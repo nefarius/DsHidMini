@@ -19,13 +19,41 @@ Environment:
 
 EXTERN_C_START
 
-//
-// The device context performs the same job as
-// a WDM device extension in the driver frameworks
-//
+struct USB_DEVICE_CONTEXT
+{
+    //
+    // Framework USB object
+    // 
+    WDFUSBDEVICE UsbDevice;
+
+    //
+    // USB interface object
+    // 
+    WDFUSBINTERFACE UsbInterface;
+
+    //
+    // USB Interrupt (in) pipe handle
+    // 
+    WDFUSBPIPE InterruptInPipe;
+
+    //
+    // USB Interrupt (out) pipe handle
+    // 
+    WDFUSBPIPE InterruptOutPipe;
+};
+
 typedef struct _DEVICE_CONTEXT
 {
     DMFMODULE DsHidMiniModule;
+
+    union
+    {
+        //
+        // USB-specific properties
+        // 
+        struct USB_DEVICE_CONTEXT Usb;
+
+    } Connection;
 
 } DEVICE_CONTEXT, *PDEVICE_CONTEXT;
 
@@ -55,8 +83,9 @@ typedef struct
     UCHAR OutputReport;
     HID_DEVICE_ATTRIBUTES HidDeviceAttributes;
     HID_DESCRIPTOR HidDescriptor;
-    //HIDMINI_INPUT_REPORT ReadReport;
-    WDFTIMER Timer;
+    
+    UCHAR InputReport[DS3_HID_INPUT_REPORT_SIZE];
+	
 } DMF_CONTEXT_DsHidMini;
 
 _Function_class_(DMF_ChildModulesAdd)

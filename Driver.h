@@ -17,12 +17,17 @@ Environment:
 #include <windows.h>
 #include <wdf.h>
 #include <initguid.h>
+#include <usb.h>
+#include <wdfusb.h>
 
 #include <DmfModules.Library.h>
+#include "DsHid.h"
 #include "device.h"
 #include "trace.h"
-#include "DsHid.h"
 #include "DsHidMiniDrv.h"
+#include "Power.h"
+#include "DsUsb.h"
+#include "Ds3.h"
 
 
 EXTERN_C_START

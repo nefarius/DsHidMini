@@ -1,5 +1,7 @@
 #pragma once
 
+
+
 NTSTATUS
 DsHidMini_GetInputReport(
     _In_ DMFMODULE DmfModule,

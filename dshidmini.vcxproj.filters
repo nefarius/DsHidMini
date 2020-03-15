@@ -45,6 +45,15 @@
     <ClInclude Include="DsHidMiniDrv.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Power.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DsUsb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Ds3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Device.c">
@@ -57,6 +66,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DsHidMiniDrv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Power.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DsUsb.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Ds3.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

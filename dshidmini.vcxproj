@@ -40,14 +40,20 @@
   <ItemGroup>
     <ClCompile Include="Device.c" />
     <ClCompile Include="Driver.c" />
+    <ClCompile Include="Ds3.c" />
     <ClCompile Include="DsHid.c" />
     <ClCompile Include="DsHidMiniDrv.c" />
+    <ClCompile Include="DsUsb.c" />
+    <ClCompile Include="Power.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Device.h" />
     <ClInclude Include="Driver.h" />
+    <ClInclude Include="Ds3.h" />
     <ClInclude Include="DsHid.h" />
     <ClInclude Include="DsHidMiniDrv.h" />
+    <ClInclude Include="DsUsb.h" />
+    <ClInclude Include="Power.h" />
     <ClInclude Include="Public.h" />
     <ClInclude Include="Trace.h" />
   </ItemGroup>
