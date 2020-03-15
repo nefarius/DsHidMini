@@ -40,10 +40,12 @@
   <ItemGroup>
     <ClCompile Include="Device.c" />
     <ClCompile Include="Driver.c" />
+    <ClCompile Include="DsHid.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Device.h" />
     <ClInclude Include="Driver.h" />
+    <ClInclude Include="DsHid.h" />
     <ClInclude Include="Public.h" />
     <ClInclude Include="Trace.h" />
   </ItemGroup>

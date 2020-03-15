@@ -21,6 +21,7 @@ Environment:
 #include <DmfModules.Library.h>
 #include "device.h"
 #include "trace.h"
+#include "DsHid.h"
 
 
 EXTERN_C_START

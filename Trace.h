@@ -28,7 +28,7 @@ Environment:
         WPP_DEFINE_BIT(MYDRIVER_ALL_INFO)                              \
         WPP_DEFINE_BIT(TRACE_DRIVER)                                   \
         WPP_DEFINE_BIT(TRACE_DEVICE)                                   \
-        WPP_DEFINE_BIT(TRACE_QUEUE)                                    \
+        WPP_DEFINE_BIT(TRACE_DSHID)                                    \
         )                             
 
 #define WPP_FLAG_LEVEL_LOGGER(flag, level)                             \
