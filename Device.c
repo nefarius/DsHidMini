@@ -17,6 +17,8 @@ Environment:
 #include "driver.h"
 #include "device.tmh"
 
+#include <DmfModules.Library.h>
+
 NTSTATUS
 dshidminiCreateDevice(
     _Inout_ PWDFDEVICE_INIT DeviceInit
