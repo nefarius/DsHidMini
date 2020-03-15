@@ -68,6 +68,23 @@ DMF_DsHidMini_ChildModulesAdd(
     _In_ PDMFMODULE_INIT DmfModuleInit
 );
 
+_Function_class_(DMF_Open)
+_IRQL_requires_max_(PASSIVE_LEVEL)
+_Must_inspect_result_
+static
+NTSTATUS
+DMF_DsHidMini_Open(
+    _In_ DMFMODULE DmfModule
+);
+
+_Function_class_(DMF_Close)
+_IRQL_requires_max_(PASSIVE_LEVEL)
+static
+VOID
+DMF_DsHidMini_Close(
+    _In_ DMFMODULE DmfModule
+);
+
 //
 // Function to initialize the device and its callbacks
 //

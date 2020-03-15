@@ -154,8 +154,8 @@ DMF_DsHidMini_Create(
 
 	DMF_CALLBACKS_DMF_INIT(&dsHidMiniCallbacks);
 	dsHidMiniCallbacks.ChildModulesAdd = DMF_DsHidMini_ChildModulesAdd;
-	//dsHidMiniCallbacks.DeviceOpen = DMF_VirtualHidMiniSample_Open;
-	//dsHidMiniCallbacks.DeviceClose = DMF_VirtualHidMiniSample_Close;
+	dsHidMiniCallbacks.DeviceOpen = DMF_DsHidMini_Open;
+	dsHidMiniCallbacks.DeviceClose = DMF_DsHidMini_Close;
 
 	DMF_MODULE_DESCRIPTOR_INIT_CONTEXT_TYPE(dsHidMiniDesc,
 		DsHidMini,
@@ -194,8 +194,69 @@ DMF_DsHidMini_ChildModulesAdd(
 	_In_ PDMFMODULE_INIT DmfModuleInit
 )
 {
-	UNREFERENCED_PARAMETER(DmfModule);
+	DMF_MODULE_ATTRIBUTES moduleAttributes;
+	DMF_CONFIG_DsHidMini* moduleConfig;
+	DMF_CONTEXT_DsHidMini* moduleContext;
+	DMF_CONFIG_VirtualHidMini vHidCfg;
+
+	PAGED_CODE();
+		
 	UNREFERENCED_PARAMETER(DmfParentModuleAttributes);
-	UNREFERENCED_PARAMETER(DmfModuleInit);
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
+	
+	moduleConfig = DMF_CONFIG_GET(DmfModule);
+	moduleContext = DMF_CONTEXT_GET(DmfModule);
+
+	DMF_CONFIG_VirtualHidMini_AND_ATTRIBUTES_INIT(&vHidCfg,
+		&moduleAttributes);
+	
+	DMF_DmfModuleAdd(DmfModuleInit,
+		&moduleAttributes,
+		WDF_NO_OBJECT_ATTRIBUTES,
+		&moduleContext->DmfModuleVirtualHidMini);	
+	
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
+}
+#pragma code_seg()
+
+#pragma code_seg("PAGE")
+_Function_class_(DMF_Open)
+_IRQL_requires_max_(PASSIVE_LEVEL)
+_Must_inspect_result_
+static
+NTSTATUS
+DMF_DsHidMini_Open(
+	_In_ DMFMODULE DmfModule
+)
+{
+	UNREFERENCED_PARAMETER(DmfModule);
+
+	PAGED_CODE();
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
+
+	return STATUS_UNSUCCESSFUL;
+}
+#pragma code_seg()
+
+#pragma code_seg("PAGE")
+_Function_class_(DMF_Close)
+_IRQL_requires_max_(PASSIVE_LEVEL)
+static
+VOID
+DMF_DsHidMini_Close(
+	_In_ DMFMODULE DmfModule
+)
+{
+	UNREFERENCED_PARAMETER(DmfModule);
+
+	PAGED_CODE();
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
 }
 #pragma code_seg()
