@@ -24,7 +24,7 @@ EXTERN_C_START
 //
 typedef struct _DEVICE_CONTEXT
 {
-    ULONG PrivateDeviceData;  // just a placeholder
+    DMFMODULE DsHidMiniModule;
 
 } DEVICE_CONTEXT, *PDEVICE_CONTEXT;
 
@@ -34,6 +34,14 @@ typedef struct _DEVICE_CONTEXT
 // in a type safe manner.
 //
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DEVICE_CONTEXT, DeviceGetContext)
+
+typedef struct
+{
+    ULONG Dummy;
+	
+} DMF_CONFIG_DsHidMini;
+
+DECLARE_DMF_MODULE(DsHidMini)
 
 //
 // Function to initialize the device and its callbacks

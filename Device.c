@@ -1,23 +1,7 @@
-/*++
-
-Module Name:
-
-	device.c - Device handling events for example driver.
-
-Abstract:
-
-   This file contains the device entry points and callbacks.
-
-Environment:
-
-	User-mode Driver Framework 2
-
---*/
 
 #include "driver.h"
 #include "device.tmh"
 
-#include <DmfModules.Library.h>
 
 EVT_DMF_DEVICE_MODULES_ADD DmfDeviceModulesAdd;
 
@@ -26,23 +10,6 @@ NTSTATUS
 dshidminiCreateDevice(
 	_Inout_ PWDFDEVICE_INIT DeviceInit
 )
-/*++
-
-Routine Description:
-
-	Worker routine called to create a device and its software resources.
-
-Arguments:
-
-	DeviceInit - Pointer to an opaque init structure. Memory for this
-					structure will be freed by the framework when the WdfDeviceCreate
-					succeeds. So don't access the structure after that point.
-
-Return Value:
-
-	NTSTATUS
-
---*/
 {
 	WDF_OBJECT_ATTRIBUTES deviceAttributes;
 	PDEVICE_CONTEXT deviceContext;
@@ -52,7 +19,8 @@ Return Value:
 	PDMFDEVICE_INIT dmfDeviceInit;
 	DMF_EVENT_CALLBACKS dmfCallbacks;
 
-
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
+	
 	dmfDeviceInit = DMF_DmfDeviceInitAllocate(DeviceInit);
 
 	// All DMF drivers must call this function even if they do not support PnP Power callbacks.
@@ -108,11 +76,6 @@ Return Value:
 		// run under framework verifier mode.
 		//
 		deviceContext = DeviceGetContext(device);
-
-		//
-		// Initialize the context.
-		//
-		deviceContext->PrivateDeviceData = 0;
 	}
 
 Exit:
@@ -121,6 +84,8 @@ Exit:
 	{
 		DMF_DmfDeviceInitFree(&dmfDeviceInit);
 	}
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
 
 	return status;
 }
@@ -132,47 +97,51 @@ DmfDeviceModulesAdd(
 	_In_ WDFDEVICE Device,
 	_In_ PDMFMODULE_INIT DmfModuleInit
 )
-/*++
-
-Routine Description:
-
-	Add all the DMF Modules used by this driver.
-
-Arguments:
-
-	Device - WDFDEVICE handle.
-	DmfModuleInit - Opaque structure to be passed to DMF_DmfModuleAdd.
-
-Return Value:
-
-	NTSTATUS
-
---*/
 {
 	PDEVICE_CONTEXT deviceContext;
 	DMF_MODULE_ATTRIBUTES moduleAttributes;
-	//DMF_CONFIG_VirtualHidMiniSample moduleConfigVirtualHidDeviceMiniSample;
-
-	UNREFERENCED_PARAMETER(deviceContext);
-	UNREFERENCED_PARAMETER(moduleAttributes);
-	UNREFERENCED_PARAMETER(DmfModuleInit);
-
-	UNREFERENCED_PARAMETER(Device);
+	DMF_CONFIG_DsHidMini dsHidMiniCfg;
 
 	PAGED_CODE();
 
-	//deviceContext = DeviceContextGet(Device);
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
+	
+	deviceContext = DeviceGetContext(Device);
 
-	// VirtualHidDeviceMiniSample
-	// --------------------------
-	//
-	//DMF_CONFIG_VirtualHidMiniSample_AND_ATTRIBUTES_INIT(&moduleConfigVirtualHidDeviceMiniSample,
-	//    &moduleAttributes);
-	//DMF_DmfModuleAdd(DmfModuleInit,
-	//    &moduleAttributes,
-	//    WDF_NO_OBJECT_ATTRIBUTES,
-	//    &deviceContext->DmfModuleVirtualHidDeviceMiniSample);
+	DMF_CONFIG_DsHidMini_AND_ATTRIBUTES_INIT(
+		&dsHidMiniCfg,
+		&moduleAttributes
+	);
+
+	DMF_DmfModuleAdd(DmfModuleInit,
+		&moduleAttributes,
+		WDF_NO_OBJECT_ATTRIBUTES,
+		&deviceContext->DsHidMiniModule);
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
 }
 #pragma code_seg()
 
+#pragma code_seg("PAGE")
+_IRQL_requires_max_(PASSIVE_LEVEL)
+_Must_inspect_result_
+NTSTATUS
+DMF_DsHidMini_Create(
+	_In_ WDFDEVICE Device,
+	_In_ DMF_MODULE_ATTRIBUTES* DmfModuleAttributes,
+	_In_ WDF_OBJECT_ATTRIBUTES* ObjectAttributes,
+	_Out_ DMFMODULE* DmfModule
+)
+{
+	UNREFERENCED_PARAMETER(Device);
+	UNREFERENCED_PARAMETER(DmfModuleAttributes);
+	UNREFERENCED_PARAMETER(ObjectAttributes);
+	UNREFERENCED_PARAMETER(DmfModule);
 
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
+	
+	return STATUS_UNSUCCESSFUL;
+}
+#pragma code_seg()

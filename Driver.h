@@ -18,9 +18,11 @@ Environment:
 #include <wdf.h>
 #include <initguid.h>
 
+#include <DmfModules.Library.h>
 #include "device.h"
 #include "queue.h"
 #include "trace.h"
+
 
 EXTERN_C_START
 
