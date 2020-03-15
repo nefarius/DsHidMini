@@ -19,6 +19,9 @@ Environment:
 
 #include <DmfModules.Library.h>
 
+EVT_DMF_DEVICE_MODULES_ADD DmfDeviceModulesAdd;
+
+
 NTSTATUS
 dshidminiCreateDevice(
     _Inout_ PWDFDEVICE_INIT DeviceInit
@@ -45,12 +48,52 @@ Return Value:
     PDEVICE_CONTEXT deviceContext;
     WDFDEVICE device;
     NTSTATUS status;
+    NTSTATUS ntStatus;
+    PDMFDEVICE_INIT dmfDeviceInit;
+    DMF_EVENT_CALLBACKS dmfCallbacks;
+
+
+    dmfDeviceInit = DMF_DmfDeviceInitAllocate(DeviceInit);
+
+    // All DMF drivers must call this function even if they do not support PnP Power callbacks.
+    // (In this case, this driver does support a PnP Power callback.)
+    //
+    DMF_DmfDeviceInitHookPnpPowerEventCallbacks(dmfDeviceInit,
+        NULL);
+
+    // All DMF drivers must call this function even if they do not support File Object callbacks.
+    //
+    DMF_DmfDeviceInitHookFileObjectConfig(dmfDeviceInit,
+        NULL);
+
+    // All DMF drivers must call this function even if they do not support Power Policy callbacks.
+    //
+    DMF_DmfDeviceInitHookPowerPolicyEventCallbacks(dmfDeviceInit,
+        NULL);
+
+    // This is a filter driver that loads on MSHIDUMDF driver.
+    //
+    WdfFdoInitSetFilter(DeviceInit);
+    // DMF Client drivers that are filter drivers must also make this call.
+    //
+    DMF_DmfFdoSetFilter(dmfDeviceInit);
+	
 
     WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_CONTEXT);
 
     status = WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device);
 
     if (NT_SUCCESS(status)) {
+
+        // Create the DMF Modules this Client driver will use.
+    //
+        dmfCallbacks.EvtDmfDeviceModulesAdd = DmfDeviceModulesAdd;
+        DMF_DmfDeviceInitSetEventCallbacks(dmfDeviceInit,
+            &dmfCallbacks);
+
+        ntStatus = DMF_ModulesCreate(device,
+            &dmfDeviceInit);
+    	
         //
         // Get a pointer to the device context structure that we just associated
         // with the device object. We define this structure in the device.h
@@ -87,3 +130,55 @@ Return Value:
 
     return status;
 }
+
+#pragma code_seg("PAGED")
+_IRQL_requires_max_(PASSIVE_LEVEL)
+VOID
+DmfDeviceModulesAdd(
+    _In_ WDFDEVICE Device,
+    _In_ PDMFMODULE_INIT DmfModuleInit
+)
+/*++
+
+Routine Description:
+
+    Add all the DMF Modules used by this driver.
+
+Arguments:
+
+    Device - WDFDEVICE handle.
+    DmfModuleInit - Opaque structure to be passed to DMF_DmfModuleAdd.
+
+Return Value:
+
+    NTSTATUS
+
+--*/
+{
+    PDEVICE_CONTEXT deviceContext;
+    DMF_MODULE_ATTRIBUTES moduleAttributes;
+    //DMF_CONFIG_VirtualHidMiniSample moduleConfigVirtualHidDeviceMiniSample;
+
+    UNREFERENCED_PARAMETER(deviceContext);
+    UNREFERENCED_PARAMETER(moduleAttributes);
+    UNREFERENCED_PARAMETER(DmfModuleInit);
+	
+    UNREFERENCED_PARAMETER(Device);
+
+    PAGED_CODE();
+
+    //deviceContext = DeviceContextGet(Device);
+
+    // VirtualHidDeviceMiniSample
+    // --------------------------
+    //
+    //DMF_CONFIG_VirtualHidMiniSample_AND_ATTRIBUTES_INIT(&moduleConfigVirtualHidDeviceMiniSample,
+    //    &moduleAttributes);
+    //DMF_DmfModuleAdd(DmfModuleInit,
+    //    &moduleAttributes,
+    //    WDF_NO_OBJECT_ATTRIBUTES,
+    //    &deviceContext->DmfModuleVirtualHidDeviceMiniSample);
+}
+#pragma code_seg()
+
+
