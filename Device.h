@@ -15,6 +15,7 @@ Environment:
 --*/
 
 #include "public.h"
+#include <DmfModule.h>
 
 EXTERN_C_START
 
@@ -42,6 +43,30 @@ typedef struct
 } DMF_CONFIG_DsHidMini;
 
 DECLARE_DMF_MODULE(DsHidMini)
+
+typedef struct
+{
+    // Underlying VHIDMINI2 support.
+    //
+    DMFMODULE DmfModuleVirtualHidMini;
+    // Private data for this device.
+    //
+    BYTE DeviceData;
+    UCHAR OutputReport;
+    HID_DEVICE_ATTRIBUTES HidDeviceAttributes;
+    HID_DESCRIPTOR HidDescriptor;
+    //HIDMINI_INPUT_REPORT ReadReport;
+    WDFTIMER Timer;
+} DMF_CONTEXT_DsHidMini;
+
+_Function_class_(DMF_ChildModulesAdd)
+_IRQL_requires_max_(PASSIVE_LEVEL)
+VOID
+DMF_DsHidMini_ChildModulesAdd(
+    _In_ DMFMODULE DmfModule,
+    _In_ DMF_MODULE_ATTRIBUTES* DmfParentModuleAttributes,
+    _In_ PDMFMODULE_INIT DmfModuleInit
+);
 
 //
 // Function to initialize the device and its callbacks

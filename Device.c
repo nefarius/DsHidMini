@@ -1,9 +1,20 @@
 
 #include "driver.h"
 #include "device.tmh"
+#include <DmfModule.h>
 
 
 EVT_DMF_DEVICE_MODULES_ADD DmfDeviceModulesAdd;
+
+// This macro declares the following function:
+// DMF_CONTEXT_GET()
+//
+DMF_MODULE_DECLARE_CONTEXT(DsHidMini)
+
+// This macro declares the following function:
+// DMF_CONFIG_GET()
+//
+DMF_MODULE_DECLARE_CONFIG(DsHidMini)
 
 
 NTSTATUS
@@ -133,15 +144,58 @@ DMF_DsHidMini_Create(
 	_Out_ DMFMODULE* DmfModule
 )
 {
-	UNREFERENCED_PARAMETER(Device);
-	UNREFERENCED_PARAMETER(DmfModuleAttributes);
-	UNREFERENCED_PARAMETER(ObjectAttributes);
-	UNREFERENCED_PARAMETER(DmfModule);
+	NTSTATUS ntStatus;
+	DMF_MODULE_DESCRIPTOR dsHidMiniDesc;
+	DMF_CALLBACKS_DMF dsHidMiniCallbacks;
+
+	PAGED_CODE();
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
 
+	DMF_CALLBACKS_DMF_INIT(&dsHidMiniCallbacks);
+	dsHidMiniCallbacks.ChildModulesAdd = DMF_DsHidMini_ChildModulesAdd;
+	//dsHidMiniCallbacks.DeviceOpen = DMF_VirtualHidMiniSample_Open;
+	//dsHidMiniCallbacks.DeviceClose = DMF_VirtualHidMiniSample_Close;
+
+	DMF_MODULE_DESCRIPTOR_INIT_CONTEXT_TYPE(dsHidMiniDesc,
+		DsHidMini,
+		DMF_CONTEXT_DsHidMini,
+		DMF_MODULE_OPTIONS_PASSIVE,
+		DMF_MODULE_OPEN_OPTION_OPEN_PrepareHardware);
+
+	dsHidMiniDesc.CallbacksDmf = &dsHidMiniCallbacks;
+
+	ntStatus = DMF_ModuleCreate(Device,
+		DmfModuleAttributes,
+		ObjectAttributes,
+		&dsHidMiniDesc,
+		DmfModule);
+	if (!NT_SUCCESS(ntStatus))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR, TRACE_DEVICE, "DMF_ModuleCreate fails: ntStatus=%!STATUS!", ntStatus);
+		goto Exit;
+	}
+
+Exit:
+
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
-	
-	return STATUS_UNSUCCESSFUL;
+
+	return(ntStatus);
+}
+#pragma code_seg()
+
+#pragma code_seg("PAGE")
+_Function_class_(DMF_ChildModulesAdd)
+_IRQL_requires_max_(PASSIVE_LEVEL)
+VOID
+DMF_DsHidMini_ChildModulesAdd(
+	_In_ DMFMODULE DmfModule,
+	_In_ DMF_MODULE_ATTRIBUTES* DmfParentModuleAttributes,
+	_In_ PDMFMODULE_INIT DmfModuleInit
+)
+{
+	UNREFERENCED_PARAMETER(DmfModule);
+	UNREFERENCED_PARAMETER(DmfParentModuleAttributes);
+	UNREFERENCED_PARAMETER(DmfModuleInit);
 }
 #pragma code_seg()
