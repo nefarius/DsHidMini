@@ -42,6 +42,9 @@
     <ClInclude Include="DsHid.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DsHidMiniDrv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Device.c">
@@ -51,6 +54,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DsHid.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DsHidMiniDrv.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

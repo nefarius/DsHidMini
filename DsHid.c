@@ -1,7 +1,64 @@
 #include "Driver.h"
 #include "DsHid.tmh"
 
-
+#define DS3_HID_REPORT_DESCRIPTOR_COMMON_FEATURES                                                                    \
+	/* DS_FEATURE_TYPE_GET_HOST_BD_ADDR                                                                           */ \
+	0xA1, 0x01,        /*   Collection (Application)                                                              */ \
+	0x85, 0xC0,        /*     Report ID (192)                                                                     */ \
+	0x75, 0x08,        /*     Report Size (8)                                                                     */ \
+	0x95, 0x08,        /*     Report Count (8)                                                                    */ \
+	0x09, 0x01,        /*     Usage (0x01)                                                                        */ \
+	0xB1, 0x02,        /*     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
+	0xC0,              /*   End Collection                                                                        */ \
+	/* DS_FEATURE_TYPE_SET_HOST_BD_ADDR                                                                           */ \
+	0xA1, 0x01,        /*   Collection (Application)                                                              */ \
+	0x85, 0xC1,        /*     Report ID (193)                                                                     */ \
+	0x75, 0x08,        /*     Report Size (8)                                                                     */ \
+	0x95, 0x08,        /*     Report Count (8)                                                                    */ \
+	0x09, 0x01,        /*     Usage (0x01)                                                                        */ \
+	0xB1, 0x02,        /*     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
+	0xC0,              /*   End Collection                                                                        */ \
+	/* DS_FEATURE_TYPE_GET_DEVICE_BD_ADDR                                                                         */ \
+	0xA1, 0x01,        /*   Collection (Application)                                                              */ \
+	0x85, 0xC2,        /*     Report ID (194)                                                                     */ \
+	0x75, 0x08,        /*     Report Size (8)                                                                     */ \
+	0x95, 0x08,        /*     Report Count (8)                                                                    */ \
+	0x09, 0x01,        /*     Usage (0x01)                                                                        */ \
+	0xB1, 0x02,        /*     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
+	0xC0,              /*   End Collection                                                                        */ \
+	/* DS_FEATURE_TYPE_GET_DEVICE_TYPE                                                                            */ \
+	0xA1, 0x01,        /*   Collection (Application)                                                              */ \
+	0x85, 0xC3,        /*     Report ID (195)                                                                     */ \
+	0x75, 0x08,        /*     Report Size (8)                                                                     */ \
+	0x95, 0x03,        /*     Report Count (3)                                                                    */ \
+	0x09, 0x01,        /*     Usage (0x01)                                                                        */ \
+	0xB1, 0x02,        /*     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
+	0xC0,              /*   End Collection                                                                        */ \
+	/* DS_FEATURE_TYPE_GET_CONNECTION_TYPE                                                                        */ \
+	0xA1, 0x01,        /*   Collection (Application)                                                              */ \
+	0x85, 0xC4,        /*     Report ID (196)                                                                     */ \
+	0x75, 0x08,        /*     Report Size (8)                                                                     */ \
+	0x95, 0x03,        /*     Report Count (3)                                                                    */ \
+	0x09, 0x01,        /*     Usage (0x01)                                                                        */ \
+	0xB1, 0x02,        /*     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
+	0xC0,              /*   End Collection                                                                        */ \
+	/* DS_FEATURE_TYPE_GET_DEVICE_CONFIG                                                                          */ \
+	0xA1, 0x01,        /*   Collection (Application)                                                              */ \
+	0x85, 0xC5,        /*     Report ID (197)                                                                     */ \
+	0x75, 0x08,        /*     Report Size (8)                                                                     */ \
+	0x95, 0x07,        /*     Report Count (7)                                                                    */ \
+	0x09, 0x01,        /*     Usage (0x01)                                                                        */ \
+	0xB1, 0x02,        /*     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
+	0xC0,              /*   End Collection                                                                        */ \
+	/* DS_FEATURE_TYPE_SET_DEVICE_CONFIG                                                                          */ \
+	0xA1, 0x01,        /*   Collection (Application)                                                              */ \
+	0x85, 0xC6,        /*     Report ID (198)                                                                     */ \
+	0x75, 0x08,        /*     Report Size (8)                                                                     */ \
+	0x95, 0x07,        /*     Report Count (7)                                                                    */ \
+	0x09, 0x01,        /*     Usage (0x01)                                                                        */ \
+	0xB1, 0x02,        /*     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
+	0xC0,              /*   End Collection                                                                        */ \
+	0xC0,              /* End Collection                                                                          */
 
 #pragma region DS3 HID Report Descriptor (Split Device Mode)
 
@@ -65,77 +122,7 @@ CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_Split_Mode[] = {
     0x26, 0xFF, 0x00,  //     Logical Maximum (255)
     0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
     0xC0,              //   End Collection
-    //
-    // DS_FEATURE_TYPE_GET_HOST_BD_ADDR
-    // 
-    0xA1, 0x01,        //   Collection (Application)
-    0x85, 0xC0,        //     Report ID (192)
-    0x75, 0x08,        //     Report Size (8)
-    0x95, 0x08,        //     Report Count (8)
-    0x09, 0x01,        //     Usage (0x01)
-    0xB1, 0x02,        //     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
-    0xC0,              //   End Collection
-    //
-    // DS_FEATURE_TYPE_SET_HOST_BD_ADDR
-    // 
-    0xA1, 0x01,        //   Collection (Application)
-    0x85, 0xC1,        //     Report ID (193)
-    0x75, 0x08,        //     Report Size (8)
-    0x95, 0x08,        //     Report Count (8)
-    0x09, 0x01,        //     Usage (0x01)
-    0xB1, 0x02,        //     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
-    0xC0,              //   End Collection
-    //
-    // DS_FEATURE_TYPE_GET_DEVICE_BD_ADDR
-    // 
-    0xA1, 0x01,        //   Collection (Application)
-    0x85, 0xC2,        //     Report ID (194)
-    0x75, 0x08,        //     Report Size (8)
-    0x95, 0x08,        //     Report Count (8)
-    0x09, 0x01,        //     Usage (0x01)
-    0xB1, 0x02,        //     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
-    0xC0,              //   End Collection
-    //
-    // DS_FEATURE_TYPE_GET_DEVICE_TYPE
-    // 
-    0xA1, 0x01,        //   Collection (Application)
-    0x85, 0xC3,        //     Report ID (195)
-    0x75, 0x08,        //     Report Size (8)
-    0x95, 0x03,        //     Report Count (3)
-    0x09, 0x01,        //     Usage (0x01)
-    0xB1, 0x02,        //     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
-    0xC0,              //   End Collection
-    //
-    // DS_FEATURE_TYPE_GET_CONNECTION_TYPE
-    // 
-    0xA1, 0x01,        //   Collection (Application)
-    0x85, 0xC4,        //     Report ID (196)
-    0x75, 0x08,        //     Report Size (8)
-    0x95, 0x03,        //     Report Count (3)
-    0x09, 0x01,        //     Usage (0x01)
-    0xB1, 0x02,        //     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
-    0xC0,              //   End Collection
-    //
-    // DS_FEATURE_TYPE_GET_DEVICE_CONFIG
-    // 
-    0xA1, 0x01,        //   Collection (Application)
-    0x85, 0xC5,        //     Report ID (197)
-    0x75, 0x08,        //     Report Size (8)
-    0x95, 0x07,        //     Report Count (7)
-    0x09, 0x01,        //     Usage (0x01)
-    0xB1, 0x02,        //     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
-    0xC0,              //   End Collection
-    //
-    // DS_FEATURE_TYPE_SET_DEVICE_CONFIG
-    // 
-    0xA1, 0x01,        //   Collection (Application)
-    0x85, 0xC6,        //     Report ID (198)
-    0x75, 0x08,        //     Report Size (8)
-    0x95, 0x07,        //     Report Count (7)
-    0x09, 0x01,        //     Usage (0x01)
-    0xB1, 0x02,        //     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
-    0xC0,              //   End Collection
-    0xC0,              // End Collection
+    DS3_HID_REPORT_DESCRIPTOR_COMMON_FEATURES                                                                    \
    /************************************************************************/
    /* Joystick definition (for exposing pressure values as axes)           */
    /************************************************************************/
@@ -301,77 +288,7 @@ CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_Single_Mode[] = {
     0x26, 0xFF, 0x00,  //     Logical Maximum (255)
     0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
     0xC0,              //   End Collection
-    //
-    // DS_FEATURE_TYPE_GET_HOST_BD_ADDR
-    // 
-    0xA1, 0x01,        //   Collection (Application)
-    0x85, 0xC0,        //     Report ID (192)
-    0x75, 0x08,        //     Report Size (8)
-    0x95, 0x08,        //     Report Count (8)
-    0x09, 0x01,        //     Usage (0x01)
-    0xB1, 0x02,        //     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
-    0xC0,              //   End Collection
-    //
-    // DS_FEATURE_TYPE_SET_HOST_BD_ADDR
-    // 
-    0xA1, 0x01,        //   Collection (Application)
-    0x85, 0xC1,        //     Report ID (193)
-    0x75, 0x08,        //     Report Size (8)
-    0x95, 0x08,        //     Report Count (8)
-    0x09, 0x01,        //     Usage (0x01)
-    0xB1, 0x02,        //     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
-    0xC0,              //   End Collection
-    //
-    // DS_FEATURE_TYPE_GET_DEVICE_BD_ADDR
-    // 
-    0xA1, 0x01,        //   Collection (Application)
-    0x85, 0xC2,        //     Report ID (194)
-    0x75, 0x08,        //     Report Size (8)
-    0x95, 0x08,        //     Report Count (8)
-    0x09, 0x01,        //     Usage (0x01)
-    0xB1, 0x02,        //     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
-    0xC0,              //   End Collection
-    //
-    // DS_FEATURE_TYPE_GET_DEVICE_TYPE
-    // 
-    0xA1, 0x01,        //   Collection (Application)
-    0x85, 0xC3,        //     Report ID (195)
-    0x75, 0x08,        //     Report Size (8)
-    0x95, 0x03,        //     Report Count (3)
-    0x09, 0x01,        //     Usage (0x01)
-    0xB1, 0x02,        //     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
-    0xC0,              //   End Collection
-    //
-    // DS_FEATURE_TYPE_GET_CONNECTION_TYPE
-    // 
-    0xA1, 0x01,        //   Collection (Application)
-    0x85, 0xC4,        //     Report ID (196)
-    0x75, 0x08,        //     Report Size (8)
-    0x95, 0x03,        //     Report Count (3)
-    0x09, 0x01,        //     Usage (0x01)
-    0xB1, 0x02,        //     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
-    0xC0,              //   End Collection
-    //
-    // DS_FEATURE_TYPE_GET_DEVICE_CONFIG
-    // 
-    0xA1, 0x01,        //   Collection (Application)
-    0x85, 0xC5,        //     Report ID (197)
-    0x75, 0x08,        //     Report Size (8)
-    0x95, 0x07,        //     Report Count (7)
-    0x09, 0x01,        //     Usage (0x01)
-    0xB1, 0x02,        //     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
-    0xC0,              //   End Collection
-    //
-    // DS_FEATURE_TYPE_SET_DEVICE_CONFIG
-    // 
-    0xA1, 0x01,        //   Collection (Application)
-    0x85, 0xC6,        //     Report ID (198)
-    0x75, 0x08,        //     Report Size (8)
-    0x95, 0x07,        //     Report Count (7)
-    0x09, 0x01,        //     Usage (0x01)
-    0xB1, 0x02,        //     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
-    0xC0,              //   End Collection
-    0xC0,              // End Collection
+    DS3_HID_REPORT_DESCRIPTOR_COMMON_FEATURES                                                                    \
 };
 
 CONST HID_DESCRIPTOR G_Ds3HidDescriptor_Single_Mode = {

@@ -4,6 +4,24 @@
 #include <DmfModule.h>
 
 
+PWSTR G_DsHidMini_Strings[] =
+{
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	L"DsHidMini Device" // TODO: populate properly
+};
+
+#define MAXIMUM_STRING_LENGTH           (126 * sizeof(WCHAR))
+#define DSHIDMINI_DEVICE_STRING          L"DsHidMini device"
+#define DSHIDMINI_MANUFACTURER_STRING    L"DsHidMini device Manufacturer string"
+#define DSHIDMINI_PRODUCT_STRING         L"DsHidMini device Product string"
+#define DSHIDMINI_SERIAL_NUMBER_STRING   L"DsHidMini device Serial Number string"
+#define DSHIDMINI_DEVICE_STRING_INDEX    5
+
+
 EVT_DMF_DEVICE_MODULES_ADD DmfDeviceModulesAdd;
 
 // This macro declares the following function:
@@ -210,6 +228,36 @@ DMF_DsHidMini_ChildModulesAdd(
 
 	DMF_CONFIG_VirtualHidMini_AND_ATTRIBUTES_INIT(&vHidCfg,
 		&moduleAttributes);
+
+	//
+	// TODO: populate properly
+	// 
+	
+	vHidCfg.VendorId = 0x1337;
+	vHidCfg.ProductId = 0x1337;
+	vHidCfg.VersionNumber = 0x0101;
+
+	vHidCfg.HidDescriptor = &G_Ds3HidDescriptor_Split_Mode;
+	vHidCfg.HidDescriptorLength = sizeof(G_Ds3HidDescriptor_Split_Mode);
+	vHidCfg.HidReportDescriptor = G_Ds3HidReportDescriptor_Split_Mode;
+	vHidCfg.HidReportDescriptorLength = G_Ds3HidDescriptor_Split_Mode.DescriptorList[0].wReportLength;
+
+	vHidCfg.HidDeviceAttributes.VendorID = 0x1337;
+	vHidCfg.HidDeviceAttributes.ProductID = 0x1337;
+	vHidCfg.HidDeviceAttributes.VersionNumber = 0x0101;
+	vHidCfg.HidDeviceAttributes.Size = sizeof(HID_DEVICE_ATTRIBUTES);
+
+	vHidCfg.GetInputReport = DsHidMini_GetInputReport;
+	
+	vHidCfg.StringSizeCbManufacturer = sizeof(DSHIDMINI_MANUFACTURER_STRING);
+	vHidCfg.StringManufacturer = DSHIDMINI_MANUFACTURER_STRING;
+	vHidCfg.StringSizeCbProduct = sizeof(DSHIDMINI_PRODUCT_STRING);
+	vHidCfg.StringProduct = DSHIDMINI_PRODUCT_STRING;
+	vHidCfg.StringSizeCbSerialNumber = sizeof(DSHIDMINI_SERIAL_NUMBER_STRING);
+	vHidCfg.StringSerialNumber = DSHIDMINI_SERIAL_NUMBER_STRING;
+	
+	vHidCfg.Strings = G_DsHidMini_Strings;
+	vHidCfg.NumberOfStrings = ARRAYSIZE(G_DsHidMini_Strings);
 	
 	DMF_DmfModuleAdd(DmfModuleInit,
 		&moduleAttributes,
@@ -238,7 +286,7 @@ DMF_DsHidMini_Open(
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
 
-	return STATUS_UNSUCCESSFUL;
+	return STATUS_SUCCESS;
 }
 #pragma code_seg()
 

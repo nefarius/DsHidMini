@@ -22,6 +22,7 @@ Environment:
 #include "device.h"
 #include "trace.h"
 #include "DsHid.h"
+#include "DsHidMiniDrv.h"
 
 
 EXTERN_C_START

@@ -41,11 +41,13 @@
     <ClCompile Include="Device.c" />
     <ClCompile Include="Driver.c" />
     <ClCompile Include="DsHid.c" />
+    <ClCompile Include="DsHidMiniDrv.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Device.h" />
     <ClInclude Include="Driver.h" />
     <ClInclude Include="DsHid.h" />
+    <ClInclude Include="DsHidMiniDrv.h" />
     <ClInclude Include="Public.h" />
     <ClInclude Include="Trace.h" />
   </ItemGroup>

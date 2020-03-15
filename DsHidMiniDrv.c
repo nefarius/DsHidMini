@@ -1,0 +1,22 @@
+#include "Driver.h"
+#include "DsHidMiniDrv.tmh"
+
+NTSTATUS
+DsHidMini_GetInputReport(
+	_In_ DMFMODULE DmfModule,
+	_In_ WDFREQUEST Request,
+	_In_ HID_XFER_PACKET* Packet,
+	_Out_ ULONG* ReportSize
+)
+{
+	UNREFERENCED_PARAMETER(DmfModule);
+	UNREFERENCED_PARAMETER(Request);
+	UNREFERENCED_PARAMETER(Packet);
+	UNREFERENCED_PARAMETER(ReportSize);
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
+	
+	return STATUS_UNSUCCESSFUL;
+}
