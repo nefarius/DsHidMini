@@ -1,5 +1,5 @@
 # DsHidMini
 
 ```
-.\vcpkg.exe install inih:x86-windows-static inih:x64-windows-static
+.\vcpkg.exe install inih:x86-windows inih:x64-windows
 ```
