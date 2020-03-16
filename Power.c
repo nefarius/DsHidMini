@@ -39,6 +39,9 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 			);
 		}
 
+		WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
+		attribs.ParentObject = pDeviceContext->Connection.Bth.HidInterruptReadRequest;
+
 		status = WdfMemoryCreate(
 			&attribs,
 			NonPagedPool,

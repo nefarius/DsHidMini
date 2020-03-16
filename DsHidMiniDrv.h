@@ -49,3 +49,5 @@ DsHidMini_WriteReport(
     _In_ HID_XFER_PACKET* Packet,
     _Out_ ULONG* ReportSize
 );
+
+VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength);

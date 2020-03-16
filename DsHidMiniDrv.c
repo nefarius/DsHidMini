@@ -349,7 +349,7 @@ DsUsbEvtUsbInterruptPipeReadComplete(
 	size_t                  rdrBufferLength;
 	LPVOID                  rdrBuffer;
 	DMFMODULE               dmfModule;
-	DMF_CONTEXT_DsHidMini*  moduleContext;
+	DMF_CONTEXT_DsHidMini* moduleContext;
 
 	UNREFERENCED_PARAMETER(Pipe);
 	UNREFERENCED_PARAMETER(NumBytesTransferred);
@@ -360,6 +360,8 @@ DsUsbEvtUsbInterruptPipeReadComplete(
 	dmfModule = (DMFMODULE)pDeviceContext->DsHidMiniModule;
 	moduleContext = DMF_CONTEXT_GET(dmfModule);
 	rdrBuffer = WdfMemoryGetBuffer(Buffer, &rdrBufferLength);
+
+	DumpAsHex(">> USB", rdrBuffer, (ULONG)rdrBufferLength);
 
 #pragma region HID Input Report (ID 01) processing
 
@@ -409,6 +411,41 @@ DsUsbEvtUsbInterruptPipeReadComplete(
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 }
 
+VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
+{
+#ifdef DBG
+	PSTR   dumpBuffer;
+	size_t  dumpBufferLength;
+	ULONG   i;
+
+	dumpBufferLength = ((BufferLength * sizeof(CHAR)) * 2) + 1;
+	dumpBuffer = malloc(dumpBufferLength);
+	if (dumpBuffer)
+	{
+
+		RtlZeroMemory(dumpBuffer, dumpBufferLength);
+
+		for (i = 0; i < BufferLength; i++)
+		{
+			sprintf(&dumpBuffer[i * 2], "%02X", ((PUCHAR)Buffer)[i]);
+		}
+
+		TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV,
+			"%s - Buffer length: %04d, buffer content: %s",
+			Prefix,
+			BufferLength,
+			dumpBuffer
+		);
+
+		free(dumpBuffer);
+	}
+#else
+	UNREFERENCED_PARAMETER(Prefix);
+	UNREFERENCED_PARAMETER(Buffer);
+	UNREFERENCED_PARAMETER(BufferLength);
+#endif
+}
+
 void DsBth_HidInterruptReadRequestCompletionRoutine(
 	WDFREQUEST Request,
 	WDFIOTARGET Target,
@@ -417,14 +454,14 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 )
 {
 	NTSTATUS                    status;
-	PUCHAR						inputBuffer;
 	PUCHAR                      buffer;
 	size_t                      bufferLength;
+	PUCHAR						inputBuffer;
 	WDF_REQUEST_REUSE_PARAMS    params;
 	PDEVICE_CONTEXT				pDeviceContext;
 	DMFMODULE                   dmfModule;
-	DMF_CONTEXT_DsHidMini*      moduleContext;
-	
+	DMF_CONTEXT_DsHidMini* moduleContext;
+
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
@@ -432,68 +469,78 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	UNREFERENCED_PARAMETER(Params);
 	UNREFERENCED_PARAMETER(Context);
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "!! Status: %!STATUS!",
-		Params->IoStatus.Status);
+	if (!NT_SUCCESS(Params->IoStatus.Status)
+		|| Params->Parameters.Ioctl.Output.Length < BTHPS3_SIXAXIS_HID_INPUT_REPORT_SIZE)
+	{
+		return;
+	}
 
 	pDeviceContext = (PDEVICE_CONTEXT)Context;
 	dmfModule = (DMFMODULE)pDeviceContext->DsHidMiniModule;
 	moduleContext = DMF_CONTEXT_GET(dmfModule);
-	
-	buffer = (PUCHAR)WdfMemoryGetBuffer(Params->Parameters.Ioctl.Output.Buffer, NULL);
-	bufferLength = Params->Parameters.Ioctl.Output.Length;
 
+	buffer = (PUCHAR)WdfMemoryGetBuffer(
+		Params->Parameters.Ioctl.Output.Buffer,
+		&bufferLength);
+
+#ifdef DBG
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "!! buffer: 0x%p, bufferLength: %d",
 		buffer, (ULONG)bufferLength);
 
-	if (FALSE) {
-		// Shift to the beginning of the report
-		inputBuffer = &buffer[9];
+	DumpAsHex(">> BTH", buffer, (ULONG)bufferLength);
+#endif
+
+	if (buffer[2] == 0xFF)
+	{
+		return;
+	}
+
+	inputBuffer = &buffer[1];
 
 #pragma region HID Input Report (ID 01) processing
 
-		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
-			inputBuffer,
-			moduleContext->InputReport,
-			FALSE
-		);
+	DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
+		inputBuffer,
+		moduleContext->InputReport,
+		FALSE
+	);
 
-		//
-		// Notify new Input Report is available
-		// 
-		status = DMF_VirtualHidMini_InputReportGenerate(
-			moduleContext->DmfModuleVirtualHidMini,
-			DsHidMini_RetrieveNextInputReport
-		);
-		if (!NT_SUCCESS(status))
-		{
-			TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
-				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
-		}
+	//
+	// Notify new Input Report is available
+	// 
+	status = DMF_VirtualHidMini_InputReportGenerate(
+		moduleContext->DmfModuleVirtualHidMini,
+		DsHidMini_RetrieveNextInputReport
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
+			"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
+	}
 
 #pragma endregion
 
 #pragma region HID Input Report (ID 02) processing
 
-		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
-			inputBuffer,
-			moduleContext->InputReport
-		);
+	DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
+		inputBuffer,
+		moduleContext->InputReport
+	);
 
-		//
-		// Notify new Input Report is available
-		// 
-		status = DMF_VirtualHidMini_InputReportGenerate(
-			moduleContext->DmfModuleVirtualHidMini,
-			DsHidMini_RetrieveNextInputReport
-		);
-		if (!NT_SUCCESS(status))
-		{
-			TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
-				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
-		}
+	//
+	// Notify new Input Report is available
+	// 
+	status = DMF_VirtualHidMini_InputReportGenerate(
+		moduleContext->DmfModuleVirtualHidMini,
+		DsHidMini_RetrieveNextInputReport
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
+			"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
+	}
 
 #pragma endregion
-	}
 
 	WDF_REQUEST_REUSE_PARAMS_INIT(
 		&params,
