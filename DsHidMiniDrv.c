@@ -349,7 +349,7 @@ DsUsbEvtUsbInterruptPipeReadComplete(
 	size_t                  rdrBufferLength;
 	LPVOID                  rdrBuffer;
 	DMFMODULE               dmfModule;
-	DMF_CONTEXT_DsHidMini* moduleContext;
+	DMF_CONTEXT_DsHidMini*  moduleContext;
 
 	UNREFERENCED_PARAMETER(Pipe);
 	UNREFERENCED_PARAMETER(NumBytesTransferred);
@@ -405,6 +405,152 @@ DsUsbEvtUsbInterruptPipeReadComplete(
 	}
 
 #pragma endregion
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
+}
+
+void DsBth_HidInterruptReadRequestCompletionRoutine(
+	WDFREQUEST Request,
+	WDFIOTARGET Target,
+	PWDF_REQUEST_COMPLETION_PARAMS Params,
+	WDFCONTEXT Context
+)
+{
+	NTSTATUS                    status;
+	PUCHAR						inputBuffer;
+	PUCHAR                      buffer;
+	size_t                      bufferLength;
+	WDF_REQUEST_REUSE_PARAMS    params;
+	PDEVICE_CONTEXT				pDeviceContext;
+	DMFMODULE                   dmfModule;
+	DMF_CONTEXT_DsHidMini*      moduleContext;
+	
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+
+	UNREFERENCED_PARAMETER(Target);
+	UNREFERENCED_PARAMETER(Params);
+	UNREFERENCED_PARAMETER(Context);
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "!! Status: %!STATUS!",
+		Params->IoStatus.Status);
+
+	pDeviceContext = (PDEVICE_CONTEXT)Context;
+	dmfModule = (DMFMODULE)pDeviceContext->DsHidMiniModule;
+	moduleContext = DMF_CONTEXT_GET(dmfModule);
+	
+	buffer = (PUCHAR)WdfMemoryGetBuffer(Params->Parameters.Ioctl.Output.Buffer, NULL);
+	bufferLength = Params->Parameters.Ioctl.Output.Length;
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "!! buffer: 0x%p, bufferLength: %d",
+		buffer, (ULONG)bufferLength);
+
+	if (FALSE) {
+		// Shift to the beginning of the report
+		inputBuffer = &buffer[9];
+
+#pragma region HID Input Report (ID 01) processing
+
+		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
+			inputBuffer,
+			moduleContext->InputReport,
+			FALSE
+		);
+
+		//
+		// Notify new Input Report is available
+		// 
+		status = DMF_VirtualHidMini_InputReportGenerate(
+			moduleContext->DmfModuleVirtualHidMini,
+			DsHidMini_RetrieveNextInputReport
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
+				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
+		}
+
+#pragma endregion
+
+#pragma region HID Input Report (ID 02) processing
+
+		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
+			inputBuffer,
+			moduleContext->InputReport
+		);
+
+		//
+		// Notify new Input Report is available
+		// 
+		status = DMF_VirtualHidMini_InputReportGenerate(
+			moduleContext->DmfModuleVirtualHidMini,
+			DsHidMini_RetrieveNextInputReport
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
+				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
+		}
+
+#pragma endregion
+	}
+
+	WDF_REQUEST_REUSE_PARAMS_INIT(
+		&params,
+		WDF_REQUEST_REUSE_NO_FLAGS,
+		STATUS_SUCCESS
+	);
+	status = WdfRequestReuse(Request, &params);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSHIDMINIDRV,
+			"WdfRequestReuse failed with status %!STATUS!",
+			status
+		);
+		return;
+	}
+
+	status = WdfIoTargetFormatRequestForIoctl(
+		pDeviceContext->Connection.Bth.BthIoTarget,
+		pDeviceContext->Connection.Bth.HidInterruptReadRequest,
+		IOCTL_BTHPS3_HID_INTERRUPT_READ,
+		NULL,
+		NULL,
+		pDeviceContext->Connection.Bth.HidInterruptReadMemory,
+		NULL
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSHIDMINIDRV,
+			"WdfIoTargetFormatRequestForIoctl failed with status %!STATUS!",
+			status
+		);
+	}
+
+	WdfRequestSetCompletionRoutine(
+		pDeviceContext->Connection.Bth.HidInterruptReadRequest,
+		DsBth_HidInterruptReadRequestCompletionRoutine,
+		pDeviceContext
+	);
+
+	if (WdfRequestSend(
+		pDeviceContext->Connection.Bth.HidInterruptReadRequest,
+		pDeviceContext->Connection.Bth.BthIoTarget,
+		WDF_NO_SEND_OPTIONS
+	) == FALSE) {
+		status = WdfRequestGetStatus(pDeviceContext->Connection.Bth.HidInterruptReadRequest);
+	}
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSHIDMINIDRV,
+			"WdfRequestSend failed with status %!STATUS!",
+			status
+		);
+	}
+
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 }

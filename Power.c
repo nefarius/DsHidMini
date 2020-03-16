@@ -8,7 +8,9 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 	WDFDEVICE  Device
 )
 {
-	NTSTATUS			status = STATUS_SUCCESS;
+	NTSTATUS				status = STATUS_SUCCESS;
+	PDEVICE_CONTEXT			pDeviceContext;
+	WDF_OBJECT_ATTRIBUTES	attribs;
 
 	UNREFERENCED_PARAMETER(Device);
 
@@ -16,6 +18,86 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER, "%!FUNC! Entry");
 
+	pDeviceContext = DeviceGetContext(Device);
+
+	if (pDeviceContext->ConnectionType == DsHidMiniDeviceConnectionTypeBth)
+	{
+		WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
+		attribs.ParentObject = Device;
+
+		status = WdfRequestCreate(
+			&attribs,
+			pDeviceContext->Connection.Bth.BthIoTarget,
+			&pDeviceContext->Connection.Bth.HidInterruptReadRequest
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceEvents(TRACE_LEVEL_ERROR,
+				TRACE_POWER,
+				"WdfRequestCreate failed with status %!STATUS!",
+				status
+			);
+		}
+
+		status = WdfMemoryCreate(
+			&attribs,
+			NonPagedPool,
+			DS3_POOL_TAG,
+			BTHPS3_SIXAXIS_HID_INPUT_REPORT_SIZE,
+			&pDeviceContext->Connection.Bth.HidInterruptReadMemory,
+			NULL
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceEvents(TRACE_LEVEL_ERROR,
+				TRACE_POWER,
+				"WdfMemoryCreate failed with status %!STATUS!",
+				status
+			);
+		}
+
+		DsBth_Ds3Init(pDeviceContext);
+
+		status = WdfIoTargetFormatRequestForIoctl(
+			pDeviceContext->Connection.Bth.BthIoTarget,
+			pDeviceContext->Connection.Bth.HidInterruptReadRequest,
+			IOCTL_BTHPS3_HID_INTERRUPT_READ,
+			NULL,
+			NULL,
+			pDeviceContext->Connection.Bth.HidInterruptReadMemory,
+			NULL
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceEvents(TRACE_LEVEL_ERROR,
+				TRACE_POWER,
+				"WdfIoTargetFormatRequestForIoctl failed with status %!STATUS!",
+				status
+			);
+		}
+
+		WdfRequestSetCompletionRoutine(
+			pDeviceContext->Connection.Bth.HidInterruptReadRequest,
+			DsBth_HidInterruptReadRequestCompletionRoutine,
+			pDeviceContext
+		);
+
+		if (WdfRequestSend(
+			pDeviceContext->Connection.Bth.HidInterruptReadRequest,
+			pDeviceContext->Connection.Bth.BthIoTarget,
+			WDF_NO_SEND_OPTIONS
+		) == FALSE) {
+			status = WdfRequestGetStatus(pDeviceContext->Connection.Bth.HidInterruptReadRequest);
+		}
+		if (!NT_SUCCESS(status))
+		{
+			TraceEvents(TRACE_LEVEL_ERROR,
+				TRACE_POWER,
+				"WdfRequestSend failed with status %!STATUS!",
+				status
+			);
+		}
+	}
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER, "%!FUNC! Exit");
 
@@ -230,11 +312,11 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 	if (pDeviceContext->ConnectionType == DsHidMiniDeviceConnectionTypeUsb)
 	{
 		WdfIoTargetStop(WdfUsbTargetPipeGetIoTarget(
-			pDeviceContext->Connection.Usb.InterruptInPipe), 
+			pDeviceContext->Connection.Usb.InterruptInPipe),
 			WdfIoTargetCancelSentIo
 		);
 		WdfIoTargetStop(WdfUsbTargetPipeGetIoTarget(
-			pDeviceContext->Connection.Usb.InterruptOutPipe), 
+			pDeviceContext->Connection.Usb.InterruptOutPipe),
 			WdfIoTargetCancelSentIo
 		);
 	}

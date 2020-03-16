@@ -2,6 +2,8 @@
 
 #define DS3_HID_COMMAND_ENABLE_SIZE             0x04
 
+#define DS3_POOL_TAG	'p3sD'
+
 typedef enum _USB_HID_REQUEST
 {
     // Class-Specific Requests
@@ -26,3 +28,5 @@ typedef enum _DS3_FEATURE_VALUE
 } DS3_FEATURE_VALUE;
 
 NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context);
+
+VOID DsBth_Ds3Init(PDEVICE_CONTEXT Context);

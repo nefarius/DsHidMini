@@ -2,8 +2,6 @@
 #include "Ds3.tmh"
 
 
-#define DS3_POOL_TAG	'p3sD'
-
 //
 // Sends the "magic packet" to the DS3 so it starts its interrupt endpoint.
 // 
