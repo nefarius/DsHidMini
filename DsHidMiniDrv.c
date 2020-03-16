@@ -1,5 +1,6 @@
 #include "Driver.h"
 #include "DsHidMiniDrv.tmh"
+#include <ini.h>
 
 
 PWSTR G_DsHidMini_Strings[] =
@@ -30,6 +31,26 @@ DMF_MODULE_DECLARE_CONTEXT(DsHidMini)
 //
 DMF_MODULE_DECLARE_CONFIG(DsHidMini)
 
+static int DsHidMini_ConfigParserHandler(void* user, const char* section, const char* name,
+	const char* value)
+{
+	PDS_DRIVER_CONFIGURATION pconfig = (PDS_DRIVER_CONFIGURATION)user;
+
+#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
+
+	if (MATCH("Global", "HidDeviceMode")) {
+		pconfig->HidDeviceMode = (DS_HID_DEVICE_MODE)atoi(value);
+	}
+	else if (MATCH("Global", "MuteDigitalPressureButtons")) {
+		pconfig->MuteDigitalPressureButtons = (atoi(value) > 0);
+	}
+	else {
+		return 0;  /* unknown section/name, error */
+	}
+
+	return 1;
+}
+
 //
 // Bootstrap DMF initialization
 // 
@@ -47,10 +68,36 @@ DMF_DsHidMini_Create(
 	NTSTATUS ntStatus;
 	DMF_MODULE_DESCRIPTOR dsHidMiniDesc;
 	DMF_CALLBACKS_DMF dsHidMiniCallbacks;
+	PDEVICE_CONTEXT pDevCtx;
 
 	PAGED_CODE();
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+
+	pDevCtx = DeviceGetContext(Device);
+	
+	if (ini_parse(
+		"C:\\ProgramData\\DsHidMini.ini",
+		DsHidMini_ConfigParserHandler,
+		&pDevCtx->Configuration) < 0)
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSHIDMINIDRV,
+			"Failed to load configuration from \"C:\\ProgramData\\DsHidMini.ini\", using defaults"
+		);
+
+		//
+		// Set defaults
+		// 
+		pDevCtx->Configuration.HidDeviceMode = DsHidMiniDeviceModeMulti;
+		pDevCtx->Configuration.MuteDigitalPressureButtons = FALSE;
+	}
+	else
+	{
+		TraceEvents(TRACE_LEVEL_INFORMATION,
+			TRACE_DSHIDMINIDRV,
+			"!! Configuration loaded");
+	}
 
 	DMF_CALLBACKS_DMF_INIT(&dsHidMiniCallbacks);
 	dsHidMiniCallbacks.ChildModulesAdd = DMF_DsHidMini_ChildModulesAdd;
@@ -101,6 +148,7 @@ DMF_DsHidMini_ChildModulesAdd(
 	DMF_CONFIG_DsHidMini* moduleConfig;
 	DMF_CONTEXT_DsHidMini* moduleContext;
 	DMF_CONFIG_VirtualHidMini vHidCfg;
+	PDEVICE_CONTEXT pDevCtx;
 
 	PAGED_CODE();
 
@@ -110,6 +158,7 @@ DMF_DsHidMini_ChildModulesAdd(
 
 	moduleConfig = DMF_CONFIG_GET(DmfModule);
 	moduleContext = DMF_CONTEXT_GET(DmfModule);
+	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
 	DMF_CONFIG_VirtualHidMini_AND_ATTRIBUTES_INIT(&vHidCfg,
 		&moduleAttributes);
@@ -122,10 +171,26 @@ DMF_DsHidMini_ChildModulesAdd(
 	vHidCfg.ProductId = 0x1337;
 	vHidCfg.VersionNumber = 0x0101;
 
-	vHidCfg.HidDescriptor = &G_Ds3HidDescriptor_Split_Mode;
-	vHidCfg.HidDescriptorLength = sizeof(G_Ds3HidDescriptor_Split_Mode);
-	vHidCfg.HidReportDescriptor = G_Ds3HidReportDescriptor_Split_Mode;
-	vHidCfg.HidReportDescriptorLength = G_Ds3HidDescriptor_Split_Mode.DescriptorList[0].wReportLength;
+	switch (pDevCtx->Configuration.HidDeviceMode)
+	{
+	case DsHidMiniDeviceModeSingle:
+		vHidCfg.HidDescriptor = &G_Ds3HidDescriptor_Single_Mode;
+		vHidCfg.HidDescriptorLength = sizeof(G_Ds3HidDescriptor_Single_Mode);
+		vHidCfg.HidReportDescriptor = G_Ds3HidReportDescriptor_Single_Mode;
+		vHidCfg.HidReportDescriptorLength = G_Ds3HidDescriptor_Single_Mode.DescriptorList[0].wReportLength;
+		break;
+	case DsHidMiniDeviceModeMulti:
+		vHidCfg.HidDescriptor = &G_Ds3HidDescriptor_Split_Mode;
+		vHidCfg.HidDescriptorLength = sizeof(G_Ds3HidDescriptor_Split_Mode);
+		vHidCfg.HidReportDescriptor = G_Ds3HidReportDescriptor_Split_Mode;
+		vHidCfg.HidReportDescriptorLength = G_Ds3HidDescriptor_Split_Mode.DescriptorList[0].wReportLength;
+		break;
+	default:
+		TraceEvents(TRACE_LEVEL_ERROR, 
+			TRACE_DSHIDMINIDRV, 
+			"Unknown HID Device Mode: 0x%02X", pDevCtx->Configuration.HidDeviceMode);
+		return;
+	}	
 
 	vHidCfg.HidDeviceAttributes.VendorID = 0x1337;
 	vHidCfg.HidDeviceAttributes.ProductID = 0x1337;
@@ -337,7 +402,7 @@ VOID
 //
 // Called when data is available on the USB Interrupt IN pipe.
 //  
-DsUsbEvtUsbInterruptPipeReadComplete(
+DsUsb_EvtUsbInterruptPipeReadComplete(
 	WDFUSBPIPE  Pipe,
 	WDFMEMORY   Buffer,
 	size_t      NumBytesTransferred,
@@ -365,12 +430,26 @@ DsUsbEvtUsbInterruptPipeReadComplete(
 
 #pragma region HID Input Report (ID 01) processing
 
-	DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
-		rdrBuffer,
-		moduleContext->InputReport,
-		FALSE
-	);
-
+	switch (pDeviceContext->Configuration.HidDeviceMode)
+	{
+	case DsHidMiniDeviceModeMulti:
+		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
+			rdrBuffer,
+			moduleContext->InputReport,
+			pDeviceContext->Configuration.MuteDigitalPressureButtons
+		);
+		break;
+	case DsHidMiniDeviceModeSingle:
+		DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
+			rdrBuffer,
+			moduleContext->InputReport,
+			pDeviceContext->Configuration.MuteDigitalPressureButtons
+		);
+		break;
+	default:
+		break;
+	}
+	
 	//
 	// Notify new Input Report is available
 	// 
@@ -388,22 +467,25 @@ DsUsbEvtUsbInterruptPipeReadComplete(
 
 #pragma region HID Input Report (ID 02) processing
 
-	DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
-		rdrBuffer,
-		moduleContext->InputReport
-	);
-
-	//
-	// Notify new Input Report is available
-	// 
-	status = DMF_VirtualHidMini_InputReportGenerate(
-		moduleContext->DmfModuleVirtualHidMini,
-		DsHidMini_RetrieveNextInputReport
-	);
-	if (!NT_SUCCESS(status))
+	if (pDeviceContext->Configuration.HidDeviceMode == DsHidMiniDeviceModeMulti)
 	{
-		TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
-			"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
+		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
+			rdrBuffer,
+			moduleContext->InputReport
+		);
+
+		//
+		// Notify new Input Report is available
+		// 
+		status = DMF_VirtualHidMini_InputReportGenerate(
+			moduleContext->DmfModuleVirtualHidMini,
+			DsHidMini_RetrieveNextInputReport
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
+				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
+		}
 	}
 
 #pragma endregion
@@ -446,6 +528,9 @@ VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
 #endif
 }
 
+//
+// Called when data is available on the wireless HID Interrupt channel.
+// 
 void DsBth_HidInterruptReadRequestCompletionRoutine(
 	WDFREQUEST Request,
 	WDFIOTARGET Target,
@@ -466,8 +551,6 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
 	UNREFERENCED_PARAMETER(Target);
-	UNREFERENCED_PARAMETER(Params);
-	UNREFERENCED_PARAMETER(Context);
 
 	if (!NT_SUCCESS(Params->IoStatus.Status)
 		|| Params->Parameters.Ioctl.Output.Length < BTHPS3_SIXAXIS_HID_INPUT_REPORT_SIZE)
@@ -498,13 +581,27 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	inputBuffer = &buffer[1];
 
 #pragma region HID Input Report (ID 01) processing
-
-	DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
-		inputBuffer,
-		moduleContext->InputReport,
-		FALSE
-	);
-
+	
+	switch (pDeviceContext->Configuration.HidDeviceMode)
+	{
+	case DsHidMiniDeviceModeMulti:
+		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
+			inputBuffer,
+			moduleContext->InputReport,
+			pDeviceContext->Configuration.MuteDigitalPressureButtons
+		);
+		break;
+	case DsHidMiniDeviceModeSingle:
+		DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
+			inputBuffer,
+			moduleContext->InputReport,
+			pDeviceContext->Configuration.MuteDigitalPressureButtons
+		);
+		break;
+	default:
+		break;
+	}
+	
 	//
 	// Notify new Input Report is available
 	// 
@@ -522,22 +619,25 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 
 #pragma region HID Input Report (ID 02) processing
 
-	DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
-		inputBuffer,
-		moduleContext->InputReport
-	);
-
-	//
-	// Notify new Input Report is available
-	// 
-	status = DMF_VirtualHidMini_InputReportGenerate(
-		moduleContext->DmfModuleVirtualHidMini,
-		DsHidMini_RetrieveNextInputReport
-	);
-	if (!NT_SUCCESS(status))
+	if (pDeviceContext->Configuration.HidDeviceMode == DsHidMiniDeviceModeMulti)
 	{
-		TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
-			"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
+		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
+			inputBuffer,
+			moduleContext->InputReport
+		);
+
+		//
+		// Notify new Input Report is available
+		// 
+		status = DMF_VirtualHidMini_InputReportGenerate(
+			moduleContext->DmfModuleVirtualHidMini,
+			DsHidMini_RetrieveNextInputReport
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
+				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
+		}
 	}
 
 #pragma endregion

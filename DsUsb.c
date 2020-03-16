@@ -83,7 +83,7 @@ DsUsbConfigContReaderForInterruptEndPoint(
 	pDeviceContext = DeviceGetContext(Device);
 
 	WDF_USB_CONTINUOUS_READER_CONFIG_INIT(&contReaderConfig,
-		DsUsbEvtUsbInterruptPipeReadComplete,
+		DsUsb_EvtUsbInterruptPipeReadComplete,
 		Device,    // Context
 		INTERRUPT_IN_BUFFER_LENGTH);   // TransferLength
 

@@ -71,6 +71,22 @@ typedef enum _DEVICE_CONNECTION_TYPE
 	
 } DEVICE_CONNECTION_TYPE, *PDEVICE_CONNECTION_TYPE;
 
+typedef enum _DS_HID_DEVICE_MODE
+{
+    DsHidMiniDeviceModeUnknown,
+    DsHidMiniDeviceModeSingle,
+    DsHidMiniDeviceModeMulti
+	
+} DS_HID_DEVICE_MODE, * PDS_HID_DEVICE_MODE;
+
+typedef struct _DS_DRIVER_CONFIGURATION
+{
+    DS_HID_DEVICE_MODE HidDeviceMode;
+
+    BOOLEAN MuteDigitalPressureButtons;
+
+} DS_DRIVER_CONFIGURATION, * PDS_DRIVER_CONFIGURATION;
+
 typedef struct _DEVICE_CONTEXT
 {
     DMFMODULE DsHidMiniModule;
@@ -90,6 +106,8 @@ typedef struct _DEVICE_CONTEXT
         struct BTH_DEVICE_CONTEXT Bth;
 
     } Connection;
+
+    DS_DRIVER_CONFIGURATION Configuration;
 
 } DEVICE_CONTEXT, *PDEVICE_CONTEXT;
 

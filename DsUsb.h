@@ -20,5 +20,5 @@ DsUsbConfigContReaderForInterruptEndPoint(
     _In_ WDFDEVICE Device
 );
 
-EVT_WDF_USB_READER_COMPLETION_ROUTINE DsUsbEvtUsbInterruptPipeReadComplete;
+EVT_WDF_USB_READER_COMPLETION_ROUTINE DsUsb_EvtUsbInterruptPipeReadComplete;
 EVT_WDF_USB_READERS_FAILED DsUsbEvtUsbInterruptReadersFailed;
