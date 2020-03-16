@@ -42,6 +42,27 @@ struct USB_DEVICE_CONTEXT
     WDFUSBPIPE InterruptOutPipe;
 };
 
+struct BTH_DEVICE_CONTEXT
+{
+    WDFIOTARGET BthIoTarget;
+
+    WDFREQUEST HidControlReadRequest;
+
+	WDFMEMORY HidControlReadMemory;
+
+    WDFREQUEST HidControlWriteRequest;
+
+    WDFMEMORY HidControlWriteMemory;
+
+    WDFREQUEST HidInterruptReadRequest;
+
+    WDFMEMORY HidInterruptReadMemory;
+
+    WDFREQUEST HidInterruptWriteRequest;
+
+    WDFMEMORY HidInterruptWriteMemory;
+};
+
 typedef struct _DEVICE_CONTEXT
 {
     DMFMODULE DsHidMiniModule;
@@ -52,6 +73,11 @@ typedef struct _DEVICE_CONTEXT
         // USB-specific properties
         // 
         struct USB_DEVICE_CONTEXT Usb;
+
+    	//
+    	// Bluetooth-specific properties
+    	// 
+        struct BTH_DEVICE_CONTEXT Bth;
 
     } Connection;
 

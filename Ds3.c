@@ -5,7 +5,7 @@
 //
 // Sends the "magic packet" to the DS3 so it starts its interrupt endpoint.
 // 
-NTSTATUS Ds3Init(PDEVICE_CONTEXT Context)
+NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context)
 {
     // "Magic packet"
     UCHAR hidCommandEnable[DS3_HID_COMMAND_ENABLE_SIZE] =

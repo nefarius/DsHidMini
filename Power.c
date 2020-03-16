@@ -187,12 +187,12 @@ End:
 		}
 	}
 
-	status = Ds3Init(pDeviceContext);
+	status = DsUsb_Ds3Init(pDeviceContext);
 
 	if (!NT_SUCCESS(status))
 	{
 		TraceEvents(TRACE_LEVEL_ERROR, TRACE_POWER,
-			"Ds3Init failed with status %!STATUS!",
+			"DsUsb_Ds3Init failed with status %!STATUS!",
 			status);
 	}
 
