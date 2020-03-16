@@ -7,9 +7,10 @@
 // 
 NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context)
 {
+	// 
 	// "Magic packet"
-	UCHAR hidCommandEnable[DS3_HID_COMMAND_ENABLE_SIZE] =
-	{
+	// 
+	UCHAR hidCommandEnable[] = {
 		0x42, 0x0C, 0x00, 0x00
 	};
 
@@ -21,7 +22,7 @@ NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context)
 		Ds3FeatureStartDevice,
 		0,
 		hidCommandEnable,
-		DS3_HID_COMMAND_ENABLE_SIZE
+		ARRAYSIZE(hidCommandEnable)
 	);
 }
 
@@ -29,6 +30,9 @@ VOID DsBth_Ds3Init(PDEVICE_CONTEXT Context)
 {
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DS3, "%!FUNC! Entry");
 
+	// 
+	// "Magic packet"
+	// 
 	BYTE hidCommandEnable[] = {
 			0x53, 0xF4, 0x42, 0x03, 0x00, 0x00
 	};

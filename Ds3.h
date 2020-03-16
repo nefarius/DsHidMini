@@ -1,7 +1,5 @@
 #pragma once
 
-#define DS3_HID_COMMAND_ENABLE_SIZE             0x04
-
 #define DS3_POOL_TAG	'p3sD'
 
 typedef enum _USB_HID_REQUEST
