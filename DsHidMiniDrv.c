@@ -30,7 +30,9 @@ DMF_MODULE_DECLARE_CONTEXT(DsHidMini)
 //
 DMF_MODULE_DECLARE_CONFIG(DsHidMini)
 
-
+//
+// Bootstrap DMF initialization
+// 
 #pragma code_seg("PAGE")
 _IRQL_requires_max_(PASSIVE_LEVEL)
 _Must_inspect_result_
@@ -82,6 +84,9 @@ Exit:
 }
 #pragma code_seg()
 
+//
+// Bootstraps VirtualHidMini DMF module
+// 
 #pragma code_seg("PAGE")
 _Function_class_(DMF_ChildModulesAdd)
 _IRQL_requires_max_(PASSIVE_LEVEL)
@@ -165,12 +170,12 @@ DMF_DsHidMini_Open(
 	NTSTATUS			status = STATUS_SUCCESS;
 
 	UNREFERENCED_PARAMETER(DmfModule);
-	
+
 	PAGED_CODE();
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
-	
+
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 
@@ -218,6 +223,10 @@ DsHidMini_GetInputReport(
 }
 
 NTSTATUS
+
+//
+// Submit new HID Input Report.
+// 
 DsHidMini_RetrieveNextInputReport(
 	_In_ DMFMODULE DmfModule,
 	_In_ WDFREQUEST Request,
@@ -237,7 +246,7 @@ DsHidMini_RetrieveNextInputReport(
 
 	*Buffer = moduleContext->InputReport;
 	*BufferSize = DS3_HID_INPUT_REPORT_SIZE;
-	
+
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 
 	return STATUS_SUCCESS;
@@ -324,6 +333,10 @@ DsHidMini_WriteReport(
 }
 
 VOID
+
+//
+// Called when data is available on the USB Interrupt IN pipe.
+//  
 DsUsbEvtUsbInterruptPipeReadComplete(
 	WDFUSBPIPE  Pipe,
 	WDFMEMORY   Buffer,
@@ -348,6 +361,7 @@ DsUsbEvtUsbInterruptPipeReadComplete(
 	moduleContext = DMF_CONTEXT_GET(dmfModule);
 	rdrBuffer = WdfMemoryGetBuffer(Buffer, &rdrBufferLength);
 
+#pragma region HID Input Report (ID 01) processing
 
 	DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 		rdrBuffer,
@@ -367,12 +381,16 @@ DsUsbEvtUsbInterruptPipeReadComplete(
 		TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
 			"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
 	}
-		
+
+#pragma endregion
+
+#pragma region HID Input Report (ID 02) processing
+
 	DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
-		rdrBuffer, 
+		rdrBuffer,
 		moduleContext->InputReport
 	);
-	
+
 	//
 	// Notify new Input Report is available
 	// 
@@ -385,6 +403,8 @@ DsUsbEvtUsbInterruptPipeReadComplete(
 		TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
 			"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
 	}
+
+#pragma endregion
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 }
