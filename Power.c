@@ -8,9 +8,18 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 	WDFDEVICE  Device
 )
 {
-	UNREFERENCED_PARAMETER(Device);
+	NTSTATUS			status = STATUS_SUCCESS;
 
-	return STATUS_SUCCESS;
+	UNREFERENCED_PARAMETER(Device);
+	
+	PAGED_CODE();
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER, "%!FUNC! Entry");
+
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER, "%!FUNC! Exit");
+
+	return status;
 }
 
 _Use_decl_annotations_
@@ -20,6 +29,10 @@ DsHidMini_EvtWdfDeviceSelfManagedIoCleanup(
 )
 {
 	UNREFERENCED_PARAMETER(Device);
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER, "%!FUNC! Entry");
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER, "%!FUNC! Exit");
 }
 
 _Use_decl_annotations_

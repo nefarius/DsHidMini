@@ -128,6 +128,10 @@ DMF_DsHidMini_ChildModulesAdd(
 	vHidCfg.HidDeviceAttributes.Size = sizeof(HID_DEVICE_ATTRIBUTES);
 
 	vHidCfg.GetInputReport = DsHidMini_GetInputReport;
+	vHidCfg.GetFeature = DsHidMini_GetFeature;
+	vHidCfg.SetFeature = DsHidMini_SetFeature;
+	vHidCfg.SetOutputReport = DsHidMini_SetOutputReport;
+	vHidCfg.WriteReport = DsHidMini_WriteReport;
 
 	vHidCfg.StringSizeCbManufacturer = sizeof(DSHIDMINI_MANUFACTURER_STRING);
 	vHidCfg.StringManufacturer = DSHIDMINI_MANUFACTURER_STRING;
@@ -158,15 +162,19 @@ DMF_DsHidMini_Open(
 	_In_ DMFMODULE DmfModule
 )
 {
-	UNREFERENCED_PARAMETER(DmfModule);
+	NTSTATUS			status = STATUS_SUCCESS;
 
+	UNREFERENCED_PARAMETER(DmfModule);
+	
 	PAGED_CODE();
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
+	
+
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 
-	return STATUS_SUCCESS;
+	return status;
 }
 #pragma code_seg()
 
@@ -205,30 +213,114 @@ DsHidMini_GetInputReport(
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
-	
+
 	return STATUS_UNSUCCESSFUL;
 }
 
 NTSTATUS
 DsHidMini_RetrieveNextInputReport(
-    _In_ DMFMODULE DmfModule,
-    _In_ WDFREQUEST Request,
-    _Out_ UCHAR** Buffer,
-    _Out_ ULONG* BufferSize
+	_In_ DMFMODULE DmfModule,
+	_In_ WDFREQUEST Request,
+	_Out_ UCHAR** Buffer,
+	_Out_ ULONG* BufferSize
 )
 {
-    DMFMODULE dmfModuleParent;
-    DMF_CONTEXT_DsHidMini* moduleContext;
+	DMFMODULE dmfModuleParent;
+	DMF_CONTEXT_DsHidMini* moduleContext;
 
-    UNREFERENCED_PARAMETER(Request);
+	UNREFERENCED_PARAMETER(Request);
 
-    dmfModuleParent = DMF_ParentModuleGet(DmfModule);
-    moduleContext = DMF_CONTEXT_GET(dmfModuleParent);
-        
-    *Buffer = (UCHAR*)moduleContext->InputReport;
-    *BufferSize = DS3_HID_INPUT_REPORT_SIZE;
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
-    return STATUS_SUCCESS;
+	dmfModuleParent = DMF_ParentModuleGet(DmfModule);
+	moduleContext = DMF_CONTEXT_GET(dmfModuleParent);
+
+	*Buffer = moduleContext->InputReport;
+	*BufferSize = DS3_HID_INPUT_REPORT_SIZE;
+	
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
+
+	return STATUS_SUCCESS;
+}
+
+NTSTATUS
+DsHidMini_GetFeature(
+	_In_ DMFMODULE DmfModule,
+	_In_ WDFREQUEST Request,
+	_In_ HID_XFER_PACKET* Packet,
+	_Out_ ULONG* ReportSize
+)
+{
+	UNREFERENCED_PARAMETER(DmfModule);
+	UNREFERENCED_PARAMETER(Request);
+	UNREFERENCED_PARAMETER(Packet);
+	UNREFERENCED_PARAMETER(ReportSize);
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
+
+	return STATUS_SUCCESS;
+}
+
+NTSTATUS
+DsHidMini_SetFeature(
+	_In_ DMFMODULE DmfModule,
+	_In_ WDFREQUEST Request,
+	_In_ HID_XFER_PACKET* Packet,
+	_Out_ ULONG* ReportSize
+)
+{
+	UNREFERENCED_PARAMETER(DmfModule);
+	UNREFERENCED_PARAMETER(Request);
+	UNREFERENCED_PARAMETER(Packet);
+	UNREFERENCED_PARAMETER(ReportSize);
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
+
+	return STATUS_SUCCESS;
+}
+
+NTSTATUS
+DsHidMini_SetOutputReport(
+	_In_ DMFMODULE DmfModule,
+	_In_ WDFREQUEST Request,
+	_In_ HID_XFER_PACKET* Packet,
+	_Out_ ULONG* ReportSize
+)
+{
+	UNREFERENCED_PARAMETER(DmfModule);
+	UNREFERENCED_PARAMETER(Request);
+	UNREFERENCED_PARAMETER(Packet);
+	UNREFERENCED_PARAMETER(ReportSize);
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
+
+	return STATUS_SUCCESS;
+}
+
+NTSTATUS
+DsHidMini_WriteReport(
+	_In_ DMFMODULE DmfModule,
+	_In_ WDFREQUEST Request,
+	_In_ HID_XFER_PACKET* Packet,
+	_Out_ ULONG* ReportSize
+)
+{
+	UNREFERENCED_PARAMETER(DmfModule);
+	UNREFERENCED_PARAMETER(Request);
+	UNREFERENCED_PARAMETER(Packet);
+	UNREFERENCED_PARAMETER(ReportSize);
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
+
+	return STATUS_SUCCESS;
 }
 
 VOID
@@ -249,15 +341,19 @@ DsUsbEvtUsbInterruptPipeReadComplete(
 	UNREFERENCED_PARAMETER(Pipe);
 	UNREFERENCED_PARAMETER(NumBytesTransferred);
 
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+
 	pDeviceContext = DeviceGetContext(Context);
 	dmfModule = (DMFMODULE)pDeviceContext->DsHidMiniModule;
 	moduleContext = DMF_CONTEXT_GET(dmfModule);
 	rdrBuffer = WdfMemoryGetBuffer(Buffer, &rdrBufferLength);
 
-	//
-	// Updated Input Report
-	// 
-	RtlCopyMemory(moduleContext->InputReport, rdrBuffer, rdrBufferLength);
+
+	DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
+		rdrBuffer,
+		moduleContext->InputReport,
+		FALSE
+	);
 
 	//
 	// Notify new Input Report is available
@@ -271,4 +367,24 @@ DsUsbEvtUsbInterruptPipeReadComplete(
 		TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
 			"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
 	}
+		
+	DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
+		rdrBuffer, 
+		moduleContext->InputReport
+	);
+	
+	//
+	// Notify new Input Report is available
+	// 
+	status = DMF_VirtualHidMini_InputReportGenerate(
+		moduleContext->DmfModuleVirtualHidMini,
+		DsHidMini_RetrieveNextInputReport
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
+			"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
+	}
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 }

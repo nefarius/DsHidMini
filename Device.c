@@ -24,11 +24,18 @@ dshidminiCreateDevice(
 	
 	dmfDeviceInit = DMF_DmfDeviceInitAllocate(DeviceInit);
 
+	WDF_PNPPOWER_EVENT_CALLBACKS_INIT(&pnpPowerCallbacks);
+	pnpPowerCallbacks.EvtDeviceSelfManagedIoInit = DsHidMini_EvtWdfDeviceSelfManagedIoInit;
+	pnpPowerCallbacks.EvtDeviceSelfManagedIoCleanup = DsHidMini_EvtWdfDeviceSelfManagedIoCleanup;
+	pnpPowerCallbacks.EvtDevicePrepareHardware = DsHidMini_EvtDevicePrepareHardware;
+	pnpPowerCallbacks.EvtDeviceD0Entry = DsHidMini_EvtDeviceD0Entry;
+	pnpPowerCallbacks.EvtDeviceD0Exit = DsHidMini_EvtDeviceD0Exit;
+
 	// All DMF drivers must call this function even if they do not support PnP Power callbacks.
 	// (In this case, this driver does support a PnP Power callback.)
 	//
 	DMF_DmfDeviceInitHookPnpPowerEventCallbacks(dmfDeviceInit,
-		NULL);
+		&pnpPowerCallbacks);
 
 	// All DMF drivers must call this function even if they do not support File Object callbacks.
 	//
@@ -46,18 +53,6 @@ dshidminiCreateDevice(
 	// DMF Client drivers that are filter drivers must also make this call.
 	//
 	DMF_DmfFdoSetFilter(dmfDeviceInit);
-
-	WDF_PNPPOWER_EVENT_CALLBACKS_INIT(&pnpPowerCallbacks);
-	pnpPowerCallbacks.EvtDeviceSelfManagedIoInit = DsHidMini_EvtWdfDeviceSelfManagedIoInit;
-	pnpPowerCallbacks.EvtDeviceSelfManagedIoCleanup = DsHidMini_EvtWdfDeviceSelfManagedIoCleanup;
-	pnpPowerCallbacks.EvtDevicePrepareHardware = DsHidMini_EvtDevicePrepareHardware;
-	pnpPowerCallbacks.EvtDeviceD0Entry = DsHidMini_EvtDeviceD0Entry;
-	pnpPowerCallbacks.EvtDeviceD0Exit = DsHidMini_EvtDeviceD0Exit;
-
-	WdfDeviceInitSetPnpPowerEventCallbacks(
-		DeviceInit,
-		&pnpPowerCallbacks
-	);
 	
 	WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_CONTEXT);
 
