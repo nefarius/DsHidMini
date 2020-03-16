@@ -28,6 +28,7 @@ Environment:
 #include "Power.h"
 #include "DsUsb.h"
 #include "Ds3.h"
+#include "DsBth.h"
 
 
 EXTERN_C_START

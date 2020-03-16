@@ -32,6 +32,7 @@ Environment:
         WPP_DEFINE_BIT(TRACE_DSHIDMINIDRV)                             \
         WPP_DEFINE_BIT(TRACE_POWER)                                    \
         WPP_DEFINE_BIT(TRACE_DSUSB)                                    \
+        WPP_DEFINE_BIT(TRACE_DS3)                                      \
         )                             
 
 #define WPP_FLAG_LEVEL_LOGGER(flag, level)                             \

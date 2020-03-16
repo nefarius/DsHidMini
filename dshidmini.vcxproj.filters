@@ -51,6 +51,9 @@
     <ClInclude Include="Ds3.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DsBth.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Device.c">

@@ -63,9 +63,19 @@ struct BTH_DEVICE_CONTEXT
     WDFMEMORY HidInterruptWriteMemory;
 };
 
+typedef enum _DEVICE_CONNECTION_TYPE
+{
+    DsHidMiniDeviceConnectionTypeUnknown,
+    DsHidMiniDeviceConnectionTypeUsb,
+    DsHidMiniDeviceConnectionTypeBth
+	
+} DEVICE_CONNECTION_TYPE, *PDEVICE_CONNECTION_TYPE;
+
 typedef struct _DEVICE_CONTEXT
 {
     DMFMODULE DsHidMiniModule;
+
+    DEVICE_CONNECTION_TYPE ConnectionType;
 
     union
     {
