@@ -38,7 +38,6 @@ static int DsHidMini_ConfigParserHandler(void* user, const char* section, const 
 	const char* value)
 {
 	PDS_DRIVER_CONFIGURATION pconfig = (PDS_DRIVER_CONFIGURATION)user;
-	DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(pconfig);
 
 #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
 
@@ -90,6 +89,11 @@ DMF_DsHidMini_Create(
 	pDevCtx = DeviceGetContext(Device);
 
 	//
+	// Set defaults
+	// 
+	DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(&pDevCtx->Configuration);
+	
+	//
 	// Load configuration from INI or use defaults
 	// 
 	if (ini_parse(
@@ -100,12 +104,7 @@ DMF_DsHidMini_Create(
 		TraceEvents(TRACE_LEVEL_ERROR,
 			TRACE_DSHIDMINIDRV,
 			"Failed to load configuration from \"C:\\ProgramData\\DsHidMini.ini\", using defaults"
-		);
-
-		//
-		// Set defaults
-		// 
-		DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(&pDevCtx->Configuration);
+		);	
 	}
 	else
 	{
