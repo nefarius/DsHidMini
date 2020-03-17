@@ -48,13 +48,13 @@ static int DsHidMini_ConfigParserHandler(void* user, const char* section, const 
 		pconfig->MuteDigitalPressureButtons = (atoi(value) > 0);
 	}
 	else if (MATCH("Global", "VendorId")) {
-		pconfig->VendorId = (USHORT)atoi(value);
+		pconfig->VendorId = (USHORT)strtol(value, NULL, 16);
 	}
 	else if (MATCH("Global", "ProductId")) {
-		pconfig->ProductId = (USHORT)atoi(value);
+		pconfig->ProductId = (USHORT)strtol(value, NULL, 16);
 	}
 	else if (MATCH("Global", "VersionNumber")) {
-		pconfig->VersionNumber = (USHORT)atoi(value);
+		pconfig->VersionNumber = (USHORT)strtol(value, NULL, 16);
 	}
 	else {
 		return 0;  /* unknown section/name, error */
