@@ -85,7 +85,24 @@ typedef struct _DS_DRIVER_CONFIGURATION
 
     BOOLEAN MuteDigitalPressureButtons;
 
+    USHORT VendorId;
+
+    USHORT ProductId;
+
+    USHORT VersionNumber;
+
 } DS_DRIVER_CONFIGURATION, * PDS_DRIVER_CONFIGURATION;
+
+VOID FORCEINLINE DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(
+    PDS_DRIVER_CONFIGURATION Configuration
+)
+{
+    Configuration->HidDeviceMode = DsHidMiniDeviceModeMulti;
+    Configuration->MuteDigitalPressureButtons = FALSE;
+    Configuration->VendorId = 0x054C;
+    Configuration->ProductId = 0x0268;
+    Configuration->VersionNumber = 0x0101;
+}
 
 typedef struct _DEVICE_CONTEXT
 {

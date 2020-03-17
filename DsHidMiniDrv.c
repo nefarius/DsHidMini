@@ -14,10 +14,10 @@ PWSTR G_DsHidMini_Strings[] =
 };
 
 #define MAXIMUM_STRING_LENGTH           (126 * sizeof(WCHAR))
-#define DSHIDMINI_DEVICE_STRING          L"DsHidMini device"
-#define DSHIDMINI_MANUFACTURER_STRING    L"DsHidMini device Manufacturer string"
-#define DSHIDMINI_PRODUCT_STRING         L"DsHidMini device Product string"
-#define DSHIDMINI_SERIAL_NUMBER_STRING   L"DsHidMini device Serial Number string"
+#define DSHIDMINI_DEVICE_STRING          L"DS3 Compatible HID Device"
+#define DSHIDMINI_MANUFACTURER_STRING    L"Nefarius Software Solutions e.U."
+#define DSHIDMINI_PRODUCT_STRING         L"DS3 Compatible HID Device"
+#define DSHIDMINI_SERIAL_NUMBER_STRING   L"TODO: use device address"
 #define DSHIDMINI_DEVICE_STRING_INDEX    5
 
 
@@ -31,10 +31,14 @@ DMF_MODULE_DECLARE_CONTEXT(DsHidMini)
 //
 DMF_MODULE_DECLARE_CONFIG(DsHidMini)
 
+//
+// Read device configuration from INI file
+// 
 static int DsHidMini_ConfigParserHandler(void* user, const char* section, const char* name,
 	const char* value)
 {
 	PDS_DRIVER_CONFIGURATION pconfig = (PDS_DRIVER_CONFIGURATION)user;
+	DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(pconfig);
 
 #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
 
@@ -43,6 +47,15 @@ static int DsHidMini_ConfigParserHandler(void* user, const char* section, const 
 	}
 	else if (MATCH("Global", "MuteDigitalPressureButtons")) {
 		pconfig->MuteDigitalPressureButtons = (atoi(value) > 0);
+	}
+	else if (MATCH("Global", "VendorId")) {
+		pconfig->VendorId = (USHORT)atoi(value);
+	}
+	else if (MATCH("Global", "ProductId")) {
+		pconfig->ProductId = (USHORT)atoi(value);
+	}
+	else if (MATCH("Global", "VersionNumber")) {
+		pconfig->VersionNumber = (USHORT)atoi(value);
 	}
 	else {
 		return 0;  /* unknown section/name, error */
@@ -75,7 +88,10 @@ DMF_DsHidMini_Create(
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
 	pDevCtx = DeviceGetContext(Device);
-	
+
+	//
+	// Load configuration from INI or use defaults
+	// 
 	if (ini_parse(
 		"C:\\ProgramData\\DsHidMini.ini",
 		DsHidMini_ConfigParserHandler,
@@ -89,8 +105,7 @@ DMF_DsHidMini_Create(
 		//
 		// Set defaults
 		// 
-		pDevCtx->Configuration.HidDeviceMode = DsHidMiniDeviceModeMulti;
-		pDevCtx->Configuration.MuteDigitalPressureButtons = FALSE;
+		DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(&pDevCtx->Configuration);
 	}
 	else
 	{
@@ -163,27 +178,27 @@ DMF_DsHidMini_ChildModulesAdd(
 	DMF_CONFIG_VirtualHidMini_AND_ATTRIBUTES_INIT(&vHidCfg,
 		&moduleAttributes);
 
-	//
-	// TODO: populate properly
-	// 
-
-	vHidCfg.VendorId = 0x1337;
-	vHidCfg.ProductId = 0x1337;
-	vHidCfg.VersionNumber = 0x0101;
+	vHidCfg.VendorId = pDevCtx->Configuration.VendorId;
+	vHidCfg.ProductId = pDevCtx->Configuration.ProductId;
+	vHidCfg.VersionNumber = pDevCtx->Configuration.VersionNumber;
 
 	switch (pDevCtx->Configuration.HidDeviceMode)
 	{
 	case DsHidMiniDeviceModeSingle:
+		
 		vHidCfg.HidDescriptor = &G_Ds3HidDescriptor_Single_Mode;
 		vHidCfg.HidDescriptorLength = sizeof(G_Ds3HidDescriptor_Single_Mode);
 		vHidCfg.HidReportDescriptor = G_Ds3HidReportDescriptor_Single_Mode;
 		vHidCfg.HidReportDescriptorLength = G_Ds3HidDescriptor_Single_Mode.DescriptorList[0].wReportLength;
+		
 		break;
 	case DsHidMiniDeviceModeMulti:
+
 		vHidCfg.HidDescriptor = &G_Ds3HidDescriptor_Split_Mode;
 		vHidCfg.HidDescriptorLength = sizeof(G_Ds3HidDescriptor_Split_Mode);
 		vHidCfg.HidReportDescriptor = G_Ds3HidReportDescriptor_Split_Mode;
 		vHidCfg.HidReportDescriptorLength = G_Ds3HidDescriptor_Split_Mode.DescriptorList[0].wReportLength;
+
 		break;
 	default:
 		TraceEvents(TRACE_LEVEL_ERROR, 
@@ -192,9 +207,9 @@ DMF_DsHidMini_ChildModulesAdd(
 		return;
 	}	
 
-	vHidCfg.HidDeviceAttributes.VendorID = 0x1337;
-	vHidCfg.HidDeviceAttributes.ProductID = 0x1337;
-	vHidCfg.HidDeviceAttributes.VersionNumber = 0x0101;
+	vHidCfg.HidDeviceAttributes.VendorID = pDevCtx->Configuration.VendorId;
+	vHidCfg.HidDeviceAttributes.ProductID = pDevCtx->Configuration.ProductId;
+	vHidCfg.HidDeviceAttributes.VersionNumber = pDevCtx->Configuration.VersionNumber;
 	vHidCfg.HidDeviceAttributes.Size = sizeof(HID_DEVICE_ATTRIBUTES);
 
 	vHidCfg.GetInputReport = DsHidMini_GetInputReport;
@@ -311,6 +326,10 @@ DsHidMini_RetrieveNextInputReport(
 
 	*Buffer = moduleContext->InputReport;
 	*BufferSize = DS3_HID_INPUT_REPORT_SIZE;
+	
+#ifdef DBG
+	DumpAsHex(">> Report", *Buffer, (ULONG)*BufferSize);
+#endif
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 
@@ -426,25 +445,39 @@ DsUsb_EvtUsbInterruptPipeReadComplete(
 	moduleContext = DMF_CONTEXT_GET(dmfModule);
 	rdrBuffer = WdfMemoryGetBuffer(Buffer, &rdrBufferLength);
 
+#ifdef DBG
 	DumpAsHex(">> USB", rdrBuffer, (ULONG)rdrBufferLength);
+#endif
 
 #pragma region HID Input Report (ID 01) processing
 
 	switch (pDeviceContext->Configuration.HidDeviceMode)
 	{
 	case DsHidMiniDeviceModeMulti:
+
 		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 			rdrBuffer,
 			moduleContext->InputReport,
 			pDeviceContext->Configuration.MuteDigitalPressureButtons
 		);
+
+#ifdef DBG
+		DumpAsHex(">> MULTI", moduleContext->InputReport, DS3_HID_INPUT_REPORT_SIZE);
+#endif
+		
 		break;
 	case DsHidMiniDeviceModeSingle:
+
 		DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
 			rdrBuffer,
 			moduleContext->InputReport,
 			pDeviceContext->Configuration.MuteDigitalPressureButtons
 		);
+
+#ifdef DBG
+		DumpAsHex(">> SINGLE", moduleContext->InputReport, DS3_HID_INPUT_REPORT_SIZE);
+#endif
+		
 		break;
 	default:
 		break;
