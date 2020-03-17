@@ -20,14 +20,16 @@ dshidminiCreateDevice(
 	PDMFDEVICE_INIT dmfDeviceInit;
 	DMF_EVENT_CALLBACKS dmfCallbacks;
 	WDF_PNPPOWER_EVENT_CALLBACKS pnpPowerCallbacks;
+	PDEVICE_CONTEXT pDevCtx;
+	WCHAR enumeratorName[200];
+	ULONG bufSize;
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
-	
+
 	dmfDeviceInit = DMF_DmfDeviceInitAllocate(DeviceInit);
 
 	WDF_PNPPOWER_EVENT_CALLBACKS_INIT(&pnpPowerCallbacks);
 	pnpPowerCallbacks.EvtDeviceSelfManagedIoInit = DsHidMini_EvtWdfDeviceSelfManagedIoInit;
-	pnpPowerCallbacks.EvtDeviceSelfManagedIoCleanup = DsHidMini_EvtWdfDeviceSelfManagedIoCleanup;
 	pnpPowerCallbacks.EvtDevicePrepareHardware = DsHidMini_EvtDevicePrepareHardware;
 	pnpPowerCallbacks.EvtDeviceD0Entry = DsHidMini_EvtDeviceD0Entry;
 	pnpPowerCallbacks.EvtDeviceD0Exit = DsHidMini_EvtDeviceD0Exit;
@@ -54,12 +56,53 @@ dshidminiCreateDevice(
 	// DMF Client drivers that are filter drivers must also make this call.
 	//
 	DMF_DmfFdoSetFilter(dmfDeviceInit);
-	
+
 	WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_CONTEXT);
 
 	status = WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device);
 
 	if (NT_SUCCESS(status)) {
+
+		status = WdfDeviceQueryProperty(
+			device,
+			DevicePropertyEnumeratorName,
+			ARRAYSIZE(enumeratorName),
+			(PVOID)enumeratorName,
+			&bufSize
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceEvents(TRACE_LEVEL_ERROR,
+				TRACE_DEVICE,
+				"WdfDeviceQueryProperty failed with status %!STATUS!",
+				status
+			);
+			goto Exit;
+		}
+
+		pDevCtx = DeviceGetContext(device);
+
+		if (wcscmp(L"USB", enumeratorName) == 0)
+		{
+			pDevCtx->ConnectionType = DsHidMiniDeviceConnectionTypeUsb;
+		}
+		else
+		{
+			pDevCtx->ConnectionType = DsHidMiniDeviceConnectionTypeBth;
+			pDevCtx->Connection.Bth.BthIoTarget = WdfDeviceGetIoTarget(device);
+
+			status = DsHidMini_BthConnectionContextInit(device);
+
+			if (!NT_SUCCESS(status))
+			{
+				TraceEvents(TRACE_LEVEL_ERROR,
+					TRACE_DEVICE,
+					"WdfDeviceQueryProperty failed with status %!STATUS!",
+					status
+				);
+				goto Exit;
+			}
+		}
 
 		// Create the DMF Modules this Client driver will use.
 		//
@@ -87,6 +130,62 @@ Exit:
 	return status;
 }
 
+NTSTATUS DsHidMini_BthConnectionContextInit(
+	WDFDEVICE Device
+)
+{
+	NTSTATUS				status = STATUS_SUCCESS;
+	PDEVICE_CONTEXT			pDeviceContext;
+	WDF_OBJECT_ATTRIBUTES	attribs;
+
+	PAGED_CODE();
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
+
+	pDeviceContext = DeviceGetContext(Device);
+
+	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
+	attribs.ParentObject = Device;
+
+	status = WdfRequestCreate(
+		&attribs,
+		pDeviceContext->Connection.Bth.BthIoTarget,
+		&pDeviceContext->Connection.Bth.HidInterruptReadRequest
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DEVICE,
+			"WdfRequestCreate failed with status %!STATUS!",
+			status
+		);
+	}
+
+	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
+	attribs.ParentObject = pDeviceContext->Connection.Bth.HidInterruptReadRequest;
+
+	status = WdfMemoryCreate(
+		&attribs,
+		NonPagedPool,
+		DS3_POOL_TAG,
+		BTHPS3_SIXAXIS_HID_INPUT_REPORT_SIZE,
+		&pDeviceContext->Connection.Bth.HidInterruptReadMemory,
+		NULL
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DEVICE,
+			"WdfMemoryCreate failed with status %!STATUS!",
+			status
+		);
+	}
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
+
+	return status;
+}
+
 #pragma code_seg("PAGED")
 _IRQL_requires_max_(PASSIVE_LEVEL)
 VOID
@@ -102,7 +201,7 @@ DmfDeviceModulesAdd(
 	PAGED_CODE();
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
-	
+
 	deviceContext = DeviceGetContext(Device);
 
 	DMF_CONFIG_DsHidMini_AND_ATTRIBUTES_INIT(

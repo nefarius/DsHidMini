@@ -2,6 +2,9 @@
 #include "Power.tmh"
 
 
+//
+// Start Bluetooth communication here
+// 
 _Use_decl_annotations_
 NTSTATUS
 DsHidMini_EvtWdfDeviceSelfManagedIoInit(
@@ -10,7 +13,6 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 {
 	NTSTATUS				status = STATUS_SUCCESS;
 	PDEVICE_CONTEXT			pDeviceContext;
-	WDF_OBJECT_ATTRIBUTES	attribs;
 
 	UNREFERENCED_PARAMETER(Device);
 
@@ -18,54 +20,14 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER, "%!FUNC! Entry");
 
+	//
+	// TODO: can be moved to D0Entry?
+	// 
+
 	pDeviceContext = DeviceGetContext(Device);
 
 	if (pDeviceContext->ConnectionType == DsHidMiniDeviceConnectionTypeBth)
 	{
-		/*
-		 * TODO: find a better place for this!
-		 *
-		 * This is the wrong place for context initialization, get enumerator 
-		 * in device creation, move away from power events with this fun.
-		 */
-		
-		WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
-		attribs.ParentObject = Device;
-
-		status = WdfRequestCreate(
-			&attribs,
-			pDeviceContext->Connection.Bth.BthIoTarget,
-			&pDeviceContext->Connection.Bth.HidInterruptReadRequest
-		);
-		if (!NT_SUCCESS(status))
-		{
-			TraceEvents(TRACE_LEVEL_ERROR,
-				TRACE_POWER,
-				"WdfRequestCreate failed with status %!STATUS!",
-				status
-			);
-		}
-
-		WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
-		attribs.ParentObject = pDeviceContext->Connection.Bth.HidInterruptReadRequest;
-
-		status = WdfMemoryCreate(
-			&attribs,
-			NonPagedPool,
-			DS3_POOL_TAG,
-			BTHPS3_SIXAXIS_HID_INPUT_REPORT_SIZE,
-			&pDeviceContext->Connection.Bth.HidInterruptReadMemory,
-			NULL
-		);
-		if (!NT_SUCCESS(status))
-		{
-			TraceEvents(TRACE_LEVEL_ERROR,
-				TRACE_POWER,
-				"WdfMemoryCreate failed with status %!STATUS!",
-				status
-			);
-		}
-
 		DsBth_Ds3Init(pDeviceContext);
 
 		status = WdfIoTargetFormatRequestForIoctl(
@@ -114,19 +76,9 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 	return status;
 }
 
-_Use_decl_annotations_
-VOID
-DsHidMini_EvtWdfDeviceSelfManagedIoCleanup(
-	WDFDEVICE  Device
-)
-{
-	UNREFERENCED_PARAMETER(Device);
-
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER, "%!FUNC! Entry");
-
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER, "%!FUNC! Exit");
-}
-
+//
+// Initialize USB communication here
+// 
 _Use_decl_annotations_
 NTSTATUS
 DsHidMini_EvtDevicePrepareHardware(
@@ -149,7 +101,7 @@ DsHidMini_EvtDevicePrepareHardware(
 
 	pDeviceContext = DeviceGetContext(Device);
 
-	if (pDeviceContext->ConnectionType == DsHidMiniDeviceConnectionTypeUnknown
+	if (pDeviceContext->ConnectionType == DsHidMiniDeviceConnectionTypeUsb
 		&& pDeviceContext->Connection.Usb.UsbDevice == NULL)
 	{
 		status = WdfUsbTargetDeviceCreate(Device,
@@ -157,18 +109,12 @@ DsHidMini_EvtDevicePrepareHardware(
 			&pDeviceContext->Connection.Usb.UsbDevice
 		);
 
-		if (NT_SUCCESS(status))
-		{
-			pDeviceContext->ConnectionType = DsHidMiniDeviceConnectionTypeUsb;
-			goto prepareInit;
+		if (!NT_SUCCESS(status)) {
+			TraceEvents(TRACE_LEVEL_ERROR, TRACE_POWER,
+				"WdfUsbTargetDeviceCreateWithParameters failed %!STATUS!", status);
+			return status;
 		}
-
-		pDeviceContext->ConnectionType = DsHidMiniDeviceConnectionTypeBth;
-		pDeviceContext->Connection.Bth.BthIoTarget = WdfDeviceGetIoTarget(Device);
-		status = STATUS_SUCCESS;
 	}
-
-prepareInit:
 
 	if (pDeviceContext->ConnectionType == DsHidMiniDeviceConnectionTypeUsb)
 	{
@@ -242,6 +188,9 @@ prepareInit:
 	return status;
 }
 
+//
+// Start reading data
+// 
 NTSTATUS DsHidMini_EvtDeviceD0Entry(
 	_In_ WDFDEVICE              Device,
 	_In_ WDF_POWER_DEVICE_STATE PreviousState
