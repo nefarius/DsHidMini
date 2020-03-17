@@ -22,6 +22,13 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 
 	if (pDeviceContext->ConnectionType == DsHidMiniDeviceConnectionTypeBth)
 	{
+		/*
+		 * TODO: find a better place for this!
+		 *
+		 * This is the wrong place for context initialization, get enumerator 
+		 * in device creation, move away from power events with this fun.
+		 */
+		
 		WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
 		attribs.ParentObject = Device;
 
