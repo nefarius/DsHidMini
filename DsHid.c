@@ -283,7 +283,7 @@ CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_Single_Mode[] = {
 	0x06, 0x01, 0xFF,  //     Usage Page (Vendor Defined 0xFF01)
 	0x09, 0x01,        //     Usage (0x01)
 	0x75, 0x08,        //     Report Size (8)
-	0x95, 0x1D,        //     Report Count (29)
+	0x95, 0x13,        //     Report Count (19)
 	0x15, 0x00,        //     Logical Minimum (0)
 	0x26, 0xFF, 0x00,  //     Logical Maximum (255)
 	0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
