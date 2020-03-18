@@ -92,7 +92,7 @@ DMF_DsHidMini_Create(
 	// Set defaults
 	// 
 	DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(&pDevCtx->Configuration);
-	
+
 	//
 	// Load configuration from INI or use defaults
 	// 
@@ -104,14 +104,16 @@ DMF_DsHidMini_Create(
 		TraceEvents(TRACE_LEVEL_ERROR,
 			TRACE_DSHIDMINIDRV,
 			"Failed to load configuration from \"C:\\ProgramData\\DsHidMini.ini\", using defaults"
-		);	
+		);
 	}
+#ifdef DBG
 	else
 	{
 		TraceEvents(TRACE_LEVEL_INFORMATION,
 			TRACE_DSHIDMINIDRV,
 			"!! Configuration loaded");
 	}
+#endif
 
 	DMF_CALLBACKS_DMF_INIT(&dsHidMiniCallbacks);
 	dsHidMiniCallbacks.ChildModulesAdd = DMF_DsHidMini_ChildModulesAdd;
@@ -184,12 +186,12 @@ DMF_DsHidMini_ChildModulesAdd(
 	switch (pDevCtx->Configuration.HidDeviceMode)
 	{
 	case DsHidMiniDeviceModeSingle:
-		
+
 		vHidCfg.HidDescriptor = &G_Ds3HidDescriptor_Single_Mode;
 		vHidCfg.HidDescriptorLength = sizeof(G_Ds3HidDescriptor_Single_Mode);
 		vHidCfg.HidReportDescriptor = G_Ds3HidReportDescriptor_Single_Mode;
 		vHidCfg.HidReportDescriptorLength = G_Ds3HidDescriptor_Single_Mode.DescriptorList[0].wReportLength;
-		
+
 		break;
 	case DsHidMiniDeviceModeMulti:
 
@@ -200,11 +202,11 @@ DMF_DsHidMini_ChildModulesAdd(
 
 		break;
 	default:
-		TraceEvents(TRACE_LEVEL_ERROR, 
-			TRACE_DSHIDMINIDRV, 
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSHIDMINIDRV,
 			"Unknown HID Device Mode: 0x%02X", pDevCtx->Configuration.HidDeviceMode);
 		return;
-	}	
+	}
 
 	vHidCfg.HidDeviceAttributes.VendorID = pDevCtx->Configuration.VendorId;
 	vHidCfg.HidDeviceAttributes.ProductID = pDevCtx->Configuration.ProductId;
@@ -318,19 +320,19 @@ DsHidMini_RetrieveNextInputReport(
 
 	UNREFERENCED_PARAMETER(Request);
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
 	dmfModuleParent = DMF_ParentModuleGet(DmfModule);
 	moduleContext = DMF_CONTEXT_GET(dmfModuleParent);
 
 	*Buffer = moduleContext->InputReport;
 	*BufferSize = DS3_HID_INPUT_REPORT_SIZE;
-	
+
 #ifdef DBG
 	DumpAsHex(">> Report", *Buffer, (ULONG)*BufferSize);
 #endif
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
+	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 
 	return STATUS_SUCCESS;
 }
@@ -437,7 +439,7 @@ DsUsb_EvtUsbInterruptPipeReadComplete(
 	UNREFERENCED_PARAMETER(Pipe);
 	UNREFERENCED_PARAMETER(NumBytesTransferred);
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
 	pDeviceContext = DeviceGetContext(Context);
 	dmfModule = (DMFMODULE)pDeviceContext->DsHidMiniModule;
@@ -463,7 +465,7 @@ DsUsb_EvtUsbInterruptPipeReadComplete(
 #ifdef DBG
 		DumpAsHex(">> MULTI", moduleContext->InputReport, DS3_HID_INPUT_REPORT_SIZE);
 #endif
-		
+
 		break;
 	case DsHidMiniDeviceModeSingle:
 
@@ -476,12 +478,12 @@ DsUsb_EvtUsbInterruptPipeReadComplete(
 #ifdef DBG
 		DumpAsHex(">> SINGLE", moduleContext->InputReport, DS3_HID_INPUT_REPORT_SIZE);
 #endif
-		
+
 		break;
 	default:
 		break;
 	}
-	
+
 	//
 	// Notify new Input Report is available
 	// 
@@ -522,7 +524,7 @@ DsUsb_EvtUsbInterruptPipeReadComplete(
 
 #pragma endregion
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
+	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 }
 
 VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
@@ -577,22 +579,25 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	WDF_REQUEST_REUSE_PARAMS    params;
 	PDEVICE_CONTEXT				pDeviceContext;
 	DMFMODULE                   dmfModule;
-	DMF_CONTEXT_DsHidMini* moduleContext;
+	DMF_CONTEXT_DsHidMini*		moduleContext;
 
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
 	UNREFERENCED_PARAMETER(Target);
-
-	if (!NT_SUCCESS(Params->IoStatus.Status)
-		|| Params->Parameters.Ioctl.Output.Length < BTHPS3_SIXAXIS_HID_INPUT_REPORT_SIZE)
-	{
-		return;
-	}
 
 	pDeviceContext = (PDEVICE_CONTEXT)Context;
 	dmfModule = (DMFMODULE)pDeviceContext->DsHidMiniModule;
 	moduleContext = DMF_CONTEXT_GET(dmfModule);
+
+	if (!NT_SUCCESS(Params->IoStatus.Status)
+		|| Params->Parameters.Ioctl.Output.Length < BTHPS3_SIXAXIS_HID_INPUT_REPORT_SIZE)
+	{
+		TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
+			"%!FUNC! failed with status %!STATUS!", Params->IoStatus.Status);
+
+		goto resendRequest;
+	}
 
 	buffer = (PUCHAR)WdfMemoryGetBuffer(
 		Params->Parameters.Ioctl.Output.Buffer,
@@ -605,15 +610,23 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	DumpAsHex(">> BTH", buffer, (ULONG)bufferLength);
 #endif
 
+	/*
+	* When connected via Bluetooth the Sixaxis occasionally sends
+	* a report with the second byte 0xff and the rest zeroed.
+	*
+	* This report does not reflect the actual state of the
+	* controller must be ignored to avoid generating false input
+	* events.
+	*/
 	if (buffer[2] == 0xFF)
 	{
-		return;
+		goto resendRequest;
 	}
 
 	inputBuffer = &buffer[1];
 
 #pragma region HID Input Report (ID 01) processing
-	
+
 	switch (pDeviceContext->Configuration.HidDeviceMode)
 	{
 	case DsHidMiniDeviceModeMulti:
@@ -633,7 +646,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	default:
 		break;
 	}
-	
+
 	//
 	// Notify new Input Report is available
 	// 
@@ -673,6 +686,8 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	}
 
 #pragma endregion
+
+	resendRequest:
 
 	WDF_REQUEST_REUSE_PARAMS_INIT(
 		&params,
@@ -730,6 +745,5 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 		);
 	}
 
-
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
+	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 }
