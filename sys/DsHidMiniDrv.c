@@ -361,10 +361,8 @@ DsHidMini_GetFeature(
 	moduleContext = DMF_CONTEXT_GET(dmfModuleParent);
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
-	UNREFERENCED_PARAMETER(DmfModule);
 	UNREFERENCED_PARAMETER(Request);
-	UNREFERENCED_PARAMETER(Packet);
-	UNREFERENCED_PARAMETER(ReportSize);
+
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 

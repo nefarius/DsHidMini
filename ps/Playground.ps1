@@ -12,7 +12,7 @@ $getConnectionType.Init()
 
 $payload = [DS.DsUtil]::StructureToByteArray($getConnectionType)
 
-Get-HidFeature $handle ([ref]$payload) $getConnectionType.Header.Size
+Get-HidFeature $handle $payload $getConnectionType.Header.Size
 
 [DS.DsUtil]::ByteArrayToStructure($payload, [ref] $getConnectionType)
 

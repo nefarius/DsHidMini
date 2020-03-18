@@ -4,6 +4,7 @@ Add-Type -TypeDefinition @"
 namespace DS {
 	using System;
 	using System.Runtime.InteropServices;
+	using Microsoft.Win32.SafeHandles;
 	
 	public enum DS_DEVICE_TYPE : uint
 	{
@@ -217,6 +218,15 @@ namespace DS {
 		}
 	}
 
+	public static class HID
+	{
+		[DllImport("hid.dll", SetLastError = true, CallingConvention = CallingConvention.StdCall)]
+		private static extern bool HidD_GetFeature(SafeFileHandle hidDeviceObject, byte[] lpReportBuffer, int reportBufferLength);
+		
+		[DllImport("hid.dll", SetLastError = true, CallingConvention = CallingConvention.StdCall)]
+		public static extern bool HidD_SetFeature(SafeFileHandle hidDeviceObject, byte[] lpReportBuffer, int reportBufferLength);
+	}
+
 	public static class DsUtil
 	{
 		public static byte [] StructureToByteArray(object obj)
@@ -277,18 +287,9 @@ function Invoke-CreateFileW([string]$devicePath)
 	return $handle
 }
 
-function Get-HidFeature([Microsoft.Win32.SafeHandles.SafeFileHandle]$handle, [ref]$buffer, [UInt32]$length)
+function Get-HidFeature([Microsoft.Win32.SafeHandles.SafeFileHandle]$handle, [byte[]]$buffer, [UInt32]$length)
 {
-	return Invoke-Win32Api -DllName hid.dll `
-		-MethodName HidD_GetFeature `
-		-ReturnType System.Boolean `
-		-ParameterTypes @([Microsoft.Win32.SafeHandles.SafeFileHandle], [byte[]], [UInt32]) `
-		-Parameters @(
-			$handle,
-			$buffer,
-			$length) `
-		-SetLastError $true `
-		-CharSet Unicode
+	return [DS.HID]::HidD_GetFeature($handle, $buffer, $length)
 }
 
 function Set-HidFeature([Microsoft.Win32.SafeHandles.SafeFileHandle]$handle, [byte[]]$buffer, [UInt32]$length)
