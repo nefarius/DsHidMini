@@ -93,6 +93,7 @@ DsHidMini_EvtDevicePrepareHardware(
 	UCHAR                                   index;
 	WDFUSBPIPE                              pipe;
 	WDF_USB_PIPE_INFORMATION                pipeInfo;
+	UCHAR									controlTransferBuffer[CONTROL_TRANSFER_BUFFER_LENGTH];
 
 	UNREFERENCED_PARAMETER(ResourcesRaw);
 	UNREFERENCED_PARAMETER(ResourcesTranslated);
@@ -181,6 +182,59 @@ DsHidMini_EvtDevicePrepareHardware(
 #pragma endregion
 
 		status = DsUsbConfigContReaderForInterruptEndPoint(Device);
+
+		if (NT_SUCCESS(status))
+		{
+			//
+			// Request device MAC address
+			// 
+			status = SendControlRequest(
+				pDeviceContext,
+				BmRequestDeviceToHost,
+				BmRequestClass,
+				GetReport,
+				Ds3FeatureDeviceAddress,
+				0,
+				controlTransferBuffer,
+				CONTROL_TRANSFER_BUFFER_LENGTH);
+
+			if (!NT_SUCCESS(status))
+			{
+				TraceEvents(TRACE_LEVEL_ERROR, TRACE_POWER,
+					"Requesting device address failed with %!STATUS!", status);
+				return status;
+			}
+
+			RtlCopyMemory(
+				&pDeviceContext->DeviceAddress,
+				&controlTransferBuffer[4],
+				sizeof(BD_ADDR));
+
+			//
+			// Request host BTH address
+			// 
+			status = SendControlRequest(
+				pDeviceContext,
+				BmRequestDeviceToHost,
+				BmRequestClass,
+				GetReport,
+				Ds3FeatureHostAddress,
+				0,
+				controlTransferBuffer,
+				CONTROL_TRANSFER_BUFFER_LENGTH);
+
+			if (!NT_SUCCESS(status))
+			{
+				TraceEvents(TRACE_LEVEL_ERROR, TRACE_POWER,
+					"Requesting host address failed with %!STATUS!", status);
+				return status;
+			}
+
+			RtlCopyMemory(
+				&pDeviceContext->HostAddress,
+				&controlTransferBuffer[2],
+				sizeof(BD_ADDR));
+		}
 	}
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER, "%!FUNC! Exit (%!STATUS!)", status);

@@ -345,6 +345,22 @@ DsHidMini_GetFeature(
 	_Out_ ULONG* ReportSize
 )
 {
+	NTSTATUS ntStatus = STATUS_SUCCESS;
+	ULONG reportSize = 0;
+	DMF_CONTEXT_DsHidMini* moduleContext;
+	DMFMODULE dmfModuleParent;
+	PDEVICE_CONTEXT pDevCtx;
+
+	PDS_FEATURE_GET_HOST_BD_ADDR pGetHostAddr = NULL;
+	PDS_FEATURE_GET_DEVICE_BD_ADDR pGetDeviceAddr = NULL;
+	PDS_FEATURE_GET_CONNECTION_TYPE pGetConnectionType = NULL;
+
+	UNREFERENCED_PARAMETER(Request);
+
+	dmfModuleParent = DMF_ParentModuleGet(DmfModule);
+	moduleContext = DMF_CONTEXT_GET(dmfModuleParent);
+	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
+
 	UNREFERENCED_PARAMETER(DmfModule);
 	UNREFERENCED_PARAMETER(Request);
 	UNREFERENCED_PARAMETER(Packet);
@@ -352,9 +368,91 @@ DsHidMini_GetFeature(
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
+	switch (Packet->reportId)
+	{
+	case DS_FEATURE_TYPE_GET_HOST_BD_ADDR:
 
-	return STATUS_SUCCESS;
+		TraceEvents(TRACE_LEVEL_INFORMATION, 
+			TRACE_DSHIDMINIDRV, 
+			"<< DS_FEATURE_TYPE_GET_HOST_BD_ADDR"
+		);
+
+		if (Packet->reportBufferLen < sizeof(DS_FEATURE_GET_HOST_BD_ADDR))
+		{
+			ntStatus = STATUS_BUFFER_TOO_SMALL;
+			goto Exit;
+		}
+
+		pGetHostAddr = (PDS_FEATURE_GET_HOST_BD_ADDR)Packet->reportBuffer;
+		pGetHostAddr->HostAddress = pDevCtx->HostAddress;
+		reportSize = sizeof(DS_FEATURE_GET_HOST_BD_ADDR);
+
+		break;
+	case DS_FEATURE_TYPE_GET_DEVICE_BD_ADDR:
+
+		TraceEvents(TRACE_LEVEL_INFORMATION,
+			TRACE_DSHIDMINIDRV,
+			"<< DS_FEATURE_TYPE_GET_DEVICE_BD_ADDR"
+		);
+
+		if (Packet->reportBufferLen < sizeof(DS_FEATURE_GET_DEVICE_BD_ADDR))
+		{
+			ntStatus = STATUS_BUFFER_TOO_SMALL;
+			goto Exit;
+		}
+
+		pGetDeviceAddr = (PDS_FEATURE_GET_DEVICE_BD_ADDR)Packet->reportBuffer;
+		pGetDeviceAddr->DeviceAddress = pDevCtx->DeviceAddress;
+		reportSize = sizeof(DS_FEATURE_GET_DEVICE_BD_ADDR);
+		
+		break;
+	case DS_FEATURE_TYPE_GET_DEVICE_TYPE:
+
+		if (Packet->reportBufferLen < sizeof(DS_FEATURE_GET_DEVICE_TYPE))
+		{
+			ntStatus = STATUS_BUFFER_TOO_SMALL;
+			goto Exit;
+		}
+		
+		break;
+	case DS_FEATURE_TYPE_GET_CONNECTION_TYPE:
+
+		TraceEvents(TRACE_LEVEL_INFORMATION,
+			TRACE_DSHIDMINIDRV,
+			"<< DS_FEATURE_TYPE_GET_CONNECTION_TYPE"
+		);
+		
+		if (Packet->reportBufferLen < sizeof(DS_FEATURE_GET_CONNECTION_TYPE))
+		{
+			ntStatus = STATUS_BUFFER_TOO_SMALL;
+			goto Exit;
+		}
+
+		pGetConnectionType = (PDS_FEATURE_GET_CONNECTION_TYPE)Packet->reportBuffer;
+		pGetConnectionType->ConnectionType = pDevCtx->ConnectionType;
+		reportSize = sizeof(DS_FEATURE_GET_CONNECTION_TYPE);
+		
+		break;
+	case DS_FEATURE_TYPE_GET_DEVICE_CONFIG:
+
+		if (Packet->reportBufferLen < sizeof(DS_FEATURE_GET_DEVICE_CONFIG))
+		{
+			ntStatus = STATUS_BUFFER_TOO_SMALL;
+			goto Exit;
+		}
+		
+		break;
+	default:
+		break;
+	}
+
+	*ReportSize = reportSize;
+
+Exit:
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit (%!STATUS!)", ntStatus);
+
+	return ntStatus;
 }
 
 NTSTATUS
@@ -371,6 +469,16 @@ DsHidMini_SetFeature(
 	UNREFERENCED_PARAMETER(ReportSize);
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+
+	switch (Packet->reportId)
+	{
+	case DS_FEATURE_TYPE_SET_HOST_BD_ADDR:
+		break;
+	case DS_FEATURE_TYPE_SET_DEVICE_CONFIG:
+		break;
+	default:
+		break;
+	}
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 
@@ -579,7 +687,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	WDF_REQUEST_REUSE_PARAMS    params;
 	PDEVICE_CONTEXT				pDeviceContext;
 	DMFMODULE                   dmfModule;
-	DMF_CONTEXT_DsHidMini*		moduleContext;
+	DMF_CONTEXT_DsHidMini* moduleContext;
 
 
 	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");

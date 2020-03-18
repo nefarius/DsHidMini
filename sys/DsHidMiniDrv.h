@@ -1,5 +1,16 @@
 #pragma once
 
+VOID FORCEINLINE REVERSE_BYTE_ARRAY(PUCHAR start, int size)
+{
+    PUCHAR lo = start;
+    PUCHAR hi = start + size - 1;
+    UCHAR swap;
+    while (lo < hi) {
+        swap = *lo;
+        *lo++ = *hi;
+        *hi-- = swap;
+    }
+}
 
 
 NTSTATUS

@@ -63,36 +63,6 @@ struct BTH_DEVICE_CONTEXT
     WDFMEMORY HidInterruptWriteMemory;
 };
 
-typedef enum _DEVICE_CONNECTION_TYPE
-{
-    DsHidMiniDeviceConnectionTypeUnknown,
-    DsHidMiniDeviceConnectionTypeUsb,
-    DsHidMiniDeviceConnectionTypeBth
-	
-} DEVICE_CONNECTION_TYPE, *PDEVICE_CONNECTION_TYPE;
-
-typedef enum _DS_HID_DEVICE_MODE
-{
-    DsHidMiniDeviceModeUnknown,
-    DsHidMiniDeviceModeSingle,
-    DsHidMiniDeviceModeMulti
-	
-} DS_HID_DEVICE_MODE, * PDS_HID_DEVICE_MODE;
-
-typedef struct _DS_DRIVER_CONFIGURATION
-{
-    DS_HID_DEVICE_MODE HidDeviceMode;
-
-    BOOLEAN MuteDigitalPressureButtons;
-
-    USHORT VendorId;
-
-    USHORT ProductId;
-
-    USHORT VersionNumber;
-
-} DS_DRIVER_CONFIGURATION, * PDS_DRIVER_CONFIGURATION;
-
 VOID FORCEINLINE DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(
     PDS_DRIVER_CONFIGURATION Configuration
 )
@@ -106,9 +76,25 @@ VOID FORCEINLINE DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(
 
 typedef struct _DEVICE_CONTEXT
 {
+	//
+	// VirtualHidMini DMF module
+	// 
     DMFMODULE DsHidMiniModule;
 
-    DEVICE_CONNECTION_TYPE ConnectionType;
+	//
+	// Type of connection (wired, wireless)
+	// 
+    DS_CONNECTION_TYPE ConnectionType;
+
+	//
+	// Remote BTH address
+	// 
+    BD_ADDR HostAddress;
+
+	//
+	// Local device BTH address
+	// 
+    BD_ADDR DeviceAddress;
 
     union
     {

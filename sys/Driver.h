@@ -22,6 +22,7 @@ Environment:
 
 #include <DmfModules.Library.h>
 #include "DsHid.h"
+#include "DsCommon.h"
 #include "device.h"
 #include "trace.h"
 #include "DsHidMiniDrv.h"

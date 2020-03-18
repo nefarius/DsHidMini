@@ -52,6 +52,7 @@
     <ClInclude Include="Driver.h" />
     <ClInclude Include="Ds3.h" />
     <ClInclude Include="DsBth.h" />
+    <ClInclude Include="DsCommon.h" />
     <ClInclude Include="DsHid.h" />
     <ClInclude Include="DsHidMiniDrv.h" />
     <ClInclude Include="DsUsb.h" />

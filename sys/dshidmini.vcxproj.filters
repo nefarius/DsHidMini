@@ -54,6 +54,9 @@
     <ClInclude Include="DsBth.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DsCommon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Device.c">
