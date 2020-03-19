@@ -94,10 +94,12 @@ DMF_DsHidMini_Create(
 	// 
 	DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(&pDevCtx->Configuration);
 
-
+	/*
+	 * TODO: BEGIN clean me up!
+	 */
+	config_setting_t* root, * setting, * dev;
 	config_t cfg;
-	config_setting_t* root, * setting, *dev;
-	
+
 	config_init(&cfg);
 
 	if (!config_read_file(&cfg, DS_DRIVER_CFG_FILE_PATH))
@@ -106,14 +108,14 @@ DMF_DsHidMini_Create(
 			TRACE_DSHIDMINIDRV,
 			"Failed to load configuration: %s:%d - %s",
 			config_error_file(&cfg),
-			config_error_line(&cfg), 
+			config_error_line(&cfg),
 			config_error_text(&cfg)
 		);
 
 		root = config_root_setting(&cfg);
-		setting = config_setting_get_member(root, "devices");
+		setting = config_setting_get_member(root, "Devices");
 		if (!setting)
-			setting = config_setting_add(root, "devices", CONFIG_TYPE_LIST);
+			setting = config_setting_add(root, "Devices", CONFIG_TYPE_LIST);
 
 		dev = config_setting_add(setting, NULL, CONFIG_TYPE_GROUP);
 
@@ -121,17 +123,15 @@ DMF_DsHidMini_Create(
 		PSTR buf = malloc(200);
 		wcstombs(buf, wideBuf, 200);
 
-		setting = config_setting_add(dev, "instanceId", CONFIG_TYPE_STRING);
+		setting = config_setting_add(dev, "InstanceId", CONFIG_TYPE_STRING);
 		config_setting_set_string(setting, buf);
 		free(buf);
-		
+
 		config_write_file(&cfg, DS_DRIVER_CFG_FILE_PATH);
-		
-		config_destroy(&cfg);
 	}
 	else
 	{
-		setting = config_lookup(&cfg, "devices");
+		setting = config_lookup(&cfg, "Devices");
 		if (setting != NULL)
 		{
 			unsigned int count = config_setting_length(setting);
@@ -146,14 +146,14 @@ DMF_DsHidMini_Create(
 				"!! %d %s",
 				count, buf
 			);
-			
+
 			for (i = 0; i < count; ++i)
 			{
 				dev = config_setting_get_elem(setting, i);
 
 				const char* instId;
-				
-				if (config_setting_lookup_string(dev, "instanceId", &instId)
+
+				if (config_setting_lookup_string(dev, "InstanceId", &instId)
 					&& strcmp(instId, buf) == 0)
 				{
 					TraceEvents(TRACE_LEVEL_INFORMATION,
@@ -161,20 +161,44 @@ DMF_DsHidMini_Create(
 						"!! Found config for instanceId: %s",
 						buf
 					);
-					
+
+					config_setting_lookup_int(
+						dev,
+						"HidDeviceMode",
+						(int*)&pDevCtx->Configuration.HidDeviceMode);
+					config_setting_lookup_bool(
+						dev,
+						"MuteDigitalPressureButtons",
+						(int*)&pDevCtx->Configuration.MuteDigitalPressureButtons);
+					config_setting_lookup_int(
+						dev,
+						"VendorId",
+						(int*)&pDevCtx->Configuration.VendorId);
+					config_setting_lookup_int(
+						dev,
+						"ProductId",
+						(int*)&pDevCtx->Configuration.ProductId);
+					config_setting_lookup_int(
+						dev,
+						"VersionNumber",
+						(int*)&pDevCtx->Configuration.VersionNumber);
+
 					break;
 				}
 			}
-			
+
 			free(buf);
 		}
-		
-		config_destroy(&cfg);
 	}
-	
-	//
-	// Load configuration from INI or use defaults
-	// 
+
+	config_destroy(&cfg);
+	/*
+	 * TODO: END clean me up!
+	 */
+
+	 //
+	 // Load configuration from INI or use defaults
+	 // 
 	if (ini_parse(
 		"C:\\ProgramData\\DsHidMini.ini",
 		DsHidMini_ConfigParserHandler,
@@ -240,7 +264,6 @@ DMF_DsHidMini_ChildModulesAdd(
 )
 {
 	DMF_MODULE_ATTRIBUTES moduleAttributes;
-	DMF_CONFIG_DsHidMini* moduleConfig;
 	DMF_CONTEXT_DsHidMini* moduleContext;
 	DMF_CONFIG_VirtualHidMini vHidCfg;
 	PDEVICE_CONTEXT pDevCtx;
@@ -251,7 +274,6 @@ DMF_DsHidMini_ChildModulesAdd(
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
-	moduleConfig = DMF_CONFIG_GET(DmfModule);
 	moduleContext = DMF_CONTEXT_GET(DmfModule);
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
@@ -352,12 +374,123 @@ DMF_DsHidMini_Close(
 	_In_ DMFMODULE DmfModule
 )
 {
-	UNREFERENCED_PARAMETER(DmfModule);
+	PDEVICE_CONTEXT pDevCtx;
+	PDS_DRIVER_CONFIGURATION pCfg;
+	config_t cfg;
+	config_setting_t* dev, * setting;
 
 	PAGED_CODE();
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
+	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
+	pCfg = &pDevCtx->Configuration;
+
+
+	/*
+	 * TODO: BEGIN clean me up!
+	 */
+
+	config_init(&cfg);
+
+	if (!config_read_file(&cfg, DS_DRIVER_CFG_FILE_PATH))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSHIDMINIDRV,
+			"Failed to load configuration: %s:%d - %s",
+			config_error_file(&cfg),
+			config_error_line(&cfg),
+			config_error_text(&cfg)
+		);
+	}
+	else
+	{
+		setting = config_lookup(&cfg, "Devices");
+		if (setting != NULL)
+		{
+			unsigned int count = config_setting_length(setting);
+			unsigned int i;
+
+			PWSTR wideBuf = WdfMemoryGetBuffer(pDevCtx->InstanceId, NULL);
+			PSTR buf = malloc(200);
+			wcstombs(buf, wideBuf, 200);
+
+			TraceEvents(TRACE_LEVEL_INFORMATION,
+				TRACE_DSHIDMINIDRV,
+				"!! %d %s",
+				count, buf
+			);
+
+			for (i = 0; i < count; ++i)
+			{
+				dev = config_setting_get_elem(setting, i);
+
+				const char* instId;
+
+				if (config_setting_lookup_string(dev, "InstanceId", &instId)
+					&& strcmp(instId, buf) == 0)
+				{
+					TraceEvents(TRACE_LEVEL_INFORMATION,
+						TRACE_DSHIDMINIDRV,
+						"!! Found config for instanceId: %s",
+						buf
+					);
+
+					//
+					// HidDeviceMode
+					// 
+					setting = config_setting_get_member(dev, "HidDeviceMode");
+					if (!setting)
+						setting = config_setting_add(dev, "HidDeviceMode", CONFIG_TYPE_INT);
+					config_setting_set_int(setting, pCfg->HidDeviceMode);
+
+					//
+					// MuteDigitalPressureButtons
+					// 
+					setting = config_setting_get_member(dev, "MuteDigitalPressureButtons");
+					if (!setting)
+						setting = config_setting_add(dev, "MuteDigitalPressureButtons", CONFIG_TYPE_BOOL);
+					config_setting_set_int(setting, pCfg->MuteDigitalPressureButtons);
+
+					//
+					// VendorId
+					// 
+					setting = config_setting_get_member(dev, "VendorId");
+					if (!setting)
+						setting = config_setting_add(dev, "VendorId", CONFIG_TYPE_INT);
+					config_setting_set_int(setting, pCfg->VendorId);
+
+					//
+					// ProductId
+					// 
+					setting = config_setting_get_member(dev, "ProductId");
+					if (!setting)
+						setting = config_setting_add(dev, "ProductId", CONFIG_TYPE_INT);
+					config_setting_set_int(setting, pCfg->ProductId);
+
+					//
+					// VersionNumber
+					// 
+					setting = config_setting_get_member(dev, "VersionNumber");
+					if (!setting)
+						setting = config_setting_add(dev, "VersionNumber", CONFIG_TYPE_INT);
+					config_setting_set_int(setting, pCfg->VersionNumber);
+
+					break;
+				}
+			}
+
+			free(buf);
+		}
+	}
+	/*
+	 * TODO: END clean me up!
+	 */
+
+	config_write_file(&cfg, DS_DRIVER_CFG_FILE_PATH);
+
+	config_destroy(&cfg);
+	
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 }
 #pragma code_seg()
@@ -449,8 +582,8 @@ DsHidMini_GetFeature(
 	{
 	case DS_FEATURE_TYPE_GET_HOST_BD_ADDR:
 
-		TraceEvents(TRACE_LEVEL_INFORMATION, 
-			TRACE_DSHIDMINIDRV, 
+		TraceEvents(TRACE_LEVEL_INFORMATION,
+			TRACE_DSHIDMINIDRV,
 			"<< DS_FEATURE_TYPE_GET_HOST_BD_ADDR"
 		);
 
@@ -481,7 +614,7 @@ DsHidMini_GetFeature(
 		pGetDeviceAddr = (PDS_FEATURE_GET_DEVICE_BD_ADDR)Packet->reportBuffer;
 		pGetDeviceAddr->DeviceAddress = pDevCtx->DeviceAddress;
 		reportSize = sizeof(DS_FEATURE_GET_DEVICE_BD_ADDR) - sizeof(Packet->reportId);
-		
+
 		break;
 	case DS_FEATURE_TYPE_GET_DEVICE_TYPE:
 
@@ -490,7 +623,7 @@ DsHidMini_GetFeature(
 			ntStatus = STATUS_BUFFER_TOO_SMALL;
 			goto Exit;
 		}
-		
+
 		break;
 	case DS_FEATURE_TYPE_GET_CONNECTION_TYPE:
 
@@ -498,7 +631,7 @@ DsHidMini_GetFeature(
 			TRACE_DSHIDMINIDRV,
 			"<< DS_FEATURE_TYPE_GET_CONNECTION_TYPE"
 		);
-		
+
 		if (Packet->reportBufferLen < sizeof(DS_FEATURE_GET_CONNECTION_TYPE))
 		{
 			ntStatus = STATUS_BUFFER_TOO_SMALL;
@@ -517,7 +650,7 @@ DsHidMini_GetFeature(
 			ntStatus = STATUS_BUFFER_TOO_SMALL;
 			goto Exit;
 		}
-		
+
 		break;
 	default:
 		break;
