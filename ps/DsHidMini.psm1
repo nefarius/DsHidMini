@@ -218,15 +218,6 @@ namespace DS {
 		}
 	}
 
-	public static class HID
-	{
-		[DllImport("hid.dll", SetLastError = true, CallingConvention = CallingConvention.StdCall)]
-		public static extern bool HidD_GetFeature(SafeFileHandle hidDeviceObject, byte[] lpReportBuffer, int reportBufferLength);
-		
-		[DllImport("hid.dll", SetLastError = true, CallingConvention = CallingConvention.StdCall)]
-		public static extern bool HidD_SetFeature(SafeFileHandle hidDeviceObject, byte[] lpReportBuffer, int reportBufferLength);
-	}
-
 	public static class DsUtil
 	{
 		public static byte [] StructureToByteArray(object obj)
@@ -289,7 +280,16 @@ function Invoke-CreateFileW([string]$devicePath)
 
 function Get-HidFeature([Microsoft.Win32.SafeHandles.SafeFileHandle]$handle, [byte[]]$buffer, [UInt32]$length)
 {
-	return [DS.HID]::HidD_GetFeature($handle, $buffer, $length)
+	return Invoke-Win32Api -DllName hid.dll `
+		-MethodName HidD_GetFeature `
+		-ReturnType System.Boolean `
+		-ParameterTypes @([Microsoft.Win32.SafeHandles.SafeFileHandle], [byte[]], [UInt32]) `
+		-Parameters @(
+			$handle,
+			$buffer,
+			$length) `
+		-SetLastError $true `
+		-CharSet Unicode
 }
 
 function Set-HidFeature([Microsoft.Win32.SafeHandles.SafeFileHandle]$handle, [byte[]]$buffer, [UInt32]$length)
@@ -304,4 +304,46 @@ function Set-HidFeature([Microsoft.Win32.SafeHandles.SafeFileHandle]$handle, [by
 			$length) `
 		-SetLastError $true `
 		-CharSet Unicode
+}
+
+function Get-DsFeatureHostAddress([Microsoft.Win32.SafeHandles.SafeFileHandle]$handle)
+{
+	$request = [System.Activator]::CreateInstance([DS.DS_FEATURE_GET_HOST_BD_ADDR])
+	$request.Init()
+	
+	$payload = [DS.DsUtil]::StructureToByteArray($request)
+	
+	Get-HidFeature $handle $payload $request.Header.Size
+	
+	[DS.DsUtil]::ByteArrayToStructure($payload, [ref] $request)
+	
+	return $request.HostAddress
+}
+
+function Get-DsFeatureDeviceAddress([Microsoft.Win32.SafeHandles.SafeFileHandle]$handle)
+{
+	$request = [System.Activator]::CreateInstance([DS.DS_FEATURE_GET_DEVICE_BD_ADDR])
+	$request.Init()
+	
+	$payload = [DS.DsUtil]::StructureToByteArray($request)
+	
+	Get-HidFeature $handle $payload $request.Header.Size
+	
+	[DS.DsUtil]::ByteArrayToStructure($payload, [ref] $request)
+	
+	return $request.DeviceAddress
+}
+
+function Get-DsFeatureConnectionType([Microsoft.Win32.SafeHandles.SafeFileHandle]$handle)
+{
+	$request = [System.Activator]::CreateInstance([DS.DS_FEATURE_GET_CONNECTION_TYPE])
+	$request.Init()
+	
+	$payload = [DS.DsUtil]::StructureToByteArray($request)
+	
+	Get-HidFeature $handle $payload $request.Header.Size
+	
+	[DS.DsUtil]::ByteArrayToStructure($payload, [ref] $request)
+	
+	return $request.ConnectionType
 }
