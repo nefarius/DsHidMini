@@ -267,9 +267,6 @@
   <ItemGroup>
     <FilesToPackage Include="$(TargetPath)" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="DsHidMini.ini" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

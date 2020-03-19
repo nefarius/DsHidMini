@@ -1,6 +1,5 @@
 #include "Driver.h"
 #include "DsHidMiniDrv.tmh"
-#include <ini.h>
 #include <libconfig.h>
 
 
@@ -32,37 +31,7 @@ DMF_MODULE_DECLARE_CONTEXT(DsHidMini)
 //
 DMF_MODULE_DECLARE_CONFIG(DsHidMini)
 
-//
-// Read device configuration from INI file
-// 
-static int DsHidMini_ConfigParserHandler(void* user, const char* section, const char* name,
-	const char* value)
-{
-	PDS_DRIVER_CONFIGURATION pconfig = (PDS_DRIVER_CONFIGURATION)user;
 
-#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
-
-	if (MATCH("Global", "HidDeviceMode")) {
-		pconfig->HidDeviceMode = (DS_HID_DEVICE_MODE)atoi(value);
-	}
-	else if (MATCH("Global", "MuteDigitalPressureButtons")) {
-		pconfig->MuteDigitalPressureButtons = (atoi(value) > 0);
-	}
-	else if (MATCH("Global", "VendorId")) {
-		pconfig->VendorId = (USHORT)strtol(value, NULL, 16);
-	}
-	else if (MATCH("Global", "ProductId")) {
-		pconfig->ProductId = (USHORT)strtol(value, NULL, 16);
-	}
-	else if (MATCH("Global", "VersionNumber")) {
-		pconfig->VersionNumber = (USHORT)strtol(value, NULL, 16);
-	}
-	else {
-		return 0;  /* unknown section/name, error */
-	}
-
-	return 1;
-}
 
 //
 // Bootstrap DMF initialization
@@ -195,28 +164,6 @@ DMF_DsHidMini_Create(
 	/*
 	 * TODO: END clean me up!
 	 */
-
-	 //
-	 // Load configuration from INI or use defaults
-	 // 
-	if (ini_parse(
-		"C:\\ProgramData\\DsHidMini.ini",
-		DsHidMini_ConfigParserHandler,
-		&pDevCtx->Configuration) < 0)
-	{
-		TraceEvents(TRACE_LEVEL_ERROR,
-			TRACE_DSHIDMINIDRV,
-			"Failed to load configuration from \"C:\\ProgramData\\DsHidMini.ini\", using defaults"
-		);
-	}
-#ifdef DBG
-	else
-	{
-		TraceEvents(TRACE_LEVEL_INFORMATION,
-			TRACE_DSHIDMINIDRV,
-			"!! Configuration loaded");
-	}
-#endif
 
 	DMF_CALLBACKS_DMF_INIT(&dsHidMiniCallbacks);
 	dsHidMiniCallbacks.ChildModulesAdd = DMF_DsHidMini_ChildModulesAdd;
