@@ -112,6 +112,9 @@ typedef enum _DS_HID_DEVICE_MODE
 
 #include <pshpack1.h>
 
+//
+// Per device dynamic configuration properties
+// 
 typedef struct _DS_DRIVER_CONFIGURATION
 {
     DS_HID_DEVICE_MODE HidDeviceMode;

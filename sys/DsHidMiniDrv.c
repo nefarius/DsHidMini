@@ -1,6 +1,7 @@
 #include "Driver.h"
 #include "DsHidMiniDrv.tmh"
 #include <ini.h>
+#include <libconfig.h>
 
 
 PWSTR G_DsHidMini_Strings[] =
@@ -93,6 +94,84 @@ DMF_DsHidMini_Create(
 	// 
 	DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(&pDevCtx->Configuration);
 
+
+	config_t cfg;
+	config_setting_t* root, * setting, *dev;
+	
+	config_init(&cfg);
+
+	if (!config_read_file(&cfg, DS_DRIVER_CFG_FILE_PATH))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSHIDMINIDRV,
+			"Failed to load configuration: %s:%d - %s",
+			config_error_file(&cfg),
+			config_error_line(&cfg), 
+			config_error_text(&cfg)
+		);
+
+		root = config_root_setting(&cfg);
+		setting = config_setting_get_member(root, "devices");
+		if (!setting)
+			setting = config_setting_add(root, "devices", CONFIG_TYPE_LIST);
+
+		dev = config_setting_add(setting, NULL, CONFIG_TYPE_GROUP);
+
+		PWSTR wideBuf = WdfMemoryGetBuffer(pDevCtx->InstanceId, NULL);
+		PSTR buf = malloc(200);
+		wcstombs(buf, wideBuf, 200);
+
+		setting = config_setting_add(dev, "instanceId", CONFIG_TYPE_STRING);
+		config_setting_set_string(setting, buf);
+		free(buf);
+		
+		config_write_file(&cfg, DS_DRIVER_CFG_FILE_PATH);
+		
+		config_destroy(&cfg);
+	}
+	else
+	{
+		setting = config_lookup(&cfg, "devices");
+		if (setting != NULL)
+		{
+			unsigned int count = config_setting_length(setting);
+			unsigned int i;
+
+			PWSTR wideBuf = WdfMemoryGetBuffer(pDevCtx->InstanceId, NULL);
+			PSTR buf = malloc(200);
+			wcstombs(buf, wideBuf, 200);
+
+			TraceEvents(TRACE_LEVEL_INFORMATION,
+				TRACE_DSHIDMINIDRV,
+				"!! %d %s",
+				count, buf
+			);
+			
+			for (i = 0; i < count; ++i)
+			{
+				dev = config_setting_get_elem(setting, i);
+
+				const char* instId;
+				
+				if (config_setting_lookup_string(dev, "instanceId", &instId)
+					&& strcmp(instId, buf) == 0)
+				{
+					TraceEvents(TRACE_LEVEL_INFORMATION,
+						TRACE_DSHIDMINIDRV,
+						"!! Found config for instanceId: %s",
+						buf
+					);
+					
+					break;
+				}
+			}
+			
+			free(buf);
+		}
+		
+		config_destroy(&cfg);
+	}
+	
 	//
 	// Load configuration from INI or use defaults
 	// 

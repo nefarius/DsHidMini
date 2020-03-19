@@ -2,6 +2,7 @@
 #include "driver.h"
 #include "device.tmh"
 #include <DmfModule.h>
+#include <devpkey.h>
 #include <ini.h>
 
 
@@ -23,6 +24,8 @@ dshidminiCreateDevice(
 	PDEVICE_CONTEXT pDevCtx;
 	WCHAR enumeratorName[200];
 	ULONG bufSize;
+	WDF_DEVICE_PROPERTY_DATA devProp;
+	DEVPROPTYPE propType;
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
 
@@ -103,6 +106,34 @@ dshidminiCreateDevice(
 				goto Exit;
 			}
 		}
+
+		WDF_DEVICE_PROPERTY_DATA_INIT(&devProp, &DEVPKEY_Device_InstanceId);
+		WDF_OBJECT_ATTRIBUTES_INIT(&deviceAttributes);
+		deviceAttributes.ParentObject = device;
+		
+		status = WdfDeviceAllocAndQueryPropertyEx(
+			device,
+			&devProp,
+			NonPagedPoolNx,
+			&deviceAttributes,
+			&pDevCtx->InstanceId,
+			&propType
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceEvents(TRACE_LEVEL_ERROR,
+				TRACE_DEVICE,
+				"WdfDeviceAllocAndQueryPropertyEx failed with status %!STATUS!",
+				status
+			);
+			goto Exit;
+		}
+
+		TraceEvents(TRACE_LEVEL_INFORMATION,
+			TRACE_DEVICE,
+			"!! DEVPKEY_Device_InstanceId: %ws",
+			WdfMemoryGetBuffer(pDevCtx->InstanceId, NULL)
+		);
 
 		// Create the DMF Modules this Client driver will use.
 		//

@@ -17,6 +17,8 @@ Environment:
 #include "public.h"
 #include <DmfModule.h>
 
+#define DS_DRIVER_CFG_FILE_PATH "C:\\ProgramData\\DsHidMini.cfg"
+
 EXTERN_C_START
 
 struct USB_DEVICE_CONTEXT
@@ -76,6 +78,11 @@ VOID FORCEINLINE DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(
 
 typedef struct _DEVICE_CONTEXT
 {
+	//
+	// Device instance ID
+	// 
+    WDFMEMORY InstanceId;
+	
 	//
 	// VirtualHidMini DMF module
 	// 
