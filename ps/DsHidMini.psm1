@@ -221,7 +221,7 @@ namespace DS {
 	public static class HID
 	{
 		[DllImport("hid.dll", SetLastError = true, CallingConvention = CallingConvention.StdCall)]
-		private static extern bool HidD_GetFeature(SafeFileHandle hidDeviceObject, byte[] lpReportBuffer, int reportBufferLength);
+		public static extern bool HidD_GetFeature(SafeFileHandle hidDeviceObject, byte[] lpReportBuffer, int reportBufferLength);
 		
 		[DllImport("hid.dll", SetLastError = true, CallingConvention = CallingConvention.StdCall)]
 		public static extern bool HidD_SetFeature(SafeFileHandle hidDeviceObject, byte[] lpReportBuffer, int reportBufferLength);

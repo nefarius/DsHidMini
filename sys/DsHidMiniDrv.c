@@ -383,7 +383,7 @@ DsHidMini_GetFeature(
 
 		pGetHostAddr = (PDS_FEATURE_GET_HOST_BD_ADDR)Packet->reportBuffer;
 		pGetHostAddr->HostAddress = pDevCtx->HostAddress;
-		reportSize = sizeof(DS_FEATURE_GET_HOST_BD_ADDR);
+		reportSize = sizeof(DS_FEATURE_GET_HOST_BD_ADDR) - sizeof(Packet->reportId);
 
 		break;
 	case DS_FEATURE_TYPE_GET_DEVICE_BD_ADDR:
@@ -401,7 +401,7 @@ DsHidMini_GetFeature(
 
 		pGetDeviceAddr = (PDS_FEATURE_GET_DEVICE_BD_ADDR)Packet->reportBuffer;
 		pGetDeviceAddr->DeviceAddress = pDevCtx->DeviceAddress;
-		reportSize = sizeof(DS_FEATURE_GET_DEVICE_BD_ADDR);
+		reportSize = sizeof(DS_FEATURE_GET_DEVICE_BD_ADDR) - sizeof(Packet->reportId);
 		
 		break;
 	case DS_FEATURE_TYPE_GET_DEVICE_TYPE:
@@ -428,8 +428,8 @@ DsHidMini_GetFeature(
 
 		pGetConnectionType = (PDS_FEATURE_GET_CONNECTION_TYPE)Packet->reportBuffer;
 		pGetConnectionType->ConnectionType = pDevCtx->ConnectionType;
-		reportSize = sizeof(DS_FEATURE_GET_CONNECTION_TYPE);
-		
+		reportSize = sizeof(DS_FEATURE_GET_CONNECTION_TYPE) - sizeof(Packet->reportId);
+
 		break;
 	case DS_FEATURE_TYPE_GET_DEVICE_CONFIG:
 
