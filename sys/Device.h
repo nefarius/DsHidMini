@@ -141,13 +141,10 @@ typedef struct
     // Underlying VHIDMINI2 support.
     //
     DMFMODULE DmfModuleVirtualHidMini;
-    // Private data for this device.
-    //
-    BYTE DeviceData;
-    UCHAR OutputReport;
-    HID_DEVICE_ATTRIBUTES HidDeviceAttributes;
-    HID_DESCRIPTOR HidDescriptor;
-    
+
+	//
+	// Input report
+	// 
     UCHAR InputReport[DS3_HID_INPUT_REPORT_SIZE];
 	
 } DMF_CONTEXT_DsHidMini;
