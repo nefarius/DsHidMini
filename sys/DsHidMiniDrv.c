@@ -514,8 +514,6 @@ DsHidMini_GetFeature(
 {
 	NTSTATUS ntStatus = STATUS_SUCCESS;
 	ULONG reportSize = 0;
-	DMF_CONTEXT_DsHidMini* moduleContext;
-	DMFMODULE dmfModuleParent;
 	PDEVICE_CONTEXT pDevCtx;
 
 	PDS_FEATURE_GET_HOST_BD_ADDR pGetHostAddr = NULL;
@@ -524,8 +522,6 @@ DsHidMini_GetFeature(
 
 	UNREFERENCED_PARAMETER(Request);
 
-	dmfModuleParent = DMF_ParentModuleGet(DmfModule);
-	moduleContext = DMF_CONTEXT_GET(dmfModuleParent);
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
 	UNREFERENCED_PARAMETER(Request);
