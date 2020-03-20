@@ -249,6 +249,14 @@ DMF_DsHidMini_ChildModulesAdd(
 		vHidCfg.HidReportDescriptorLength = G_Ds3HidDescriptor_Split_Mode.DescriptorList[0].wReportLength;
 
 		break;
+	case DsHidMiniDeviceModeSixaxisCompatible:
+
+		vHidCfg.HidDescriptor = &G_SixaxisHidDescriptor_1;
+		vHidCfg.HidDescriptorLength = sizeof(G_SixaxisHidDescriptor_1);
+		vHidCfg.HidReportDescriptor = G_SixaxisHidReportDescriptor_1;
+		vHidCfg.HidReportDescriptorLength = G_SixaxisHidDescriptor_1.DescriptorList[0].wReportLength;
+		
+		break;
 	default:
 		TraceEvents(TRACE_LEVEL_ERROR,
 			TRACE_DSHIDMINIDRV,

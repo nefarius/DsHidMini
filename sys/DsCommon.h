@@ -104,9 +104,10 @@ typedef enum _DS_FEATURE_TYPE
 
 typedef enum _DS_HID_DEVICE_MODE
 {
-    DsHidMiniDeviceModeUnknown,
+    DsHidMiniDeviceModeUnknown = 0x00,
     DsHidMiniDeviceModeSingle,
-    DsHidMiniDeviceModeMulti
+    DsHidMiniDeviceModeMulti,
+    DsHidMiniDeviceModeSixaxisCompatible
 
 } DS_HID_DEVICE_MODE, * PDS_HID_DEVICE_MODE;
 
