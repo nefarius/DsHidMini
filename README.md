@@ -22,4 +22,4 @@ You can build individual projects of the solution within Visual Studio.
 - [Microsoft/Driver Module Framework (DMF)](https://github.com/microsoft/DMF)
 - [Microsoft - DMF - HID minidriver module](https://github.com/microsoft/DMF/issues/69)
 - [Microsoft - DMF - VHidMini2DmfK and VHidMini2DmfU Sample Drivers](https://github.com/microsoft/DMF/tree/master/DmfSamples/VHidMini2Dmf)
-- [benhoyt/inih](https://github.com/benhoyt/inih)
+- [hyperrealm/libconfig](https://github.com/hyperrealm/libconfig)
