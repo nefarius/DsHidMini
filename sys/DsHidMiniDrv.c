@@ -686,12 +686,10 @@ DsHidMini_WriteReport(
 	return STATUS_SUCCESS;
 }
 
-VOID
-
 //
 // Called when data is available on the USB Interrupt IN pipe.
 //  
-DsUsb_EvtUsbInterruptPipeReadComplete(
+VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	WDFUSBPIPE  Pipe,
 	WDFMEMORY   Buffer,
 	size_t      NumBytesTransferred,
@@ -794,41 +792,6 @@ DsUsb_EvtUsbInterruptPipeReadComplete(
 #pragma endregion
 
 	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
-}
-
-VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
-{
-#ifdef DBG
-	PSTR   dumpBuffer;
-	size_t  dumpBufferLength;
-	ULONG   i;
-
-	dumpBufferLength = ((BufferLength * sizeof(CHAR)) * 2) + 1;
-	dumpBuffer = malloc(dumpBufferLength);
-	if (dumpBuffer)
-	{
-
-		RtlZeroMemory(dumpBuffer, dumpBufferLength);
-
-		for (i = 0; i < BufferLength; i++)
-		{
-			sprintf(&dumpBuffer[i * 2], "%02X", ((PUCHAR)Buffer)[i]);
-		}
-
-		TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV,
-			"%s - Buffer length: %04d, buffer content: %s",
-			Prefix,
-			BufferLength,
-			dumpBuffer
-		);
-
-		free(dumpBuffer);
-	}
-#else
-	UNREFERENCED_PARAMETER(Prefix);
-	UNREFERENCED_PARAMETER(Buffer);
-	UNREFERENCED_PARAMETER(BufferLength);
-#endif
 }
 
 //
@@ -1015,4 +978,39 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	}
 
 	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
+}
+
+VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
+{
+#ifdef DBG
+	PSTR   dumpBuffer;
+	size_t  dumpBufferLength;
+	ULONG   i;
+
+	dumpBufferLength = ((BufferLength * sizeof(CHAR)) * 2) + 1;
+	dumpBuffer = malloc(dumpBufferLength);
+	if (dumpBuffer)
+	{
+
+		RtlZeroMemory(dumpBuffer, dumpBufferLength);
+
+		for (i = 0; i < BufferLength; i++)
+		{
+			sprintf(&dumpBuffer[i * 2], "%02X", ((PUCHAR)Buffer)[i]);
+		}
+
+		TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV,
+			"%s - Buffer length: %04d, buffer content: %s",
+			Prefix,
+			BufferLength,
+			dumpBuffer
+		);
+
+		free(dumpBuffer);
+	}
+#else
+	UNREFERENCED_PARAMETER(Prefix);
+	UNREFERENCED_PARAMETER(Buffer);
+	UNREFERENCED_PARAMETER(BufferLength);
+#endif
 }
