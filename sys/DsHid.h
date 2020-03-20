@@ -10,9 +10,9 @@ extern CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_Single_Mode[];
 
 extern CONST HID_DESCRIPTOR G_Ds3HidDescriptor_Single_Mode;
 
-extern CONST HID_REPORT_DESCRIPTOR G_SixaxisHidReportDescriptor_1[];
+extern CONST HID_REPORT_DESCRIPTOR G_SixaxisHidReportDescriptor[];
 
-extern CONST HID_DESCRIPTOR G_SixaxisHidDescriptor_1;
+extern CONST HID_DESCRIPTOR G_SixaxisHidDescriptor;
 
 extern CONST HID_REPORT_DESCRIPTOR G_SixaxisHidReportDescriptor_2[];
 

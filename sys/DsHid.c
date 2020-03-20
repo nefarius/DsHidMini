@@ -306,7 +306,7 @@ sizeof(G_Ds3HidReportDescriptor_Single_Mode) }  // total length of report descri
 
 #pragma region DS3 HID Report Descriptor (SIXAXIS.SYS compatible)
 
-CONST HID_REPORT_DESCRIPTOR G_SixaxisHidReportDescriptor_1[] =
+CONST HID_REPORT_DESCRIPTOR G_SixaxisHidReportDescriptor[] =
 {
 	0x05, 0x01,        // Usage Page (Generic Desktop Ctrls)
 	0x09, 0x04,        // Usage (Joystick)
@@ -370,14 +370,14 @@ CONST HID_REPORT_DESCRIPTOR G_SixaxisHidReportDescriptor_1[] =
 	// 120 bytes
 };
 
-CONST HID_DESCRIPTOR G_SixaxisHidDescriptor_1 = {
+CONST HID_DESCRIPTOR G_SixaxisHidDescriptor = {
 	0x09,   // length of HID descriptor
 	0x21,   // descriptor type == HID  0x21
 	0x0100, // hid spec release
 	0x00,   // country code == Not Specified
 	0x01,   // number of HID class descriptors
 { 0x22,   // descriptor type 
-sizeof(G_SixaxisHidReportDescriptor_1) }  // total length of report descriptor
+sizeof(G_SixaxisHidReportDescriptor) }  // total length of report descriptor
 };
 
 #pragma endregion

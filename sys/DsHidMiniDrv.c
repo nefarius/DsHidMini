@@ -251,10 +251,10 @@ DMF_DsHidMini_ChildModulesAdd(
 		break;
 	case DsHidMiniDeviceModeSixaxisCompatible:
 
-		vHidCfg.HidDescriptor = &G_SixaxisHidDescriptor_1;
-		vHidCfg.HidDescriptorLength = sizeof(G_SixaxisHidDescriptor_1);
-		vHidCfg.HidReportDescriptor = G_SixaxisHidReportDescriptor_1;
-		vHidCfg.HidReportDescriptorLength = G_SixaxisHidDescriptor_1.DescriptorList[0].wReportLength;
+		vHidCfg.HidDescriptor = &G_SixaxisHidDescriptor;
+		vHidCfg.HidDescriptorLength = sizeof(G_SixaxisHidDescriptor);
+		vHidCfg.HidReportDescriptor = G_SixaxisHidReportDescriptor;
+		vHidCfg.HidReportDescriptorLength = G_SixaxisHidDescriptor.DescriptorList[0].wReportLength;
 		
 		break;
 	default:
