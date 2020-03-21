@@ -14,8 +14,6 @@ const UCHAR G_Ds3UsbHidOutputReport[] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-#define DS3_USB_HID_OUTPUT_REPORT_SIZE		0x30
-
 const UCHAR G_Ds3BthHidOutputReport[] = {
 	0x52, /* HID BT Set_report (0x50) | Report Type (Output 0x02)*/
 	0x01, /* Report ID */
@@ -29,8 +27,6 @@ const UCHAR G_Ds3BthHidOutputReport[] = {
 	0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
-
-#define DS3_BTH_HID_OUTPUT_REPORT_SIZE		0x32
 
 //
 // Sends the "magic packet" to the DS3 so it starts its interrupt endpoint.

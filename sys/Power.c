@@ -240,6 +240,19 @@ DsHidMini_EvtDevicePrepareHardware(
 				&pDeviceContext->HostAddress,
 				&controlTransferBuffer[2],
 				sizeof(BD_ADDR));
+
+			//
+			// Send initial output report
+			// 
+			status = SendControlRequest(
+				pDeviceContext,
+				BmRequestHostToDevice,
+				BmRequestClass,
+				SetReport,
+				USB_SETUP_VALUE(HidReportRequestTypeOutput, HidReportRequestIdOne),
+				0,
+				(PVOID)G_Ds3UsbHidOutputReport,
+				DS3_USB_HID_OUTPUT_REPORT_SIZE);
 		}
 	}
 
