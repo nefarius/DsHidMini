@@ -1,6 +1,7 @@
 #pragma once
 
 #define DS3_POOL_TAG	'p3sD'
+#define SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH  8
 
 typedef enum _USB_HID_REQUEST
 {

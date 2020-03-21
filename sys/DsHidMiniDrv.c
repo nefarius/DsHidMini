@@ -255,7 +255,7 @@ DMF_DsHidMini_ChildModulesAdd(
 		vHidCfg.HidDescriptorLength = sizeof(G_SixaxisHidDescriptor);
 		vHidCfg.HidReportDescriptor = G_SixaxisHidReportDescriptor;
 		vHidCfg.HidReportDescriptorLength = G_SixaxisHidDescriptor.DescriptorList[0].wReportLength;
-		
+
 		break;
 	default:
 		TraceEvents(TRACE_LEVEL_ERROR,
@@ -445,7 +445,7 @@ DMF_DsHidMini_Close(
 	config_write_file(&cfg, DS_DRIVER_CFG_FILE_PATH);
 
 	config_destroy(&cfg);
-	
+
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 }
 #pragma code_seg()
@@ -508,13 +508,13 @@ DsHidMini_RetrieveNextInputReport(
 		break;
 	default:
 		TraceEvents(TRACE_LEVEL_WARNING,
-			TRACE_DSHIDMINIDRV, 
+			TRACE_DSHIDMINIDRV,
 			"Unsupported HID device mode: 0x%04X",
 			pDevCtx->Configuration.HidDeviceMode
 		);
 		status = STATUS_INVALID_PARAMETER;
 		break;
-	}	
+	}
 
 #ifdef DBG
 	DumpAsHex(">> Report", *Buffer, (ULONG)*BufferSize);
@@ -603,7 +603,7 @@ DsHidMini_GetFeature(
 		// 
 		pGetDeviceType->DeviceType = DS_DEVICE_TYPE_PS3_DUALSHOCK;
 		reportSize = sizeof(DS_FEATURE_GET_DEVICE_TYPE) - sizeof(Packet->reportId);
-		
+
 		break;
 	case DS_FEATURE_TYPE_GET_CONNECTION_TYPE:
 
@@ -634,7 +634,7 @@ DsHidMini_GetFeature(
 		//
 		// TODO: implement me!
 		// 
-		
+
 		break;
 	default:
 		break;
@@ -657,36 +657,100 @@ DsHidMini_SetFeature(
 	_Out_ ULONG* ReportSize
 )
 {
-	UNREFERENCED_PARAMETER(DmfModule);
-	UNREFERENCED_PARAMETER(Request);
-	UNREFERENCED_PARAMETER(Packet);
-	UNREFERENCED_PARAMETER(ReportSize);
+	NTSTATUS status = STATUS_SUCCESS;
+	PDEVICE_CONTEXT pDevCtx;
+	ULONG reportSize = 0;
 
+	PDS_FEATURE_SET_HOST_BD_ADDR pSetHostAddr = NULL;
+	PDS_FEATURE_SET_DEVICE_CONFIG pSetDeviceConfig = NULL;
+
+	UNREFERENCED_PARAMETER(Request);
+	UNREFERENCED_PARAMETER(pSetDeviceConfig);
+	
+	
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
+	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
+	
 	switch (Packet->reportId)
 	{
 	case DS_FEATURE_TYPE_SET_HOST_BD_ADDR:
 
+		TraceEvents(TRACE_LEVEL_INFORMATION,
+			TRACE_DSHIDMINIDRV,
+			">> DS_FEATURE_TYPE_SET_HOST_BD_ADDR"
+		);
+
 		//
-		// TODO: implement me!
+		// Not possible via BTH
 		// 
-		
+		if (pDevCtx->ConnectionType == DsHidMiniDeviceConnectionTypeBth)
+		{
+			TraceEvents(TRACE_LEVEL_WARNING,
+				TRACE_DSHIDMINIDRV,
+				"Setting host address not possible while connected via Bluetooth");
+			status = STATUS_INVALID_DEVICE_REQUEST;
+			goto Exit;
+		}
+
+		if (Packet->reportBufferLen < sizeof(DS_FEATURE_SET_HOST_BD_ADDR))
+		{
+			status = STATUS_BUFFER_TOO_SMALL;
+			goto Exit;
+		}
+
+		pSetHostAddr = (PDS_FEATURE_SET_HOST_BD_ADDR)Packet->reportBuffer;
+
+		UCHAR controlBuffer[SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH];
+		RtlZeroMemory(controlBuffer, SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH);
+
+		RtlCopyMemory(&controlBuffer[2], &pSetHostAddr->HostAddress, sizeof(BD_ADDR));
+
+		status = SendControlRequest(
+			pDevCtx,
+			BmRequestHostToDevice,
+			BmRequestClass,
+			SetReport,
+			Ds3FeatureHostAddress,
+			0,
+			controlBuffer,
+			SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH);
+
+		if (!NT_SUCCESS(status))
+		{
+			TraceEvents(TRACE_LEVEL_ERROR,
+				TRACE_DSHIDMINIDRV,
+				"Setting host address failed with %!STATUS!", status);
+			status = STATUS_UNSUCCESSFUL;
+		}
+		else
+		{
+			RtlCopyMemory(&pDevCtx->HostAddress, &pSetHostAddr->HostAddress, sizeof(BD_ADDR));
+
+			reportSize = sizeof(DS_FEATURE_SET_HOST_BD_ADDR);
+		}
+
 		break;
 	case DS_FEATURE_TYPE_SET_DEVICE_CONFIG:
 
 		//
 		// TODO: implement me!
 		// 
+
+		status = STATUS_NOT_IMPLEMENTED;
 		
 		break;
 	default:
 		break;
 	}
 
+	*ReportSize = reportSize;
+
+Exit:
+
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 
-	return STATUS_UNSUCCESSFUL;
+	return status;
 }
 
 NTSTATUS
@@ -707,7 +771,7 @@ DsHidMini_SetOutputReport(
 	//
 	// TODO: implement me!
 	// 
-	
+
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 
 	return STATUS_UNSUCCESSFUL;
@@ -731,7 +795,7 @@ DsHidMini_WriteReport(
 	//
 	// TODO: implement me!
 	// 
-	
+
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 
 	return STATUS_UNSUCCESSFUL;
@@ -940,22 +1004,22 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	switch (pDeviceContext->Configuration.HidDeviceMode)
 	{
 	case DsHidMiniDeviceModeMulti:
-		
+
 		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 			inputBuffer,
 			moduleContext->InputReport,
 			pDeviceContext->Configuration.MuteDigitalPressureButtons
 		);
-		
+
 		break;
 	case DsHidMiniDeviceModeSingle:
-		
+
 		DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
 			inputBuffer,
 			moduleContext->InputReport,
 			pDeviceContext->Configuration.MuteDigitalPressureButtons
 		);
-		
+
 		break;
 	default:
 		break;
