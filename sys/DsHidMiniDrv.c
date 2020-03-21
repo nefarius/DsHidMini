@@ -504,7 +504,7 @@ DsHidMini_RetrieveNextInputReport(
 		*BufferSize = DS3_HID_INPUT_REPORT_SIZE;
 		break;
 	case DsHidMiniDeviceModeSixaxisCompatible:
-		*BufferSize = 12;
+		*BufferSize = SIXAXIS_HID_INPUT_REPORT_SIZE;
 		break;
 	default:
 		TraceEvents(TRACE_LEVEL_WARNING,
@@ -525,6 +525,9 @@ DsHidMini_RetrieveNextInputReport(
 	return status;
 }
 
+//
+// Handles GET_FEATURE requests
+// 
 NTSTATUS
 DsHidMini_GetFeature(
 	_In_ DMFMODULE DmfModule,
@@ -533,7 +536,7 @@ DsHidMini_GetFeature(
 	_Out_ ULONG* ReportSize
 )
 {
-	NTSTATUS ntStatus = STATUS_SUCCESS;
+	NTSTATUS status = STATUS_SUCCESS;
 	ULONG reportSize = 0;
 	PDEVICE_CONTEXT pDevCtx;
 
@@ -544,13 +547,11 @@ DsHidMini_GetFeature(
 
 	UNREFERENCED_PARAMETER(Request);
 
-	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
-
-	UNREFERENCED_PARAMETER(Request);
-
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
+	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
+	
 	switch (Packet->reportId)
 	{
 	case DS_FEATURE_TYPE_GET_HOST_BD_ADDR:
@@ -562,7 +563,7 @@ DsHidMini_GetFeature(
 
 		if (Packet->reportBufferLen < sizeof(DS_FEATURE_GET_HOST_BD_ADDR))
 		{
-			ntStatus = STATUS_BUFFER_TOO_SMALL;
+			status = STATUS_BUFFER_TOO_SMALL;
 			goto Exit;
 		}
 
@@ -580,7 +581,7 @@ DsHidMini_GetFeature(
 
 		if (Packet->reportBufferLen < sizeof(DS_FEATURE_GET_DEVICE_BD_ADDR))
 		{
-			ntStatus = STATUS_BUFFER_TOO_SMALL;
+			status = STATUS_BUFFER_TOO_SMALL;
 			goto Exit;
 		}
 
@@ -593,7 +594,7 @@ DsHidMini_GetFeature(
 
 		if (Packet->reportBufferLen < sizeof(DS_FEATURE_GET_DEVICE_TYPE))
 		{
-			ntStatus = STATUS_BUFFER_TOO_SMALL;
+			status = STATUS_BUFFER_TOO_SMALL;
 			goto Exit;
 		}
 
@@ -614,7 +615,7 @@ DsHidMini_GetFeature(
 
 		if (Packet->reportBufferLen < sizeof(DS_FEATURE_GET_CONNECTION_TYPE))
 		{
-			ntStatus = STATUS_BUFFER_TOO_SMALL;
+			status = STATUS_BUFFER_TOO_SMALL;
 			goto Exit;
 		}
 
@@ -627,7 +628,7 @@ DsHidMini_GetFeature(
 
 		if (Packet->reportBufferLen < sizeof(DS_FEATURE_GET_DEVICE_CONFIG))
 		{
-			ntStatus = STATUS_BUFFER_TOO_SMALL;
+			status = STATUS_BUFFER_TOO_SMALL;
 			goto Exit;
 		}
 
@@ -635,6 +636,8 @@ DsHidMini_GetFeature(
 		// TODO: implement me!
 		// 
 
+		status = STATUS_NOT_IMPLEMENTED;
+		
 		break;
 	default:
 		break;
@@ -644,9 +647,9 @@ DsHidMini_GetFeature(
 
 Exit:
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit (%!STATUS!)", ntStatus);
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit (%!STATUS!)", status);
 
-	return ntStatus;
+	return status;
 }
 
 NTSTATUS
