@@ -791,6 +791,31 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 
 #pragma endregion
 
+#pragma region HID Input Report (ID 02) processing
+
+	if (pDeviceContext->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
+	{
+		DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
+			rdrBuffer,
+			moduleContext->InputReport
+		);
+
+		//
+		// Notify new Input Report is available
+		// 
+		status = DMF_VirtualHidMini_InputReportGenerate(
+			moduleContext->DmfModuleVirtualHidMini,
+			DsHidMini_RetrieveNextInputReport
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
+				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
+		}
+	}
+
+#pragma endregion
+
 	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 }
 
