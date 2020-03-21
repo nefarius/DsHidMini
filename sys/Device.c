@@ -9,6 +9,9 @@
 EVT_DMF_DEVICE_MODULES_ADD DmfDeviceModulesAdd;
 
 
+//
+// Bootstrap device
+// 
 NTSTATUS
 dshidminiCreateDevice(
 	_Inout_ PWDFDEVICE_INIT DeviceInit
@@ -64,8 +67,11 @@ dshidminiCreateDevice(
 
 	status = WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device);
 
-	if (NT_SUCCESS(status)) {
-
+	if (NT_SUCCESS(status)) 
+	{
+		//
+		// Query enumerator name to discover connection type
+		// 
 		status = WdfDeviceQueryProperty(
 			device,
 			DevicePropertyEnumeratorName,
@@ -110,7 +116,10 @@ dshidminiCreateDevice(
 		WDF_DEVICE_PROPERTY_DATA_INIT(&devProp, &DEVPKEY_Device_InstanceId);
 		WDF_OBJECT_ATTRIBUTES_INIT(&deviceAttributes);
 		deviceAttributes.ParentObject = device;
-		
+
+		//
+		// Query device instance string for configuration
+		// 
 		status = WdfDeviceAllocAndQueryPropertyEx(
 			device,
 			&devProp,
@@ -161,6 +170,9 @@ Exit:
 	return status;
 }
 
+//
+// Initialize objects required for BTH communication
+// 
 NTSTATUS DsHidMini_BthConnectionContextInit(
 	WDFDEVICE Device
 )
@@ -217,6 +229,9 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 	return status;
 }
 
+//
+// Bootstrap out own module
+// 
 #pragma code_seg("PAGED")
 _IRQL_requires_max_(PASSIVE_LEVEL)
 VOID
@@ -248,5 +263,3 @@ DmfDeviceModulesAdd(
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
 }
 #pragma code_seg()
-
-

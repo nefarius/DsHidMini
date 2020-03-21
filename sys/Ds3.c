@@ -26,6 +26,9 @@ NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context)
 	);
 }
 
+//
+// Send magic packet over BTH
+// 
 VOID DsBth_Ds3Init(PDEVICE_CONTEXT Context)
 {
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DS3, "%!FUNC! Entry");

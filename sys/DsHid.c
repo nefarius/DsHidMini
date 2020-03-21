@@ -1,6 +1,9 @@
 #include "Driver.h"
 #include "DsHid.tmh"
 
+//
+// Common set of feature definitions
+// 
 #define DS3_HID_REPORT_DESCRIPTOR_COMMON_FEATURES                                                                    \
 	/* DS_FEATURE_TYPE_GET_HOST_BD_ADDR                                                                           */ \
 	0xA1, 0x01,        /*   Collection (Application)                                                              */ \
@@ -61,7 +64,8 @@
 
 #pragma region DS3 HID Report Descriptor (Split Device Mode)
 
-CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_Split_Mode[] = {
+CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_Split_Mode[] = 
+{
 	/************************************************************************/
 	/* Gamepad definition (for regular DS3 buttons, axes & features)        */
 	/************************************************************************/
@@ -185,7 +189,11 @@ sizeof(G_Ds3HidReportDescriptor_Split_Mode) }  // total length of report descrip
 
 #pragma region DS3 HID Report Descriptor (Single Device Mode)
 
-CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_Single_Mode[] = {
+CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_Single_Mode[] = 
+{
+	/************************************************************************/
+	/* Gamepad definition with pressure axes in one report                  */
+	/************************************************************************/
 	0x05, 0x01,        // Usage Page (Generic Desktop Ctrls)
 	0x09, 0x05,        // Usage (Game Pad)
 	0xA1, 0x01,        // Collection (Application)
@@ -308,6 +316,9 @@ sizeof(G_Ds3HidReportDescriptor_Single_Mode) }  // total length of report descri
 
 CONST HID_REPORT_DESCRIPTOR G_SixaxisHidReportDescriptor[] =
 {
+	/************************************************************************/
+	/* SIXAXIS.SYS compatible report descriptor                             */
+	/************************************************************************/
 	0x05, 0x01,        // Usage Page (Generic Desktop Ctrls)
 	0x09, 0x04,        // Usage (Joystick)
 	0xA1, 0x01,        // Collection (Application)
