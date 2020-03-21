@@ -28,8 +28,13 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 
 	if (pDeviceContext->ConnectionType == DsHidMiniDeviceConnectionTypeBth)
 	{
+		//
+		// Send magic packet, starts input report sending
+		// 
 		DsBth_Ds3Init(pDeviceContext);
 
+#pragma region HID Interrupt Read
+		
 		status = WdfIoTargetFormatRequestForIoctl(
 			pDeviceContext->Connection.Bth.BthIoTarget,
 			pDeviceContext->Connection.Bth.HidInterruptReadRequest,
@@ -69,6 +74,52 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 				status
 			);
 		}
+
+#pragma endregion
+
+#pragma region HID Control Write
+		
+		status = WdfIoTargetFormatRequestForIoctl(
+			pDeviceContext->Connection.Bth.BthIoTarget,
+			pDeviceContext->Connection.Bth.HidControlWriteRequest,
+			IOCTL_BTHPS3_HID_CONTROL_WRITE,
+			pDeviceContext->Connection.Bth.HidControlWriteMemory,
+			NULL,
+			NULL,
+			NULL
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceEvents(TRACE_LEVEL_ERROR,
+				TRACE_POWER,
+				"WdfIoTargetFormatRequestForIoctl failed with status %!STATUS!",
+				status
+			);
+		}
+
+		WdfRequestSetCompletionRoutine(
+			pDeviceContext->Connection.Bth.HidControlWriteRequest,
+			DsBth_HidControlWriteRequestCompletionRoutine,
+			pDeviceContext
+		);
+
+		if (WdfRequestSend(
+			pDeviceContext->Connection.Bth.HidControlWriteRequest,
+			pDeviceContext->Connection.Bth.BthIoTarget,
+			WDF_NO_SEND_OPTIONS
+		) == FALSE) {
+			status = WdfRequestGetStatus(pDeviceContext->Connection.Bth.HidControlWriteRequest);
+		}
+		if (!NT_SUCCESS(status))
+		{
+			TraceEvents(TRACE_LEVEL_ERROR,
+				TRACE_POWER,
+				"WdfRequestSend failed with status %!STATUS!",
+				status
+			);
+		}
+
+#pragma endregion
 	}
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER, "%!FUNC! Exit");

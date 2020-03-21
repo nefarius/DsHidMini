@@ -180,6 +180,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 	NTSTATUS				status = STATUS_SUCCESS;
 	PDEVICE_CONTEXT			pDeviceContext;
 	WDF_OBJECT_ATTRIBUTES	attribs;
+	PUCHAR					outBuffer;
 
 	PAGED_CODE();
 
@@ -187,6 +188,8 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 
 	pDeviceContext = DeviceGetContext(Device);
 
+#pragma region HID Interrupt Read
+	
 	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
 	attribs.ParentObject = Device;
 
@@ -223,6 +226,56 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 			status
 		);
 	}
+
+#pragma endregion
+
+#pragma region HID Control Write
+
+	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
+	attribs.ParentObject = Device;
+
+	status = WdfRequestCreate(
+		&attribs,
+		pDeviceContext->Connection.Bth.BthIoTarget,
+		&pDeviceContext->Connection.Bth.HidControlWriteRequest
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DEVICE,
+			"WdfRequestCreate failed with status %!STATUS!",
+			status
+		);
+	}
+
+	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
+	attribs.ParentObject = pDeviceContext->Connection.Bth.HidControlWriteRequest;
+
+	status = WdfMemoryCreate(
+		&attribs,
+		NonPagedPool,
+		DS3_POOL_TAG,
+		BTHPS3_SIXAXIS_HID_OUTPUT_REPORT_SIZE,
+		&pDeviceContext->Connection.Bth.HidControlWriteMemory,
+		(PVOID)&outBuffer
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DEVICE,
+			"WdfMemoryCreate failed with status %!STATUS!",
+			status
+		);
+	}
+	else
+	{
+		//
+		// Initialize output report
+		// 
+		RtlCopyMemory(outBuffer, G_Ds3BthHidOutputReport, DS3_BTH_HID_OUTPUT_REPORT_SIZE);
+	}
+
+#pragma endregion
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
 

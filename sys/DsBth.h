@@ -37,3 +37,4 @@
 
 
 EVT_WDF_REQUEST_COMPLETION_ROUTINE DsBth_HidInterruptReadRequestCompletionRoutine;
+EVT_WDF_REQUEST_COMPLETION_ROUTINE DsBth_HidControlWriteRequestCompletionRoutine;
