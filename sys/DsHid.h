@@ -299,16 +299,12 @@ VOID FORCEINLINE DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
 	Output[1] |= ((Input[2] & 0x04) << 1);
 	// PS
 	Output[1] |= ((Input[4] & 0x01) << 4);
-
-	// ^ OK ---------------------------
-
-	
 	
 	// Trigger axes
-	Output[10] = Input[18];
-	Output[11] = Input[19];
+	Output[10] = (0xFF - Input[18]);
+	Output[11] = (0xFF - Input[19]);
 		
 	// Face buttons (pressure)
-	Output[8] = Input[22];
-	Output[9] = Input[23];
+	Output[8] = (0xFF - Input[23]);
+	Output[9] = (0xFF - Input[24]);
 }
