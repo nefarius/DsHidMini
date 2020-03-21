@@ -24,3 +24,6 @@ Left Thumb = X Axis/Y Axis
 Right Thumb = Z Axis/Z Rotation
 L2 = X Rotation
 R2 = Y Rotation
+
+8 = Circle
+9 = Cross

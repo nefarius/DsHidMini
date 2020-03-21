@@ -484,6 +484,7 @@ DsHidMini_RetrieveNextInputReport(
 {
 	DMFMODULE dmfModuleParent;
 	DMF_CONTEXT_DsHidMini* moduleContext;
+	PDEVICE_CONTEXT pDevCtx;
 
 	UNREFERENCED_PARAMETER(Request);
 
@@ -491,9 +492,20 @@ DsHidMini_RetrieveNextInputReport(
 
 	dmfModuleParent = DMF_ParentModuleGet(DmfModule);
 	moduleContext = DMF_CONTEXT_GET(dmfModuleParent);
+	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
 	*Buffer = moduleContext->InputReport;
-	*BufferSize = DS3_HID_INPUT_REPORT_SIZE;
+
+	switch (pDevCtx->Configuration.HidDeviceMode)
+	{
+	case DsHidMiniDeviceModeSingle:
+	case DsHidMiniDeviceModeMulti:
+		*BufferSize = DS3_HID_INPUT_REPORT_SIZE;
+		break;
+	case DsHidMiniDeviceModeSixaxisCompatible:
+		*BufferSize = 12;
+		break;
+	}	
 
 #ifdef DBG
 	DumpAsHex(">> Report", *Buffer, (ULONG)*BufferSize);
