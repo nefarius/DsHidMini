@@ -631,6 +631,10 @@ DsHidMini_GetFeature(
 			goto Exit;
 		}
 
+		//
+		// TODO: implement me!
+		// 
+		
 		break;
 	default:
 		break;
@@ -663,8 +667,18 @@ DsHidMini_SetFeature(
 	switch (Packet->reportId)
 	{
 	case DS_FEATURE_TYPE_SET_HOST_BD_ADDR:
+
+		//
+		// TODO: implement me!
+		// 
+		
 		break;
 	case DS_FEATURE_TYPE_SET_DEVICE_CONFIG:
+
+		//
+		// TODO: implement me!
+		// 
+		
 		break;
 	default:
 		break;
@@ -672,7 +686,7 @@ DsHidMini_SetFeature(
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 
-	return STATUS_SUCCESS;
+	return STATUS_UNSUCCESSFUL;
 }
 
 NTSTATUS
@@ -690,9 +704,13 @@ DsHidMini_SetOutputReport(
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
+	//
+	// TODO: implement me!
+	// 
+	
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 
-	return STATUS_SUCCESS;
+	return STATUS_UNSUCCESSFUL;
 }
 
 NTSTATUS
@@ -710,9 +728,13 @@ DsHidMini_WriteReport(
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
+	//
+	// TODO: implement me!
+	// 
+	
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 
-	return STATUS_SUCCESS;
+	return STATUS_UNSUCCESSFUL;
 }
 
 //
@@ -916,18 +938,22 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	switch (pDeviceContext->Configuration.HidDeviceMode)
 	{
 	case DsHidMiniDeviceModeMulti:
+		
 		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 			inputBuffer,
 			moduleContext->InputReport,
 			pDeviceContext->Configuration.MuteDigitalPressureButtons
 		);
+		
 		break;
 	case DsHidMiniDeviceModeSingle:
+		
 		DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
 			inputBuffer,
 			moduleContext->InputReport,
 			pDeviceContext->Configuration.MuteDigitalPressureButtons
 		);
+		
 		break;
 	default:
 		break;
