@@ -69,7 +69,7 @@ VOID FORCEINLINE DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(
     PDS_DRIVER_CONFIGURATION Configuration
 )
 {
-    Configuration->HidDeviceMode = DsHidMiniDeviceModeSingle;
+    Configuration->HidDeviceMode = DsHidMiniDeviceModeSixaxisCompatible;
     Configuration->MuteDigitalPressureButtons = FALSE;
     Configuration->VendorId = 0x054C;
     Configuration->ProductId = 0x0268;
