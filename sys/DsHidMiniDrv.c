@@ -482,6 +482,7 @@ DsHidMini_RetrieveNextInputReport(
 	_Out_ ULONG* BufferSize
 )
 {
+	NTSTATUS status = STATUS_SUCCESS;
 	DMFMODULE dmfModuleParent;
 	DMF_CONTEXT_DsHidMini* moduleContext;
 	PDEVICE_CONTEXT pDevCtx;
@@ -505,15 +506,23 @@ DsHidMini_RetrieveNextInputReport(
 	case DsHidMiniDeviceModeSixaxisCompatible:
 		*BufferSize = 12;
 		break;
+	default:
+		TraceEvents(TRACE_LEVEL_WARNING,
+			TRACE_DSHIDMINIDRV, 
+			"Unsupported HID device mode: 0x%04X",
+			pDevCtx->Configuration.HidDeviceMode
+		);
+		status = STATUS_INVALID_PARAMETER;
+		break;
 	}	
 
 #ifdef DBG
 	DumpAsHex(">> Report", *Buffer, (ULONG)*BufferSize);
 #endif
 
-	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
+	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Exit (%!STATUS!)", status);
 
-	return STATUS_SUCCESS;
+	return status;
 }
 
 NTSTATUS
@@ -531,6 +540,7 @@ DsHidMini_GetFeature(
 	PDS_FEATURE_GET_HOST_BD_ADDR pGetHostAddr = NULL;
 	PDS_FEATURE_GET_DEVICE_BD_ADDR pGetDeviceAddr = NULL;
 	PDS_FEATURE_GET_CONNECTION_TYPE pGetConnectionType = NULL;
+	PDS_FEATURE_GET_DEVICE_TYPE pGetDeviceType = NULL;
 
 	UNREFERENCED_PARAMETER(Request);
 
@@ -587,6 +597,13 @@ DsHidMini_GetFeature(
 			goto Exit;
 		}
 
+		pGetDeviceType = (PDS_FEATURE_GET_DEVICE_TYPE)Packet->reportBuffer;
+		//
+		// TODO: the only one supported currently
+		// 
+		pGetDeviceType->DeviceType = DS_DEVICE_TYPE_PS3_DUALSHOCK;
+		reportSize = sizeof(DS_FEATURE_GET_DEVICE_TYPE) - sizeof(Packet->reportId);
+		
 		break;
 	case DS_FEATURE_TYPE_GET_CONNECTION_TYPE:
 
