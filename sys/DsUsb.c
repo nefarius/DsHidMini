@@ -69,6 +69,9 @@ SendControlRequest(
 	return status;
 }
 
+//
+// Prepare continuous reader
+// 
 NTSTATUS
 DsUsbConfigContReaderForInterruptEndPoint(
 	_In_ WDFDEVICE Device
@@ -111,6 +114,9 @@ DsUsbConfigContReaderForInterruptEndPoint(
 	return status;
 }
 
+//
+// Reader failed for some reason
+// 
 BOOLEAN
 DsUsbEvtUsbInterruptReadersFailed(
 	_In_ WDFUSBPIPE Pipe,

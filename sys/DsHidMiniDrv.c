@@ -652,6 +652,9 @@ Exit:
 	return status;
 }
 
+//
+// Handles SET_FEATURE requests
+// 
 NTSTATUS
 DsHidMini_SetFeature(
 	_In_ DMFMODULE DmfModule,
@@ -777,7 +780,7 @@ DsHidMini_SetOutputReport(
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 
-	return STATUS_UNSUCCESSFUL;
+	return STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS
@@ -801,7 +804,7 @@ DsHidMini_WriteReport(
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 
-	return STATUS_UNSUCCESSFUL;
+	return STATUS_NOT_IMPLEMENTED;
 }
 
 #pragma region Input Report processing

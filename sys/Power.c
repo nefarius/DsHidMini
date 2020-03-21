@@ -102,6 +102,9 @@ DsHidMini_EvtDevicePrepareHardware(
 
 	pDeviceContext = DeviceGetContext(Device);
 
+	//
+	// Initialize USB framework object
+	// 
 	if (pDeviceContext->ConnectionType == DsHidMiniDeviceConnectionTypeUsb
 		&& pDeviceContext->Connection.Usb.UsbDevice == NULL)
 	{
@@ -117,6 +120,9 @@ DsHidMini_EvtDevicePrepareHardware(
 		}
 	}
 
+	//
+	// Grab pipes and meta information
+	// 
 	if (pDeviceContext->ConnectionType == DsHidMiniDeviceConnectionTypeUsb)
 	{
 #pragma region USB Interface & Pipe settings
@@ -243,7 +249,7 @@ DsHidMini_EvtDevicePrepareHardware(
 }
 
 //
-// Start reading data
+// Power up
 // 
 NTSTATUS DsHidMini_EvtDeviceD0Entry(
 	_In_ WDFDEVICE              Device,
@@ -294,6 +300,9 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 			}
 		}
 
+		//
+		// Instruct pad to send input reports
+		// 
 		status = DsUsb_Ds3Init(pDeviceContext);
 
 		if (!NT_SUCCESS(status))
@@ -309,6 +318,9 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 	return status;
 }
 
+//
+// Power down
+// 
 NTSTATUS DsHidMini_EvtDeviceD0Exit(
 	_In_ WDFDEVICE              Device,
 	_In_ WDF_POWER_DEVICE_STATE TargetState
