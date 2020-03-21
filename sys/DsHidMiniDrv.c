@@ -803,7 +803,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 
 #pragma endregion
 
-#pragma region HID Input Report (ID 02) processing
+#pragma region HID Input Report (SIXAXIS compatible) processing
 
 	if (pDeviceContext->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
 	{
@@ -936,6 +936,31 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	if (pDeviceContext->Configuration.HidDeviceMode == DsHidMiniDeviceModeMulti)
 	{
 		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
+			inputBuffer,
+			moduleContext->InputReport
+		);
+
+		//
+		// Notify new Input Report is available
+		// 
+		status = DMF_VirtualHidMini_InputReportGenerate(
+			moduleContext->DmfModuleVirtualHidMini,
+			DsHidMini_RetrieveNextInputReport
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
+				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
+		}
+	}
+
+#pragma endregion
+
+#pragma region HID Input Report (SIXAXIS compatible) processing
+
+	if (pDeviceContext->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
+	{
+		DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
 			inputBuffer,
 			moduleContext->InputReport
 		);
