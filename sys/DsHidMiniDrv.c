@@ -737,6 +737,8 @@ DsHidMini_WriteReport(
 	return STATUS_UNSUCCESSFUL;
 }
 
+#pragma region Input Report processing
+
 //
 // Called when data is available on the USB Interrupt IN pipe.
 //  
@@ -1084,6 +1086,8 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 
 	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 }
+
+#pragma endregion
 
 VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
 {
