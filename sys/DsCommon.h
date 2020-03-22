@@ -58,6 +58,19 @@ typedef enum _DS_CONNECTION_TYPE
 
 } DS_CONNECTION_TYPE, * PDS_CONNECTION_TYPE;
 
+typedef enum _DS_BATTERY_STATUS
+{
+    DsBatteryStatusNone = 0x00,
+    DsBatteryStatusDying = 0x01,
+    DsBatteryStatusLow = 0x02,
+    DsBatteryStatusMedium = 0x03,
+    DsBatteryStatusHigh = 0x04,
+    DsBatteryStatusFull = 0x05,
+    DsBatteryStatusCharging = 0xEE,
+    DsBatteryStatusCharged = 0xEF
+	
+} DS_BATTERY_STATUS, *PDS_BATTERY_STATUS;
+
 /**
  * \enum    _DS_FEATURE_TYPE
  *
