@@ -93,11 +93,11 @@ dshidminiCreateDevice(
 
 		if (wcscmp(L"USB", enumeratorName) == 0)
 		{
-			pDevCtx->ConnectionType = DsHidMiniDeviceConnectionTypeUsb;
+			pDevCtx->ConnectionType = DsDeviceConnectionTypeUsb;
 		}
 		else
 		{
-			pDevCtx->ConnectionType = DsHidMiniDeviceConnectionTypeBth;
+			pDevCtx->ConnectionType = DsDeviceConnectionTypeBth;
 			pDevCtx->Connection.Bth.BthIoTarget = WdfDeviceGetIoTarget(device);
 
 			status = DsHidMini_BthConnectionContextInit(device);

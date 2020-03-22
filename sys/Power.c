@@ -26,7 +26,7 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 
 	pDeviceContext = DeviceGetContext(Device);
 
-	if (pDeviceContext->ConnectionType == DsHidMiniDeviceConnectionTypeBth)
+	if (pDeviceContext->ConnectionType == DsDeviceConnectionTypeBth)
 	{
 		//
 		// Send magic packet, starts input report sending
@@ -156,7 +156,7 @@ DsHidMini_EvtDevicePrepareHardware(
 	//
 	// Initialize USB framework object
 	// 
-	if (pDeviceContext->ConnectionType == DsHidMiniDeviceConnectionTypeUsb
+	if (pDeviceContext->ConnectionType == DsDeviceConnectionTypeUsb
 		&& pDeviceContext->Connection.Usb.UsbDevice == NULL)
 	{
 		status = WdfUsbTargetDeviceCreate(Device,
@@ -174,7 +174,7 @@ DsHidMini_EvtDevicePrepareHardware(
 	//
 	// Grab pipes and meta information
 	// 
-	if (pDeviceContext->ConnectionType == DsHidMiniDeviceConnectionTypeUsb)
+	if (pDeviceContext->ConnectionType == DsDeviceConnectionTypeUsb)
 	{
 #pragma region USB Interface & Pipe settings
 
@@ -331,7 +331,7 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 
 	UNREFERENCED_PARAMETER(PreviousState);
 
-	if (pDeviceContext->ConnectionType == DsHidMiniDeviceConnectionTypeUsb)
+	if (pDeviceContext->ConnectionType == DsDeviceConnectionTypeUsb)
 	{
 		//
 		// Since continuous reader is configured for this interrupt-pipe, we must explicitly start
@@ -404,7 +404,7 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 
 	pDeviceContext = DeviceGetContext(Device);
 
-	if (pDeviceContext->ConnectionType == DsHidMiniDeviceConnectionTypeUsb)
+	if (pDeviceContext->ConnectionType == DsDeviceConnectionTypeUsb)
 	{
 		WdfIoTargetStop(WdfUsbTargetPipeGetIoTarget(
 			pDeviceContext->Connection.Usb.InterruptInPipe),

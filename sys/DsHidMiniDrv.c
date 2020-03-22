@@ -708,7 +708,7 @@ DsHidMini_SetFeature(
 		//
 		// Not possible via BTH
 		// 
-		if (pDevCtx->ConnectionType == DsHidMiniDeviceConnectionTypeBth)
+		if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
 		{
 			TraceEvents(TRACE_LEVEL_WARNING,
 				TRACE_DSHIDMINIDRV,

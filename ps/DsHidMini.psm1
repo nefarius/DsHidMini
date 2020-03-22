@@ -36,20 +36,9 @@ namespace DS {
 	
 	public enum DS_CONNECTION_TYPE : uint
 	{
-		//
-		// Unknown connection type
-		// 
-		DS_CONNECTION_TYPE_UNKNOWN = 0x00,
-
-		//
-		// Connected via USB (wired)
-		// 
-		DS_CONNECTION_TYPE_USB = 0x01,
-
-		//
-		// Connected via Bluetooth (wireless)
-		// 
-		DS_CONNECTION_TYPE_BLUETOOTH = 0x02
+		DsDeviceConnectionTypeUnknown = 0x00,
+		DsDeviceConnectionTypeUsb,
+		DsDeviceConnectionTypeBth
 	}
 	
 	public enum DS_FEATURE_TYPE : uint
@@ -87,9 +76,26 @@ namespace DS {
 		//
 		// Update current volatile configuration properties
 		// 
-		DS_FEATURE_TYPE_SET_DEVICE_CONFIG = 0xC6
+		DS_FEATURE_TYPE_SET_DEVICE_CONFIG = 0xC6,
+
+		//
+		// Receive current battery status
+		// 
+		DS_FEATURE_TYPE_GET_BATTERY_STATUS = 0xC7
 	}
 	
+	public enum DS_BATTERY_STATUS : uint
+	{
+		DsBatteryStatusNone = 0x00,
+		DsBatteryStatusDying = 0x01,
+		DsBatteryStatusLow = 0x02,
+		DsBatteryStatusMedium = 0x03,
+		DsBatteryStatusHigh = 0x04,
+		DsBatteryStatusFull = 0x05,
+		DsBatteryStatusCharging = 0xEE,
+		DsBatteryStatusCharged = 0xEF
+	}
+
 	[StructLayout(LayoutKind.Sequential, Pack=1)]
 	public struct BD_ADDR
 	{
@@ -99,9 +105,10 @@ namespace DS {
 	
 	public enum DS_HID_DEVICE_MODE : uint
 	{
-		DS_HID_DEVICE_MODE_SINGLE,
-
-		DS_HID_DEVICE_MODE_MULTI
+		DsHidMiniDeviceModeUnknown = 0x00,
+		DsHidMiniDeviceModeSingle,
+		DsHidMiniDeviceModeMulti,
+		DsHidMiniDeviceModeSixaxisCompatible
 	}
 	
 	[StructLayout(LayoutKind.Sequential, Pack=1)]
@@ -215,6 +222,20 @@ namespace DS {
 		{
 			this.Header.Size = (UInt32)Marshal.SizeOf(this.GetType());
 			this.Header.ReportId = (byte)DS_FEATURE_TYPE.DS_FEATURE_TYPE_SET_DEVICE_CONFIG;
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential, Pack=1)]
+	public struct DS_FEATURE_GET_BATTERY_STATUS
+	{
+		public DS_FEATURE_HEADER Header;
+
+		public DS_BATTERY_STATUS BatteryStatus;
+		
+		public void Init()
+		{
+			this.Header.Size = (UInt32)Marshal.SizeOf(this.GetType());
+			this.Header.ReportId = (byte)DS_FEATURE_TYPE.DS_FEATURE_TYPE_GET_BATTERY_STATUS;
 		}
 	}
 
@@ -346,4 +367,18 @@ function Get-DsFeatureConnectionType([Microsoft.Win32.SafeHandles.SafeFileHandle
 	[DS.DsUtil]::ByteArrayToStructure($payload, [ref] $request)
 	
 	return $request.ConnectionType
+}
+
+function Get-DsFeatureBatteryStatus([Microsoft.Win32.SafeHandles.SafeFileHandle]$handle)
+{
+	$request = [System.Activator]::CreateInstance([DS.DS_FEATURE_GET_BATTERY_STATUS])
+	$request.Init()
+	
+	$payload = [DS.DsUtil]::StructureToByteArray($request)
+	
+	Get-HidFeature $handle $payload $request.Header.Size
+	
+	[DS.DsUtil]::ByteArrayToStructure($payload, [ref] $request)
+	
+	return $request.BatteryStatus
 }

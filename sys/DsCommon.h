@@ -52,9 +52,9 @@ typedef enum _DS_DEVICE_TYPE
  */
 typedef enum _DS_CONNECTION_TYPE
 {
-    DsHidMiniDeviceConnectionTypeUnknown,
-    DsHidMiniDeviceConnectionTypeUsb,
-    DsHidMiniDeviceConnectionTypeBth
+    DsDeviceConnectionTypeUnknown = 0x00,
+    DsDeviceConnectionTypeUsb,
+    DsDeviceConnectionTypeBth
 
 } DS_CONNECTION_TYPE, * PDS_CONNECTION_TYPE;
 
