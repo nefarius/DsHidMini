@@ -551,7 +551,7 @@ DsHidMini_GetFeature(
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
-	
+
 	switch (Packet->reportId)
 	{
 	case DS_FEATURE_TYPE_GET_HOST_BD_ADDR:
@@ -637,7 +637,7 @@ DsHidMini_GetFeature(
 		// 
 
 		status = STATUS_NOT_IMPLEMENTED;
-		
+
 		break;
 	default:
 		break;
@@ -672,12 +672,12 @@ DsHidMini_SetFeature(
 
 	UNREFERENCED_PARAMETER(Request);
 	UNREFERENCED_PARAMETER(pSetDeviceConfig);
-	
-	
+
+
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
-	
+
 	switch (Packet->reportId)
 	{
 	case DS_FEATURE_TYPE_SET_HOST_BD_ADDR:
@@ -744,7 +744,7 @@ DsHidMini_SetFeature(
 		// 
 
 		status = STATUS_NOT_IMPLEMENTED;
-		
+
 		break;
 	default:
 		break;
@@ -966,6 +966,14 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 
 	UNREFERENCED_PARAMETER(Target);
 
+	//
+	// Device has been disconnected, quit requesting inputs
+	// 
+	if (Params->IoStatus.Status == STATUS_DEVICE_NOT_CONNECTED)
+	{
+		goto Exit;
+	}
+
 	pDeviceContext = (PDEVICE_CONTEXT)Context;
 	dmfModule = (DMFMODULE)pDeviceContext->DsHidMiniModule;
 	moduleContext = DMF_CONTEXT_GET(dmfModule);
@@ -1154,6 +1162,8 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 		);
 	}
 
+Exit:
+
 	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 }
 
@@ -1172,9 +1182,9 @@ void DsBth_HidControlWriteRequestCompletionRoutine(
 	UNREFERENCED_PARAMETER(Target);
 	UNREFERENCED_PARAMETER(Params);
 	UNREFERENCED_PARAMETER(Context);
-	
+
 	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
-	
+
 	WDF_REQUEST_REUSE_PARAMS_INIT(
 		&params,
 		WDF_REQUEST_REUSE_NO_FLAGS,
