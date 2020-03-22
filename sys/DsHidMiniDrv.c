@@ -340,8 +340,7 @@ DMF_DsHidMini_Close(
 
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 	pCfg = &pDevCtx->Configuration;
-
-
+			
 	/*
 	 * TODO: BEGIN clean me up!
 	 */
