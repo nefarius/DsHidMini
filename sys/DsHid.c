@@ -61,6 +61,14 @@
 	0x09, 0x01,        /*     Usage (0x01)                                                                        */ \
 	0xB1, 0x02,        /*     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
 	0xC0,              /*   End Collection                                                                        */ \
+	/* DS_FEATURE_TYPE_GET_BATTERY_STATUS                                                                         */ \
+	0xA1, 0x01,        /*   Collection (Application)                                                              */ \
+	0x85, 0xC7,        /*     Report ID (199)                                                                     */ \
+	0x75, 0x08,        /*     Report Size (8)                                                                     */ \
+	0x95, 0x07,        /*     Report Count (8)                                                                    */ \
+	0x09, 0x01,        /*     Usage (0x01)                                                                        */ \
+	0xB1, 0x02,        /*     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
+	0xC0,              /*   End Collection                                                                        */ \
 
 #pragma region DS3 HID Report Descriptor (Split Device Mode)
 

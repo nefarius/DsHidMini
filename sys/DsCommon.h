@@ -111,7 +111,12 @@ typedef enum _DS_FEATURE_TYPE
     //
     // Update current volatile configuration properties
     // 
-    DS_FEATURE_TYPE_SET_DEVICE_CONFIG = 0xC6
+    DS_FEATURE_TYPE_SET_DEVICE_CONFIG = 0xC6,
+
+	//
+	// Receive current battery status
+	// 
+    DS_FEATURE_TYPE_GET_BATTERY_STATUS = 0xC7
 
 } DS_FEATURE_TYPE, * PDS_FEATURE_TYPE;
 
@@ -304,6 +309,27 @@ VOID FORCEINLINE DS_FEATURE_SET_DEVICE_CONFIG_INIT(
     RtlZeroMemory(Request, sizeof(DS_FEATURE_SET_DEVICE_CONFIG));
     Request->Header.ReportId = DS_FEATURE_TYPE_SET_DEVICE_CONFIG;
     Request->Header.Size = sizeof(DS_FEATURE_SET_DEVICE_CONFIG);
+}
+
+#pragma endregion
+
+#pragma region DS_FEATURE_GET_BATTERY_STATUS
+
+typedef struct _DS_FEATURE_GET_BATTERY_STATUS
+{
+    DS_FEATURE_HEADER Header;
+
+    DS_BATTERY_STATUS BatteryStatus;
+
+} DS_FEATURE_GET_BATTERY_STATUS, * PDS_FEATURE_GET_BATTERY_STATUS;
+
+VOID FORCEINLINE DS_FEATURE_GET_BATTERY_STATUS_INIT(
+    PDS_FEATURE_GET_BATTERY_STATUS Request
+)
+{
+    RtlZeroMemory(Request, sizeof(DS_FEATURE_GET_BATTERY_STATUS));
+    Request->Header.ReportId = DS_FEATURE_TYPE_GET_BATTERY_STATUS;
+    Request->Header.Size = sizeof(DS_FEATURE_GET_BATTERY_STATUS);
 }
 
 #pragma endregion

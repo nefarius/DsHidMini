@@ -103,6 +103,11 @@ typedef struct _DEVICE_CONTEXT
 	// 
     BD_ADDR DeviceAddress;
 
+	//
+	// Current reported battery status
+	// 
+    DS_BATTERY_STATUS BatteryStatus;
+
     union
     {
         //

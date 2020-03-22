@@ -544,6 +544,7 @@ DsHidMini_GetFeature(
 	PDS_FEATURE_GET_DEVICE_BD_ADDR pGetDeviceAddr = NULL;
 	PDS_FEATURE_GET_CONNECTION_TYPE pGetConnectionType = NULL;
 	PDS_FEATURE_GET_DEVICE_TYPE pGetDeviceType = NULL;
+	PDS_FEATURE_GET_BATTERY_STATUS pGetBatteryStatus = NULL;
 
 	UNREFERENCED_PARAMETER(Request);
 
@@ -638,6 +639,24 @@ DsHidMini_GetFeature(
 
 		status = STATUS_NOT_IMPLEMENTED;
 
+		break;
+	case DS_FEATURE_TYPE_GET_BATTERY_STATUS:
+
+		TraceEvents(TRACE_LEVEL_INFORMATION,
+			TRACE_DSHIDMINIDRV,
+			"<< DS_FEATURE_TYPE_GET_BATTERY_STATUS"
+		);
+
+		if (Packet->reportBufferLen < sizeof(DS_FEATURE_GET_BATTERY_STATUS))
+		{
+			status = STATUS_BUFFER_TOO_SMALL;
+			goto Exit;
+		}
+
+		pGetBatteryStatus = (PDS_FEATURE_GET_BATTERY_STATUS)Packet->reportBuffer;
+		pGetBatteryStatus->BatteryStatus = pDevCtx->BatteryStatus;
+		reportSize = sizeof(DS_FEATURE_GET_BATTERY_STATUS) - sizeof(Packet->reportId);
+		
 		break;
 	default:
 		break;
@@ -840,6 +859,8 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	DumpAsHex(">> USB", rdrBuffer, (ULONG)rdrBufferLength);
 #endif
 
+	pDeviceContext->BatteryStatus = (DS_BATTERY_STATUS)((PUCHAR)rdrBuffer)[30];
+	
 #pragma region HID Input Report (ID 01) processing
 
 	switch (pDeviceContext->Configuration.HidDeviceMode)
@@ -1010,6 +1031,8 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	{
 		goto resendRequest;
 	}
+		
+	pDeviceContext->BatteryStatus = (DS_BATTERY_STATUS)((PUCHAR)buffer)[30];
 
 	inputBuffer = &buffer[1];
 
