@@ -30,6 +30,7 @@ Environment:
 #include "DsUsb.h"
 #include "Ds3.h"
 #include "DsBth.h"
+#include "Config.h"
 
 
 EXTERN_C_START

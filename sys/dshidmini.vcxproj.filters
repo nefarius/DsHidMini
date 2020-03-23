@@ -57,6 +57,9 @@
     <ClInclude Include="DsCommon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Device.c">
@@ -78,6 +81,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Ds3.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Config.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

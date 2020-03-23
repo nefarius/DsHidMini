@@ -17,7 +17,6 @@ Environment:
 #include "public.h"
 #include <DmfModule.h>
 
-#define DS_DRIVER_CFG_FILE_PATH "C:\\ProgramData\\DsHidMini.cfg"
 
 EXTERN_C_START
 
