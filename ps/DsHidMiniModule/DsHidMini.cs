@@ -6,9 +6,9 @@ using Hid.Net.Windows;
 
 namespace DsHidMiniModule
 {
-    [Cmdlet(VerbsCommon.Get, "HidDeviceId")]
-    [OutputType(typeof(string))]
-    public class GetHidDeviceId : Cmdlet
+    [Cmdlet(VerbsCommon.Get, "HidDevice")]
+    [OutputType(typeof(ConnectedDeviceDefinition))]
+    public class GetHidDevice : Cmdlet
     {
         private static readonly DebugLogger Logger = new DebugLogger();
         private static readonly DebugTracer Tracer = new DebugTracer();
@@ -31,7 +31,12 @@ namespace DsHidMiniModule
 
             var devices = DeviceManager.Current.GetDevicesAsync(deviceDefinitions).Result;
 
-            devices.Select(d => d.DeviceId).ToList().ForEach(WriteObject);
+            foreach (var device in devices)
+            {
+                device.InitializeAsync().Wait();
+            }
+
+            devices.Select(d => d.ConnectedDeviceDefinition).ToList().ForEach(WriteObject);
         }
     }
 }
