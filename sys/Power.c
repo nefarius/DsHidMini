@@ -304,6 +304,12 @@ DsHidMini_EvtDevicePrepareHardware(
 				0,
 				(PVOID)G_Ds3UsbHidOutputReport,
 				DS3_USB_HID_OUTPUT_REPORT_SIZE);
+
+			//
+			// Auto-pair to first found radio
+			// TODO: add option to disable
+			// 
+			(void)DsUsb_Ds3PairToFirstRadio(pDeviceContext);
 		}
 	}
 
