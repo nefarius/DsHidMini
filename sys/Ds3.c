@@ -180,7 +180,7 @@ VOID DsBth_Ds3Init(PDEVICE_CONTEXT Context)
 	WDFMEMORY				MemoryHandle = NULL;
 
 	status = WdfMemoryCreate(NULL,
-		NonPagedPool,
+		NonPagedPoolNx,
 		DS3_POOL_TAG,
 		ARRAYSIZE(hidCommandEnable),
 		&MemoryHandle,

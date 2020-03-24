@@ -123,7 +123,7 @@ dshidminiCreateDevice(
 		status = WdfDeviceAllocAndQueryPropertyEx(
 			device,
 			&devProp,
-			NonPagedPoolNx,
+			NonPagedPoolNxNx,
 			&deviceAttributes,
 			&pDevCtx->InstanceId,
 			&propType
@@ -212,7 +212,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 
 	status = WdfMemoryCreate(
 		&attribs,
-		NonPagedPool,
+		NonPagedPoolNx,
 		DS3_POOL_TAG,
 		BTHPS3_SIXAXIS_HID_INPUT_REPORT_SIZE,
 		&pDeviceContext->Connection.Bth.HidInterruptReadMemory,
@@ -253,7 +253,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 
 	status = WdfMemoryCreate(
 		&attribs,
-		NonPagedPool,
+		NonPagedPoolNx,
 		DS3_POOL_TAG,
 		BTHPS3_SIXAXIS_HID_OUTPUT_REPORT_SIZE,
 		&pDeviceContext->Connection.Bth.HidControlWriteMemory,
