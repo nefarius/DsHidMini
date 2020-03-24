@@ -62,6 +62,8 @@ struct BTH_DEVICE_CONTEXT
     WDFREQUEST HidInterruptWriteRequest;
 
     WDFMEMORY HidInterruptWriteMemory;
+
+    LARGE_INTEGER QuickDisconnectTimestamp;
 };
 
 VOID FORCEINLINE DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(

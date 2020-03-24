@@ -1,5 +1,7 @@
 #include "Driver.h"
 #include "DsHidMiniDrv.tmh"
+#include <bluetoothapis.h>
+#include <bthioctl.h>
 
 
 PWSTR G_DsHidMini_Strings[] =
@@ -232,7 +234,7 @@ DMF_DsHidMini_Close(
 )
 {
 	PDEVICE_CONTEXT pDevCtx;
-	
+
 	PAGED_CODE();
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
@@ -779,6 +781,9 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	PDEVICE_CONTEXT				pDeviceContext;
 	DMFMODULE                   dmfModule;
 	DMF_CONTEXT_DsHidMini* moduleContext;
+	WDF_MEMORY_DESCRIPTOR       memDesc;
+	LARGE_INTEGER				freq, * t1, t2;
+	LONGLONG					ms;
 
 
 	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
@@ -796,6 +801,8 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	pDeviceContext = (PDEVICE_CONTEXT)Context;
 	dmfModule = (DMFMODULE)pDeviceContext->DsHidMiniModule;
 	moduleContext = DMF_CONTEXT_GET(dmfModule);
+	QueryPerformanceFrequency(&freq);
+	t1 = &pDeviceContext->Connection.Bth.QuickDisconnectTimestamp;
 
 	if (!NT_SUCCESS(Params->IoStatus.Status)
 		|| Params->Parameters.Ioctl.Output.Length < BTHPS3_SIXAXIS_HID_INPUT_REPORT_SIZE)
@@ -830,9 +837,82 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 		goto resendRequest;
 	}
 
+	//
+	// Update battery status
+	// 
 	pDeviceContext->BatteryStatus = (DS_BATTERY_STATUS)((PUCHAR)buffer)[30];
 
+	//
+	// Skip to report ID
+	// 
 	inputBuffer = &buffer[1];
+
+	//
+	// Quick disconnect combo (L1 + R1 + PS) detected
+	// 
+	if (((inputBuffer[3] >> 3) & 1U) && ((inputBuffer[3] >> 2) & 1U) && (inputBuffer[4] & 1U))
+	{
+		TraceEvents(TRACE_LEVEL_INFORMATION,
+			TRACE_DSHIDMINIDRV,
+			"!! Quick disconnect combination detected"
+		);
+		
+		if (pDeviceContext->Connection.Bth.QuickDisconnectTimestamp.QuadPart == 0)
+		{
+			QueryPerformanceCounter(t1);
+		}
+
+		QueryPerformanceCounter(&t2);
+
+		ms = (t2.QuadPart - t1->QuadPart) / (freq.QuadPart / 1000);
+
+		//
+		// 1 second passed
+		// 
+		if (ms > 1000)
+		{
+			TraceEvents(TRACE_LEVEL_INFORMATION,
+				TRACE_DSHIDMINIDRV,
+				"!! Sending disconnect request"
+			);
+			
+			WDF_MEMORY_DESCRIPTOR_INIT_BUFFER(
+				&memDesc,
+				&pDeviceContext->DeviceAddress,
+				sizeof(BD_ADDR)
+			);
+
+			//
+			// Send disconnect request
+			// 
+			status = WdfIoTargetSendIoctlSynchronously(
+				pDeviceContext->Connection.Bth.BthIoTarget,
+				NULL, // use internal request object
+				IOCTL_BTH_DISCONNECT_DEVICE,
+				&memDesc, // holds address to disconnect
+				NULL,
+				NULL,
+				NULL
+			);
+			if (!NT_SUCCESS(status))
+			{
+				TraceEvents(TRACE_LEVEL_ERROR,
+					TRACE_DSHIDMINIDRV,
+					"Sending disconnect request failed with status %!STATUS!",
+					status
+				);
+			}
+
+			//
+			// No further processing
+			// 
+			return;
+		}
+	}
+	else
+	{
+		pDeviceContext->Connection.Bth.QuickDisconnectTimestamp.QuadPart = 0;
+	}
 
 #pragma region HID Input Report (ID 01) processing
 
@@ -1051,7 +1131,7 @@ VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
 		);
 
 		free(dumpBuffer);
-}
+	}
 #else
 	UNREFERENCED_PARAMETER(Prefix);
 	UNREFERENCED_PARAMETER(Buffer);

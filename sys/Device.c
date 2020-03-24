@@ -123,7 +123,7 @@ dshidminiCreateDevice(
 		status = WdfDeviceAllocAndQueryPropertyEx(
 			device,
 			&devProp,
-			NonPagedPoolNxNx,
+			NonPagedPoolNx,
 			&deviceAttributes,
 			&pDevCtx->InstanceId,
 			&propType
