@@ -1,7 +1,5 @@
 #include "Driver.h"
 #include "DsHidMiniDrv.tmh"
-#include <bluetoothapis.h>
-#include <bthioctl.h>
 
 
 PWSTR G_DsHidMini_Strings[] =
@@ -781,7 +779,6 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	PDEVICE_CONTEXT				pDeviceContext;
 	DMFMODULE                   dmfModule;
 	DMF_CONTEXT_DsHidMini* moduleContext;
-	WDF_MEMORY_DESCRIPTOR       memDesc;
 	LARGE_INTEGER				freq, * t1, t2;
 	LONGLONG					ms;
 
@@ -875,25 +872,12 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 				TRACE_DSHIDMINIDRV,
 				"!! Sending disconnect request"
 			);
-			
-			WDF_MEMORY_DESCRIPTOR_INIT_BUFFER(
-				&memDesc,
-				&pDeviceContext->DeviceAddress,
-				sizeof(BD_ADDR)
-			);
 
 			//
 			// Send disconnect request
 			// 
-			status = WdfIoTargetSendIoctlSynchronously(
-				pDeviceContext->Connection.Bth.BthIoTarget,
-				NULL, // use internal request object
-				IOCTL_BTH_DISCONNECT_DEVICE,
-				&memDesc, // holds address to disconnect
-				NULL,
-				NULL,
-				NULL
-			);
+			status = DsBth_SendDisconnectRequestAsync(pDeviceContext);
+			
 			if (!NT_SUCCESS(status))
 			{
 				TraceEvents(TRACE_LEVEL_ERROR,
