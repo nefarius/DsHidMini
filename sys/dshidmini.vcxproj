@@ -60,7 +60,6 @@
     <ClInclude Include="DsHidMiniDrv.h" />
     <ClInclude Include="DsUsb.h" />
     <ClInclude Include="Power.h" />
-    <ClInclude Include="Public.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Trace.h" />
   </ItemGroup>

@@ -14,7 +14,6 @@ Environment:
 
 --*/
 
-#include "public.h"
 #include <DmfModule.h>
 
 
