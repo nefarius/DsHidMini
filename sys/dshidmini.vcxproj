@@ -61,6 +61,7 @@
     <ClInclude Include="DsUsb.h" />
     <ClInclude Include="Power.h" />
     <ClInclude Include="Public.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="Trace.h" />
   </ItemGroup>
   <ItemGroup>
@@ -269,6 +270,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <FilesToPackage Include="$(TargetPath)" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="dshidmini.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
