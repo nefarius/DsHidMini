@@ -7,8 +7,12 @@ NTSTATUS DsBth_SendDisconnectRequest(PDEVICE_CONTEXT Context)
 {
 	BLUETOOTH_ADDRESS address;
 	WDF_MEMORY_DESCRIPTOR memDesc;
+	UCHAR buffer[sizeof(BLUETOOTH_ADDRESS)];
 
-	address.ullLong = *(PULONGLONG)&Context->DeviceAddress;
+	RtlZeroMemory(buffer, sizeof(BLUETOOTH_ADDRESS));
+	RtlCopyMemory(buffer, &Context->DeviceAddress, sizeof(Context->DeviceAddress));
+	
+	address.ullLong = *(PULONGLONG)&buffer[0];
 
 	WDF_MEMORY_DESCRIPTOR_INIT_BUFFER(
 		&memDesc,
