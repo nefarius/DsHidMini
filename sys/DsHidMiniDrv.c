@@ -876,7 +876,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 			//
 			// Send disconnect request
 			// 
-			status = DsBth_SendDisconnectRequestAsync(pDeviceContext);
+			status = DsBth_SendDisconnectRequest(pDeviceContext);
 			
 			if (!NT_SUCCESS(status))
 			{

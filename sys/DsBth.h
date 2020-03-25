@@ -39,6 +39,4 @@
 EVT_WDF_REQUEST_COMPLETION_ROUTINE DsBth_HidInterruptReadRequestCompletionRoutine;
 EVT_WDF_REQUEST_COMPLETION_ROUTINE DsBth_HidControlWriteRequestCompletionRoutine;
 
-NTSTATUS DsBth_SendDisconnectRequestAsync(PDEVICE_CONTEXT Context);
-
-EVT_WDF_REQUEST_COMPLETION_ROUTINE DsBth_SendDisconnectRequestCompletionRoutine;
+NTSTATUS DsBth_SendDisconnectRequest(PDEVICE_CONTEXT Context);
