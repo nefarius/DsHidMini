@@ -67,7 +67,7 @@ dshidminiCreateDevice(
 
 	status = WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device);
 
-	if (NT_SUCCESS(status)) 
+	if (NT_SUCCESS(status))
 	{
 		//
 		// Query enumerator name to discover connection type
@@ -144,6 +144,22 @@ dshidminiCreateDevice(
 			WdfMemoryGetBuffer(pDevCtx->InstanceId, NULL)
 		);
 
+		if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
+		{
+			PCWSTR buf = WdfMemoryGetBuffer(pDevCtx->InstanceId, NULL);
+			*(PULONGLONG)&pDevCtx->DeviceAddress = (ULONGLONG)wcstoll(
+				&buf[(wcslen(buf) - (sizeof(BD_ADDR) * sizeof(WCHAR)))],
+				NULL,
+				16
+			);
+
+			TraceEvents(TRACE_LEVEL_INFORMATION,
+				TRACE_DEVICE,
+				"!! DeviceAddress: %012llX",
+				*(PULONGLONG)&pDevCtx->DeviceAddress
+			);
+		}
+
 		// Create the DMF Modules this Client driver will use.
 		//
 		dmfCallbacks.EvtDmfDeviceModulesAdd = DmfDeviceModulesAdd;
@@ -189,7 +205,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 	pDeviceContext = DeviceGetContext(Device);
 
 #pragma region HID Interrupt Read
-	
+
 	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
 	attribs.ParentObject = Device;
 
