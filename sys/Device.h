@@ -1,19 +1,4 @@
-/*++
-
-Module Name:
-
-    device.h
-
-Abstract:
-
-    This file contains the device definitions.
-
-Environment:
-
-    User-mode Driver Framework 2
-
---*/
-
+#pragma once
 #include <DmfModule.h>
 
 
