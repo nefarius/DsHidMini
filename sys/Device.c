@@ -212,7 +212,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 	status = WdfRequestCreate(
 		&attribs,
 		pDeviceContext->Connection.Bth.BthIoTarget,
-		&pDeviceContext->Connection.Bth.HidInterruptReadRequest
+		&pDeviceContext->Connection.Bth.HidInterrupt.ReadRequest
 	);
 	if (!NT_SUCCESS(status))
 	{
@@ -224,14 +224,14 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 	}
 
 	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
-	attribs.ParentObject = pDeviceContext->Connection.Bth.HidInterruptReadRequest;
+	attribs.ParentObject = pDeviceContext->Connection.Bth.HidInterrupt.ReadRequest;
 
 	status = WdfMemoryCreate(
 		&attribs,
 		NonPagedPoolNx,
 		DS3_POOL_TAG,
 		BTHPS3_SIXAXIS_HID_INPUT_REPORT_SIZE,
-		&pDeviceContext->Connection.Bth.HidInterruptReadMemory,
+		&pDeviceContext->Connection.Bth.HidInterrupt.ReadMemory,
 		NULL
 	);
 	if (!NT_SUCCESS(status))
@@ -253,7 +253,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 	status = WdfRequestCreate(
 		&attribs,
 		pDeviceContext->Connection.Bth.BthIoTarget,
-		&pDeviceContext->Connection.Bth.HidControlWriteRequest
+		&pDeviceContext->Connection.Bth.HidControl.WriteRequest
 	);
 	if (!NT_SUCCESS(status))
 	{
@@ -265,14 +265,14 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 	}
 
 	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
-	attribs.ParentObject = pDeviceContext->Connection.Bth.HidControlWriteRequest;
+	attribs.ParentObject = pDeviceContext->Connection.Bth.HidControl.WriteRequest;
 
 	status = WdfMemoryCreate(
 		&attribs,
 		NonPagedPoolNx,
 		DS3_POOL_TAG,
 		BTHPS3_SIXAXIS_HID_OUTPUT_REPORT_SIZE,
-		&pDeviceContext->Connection.Bth.HidControlWriteMemory,
+		&pDeviceContext->Connection.Bth.HidControl.WriteMemory,
 		(PVOID)&outBuffer
 	);
 	if (!NT_SUCCESS(status))

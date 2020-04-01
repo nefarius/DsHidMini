@@ -37,11 +37,11 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 		
 		status = WdfIoTargetFormatRequestForIoctl(
 			pDeviceContext->Connection.Bth.BthIoTarget,
-			pDeviceContext->Connection.Bth.HidInterruptReadRequest,
+			pDeviceContext->Connection.Bth.HidInterrupt.ReadRequest,
 			IOCTL_BTHPS3_HID_INTERRUPT_READ,
 			NULL,
 			NULL,
-			pDeviceContext->Connection.Bth.HidInterruptReadMemory,
+			pDeviceContext->Connection.Bth.HidInterrupt.ReadMemory,
 			NULL
 		);
 		if (!NT_SUCCESS(status))
@@ -54,17 +54,17 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 		}
 
 		WdfRequestSetCompletionRoutine(
-			pDeviceContext->Connection.Bth.HidInterruptReadRequest,
+			pDeviceContext->Connection.Bth.HidInterrupt.ReadRequest,
 			DsBth_HidInterruptReadRequestCompletionRoutine,
 			pDeviceContext
 		);
 
 		if (WdfRequestSend(
-			pDeviceContext->Connection.Bth.HidInterruptReadRequest,
+			pDeviceContext->Connection.Bth.HidInterrupt.ReadRequest,
 			pDeviceContext->Connection.Bth.BthIoTarget,
 			WDF_NO_SEND_OPTIONS
 		) == FALSE) {
-			status = WdfRequestGetStatus(pDeviceContext->Connection.Bth.HidInterruptReadRequest);
+			status = WdfRequestGetStatus(pDeviceContext->Connection.Bth.HidInterrupt.ReadRequest);
 		}
 		if (!NT_SUCCESS(status))
 		{
@@ -81,9 +81,9 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 		
 		status = WdfIoTargetFormatRequestForIoctl(
 			pDeviceContext->Connection.Bth.BthIoTarget,
-			pDeviceContext->Connection.Bth.HidControlWriteRequest,
+			pDeviceContext->Connection.Bth.HidControl.WriteRequest,
 			IOCTL_BTHPS3_HID_CONTROL_WRITE,
-			pDeviceContext->Connection.Bth.HidControlWriteMemory,
+			pDeviceContext->Connection.Bth.HidControl.WriteMemory,
 			NULL,
 			NULL,
 			NULL
@@ -98,17 +98,17 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 		}
 
 		WdfRequestSetCompletionRoutine(
-			pDeviceContext->Connection.Bth.HidControlWriteRequest,
+			pDeviceContext->Connection.Bth.HidControl.WriteRequest,
 			DsBth_HidControlWriteRequestCompletionRoutine,
 			pDeviceContext
 		);
 
 		if (WdfRequestSend(
-			pDeviceContext->Connection.Bth.HidControlWriteRequest,
+			pDeviceContext->Connection.Bth.HidControl.WriteRequest,
 			pDeviceContext->Connection.Bth.BthIoTarget,
 			WDF_NO_SEND_OPTIONS
 		) == FALSE) {
-			status = WdfRequestGetStatus(pDeviceContext->Connection.Bth.HidControlWriteRequest);
+			status = WdfRequestGetStatus(pDeviceContext->Connection.Bth.HidControl.WriteRequest);
 		}
 		if (!NT_SUCCESS(status))
 		{
