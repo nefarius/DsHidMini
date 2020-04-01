@@ -82,6 +82,12 @@ struct BTH_DEVICE_CONTEXT
 
 	} HidInterrupt;
 
+	struct
+	{
+		WDFTIMER HidControlConsume;
+				
+	} Timers;
+	
 	//
 	// Timestamp to calculate quick disconnect combo detection
 	// 

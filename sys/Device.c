@@ -197,6 +197,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 	PDEVICE_CONTEXT			pDeviceContext;
 	WDF_OBJECT_ATTRIBUTES	attribs;
 	PUCHAR					outBuffer;
+	WDF_TIMER_CONFIG		timerCfg;
 
 	PAGED_CODE();
 
@@ -221,6 +222,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 			"WdfRequestCreate failed with status %!STATUS!",
 			status
 		);
+		return status;
 	}
 
 	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
@@ -241,6 +243,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 			"WdfMemoryCreate failed with status %!STATUS!",
 			status
 		);
+		return status;
 	}
 
 #pragma endregion
@@ -262,6 +265,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 			"WdfRequestCreate failed with status %!STATUS!",
 			status
 		);
+		return status;
 	}
 
 	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
@@ -282,6 +286,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 			"WdfMemoryCreate failed with status %!STATUS!",
 			status
 		);
+		return status;
 	}
 	else
 	{
@@ -292,6 +297,77 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 	}
 
 #pragma endregion
+
+#pragma region HID Control Read
+
+	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
+	attribs.ParentObject = Device;
+
+	status = WdfRequestCreate(
+		&attribs,
+		pDeviceContext->Connection.Bth.BthIoTarget,
+		&pDeviceContext->Connection.Bth.HidControl.ReadRequest
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DEVICE,
+			"WdfRequestCreate failed with status %!STATUS!",
+			status
+		);
+		return status;
+	}
+
+	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
+	attribs.ParentObject = pDeviceContext->Connection.Bth.HidControl.ReadRequest;
+
+	status = WdfMemoryCreate(
+		&attribs,
+		NonPagedPoolNx,
+		DS3_POOL_TAG,
+		0x0A,
+		&pDeviceContext->Connection.Bth.HidControl.ReadMemory,
+		NULL
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DEVICE,
+			"WdfMemoryCreate failed with status %!STATUS!",
+			status
+		);
+		return status;
+	}
+
+#pragma endregion
+	
+	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
+	attribs.ParentObject = Device;
+
+	WDF_TIMER_CONFIG_INIT(
+		&timerCfg,
+		DsBth_EvtControlReadTimerFunc
+	);
+
+	status = WdfTimerCreate(
+		&timerCfg,
+		&attribs,
+		&pDeviceContext->Connection.Bth.Timers.HidControlConsume
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DEVICE,
+			"WdfTimerCreate failed with status %!STATUS!",
+			status
+		);
+		return status;
+	}
+
+	WdfTimerStart(
+		pDeviceContext->Connection.Bth.Timers.HidControlConsume,
+		WDF_REL_TIMEOUT_IN_MS(0x64)
+	);
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
 
