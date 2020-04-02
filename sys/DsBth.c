@@ -77,6 +77,11 @@ DsBth_EvtControlReadTimerFunc(
 		);
 	}
 
+	TraceDbg(TRACE_DSBTH,
+		"++ Control bytes consumed: %d",
+		(ULONG)bufferLength
+	);
+
 	WDF_REQUEST_REUSE_PARAMS_INIT(
 		&params,
 		WDF_REQUEST_REUSE_NO_FLAGS,
