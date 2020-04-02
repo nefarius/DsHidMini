@@ -3,6 +3,9 @@
 #include <bluetoothapis.h>
 
 
+//
+// Default Output Report for LED & Rumble state changes (USB)
+// 
 const UCHAR G_Ds3UsbHidOutputReport[] = {
 	0x00, 0xFF, 0x00, 0xFF, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00,
@@ -15,6 +18,9 @@ const UCHAR G_Ds3UsbHidOutputReport[] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
+//
+// Default Output Report for LED & Rumble state changes (Bluetooth)
+// 
 const UCHAR G_Ds3BthHidOutputReport[] = {
 	0x52, /* HID BT Set_report (0x50) | Report Type (Output 0x02)*/
 	0x01, /* Report ID */
@@ -171,7 +177,7 @@ VOID DsBth_Ds3Init(PDEVICE_CONTEXT Context)
 	// "Magic packet"
 	// 
 	BYTE hidCommandEnable[] = {
-			0x53, 0xF4, 0x42, 0x03, 0x00, 0x00
+		0x53, 0xF4, 0x42, 0x03, 0x00, 0x00
 	};
 
 	NTSTATUS				status;
