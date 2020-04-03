@@ -294,6 +294,11 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 		// Initialize output report
 		// 
 		RtlCopyMemory(outBuffer, G_Ds3BthHidOutputReport, DS3_BTH_HID_OUTPUT_REPORT_SIZE);
+
+		//
+		// Turn flashing LEDs off
+		// 
+		DS3_BTH_SET_LED(outBuffer, DS3_LED_OFF);
 	}
 
 #pragma endregion
