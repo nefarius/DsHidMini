@@ -3,6 +3,109 @@
 #include <bluetoothapis.h>
 #include <bthioctl.h>
 
+
+NTSTATUS DsBth_SendHidControlWriteRequest(PDEVICE_CONTEXT Context)
+{
+	NTSTATUS					status;
+	WDF_MEMORY_DESCRIPTOR		memDesc;
+	WDF_REQUEST_REUSE_PARAMS    params;
+
+	WDF_MEMORY_DESCRIPTOR_INIT_HANDLE(
+		&memDesc,
+		Context->Connection.Bth.HidControl.WriteMemory,
+		NULL
+	);
+
+	status = WdfIoTargetSendIoctlSynchronously(
+		Context->Connection.Bth.BthIoTarget,
+		Context->Connection.Bth.HidControl.WriteRequest,
+		IOCTL_BTHPS3_HID_CONTROL_WRITE,
+		&memDesc,
+		NULL,
+		NULL,
+		NULL
+	);
+	if (!NT_SUCCESS(status)) {
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSBTH,
+			"WdfIoTargetSendInternalIoctlSynchronously failed with status %!STATUS!",
+			status
+		);
+		return status;
+	}
+
+	WDF_REQUEST_REUSE_PARAMS_INIT(
+		&params,
+		WDF_REQUEST_REUSE_NO_FLAGS,
+		STATUS_SUCCESS
+	);
+	status = WdfRequestReuse(
+		Context->Connection.Bth.HidControl.WriteRequest,
+		&params
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSBTH,
+			"WdfRequestReuse failed with status %!STATUS!",
+			status
+		);
+	}
+
+	return status;
+}
+
+NTSTATUS DsBth_SendHidInterruptWriteRequest(PDEVICE_CONTEXT Context)
+{
+	NTSTATUS					status;
+	WDF_MEMORY_DESCRIPTOR		memDesc;
+	WDF_REQUEST_REUSE_PARAMS    params;
+
+	WDF_MEMORY_DESCRIPTOR_INIT_HANDLE(
+		&memDesc,
+		Context->Connection.Bth.HidInterrupt.WriteMemory,
+		NULL
+	);
+
+	status = WdfIoTargetSendIoctlSynchronously(
+		Context->Connection.Bth.BthIoTarget,
+		Context->Connection.Bth.HidInterrupt.WriteRequest,
+		IOCTL_BTHPS3_HID_INTERRUPT_WRITE,
+		&memDesc,
+		NULL,
+		NULL,
+		NULL
+	);
+	if (!NT_SUCCESS(status)) {
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSBTH,
+			"WdfIoTargetSendInternalIoctlSynchronously failed with status %!STATUS!",
+			status
+		);
+		return status;
+	}
+
+	WDF_REQUEST_REUSE_PARAMS_INIT(
+		&params,
+		WDF_REQUEST_REUSE_NO_FLAGS,
+		STATUS_SUCCESS
+	);
+	status = WdfRequestReuse(
+		Context->Connection.Bth.HidInterrupt.WriteRequest,
+		&params
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSBTH,
+			"WdfRequestReuse failed with status %!STATUS!",
+			status
+		);
+	}
+
+	return status;
+}
+
 NTSTATUS DsBth_SendDisconnectRequest(PDEVICE_CONTEXT Context)
 {
 	BLUETOOTH_ADDRESS address;

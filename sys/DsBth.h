@@ -36,9 +36,10 @@
 #define IOCTL_BTHPS3_HID_INTERRUPT_WRITE        BUSENUM_W_IOCTL (IOCTL_BTHPS3_BASE + 0x203)
 
 
+NTSTATUS DsBth_SendHidControlWriteRequest(PDEVICE_CONTEXT Context);
+NTSTATUS DsBth_SendHidInterruptWriteRequest(PDEVICE_CONTEXT Context);
+
 EVT_WDF_REQUEST_COMPLETION_ROUTINE DsBth_HidInterruptReadRequestCompletionRoutine;
-EVT_WDF_REQUEST_COMPLETION_ROUTINE DsBth_HidInterruptWriteRequestCompletionRoutine;
-EVT_WDF_REQUEST_COMPLETION_ROUTINE DsBth_HidControlReadRequestCompletionRoutine;
 EVT_WDF_REQUEST_COMPLETION_ROUTINE DsBth_HidControlWriteRequestCompletionRoutine;
 
 NTSTATUS DsBth_SendDisconnectRequest(PDEVICE_CONTEXT Context);
