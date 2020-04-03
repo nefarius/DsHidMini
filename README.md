@@ -32,3 +32,4 @@ You can build individual projects of the solution within Visual Studio.
 - [Microsoft - DMF - HID minidriver module](https://github.com/microsoft/DMF/issues/69)
 - [Microsoft - DMF - VHidMini2DmfK and VHidMini2DmfU Sample Drivers](https://github.com/microsoft/DMF/tree/master/DmfSamples/VHidMini2Dmf)
 - [hyperrealm/libconfig](https://github.com/hyperrealm/libconfig)
+- [linux/drivers/hid/hid-sony.c](https://github.com/torvalds/linux/blob/master/drivers/hid/hid-sony.c)
