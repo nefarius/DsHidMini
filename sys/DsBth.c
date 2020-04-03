@@ -110,3 +110,37 @@ Exit:
 
 	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSBTH, "%!FUNC! Exit");
 }
+
+void DsBth_HidControlWriteRequestCompletionRoutine(
+	WDFREQUEST Request,
+	WDFIOTARGET Target,
+	PWDF_REQUEST_COMPLETION_PARAMS Params,
+	WDFCONTEXT Context
+)
+{
+	NTSTATUS                    status;
+	WDF_REQUEST_REUSE_PARAMS    params;
+
+	UNREFERENCED_PARAMETER(Target);
+	UNREFERENCED_PARAMETER(Params);
+	UNREFERENCED_PARAMETER(Context);
+
+	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+
+	WDF_REQUEST_REUSE_PARAMS_INIT(
+		&params,
+		WDF_REQUEST_REUSE_NO_FLAGS,
+		STATUS_SUCCESS
+	);
+	status = WdfRequestReuse(Request, &params);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSHIDMINIDRV,
+			"WdfRequestReuse failed with status %!STATUS!",
+			status
+		);
+	}
+
+	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
+}
