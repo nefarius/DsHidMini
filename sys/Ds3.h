@@ -12,9 +12,9 @@ extern const UCHAR G_Ds3BthHidOutputReport[];
 #define DS3_BTH_HID_OUTPUT_REPORT_SIZE		0x32
 
 #define DS3_LED_1       0x02
-#define DS3_LED_2       0x02
-#define DS3_LED_3       0x02
-#define DS3_LED_4       0x02
+#define DS3_LED_2       0x04
+#define DS3_LED_3       0x08
+#define DS3_LED_4       0x10
 #define DS3_LED_OFF     0x20
 
 #define DS3_BTH_SET_LED(_buf_, _led_)  ((_buf_)[11] = (_led_))
