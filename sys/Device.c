@@ -17,18 +17,18 @@ dshidminiCreateDevice(
 	_Inout_ PWDFDEVICE_INIT DeviceInit
 )
 {
-	WDF_OBJECT_ATTRIBUTES deviceAttributes;
-	WDFDEVICE device;
-	NTSTATUS status;
-	NTSTATUS ntStatus;
-	PDMFDEVICE_INIT dmfDeviceInit;
-	DMF_EVENT_CALLBACKS dmfCallbacks;
-	WDF_PNPPOWER_EVENT_CALLBACKS pnpPowerCallbacks;
-	PDEVICE_CONTEXT pDevCtx;
-	WCHAR enumeratorName[200];
-	ULONG bufSize;
-	WDF_DEVICE_PROPERTY_DATA devProp;
-	DEVPROPTYPE propType;
+	WDF_OBJECT_ATTRIBUTES			deviceAttributes;
+	WDFDEVICE						device;
+	NTSTATUS						status;
+	NTSTATUS						ntStatus;
+	PDMFDEVICE_INIT					dmfDeviceInit;
+	DMF_EVENT_CALLBACKS				dmfCallbacks;
+	WDF_PNPPOWER_EVENT_CALLBACKS	pnpPowerCallbacks;
+	PDEVICE_CONTEXT					pDevCtx;
+	WCHAR							enumeratorName[200];
+	ULONG							bufSize;
+	WDF_DEVICE_PROPERTY_DATA		devProp;
+	DEVPROPTYPE						propType;
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
 
@@ -91,6 +91,9 @@ dshidminiCreateDevice(
 
 		pDevCtx = DeviceGetContext(device);
 
+		//
+		// Early device type detection, using enumerator name
+		// 
 		if (wcscmp(L"USB", enumeratorName) == 0)
 		{
 			pDevCtx->ConnectionType = DsDeviceConnectionTypeUsb;
@@ -100,6 +103,9 @@ dshidminiCreateDevice(
 			pDevCtx->ConnectionType = DsDeviceConnectionTypeBth;
 			pDevCtx->Connection.Bth.BthIoTarget = WdfDeviceGetIoTarget(device);
 
+			//
+			// Initialize all necessary BTH-specific objects
+			// 
 			status = DsHidMini_BthConnectionContextInit(device);
 
 			if (!NT_SUCCESS(status))
@@ -146,6 +152,9 @@ dshidminiCreateDevice(
 
 		if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
 		{
+			//
+			// TODO: cheap but quick; extract MAC address from InstanceId
+			// 
 			PCWSTR buf = WdfMemoryGetBuffer(pDevCtx->InstanceId, NULL);
 			*(PULONGLONG)&pDevCtx->DeviceAddress = (ULONGLONG)wcstoll(
 				&buf[(wcslen(buf) - (sizeof(BD_ADDR) * sizeof(WCHAR)))],
@@ -180,231 +189,6 @@ Exit:
 	{
 		DMF_DmfDeviceInitFree(&dmfDeviceInit);
 	}
-
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
-
-	return status;
-}
-
-//
-// Initialize objects required for BTH communication
-// 
-NTSTATUS DsHidMini_BthConnectionContextInit(
-	WDFDEVICE Device
-)
-{
-	NTSTATUS				status = STATUS_SUCCESS;
-	PDEVICE_CONTEXT			pDeviceContext;
-	WDF_OBJECT_ATTRIBUTES	attribs;
-	PUCHAR					outBuffer;
-	WDF_TIMER_CONFIG		timerCfg;
-
-	PAGED_CODE();
-
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
-
-	pDeviceContext = DeviceGetContext(Device);
-
-#pragma region HID Interrupt Read
-
-	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
-	attribs.ParentObject = Device;
-
-	status = WdfRequestCreate(
-		&attribs,
-		pDeviceContext->Connection.Bth.BthIoTarget,
-		&pDeviceContext->Connection.Bth.HidInterrupt.ReadRequest
-	);
-	if (!NT_SUCCESS(status))
-	{
-		TraceEvents(TRACE_LEVEL_ERROR,
-			TRACE_DEVICE,
-			"WdfRequestCreate failed with status %!STATUS!",
-			status
-		);
-		return status;
-	}
-
-	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
-	attribs.ParentObject = pDeviceContext->Connection.Bth.HidInterrupt.ReadRequest;
-
-	status = WdfMemoryCreate(
-		&attribs,
-		NonPagedPoolNx,
-		DS3_POOL_TAG,
-		BTHPS3_SIXAXIS_HID_INPUT_REPORT_SIZE,
-		&pDeviceContext->Connection.Bth.HidInterrupt.ReadMemory,
-		NULL
-	);
-	if (!NT_SUCCESS(status))
-	{
-		TraceEvents(TRACE_LEVEL_ERROR,
-			TRACE_DEVICE,
-			"WdfMemoryCreate failed with status %!STATUS!",
-			status
-		);
-		return status;
-	}
-
-#pragma endregion
-
-#pragma region HID Control Write
-
-	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
-	attribs.ParentObject = Device;
-
-	status = WdfRequestCreate(
-		&attribs,
-		pDeviceContext->Connection.Bth.BthIoTarget,
-		&pDeviceContext->Connection.Bth.HidControl.WriteRequest
-	);
-	if (!NT_SUCCESS(status))
-	{
-		TraceEvents(TRACE_LEVEL_ERROR,
-			TRACE_DEVICE,
-			"WdfRequestCreate failed with status %!STATUS!",
-			status
-		);
-		return status;
-	}
-
-	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
-	attribs.ParentObject = pDeviceContext->Connection.Bth.HidControl.WriteRequest;
-
-	status = WdfMemoryCreate(
-		&attribs,
-		NonPagedPoolNx,
-		DS3_POOL_TAG,
-		BTHPS3_SIXAXIS_HID_OUTPUT_REPORT_SIZE,
-		&pDeviceContext->Connection.Bth.HidControl.WriteMemory,
-		(PVOID)&outBuffer
-	);
-	if (!NT_SUCCESS(status))
-	{
-		TraceEvents(TRACE_LEVEL_ERROR,
-			TRACE_DEVICE,
-			"WdfMemoryCreate failed with status %!STATUS!",
-			status
-		);
-		return status;
-	}
-	else
-	{
-		//
-		// Initialize output report
-		// 
-		RtlCopyMemory(outBuffer, G_Ds3BthHidOutputReport, DS3_BTH_HID_OUTPUT_REPORT_SIZE);
-
-		//
-		// Turn flashing LEDs off
-		// 
-		DS3_BTH_SET_LED(outBuffer, DS3_LED_OFF);
-	}
-
-#pragma endregion
-
-#pragma region HID Control Read
-
-	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
-	attribs.ParentObject = Device;
-
-	status = WdfRequestCreate(
-		&attribs,
-		pDeviceContext->Connection.Bth.BthIoTarget,
-		&pDeviceContext->Connection.Bth.HidControl.ReadRequest
-	);
-	if (!NT_SUCCESS(status))
-	{
-		TraceEvents(TRACE_LEVEL_ERROR,
-			TRACE_DEVICE,
-			"WdfRequestCreate failed with status %!STATUS!",
-			status
-		);
-		return status;
-	}
-
-	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
-	attribs.ParentObject = pDeviceContext->Connection.Bth.HidControl.ReadRequest;
-
-	status = WdfMemoryCreate(
-		&attribs,
-		NonPagedPoolNx,
-		DS3_POOL_TAG,
-		0x0A,
-		&pDeviceContext->Connection.Bth.HidControl.ReadMemory,
-		NULL
-	);
-	if (!NT_SUCCESS(status))
-	{
-		TraceEvents(TRACE_LEVEL_ERROR,
-			TRACE_DEVICE,
-			"WdfMemoryCreate failed with status %!STATUS!",
-			status
-		);
-		return status;
-	}
-
-#pragma endregion
-
-#pragma region Timers
-
-	//
-	// Control consume
-	// 
-	
-	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
-	attribs.ParentObject = Device;
-
-	WDF_TIMER_CONFIG_INIT(
-		&timerCfg,
-		DsBth_EvtControlReadTimerFunc
-	);
-
-	status = WdfTimerCreate(
-		&timerCfg,
-		&attribs,
-		&pDeviceContext->Connection.Bth.Timers.HidControlConsume
-	);
-	if (!NT_SUCCESS(status))
-	{
-		TraceEvents(TRACE_LEVEL_ERROR,
-			TRACE_DEVICE,
-			"WdfTimerCreate (HidControlConsume) failed with status %!STATUS!",
-			status
-		);
-		return status;
-	}
-
-	WdfTimerStart(
-		pDeviceContext->Connection.Bth.Timers.HidControlConsume,
-		WDF_REL_TIMEOUT_IN_MS(0x64)
-	);
-
-	//
-	// Output Report Delay
-	// 
-
-	WDF_TIMER_CONFIG_INIT(
-		&timerCfg,
-		DsBth_EvtControlWriteTimerFunc
-	);
-
-	status = WdfTimerCreate(
-		&timerCfg,
-		&attribs,
-		&pDeviceContext->Connection.Bth.Timers.HidOutputReport
-	);
-	if (!NT_SUCCESS(status))
-	{
-		TraceEvents(TRACE_LEVEL_ERROR,
-			TRACE_DEVICE,
-			"WdfTimerCreate (HidOutputReport) failed with status %!STATUS!",
-			status
-		);
-		return status;
-	}
-	
-#pragma endregion
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
 

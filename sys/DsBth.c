@@ -4,6 +4,231 @@
 #include <bthioctl.h>
 
 
+//
+// Initialize objects required for BTH communication
+// 
+NTSTATUS DsHidMini_BthConnectionContextInit(
+	WDFDEVICE Device
+)
+{
+	NTSTATUS				status = STATUS_SUCCESS;
+	PDEVICE_CONTEXT			pDeviceContext;
+	WDF_OBJECT_ATTRIBUTES	attribs;
+	PUCHAR					outBuffer;
+	WDF_TIMER_CONFIG		timerCfg;
+
+	PAGED_CODE();
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSBTH, "%!FUNC! Entry");
+
+	pDeviceContext = DeviceGetContext(Device);
+
+#pragma region HID Interrupt Read
+
+	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
+	attribs.ParentObject = Device;
+
+	status = WdfRequestCreate(
+		&attribs,
+		pDeviceContext->Connection.Bth.BthIoTarget,
+		&pDeviceContext->Connection.Bth.HidInterrupt.ReadRequest
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSBTH,
+			"WdfRequestCreate failed with status %!STATUS!",
+			status
+		);
+		return status;
+	}
+
+	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
+	attribs.ParentObject = pDeviceContext->Connection.Bth.HidInterrupt.ReadRequest;
+
+	status = WdfMemoryCreate(
+		&attribs,
+		NonPagedPoolNx,
+		DS3_POOL_TAG,
+		BTHPS3_SIXAXIS_HID_INPUT_REPORT_SIZE,
+		&pDeviceContext->Connection.Bth.HidInterrupt.ReadMemory,
+		NULL
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSBTH,
+			"WdfMemoryCreate failed with status %!STATUS!",
+			status
+		);
+		return status;
+	}
+
+#pragma endregion
+
+#pragma region HID Control Write
+
+	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
+	attribs.ParentObject = Device;
+
+	status = WdfRequestCreate(
+		&attribs,
+		pDeviceContext->Connection.Bth.BthIoTarget,
+		&pDeviceContext->Connection.Bth.HidControl.WriteRequest
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSBTH,
+			"WdfRequestCreate failed with status %!STATUS!",
+			status
+		);
+		return status;
+	}
+
+	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
+	attribs.ParentObject = pDeviceContext->Connection.Bth.HidControl.WriteRequest;
+
+	status = WdfMemoryCreate(
+		&attribs,
+		NonPagedPoolNx,
+		DS3_POOL_TAG,
+		BTHPS3_SIXAXIS_HID_OUTPUT_REPORT_SIZE,
+		&pDeviceContext->Connection.Bth.HidControl.WriteMemory,
+		(PVOID)&outBuffer
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSBTH,
+			"WdfMemoryCreate failed with status %!STATUS!",
+			status
+		);
+		return status;
+	}
+	else
+	{
+		//
+		// Initialize output report
+		// 
+		RtlCopyMemory(outBuffer, G_Ds3BthHidOutputReport, DS3_BTH_HID_OUTPUT_REPORT_SIZE);
+
+		//
+		// Turn flashing LEDs off
+		// 
+		DS3_BTH_SET_LED(outBuffer, DS3_LED_OFF);
+	}
+
+#pragma endregion
+
+#pragma region HID Control Read
+
+	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
+	attribs.ParentObject = Device;
+
+	status = WdfRequestCreate(
+		&attribs,
+		pDeviceContext->Connection.Bth.BthIoTarget,
+		&pDeviceContext->Connection.Bth.HidControl.ReadRequest
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSBTH,
+			"WdfRequestCreate failed with status %!STATUS!",
+			status
+		);
+		return status;
+	}
+
+	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
+	attribs.ParentObject = pDeviceContext->Connection.Bth.HidControl.ReadRequest;
+
+	status = WdfMemoryCreate(
+		&attribs,
+		NonPagedPoolNx,
+		DS3_POOL_TAG,
+		0x0A, // TODO: introduce const
+		&pDeviceContext->Connection.Bth.HidControl.ReadMemory,
+		NULL
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSBTH,
+			"WdfMemoryCreate failed with status %!STATUS!",
+			status
+		);
+		return status;
+	}
+
+#pragma endregion
+
+#pragma region Timers
+
+	//
+	// Control consume
+	// 
+
+	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
+	attribs.ParentObject = Device;
+
+	WDF_TIMER_CONFIG_INIT(
+		&timerCfg,
+		DsBth_EvtControlReadTimerFunc
+	);
+
+	status = WdfTimerCreate(
+		&timerCfg,
+		&attribs,
+		&pDeviceContext->Connection.Bth.Timers.HidControlConsume
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSBTH,
+			"WdfTimerCreate (HidControlConsume) failed with status %!STATUS!",
+			status
+		);
+		return status;
+	}
+
+	WdfTimerStart(
+		pDeviceContext->Connection.Bth.Timers.HidControlConsume,
+		WDF_REL_TIMEOUT_IN_MS(0x64) // TODO: introduce const
+	);
+
+	//
+	// Output Report Delay
+	// 
+
+	WDF_TIMER_CONFIG_INIT(
+		&timerCfg,
+		DsBth_EvtControlWriteTimerFunc
+	);
+
+	status = WdfTimerCreate(
+		&timerCfg,
+		&attribs,
+		&pDeviceContext->Connection.Bth.Timers.HidOutputReport
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSBTH,
+			"WdfTimerCreate (HidOutputReport) failed with status %!STATUS!",
+			status
+		);
+		return status;
+	}
+
+#pragma endregion
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSBTH, "%!FUNC! Exit");
+
+	return status;
+}
+
 NTSTATUS DsBth_SendHidControlWriteRequest(PDEVICE_CONTEXT Context)
 {
 	NTSTATUS					status;

@@ -225,8 +225,4 @@ dshidminiCreateDevice(
 	_Inout_ PWDFDEVICE_INIT DeviceInit
 );
 
-NTSTATUS DsHidMini_BthConnectionContextInit(
-	WDFDEVICE Device
-);
-
 EXTERN_C_END
