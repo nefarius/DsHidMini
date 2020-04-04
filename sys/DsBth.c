@@ -561,7 +561,7 @@ void DsBth_HidControlWriteRequestCompletionRoutine(
 	WDF_REQUEST_REUSE_PARAMS_INIT(
 		&params,
 		WDF_REQUEST_REUSE_NO_FLAGS,
-		STATUS_SUCCESS
+		Params->IoStatus.Status
 	);
 	status = WdfRequestReuse(Request, &params);
 	if (!NT_SUCCESS(status))
