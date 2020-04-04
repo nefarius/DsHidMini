@@ -789,6 +789,12 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 
 	UNREFERENCED_PARAMETER(Target);
 
+	TraceDbg(
+		TRACE_DSHIDMINIDRV,
+		"++ Completion status: %!STATUS!",
+		Params->IoStatus.Status
+	);
+
 	//
 	// Device has been disconnected, quit requesting inputs
 	// 
@@ -841,7 +847,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	// 
 	battery = (DS_BATTERY_STATUS)((PUCHAR)buffer)[30];
 
-#ifdef TEST
+#ifdef DBG
 	//
 	// React if last known state differs from current state
 	// 
@@ -852,33 +858,39 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 			"Battery status changed to %d",
 			battery
 		);
-		
+
 		outputBuffer = WdfMemoryGetBuffer(
 			pDeviceContext->Connection.Bth.HidControl.WriteMemory,
 			NULL
 		);
 
-		switch (battery)
+		//
+		// Don't send update if not initialized yet
+		// 
+		if (DS3_BTH_GET_LED(outputBuffer) != 0x00)
 		{
-		case DsBatteryStatusCharged:
-		case DsBatteryStatusFull:
-		case DsBatteryStatusHigh:
-			DS3_BTH_SET_LED(outputBuffer, DS3_LED_4);
-			break;
-		case DsBatteryStatusMedium:
-			DS3_BTH_SET_LED(outputBuffer, DS3_LED_3);
-			break;
-		case DsBatteryStatusLow:
-			DS3_BTH_SET_LED(outputBuffer, DS3_LED_2);
-			break;
-		case DsBatteryStatusDying:
-			DS3_BTH_SET_LED(outputBuffer, DS3_LED_1);
-			break;
-		default:
-			break;
-		}
+			switch (battery)
+			{
+			case DsBatteryStatusCharged:
+			case DsBatteryStatusFull:
+			case DsBatteryStatusHigh:
+				DS3_BTH_SET_LED(outputBuffer, DS3_LED_4);
+				break;
+			case DsBatteryStatusMedium:
+				DS3_BTH_SET_LED(outputBuffer, DS3_LED_3);
+				break;
+			case DsBatteryStatusLow:
+				DS3_BTH_SET_LED(outputBuffer, DS3_LED_2);
+				break;
+			case DsBatteryStatusDying:
+				DS3_BTH_SET_LED(outputBuffer, DS3_LED_1);
+				break;
+			default:
+				break;
+			}
 
-		(void)DsBth_SendHidControlWriteRequestAsync(pDeviceContext);
+			(void)DsBth_SendHidControlWriteRequestAsync(pDeviceContext);
+		}
 
 		//
 		// Update battery status

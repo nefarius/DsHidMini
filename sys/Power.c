@@ -400,7 +400,8 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 		WdfTimerStop(pDevCtx->Connection.Bth.Timers.HidOutputReport, TRUE);
 		WdfTimerStop(pDevCtx->Connection.Bth.Timers.HidControlConsume, TRUE);
 
-		WdfIoTargetPurge(pDevCtx->Connection.Bth.BthIoTarget, WdfIoTargetPurgeIoAndWait);
+		//(void)DsBth_SendDisconnectRequest(pDevCtx);
+		//WdfIoTargetStop(pDevCtx->Connection.Bth.BthIoTarget, WdfIoTargetCancelSentIo);
 	}
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER, "%!FUNC! Exit");

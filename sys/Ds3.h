@@ -17,7 +17,8 @@ extern const UCHAR G_Ds3BthHidOutputReport[];
 #define DS3_LED_4       0x10
 #define DS3_LED_OFF     0x20
 
-#define DS3_BTH_SET_LED(_buf_, _led_)  ((_buf_)[11] = (_led_))
+#define DS3_BTH_SET_LED(_buf_, _led_)   ((_buf_)[11] = (_led_))
+#define DS3_BTH_GET_LED(_buf_)          ((_buf_)[11])
 
 #define DS3_BTH_SET_SMALL_RUMBLE_DURATION(_buf_, _dur_)  ((_buf_)[3] = (_dur_))
 #define DS3_BTH_SET_LARGE_RUMBLE_DURATION(_buf_, _dur_)  ((_buf_)[5] = (_dur_))

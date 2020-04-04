@@ -56,6 +56,11 @@ struct BTH_DEVICE_CONTEXT
 		// 
 		WDFMEMORY WriteMemory;
 
+		//
+		// Lock to protect async operation
+		// 
+		WDFWAITLOCK WriteLock;
+
 	} HidControl;
 
 	struct

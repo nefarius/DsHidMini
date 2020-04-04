@@ -224,6 +224,31 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 
 #pragma endregion
 
+#pragma region Locks
+
+	//
+	// HidControl.WriteLock
+	// 
+
+	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
+	attribs.ParentObject = Device;
+
+	status = WdfWaitLockCreate(
+		&attribs,
+		&pDeviceContext->Connection.Bth.HidControl.WriteLock
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSBTH,
+			"WdfWaitLockCreate (HidControl.WriteLock) failed with status %!STATUS!",
+			status
+		);
+		return status;
+	}
+
+#pragma endregion 
+
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSBTH, "%!FUNC! Exit");
 
 	return status;
@@ -289,6 +314,11 @@ NTSTATUS DsBth_SendHidControlWriteRequest(PDEVICE_CONTEXT Context)
 NTSTATUS DsBth_SendHidControlWriteRequestAsync(PDEVICE_CONTEXT Context)
 {
 	NTSTATUS status;
+
+	if (!NT_SUCCESS(WdfWaitLockAcquire(Context->Connection.Bth.HidControl.WriteLock, 0)))
+	{
+		return STATUS_DEVICE_BUSY;
+	}
 
 	status = WdfIoTargetFormatRequestForIoctl(
 		Context->Connection.Bth.BthIoTarget,
@@ -520,7 +550,33 @@ DsBth_EvtControlWriteTimerFunc(
 
 	buffer = WdfMemoryGetBuffer(pDevCtx->Connection.Bth.HidControl.WriteMemory, NULL);
 
-	DS3_BTH_SET_LED(buffer, DS3_LED_1); // TODO: what should the default be?
+	if (pDevCtx->BatteryStatus == DsBatteryStatusNone)
+	{
+		DS3_BTH_SET_LED(buffer, DS3_LED_1); // TODO: what should the default be?
+	}
+	else
+	{
+		switch (pDevCtx->BatteryStatus)
+		{
+		case DsBatteryStatusCharged:
+		case DsBatteryStatusFull:
+		case DsBatteryStatusHigh:
+			DS3_BTH_SET_LED(buffer, DS3_LED_4);
+			break;
+		case DsBatteryStatusMedium:
+			DS3_BTH_SET_LED(buffer, DS3_LED_3);
+			break;
+		case DsBatteryStatusLow:
+			DS3_BTH_SET_LED(buffer, DS3_LED_2);
+			break;
+		case DsBatteryStatusDying:
+			DS3_BTH_SET_LED(buffer, DS3_LED_1);
+			break;
+		default:
+			break;
+		}
+	}
+		
 	DS3_BTH_SET_SMALL_RUMBLE_DURATION(buffer, 0xFE);
 	DS3_BTH_SET_SMALL_RUMBLE_STRENGTH(buffer, 0x00);
 	DS3_BTH_SET_LARGE_RUMBLE_DURATION(buffer, 0xFE);
@@ -551,6 +607,7 @@ void DsBth_HidControlWriteRequestCompletionRoutine(
 {
 	NTSTATUS                    status;
 	WDF_REQUEST_REUSE_PARAMS    params;
+	PDEVICE_CONTEXT				pDevCtx = (PDEVICE_CONTEXT)Context;
 
 	UNREFERENCED_PARAMETER(Target);
 	UNREFERENCED_PARAMETER(Context);
@@ -574,6 +631,8 @@ void DsBth_HidControlWriteRequestCompletionRoutine(
 			);
 		}
 	}
+
+	WdfWaitLockRelease(pDevCtx->Connection.Bth.HidControl.WriteLock);
 
 	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSBTH, "%!FUNC! Exit");
 }
