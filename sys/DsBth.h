@@ -37,6 +37,7 @@
 
 
 NTSTATUS DsBth_SendHidControlWriteRequest(PDEVICE_CONTEXT Context);
+NTSTATUS DsBth_SendHidControlWriteRequestAsync(PDEVICE_CONTEXT Context);
 NTSTATUS DsBth_SendHidInterruptWriteRequest(PDEVICE_CONTEXT Context);
 
 EVT_WDF_REQUEST_COMPLETION_ROUTINE DsBth_HidInterruptReadRequestCompletionRoutine;
@@ -45,3 +46,4 @@ EVT_WDF_REQUEST_COMPLETION_ROUTINE DsBth_HidControlWriteRequestCompletionRoutine
 NTSTATUS DsBth_SendDisconnectRequest(PDEVICE_CONTEXT Context);
 
 EVT_WDF_TIMER DsBth_EvtControlReadTimerFunc;
+EVT_WDF_TIMER DsBth_EvtControlWriteTimerFunc;

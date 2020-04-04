@@ -345,6 +345,12 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 	}
 
 #pragma endregion
+
+#pragma region Timers
+
+	//
+	// Control consume
+	// 
 	
 	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
 	attribs.ParentObject = Device;
@@ -363,7 +369,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 	{
 		TraceEvents(TRACE_LEVEL_ERROR,
 			TRACE_DEVICE,
-			"WdfTimerCreate failed with status %!STATUS!",
+			"WdfTimerCreate (HidControlConsume) failed with status %!STATUS!",
 			status
 		);
 		return status;
@@ -373,6 +379,32 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 		pDeviceContext->Connection.Bth.Timers.HidControlConsume,
 		WDF_REL_TIMEOUT_IN_MS(0x64)
 	);
+
+	//
+	// Output Report Delay
+	// 
+
+	WDF_TIMER_CONFIG_INIT(
+		&timerCfg,
+		DsBth_EvtControlWriteTimerFunc
+	);
+
+	status = WdfTimerCreate(
+		&timerCfg,
+		&attribs,
+		&pDeviceContext->Connection.Bth.Timers.HidOutputReport
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DEVICE,
+			"WdfTimerCreate (HidOutputReport) failed with status %!STATUS!",
+			status
+		);
+		return status;
+	}
+	
+#pragma endregion
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
 

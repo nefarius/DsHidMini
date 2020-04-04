@@ -78,46 +78,19 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 #pragma endregion
 
 #pragma region HID Control Write
-		
-		status = WdfIoTargetFormatRequestForIoctl(
-			pDeviceContext->Connection.Bth.BthIoTarget,
-			pDeviceContext->Connection.Bth.HidControl.WriteRequest,
-			IOCTL_BTHPS3_HID_CONTROL_WRITE,
-			pDeviceContext->Connection.Bth.HidControl.WriteMemory,
-			NULL,
-			NULL,
-			NULL
-		);
-		if (!NT_SUCCESS(status))
-		{
-			TraceEvents(TRACE_LEVEL_ERROR,
-				TRACE_POWER,
-				"WdfIoTargetFormatRequestForIoctl failed with status %!STATUS!",
-				status
-			);
-		}
 
-		WdfRequestSetCompletionRoutine(
-			pDeviceContext->Connection.Bth.HidControl.WriteRequest,
-			DsBth_HidControlWriteRequestCompletionRoutine,
-			pDeviceContext
-		);
+		//
+		// Send initial output report
+		// 
+		status = DsBth_SendHidControlWriteRequestAsync(pDeviceContext);
 
-		if (WdfRequestSend(
-			pDeviceContext->Connection.Bth.HidControl.WriteRequest,
-			pDeviceContext->Connection.Bth.BthIoTarget,
-			WDF_NO_SEND_OPTIONS
-		) == FALSE) {
-			status = WdfRequestGetStatus(pDeviceContext->Connection.Bth.HidControl.WriteRequest);
-		}
-		if (!NT_SUCCESS(status))
-		{
-			TraceEvents(TRACE_LEVEL_ERROR,
-				TRACE_POWER,
-				"WdfRequestSend failed with status %!STATUS!",
-				status
-			);
-		}
+		//
+		// Send preset output report (delayed)
+		// 
+		WdfTimerStart(
+			pDeviceContext->Connection.Bth.Timers.HidOutputReport,
+			WDF_REL_TIMEOUT_IN_SEC(1)
+		);
 
 #pragma endregion
 	}

@@ -84,7 +84,15 @@ struct BTH_DEVICE_CONTEXT
 
 	struct
 	{
+		//
+		// Periodic timer to consume pending memory
+		// 
 		WDFTIMER HidControlConsume;
+
+		//
+		// Delayed Output Report Timer
+		// 
+		WDFTIMER HidOutputReport;
 				
 	} Timers;
 	

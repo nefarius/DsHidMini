@@ -55,6 +55,53 @@ NTSTATUS DsBth_SendHidControlWriteRequest(PDEVICE_CONTEXT Context)
 	return status;
 }
 
+NTSTATUS DsBth_SendHidControlWriteRequestAsync(PDEVICE_CONTEXT Context)
+{
+	NTSTATUS status;
+
+	status = WdfIoTargetFormatRequestForIoctl(
+		Context->Connection.Bth.BthIoTarget,
+		Context->Connection.Bth.HidControl.WriteRequest,
+		IOCTL_BTHPS3_HID_CONTROL_WRITE,
+		Context->Connection.Bth.HidControl.WriteMemory,
+		NULL,
+		NULL,
+		NULL
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSBTH,
+			"WdfIoTargetFormatRequestForIoctl failed with status %!STATUS!",
+			status
+		);
+	}
+
+	WdfRequestSetCompletionRoutine(
+		Context->Connection.Bth.HidControl.WriteRequest,
+		DsBth_HidControlWriteRequestCompletionRoutine,
+		Context
+	);
+
+	if (WdfRequestSend(
+		Context->Connection.Bth.HidControl.WriteRequest,
+		Context->Connection.Bth.BthIoTarget,
+		WDF_NO_SEND_OPTIONS
+	) == FALSE) {
+		status = WdfRequestGetStatus(Context->Connection.Bth.HidControl.WriteRequest);
+	}
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSBTH,
+			"WdfRequestSend failed with status %!STATUS!",
+			status
+		);
+	}
+
+	return status;
+}
+
 NTSTATUS DsBth_SendHidInterruptWriteRequest(PDEVICE_CONTEXT Context)
 {
 	NTSTATUS					status;
@@ -106,6 +153,9 @@ NTSTATUS DsBth_SendHidInterruptWriteRequest(PDEVICE_CONTEXT Context)
 	return status;
 }
 
+//
+// Request device disconnect from host radio
+// 
 NTSTATUS DsBth_SendDisconnectRequest(PDEVICE_CONTEXT Context)
 {
 	BLUETOOTH_ADDRESS address;
@@ -137,6 +187,9 @@ NTSTATUS DsBth_SendDisconnectRequest(PDEVICE_CONTEXT Context)
 	);
 }
 
+//
+// Periodic timer to consume pending memory on HID Control channel
+// 
 _Use_decl_annotations_
 VOID
 DsBth_EvtControlReadTimerFunc(
@@ -214,6 +267,47 @@ Exit:
 	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSBTH, "%!FUNC! Exit");
 }
 
+//
+// Called once 1 second after power-up
+// 
+_Use_decl_annotations_
+VOID
+DsBth_EvtControlWriteTimerFunc(
+	WDFTIMER  Timer
+)
+{
+	NTSTATUS			status;
+	PDEVICE_CONTEXT		pDevCtx;
+	PUCHAR				buffer;
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSBTH, "%!FUNC! Exit");
+
+	pDevCtx = DeviceGetContext(WdfTimerGetParentObject(Timer));
+
+	buffer = WdfMemoryGetBuffer(pDevCtx->Connection.Bth.HidControl.WriteMemory, NULL);
+
+	DS3_BTH_SET_LED(buffer, DS3_LED_1); // TODO: what should the default be?
+	DS3_BTH_SET_SMALL_RUMBLE_DURATION(buffer, 0xFE);
+	DS3_BTH_SET_SMALL_RUMBLE_STRENGTH(buffer, 0x00);
+	DS3_BTH_SET_LARGE_RUMBLE_DURATION(buffer, 0xFE);
+	DS3_BTH_SET_LARGE_RUMBLE_STRENGTH(buffer, 0x00);
+
+	status = DsBth_SendHidControlWriteRequestAsync(pDevCtx);
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSBTH,
+			"DsBth_SendHidControlWriteRequestAsync failed with status %!STATUS!",
+			status
+		);
+	}
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSBTH, "%!FUNC! Exit");
+}
+
+//
+// Reuse HID Control OUT Request
+// 
 void DsBth_HidControlWriteRequestCompletionRoutine(
 	WDFREQUEST Request,
 	WDFIOTARGET Target,
@@ -228,7 +322,7 @@ void DsBth_HidControlWriteRequestCompletionRoutine(
 	UNREFERENCED_PARAMETER(Params);
 	UNREFERENCED_PARAMETER(Context);
 
-	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSBTH, "%!FUNC! Entry");
 
 	WDF_REQUEST_REUSE_PARAMS_INIT(
 		&params,
@@ -239,11 +333,11 @@ void DsBth_HidControlWriteRequestCompletionRoutine(
 	if (!NT_SUCCESS(status))
 	{
 		TraceEvents(TRACE_LEVEL_ERROR,
-			TRACE_DSHIDMINIDRV,
+			TRACE_DSBTH,
 			"WdfRequestReuse failed with status %!STATUS!",
 			status
 		);
 	}
 
-	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
+	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSBTH, "%!FUNC! Exit");
 }
