@@ -95,4 +95,9 @@
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>
+  <ItemGroup>
+    <Xml Include="dpinst.xml">
+      <Filter>Driver Files</Filter>
+    </Xml>
+  </ItemGroup>
 </Project>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<dpInst>
+  <search>
+    <subDirectory>*</subDirectory>
+  </search>
+  
+  <enableNotListedLanguages/>
+  <deleteBinaries/>
+  <forceIfDriverIsNotBetter/>
+  <suppressEulaPage/>
+
+  <language code="0x0409">
+    <dpinstTitle>DsHidMini Driver Installer</dpinstTitle>
+
+    <welcomeTitle>Welcome to the DsHidMini Driver Installer!</welcomeTitle>
+    <welcomeIntro>This wizard will install DsHidMini drivers for your DsHidMini USB device.</welcomeIntro>
+
+    <!--
+    <eulaHeaderTitle>End User License Agreement</eulaHeaderTitle>
+    <eulaYesButton>I &amp;accept this EULA</eulaYesButton>
+    <eulaNoButton>I do &amp;not accept this EULA</eulaNoButton>
+    -->
+
+    <installHeaderTitle>Installing the software for your DsHidMini device...</installHeaderTitle>
+
+    <finishTitle>Congratulations! You are finished installing your DsHidMini device.</finishTitle>
+    <finishText>DsHidMini drivers are now installed for your DsHidMini USB device.</finishText>
+
+    <!--
+    <eula type="txt" path="eula.txt" />
+    -->
+  </language>
+
+</dpInst>
