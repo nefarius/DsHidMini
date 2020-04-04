@@ -847,7 +847,6 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	// 
 	battery = (DS_BATTERY_STATUS)((PUCHAR)buffer)[30];
 
-#ifdef DBG
 	//
 	// React if last known state differs from current state
 	// 
@@ -897,10 +896,6 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 		// 
 		pDeviceContext->BatteryStatus = battery;
 	}
-#else
-	UNREFERENCED_PARAMETER(outputBuffer);
-	pDeviceContext->BatteryStatus = battery;
-#endif
 
 	//
 	// Skip to report ID
