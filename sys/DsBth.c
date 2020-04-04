@@ -229,6 +229,9 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 	return status;
 }
 
+//
+// Send HID Control OUT Request (TODO: unused)
+// 
 NTSTATUS DsBth_SendHidControlWriteRequest(PDEVICE_CONTEXT Context)
 {
 	NTSTATUS					status;
@@ -280,6 +283,9 @@ NTSTATUS DsBth_SendHidControlWriteRequest(PDEVICE_CONTEXT Context)
 	return status;
 }
 
+//
+// Send off async HID Control OUT request
+// 
 NTSTATUS DsBth_SendHidControlWriteRequestAsync(PDEVICE_CONTEXT Context)
 {
 	NTSTATUS status;
@@ -327,6 +333,9 @@ NTSTATUS DsBth_SendHidControlWriteRequestAsync(PDEVICE_CONTEXT Context)
 	return status;
 }
 
+//
+// Send HID Interrupt OUT Request (TODO: unused)
+// 
 NTSTATUS DsBth_SendHidInterruptWriteRequest(PDEVICE_CONTEXT Context)
 {
 	NTSTATUS					status;
