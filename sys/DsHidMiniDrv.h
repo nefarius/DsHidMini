@@ -1,4 +1,5 @@
 #pragma once
+#pragma once
 
 VOID FORCEINLINE REVERSE_BYTE_ARRAY(PUCHAR start, int size)
 {

@@ -781,6 +781,8 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	DMF_CONTEXT_DsHidMini* moduleContext;
 	LARGE_INTEGER				freq, * t1, t2;
 	LONGLONG					ms;
+	DS_BATTERY_STATUS			battery;
+	PUCHAR						outputBuffer;
 
 
 	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
@@ -835,9 +837,58 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	}
 
 	//
-	// Update battery status
+	// Grab battery info
 	// 
-	pDeviceContext->BatteryStatus = (DS_BATTERY_STATUS)((PUCHAR)buffer)[30];
+	battery = (DS_BATTERY_STATUS)((PUCHAR)buffer)[30];
+
+#ifdef TEST
+	//
+	// React if last known state differs from current state
+	// 
+	if (pDeviceContext->BatteryStatus != battery)
+	{
+		TraceDbg(
+			TRACE_DSHIDMINIDRV,
+			"Battery status changed to %d",
+			battery
+		);
+		
+		outputBuffer = WdfMemoryGetBuffer(
+			pDeviceContext->Connection.Bth.HidControl.WriteMemory,
+			NULL
+		);
+
+		switch (battery)
+		{
+		case DsBatteryStatusCharged:
+		case DsBatteryStatusFull:
+		case DsBatteryStatusHigh:
+			DS3_BTH_SET_LED(outputBuffer, DS3_LED_4);
+			break;
+		case DsBatteryStatusMedium:
+			DS3_BTH_SET_LED(outputBuffer, DS3_LED_3);
+			break;
+		case DsBatteryStatusLow:
+			DS3_BTH_SET_LED(outputBuffer, DS3_LED_2);
+			break;
+		case DsBatteryStatusDying:
+			DS3_BTH_SET_LED(outputBuffer, DS3_LED_1);
+			break;
+		default:
+			break;
+		}
+
+		(void)DsBth_SendHidControlWriteRequestAsync(pDeviceContext);
+
+		//
+		// Update battery status
+		// 
+		pDeviceContext->BatteryStatus = battery;
+	}
+#else
+	UNREFERENCED_PARAMETER(outputBuffer);
+	pDeviceContext->BatteryStatus = battery;
+#endif
 
 	//
 	// Skip to report ID
@@ -853,7 +904,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 			TRACE_DSHIDMINIDRV,
 			"!! Quick disconnect combination detected"
 		);
-		
+
 		if (pDeviceContext->Connection.Bth.QuickDisconnectTimestamp.QuadPart == 0)
 		{
 			QueryPerformanceCounter(t1);
@@ -877,7 +928,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 			// Send disconnect request
 			// 
 			status = DsBth_SendDisconnectRequest(pDeviceContext);
-			
+
 			if (!NT_SUCCESS(status))
 			{
 				TraceEvents(TRACE_LEVEL_ERROR,
