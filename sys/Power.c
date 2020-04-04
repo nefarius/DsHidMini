@@ -34,7 +34,7 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 		DsBth_Ds3Init(pDeviceContext);
 
 #pragma region HID Interrupt Read
-		
+
 		status = WdfIoTargetFormatRequestForIoctl(
 			pDeviceContext->Connection.Bth.BthIoTarget,
 			pDeviceContext->Connection.Bth.HidInterrupt.ReadRequest,
@@ -339,11 +339,11 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 			//
 			if (isTargetStarted) {
 				WdfIoTargetStop(
-					WdfUsbTargetPipeGetIoTarget(pDeviceContext->Connection.Usb.InterruptInPipe), 
+					WdfUsbTargetPipeGetIoTarget(pDeviceContext->Connection.Usb.InterruptInPipe),
 					WdfIoTargetCancelSentIo
 				);
 				WdfIoTargetStop(WdfUsbTargetPipeGetIoTarget(
-					pDeviceContext->Connection.Usb.InterruptOutPipe), 
+					pDeviceContext->Connection.Usb.InterruptOutPipe),
 					WdfIoTargetCancelSentIo
 				);
 			}
@@ -375,24 +375,32 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 	_In_ WDF_POWER_DEVICE_STATE TargetState
 )
 {
-	PDEVICE_CONTEXT pDeviceContext;
+	PDEVICE_CONTEXT pDevCtx;
 
 	UNREFERENCED_PARAMETER(TargetState);
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER, "%!FUNC! Entry");
 
-	pDeviceContext = DeviceGetContext(Device);
+	pDevCtx = DeviceGetContext(Device);
 
-	if (pDeviceContext->ConnectionType == DsDeviceConnectionTypeUsb)
+	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
 	{
 		WdfIoTargetStop(WdfUsbTargetPipeGetIoTarget(
-			pDeviceContext->Connection.Usb.InterruptInPipe),
+			pDevCtx->Connection.Usb.InterruptInPipe),
 			WdfIoTargetCancelSentIo
 		);
 		WdfIoTargetStop(WdfUsbTargetPipeGetIoTarget(
-			pDeviceContext->Connection.Usb.InterruptOutPipe),
+			pDevCtx->Connection.Usb.InterruptOutPipe),
 			WdfIoTargetCancelSentIo
 		);
+	}
+
+	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
+	{
+		WdfTimerStop(pDevCtx->Connection.Bth.Timers.HidOutputReport, TRUE);
+		WdfTimerStop(pDevCtx->Connection.Bth.Timers.HidControlConsume, TRUE);
+
+		WdfIoTargetPurge(pDevCtx->Connection.Bth.BthIoTarget, WdfIoTargetPurgeIoAndWait);
 	}
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER, "%!FUNC! Exit");

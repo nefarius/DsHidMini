@@ -553,24 +553,26 @@ void DsBth_HidControlWriteRequestCompletionRoutine(
 	WDF_REQUEST_REUSE_PARAMS    params;
 
 	UNREFERENCED_PARAMETER(Target);
-	UNREFERENCED_PARAMETER(Params);
 	UNREFERENCED_PARAMETER(Context);
 
 	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSBTH, "%!FUNC! Entry");
 
-	WDF_REQUEST_REUSE_PARAMS_INIT(
-		&params,
-		WDF_REQUEST_REUSE_NO_FLAGS,
-		Params->IoStatus.Status
-	);
-	status = WdfRequestReuse(Request, &params);
-	if (!NT_SUCCESS(status))
+	if (Params->IoStatus.Status != STATUS_DEVICE_NOT_CONNECTED)
 	{
-		TraceEvents(TRACE_LEVEL_ERROR,
-			TRACE_DSBTH,
-			"WdfRequestReuse failed with status %!STATUS!",
-			status
+		WDF_REQUEST_REUSE_PARAMS_INIT(
+			&params,
+			WDF_REQUEST_REUSE_NO_FLAGS,
+			Params->IoStatus.Status
 		);
+		status = WdfRequestReuse(Request, &params);
+		if (!NT_SUCCESS(status))
+		{
+			TraceEvents(TRACE_LEVEL_ERROR,
+				TRACE_DSBTH,
+				"WdfRequestReuse failed with status %!STATUS!",
+				status
+			);
+		}
 	}
 
 	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSBTH, "%!FUNC! Exit");
