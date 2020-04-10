@@ -220,14 +220,14 @@ DMF_DsHidMini_Open(
 
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
-	if ((pDevCtx->IpcPubSocket = nn_socket(AF_SP, NN_PUB)) < 0) 
+	if ((pDevCtx->IpcPubSocket = nn_socket(AF_SP, NN_PUB)) < 0)
 	{
 		TraceEvents(TRACE_LEVEL_ERROR,
 			TRACE_DSHIDMINIDRV,
 			"nn_socket failed"
 		);
 	}
-	
+
 	if (nn_bind(pDevCtx->IpcPubSocket, "tcp://127.0.0.1:46856" /* TODO: move to header */) < 0) {
 		TraceEvents(TRACE_LEVEL_ERROR,
 			TRACE_DSHIDMINIDRV,
@@ -265,7 +265,7 @@ DMF_DsHidMini_Close(
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
 	nn_close(pDevCtx->IpcPubSocket);
-	
+
 	//
 	// Store volatile configuration
 	// 
@@ -674,6 +674,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	LPVOID                  rdrBuffer;
 	DMFMODULE               dmfModule;
 	DMF_CONTEXT_DsHidMini* moduleContext;
+	DS_PUB_SOCKET_PACKET	pubPacket;
 
 	UNREFERENCED_PARAMETER(Pipe);
 	UNREFERENCED_PARAMETER(NumBytesTransferred);
@@ -685,7 +686,18 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	moduleContext = DMF_CONTEXT_GET(dmfModule);
 	rdrBuffer = WdfMemoryGetBuffer(Buffer, &rdrBufferLength);
 
-	nn_send(pDeviceContext->IpcPubSocket, rdrBuffer, DS3_USB_HID_OUTPUT_REPORT_SIZE, 0);
+	DSHIDMINI_DS3_PUB_SOCKET_PACKET_INIT(
+		&pubPacket,
+		pDeviceContext,
+		rdrBuffer
+	);
+
+	nn_send(
+		pDeviceContext->IpcPubSocket,
+		&pubPacket,
+		sizeof(DS_PUB_SOCKET_PACKET),
+		0
+	);
 
 #ifdef DBG
 	DumpAsHex(">> USB", rdrBuffer, (ULONG)rdrBufferLength);
@@ -874,7 +886,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	if (buffer[2] == 0xFF)
 	{
 		goto resendRequest;
-	}	
+	}
 
 	//
 	// Skip to report ID
@@ -1175,10 +1187,10 @@ VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
 		);
 
 		free(dumpBuffer);
-	}
+		}
 #else
 	UNREFERENCED_PARAMETER(Prefix);
 	UNREFERENCED_PARAMETER(Buffer);
 	UNREFERENCED_PARAMETER(BufferLength);
 #endif
-}
+	}
