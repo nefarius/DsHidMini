@@ -33,3 +33,14 @@
 0040   10 00 32 00 00 00 00 00 00 00 00 00 00 00 00 00   ..2.............
 0050   00 00 00 00 00                                    .....
 ```
+
+# Compatible models
+
+## SIXAXIS Models
+
+- CECHZC1E
+
+## DualShock 3 Models
+
+- CECHZC2EA1
+- CECHZC2UA2
