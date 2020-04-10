@@ -1,5 +1,8 @@
 #include "Driver.h"
 #include "DsHidMiniDrv.tmh"
+#include <nanomsg/nn.h>
+#include <nanomsg/pubsub.h>
+#include <errno.h>
 
 
 PWSTR G_DsHidMini_Strings[] =
@@ -207,6 +210,7 @@ DMF_DsHidMini_Open(
 )
 {
 	NTSTATUS			status = STATUS_SUCCESS;
+	PDEVICE_CONTEXT pDevCtx;
 
 	UNREFERENCED_PARAMETER(DmfModule);
 
@@ -214,7 +218,23 @@ DMF_DsHidMini_Open(
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
+	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
+	if ((pDevCtx->IpcPubSocket = nn_socket(AF_SP, NN_PUB)) < 0) 
+	{
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSHIDMINIDRV,
+			"nn_socket failed"
+		);
+	}
+	
+	if (nn_bind(pDevCtx->IpcPubSocket, "tcp://127.0.0.1:46856" /* TODO: move to header */) < 0) {
+		TraceEvents(TRACE_LEVEL_ERROR,
+			TRACE_DSHIDMINIDRV,
+			"nn_bind failed: %s",
+			strerror(errno)
+		);
+	}
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 
@@ -239,6 +259,8 @@ DMF_DsHidMini_Close(
 
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
+	nn_close(pDevCtx->IpcPubSocket);
+	
 	//
 	// Store volatile configuration
 	// 
