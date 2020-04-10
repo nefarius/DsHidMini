@@ -236,6 +236,11 @@ DMF_DsHidMini_Open(
 		);
 	}
 
+	//
+	// Increase pad instance count
+	// 
+	numInstances++;
+
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 
 	return status;
@@ -265,6 +270,11 @@ DMF_DsHidMini_Close(
 	// Store volatile configuration
 	// 
 	DsConfig_Store(pDevCtx);
+
+	//
+	// Decrease pad instance count
+	// 
+	numInstances--;
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 }
@@ -674,6 +684,8 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	dmfModule = (DMFMODULE)pDeviceContext->DsHidMiniModule;
 	moduleContext = DMF_CONTEXT_GET(dmfModule);
 	rdrBuffer = WdfMemoryGetBuffer(Buffer, &rdrBufferLength);
+
+	nn_send(pDeviceContext->IpcPubSocket, rdrBuffer, DS3_USB_HID_OUTPUT_REPORT_SIZE, 0);
 
 #ifdef DBG
 	DumpAsHex(">> USB", rdrBuffer, (ULONG)rdrBufferLength);

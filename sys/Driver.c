@@ -17,6 +17,8 @@ Environment:
 #include "driver.h"
 #include "driver.tmh"
 
+unsigned int numInstances = 0;
+
 
 //
 // Bootstrap driver

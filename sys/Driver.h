@@ -1,18 +1,9 @@
-/*++
+#pragma once
 
-Module Name:
-
-    driver.h
-
-Abstract:
-
-    This file contains the driver definitions.
-
-Environment:
-
-    User-mode Driver Framework 2
-
---*/
+#pragma data_seg("SHARED")
+extern unsigned int numInstances;
+#pragma data_seg()
+#pragma comment(linker, "/section:SHARED,RWS")
 
 #include <windows.h>
 #include <wdf.h>
