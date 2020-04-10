@@ -840,12 +840,17 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	if (buffer[2] == 0xFF)
 	{
 		goto resendRequest;
-	}
+	}	
+
+	//
+	// Skip to report ID
+	// 
+	inputBuffer = &buffer[1];
 
 	//
 	// Grab battery info
 	// 
-	battery = (DS_BATTERY_STATUS)((PUCHAR)buffer)[30];
+	battery = (DS_BATTERY_STATUS)((PUCHAR)inputBuffer)[30];
 
 	//
 	// React if last known state differs from current state
@@ -896,11 +901,6 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 		// 
 		pDeviceContext->BatteryStatus = battery;
 	}
-
-	//
-	// Skip to report ID
-	// 
-	inputBuffer = &buffer[1];
 
 	//
 	// Quick disconnect combo (L1 + R1 + PS) detected
