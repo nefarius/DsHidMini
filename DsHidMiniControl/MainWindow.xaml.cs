@@ -21,7 +21,7 @@ namespace DsHidMiniControl
                 {
                     //Needs to match the first portion of the message being received.
                     s.Subscribe("DSHM");
-                    s.Connect("tcp://127.0.0.1:46856");
+                    s.Connect("tcp://192.168.2.113:46856");
                     while (true)
                     {
                         var b = s.Receive();

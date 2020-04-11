@@ -211,7 +211,20 @@ DMF_DsHidMini_Open(
 )
 {
 	NTSTATUS			status = STATUS_SUCCESS;
-	PDEVICE_CONTEXT pDevCtx;
+	PDEVICE_CONTEXT		pDevCtx;
+	WDFKEY				hKey = NULL;
+	WDFSTRING			valIpcPubAddr;
+	WDFSTRING			valIpcReqAddr;
+	PSTR				strIpcPubAddr;
+	PSTR				strIpcReqAddr;
+	UNICODE_STRING		unicodeIpcPubAddr;
+	UNICODE_STRING		unicodeIpcReqAddr;
+	size_t				lenIpcPubAddr;
+	size_t				lenIpcReqAddr;
+	DECLARE_CONST_UNICODE_STRING(regIpcPubAddr, L"IpcPubAddr");
+	DECLARE_CONST_UNICODE_STRING(regIpcReqAddr, L"IpcReqAddr");
+	DECLARE_CONST_UNICODE_STRING(defaultIpcPubAddr, L"tcp://127.0.0.1:46856");
+	DECLARE_CONST_UNICODE_STRING(defaultIpcReqAddr, L"tcp://127.0.0.1:46858");
 
 	UNREFERENCED_PARAMETER(DmfModule);
 
@@ -228,10 +241,62 @@ DMF_DsHidMini_Open(
 			"Binding sockets"
 		);
 
+		status = WdfDriverOpenParametersRegistryKey(
+			WdfGetDriver(),
+			KEY_READ,
+			WDF_NO_OBJECT_ATTRIBUTES,
+			&hKey
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceEvents(TRACE_LEVEL_ERROR,
+				TRACE_DSHIDMINIDRV,
+				"WdfDriverOpenParametersRegistryKey failed with status %!STATUS!",
+				status
+			);
+
+			goto Exit;
+		}
+
+		status = WdfStringCreate(
+			&defaultIpcPubAddr,
+			WDF_NO_OBJECT_ATTRIBUTES,
+			&valIpcPubAddr
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceEvents(TRACE_LEVEL_ERROR,
+				TRACE_DSHIDMINIDRV,
+				"WdfStringCreate failed with status %!STATUS!",
+				status
+			);
+
+			goto Exit;
+		}
+
+		if (!NT_SUCCESS(status = WdfRegistryQueryString(hKey, &regIpcPubAddr, valIpcPubAddr)))
+		{
+			TraceEvents(TRACE_LEVEL_ERROR,
+				TRACE_DSHIDMINIDRV,
+				"WdfRegistryQueryString failed with status %!STATUS!",
+				status
+			);
+		}
+		WdfStringGetUnicodeString(valIpcPubAddr, &unicodeIpcPubAddr);
+		lenIpcPubAddr = (unicodeIpcPubAddr.Length / sizeof(WCHAR)) + 1;
+		strIpcPubAddr = malloc(lenIpcPubAddr);
+		sprintf_s(strIpcPubAddr, lenIpcPubAddr, "%wZ", &unicodeIpcPubAddr);
+
+		TraceEvents(TRACE_LEVEL_INFORMATION,
+			TRACE_DSHIDMINIDRV,
+			"!! Will bind PUB socket to: %s",
+			strIpcPubAddr
+		);
+
 		//
 		// Publisher socket
 		// 
-		
+
 		if ((pDevCtx->IpcPubSocket = nn_socket(AF_SP, NN_PUB)) < 0)
 		{
 			TraceEvents(TRACE_LEVEL_ERROR,
@@ -241,7 +306,7 @@ DMF_DsHidMini_Open(
 			);
 		}
 
-		if (nn_bind(pDevCtx->IpcPubSocket, DSHM_IPC_PUB_ADDR) < 0) 
+		if (nn_bind(pDevCtx->IpcPubSocket, strIpcPubAddr) < 0)
 		{
 			TraceEvents(TRACE_LEVEL_ERROR,
 				TRACE_DSHIDMINIDRV,
@@ -250,11 +315,41 @@ DMF_DsHidMini_Open(
 			);
 		}
 
+		free(strIpcPubAddr);
+
+		status = WdfStringCreate(
+			&defaultIpcReqAddr,
+			WDF_NO_OBJECT_ATTRIBUTES,
+			&valIpcReqAddr
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceEvents(TRACE_LEVEL_ERROR,
+				TRACE_DSHIDMINIDRV,
+				"WdfStringCreate failed with status %!STATUS!",
+				status
+			);
+
+			goto Exit;
+		}
+
+		(void)WdfRegistryQueryString(hKey, &regIpcReqAddr, valIpcReqAddr);
+		WdfStringGetUnicodeString(valIpcReqAddr, &unicodeIpcReqAddr);
+		lenIpcReqAddr = (unicodeIpcReqAddr.Length / sizeof(WCHAR)) + 1;
+		strIpcReqAddr = malloc(lenIpcReqAddr);
+		sprintf_s(strIpcReqAddr, lenIpcReqAddr, "%wZ", &unicodeIpcReqAddr);
+
+		TraceEvents(TRACE_LEVEL_INFORMATION,
+			TRACE_DSHIDMINIDRV,
+			"!! Will bind REQ socket to: %s",
+			strIpcReqAddr
+		);
+
 		//
 		// Request/reply socket
 		// 
 
-		if ((pDevCtx->IpcReqSocket = nn_socket(AF_SP, NN_REP)) < 0) 
+		if ((pDevCtx->IpcReqSocket = nn_socket(AF_SP, NN_REP)) < 0)
 		{
 			TraceEvents(TRACE_LEVEL_ERROR,
 				TRACE_DSHIDMINIDRV,
@@ -262,8 +357,8 @@ DMF_DsHidMini_Open(
 				strerror(errno)
 			);
 		}
-		
-		if (nn_bind(pDevCtx->IpcReqSocket, DSHM_IPC_REQ_ADDR) < 0) 
+
+		if (nn_bind(pDevCtx->IpcReqSocket, strIpcReqAddr) < 0)
 		{
 			TraceEvents(TRACE_LEVEL_ERROR,
 				TRACE_DSHIDMINIDRV,
@@ -271,7 +366,13 @@ DMF_DsHidMini_Open(
 				strerror(errno)
 			);
 		}
+
+		free(strIpcReqAddr);
+
+		WdfObjectDelete(hKey);
 	}
+
+Exit:
 
 	//
 	// Increase pad instance count
