@@ -1,5 +1,8 @@
 #pragma once
 
+#define DSHM_IPC_PUB_ADDR	"tcp://127.0.0.1:46856"
+#define DSHM_IPC_REQ_ADDR	"tcp://127.0.0.1:46858"
+
 #include <pshpack1.h>
 
 struct DS_PUB_SOCKET_PACKET_HEADER

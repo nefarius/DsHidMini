@@ -2,6 +2,7 @@
 #include "DsHidMiniDrv.tmh"
 #include <nanomsg/nn.h>
 #include <nanomsg/pubsub.h>
+#include <nanomsg/reqrep.h>
 #include <errno.h>
 
 
@@ -220,20 +221,56 @@ DMF_DsHidMini_Open(
 
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
-	if ((pDevCtx->IpcPubSocket = nn_socket(AF_SP, NN_PUB)) < 0)
+	if (numInstances == 0)
 	{
-		TraceEvents(TRACE_LEVEL_ERROR,
+		TraceEvents(TRACE_LEVEL_INFORMATION,
 			TRACE_DSHIDMINIDRV,
-			"nn_socket failed"
+			"Binding sockets"
 		);
-	}
 
-	if (nn_bind(pDevCtx->IpcPubSocket, "tcp://127.0.0.1:46856" /* TODO: move to header */) < 0) {
-		TraceEvents(TRACE_LEVEL_ERROR,
-			TRACE_DSHIDMINIDRV,
-			"nn_bind failed: %s",
-			strerror(errno)
-		);
+		//
+		// Publisher socket
+		// 
+		
+		if ((pDevCtx->IpcPubSocket = nn_socket(AF_SP, NN_PUB)) < 0)
+		{
+			TraceEvents(TRACE_LEVEL_ERROR,
+				TRACE_DSHIDMINIDRV,
+				"nn_socket failed: %s",
+				strerror(errno)
+			);
+		}
+
+		if (nn_bind(pDevCtx->IpcPubSocket, DSHM_IPC_PUB_ADDR) < 0) 
+		{
+			TraceEvents(TRACE_LEVEL_ERROR,
+				TRACE_DSHIDMINIDRV,
+				"nn_bind failed: %s",
+				strerror(errno)
+			);
+		}
+
+		//
+		// Request/reply socket
+		// 
+
+		if ((pDevCtx->IpcReqSocket = nn_socket(AF_SP, NN_REP)) < 0) 
+		{
+			TraceEvents(TRACE_LEVEL_ERROR,
+				TRACE_DSHIDMINIDRV,
+				"nn_socket failed: %s",
+				strerror(errno)
+			);
+		}
+		
+		if (nn_bind(pDevCtx->IpcReqSocket, DSHM_IPC_REQ_ADDR) < 0) 
+		{
+			TraceEvents(TRACE_LEVEL_ERROR,
+				TRACE_DSHIDMINIDRV,
+				"nn_bind failed: %s",
+				strerror(errno)
+			);
+		}
 	}
 
 	//
@@ -264,17 +301,30 @@ DMF_DsHidMini_Close(
 
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
-	nn_close(pDevCtx->IpcPubSocket);
+	//
+	// Decrease pad instance count
+	// 
+	numInstances--;
+
+	//
+	// Stop IPC if last instance
+	// 
+	if (numInstances < 1)
+	{
+		TraceEvents(TRACE_LEVEL_INFORMATION,
+			TRACE_DSHIDMINIDRV,
+			"Closing sockets"
+		);
+
+		nn_close(pDevCtx->IpcPubSocket);
+
+		nn_close(pDevCtx->IpcReqSocket);
+	}
 
 	//
 	// Store volatile configuration
 	// 
 	DsConfig_Store(pDevCtx);
-
-	//
-	// Decrease pad instance count
-	// 
-	numInstances--;
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 }
@@ -1187,10 +1237,10 @@ VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
 		);
 
 		free(dumpBuffer);
-		}
+	}
 #else
 	UNREFERENCED_PARAMETER(Prefix);
 	UNREFERENCED_PARAMETER(Buffer);
 	UNREFERENCED_PARAMETER(BufferLength);
 #endif
-	}
+}

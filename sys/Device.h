@@ -168,6 +168,8 @@ typedef struct _DEVICE_CONTEXT
 
 	INT IpcPubSocket;
 
+	INT IpcReqSocket;
+
 } DEVICE_CONTEXT, * PDEVICE_CONTEXT;
 
 //
