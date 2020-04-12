@@ -22,7 +22,7 @@ extern unsigned int numInstances;
 #include "Ds3.h"
 #include "DsBth.h"
 #include "Config.h"
-#include "PubSocket.h"
+#include "IpcSocket.h"
 
 
 EXTERN_C_START
