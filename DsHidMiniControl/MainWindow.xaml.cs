@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
+using DsHidMiniControl.Util;
 using NNanomsg.Protocols;
 
 namespace DsHidMiniControl
@@ -11,11 +12,15 @@ namespace DsHidMiniControl
     /// </summary>
     public partial class MainWindow : Window
     {
+        private readonly DeviceNotificationListener _devListener = new DeviceNotificationListener();
+
         public MainWindow()
         {
             InitializeComponent();
 
-            Task.Run(() =>
+            
+
+            /*Task.Run(() =>
             {
                 using (var s = new SubscribeSocket())
                 {
@@ -36,7 +41,7 @@ namespace DsHidMiniControl
                         }
                     }
                 }
-            });
+            });*/
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -128,6 +133,11 @@ namespace DsHidMiniControl
 
                 return str;
             }
+        }
+
+        private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
+        {
+            _devListener.StartListen(this);
         }
     }
 }

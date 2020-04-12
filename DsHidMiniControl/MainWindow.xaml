@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DsHidMiniControl"
         mc:Ignorable="d"
-        Title="MainWindow" Height="80" Width="1000">
+        Title="MainWindow" Height="80" Width="1000"
+        Loaded="MainWindow_OnLoaded">
     <Grid>
         <TextBox FontFamily="Lucida Console" IsReadOnly="True" x:Name="Log"/>
     </Grid>

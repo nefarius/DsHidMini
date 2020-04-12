@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Windows;
@@ -72,6 +69,10 @@ namespace DsHidMiniControl.Util
         // Class GUID: {A5DCBF10-6530-11D2-901F-00C04FB951ED}
         private static readonly Guid GUID_DEVINTERFACE_USB_DEVICE = new Guid("A5DCBF10-6530-11D2-901F-00C04FB951ED");
 
+        // Identifier: GUID_DEVINTERFACE_HID
+        // Class GUID: {4D1E55B2-F16F-11CF-88CB-001111000030}
+        private static readonly Guid GUID_DEVINTERFACE_HID = new Guid("{4D1E55B2-F16F-11CF-88CB-001111000030}");
+
         #endregion
 
 
@@ -105,7 +106,7 @@ namespace DsHidMiniControl.Util
             {
                 dbcc_size = (uint)Marshal.SizeOf(typeof(DEV_BROADCAST_DEVICEINTERFACE)),
                 dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE,
-                dbcc_classguid = GUID_DEVINTERFACE_USB_DEVICE,
+                dbcc_classguid = GUID_DEVINTERFACE_HID,
             };
 
             var notificationFilter = Marshal.AllocHGlobal(Marshal.SizeOf(dbcc));
@@ -123,14 +124,6 @@ namespace DsHidMiniControl.Util
         }
 
         #endregion
-
-
-        private enum VolumeType : ushort
-        {
-            Other = 0,
-            Media = DBTF_MEDIA,
-            Net = DBTF_NET,
-        }
 
         private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
@@ -159,18 +152,6 @@ namespace DsHidMiniControl.Util
 
             switch (hdr.dbch_devicetype)
             {
-                case DeviceNotificationListener.DBT_DEVTYP_VOLUME:
-                    var volume = (DEV_BROADCAST_VOLUME)Marshal.PtrToStructure(lParam, typeof(DEV_BROADCAST_VOLUME));
-
-                    // Index 0 represents drive A, index 1 represents drive B, and so on.
-                    var driveIndices = FindDriveIndices(volume.dbcv_unitmask).Take(26).ToArray();
-                    var driveLetters = ConvertIndicesToLetters(driveIndices);
-
-                    var volumeType = (VolumeType)Enum.ToObject(typeof(VolumeType), volume.dbcv_flags);
-
-                    Debug.WriteLine("Volume changed. Drive:{0} Type:{1}", String.Join(",", driveLetters), volumeType);
-                    break;
-
                 case DeviceNotificationListener.DBT_DEVTYP_DEVICEINTERFACE:
                     var deviceInterface = (DEV_BROADCAST_DEVICEINTERFACE)Marshal.PtrToStructure(lParam, typeof(DEV_BROADCAST_DEVICEINTERFACE));
 
@@ -180,22 +161,6 @@ namespace DsHidMiniControl.Util
                     Debug.WriteLine("USB device changed. VID:{0} PID:{1}", vid, pid);
                     break;
             }
-        }
-
-        private static IEnumerable<int> FindDriveIndices(uint value)
-        {
-            return new BitArray(new[] { (int)value }) // Up to 31 drive indices can be accepted.
-                .Cast<bool>()
-                .Select((x, index) => x ? index : -1)
-                .Where(x => x >= 0);
-        }
-
-        private static IEnumerable<char> ConvertIndicesToLetters(int[] indices)
-        {
-            return Enumerable.Range('A', 'Z' - 'A' + 1)
-                .Select((x, index) => new { Letter = (char)x, Index = index })
-                .Where(x => indices.Contains(x.Index))
-                .Select(x => x.Letter);
         }
 
         private static readonly Regex _patternVid = new Regex("VID_[0-9A-Z]{4}", RegexOptions.Compiled);
