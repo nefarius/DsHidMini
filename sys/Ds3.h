@@ -17,6 +17,14 @@ extern const UCHAR G_Ds3BthHidOutputReport[];
 #define DS3_LED_4       0x10
 #define DS3_LED_OFF     0x20
 
+#define DS3_USB_SET_LED(_buf_, _led_)   ((_buf_)[9] = (_led_))
+#define DS3_USB_GET_LED(_buf_)          ((_buf_)[9])
+
+#define DS3_USB_SET_SMALL_RUMBLE_DURATION(_buf_, _dur_)  ((_buf_)[1] = (_dur_))
+#define DS3_USB_SET_LARGE_RUMBLE_DURATION(_buf_, _dur_)  ((_buf_)[3] = (_dur_))
+#define DS3_USB_SET_SMALL_RUMBLE_STRENGTH(_buf_, _dur_)  ((_buf_)[2] = (_dur_))
+#define DS3_USB_SET_LARGE_RUMBLE_STRENGTH(_buf_, _dur_)  ((_buf_)[4] = (_dur_))
+
 #define DS3_BTH_SET_LED(_buf_, _led_)   ((_buf_)[11] = (_led_))
 #define DS3_BTH_GET_LED(_buf_)          ((_buf_)[11])
 
@@ -70,7 +78,7 @@ typedef enum _DS3_FEATURE_VALUE
 
 } DS3_FEATURE_VALUE;
 
-#define USB_SETUP_VALUE(_type_, _id_) (USHORT)((_type_ << 8) | _id_)
+#define USB_SETUP_VALUE(_type_, _id_) (USHORT)(((_type_) << 8) | (_id_))
 
 NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context);
 
