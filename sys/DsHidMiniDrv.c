@@ -211,6 +211,7 @@ DMF_DsHidMini_Open(
 )
 {
 	NTSTATUS			status = STATUS_SUCCESS;
+#ifdef DSHM_FEATURE_IPC
 	PDEVICE_CONTEXT		pDevCtx;
 	WDFKEY				hKey = NULL;
 	WDFSTRING			valIpcPubAddr;
@@ -225,6 +226,7 @@ DMF_DsHidMini_Open(
 	DECLARE_CONST_UNICODE_STRING(regIpcReqAddr, L"IpcReqAddr");
 	DECLARE_CONST_UNICODE_STRING(defaultIpcPubAddr, L"tcp://127.0.0.1:46856");
 	DECLARE_CONST_UNICODE_STRING(defaultIpcReqAddr, L"tcp://127.0.0.1:46858");
+#endif
 
 	UNREFERENCED_PARAMETER(DmfModule);
 
@@ -232,10 +234,13 @@ DMF_DsHidMini_Open(
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
+#ifdef DSHM_FEATURE_IPC
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
 	if (numInstances == 0)
 	{
+
+
 		TraceEvents(TRACE_LEVEL_INFORMATION,
 			TRACE_DSHIDMINIDRV,
 			"Binding sockets"
@@ -370,9 +375,11 @@ DMF_DsHidMini_Open(
 		free(strIpcReqAddr);
 
 		WdfObjectDelete(hKey);
+
 	}
 
 Exit:
+#endif
 
 	//
 	// Increase pad instance count
@@ -412,6 +419,8 @@ DMF_DsHidMini_Close(
 	// 
 	if (numInstances < 1)
 	{
+#ifdef DSHM_FEATURE_IPC
+
 		TraceEvents(TRACE_LEVEL_INFORMATION,
 			TRACE_DSHIDMINIDRV,
 			"Closing sockets"
@@ -420,6 +429,8 @@ DMF_DsHidMini_Close(
 		nn_close(pDevCtx->IpcPubSocket);
 
 		nn_close(pDevCtx->IpcReqSocket);
+
+#endif
 	}
 
 	//
@@ -825,7 +836,9 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	LPVOID                  rdrBuffer;
 	DMFMODULE               dmfModule;
 	DMF_CONTEXT_DsHidMini* moduleContext;
+#ifdef DSHM_FEATURE_IPC
 	DS_PUB_SOCKET_PACKET	pubPacket;
+#endif
 
 	UNREFERENCED_PARAMETER(Pipe);
 	UNREFERENCED_PARAMETER(NumBytesTransferred);
@@ -837,6 +850,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	moduleContext = DMF_CONTEXT_GET(dmfModule);
 	rdrBuffer = WdfMemoryGetBuffer(Buffer, &rdrBufferLength);
 
+#ifdef DSHM_FEATURE_IPC
 	DSHIDMINI_DS3_PUB_SOCKET_PACKET_INIT(
 		&pubPacket,
 		pDeviceContext,
@@ -849,6 +863,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 		sizeof(DS_PUB_SOCKET_PACKET),
 		0
 	);
+#endif
 
 #ifdef DBG
 	DumpAsHex(">> USB", rdrBuffer, (ULONG)rdrBufferLength);

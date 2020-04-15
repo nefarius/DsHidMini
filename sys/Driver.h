@@ -5,6 +5,11 @@ extern unsigned int numInstances;
 #pragma data_seg()
 #pragma comment(linker, "/section:SHARED,RWS")
 
+//
+// Compile with or without additional features
+// 
+//#define DSHM_FEATURE_IPC
+
 #include <windows.h>
 #include <wdf.h>
 #include <initguid.h>
@@ -22,7 +27,9 @@ extern unsigned int numInstances;
 #include "Ds3.h"
 #include "DsBth.h"
 #include "Config.h"
+#ifdef DSHM_FEATURE_IPC
 #include "IpcSocket.h"
+#endif
 
 
 EXTERN_C_START
