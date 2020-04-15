@@ -818,69 +818,29 @@ DsHidMini_WriteReport(
 	return STATUS_NOT_IMPLEMENTED;
 }
 
-#pragma region Input Report processing
-
-//
-// Called when data is available on the USB Interrupt IN pipe.
-//  
-VOID DsUsb_EvtUsbInterruptPipeReadComplete(
-	WDFUSBPIPE  Pipe,
-	WDFMEMORY   Buffer,
-	size_t      NumBytesTransferred,
-	WDFCONTEXT  Context
-)
+VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t BufferLength)
 {
-	NTSTATUS                status;
-	PDEVICE_CONTEXT         pDeviceContext;
-	size_t                  rdrBufferLength;
-	LPVOID                  rdrBuffer;
+	NTSTATUS				status;
 	DMFMODULE               dmfModule;
 	DMF_CONTEXT_DsHidMini* moduleContext;
-#ifdef DSHM_FEATURE_IPC
-	DS_PUB_SOCKET_PACKET	pubPacket;
-#endif
 
-	UNREFERENCED_PARAMETER(Pipe);
-	UNREFERENCED_PARAMETER(NumBytesTransferred);
+	UNREFERENCED_PARAMETER(BufferLength);
 
 	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
-	pDeviceContext = DeviceGetContext(Context);
-	dmfModule = (DMFMODULE)pDeviceContext->DsHidMiniModule;
+	dmfModule = (DMFMODULE)Context->DsHidMiniModule;
 	moduleContext = DMF_CONTEXT_GET(dmfModule);
-	rdrBuffer = WdfMemoryGetBuffer(Buffer, &rdrBufferLength);
-
-#ifdef DSHM_FEATURE_IPC
-	DSHIDMINI_DS3_PUB_SOCKET_PACKET_INIT(
-		&pubPacket,
-		pDeviceContext,
-		rdrBuffer
-	);
-
-	nn_send(
-		pDeviceContext->IpcPubSocket,
-		&pubPacket,
-		sizeof(DS_PUB_SOCKET_PACKET),
-		0
-	);
-#endif
-
-#ifdef DBG
-	DumpAsHex(">> USB", rdrBuffer, (ULONG)rdrBufferLength);
-#endif
-
-	pDeviceContext->BatteryStatus = (DS_BATTERY_STATUS)((PUCHAR)rdrBuffer)[30];
 
 #pragma region HID Input Report (ID 01) processing
 
-	switch (pDeviceContext->Configuration.HidDeviceMode)
+	switch (Context->Configuration.HidDeviceMode)
 	{
 	case DsHidMiniDeviceModeMulti:
 
 		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
-			rdrBuffer,
+			Buffer,
 			moduleContext->InputReport,
-			pDeviceContext->Configuration.MuteDigitalPressureButtons
+			Context->Configuration.MuteDigitalPressureButtons
 		);
 
 #ifdef DBG
@@ -891,9 +851,9 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	case DsHidMiniDeviceModeSingle:
 
 		DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
-			rdrBuffer,
+			Buffer,
 			moduleContext->InputReport,
-			pDeviceContext->Configuration.MuteDigitalPressureButtons
+			Context->Configuration.MuteDigitalPressureButtons
 		);
 
 #ifdef DBG
@@ -922,10 +882,10 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 
 #pragma region HID Input Report (ID 02) processing
 
-	if (pDeviceContext->Configuration.HidDeviceMode == DsHidMiniDeviceModeMulti)
+	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeMulti)
 	{
 		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
-			rdrBuffer,
+			Buffer,
 			moduleContext->InputReport
 		);
 
@@ -947,10 +907,10 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 
 #pragma region HID Input Report (SIXAXIS compatible) processing
 
-	if (pDeviceContext->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
+	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
 	{
 		DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
-			rdrBuffer,
+			Buffer,
 			moduleContext->InputReport
 		);
 
@@ -973,6 +933,59 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 }
 
+#pragma region Input Report processing
+
+//
+// Called when data is available on the USB Interrupt IN pipe.
+//  
+VOID DsUsb_EvtUsbInterruptPipeReadComplete(
+	WDFUSBPIPE  Pipe,
+	WDFMEMORY   Buffer,
+	size_t      NumBytesTransferred,
+	WDFCONTEXT  Context
+)
+{
+	PDEVICE_CONTEXT         pDeviceContext;
+	size_t                  rdrBufferLength;
+	LPVOID                  rdrBuffer;
+#ifdef DSHM_FEATURE_IPC
+	DS_PUB_SOCKET_PACKET	pubPacket;
+#endif
+
+	UNREFERENCED_PARAMETER(Pipe);
+	UNREFERENCED_PARAMETER(NumBytesTransferred);
+
+	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+
+	pDeviceContext = DeviceGetContext(Context);
+	rdrBuffer = WdfMemoryGetBuffer(Buffer, &rdrBufferLength);
+
+#ifdef DSHM_FEATURE_IPC
+	DSHIDMINI_DS3_PUB_SOCKET_PACKET_INIT(
+		&pubPacket,
+		pDeviceContext,
+		rdrBuffer
+	);
+
+	nn_send(
+		pDeviceContext->IpcPubSocket,
+		&pubPacket,
+		sizeof(DS_PUB_SOCKET_PACKET),
+		0
+	);
+#endif
+
+#ifdef DBG
+	DumpAsHex(">> USB", rdrBuffer, (ULONG)rdrBufferLength);
+#endif
+
+	pDeviceContext->BatteryStatus = (DS_BATTERY_STATUS)((PUCHAR)rdrBuffer)[30];
+
+	Ds_ProcessHidInputReport(pDeviceContext, rdrBuffer, rdrBufferLength);
+
+	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
+}
+
 //
 // Called when data is available on the wireless HID Interrupt channel.
 // 
@@ -989,8 +1002,6 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	PUCHAR						inputBuffer;
 	WDF_REQUEST_REUSE_PARAMS    params;
 	PDEVICE_CONTEXT				pDeviceContext;
-	DMFMODULE                   dmfModule;
-	DMF_CONTEXT_DsHidMini* moduleContext;
 	LARGE_INTEGER				freq, * t1, t2;
 	LONGLONG					ms;
 	DS_BATTERY_STATUS			battery;
@@ -1016,8 +1027,6 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	}
 
 	pDeviceContext = (PDEVICE_CONTEXT)Context;
-	dmfModule = (DMFMODULE)pDeviceContext->DsHidMiniModule;
-	moduleContext = DMF_CONTEXT_GET(dmfModule);
 	QueryPerformanceFrequency(&freq);
 	t1 = &pDeviceContext->Connection.Bth.QuickDisconnectTimestamp;
 
@@ -1168,96 +1177,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 		pDeviceContext->Connection.Bth.QuickDisconnectTimestamp.QuadPart = 0;
 	}
 
-#pragma region HID Input Report (ID 01) processing
-
-	switch (pDeviceContext->Configuration.HidDeviceMode)
-	{
-	case DsHidMiniDeviceModeMulti:
-
-		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
-			inputBuffer,
-			moduleContext->InputReport,
-			pDeviceContext->Configuration.MuteDigitalPressureButtons
-		);
-
-		break;
-	case DsHidMiniDeviceModeSingle:
-
-		DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
-			inputBuffer,
-			moduleContext->InputReport,
-			pDeviceContext->Configuration.MuteDigitalPressureButtons
-		);
-
-		break;
-	default:
-		break;
-	}
-
-	//
-	// Notify new Input Report is available
-	// 
-	status = DMF_VirtualHidMini_InputReportGenerate(
-		moduleContext->DmfModuleVirtualHidMini,
-		DsHidMini_RetrieveNextInputReport
-	);
-	if (!NT_SUCCESS(status))
-	{
-		TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
-			"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
-	}
-
-#pragma endregion
-
-#pragma region HID Input Report (ID 02) processing
-
-	if (pDeviceContext->Configuration.HidDeviceMode == DsHidMiniDeviceModeMulti)
-	{
-		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
-			inputBuffer,
-			moduleContext->InputReport
-		);
-
-		//
-		// Notify new Input Report is available
-		// 
-		status = DMF_VirtualHidMini_InputReportGenerate(
-			moduleContext->DmfModuleVirtualHidMini,
-			DsHidMini_RetrieveNextInputReport
-		);
-		if (!NT_SUCCESS(status))
-		{
-			TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
-				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
-		}
-	}
-
-#pragma endregion
-
-#pragma region HID Input Report (SIXAXIS compatible) processing
-
-	if (pDeviceContext->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
-	{
-		DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
-			inputBuffer,
-			moduleContext->InputReport
-		);
-
-		//
-		// Notify new Input Report is available
-		// 
-		status = DMF_VirtualHidMini_InputReportGenerate(
-			moduleContext->DmfModuleVirtualHidMini,
-			DsHidMini_RetrieveNextInputReport
-		);
-		if (!NT_SUCCESS(status))
-		{
-			TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
-				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
-		}
-	}
-
-#pragma endregion
+	Ds_ProcessHidInputReport(pDeviceContext, inputBuffer, bufferLength - 1);
 
 	resendRequest:
 
@@ -1359,4 +1279,4 @@ VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
 	UNREFERENCED_PARAMETER(Buffer);
 	UNREFERENCED_PARAMETER(BufferLength);
 #endif
-}
+	}

@@ -62,4 +62,6 @@ DsHidMini_WriteReport(
     _Out_ ULONG* ReportSize
 );
 
+VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t BufferLength);
+
 VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength);
