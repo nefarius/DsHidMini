@@ -3,7 +3,6 @@
 #include "device.tmh"
 #include <DmfModule.h>
 #include <devpkey.h>
-#include <ini.h>
 
 
 EVT_DMF_DEVICE_MODULES_ADD DmfDeviceModulesAdd;
