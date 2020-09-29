@@ -1244,32 +1244,29 @@ Exit:
 
 #pragma endregion
 
-
-
 VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
 {
 #ifdef DBG
-	PSTR   dumpBuffer;
-	size_t  dumpBufferLength;
-	ULONG   i;
+	PSTR dumpBuffer;
+	size_t dumpBufferLength;
+	ULONG i;
 
 	dumpBufferLength = ((BufferLength * sizeof(CHAR)) * 2) + 1;
 	dumpBuffer = malloc(dumpBufferLength);
 	if (dumpBuffer)
 	{
-
 		RtlZeroMemory(dumpBuffer, dumpBufferLength);
 
 		for (i = 0; i < BufferLength; i++)
 		{
-			sprintf(&dumpBuffer[i * 2], "%02X", ((PUCHAR)Buffer)[i]);
+			sprintf_s(&dumpBuffer[i * 2], dumpBufferLength, "%02X", ((PUCHAR)Buffer)[i]);
 		}
 
 		TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV,
-			"%s - Buffer length: %04d, buffer content: %s",
-			Prefix,
-			BufferLength,
-			dumpBuffer
+		            "%s - Buffer length: %04d, buffer content: %s",
+		            Prefix,
+		            BufferLength,
+		            dumpBuffer
 		);
 
 		free(dumpBuffer);
@@ -1279,4 +1276,4 @@ VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
 	UNREFERENCED_PARAMETER(Buffer);
 	UNREFERENCED_PARAMETER(BufferLength);
 #endif
-	}
+}

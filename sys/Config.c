@@ -7,6 +7,7 @@ VOID DsConfig_LoadOrCreate(PDEVICE_CONTEXT Context)
 {
 	config_setting_t* root, * setting, * dev;
 	config_t cfg;
+	size_t characters;
 
 	config_init(&cfg);
 
@@ -29,7 +30,7 @@ VOID DsConfig_LoadOrCreate(PDEVICE_CONTEXT Context)
 
 		PWSTR wideBuf = WdfMemoryGetBuffer(Context->InstanceId, NULL);
 		PSTR buf = malloc(MAX_INSTANCE_ID_LENGTH);
-		wcstombs(buf, wideBuf, MAX_INSTANCE_ID_LENGTH);
+		wcstombs_s(&characters, buf, MAX_INSTANCE_ID_LENGTH, wideBuf, MAX_INSTANCE_ID_LENGTH);
 
 		setting = config_setting_add(dev, "InstanceId", CONFIG_TYPE_STRING);
 		config_setting_set_string(setting, buf);
@@ -47,7 +48,7 @@ VOID DsConfig_LoadOrCreate(PDEVICE_CONTEXT Context)
 
 			PWSTR wideBuf = WdfMemoryGetBuffer(Context->InstanceId, NULL);
 			PSTR buf = malloc(MAX_INSTANCE_ID_LENGTH);
-			wcstombs(buf, wideBuf, MAX_INSTANCE_ID_LENGTH);
+			wcstombs_s(&characters, buf, MAX_INSTANCE_ID_LENGTH, wideBuf, MAX_INSTANCE_ID_LENGTH);
 
 			TraceEvents(TRACE_LEVEL_INFORMATION,
 				TRACE_CONFIG,
@@ -106,7 +107,8 @@ VOID DsConfig_Store(PDEVICE_CONTEXT Context)
 {
 	config_t cfg;
 	config_setting_t* dev = NULL, * setting;
-
+	size_t characters;
+	
 	PDS_DRIVER_CONFIGURATION pCfg = &Context->Configuration;
 
 	config_init(&cfg);
@@ -130,8 +132,8 @@ VOID DsConfig_Store(PDEVICE_CONTEXT Context)
 			unsigned int i;
 
 			PWSTR wideBuf = WdfMemoryGetBuffer(Context->InstanceId, NULL);
-			PSTR buf = malloc(200);
-			wcstombs(buf, wideBuf, 200);
+			PSTR buf = malloc(MAX_INSTANCE_ID_LENGTH);
+			wcstombs_s(&characters, buf,MAX_INSTANCE_ID_LENGTH, wideBuf, MAX_INSTANCE_ID_LENGTH);
 
 			TraceEvents(TRACE_LEVEL_INFORMATION,
 				TRACE_CONFIG,
