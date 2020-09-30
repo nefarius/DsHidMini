@@ -7,11 +7,16 @@ Virtual HID Mini-user-mode-driver for Sony DualShock 3 Controllers
 ## Features
 
 - Bluetooth support if used in conjunction with [BthPS3](https://github.com/ViGEm/BthPS3)
+- Automatically pairs the controller to Windows Bluetooth (if Bluetooth host radio is present)
 - Sony `sixaxis.sys` compatibility (both wired **and wireless**)
 - Quick disconnect (on Bluetooth) by pressing `L1 + R1 + PS` together for over one second
 
 ### Planned/Work in progress
 
+Rough road map with useful features (in no particular order):
+
+- Implement/expose more options to control pairing behavior
+- UI tool for configuration file
 - UDP server for cemuhook compatibility
 
 ## How it works
