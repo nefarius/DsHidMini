@@ -23,7 +23,7 @@ Virtual HID Mini-user-mode-driver for Sony DualShock 3 Controllers
 - [Step 1: Install Visual Studio 2019](<https://docs.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk#download-icon-step-1-install-visual-studio-2019>)
 - [Step 2: Install WDK for Windows 10, version 1903](<https://docs.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk#download-icon-step-2-install-wdk-for-windows-10-version-1903>)
 - [Step 3: Follow the Vcpkg Quick Start](https://github.com/Microsoft/vcpkg#quick-start) and install the following packages:
-  - `.\vcpkg.exe install libconfig:x86-windows libconfig:x64-windows`
+  - `.\vcpkg.exe install inih:x86-windows-static inih:x64-windows-static`
 
 You can build individual projects of the solution within Visual Studio.
 

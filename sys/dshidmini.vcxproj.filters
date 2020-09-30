@@ -103,4 +103,7 @@
       <Filter>Driver Files</Filter>
     </Xml>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="DsHidMini.Example.ini" />
+  </ItemGroup>
 </Project>

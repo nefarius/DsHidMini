@@ -1,9 +1,5 @@
 #include "Driver.h"
 #include "DsHidMiniDrv.tmh"
-#include <nanomsg/nn.h>
-#include <nanomsg/pubsub.h>
-#include <nanomsg/reqrep.h>
-#include <errno.h>
 
 
 PWSTR G_DsHidMini_Strings[] =
@@ -432,11 +428,6 @@ DMF_DsHidMini_Close(
 
 #endif
 	}
-
-	//
-	// Store volatile configuration
-	// 
-	DsConfig_Store(pDevCtx);
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 }
@@ -872,7 +863,7 @@ VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t Buf
 		moduleContext->DmfModuleVirtualHidMini,
 		DsHidMini_RetrieveNextInputReport
 	);
-	if (!NT_SUCCESS(status))
+	if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
 	{
 		TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
 			"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
@@ -896,7 +887,7 @@ VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t Buf
 			moduleContext->DmfModuleVirtualHidMini,
 			DsHidMini_RetrieveNextInputReport
 		);
-		if (!NT_SUCCESS(status))
+		if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
 		{
 			TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
 				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
@@ -921,7 +912,7 @@ VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t Buf
 			moduleContext->DmfModuleVirtualHidMini,
 			DsHidMini_RetrieveNextInputReport
 		);
-		if (!NT_SUCCESS(status))
+		if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
 		{
 			TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
 				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);

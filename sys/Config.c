@@ -1,225 +1,116 @@
 #include "Driver.h"
 #include "Config.tmh"
-#include <libconfig.h>
+#include <ini.h>
 
+#pragma region https://gist.github.com/xebecnan/6d070c93fb69f40c3673
+
+static wchar_t*
+fromUTF8(
+	const char* src,
+	size_t src_length, /* = 0 */
+	size_t* out_length /* = NULL */
+)
+{
+	if (!src)
+	{
+		return NULL;
+	}
+
+	if (src_length == 0) { src_length = strlen(src); }
+	int length = MultiByteToWideChar(CP_UTF8, 0, src, (int)src_length, 0, 0);
+	wchar_t* output_buffer = (wchar_t*)malloc((length + 1) * sizeof(wchar_t));
+	if (output_buffer)
+	{
+		MultiByteToWideChar(CP_UTF8, 0, src, (int)src_length, output_buffer, length);
+		output_buffer[length] = L'\0';
+	}
+	if (out_length) { *out_length = length; }
+	return output_buffer;
+}
+
+static char*
+toUTF8(
+	const wchar_t* src,
+	size_t src_length, /* = 0 */
+	size_t* out_length /* = NULL */
+)
+{
+	if (!src)
+	{
+		return NULL;
+	}
+
+	if (src_length == 0) { src_length = wcslen(src); }
+	int length = WideCharToMultiByte(CP_UTF8, 0, src, (int)src_length,
+	                                 0, 0, NULL, NULL);
+	char* output_buffer = (char*)malloc((length + 1) * sizeof(char));
+	if (output_buffer)
+	{
+		WideCharToMultiByte(CP_UTF8, 0, src, (int)src_length,
+		                    output_buffer, length, NULL, NULL);
+		output_buffer[length] = '\0';
+	}
+	if (out_length) { *out_length = length; }
+	return output_buffer;
+}
+
+#pragma endregion
+
+
+static int inih_read_cfg_handler(void* user, const char* section, const char* name,
+                                 const char* value)
+{
+	PDEVICE_CONTEXT pCtx = (PDEVICE_CONTEXT)user;
+
+	size_t wideLen = 0, narrowLen = 0;
+	PSTR instId = toUTF8(WdfMemoryGetBuffer(pCtx->InstanceId, &wideLen), wideLen, &narrowLen);
+	
+#define MATCH(s, n) _stricmp(section, s) == 0 && _stricmp(name, n) == 0
+
+
+	if (MATCH(instId, "HidDeviceMode"))
+	{
+		pCtx->Configuration.HidDeviceMode = (DS_HID_DEVICE_MODE)strtol(value, NULL, 10);
+		TraceDbg(TRACE_CONFIG, "Updating HidDeviceMode to 0x%04X", pCtx->Configuration.HidDeviceMode);
+	}
+	else if (MATCH(instId, "MuteDigitalPressureButtons"))
+	{
+		pCtx->Configuration.MuteDigitalPressureButtons = strtol(value, NULL, 10) > 0;
+		TraceDbg(TRACE_CONFIG, "Updating MuteDigitalPressureButtons to 0x%04X",
+		         pCtx->Configuration.MuteDigitalPressureButtons);
+	}
+	else if (MATCH(instId, "VendorId"))
+	{
+		pCtx->Configuration.VendorId = (USHORT)strtol(value, NULL, 16);
+		TraceDbg(TRACE_CONFIG, "Updating VendorId to 0x%04X", pCtx->Configuration.VendorId);
+	}
+	else if (MATCH(instId, "ProductId"))
+	{
+		pCtx->Configuration.ProductId = (USHORT)strtol(value, NULL, 16);
+		TraceDbg(TRACE_CONFIG, "Updating ProductId to 0x%04X", pCtx->Configuration.ProductId);
+	}
+	else if (MATCH(instId, "VersionNumber"))
+	{
+		pCtx->Configuration.VersionNumber = (USHORT)strtol(value, NULL, 16);
+		TraceDbg(TRACE_CONFIG, "Updating VersionNumber to 0x%04X", pCtx->Configuration.VersionNumber);
+	}
+	else
+	{
+		free(instId);
+		return 0; /* unknown section/name, error */
+	}
+
+	free(instId);
+	return 1;
+}
 
 VOID DsConfig_LoadOrCreate(PDEVICE_CONTEXT Context)
 {
-	config_setting_t* root, * setting, * dev;
-	config_t cfg;
-	size_t characters;
-
-	config_init(&cfg);
-
-	if (!config_read_file(&cfg, DS_DRIVER_CFG_FILE_PATH))
+	if (ini_parse(DS_DRIVER_CFG_FILE_PATH, inih_read_cfg_handler, Context) < 0)
 	{
-		TraceEvents(TRACE_LEVEL_ERROR,
-			TRACE_CONFIG,
-			"Failed to load configuration: %s:%d - %s",
-			config_error_file(&cfg),
-			config_error_line(&cfg),
-			config_error_text(&cfg)
-		);
-
-		root = config_root_setting(&cfg);
-		setting = config_setting_get_member(root, "Devices");
-		if (!setting)
-			setting = config_setting_add(root, "Devices", CONFIG_TYPE_LIST);
-
-		dev = config_setting_add(setting, NULL, CONFIG_TYPE_GROUP);
-
-		PWSTR wideBuf = WdfMemoryGetBuffer(Context->InstanceId, NULL);
-		PSTR buf = malloc(MAX_INSTANCE_ID_LENGTH);
-		wcstombs_s(&characters, buf, MAX_INSTANCE_ID_LENGTH, wideBuf, MAX_INSTANCE_ID_LENGTH);
-
-		setting = config_setting_add(dev, "InstanceId", CONFIG_TYPE_STRING);
-		config_setting_set_string(setting, buf);
-		free(buf);
-
-		config_write_file(&cfg, DS_DRIVER_CFG_FILE_PATH);
-	}
-	else
-	{
-		setting = config_lookup(&cfg, "Devices");
-		if (setting != NULL)
-		{
-			unsigned int count = config_setting_length(setting);
-			unsigned int i;
-
-			PWSTR wideBuf = WdfMemoryGetBuffer(Context->InstanceId, NULL);
-			PSTR buf = malloc(MAX_INSTANCE_ID_LENGTH);
-			wcstombs_s(&characters, buf, MAX_INSTANCE_ID_LENGTH, wideBuf, MAX_INSTANCE_ID_LENGTH);
-
-			TraceEvents(TRACE_LEVEL_INFORMATION,
-				TRACE_CONFIG,
-				"!! %d %s",
-				count, buf
-			);
-
-			for (i = 0; i < count; ++i)
-			{
-				dev = config_setting_get_elem(setting, i);
-
-				const char* instId;
-
-				if (config_setting_lookup_string(dev, "InstanceId", &instId)
-					&& strcmp(instId, buf) == 0)
-				{
-					TraceEvents(TRACE_LEVEL_INFORMATION,
-						TRACE_CONFIG,
-						"!! Found config for instanceId: %s",
-						buf
-					);
-
-					config_setting_lookup_int(
-						dev,
-						"HidDeviceMode",
-						(int*)&Context->Configuration.HidDeviceMode);
-					config_setting_lookup_bool(
-						dev,
-						"MuteDigitalPressureButtons",
-						(int*)&Context->Configuration.MuteDigitalPressureButtons);
-					config_setting_lookup_int(
-						dev,
-						"VendorId",
-						(int*)&Context->Configuration.VendorId);
-					config_setting_lookup_int(
-						dev,
-						"ProductId",
-						(int*)&Context->Configuration.ProductId);
-					config_setting_lookup_int(
-						dev,
-						"VersionNumber",
-						(int*)&Context->Configuration.VersionNumber);
-
-					break;
-				}
-			}
-
-			free(buf);
-		}
-	}
-
-	config_destroy(&cfg);
-}
-
-VOID DsConfig_Store(PDEVICE_CONTEXT Context)
-{
-	config_t cfg;
-	config_setting_t* dev = NULL, * setting;
-	size_t characters;
-	
-	PDS_DRIVER_CONFIGURATION pCfg = &Context->Configuration;
-
-	config_init(&cfg);
-
-	if (!config_read_file(&cfg, DS_DRIVER_CFG_FILE_PATH))
-	{
-		TraceEvents(TRACE_LEVEL_ERROR,
-			TRACE_CONFIG,
-			"Failed to load configuration: %s:%d - %s",
-			config_error_file(&cfg),
-			config_error_line(&cfg),
-			config_error_text(&cfg)
+		TraceEvents(TRACE_LEVEL_WARNING,
+		            TRACE_CONFIG,
+		            "Failed to load configuration"
 		);
 	}
-	else
-	{
-		setting = config_lookup(&cfg, "Devices");
-		if (setting != NULL)
-		{
-			unsigned int count = config_setting_length(setting);
-			unsigned int i;
-
-			PWSTR wideBuf = WdfMemoryGetBuffer(Context->InstanceId, NULL);
-			PSTR buf = malloc(MAX_INSTANCE_ID_LENGTH);
-			wcstombs_s(&characters, buf,MAX_INSTANCE_ID_LENGTH, wideBuf, MAX_INSTANCE_ID_LENGTH);
-
-			TraceEvents(TRACE_LEVEL_INFORMATION,
-				TRACE_CONFIG,
-				"!! %d %s",
-				count, buf
-			);
-
-			//
-			// Search for existing configuration to update
-			// 
-			for (i = 0; i < count; ++i)
-			{
-				dev = config_setting_get_elem(setting, i);
-
-				const char* instId;
-
-				if (config_setting_lookup_string(dev, "InstanceId", &instId)
-					&& strcmp(instId, buf) == 0)
-				{
-					TraceEvents(TRACE_LEVEL_INFORMATION,
-						TRACE_CONFIG,
-						"!! Found config for instanceId: %s",
-						buf
-					);
-
-					break;
-				}
-
-				dev = NULL;
-			}
-
-			//
-			// Not found, create new group
-			// 
-			if (!dev)
-			{
-				dev = config_setting_add(setting, NULL, CONFIG_TYPE_GROUP);
-				setting = config_setting_add(dev, "InstanceId", CONFIG_TYPE_STRING);
-				config_setting_set_string(setting, buf);
-			}
-
-			//
-			// HidDeviceMode
-			// 
-			setting = config_setting_get_member(dev, "HidDeviceMode");
-			if (!setting)
-				setting = config_setting_add(dev, "HidDeviceMode", CONFIG_TYPE_INT);
-			config_setting_set_int(setting, pCfg->HidDeviceMode);
-
-			//
-			// MuteDigitalPressureButtons
-			// 
-			setting = config_setting_get_member(dev, "MuteDigitalPressureButtons");
-			if (!setting)
-				setting = config_setting_add(dev, "MuteDigitalPressureButtons", CONFIG_TYPE_BOOL);
-			config_setting_set_int(setting, pCfg->MuteDigitalPressureButtons);
-
-			//
-			// VendorId
-			// 
-			setting = config_setting_get_member(dev, "VendorId");
-			if (!setting)
-				setting = config_setting_add(dev, "VendorId", CONFIG_TYPE_INT);
-			config_setting_set_int(setting, pCfg->VendorId);
-
-			//
-			// ProductId
-			// 
-			setting = config_setting_get_member(dev, "ProductId");
-			if (!setting)
-				setting = config_setting_add(dev, "ProductId", CONFIG_TYPE_INT);
-			config_setting_set_int(setting, pCfg->ProductId);
-
-			//
-			// VersionNumber
-			// 
-			setting = config_setting_get_member(dev, "VersionNumber");
-			if (!setting)
-				setting = config_setting_add(dev, "VersionNumber", CONFIG_TYPE_INT);
-			config_setting_set_int(setting, pCfg->VersionNumber);
-
-			free(buf);
-		}
-	}
-
-	config_write_file(&cfg, DS_DRIVER_CFG_FILE_PATH);
-
-	config_destroy(&cfg);
 }
