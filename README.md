@@ -7,7 +7,7 @@ Virtual HID Mini-user-mode-driver for Sony DualShock 3 Controllers
 ## Features
 
 - Bluetooth support if used in conjunction with [BthPS3](https://github.com/ViGEm/BthPS3)
-- Sony `sixaxis.sys` compatibility (both wired and wireless)
+- Sony `sixaxis.sys` compatibility (both wired **and wireless**)
 - Quick disconnect (on Bluetooth) by pressing `L1 + R1 + PS` together for over one second
 
 ### Planned/Work in progress
@@ -46,3 +46,4 @@ You can build individual projects of the solution within Visual Studio.
 - [Summary of the DPInst XML Elements](https://web.archive.org/web/20120623222252/http://msdn.microsoft.com/en-us/library/ff553383.aspx)
 - [dpinst XML Element](https://docs.microsoft.com/en-us/windows-hardware/drivers/install/dpinst-xml-element)
 - [Driver installation and updating made easy: DPInst.exe](https://docs.microsoft.com/en-us/archive/blogs/svengruenitz/driver-installation-and-updating-made-easy-dpinst-exe)
+- [inih (INI Not Invented Here)](https://github.com/benhoyt/inih)
