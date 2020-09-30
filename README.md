@@ -38,6 +38,7 @@ You can build individual projects of the solution within Visual Studio.
 - [HID: sony: Update device ids](https://patchwork.kernel.org/patch/9367441/)
 - [ViGEm/FireShock](https://github.com/ViGEm/FireShock)
 - [ViGEm/AirBender](https://github.com/ViGEm/AirBender)
+- [ViGEm/WireShock](https://github.com/ViGEm/WireShock)
 - [Microsoft/Driver Module Framework (DMF)](https://github.com/microsoft/DMF)
 - [Microsoft - DMF - HID minidriver module](https://github.com/microsoft/DMF/issues/69)
 - [Microsoft - DMF - VHidMini2DmfK and VHidMini2DmfU Sample Drivers](https://github.com/microsoft/DMF/tree/master/DmfSamples/VHidMini2Dmf)
