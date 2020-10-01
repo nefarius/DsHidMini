@@ -47,6 +47,7 @@
     <ClCompile Include="DsHid.c" />
     <ClCompile Include="DsHidMiniDrv.c" />
     <ClCompile Include="DsUsb.c" />
+    <ClCompile Include="ini.c" />
     <ClCompile Include="Power.c" />
   </ItemGroup>
   <ItemGroup>
@@ -59,6 +60,7 @@
     <ClInclude Include="DsHid.h" />
     <ClInclude Include="DsHidMiniDrv.h" />
     <ClInclude Include="DsUsb.h" />
+    <ClInclude Include="ini.h" />
     <ClInclude Include="Power.h" />
     <ClInclude Include="IpcSocket.h" />
     <ClInclude Include="resource.h" />

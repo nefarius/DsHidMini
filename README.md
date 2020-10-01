@@ -12,12 +12,14 @@ TBD
 - Automatically pairs the controller to Windows Bluetooth (if Bluetooth host radio is present)
 - Sony `sixaxis.sys` compatibility (both wired **and wireless**)
 - Quick disconnect (on Bluetooth) by pressing `L1 + R1 + PS` together for over one second
+- LED indicates battery charge level on wireless (4 = Full, 1 = Low)
 
 ### Planned/Work in progress
 
 Rough road map with useful features (in no particular order):
 
 - Implement support for Navigation controller
+- Implement auto-disconnect on wireless after idle timeout to save battery
 - Implement/expose more options to control pairing behavior
 - UI tool for configuration file
 - UDP server for `cemuhook` compatibility
@@ -30,9 +32,7 @@ Rough road map with useful features (in no particular order):
 
 - [Step 1: Install Visual Studio 2019](<https://docs.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk#download-icon-step-1-install-visual-studio-2019>)
 - [Step 2: Install WDK for Windows 10, version 2004](<https://docs.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk#download-icon-step-2-install-wdk-for-windows-10-version-2004>)
-- [Step 3: Follow the Vcpkg Quick Start](https://github.com/Microsoft/vcpkg#quick-start) and install the following packages:
-  - `.\vcpkg.exe install inih:x86-windows-static inih:x64-windows-static`
-- [Step 4: Clone the Driver Module Framework (DMF)](https://github.com/microsoft/DMF) into the same parent directory.
+- [Step 3: Clone the Driver Module Framework (DMF)](https://github.com/microsoft/DMF) into the same parent directory.
   - Build the `DmfU` project with Release and Debug configurations for all architectures (x64 and Win32).
 
 You can build individual projects of the solution within Visual Studio.

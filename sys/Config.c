@@ -1,6 +1,10 @@
 #include "Driver.h"
 #include "Config.tmh"
-#include <ini.h>
+
+#define INI_USE_STACK		0
+#define INI_MAX_LINE		1000
+#define INI_ALLOW_REALLOC	1
+#include "ini.h"
 
 #pragma region https://gist.github.com/xebecnan/6d070c93fb69f40c3673
 
@@ -67,6 +71,7 @@ static int inih_read_cfg_handler(void* user, const char* section, const char* na
 
 #define MATCH(s, n) _stricmp(section, s) == 0 && _stricmp(name, n) == 0
 
+	TraceDbg(TRACE_CONFIG, "Checking for InstanceId \"%s\" vs section \"%s\"", instId, section);
 
 	if (MATCH(instId, "HidDeviceMode"))
 	{
