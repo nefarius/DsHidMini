@@ -15,9 +15,10 @@ Virtual HID Mini-user-mode-driver for Sony DualShock 3 Controllers
 
 Rough road map with useful features (in no particular order):
 
+- Implement support for Navigation controller
 - Implement/expose more options to control pairing behavior
 - UI tool for configuration file
-- UDP server for cemuhook compatibility
+- UDP server for `cemuhook` compatibility
 
 ## How it works
 

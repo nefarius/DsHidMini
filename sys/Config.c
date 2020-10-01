@@ -64,7 +64,7 @@ static int inih_read_cfg_handler(void* user, const char* section, const char* na
 
 	size_t wideLen = 0, narrowLen = 0;
 	PSTR instId = toUTF8(WdfMemoryGetBuffer(pCtx->InstanceId, &wideLen), wideLen, &narrowLen);
-	
+
 #define MATCH(s, n) _stricmp(section, s) == 0 && _stricmp(name, n) == 0
 
 
@@ -93,6 +93,11 @@ static int inih_read_cfg_handler(void* user, const char* section, const char* na
 	{
 		pCtx->Configuration.VersionNumber = (USHORT)strtol(value, NULL, 16);
 		TraceDbg(TRACE_CONFIG, "Updating VersionNumber to 0x%04X", pCtx->Configuration.VersionNumber);
+	}
+	else if (MATCH(instId, "DisableAutoPairing"))
+	{
+		pCtx->Configuration.DisableAutoPairing = strtol(value, NULL, 10) > 0;
+		TraceDbg(TRACE_CONFIG, "Updating DisableAutoPairing to 0x%04X", pCtx->Configuration.DisableAutoPairing);
 	}
 	else
 	{

@@ -146,6 +146,8 @@ typedef struct _DS_DRIVER_CONFIGURATION
 
     USHORT VersionNumber;
 
+	BOOLEAN DisableAutoPairing;
+
 } DS_DRIVER_CONFIGURATION, * PDS_DRIVER_CONFIGURATION;
 
 //

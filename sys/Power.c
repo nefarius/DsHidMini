@@ -112,7 +112,7 @@ DsHidMini_EvtDevicePrepareHardware(
 )
 {
 	NTSTATUS                                status = STATUS_SUCCESS;
-	PDEVICE_CONTEXT                         pDeviceContext;
+	PDEVICE_CONTEXT                         pCtx;
 	WDF_USB_DEVICE_SELECT_CONFIG_PARAMS     configParams;
 	UCHAR                                   index;
 	WDFUSBPIPE                              pipe;
@@ -124,17 +124,17 @@ DsHidMini_EvtDevicePrepareHardware(
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER, "%!FUNC! Entry");
 
-	pDeviceContext = DeviceGetContext(Device);
+	pCtx = DeviceGetContext(Device);
 
 	//
 	// Initialize USB framework object
 	// 
-	if (pDeviceContext->ConnectionType == DsDeviceConnectionTypeUsb
-		&& pDeviceContext->Connection.Usb.UsbDevice == NULL)
+	if (pCtx->ConnectionType == DsDeviceConnectionTypeUsb
+		&& pCtx->Connection.Usb.UsbDevice == NULL)
 	{
 		status = WdfUsbTargetDeviceCreate(Device,
 			WDF_NO_OBJECT_ATTRIBUTES,
-			&pDeviceContext->Connection.Usb.UsbDevice
+			&pCtx->Connection.Usb.UsbDevice
 		);
 
 		if (!NT_SUCCESS(status)) {
@@ -147,13 +147,13 @@ DsHidMini_EvtDevicePrepareHardware(
 	//
 	// Grab pipes and meta information
 	// 
-	if (pDeviceContext->ConnectionType == DsDeviceConnectionTypeUsb)
+	if (pCtx->ConnectionType == DsDeviceConnectionTypeUsb)
 	{
 #pragma region USB Interface & Pipe settings
 
 		WDF_USB_DEVICE_SELECT_CONFIG_PARAMS_INIT_SINGLE_INTERFACE(&configParams);
 
-		status = WdfUsbTargetDeviceSelectConfig(pDeviceContext->Connection.Usb.UsbDevice,
+		status = WdfUsbTargetDeviceSelectConfig(pCtx->Connection.Usb.UsbDevice,
 			WDF_NO_OBJECT_ATTRIBUTES,
 			&configParams
 		);
@@ -164,17 +164,17 @@ DsHidMini_EvtDevicePrepareHardware(
 			return status;
 		}
 
-		pDeviceContext->Connection.Usb.UsbInterface = configParams.Types.SingleInterface.ConfiguredUsbInterface;
+		pCtx->Connection.Usb.UsbInterface = configParams.Types.SingleInterface.ConfiguredUsbInterface;
 
 		//
 		// Get pipe handles
 		//
-		for (index = 0; index < WdfUsbInterfaceGetNumConfiguredPipes(pDeviceContext->Connection.Usb.UsbInterface); index++) {
+		for (index = 0; index < WdfUsbInterfaceGetNumConfiguredPipes(pCtx->Connection.Usb.UsbInterface); index++) {
 
 			WDF_USB_PIPE_INFORMATION_INIT(&pipeInfo);
 
 			pipe = WdfUsbInterfaceGetConfiguredPipe(
-				pDeviceContext->Connection.Usb.UsbInterface,
+				pCtx->Connection.Usb.UsbInterface,
 				index, //PipeIndex,
 				&pipeInfo
 			);
@@ -188,18 +188,18 @@ DsHidMini_EvtDevicePrepareHardware(
 				WdfUsbTargetPipeIsInEndpoint(pipe)) {
 				TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER,
 					"InterruptReadPipe is 0x%p\n", pipe);
-				pDeviceContext->Connection.Usb.InterruptInPipe = pipe;
+				pCtx->Connection.Usb.InterruptInPipe = pipe;
 			}
 
 			if (WdfUsbPipeTypeInterrupt == pipeInfo.PipeType &&
 				WdfUsbTargetPipeIsOutEndpoint(pipe)) {
 				TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER,
 					"InterruptWritePipe is 0x%p\n", pipe);
-				pDeviceContext->Connection.Usb.InterruptOutPipe = pipe;
+				pCtx->Connection.Usb.InterruptOutPipe = pipe;
 			}
 		}
 
-		if (!pDeviceContext->Connection.Usb.InterruptInPipe || !pDeviceContext->Connection.Usb.InterruptOutPipe)
+		if (!pCtx->Connection.Usb.InterruptInPipe || !pCtx->Connection.Usb.InterruptOutPipe)
 		{
 			status = STATUS_INVALID_DEVICE_STATE;
 			TraceEvents(TRACE_LEVEL_ERROR, TRACE_POWER,
@@ -219,7 +219,7 @@ DsHidMini_EvtDevicePrepareHardware(
 			// Request device MAC address
 			// 
 			status = SendControlRequest(
-				pDeviceContext,
+				pCtx,
 				BmRequestDeviceToHost,
 				BmRequestClass,
 				GetReport,
@@ -236,7 +236,7 @@ DsHidMini_EvtDevicePrepareHardware(
 			}
 
 			RtlCopyMemory(
-				&pDeviceContext->DeviceAddress,
+				&pCtx->DeviceAddress,
 				&controlTransferBuffer[4],
 				sizeof(BD_ADDR));
 
@@ -244,7 +244,7 @@ DsHidMini_EvtDevicePrepareHardware(
 			// Request host BTH address
 			// 
 			status = SendControlRequest(
-				pDeviceContext,
+				pCtx,
 				BmRequestDeviceToHost,
 				BmRequestClass,
 				GetReport,
@@ -261,7 +261,7 @@ DsHidMini_EvtDevicePrepareHardware(
 			}
 
 			RtlCopyMemory(
-				&pDeviceContext->HostAddress,
+				&pCtx->HostAddress,
 				&controlTransferBuffer[2],
 				sizeof(BD_ADDR));
 
@@ -269,7 +269,7 @@ DsHidMini_EvtDevicePrepareHardware(
 			// Send initial output report
 			// 
 			status = SendControlRequest(
-				pDeviceContext,
+				pCtx,
 				BmRequestHostToDevice,
 				BmRequestClass,
 				SetReport,
@@ -279,10 +279,21 @@ DsHidMini_EvtDevicePrepareHardware(
 				DS3_USB_HID_OUTPUT_REPORT_SIZE);
 
 			//
-			// Auto-pair to first found radio
-			// TODO: add option to disable
+			// Attempt automatic pairing
 			// 
-			(void)DsUsb_Ds3PairToFirstRadio(pDeviceContext);
+			if (!pCtx->Configuration.DisableAutoPairing)
+			{
+				//
+				// Auto-pair to first found radio
+				// 
+				(void)DsUsb_Ds3PairToFirstRadio(pCtx);
+			}
+			else
+			{
+				TraceEvents(TRACE_LEVEL_INFORMATION, 
+					TRACE_POWER, 
+					"Auto-pairing disabled in device configuration");
+			}
 		}
 	}
 
