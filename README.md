@@ -4,6 +4,8 @@ Virtual HID Mini-user-mode driver for Sony DualShock 3 Controllers
 
 ## Summary
 
+TBD
+
 ## Features
 
 - Bluetooth support if used in conjunction with [BthPS3](https://github.com/ViGEm/BthPS3)
@@ -30,7 +32,8 @@ Rough road map with useful features (in no particular order):
 - [Step 2: Install WDK for Windows 10, version 2004](<https://docs.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk#download-icon-step-2-install-wdk-for-windows-10-version-2004>)
 - [Step 3: Follow the Vcpkg Quick Start](https://github.com/Microsoft/vcpkg#quick-start) and install the following packages:
   - `.\vcpkg.exe install inih:x86-windows-static inih:x64-windows-static`
-- [Step 4: Clone the Driver Module Framework (DMF)](https://github.com/microsoft/DMF) into the same parent directory, then build both Release and Debug configurations for all architectures (x64 and Win32) of the `DmfU` project.
+- [Step 4: Clone the Driver Module Framework (DMF)](https://github.com/microsoft/DMF) into the same parent directory.
+  - Build the `DmfU` project with Release and Debug configurations for all architectures (x64 and Win32).
 
 You can build individual projects of the solution within Visual Studio.
 
