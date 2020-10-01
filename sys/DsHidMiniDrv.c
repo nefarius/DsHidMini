@@ -65,7 +65,7 @@ DMF_DsHidMini_Create(
 	//
 	// Load volatile configuration
 	// 
-	DsConfig_LoadOrCreate(pDevCtx);
+	DsConfig_Load(pDevCtx);
 
 	DMF_CALLBACKS_DMF_INIT(&dsHidMiniCallbacks);
 	dsHidMiniCallbacks.ChildModulesAdd = DMF_DsHidMini_ChildModulesAdd;

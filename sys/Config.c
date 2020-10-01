@@ -114,7 +114,7 @@ static int inih_read_cfg_handler(void* user, const char* section, const char* na
 	return 1;
 }
 
-VOID DsConfig_LoadOrCreate(PDEVICE_CONTEXT Context)
+VOID DsConfig_Load(PDEVICE_CONTEXT Context)
 {
 	if (ini_parse(DS_DRIVER_CFG_FILE_PATH, inih_read_cfg_handler, Context) < 0)
 	{
