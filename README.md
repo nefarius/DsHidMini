@@ -1,6 +1,6 @@
 # DsHidMini
 
-Virtual HID Mini-user-mode-driver for Sony DualShock 3 Controllers
+Virtual HID Mini-user-mode driver for Sony DualShock 3 Controllers
 
 ## Summary
 

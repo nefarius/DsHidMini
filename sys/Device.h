@@ -107,6 +107,9 @@ struct BTH_DEVICE_CONTEXT
 	LARGE_INTEGER QuickDisconnectTimestamp;
 };
 
+//
+// Sets default values for device configuration
+// 
 VOID FORCEINLINE DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(
 	PDS_DRIVER_CONFIGURATION Configuration
 )
@@ -116,6 +119,7 @@ VOID FORCEINLINE DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(
 	Configuration->VendorId = 0x054C;
 	Configuration->ProductId = 0x0268;
 	Configuration->VersionNumber = 0x0101;
+	Configuration->DisableAutoPairing = FALSE;
 }
 
 typedef struct _DEVICE_CONTEXT
