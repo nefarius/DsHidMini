@@ -69,37 +69,37 @@ static int inih_read_cfg_handler(void* user, const char* section, const char* na
 	size_t wideLen = 0, narrowLen = 0;
 	PSTR instId = toUTF8(WdfMemoryGetBuffer(pCtx->InstanceId, &wideLen), wideLen, &narrowLen);
 
-#define MATCH(s, n) _stricmp(section, s) == 0 && _stricmp(name, n) == 0
+#define MATCH(n) (_stricmp(section, "Global") == 0 || _stricmp(section, instId) == 0) && _stricmp(name, n) == 0
 
 	TraceDbg(TRACE_CONFIG, "Checking for InstanceId \"%s\" vs section \"%s\"", instId, section);
 
-	if (MATCH(instId, "HidDeviceMode"))
+	if (MATCH("HidDeviceMode"))
 	{
 		pCtx->Configuration.HidDeviceMode = (DS_HID_DEVICE_MODE)strtol(value, NULL, 10);
 		TraceDbg(TRACE_CONFIG, "Updating HidDeviceMode to 0x%04X", pCtx->Configuration.HidDeviceMode);
 	}
-	else if (MATCH(instId, "MuteDigitalPressureButtons"))
+	else if (MATCH("MuteDigitalPressureButtons"))
 	{
 		pCtx->Configuration.MuteDigitalPressureButtons = strtol(value, NULL, 10) > 0;
 		TraceDbg(TRACE_CONFIG, "Updating MuteDigitalPressureButtons to 0x%04X",
 		         pCtx->Configuration.MuteDigitalPressureButtons);
 	}
-	else if (MATCH(instId, "VendorId"))
+	else if (MATCH("VendorId"))
 	{
 		pCtx->Configuration.VendorId = (USHORT)strtol(value, NULL, 16);
 		TraceDbg(TRACE_CONFIG, "Updating VendorId to 0x%04X", pCtx->Configuration.VendorId);
 	}
-	else if (MATCH(instId, "ProductId"))
+	else if (MATCH("ProductId"))
 	{
 		pCtx->Configuration.ProductId = (USHORT)strtol(value, NULL, 16);
 		TraceDbg(TRACE_CONFIG, "Updating ProductId to 0x%04X", pCtx->Configuration.ProductId);
 	}
-	else if (MATCH(instId, "VersionNumber"))
+	else if (MATCH("VersionNumber"))
 	{
 		pCtx->Configuration.VersionNumber = (USHORT)strtol(value, NULL, 16);
 		TraceDbg(TRACE_CONFIG, "Updating VersionNumber to 0x%04X", pCtx->Configuration.VersionNumber);
 	}
-	else if (MATCH(instId, "DisableAutoPairing"))
+	else if (MATCH("DisableAutoPairing"))
 	{
 		pCtx->Configuration.DisableAutoPairing = strtol(value, NULL, 10) > 0;
 		TraceDbg(TRACE_CONFIG, "Updating DisableAutoPairing to 0x%04X", pCtx->Configuration.DisableAutoPairing);
