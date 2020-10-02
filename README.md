@@ -28,7 +28,9 @@ Rough road map with useful features (in no particular order):
 - Integrate ViGEm client SDK for XInput support
 - Add remapping capabilities 
   - See [jfes](https://github.com/dmitrii-eremin/jfes) 
+  - Might be redundant due to existing tools
 - Add configurable Turbo Mode for buttons
+  - Might be redundant due to existing tools
 - Test and document setup with PCSX2, RetroArch
 
 ## How it works
