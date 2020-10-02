@@ -23,6 +23,7 @@ Rough road map with useful features (in no particular order):
 - Implement/expose more options to control pairing behavior
 - UI tool for configuration file
 - UDP server for `cemuhook` compatibility
+  - See [ds4drv](https://github.com/TheDrHax/ds4drv-cemuhook) 
 - Test power behavior (like, what happens when the system wants to sleep with controllers connected etc.)
 - Integrate ViGEm client SDK for XInput support
 - Add remapping capabilities 
