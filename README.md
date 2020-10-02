@@ -24,6 +24,9 @@ Rough road map with useful features (in no particular order):
 - UI tool for configuration file
 - UDP server for `cemuhook` compatibility
 - Test power behavior (like, what happens when the system wants to sleep with controllers connected etc.)
+- Integrate ViGEm client SDK for XInput support
+- Add remapping capabilities 
+- Add configurable Turbo Mode for buttons
 
 ## How it works
 
