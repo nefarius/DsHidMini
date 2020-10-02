@@ -29,6 +29,7 @@ Rough road map with useful features (in no particular order):
 - Add remapping capabilities 
   - See [jfes](https://github.com/dmitrii-eremin/jfes) 
 - Add configurable Turbo Mode for buttons
+- Test and document setup with PCSX2, RetroArch
 
 ## How it works
 
