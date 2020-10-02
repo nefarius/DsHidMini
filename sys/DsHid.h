@@ -136,7 +136,8 @@ VOID FORCEINLINE DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
 	Output[8] = Input[25];
 
 	// Shoulders (pressure)
-	// NOTE: not accessible via DirectInput because out axis limit
+	// NOTE: not accessible via DirectInput because of axis limit
+	// TODO: introduce 3rd device?
 	Output[9] = Input[20];
 	Output[10] = Input[21];
 }
