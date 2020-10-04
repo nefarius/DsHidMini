@@ -12,7 +12,9 @@ TBD
 - Automatically pairs the controller to Windows Bluetooth (if Bluetooth host radio is present)
 - Sony `sixaxis.sys` compatibility (both wired **and wireless**)
 - Quick disconnect (on Bluetooth) by pressing `L1 + R1 + PS` together for over one second
-- LED indicates battery charge level on wireless (4 = Full, 1 = Low)
+- Custom LED states indicate battery charge level
+  - Wired: Charging will cycle through 1 to 4, if fully charged will stay on 4
+  - Wireless: 4 = Full, 3 = High, 2 = Medium/low, 1 = Low/dying
 
 ### Planned/Work in progress
 
