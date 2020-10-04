@@ -180,14 +180,6 @@ typedef struct _DEVICE_CONTEXT
 
 	DS_DRIVER_CONFIGURATION Configuration;
 
-#ifdef DSHM_FEATURE_IPC
-	
-	INT IpcPubSocket;
-
-	INT IpcReqSocket;
-
-#endif
-
 } DEVICE_CONTEXT, * PDEVICE_CONTEXT;
 
 //
