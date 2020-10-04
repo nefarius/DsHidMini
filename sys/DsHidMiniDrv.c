@@ -373,6 +373,13 @@ DsHidMini_GetFeature(
 
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
+	TraceDbg(TRACE_DSHIDMINIDRV, "!! Packet->reportId: %d, Packet->reportBufferLen: %d, ReportSize: %d", 
+		Packet->reportId,
+		Packet->reportBufferLen,
+		*ReportSize);
+	
+	//DumpAsHex("!! GET_FEATURE.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
+	
 	switch (Packet->reportId)
 	{
 	case DS_FEATURE_TYPE_GET_HOST_BD_ADDR:
@@ -517,6 +524,11 @@ DsHidMini_SetFeature(
 
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
+	TraceDbg(TRACE_DSHIDMINIDRV, "!! Packet->reportId: %d, Packet->reportBufferLen: %d, ReportSize: %d", 
+		Packet->reportId,
+		Packet->reportBufferLen,
+		*ReportSize);
+
 	switch (Packet->reportId)
 	{
 	case DS_FEATURE_TYPE_SET_HOST_BD_ADDR:
@@ -637,13 +649,20 @@ DsHidMini_WriteReport(
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
+	TraceDbg(TRACE_DSHIDMINIDRV, "!! Packet->reportId: %d, Packet->reportBufferLen: %d, ReportSize: %d", 
+		Packet->reportId,
+		Packet->reportBufferLen,
+		*ReportSize);
+	
+	DumpAsHex("!! WRITE_REPORT.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
+	
 	//
 	// TODO: implement me!
 	// 
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 
-	return STATUS_NOT_IMPLEMENTED;
+	return STATUS_SUCCESS;
 }
 
 VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t BufferLength)
