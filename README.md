@@ -35,6 +35,7 @@ Rough road map with useful features (in no particular order):
   - Might be redundant due to existing tools
 - Test and document setup with PCSX2, RetroArch
 - Implement/expose rumble support via PID/FFB ⚡
+- Implement/expose gyro and accelerometer via some channel
 
 ## How it works
 
