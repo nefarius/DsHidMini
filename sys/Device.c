@@ -63,6 +63,7 @@ dshidminiCreateDevice(
 	DMF_DmfFdoSetFilter(dmfDeviceInit);
 
 	WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_CONTEXT);
+	deviceAttributes.EvtCleanupCallback = DsHidMini_EvtDeviceContextCleanup;
 
 	status = WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device);
 
@@ -192,6 +193,24 @@ Exit:
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
 
 	return status;
+}
+
+//
+// Free context memory
+// 
+void DsHidMini_EvtDeviceContextCleanup(
+	WDFOBJECT Object
+)
+{
+	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Object);
+
+	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
+	{
+		if (pDevCtx->Connection.Usb.OutputReport)
+		{
+			free(pDevCtx->Connection.Usb.OutputReport);
+		}
+	}
 }
 
 //

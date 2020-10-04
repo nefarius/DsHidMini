@@ -25,6 +25,16 @@ struct USB_DEVICE_CONTEXT
 	// USB Interrupt (out) pipe handle
 	// 
 	WDFUSBPIPE InterruptOutPipe;
+
+	//
+	// Output report buffer
+	// 
+	PUCHAR OutputReport;
+
+	//
+	// Timestamp to calculate charing cycle state change
+	// 
+	LARGE_INTEGER ChargingCycleTimestamp;
 };
 
 struct BTH_DEVICE_CONTEXT
@@ -186,6 +196,8 @@ typedef struct _DEVICE_CONTEXT
 // in a type safe manner.
 //
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DEVICE_CONTEXT, DeviceGetContext)
+
+EVT_WDF_OBJECT_CONTEXT_CLEANUP DsHidMini_EvtDeviceContextCleanup;
 
 typedef struct
 {

@@ -936,43 +936,109 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	WDFCONTEXT  Context
 )
 {
-	PDEVICE_CONTEXT         pDeviceContext;
+	PDEVICE_CONTEXT         pDevCtx;
 	size_t                  rdrBufferLength;
 	LPVOID                  rdrBuffer;
-#ifdef DSHM_FEATURE_IPC
-	DS_PUB_SOCKET_PACKET	pubPacket;
-#endif
+	LARGE_INTEGER			freq, * t1, t2;
+	LONGLONG				ms;
+	DS_BATTERY_STATUS		battery;
 
 	UNREFERENCED_PARAMETER(Pipe);
 	UNREFERENCED_PARAMETER(NumBytesTransferred);
 
 	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
-	pDeviceContext = DeviceGetContext(Context);
+	pDevCtx = DeviceGetContext(Context);
 	rdrBuffer = WdfMemoryGetBuffer(Buffer, &rdrBufferLength);
 
-#ifdef DSHM_FEATURE_IPC
-	DSHIDMINI_DS3_PUB_SOCKET_PACKET_INIT(
-		&pubPacket,
-		pDeviceContext,
-		rdrBuffer
-	);
-
-	nn_send(
-		pDeviceContext->IpcPubSocket,
-		&pubPacket,
-		sizeof(DS_PUB_SOCKET_PACKET),
-		0
-	);
-#endif
+	QueryPerformanceFrequency(&freq);
+	t1 = &pDevCtx->Connection.Usb.ChargingCycleTimestamp;
 
 #ifdef DBG
 	DumpAsHex(">> USB", rdrBuffer, (ULONG)rdrBufferLength);
 #endif
 
-	pDeviceContext->BatteryStatus = (DS_BATTERY_STATUS)((PUCHAR)rdrBuffer)[30];
+	battery = (DS_BATTERY_STATUS)((PUCHAR)rdrBuffer)[30];
 
-	Ds_ProcessHidInputReport(pDeviceContext, rdrBuffer, rdrBufferLength);
+	TraceDbg(
+		TRACE_DSHIDMINIDRV,
+		"++ Battery value: 0x%02X",
+		battery
+	);
+
+	//
+	// Check if state has changed to Charged
+	// 
+	if (battery == DsBatteryStatusCharged
+		&& battery != pDevCtx->BatteryStatus)
+	{
+		pDevCtx->BatteryStatus = battery;
+
+		DS3_USB_SET_LED(pDevCtx->Connection.Usb.OutputReport, DS3_LED_4);
+
+		(void)SendControlRequest(
+			pDevCtx,
+			BmRequestHostToDevice,
+			BmRequestClass,
+			SetReport,
+			USB_SETUP_VALUE(HidReportRequestTypeOutput, HidReportRequestIdOne),
+			0,
+			(PVOID)pDevCtx->Connection.Usb.OutputReport,
+			DS3_USB_HID_OUTPUT_REPORT_SIZE);
+	}
+	//
+	// If charging, cycle LEDs
+	// 
+	else if (battery == DsBatteryStatusCharging)
+	{
+		if (pDevCtx->Connection.Usb.ChargingCycleTimestamp.QuadPart == 0)
+		{
+			QueryPerformanceCounter(t1);
+		}
+
+		QueryPerformanceCounter(&t2);
+
+		ms = (t2.QuadPart - t1->QuadPart) / (freq.QuadPart / 1000);
+
+		//
+		// 1 second passed
+		// 
+		if (ms > 1000)
+		{
+			//
+			// Reset
+			// 
+			pDevCtx->Connection.Usb.ChargingCycleTimestamp.QuadPart = 0;
+			
+			UCHAR led = DS3_USB_GET_LED(pDevCtx->Connection.Usb.OutputReport) << 1;
+
+			//
+			// Cycle through
+			// 
+			if (led > DS3_LED_4 || led < DS3_LED_1)
+			{
+				led = DS3_LED_1;
+			}
+
+			DS3_USB_SET_LED(pDevCtx->Connection.Usb.OutputReport, led);
+
+			(void)SendControlRequest(
+				pDevCtx,
+				BmRequestHostToDevice,
+				BmRequestClass,
+				SetReport,
+				USB_SETUP_VALUE(HidReportRequestTypeOutput, HidReportRequestIdOne),
+				0,
+				(PVOID)pDevCtx->Connection.Usb.OutputReport,
+				DS3_USB_HID_OUTPUT_REPORT_SIZE);
+		}
+	}
+	else
+	{
+		pDevCtx->BatteryStatus = battery;
+	}
+	
+	Ds_ProcessHidInputReport(pDevCtx, rdrBuffer, rdrBufferLength);
 
 	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 }

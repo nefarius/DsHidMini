@@ -279,6 +279,20 @@ DsHidMini_EvtDevicePrepareHardware(
 				DS3_USB_HID_OUTPUT_REPORT_SIZE);
 
 			//
+			// Copy output report for later modification and reuse
+			// 
+			if (!pCtx->Connection.Usb.OutputReport)
+			{
+				pCtx->Connection.Usb.OutputReport = malloc(DS3_USB_HID_OUTPUT_REPORT_SIZE);
+
+				RtlCopyMemory(
+					pCtx->Connection.Usb.OutputReport,
+					G_Ds3UsbHidOutputReport,
+					DS3_USB_HID_OUTPUT_REPORT_SIZE
+				);
+			}
+			
+			//
 			// Attempt automatic pairing
 			// 
 			if (!pCtx->Configuration.DisableAutoPairing)
