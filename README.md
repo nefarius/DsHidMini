@@ -18,21 +18,21 @@ TBD
 
 Rough road map with useful features (in no particular order):
 
-- Implement support for Navigation controller
-- Implement auto-disconnect on wireless after idle timeout to save battery
+- Implement support for Navigation controller ⚡
+- Implement auto-disconnect on wireless after idle timeout to save battery ⚡
 - Implement/expose more options to control pairing behavior
 - UI tool for configuration file
 - UDP server for `cemuhook` compatibility
   - See [ds4drv](https://github.com/TheDrHax/ds4drv-cemuhook) 
 - Test power behavior (like, what happens when the system wants to sleep with controllers connected etc.)
-- Integrate ViGEm client SDK for XInput support
-- Add remapping capabilities 
-  - See [jfes](https://github.com/dmitrii-eremin/jfes) 
+- Integrate ViGEm client SDK for XInput support ⚡
+- Add remapping capabilities
+  - See [jfes](https://github.com/dmitrii-eremin/jfes)
   - Might be redundant due to existing tools
 - Add configurable Turbo Mode for buttons
   - Might be redundant due to existing tools
 - Test and document setup with PCSX2, RetroArch
-- Implement/expose rumble support via PID/FFB
+- Implement/expose rumble support via PID/FFB ⚡
 
 ## How it works
 
