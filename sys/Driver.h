@@ -8,6 +8,8 @@ extern unsigned int numInstances;
 //
 // Compile with or without additional features
 // 
+
+/* Enable Force Feedback features */
 #define DSHM_FEATURE_FFB
 
 #include <windows.h>
