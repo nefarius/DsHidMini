@@ -72,6 +72,8 @@
 
 #pragma region Force Feedback Descriptor
 
+#ifdef DSHM_FEATURE_FFB
+
 /* https://github.com/YukMingLaw/ArduinoJoystickWithFFBLibrary/blob/45ee061d4e71ee2fea0028fa0f76bbae1a2398cf/src/FFBDescriptor.h#L6 */
 #define FFB_DESCRIPTOR_SEGMENT \
 0x05, 0x0F,        /* Usage Page (PID Page) */ \
@@ -641,6 +643,8 @@
 0xB1, 0x03,        /*   Feature (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
 0xC0,              /* End Collection */ \
 
+#endif
+
 #pragma endregion
 
 #pragma region DS3 HID Report Descriptor (Split Device Mode)
@@ -876,7 +880,9 @@ CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_Single_Mode[] =
 	0x26, 0xFF, 0x00,  //     Logical Maximum (255)
 	0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
 	0xC0,              //   End Collection
+#ifdef DSHM_FEATURE_FFB
 	FFB_DESCRIPTOR_SEGMENT
+#endif
 	0xC0,              // End Collection
 };
 

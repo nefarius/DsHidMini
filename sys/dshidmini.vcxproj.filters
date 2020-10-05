@@ -66,6 +66,9 @@
     <ClInclude Include="ini.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="FFBTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Device.c">

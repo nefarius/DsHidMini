@@ -8,7 +8,7 @@ extern unsigned int numInstances;
 //
 // Compile with or without additional features
 // 
-//#define DSHM_FEATURE_IPC
+#define DSHM_FEATURE_FFB
 
 #include <windows.h>
 #include <wdf.h>
@@ -27,8 +27,10 @@ extern unsigned int numInstances;
 #include "Ds3.h"
 #include "DsBth.h"
 #include "Config.h"
-#ifdef DSHM_FEATURE_IPC
-#include "IpcSocket.h"
+
+#ifdef DSHM_FEATURE_FFB
+#include <inttypes.h>
+#include "FFBTypes.h"
 #endif
 
 

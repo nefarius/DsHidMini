@@ -60,6 +60,7 @@
     <ClInclude Include="DsHid.h" />
     <ClInclude Include="DsHidMiniDrv.h" />
     <ClInclude Include="DsUsb.h" />
+    <ClInclude Include="FFBTypes.h" />
     <ClInclude Include="ini.h" />
     <ClInclude Include="Power.h" />
     <ClInclude Include="IpcSocket.h" />

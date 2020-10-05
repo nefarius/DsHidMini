@@ -247,25 +247,6 @@ DMF_DsHidMini_Close(
 	// 
 	numInstances--;
 
-	//
-	// Stop IPC if last instance
-	// 
-	if (numInstances < 1)
-	{
-#ifdef DSHM_FEATURE_IPC
-
-		TraceEvents(TRACE_LEVEL_INFORMATION,
-			TRACE_DSHIDMINIDRV,
-			"Closing sockets"
-		);
-
-		nn_close(pDevCtx->IpcPubSocket);
-
-		nn_close(pDevCtx->IpcReqSocket);
-
-#endif
-	}
-
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 }
 #pragma code_seg()
@@ -290,11 +271,10 @@ DsHidMini_GetInputReport(
 	return STATUS_UNSUCCESSFUL;
 }
 
-NTSTATUS
-
 //
 // Submit new HID Input Report.
 // 
+NTSTATUS
 DsHidMini_RetrieveNextInputReport(
 	_In_ DMFMODULE DmfModule,
 	_In_ WDFREQUEST Request,
