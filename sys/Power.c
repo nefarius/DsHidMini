@@ -291,23 +291,6 @@ DsHidMini_EvtDevicePrepareHardware(
 					DS3_USB_HID_OUTPUT_REPORT_SIZE
 				);
 			}
-			
-			//
-			// Attempt automatic pairing
-			// 
-			if (!pCtx->Configuration.DisableAutoPairing)
-			{
-				//
-				// Auto-pair to first found radio
-				// 
-				(void)DsUsb_Ds3PairToFirstRadio(pCtx);
-			}
-			else
-			{
-				TraceEvents(TRACE_LEVEL_INFORMATION, 
-					TRACE_POWER, 
-					"Auto-pairing disabled in device configuration");
-			}
 		}
 	}
 
@@ -324,30 +307,30 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 	_In_ WDF_POWER_DEVICE_STATE PreviousState
 )
 {
-	PDEVICE_CONTEXT         pDeviceContext;
+	PDEVICE_CONTEXT         pDevCtx;
 	NTSTATUS                status = STATUS_SUCCESS;
 	BOOLEAN                 isTargetStarted;
 
-	pDeviceContext = DeviceGetContext(Device);
+	pDevCtx = DeviceGetContext(Device);
 	isTargetStarted = FALSE;
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER, "%!FUNC! Entry");
 
 	UNREFERENCED_PARAMETER(PreviousState);
 
-	if (pDeviceContext->ConnectionType == DsDeviceConnectionTypeUsb)
+	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
 	{
 		//
 		// Since continuous reader is configured for this interrupt-pipe, we must explicitly start
 		// the I/O target to get the framework to post read requests.
 		//
-		status = WdfIoTargetStart(WdfUsbTargetPipeGetIoTarget(pDeviceContext->Connection.Usb.InterruptInPipe));
+		status = WdfIoTargetStart(WdfUsbTargetPipeGetIoTarget(pDevCtx->Connection.Usb.InterruptInPipe));
 		if (!NT_SUCCESS(status)) {
 			TraceEvents(TRACE_LEVEL_ERROR, TRACE_POWER, "Failed to start interrupt read pipe %!STATUS!", status);
 			goto End;
 		}
 
-		status = WdfIoTargetStart(WdfUsbTargetPipeGetIoTarget(pDeviceContext->Connection.Usb.InterruptOutPipe));
+		status = WdfIoTargetStart(WdfUsbTargetPipeGetIoTarget(pDevCtx->Connection.Usb.InterruptOutPipe));
 		if (!NT_SUCCESS(status)) {
 			TraceEvents(TRACE_LEVEL_ERROR, TRACE_POWER, "Failed to start interrupt write pipe %!STATUS!", status);
 			goto End;
@@ -364,20 +347,44 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 			//
 			if (isTargetStarted) {
 				WdfIoTargetStop(
-					WdfUsbTargetPipeGetIoTarget(pDeviceContext->Connection.Usb.InterruptInPipe),
+					WdfUsbTargetPipeGetIoTarget(pDevCtx->Connection.Usb.InterruptInPipe),
 					WdfIoTargetCancelSentIo
 				);
 				WdfIoTargetStop(WdfUsbTargetPipeGetIoTarget(
-					pDeviceContext->Connection.Usb.InterruptOutPipe),
+					pDevCtx->Connection.Usb.InterruptOutPipe),
 					WdfIoTargetCancelSentIo
 				);
 			}
 		}
 
 		//
+		// Attempt automatic pairing
+		// 
+		if (!pDevCtx->Configuration.DisableAutoPairing)
+		{
+			//
+			// Auto-pair to first found radio
+			// 
+			status = DsUsb_Ds3PairToFirstRadio(pDevCtx);
+
+			if (!NT_SUCCESS(status))
+			{
+				TraceEvents(TRACE_LEVEL_ERROR, TRACE_POWER,
+				            "DsUsb_Ds3PairToFirstRadio failed with status %!STATUS!",
+				            status);
+			}
+		}
+		else
+		{
+			TraceEvents(TRACE_LEVEL_INFORMATION, 
+				TRACE_POWER, 
+				"Auto-pairing disabled in device configuration");
+		}
+
+		//
 		// Instruct pad to send input reports
 		// 
-		status = DsUsb_Ds3Init(pDeviceContext);
+		status = DsUsb_Ds3Init(pDevCtx);
 
 		if (!NT_SUCCESS(status))
 		{

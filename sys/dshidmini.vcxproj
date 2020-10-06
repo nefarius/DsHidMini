@@ -226,9 +226,7 @@
       <AdditionalDependencies>..\..\DMF\Release\Win32\lib\DmfU\DmfU.lib;%(AdditionalDependencies);OneCoreUAP.lib;BluetoothApis.lib</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries);kernel32.lib;user32.lib</IgnoreSpecificDefaultLibraries>
     </Link>
-    <Inf>
-      <TimeStamp>1.0.0.0</TimeStamp>
-    </Inf>
+    <Inf />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -255,9 +253,7 @@
       <AdditionalDependencies>..\..\DMF\Release\x64\lib\DmfU\DmfU.lib;%(AdditionalDependencies);OneCoreUAP.lib;BluetoothApis.lib</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries);kernel32.lib;user32.lib</IgnoreSpecificDefaultLibraries>
     </Link>
-    <Inf>
-      <TimeStamp>1.0.0.0</TimeStamp>
-    </Inf>
+    <Inf />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
