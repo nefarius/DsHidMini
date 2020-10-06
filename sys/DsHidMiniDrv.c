@@ -1,5 +1,6 @@
 #include "Driver.h"
 #include "DsHidMiniDrv.tmh"
+#include "Debugging.h"
 
 
 PWSTR G_DsHidMini_Strings[] =
@@ -353,12 +354,28 @@ DsHidMini_GetFeature(
 
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
-	TraceDbg(TRACE_DSHIDMINIDRV, "!! Packet->reportId: %d, Packet->reportBufferLen: %d, ReportSize: %d", 
+	TraceDbg(TRACE_DSHIDMINIDRV, "!! Packet->reportId: %d, Packet->reportBufferLen: %d", 
 		Packet->reportId,
-		Packet->reportBufferLen,
-		*ReportSize);
+		Packet->reportBufferLen);
 	
 	//DumpAsHex("!! GET_FEATURE.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
+
+#ifdef DSHM_FEATURE_FFB
+	if (Packet->reportId == 7 && Packet->reportBufferLen == sizeof(USB_FFBReport_PIDPool_Feature_Data_t))
+	{
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! USB_FFBReport_PIDPool_Feature_Data_t");
+		
+		USB_FFBReport_PIDPool_Feature_Data_t* data = (USB_FFBReport_PIDPool_Feature_Data_t*)Packet->
+			reportBuffer;
+
+		data->reportId = 7;
+		data->ramPoolSize = 0xFFFF;
+		data->maxSimultaneousEffects = 40;
+		data->memoryManagement = 0;
+
+		reportSize = Packet->reportBufferLen;
+	}
+#endif
 	
 	switch (Packet->reportId)
 	{
@@ -504,10 +521,23 @@ DsHidMini_SetFeature(
 
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
-	TraceDbg(TRACE_DSHIDMINIDRV, "!! Packet->reportId: %d, Packet->reportBufferLen: %d, ReportSize: %d", 
+	TraceDbg(TRACE_DSHIDMINIDRV, "!! Packet->reportId: %d, Packet->reportBufferLen: %d", 
 		Packet->reportId,
-		Packet->reportBufferLen,
-		*ReportSize);
+		Packet->reportBufferLen);
+
+#ifdef DSHM_FEATURE_FFB
+	if(Packet->reportId == 5 && Packet->reportBufferLen == sizeof(USB_FFBReport_SetConstantForce_Output_Data_t))
+	{
+		USB_FFBReport_SetConstantForce_Output_Data_t* data =(USB_FFBReport_SetConstantForce_Output_Data_t*)Packet->reportBuffer;
+
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! data->effectBlockIndex: %d, data->magnitude: %d",
+			data->effectBlockIndex,
+			data->magnitude
+		);
+		
+		*ReportSize=Packet->reportBufferLen;
+	}
+#endif
 
 	switch (Packet->reportId)
 	{
@@ -629,12 +659,53 @@ DsHidMini_WriteReport(
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
-	TraceDbg(TRACE_DSHIDMINIDRV, "!! Packet->reportId: %d, Packet->reportBufferLen: %d, ReportSize: %d", 
+	TraceDbg(TRACE_DSHIDMINIDRV, "!! Packet->reportId: %d, Packet->reportBufferLen: %d", 
 		Packet->reportId,
-		Packet->reportBufferLen,
-		*ReportSize);
+		Packet->reportBufferLen);
 	
 	DumpAsHex("!! WRITE_REPORT.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
+
+#ifdef DSHM_FEATURE_FFB
+	if (Packet->reportId == 12 && Packet->reportBufferLen == sizeof(USB_FFBReport_DeviceControl_Output_Data_t))
+	{
+		USB_FFBReport_DeviceControl_Output_Data_t* data = (USB_FFBReport_DeviceControl_Output_Data_t*)Packet->
+			reportBuffer;
+
+		switch (data->control)
+		{
+		case 1:
+			TraceDbg(TRACE_DSHIDMINIDRV, "!! data->control: Enable Actuators");
+			break;
+		case 2:
+			TraceDbg(TRACE_DSHIDMINIDRV, "!! data->control: Disable Actuators");
+			break;
+		case 4:
+			TraceDbg(TRACE_DSHIDMINIDRV, "!! data->control: Stop All Effects");
+			break;
+		case 8:
+			TraceDbg(TRACE_DSHIDMINIDRV, "!! data->control: Reset");
+			break;
+		case 16:
+			TraceDbg(TRACE_DSHIDMINIDRV, "!! data->control: Pause");
+			break;
+		case 32:
+			TraceDbg(TRACE_DSHIDMINIDRV, "!! data->control: Continue");
+			break;
+		}
+		
+
+		*ReportSize = Packet->reportBufferLen;
+	}
+
+	if (Packet->reportId == 13 && Packet->reportBufferLen == sizeof(USB_FFBReport_DeviceGain_Output_Data_t))
+	{
+		USB_FFBReport_DeviceGain_Output_Data_t* data = (USB_FFBReport_DeviceGain_Output_Data_t*)Packet->reportBuffer;
+
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! data->gain: %d", data->gain);
+		
+		*ReportSize = Packet->reportBufferLen;
+	}
+#endif
 	
 	//
 	// TODO: implement me!
@@ -796,11 +867,13 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 
 	battery = (DS_BATTERY_STATUS)((PUCHAR)rdrBuffer)[30];
 
+#ifdef DBG
 	TraceDbg(
 		TRACE_DSHIDMINIDRV,
 		"++ Battery value: 0x%02X",
 		battery
 	);
+#endif
 
 	//
 	// Check if state has changed to Charged
@@ -905,11 +978,13 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 
 	UNREFERENCED_PARAMETER(Target);
 
+#ifdef DBG
 	TraceDbg(
 		TRACE_DSHIDMINIDRV,
 		"++ Completion status: %!STATUS!",
 		Params->IoStatus.Status
 	);
+#endif
 
 	//
 	// Device has been disconnected, quit requesting inputs
