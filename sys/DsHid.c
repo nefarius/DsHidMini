@@ -1,6 +1,8 @@
 #include "Driver.h"
 #include "DsHid.tmh"
 
+#pragma region Obsolete
+
 //
 // Common set of feature definitions
 // 
@@ -69,6 +71,8 @@
 	0x09, 0x01,        /*     Usage (0x01)                                                                        */ \
 	0xB1, 0x02,        /*     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
 	0xC0,              /*   End Collection                                                                        */ \
+
+#pragma endregion
 
 #pragma region Force Feedback Descriptor
 
