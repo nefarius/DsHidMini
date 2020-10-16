@@ -1,0 +1,154 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285]
+"ConfigCLSID"="{60150956-C4AE-11D1-B59B-00A0C9971EFC}"
+"OEMName"="Logitech WingMan Strike Force 3D USB"
+"OEMData"=hex:03,00,08,10,11,00,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\Axes]
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\Axes\0]
+@="X axis"
+"Attributes"=hex:01,81,00,00
+"FFAttributes"=hex:0a,00,00,00,00,01,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\Axes\1]
+@="Y axis"
+"Attributes"=hex:01,81,00,00
+"FFAttributes"=hex:0a,00,00,00,00,01,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\Axes\2]
+@="Throttle"
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\Axes\5]
+@="Rudder"
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\Buttons]
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\Buttons\0]
+@="Trigger"
+"Attributes"=hex:02,80,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\Buttons\1]
+@="Button 2"
+"Attributes"=hex:02,80,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\Buttons\10]
+@="POV 2 East"
+"Attributes"=hex:02,80,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\Buttons\11]
+@="POV 2 South"
+"Attributes"=hex:02,80,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\Buttons\12]
+@="POV 2 West"
+"Attributes"=hex:02,80,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\Buttons\13]
+@="POV 2 North-East"
+"Attributes"=hex:02,80,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\Buttons\14]
+@="POV 2 South-East"
+"Attributes"=hex:02,80,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\Buttons\15]
+@="POV 2 South-West"
+"Attributes"=hex:02,80,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\Buttons\16]
+@="POV 2 North-West"
+"Attributes"=hex:02,80,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\Buttons\2]
+@="Button 3"
+"Attributes"=hex:02,80,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\Buttons\3]
+@="Button 4"
+"Attributes"=hex:02,80,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\Buttons\4]
+@="Button 5"
+"Attributes"=hex:02,80,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\Buttons\5]
+@="Button 6"
+"Attributes"=hex:02,80,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\Buttons\6]
+@="Button 7"
+"Attributes"=hex:02,80,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\Buttons\7]
+@="Roller Forward"
+"Attributes"=hex:02,80,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\Buttons\8]
+@="Roller Backward"
+"Attributes"=hex:02,80,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\Buttons\9]
+@="POV 2 North"
+"Attributes"=hex:02,80,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\OEMForceFeedback]
+"Attributes"=hex:00,00,00,00,e8,03,00,00,e8,03,00,00
+"CLSID"="{8D533A43-7A5F-11D3-8297-0050DA1A72D3}"
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\OEMForceFeedback\Effects]
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\OEMForceFeedback\Effects\{13541C20-8E33-11D0-9AD0-00A0C9A06E35}]
+@="Constant"
+"Attributes"=hex:00,00,00,00,01,86,00,00,ed,03,00,00,ed,03,00,00,30,00,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\OEMForceFeedback\Effects\{13541C21-8E33-11D0-9AD0-00A0C9A06E35}]
+@="Ramp Force"
+"Attributes"=hex:01,00,00,00,02,86,00,00,ef,03,00,00,ef,03,00,00,30,00,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\OEMForceFeedback\Effects\{13541C22-8E33-11D0-9AD0-00A0C9A06E35}]
+@="Square Wave"
+"Attributes"=hex:02,00,00,00,03,86,00,00,ef,03,00,00,ef,03,00,00,30,00,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\OEMForceFeedback\Effects\{13541C23-8E33-11D0-9AD0-00A0C9A06E35}]
+@="Sine Wave"
+"Attributes"=hex:03,00,00,00,03,86,00,00,ef,03,00,00,ef,03,00,00,30,00,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\OEMForceFeedback\Effects\{13541C24-8E33-11D0-9AD0-00A0C9A06E35}]
+@="Triangle Wave"
+"Attributes"=hex:04,00,00,00,03,86,00,00,ef,03,00,00,ef,03,00,00,30,00,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\OEMForceFeedback\Effects\{13541C25-8E33-11D0-9AD0-00A0C9A06E35}]
+@="Sawtooth Up Wave"
+"Attributes"=hex:05,00,00,00,03,86,00,00,ef,03,00,00,ef,03,00,00,30,00,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\OEMForceFeedback\Effects\{13541C26-8E33-11D0-9AD0-00A0C9A06E35}]
+@="Sawtooth Down Wave"
+"Attributes"=hex:06,00,00,00,03,86,00,00,ef,03,00,00,ef,03,00,00,30,00,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\OEMForceFeedback\Effects\{13541C27-8E33-11D0-9AD0-00A0C9A06E35}]
+@="Spring"
+"Attributes"=hex:07,00,00,00,04,d8,00,00,6d,03,00,00,6d,03,00,00,30,00,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\OEMForceFeedback\Effects\{13541C28-8E33-11D0-9AD0-00A0C9A06E35}]
+@="Damper"
+"Attributes"=hex:08,00,00,00,04,d8,00,00,6d,03,00,00,6d,03,00,00,30,00,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\OEMForceFeedback\Effects\{13541C29-8E33-11D0-9AD0-00A0C9A06E35}]
+@="Inertia"
+"Attributes"=hex:09,00,00,00,04,d8,00,00,6d,03,00,00,6d,03,00,00,30,00,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\OEMForceFeedback\Effects\{13541C2A-8E33-11D0-9AD0-00A0C9A06E35}]
+@="Friction"
+"Attributes"=hex:0a,00,00,00,04,d8,00,00,6d,03,00,00,6d,03,00,00,30,00,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\OEMForceFeedback\Effects\{13541C2B-8E33-11D0-9AD0-00A0C9A06E35}]
+@="CustomForce"
+"Attributes"=hex:00,01,00,00,05,86,00,00,ef,03,00,00,ef,03,00,00,30,00,00,00
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\POVs]
+
+[HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C285\POVs\0]
+@="Hat Switch"
+
