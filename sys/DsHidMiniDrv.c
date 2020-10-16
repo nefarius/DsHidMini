@@ -354,13 +354,18 @@ DsHidMini_GetFeature(
 
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
-	TraceDbg(TRACE_DSHIDMINIDRV, "!! Packet->reportId: %d, Packet->reportBufferLen: %d", 
+	TraceDbg(TRACE_DSHIDMINIDRV, "!! Packet->reportId: %d, Packet->reportBufferLen: %d, id: %d", 
 		Packet->reportId,
-		Packet->reportBufferLen);
+		Packet->reportBufferLen, 
+		Packet->reportId >> 4);
 	
 	//DumpAsHex("!! GET_FEATURE.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
 
 #ifdef DSHM_FEATURE_FFB
+
+	//
+	// TODO: OBSOLETE
+	// 
 	if (Packet->reportId == 7 && Packet->reportBufferLen == sizeof(USB_FFBReport_PIDPool_Feature_Data_t))
 	{
 		TraceDbg(TRACE_DSHIDMINIDRV, "!! USB_FFBReport_PIDPool_Feature_Data_t");
@@ -375,7 +380,29 @@ DsHidMini_GetFeature(
 
 		reportSize = Packet->reportBufferLen;
 	}
+
+	if ((Packet->reportId & 0x0F) == 0x02)
+	{
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! FFB 2");
+
+		Packet->reportBuffer[0] = Packet->reportId;
+		Packet->reportBuffer[2] = 1;
+		Packet->reportBuffer[3] = 0;
+		Packet->reportBuffer[4] = 0;
+
+		reportSize = Packet->reportBufferLen;
+	}
+
+	if ((Packet->reportId & 0x0F) == 0x03)
+	{
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! FFB 3");
+
+		status = STATUS_NO_SUCH_DEVICE;
+	}
+	
 #endif
+
+#pragma region DEPRECATED
 	
 	switch (Packet->reportId)
 	{
@@ -485,6 +512,8 @@ DsHidMini_GetFeature(
 	default:
 		break;
 	}
+
+#pragma endregion
 
 	*ReportSize = reportSize;
 

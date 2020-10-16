@@ -37,6 +37,47 @@ DsHidMini_WriteReport		DsHidMini_WriteReport Exit
 
 `System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_054C&PID_0268\OEMForceFeedback\Effects\<GUID>\Attributes` 👉 [is this format](https://docs.microsoft.com/en-us/windows/win32/api/dinputd/ns-dinputd-dieffectattributes)
 
+```cpp
+#define DIEFT_ALL                   0x00000000
+
+#define DIEFT_CONSTANTFORCE         0x00000001
+#define DIEFT_RAMPFORCE             0x00000002
+#define DIEFT_PERIODIC              0x00000003
+#define DIEFT_CONDITION             0x00000004
+#define DIEFT_CUSTOMFORCE           0x00000005
+#define DIEFT_HARDWARE              0x000000FF
+#define DIEFT_FFATTACK              0x00000200
+#define DIEFT_FFFADE                0x00000400
+#define DIEFT_SATURATION            0x00000800
+#define DIEFT_POSNEGCOEFFICIENTS    0x00001000
+#define DIEFT_POSNEGSATURATION      0x00002000
+#define DIEFT_DEADBAND              0x00004000
+#define DIEFT_STARTDELAY            0x00008000
+#define DIEFT_GETTYPE(n)            LOBYTE(n)
+```
+
+```cpp
+#define DIEP_DURATION               0x00000001
+#define DIEP_SAMPLEPERIOD           0x00000002
+#define DIEP_GAIN                   0x00000004
+#define DIEP_TRIGGERBUTTON          0x00000008
+#define DIEP_TRIGGERREPEATINTERVAL  0x00000010
+#define DIEP_AXES                   0x00000020
+#define DIEP_DIRECTION              0x00000040
+#define DIEP_ENVELOPE               0x00000080
+#define DIEP_TYPESPECIFICPARAMS     0x00000100
+#if(DIRECTINPUT_VERSION >= 0x0600)
+#define DIEP_STARTDELAY             0x00000200
+#define DIEP_ALLPARAMS_DX5          0x000001FF
+#define DIEP_ALLPARAMS              0x000003FF
+#else /* DIRECTINPUT_VERSION < 0x0600 */
+#define DIEP_ALLPARAMS              0x000001FF
+#endif /* DIRECTINPUT_VERSION < 0x0600 */
+#define DIEP_START                  0x20000000
+#define DIEP_NORESTART              0x40000000
+#define DIEP_NODOWNLOAD             0x80000000
+```
+
 As of the example of effect setting, refer to this INF file `C:\Windows\inf\swnt.inf` (pre-installed on WinXP)  or MS SideWinder FFB2. Here is an excerpt from this INF.
 <pre>
 HKLM,%szSWFFPro%\OEMForceFeedback\Effects\{13541C20-8E33-11D0-9AD0-
