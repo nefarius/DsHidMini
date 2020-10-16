@@ -10,7 +10,7 @@ extern unsigned int numInstances;
 // 
 
 /* Enable Force Feedback features */
-//#define DSHM_FEATURE_FFB
+#define DSHM_FEATURE_FFB
 
 #include <windows.h>
 #include <wdf.h>
