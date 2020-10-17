@@ -21,7 +21,7 @@ TBD
 Rough road map with useful features (in no particular order):
 
 - Implement support for Navigation controller ⚡
-  - Partially done
+  - Add USB and Bluetooth Hardware IDs to INF ✔️
   - Adapt feature report for setting/getting Bluetooth master address
 - Implement auto-disconnect on wireless after idle timeout to save battery ⚡
 - Implement/expose more options to control pairing behavior
