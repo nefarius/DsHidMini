@@ -9,6 +9,7 @@
 - [Syniurge/ShieldControllerWinDriver](https://github.com/Syniurge/ShieldControllerWinDriver/blob/b5c2bfa7b3e86d85c7fd7bac24cb6a4ae6ab5226/sys/hid.c#L1099)
 - [Force Feedback Tutorial: PIC18F4550](https://www.microchip.com/forums/m958105.aspx)
 - [USB HID Joystick rumble (ffb)](https://www.microchip.com/forums/m545778.aspx)
+- [FirstPlatoLV/EmuController](https://github.com/FirstPlatoLV/EmuController/blob/628d077637eec92a91a4ac845dd8b9c2d3851034/inc/Public.h)
 
 ## Sniffs/Logs
 

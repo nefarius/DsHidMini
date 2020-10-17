@@ -364,13 +364,21 @@ DsHidMini_GetFeature(
 	{
 		TraceDbg(TRACE_DSHIDMINIDRV, "!! USB_FFBReport_PIDBlockLoad_Feature_Data_t");
 
+		/*
 		USB_FFBReport_PIDBlockLoad_Feature_Data_t* data = (USB_FFBReport_PIDBlockLoad_Feature_Data_t*)Packet->
 			reportBuffer;
 
 		data->reportId = Packet->reportId;
 		data->effectBlockIndex = 0x01;
 		data->loadStatus = 0x01;
-		data->ramPoolAvailable = 0xFFFF;
+		data->ramPoolAvailable = 0x0000;
+		*/
+
+		Packet->reportBuffer[0] = Packet->reportId;
+		Packet->reportBuffer[1] = 1; // Effect Block Index = 1
+		Packet->reportBuffer[3] = 0; // Load Full = 0
+		Packet->reportBuffer[2] = 1; // Load Success = 1
+		Packet->reportBuffer[4] = 0; // Load Error =0
 		
 		reportSize = Packet->reportBufferLen;
 	}
@@ -420,6 +428,8 @@ DsHidMini_SetFeature(
 	TraceDbg(TRACE_DSHIDMINIDRV, "!! Packet->reportId: %d, Packet->reportBufferLen: %d", 
 		Packet->reportId,
 		Packet->reportBufferLen);
+
+	DumpAsHex("!! SET_FEATURE.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
 
 #ifdef DSHM_FEATURE_FFB
 	if(Packet->reportId == 5 && Packet->reportBufferLen == sizeof(USB_FFBReport_SetConstantForce_Output_Data_t))
@@ -488,7 +498,7 @@ DsHidMini_WriteReport(
 	DumpAsHex("!! WRITE_REPORT.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
 
 #ifdef DSHM_FEATURE_FFB
-	if (Packet->reportId == 12 && Packet->reportBufferLen == sizeof(USB_FFBReport_DeviceControl_Output_Data_t))
+	if (Packet->reportId == 28 && Packet->reportBufferLen == sizeof(USB_FFBReport_DeviceControl_Output_Data_t))
 	{
 		USB_FFBReport_DeviceControl_Output_Data_t* data = (USB_FFBReport_DeviceControl_Output_Data_t*)Packet->
 			reportBuffer;
@@ -519,7 +529,7 @@ DsHidMini_WriteReport(
 		*ReportSize = Packet->reportBufferLen;
 	}
 
-	if (Packet->reportId == 13 && Packet->reportBufferLen == sizeof(USB_FFBReport_DeviceGain_Output_Data_t))
+	if (Packet->reportId == 29 && Packet->reportBufferLen == sizeof(USB_FFBReport_DeviceGain_Output_Data_t))
 	{
 		USB_FFBReport_DeviceGain_Output_Data_t* data = (USB_FFBReport_DeviceGain_Output_Data_t*)Packet->reportBuffer;
 
