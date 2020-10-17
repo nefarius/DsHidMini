@@ -341,12 +341,6 @@ DsHidMini_GetFeature(
 	ULONG reportSize = 0;
 	PDEVICE_CONTEXT pDevCtx;
 
-	PDS_FEATURE_GET_HOST_BD_ADDR pGetHostAddr = NULL;
-	PDS_FEATURE_GET_DEVICE_BD_ADDR pGetDeviceAddr = NULL;
-	PDS_FEATURE_GET_CONNECTION_TYPE pGetConnectionType = NULL;
-	PDS_FEATURE_GET_DEVICE_TYPE pGetDeviceType = NULL;
-	PDS_FEATURE_GET_BATTERY_STATUS pGetBatteryStatus = NULL;
-
 	UNREFERENCED_PARAMETER(Request);
 
 
@@ -392,120 +386,9 @@ DsHidMini_GetFeature(
 
 #pragma region DEPRECATED
 	
-	switch (Packet->reportId)
-	{
-	case DS_FEATURE_TYPE_GET_HOST_BD_ADDR:
-
-		TraceEvents(TRACE_LEVEL_INFORMATION,
-			TRACE_DSHIDMINIDRV,
-			"<< DS_FEATURE_TYPE_GET_HOST_BD_ADDR"
-		);
-
-		if (Packet->reportBufferLen < sizeof(DS_FEATURE_GET_HOST_BD_ADDR))
-		{
-			status = STATUS_BUFFER_TOO_SMALL;
-			goto Exit;
-		}
-
-		pGetHostAddr = (PDS_FEATURE_GET_HOST_BD_ADDR)Packet->reportBuffer;
-		pGetHostAddr->HostAddress = pDevCtx->HostAddress;
-		reportSize = sizeof(DS_FEATURE_GET_HOST_BD_ADDR) - sizeof(Packet->reportId);
-
-		break;
-	case DS_FEATURE_TYPE_GET_DEVICE_BD_ADDR:
-
-		TraceEvents(TRACE_LEVEL_INFORMATION,
-			TRACE_DSHIDMINIDRV,
-			"<< DS_FEATURE_TYPE_GET_DEVICE_BD_ADDR"
-		);
-
-		if (Packet->reportBufferLen < sizeof(DS_FEATURE_GET_DEVICE_BD_ADDR))
-		{
-			status = STATUS_BUFFER_TOO_SMALL;
-			goto Exit;
-		}
-
-		pGetDeviceAddr = (PDS_FEATURE_GET_DEVICE_BD_ADDR)Packet->reportBuffer;
-		pGetDeviceAddr->DeviceAddress = pDevCtx->DeviceAddress;
-		reportSize = sizeof(DS_FEATURE_GET_DEVICE_BD_ADDR) - sizeof(Packet->reportId);
-
-		break;
-	case DS_FEATURE_TYPE_GET_DEVICE_TYPE:
-
-		if (Packet->reportBufferLen < sizeof(DS_FEATURE_GET_DEVICE_TYPE))
-		{
-			status = STATUS_BUFFER_TOO_SMALL;
-			goto Exit;
-		}
-
-		pGetDeviceType = (PDS_FEATURE_GET_DEVICE_TYPE)Packet->reportBuffer;
-		//
-		// TODO: the only one supported currently
-		// 
-		pGetDeviceType->DeviceType = DS_DEVICE_TYPE_PS3_DUALSHOCK;
-		reportSize = sizeof(DS_FEATURE_GET_DEVICE_TYPE) - sizeof(Packet->reportId);
-
-		break;
-	case DS_FEATURE_TYPE_GET_CONNECTION_TYPE:
-
-		TraceEvents(TRACE_LEVEL_INFORMATION,
-			TRACE_DSHIDMINIDRV,
-			"<< DS_FEATURE_TYPE_GET_CONNECTION_TYPE"
-		);
-
-		if (Packet->reportBufferLen < sizeof(DS_FEATURE_GET_CONNECTION_TYPE))
-		{
-			status = STATUS_BUFFER_TOO_SMALL;
-			goto Exit;
-		}
-
-		pGetConnectionType = (PDS_FEATURE_GET_CONNECTION_TYPE)Packet->reportBuffer;
-		pGetConnectionType->ConnectionType = pDevCtx->ConnectionType;
-		reportSize = sizeof(DS_FEATURE_GET_CONNECTION_TYPE) - sizeof(Packet->reportId);
-
-		break;
-	case DS_FEATURE_TYPE_GET_DEVICE_CONFIG:
-
-		if (Packet->reportBufferLen < sizeof(DS_FEATURE_GET_DEVICE_CONFIG))
-		{
-			status = STATUS_BUFFER_TOO_SMALL;
-			goto Exit;
-		}
-
-		//
-		// TODO: implement me!
-		// 
-
-		status = STATUS_NOT_IMPLEMENTED;
-
-		break;
-	case DS_FEATURE_TYPE_GET_BATTERY_STATUS:
-
-		TraceEvents(TRACE_LEVEL_INFORMATION,
-			TRACE_DSHIDMINIDRV,
-			"<< DS_FEATURE_TYPE_GET_BATTERY_STATUS"
-		);
-
-		if (Packet->reportBufferLen < sizeof(DS_FEATURE_GET_BATTERY_STATUS))
-		{
-			status = STATUS_BUFFER_TOO_SMALL;
-			goto Exit;
-		}
-
-		pGetBatteryStatus = (PDS_FEATURE_GET_BATTERY_STATUS)Packet->reportBuffer;
-		pGetBatteryStatus->BatteryStatus = pDevCtx->BatteryStatus;
-		reportSize = sizeof(DS_FEATURE_GET_BATTERY_STATUS) - sizeof(Packet->reportId);
-
-		break;
-	default:
-		break;
-	}
-
 #pragma endregion
 
 	*ReportSize = reportSize;
-
-Exit:
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit (%!STATUS!)", status);
 
@@ -527,11 +410,7 @@ DsHidMini_SetFeature(
 	PDEVICE_CONTEXT pDevCtx;
 	ULONG reportSize = 0;
 
-	PDS_FEATURE_SET_HOST_BD_ADDR pSetHostAddr = NULL;
-	PDS_FEATURE_SET_DEVICE_CONFIG pSetDeviceConfig = NULL;
-
 	UNREFERENCED_PARAMETER(Request);
-	UNREFERENCED_PARAMETER(pSetDeviceConfig);
 
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
@@ -556,81 +435,7 @@ DsHidMini_SetFeature(
 	}
 #endif
 
-	switch (Packet->reportId)
-	{
-	case DS_FEATURE_TYPE_SET_HOST_BD_ADDR:
-
-		TraceEvents(TRACE_LEVEL_INFORMATION,
-			TRACE_DSHIDMINIDRV,
-			">> DS_FEATURE_TYPE_SET_HOST_BD_ADDR"
-		);
-
-		//
-		// Not possible via BTH
-		// 
-		if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
-		{
-			TraceEvents(TRACE_LEVEL_WARNING,
-				TRACE_DSHIDMINIDRV,
-				"Setting host address not possible while connected via Bluetooth");
-			status = STATUS_INVALID_DEVICE_REQUEST;
-			goto Exit;
-		}
-
-		if (Packet->reportBufferLen < sizeof(DS_FEATURE_SET_HOST_BD_ADDR))
-		{
-			status = STATUS_BUFFER_TOO_SMALL;
-			goto Exit;
-		}
-
-		pSetHostAddr = (PDS_FEATURE_SET_HOST_BD_ADDR)Packet->reportBuffer;
-
-		UCHAR controlBuffer[SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH];
-		RtlZeroMemory(controlBuffer, SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH);
-
-		RtlCopyMemory(&controlBuffer[2], &pSetHostAddr->HostAddress, sizeof(BD_ADDR));
-
-		status = SendControlRequest(
-			pDevCtx,
-			BmRequestHostToDevice,
-			BmRequestClass,
-			SetReport,
-			Ds3FeatureHostAddress,
-			0,
-			controlBuffer,
-			SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH);
-
-		if (!NT_SUCCESS(status))
-		{
-			TraceEvents(TRACE_LEVEL_ERROR,
-				TRACE_DSHIDMINIDRV,
-				"Setting host address failed with %!STATUS!", status);
-			status = STATUS_UNSUCCESSFUL;
-		}
-		else
-		{
-			RtlCopyMemory(&pDevCtx->HostAddress, &pSetHostAddr->HostAddress, sizeof(BD_ADDR));
-
-			reportSize = sizeof(DS_FEATURE_SET_HOST_BD_ADDR);
-		}
-
-		break;
-	case DS_FEATURE_TYPE_SET_DEVICE_CONFIG:
-
-		//
-		// TODO: implement me!
-		// 
-
-		status = STATUS_NOT_IMPLEMENTED;
-
-		break;
-	default:
-		break;
-	}
-
 	*ReportSize = reportSize;
-
-Exit:
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 
