@@ -364,32 +364,20 @@ DsHidMini_GetFeature(
 #ifdef DSHM_FEATURE_FFB
 
 	//
-	// TODO: OBSOLETE
+	// USB_FFBReport_PIDBlockLoad_Feature_Data_t
 	// 
-	if (Packet->reportId == 7 && Packet->reportBufferLen == sizeof(USB_FFBReport_PIDPool_Feature_Data_t))
-	{
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! USB_FFBReport_PIDPool_Feature_Data_t");
-		
-		USB_FFBReport_PIDPool_Feature_Data_t* data = (USB_FFBReport_PIDPool_Feature_Data_t*)Packet->
-			reportBuffer;
-
-		data->reportId = 7;
-		data->ramPoolSize = 0xFFFF;
-		data->maxSimultaneousEffects = 40;
-		data->memoryManagement = 0;
-
-		reportSize = Packet->reportBufferLen;
-	}
-
 	if ((Packet->reportId & 0x0F) == 0x02)
 	{
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! FFB 2");
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! USB_FFBReport_PIDBlockLoad_Feature_Data_t");
 
-		Packet->reportBuffer[0] = Packet->reportId;
-		Packet->reportBuffer[2] = 1;
-		Packet->reportBuffer[3] = 0;
-		Packet->reportBuffer[4] = 0;
+		USB_FFBReport_PIDBlockLoad_Feature_Data_t* data = (USB_FFBReport_PIDBlockLoad_Feature_Data_t*)Packet->
+			reportBuffer;
 
+		data->reportId = Packet->reportId;
+		data->effectBlockIndex = 0x01;
+		data->loadStatus = 0x01;
+		data->ramPoolAvailable = 0xFFFF;
+		
 		reportSize = Packet->reportBufferLen;
 	}
 

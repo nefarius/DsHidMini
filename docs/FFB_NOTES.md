@@ -228,3 +228,30 @@ HKLM,%szSWFFPro%\OEMForceFeedback\Effects\{e84cd1c8-81fa-11d0-94ab-0080c74c7e95}
 </pre>
 
 **Delete this entire key** to remove outdated values 👉 `Computer\HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties`
+
+## Example traces
+
+```text
+--- ON
+DsHidMini_GetFeature	2020/10/16-23:43:09.020	TRACE_LEVEL_INFORMATION	DsHidMini_GetFeature Entry
+DsHidMini_GetFeature	2020/10/16-23:43:09.020	TRACE_LEVEL_INFORMATION	!! Packet->reportId: 19, Packet->reportBufferLen: 5, id: 1
+DsHidMini_GetFeature	2020/10/16-23:43:09.020	TRACE_LEVEL_INFORMATION	!! FFB 3
+DsHidMini_GetFeature	2020/10/16-23:43:09.020	TRACE_LEVEL_INFORMATION	DsHidMini_GetFeature Exit (STATUS_NO_SUCH_DEVICE (0xC000000E))
+DsHidMini_WriteReport	2020/10/16-23:43:09.020	TRACE_LEVEL_INFORMATION	DsHidMini_WriteReport Entry
+DsHidMini_WriteReport	2020/10/16-23:43:09.020	TRACE_LEVEL_INFORMATION	!! Packet->reportId: 28, Packet->reportBufferLen: 2
+DsHidMini_WriteReport	2020/10/16-23:43:09.020	TRACE_LEVEL_INFORMATION	DsHidMini_WriteReport Exit
+DsHidMini_WriteReport	2020/10/16-23:43:09.020	TRACE_LEVEL_INFORMATION	DsHidMini_WriteReport Entry
+DsHidMini_WriteReport	2020/10/16-23:43:09.020	TRACE_LEVEL_INFORMATION	!! Packet->reportId: 29, Packet->reportBufferLen: 2
+DsHidMini_WriteReport	2020/10/16-23:43:09.020	TRACE_LEVEL_INFORMATION	DsHidMini_WriteReport Exit
+DsHidMini_SetFeature	2020/10/16-23:43:09.026	TRACE_LEVEL_INFORMATION	DsHidMini_SetFeature Entry
+DsHidMini_SetFeature	2020/10/16-23:43:09.026	TRACE_LEVEL_INFORMATION	!! Packet->reportId: 17, Packet->reportBufferLen: 4
+DsHidMini_SetFeature	2020/10/16-23:43:09.026	TRACE_LEVEL_INFORMATION	DsHidMini_SetFeature Exit
+DsHidMini_GetFeature	2020/10/16-23:43:09.026	TRACE_LEVEL_INFORMATION	DsHidMini_GetFeature Entry
+DsHidMini_GetFeature	2020/10/16-23:43:09.026	TRACE_LEVEL_INFORMATION	!! Packet->reportId: 18, Packet->reportBufferLen: 5, id: 1
+DsHidMini_GetFeature	2020/10/16-23:43:09.026	TRACE_LEVEL_INFORMATION	!! FFB 2
+DsHidMini_GetFeature	2020/10/16-23:43:09.026	TRACE_LEVEL_INFORMATION	DsHidMini_GetFeature Exit (STATUS_SUCCESS (0x00000000))
+--- OFF
+DsHidMini_WriteReport	2020/10/16-23:43:11.204	TRACE_LEVEL_INFORMATION	DsHidMini_WriteReport Entry
+DsHidMini_WriteReport	2020/10/16-23:43:11.204	TRACE_LEVEL_INFORMATION	!! Packet->reportId: 28, Packet->reportBufferLen: 2
+DsHidMini_WriteReport	2020/10/16-23:43:11.204	TRACE_LEVEL_INFORMATION	DsHidMini_WriteReport Exit
+```
