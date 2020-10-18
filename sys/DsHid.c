@@ -550,25 +550,24 @@
 0xC0,              /*   End Collection */ \
 0x09, 0xAB,        /*   Usage (Create New Effect Report) */ \
 0xA1, 0x02,        /*   Collection (Logical) */ \
-0x85, 0x11,        /*     Report ID (17) */ \
-0x09, 0x25,        /*     Usage (0x25) */ \
+0x85, PID_CREATE_NEW_EFFECT_REPORT_ID,        /*     Report ID (17) */ \
+0x09, 0x25,        /*     Usage (Effect Type) */ \
 0xA1, 0x02,        /*     Collection (Logical) */ \
-0x09, 0x26,        /*       Usage (0x26) */ \
-0x09, 0x27,        /*       Usage (0x27) */ \
-0x09, 0x30,        /*       Usage (0x30) */ \
-0x09, 0x31,        /*       Usage (0x31) */ \
-0x09, 0x32,        /*       Usage (0x32) */ \
-0x09, 0x33,        /*       Usage (0x33) */ \
-0x09, 0x34,        /*       Usage (0x34) */ \
-0x09, 0x40,        /*       Usage (0x40) */ \
-0x09, 0x41,        /*       Usage (0x41) */ \
-0x09, 0x42,        /*       Usage (0x42) */ \
-0x09, 0x43,        /*       Usage (0x43) */ \
-0x09, 0x29,        /*       Usage (0x29) */ \
-0x25, 0x0C,        /*       Logical Maximum (12) */ \
+0x09, 0x26,        /*       Usage (ET Constant Force) */ \
+0x09, 0x27,        /*       Usage (ET Ramp) */ \
+0x09, 0x30,        /*       Usage (ET Square) */ \
+0x09, 0x31,        /*       Usage (ET Sine) */ \
+0x09, 0x32,        /*       Usage (ET Triangle) */ \
+0x09, 0x33,        /*       Usage (ET Sawtooth Up) */ \
+0x09, 0x34,        /*       Usage (ET Sawtooth Down) */ \
+0x09, 0x40,        /*       Usage (ET Spring) */ \
+0x09, 0x41,        /*       Usage (ET Damper) */ \
+0x09, 0x42,        /*       Usage (ET Inertia) */ \
+0x09, 0x43,        /*       Usage (ET Friction) */ \
+0x25, 0x0C,        /*       Logical Maximum (11) */ \
 0x15, 0x01,        /*       Logical Minimum (1) */ \
 0x35, 0x01,        /*       Physical Minimum (1) */ \
-0x45, 0x0C,        /*       Physical Maximum (12) */ \
+0x45, 0x0C,        /*       Physical Maximum (11) */ \
 0x75, 0x08,        /*       Report Size (8) */ \
 0x95, 0x01,        /*       Report Count (1) */ \
 0xB1, 0x00,        /*       Feature (Data,Array,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \

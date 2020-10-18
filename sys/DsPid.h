@@ -16,6 +16,7 @@
 // 
 
 #define PID_POOL_REPORT_ID				0x13 // 19
+#define PID_CREATE_NEW_EFFECT_REPORT_ID	0x11 // 17
 
 /** Possible PID device control values */
 typedef enum _PID_DEVICE_CONTROL
@@ -28,6 +29,23 @@ typedef enum _PID_DEVICE_CONTROL
 	PidDcContinue = 6	
 	
 } PID_DEVICE_CONTROL;
+
+/** Possible PID device control values */
+typedef enum _PID_EFFECT_TYPE
+{
+	PidEtConstantForce = 1,
+	PidEtRamp = 2,
+	PidEtSquare = 3,
+	PidEtSine = 4,
+	PidEtTriangle = 5,
+	PidEtSawtoothUp = 6,
+	PidEtSawtoothDown = 7,
+	PidEtSpring = 8,
+	PidEtDamper = 9,
+	PidEtInertia = 10,
+	PidEtFriction = 11
+	
+} PID_EFFECT_TYPE;
 
 #include <pshpack1.h>
 
@@ -60,5 +78,13 @@ typedef struct _PID_DEVICE_GAIN_REPORT
 	UCHAR DeviceGain;
 	
 } PID_DEVICE_GAIN_REPORT, *PPID_DEVICE_GAIN_REPORT;
+
+typedef struct _PID_CREATE_NEW_EFFECT_REPORT
+{
+	UCHAR ReportID;
+
+	UCHAR EffectType;
+	
+} PID_CREATE_NEW_EFFECT_REPORT, *PPID_CREATE_NEW_EFFECT_REPORT;
 
 #include <poppack.h>

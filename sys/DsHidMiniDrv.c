@@ -413,6 +413,50 @@ DsHidMini_SetFeature(
 	DumpAsHex("!! SET_FEATURE.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
 
 #ifdef DSHM_FEATURE_FFB
+	if (Packet->reportId == PID_CREATE_NEW_EFFECT_REPORT_ID)
+	{
+		const PPID_CREATE_NEW_EFFECT_REPORT data = (PPID_CREATE_NEW_EFFECT_REPORT)Packet->reportBuffer;
+
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_CREATE_NEW_EFFECT_REPORT");
+
+		switch (data->EffectType)
+		{
+		case PidEtConstantForce:
+			TraceDbg(TRACE_DSHIDMINIDRV, "!! ET Constant Force");
+			break;
+		case PidEtRamp:
+			TraceDbg(TRACE_DSHIDMINIDRV, "!! ET Ramp");
+			break;
+		case PidEtSquare:
+			TraceDbg(TRACE_DSHIDMINIDRV, "!! ET Square");
+			break;
+		case PidEtSine:
+			TraceDbg(TRACE_DSHIDMINIDRV, "!! ET Sine");
+			break;
+		case PidEtTriangle:
+			TraceDbg(TRACE_DSHIDMINIDRV, "!! ET Triangle");
+			break;
+		case PidEtSawtoothUp:
+			TraceDbg(TRACE_DSHIDMINIDRV, "!! ET Sawtooth Up");
+			break;
+		case PidEtSawtoothDown:
+			TraceDbg(TRACE_DSHIDMINIDRV, "!! ET Sawtooth Down");
+			break;
+		case PidEtSpring:
+			TraceDbg(TRACE_DSHIDMINIDRV, "!! ET Spring");
+			break;
+		case PidEtDamper:
+			TraceDbg(TRACE_DSHIDMINIDRV, "!! ET Damper");
+			break;
+		case PidEtInertia:
+			TraceDbg(TRACE_DSHIDMINIDRV, "!! ET Inertia");
+			break;
+		case PidEtFriction:
+			TraceDbg(TRACE_DSHIDMINIDRV, "!! ET Friction");
+			break;
+		}	
+	}
+	
 	if(Packet->reportId == 5 && Packet->reportBufferLen == sizeof(USB_FFBReport_SetConstantForce_Output_Data_t))
 	{
 		USB_FFBReport_SetConstantForce_Output_Data_t* data =(USB_FFBReport_SetConstantForce_Output_Data_t*)Packet->reportBuffer;
