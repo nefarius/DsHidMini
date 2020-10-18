@@ -352,11 +352,6 @@ DsHidMini_GetFeature(
 	PPID_POOL_REPORT pPool;
 	PPID_BLOCK_LOAD_REPORT pBlockLoad;
 
-	TraceDbg(TRACE_DSHIDMINIDRV, "-- Packet->reportId: %d, Packet->reportBufferLen: %d",
-	         Packet->reportId,
-	         Packet->reportBufferLen);
-
-
 #ifdef DSHM_FEATURE_FFB
 
 	switch (Packet->reportId)
@@ -395,6 +390,10 @@ DsHidMini_GetFeature(
 	default:
 		TraceEvents(TRACE_LEVEL_WARNING, 
 			TRACE_DSHIDMINIDRV, "%!FUNC! Not implemented");
+
+		TraceDbg(TRACE_DSHIDMINIDRV, "-- Packet->reportId: %d, Packet->reportBufferLen: %d",
+	         Packet->reportId,
+	         Packet->reportBufferLen);
 		break;
 	}
 	
@@ -427,12 +426,6 @@ DsHidMini_SetFeature(
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
 	PPID_CREATE_NEW_EFFECT_REPORT pNewEffect;
-
-	TraceDbg(TRACE_DSHIDMINIDRV, "-- Packet->reportId: %d, Packet->reportBufferLen: %d",
-	         Packet->reportId,
-	         Packet->reportBufferLen);
-
-	DumpAsHex("-- SET_FEATURE.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
 
 #ifdef DSHM_FEATURE_FFB
 
@@ -485,8 +478,14 @@ DsHidMini_SetFeature(
 		
 		break;
 	default:
-		TraceEvents(TRACE_LEVEL_WARNING, 
-			TRACE_DSHIDMINIDRV, "%!FUNC! Not implemented");
+		TraceEvents(TRACE_LEVEL_WARNING,
+		            TRACE_DSHIDMINIDRV, "%!FUNC! Not implemented");
+
+		TraceDbg(TRACE_DSHIDMINIDRV, "-- Packet->reportId: %d, Packet->reportBufferLen: %d",
+		         Packet->reportId,
+		         Packet->reportBufferLen);
+
+		DumpAsHex("-- SET_FEATURE.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
 		break;
 	}
 
@@ -540,12 +539,6 @@ DsHidMini_WriteReport(
 	PPID_DEVICE_CONTROL_REPORT pDeviceControl;
 	PPID_DEVICE_GAIN_REPORT pGain;
 
-	TraceDbg(TRACE_DSHIDMINIDRV, "-- Packet->reportId: %d, Packet->reportBufferLen: %d",
-	         Packet->reportId,
-	         Packet->reportBufferLen);
-
-	DumpAsHex("-- WRITE_REPORT.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
-
 #ifdef DSHM_FEATURE_FFB
 
 	switch (Packet->reportId)
@@ -591,8 +584,14 @@ DsHidMini_WriteReport(
 		break;
 
 	default:
-		TraceEvents(TRACE_LEVEL_WARNING, 
-			TRACE_DSHIDMINIDRV, "%!FUNC! Not implemented");
+		TraceEvents(TRACE_LEVEL_WARNING,
+		            TRACE_DSHIDMINIDRV, "%!FUNC! Not implemented");
+
+		TraceDbg(TRACE_DSHIDMINIDRV, "-- Packet->reportId: %d, Packet->reportBufferLen: %d",
+		         Packet->reportId,
+		         Packet->reportBufferLen);
+
+		DumpAsHex("-- WRITE_REPORT.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
 		break;
 	}
 	
