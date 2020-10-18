@@ -338,7 +338,6 @@ DsHidMini_GetFeature(
 )
 {
 	NTSTATUS status = STATUS_SUCCESS;
-	ULONG reportSize = 0;
 	PDEVICE_CONTEXT pDevCtx;
 
 	UNREFERENCED_PARAMETER(Request);
@@ -348,27 +347,51 @@ DsHidMini_GetFeature(
 
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
-	TraceDbg(TRACE_DSHIDMINIDRV, "!! Packet->reportId: %d, Packet->reportBufferLen: %d", 
-		Packet->reportId,
-		Packet->reportBufferLen);
-	
-	//DumpAsHex("!! GET_FEATURE.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
+	PPID_POOL_REPORT pPool;
+	PPID_BLOCK_LOAD_REPORT pBlockLoad;
 
 #ifdef DSHM_FEATURE_FFB
 
-	if (Packet->reportId == PID_POOL_REPORT_ID)
+	switch (Packet->reportId)
 	{
+	case PID_POOL_REPORT_ID:
+
 		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_POOL_REPORT_ID");
 		
-		PPID_POOL_REPORT data = (PPID_POOL_REPORT)Packet->reportBuffer;
+		pPool = (PPID_POOL_REPORT)Packet->reportBuffer;
 
-		data->ReportID = Packet->reportId;
-		data->RAMPoolSize = 0xFFFF;
-		data->SimultaneousEffectsMax = 2;
-		data->DeviceManagedPool = 0;
-		data->SharedParameterBlocks = 0;
-		
-		reportSize = Packet->reportBufferLen;
+		pPool->ReportID = Packet->reportId;
+		pPool->RAMPoolSize = 0xFFFE;
+		pPool->SimultaneousEffectsMax = 20; // TODO: just an example
+		pPool->DeviceManagedPool = 1;
+		pPool->SharedParameterBlocks = 0;
+
+		*ReportSize = Packet->reportBufferLen;
+
+		break;
+
+	case PID_BLOCK_LOAD_REPORT_ID:
+
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_BLOCK_LOAD_REPORT_ID");
+				
+		pBlockLoad = (PPID_BLOCK_LOAD_REPORT)Packet->reportBuffer;
+
+		pBlockLoad->ReportID = Packet->reportId;
+		pBlockLoad->EffectBlockIndex = 2; // TODO: just an example
+		pBlockLoad->BlockLoadStatus = PidBlsSuccess;
+		pBlockLoad->RAMPoolAvailable = 0xFFFE;
+
+		*ReportSize = Packet->reportBufferLen;
+
+		break;
+
+	default:
+
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! Packet->reportId: %d, Packet->reportBufferLen: %d",
+		         Packet->reportId,
+		         Packet->reportBufferLen);
+
+		break;
 	}
 	
 #endif
@@ -376,8 +399,6 @@ DsHidMini_GetFeature(
 #pragma region DEPRECATED
 	
 #pragma endregion
-
-	*ReportSize = reportSize;
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit (%!STATUS!)", status);
 
@@ -406,20 +427,20 @@ DsHidMini_SetFeature(
 
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
-	TraceDbg(TRACE_DSHIDMINIDRV, "!! Packet->reportId: %d, Packet->reportBufferLen: %d", 
-		Packet->reportId,
-		Packet->reportBufferLen);
+	PPID_CREATE_NEW_EFFECT_REPORT pNewEffect;
 
-	DumpAsHex("!! SET_FEATURE.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
 
 #ifdef DSHM_FEATURE_FFB
-	if (Packet->reportId == PID_CREATE_NEW_EFFECT_REPORT_ID)
+
+	switch (Packet->reportId)
 	{
-		const PPID_CREATE_NEW_EFFECT_REPORT data = (PPID_CREATE_NEW_EFFECT_REPORT)Packet->reportBuffer;
+	case PID_CREATE_NEW_EFFECT_REPORT_ID:
+
+		pNewEffect = (PPID_CREATE_NEW_EFFECT_REPORT)Packet->reportBuffer;
 
 		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_CREATE_NEW_EFFECT_REPORT");
 
-		switch (data->EffectType)
+		switch (pNewEffect->EffectType)
 		{
 		case PidEtConstantForce:
 			TraceDbg(TRACE_DSHIDMINIDRV, "!! ET Constant Force");
@@ -454,20 +475,21 @@ DsHidMini_SetFeature(
 		case PidEtFriction:
 			TraceDbg(TRACE_DSHIDMINIDRV, "!! ET Friction");
 			break;
-		}	
-	}
-	
-	if(Packet->reportId == 5 && Packet->reportBufferLen == sizeof(USB_FFBReport_SetConstantForce_Output_Data_t))
-	{
-		USB_FFBReport_SetConstantForce_Output_Data_t* data =(USB_FFBReport_SetConstantForce_Output_Data_t*)Packet->reportBuffer;
+		}
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! data->effectBlockIndex: %d, data->magnitude: %d",
-			data->effectBlockIndex,
-			data->magnitude
-		);
-		
-		*ReportSize=Packet->reportBufferLen;
+		break;
+
+	default:
+
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! Packet->reportId: %d, Packet->reportBufferLen: %d",
+		         Packet->reportId,
+		         Packet->reportBufferLen);
+
+		DumpAsHex("!! SET_FEATURE.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
+
+		break;
 	}
+
 #endif
 
 	*ReportSize = reportSize;
@@ -516,18 +538,18 @@ DsHidMini_WriteReport(
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
-	TraceDbg(TRACE_DSHIDMINIDRV, "!! Packet->reportId: %d, Packet->reportBufferLen: %d", 
-		Packet->reportId,
-		Packet->reportBufferLen);
-	
-	DumpAsHex("!! WRITE_REPORT.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
+	PPID_DEVICE_CONTROL_REPORT pDeviceControl;
+	PPID_DEVICE_GAIN_REPORT pGain;
 
 #ifdef DSHM_FEATURE_FFB
-	if (Packet->reportId == PID_DEVICE_CONTROL_REPORT_ID)
-	{
-		const PPID_DEVICE_CONTROL_REPORT data = (PPID_DEVICE_CONTROL_REPORT)Packet->reportBuffer;
 
-		switch (data->Control)
+	switch (Packet->reportId)
+	{
+	case PID_DEVICE_CONTROL_REPORT_ID:
+
+		pDeviceControl = (PPID_DEVICE_CONTROL_REPORT)Packet->reportBuffer;
+
+		switch (pDeviceControl->Control)
 		{
 		case PidDcEnableActuators:
 			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Enable Actuators");
@@ -547,19 +569,33 @@ DsHidMini_WriteReport(
 		case PidDcContinue:
 			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Continue");
 			break;
-		}	
+		}
 
 		*ReportSize = Packet->reportBufferLen;
-	}
 
-	if (Packet->reportId == PID_DEVICE_GAIN_REPORT_ID)
-	{
-		const PPID_DEVICE_GAIN_REPORT data = (PPID_DEVICE_GAIN_REPORT)Packet->reportBuffer;
+		break;
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_DEVICE_GAIN_REPORT, DeviceGain: %d", data->DeviceGain);
-		
+	case PID_DEVICE_GAIN_REPORT_ID:
+
+		pGain = (PPID_DEVICE_GAIN_REPORT)Packet->reportBuffer;
+
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_DEVICE_GAIN_REPORT, DeviceGain: %d", pGain->DeviceGain);
+
 		*ReportSize = Packet->reportBufferLen;
+
+		break;
+
+	default:
+
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! Packet->reportId: %d, Packet->reportBufferLen: %d",
+		         Packet->reportId,
+		         Packet->reportBufferLen);
+
+		DumpAsHex("!! WRITE_REPORT.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
+
+		break;
 	}
+	
 #endif
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");

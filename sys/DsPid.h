@@ -17,6 +17,7 @@
 
 #define PID_POOL_REPORT_ID				0x13 // 19
 #define PID_CREATE_NEW_EFFECT_REPORT_ID	0x11 // 17
+#define PID_BLOCK_LOAD_REPORT_ID		0x12 // 18
 
 /** Possible PID device control values */
 typedef enum _PID_DEVICE_CONTROL
@@ -46,6 +47,14 @@ typedef enum _PID_EFFECT_TYPE
 	PidEtFriction = 11
 	
 } PID_EFFECT_TYPE;
+
+typedef enum _PID_BLOCK_LOAD_STATUS
+{
+	PidBlsSuccess = 1,
+	PidBlsFull = 2,
+	PidBlsError = 3
+	
+} PID_BLOCK_LOAD_STATUS;
 
 #include <pshpack1.h>
 
@@ -86,5 +95,17 @@ typedef struct _PID_CREATE_NEW_EFFECT_REPORT
 	UCHAR EffectType;
 	
 } PID_CREATE_NEW_EFFECT_REPORT, *PPID_CREATE_NEW_EFFECT_REPORT;
+
+typedef struct _PID_BLOCK_LOAD_REPORT
+{
+	UCHAR ReportID;
+
+	UCHAR EffectBlockIndex;
+
+	UCHAR BlockLoadStatus;
+
+	USHORT RAMPoolAvailable;
+	
+} PID_BLOCK_LOAD_REPORT, *PPID_BLOCK_LOAD_REPORT;
 
 #include <poppack.h>
