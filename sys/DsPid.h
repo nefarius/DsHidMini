@@ -1,5 +1,7 @@
 #pragma once
 
+#define MAX_EFFECT_BLOCKS				0x7F // 127
+
 /*
  * The Report IDs defined here must match the ones used in the report descriptor.
  */
