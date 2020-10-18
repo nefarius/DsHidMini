@@ -504,9 +504,9 @@
 0x95, 0x01,        /*     Report Count (1) */ \
 0x91, 0x00,        /*     Output (Data,Array,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
 0xC0,              /*   End Collection */ \
-0x09, 0x7D,        /*   Usage (0x7D) */ \
+0x09, 0x7D,        /*   Usage (Device Gain Report) */ \
 0xA1, 0x02,        /*   Collection (Logical) */ \
-0x85, 0x1D,        /*     Report ID (29) */ \
+0x85, PID_DEVICE_GAIN_REPORT_ID,        /*     Report ID (29) */ \
 0x09, 0x7E,        /*     Usage (0x7E) */ \
 0x15, 0x00,        /*     Logical Minimum (0) */ \
 0x26, 0xFF, 0x00,  /*     Logical Maximum (255) */ \

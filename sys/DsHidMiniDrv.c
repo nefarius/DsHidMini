@@ -480,8 +480,8 @@ DsHidMini_WriteReport(
 
 #ifdef DSHM_FEATURE_FFB
 	if (Packet->reportId == PID_DEVICE_CONTROL_REPORT_ID)
-	{	
-		PPID_DEVICE_CONTROL_REPORT data = (PPID_DEVICE_CONTROL_REPORT)Packet->reportBuffer;
+	{
+		const PPID_DEVICE_CONTROL_REPORT data = (PPID_DEVICE_CONTROL_REPORT)Packet->reportBuffer;
 
 		switch (data->Control)
 		{
@@ -508,11 +508,11 @@ DsHidMini_WriteReport(
 		*ReportSize = Packet->reportBufferLen;
 	}
 
-	if (Packet->reportId == 29 && Packet->reportBufferLen == sizeof(USB_FFBReport_DeviceGain_Output_Data_t))
+	if (Packet->reportId == PID_DEVICE_GAIN_REPORT_ID)
 	{
-		USB_FFBReport_DeviceGain_Output_Data_t* data = (USB_FFBReport_DeviceGain_Output_Data_t*)Packet->reportBuffer;
+		const PPID_DEVICE_GAIN_REPORT data = (PPID_DEVICE_GAIN_REPORT)Packet->reportBuffer;
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! data->gain: %d", data->gain);
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_DEVICE_GAIN_REPORT, Gain: %d", data->Gain);
 		
 		*ReportSize = Packet->reportBufferLen;
 	}

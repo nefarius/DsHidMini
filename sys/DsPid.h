@@ -4,7 +4,17 @@
  * The Report IDs defined here must match the ones used in the report descriptor.
  */
 
+//
+// Output
+// 
+
 #define PID_DEVICE_CONTROL_REPORT_ID	0x1C // 28
+#define PID_DEVICE_GAIN_REPORT_ID		0x1D // 29
+
+//
+// Features
+// 
+
 #define PID_POOL_REPORT_ID				0x13 // 19
 
 /** Possible PID device control values */
@@ -42,5 +52,13 @@ typedef struct _PID_POOL_REPORT
 	UINT SharedParameterBlocks : 1;
 	
 } PID_POOL_REPORT, *PPID_POOL_REPORT;
+
+typedef struct _PID_DEVICE_GAIN_REPORT
+{
+	UCHAR ReportID;
+
+	UCHAR Gain;
+	
+} PID_DEVICE_GAIN_REPORT, *PPID_DEVICE_GAIN_REPORT;
 
 #include <poppack.h>
