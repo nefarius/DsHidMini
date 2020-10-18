@@ -356,37 +356,19 @@ DsHidMini_GetFeature(
 
 #ifdef DSHM_FEATURE_FFB
 
-	//
-	// USB_FFBReport_PIDBlockLoad_Feature_Data_t
-	// 
-	if ((Packet->reportId & 0x0F) == 0x02)
+	if (Packet->reportId == PID_POOL_REPORT_ID)
 	{
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! USB_FFBReport_PIDBlockLoad_Feature_Data_t");
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_POOL_REPORT_ID");
+		
+		PPID_POOL_REPORT data = (PPID_POOL_REPORT)Packet->reportBuffer;
 
-		/*
-		USB_FFBReport_PIDBlockLoad_Feature_Data_t* data = (USB_FFBReport_PIDBlockLoad_Feature_Data_t*)Packet->
-			reportBuffer;
-
-		data->reportId = Packet->reportId;
-		data->effectBlockIndex = 0x01;
-		data->loadStatus = 0x01;
-		data->ramPoolAvailable = 0x0000;
-		*/
-
-		Packet->reportBuffer[0] = Packet->reportId;
-		Packet->reportBuffer[1] = 1; // Effect Block Index = 1
-		Packet->reportBuffer[3] = 0; // Load Full = 0
-		Packet->reportBuffer[2] = 1; // Load Success = 1
-		Packet->reportBuffer[4] = 0; // Load Error =0
+		data->ReportID = Packet->reportId;
+		data->RAMPoolSize = 0xFFFF;
+		data->SimultaneousEffectsMax = 2;
+		data->DeviceManagedPool = 0;
+		data->SharedParameterBlocks = 0;
 		
 		reportSize = Packet->reportBufferLen;
-	}
-
-	if ((Packet->reportId & 0x0F) == 0x03)
-	{
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! FFB 3");
-
-		status = STATUS_NO_SUCH_DEVICE;
 	}
 	
 #endif
@@ -498,32 +480,30 @@ DsHidMini_WriteReport(
 
 #ifdef DSHM_FEATURE_FFB
 	if (Packet->reportId == PID_DEVICE_CONTROL_REPORT_ID)
-	{
-		USB_FFBReport_DeviceControl_Output_Data_t* data = (USB_FFBReport_DeviceControl_Output_Data_t*)Packet->
-			reportBuffer;
+	{	
+		PPID_DEVICE_CONTROL_REPORT data = (PPID_DEVICE_CONTROL_REPORT)Packet->reportBuffer;
 
-		switch (data->control)
+		switch (data->Control)
 		{
-		case 1:
+		case PidDcEnableActuators:
 			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Enable Actuators");
 			break;
-		case 2:
+		case PidDcDisableActuators:
 			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Disable Actuators");
 			break;
-		case 3:
+		case PidDcStopAllEffects:
 			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Stop All Effects");
 			break;
-		case 4:
+		case PidDcReset:
 			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Reset");
 			break;
-		case 5:
+		case PidDcPause:
 			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Pause");
 			break;
-		case 6:
+		case PidDcContinue:
 			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Continue");
 			break;
-		}
-		
+		}	
 
 		*ReportSize = Packet->reportBufferLen;
 	}
@@ -537,10 +517,6 @@ DsHidMini_WriteReport(
 		*ReportSize = Packet->reportBufferLen;
 	}
 #endif
-	
-	//
-	// TODO: implement me!
-	// 
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 
