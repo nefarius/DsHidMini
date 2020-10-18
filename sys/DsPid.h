@@ -57,7 +57,7 @@ typedef struct _PID_DEVICE_GAIN_REPORT
 {
 	UCHAR ReportID;
 
-	UCHAR Gain;
+	UCHAR DeviceGain;
 	
 } PID_DEVICE_GAIN_REPORT, *PPID_DEVICE_GAIN_REPORT;
 

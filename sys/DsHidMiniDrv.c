@@ -512,7 +512,7 @@ DsHidMini_WriteReport(
 	{
 		const PPID_DEVICE_GAIN_REPORT data = (PPID_DEVICE_GAIN_REPORT)Packet->reportBuffer;
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_DEVICE_GAIN_REPORT, Gain: %d", data->Gain);
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_DEVICE_GAIN_REPORT, DeviceGain: %d", data->DeviceGain);
 		
 		*ReportSize = Packet->reportBufferLen;
 	}

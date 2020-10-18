@@ -507,7 +507,7 @@
 0x09, 0x7D,        /*   Usage (Device Gain Report) */ \
 0xA1, 0x02,        /*   Collection (Logical) */ \
 0x85, PID_DEVICE_GAIN_REPORT_ID,        /*     Report ID (29) */ \
-0x09, 0x7E,        /*     Usage (0x7E) */ \
+0x09, 0x7E,        /*     Usage (Device Gain) */ \
 0x15, 0x00,        /*     Logical Minimum (0) */ \
 0x26, 0xFF, 0x00,  /*     Logical Maximum (255) */ \
 0x35, 0x00,        /*     Physical Minimum (0) */ \
@@ -548,7 +548,7 @@
 0x55, 0x00,        /*     Unit Exponent (0) */ \
 0x66, 0x00, 0x00,  /*     Unit (None) */ \
 0xC0,              /*   End Collection */ \
-0x09, 0xAB,        /*   Usage (0xAB) */ \
+0x09, 0xAB,        /*   Usage (Create New Effect Report) */ \
 0xA1, 0x02,        /*   Collection (Logical) */ \
 0x85, 0x11,        /*     Report ID (17) */ \
 0x09, 0x25,        /*     Usage (0x25) */ \
