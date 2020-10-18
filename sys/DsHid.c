@@ -564,10 +564,11 @@
 0x09, 0x41,        /*       Usage (ET Damper) */ \
 0x09, 0x42,        /*       Usage (ET Inertia) */ \
 0x09, 0x43,        /*       Usage (ET Friction) */ \
-0x25, 0x0C,        /*       Logical Maximum (11) */ \
+0x09, 0x28,        /*       Usage (ET Custom Force Data) */ \
+0x25, 0x0C,        /*       Logical Maximum (12) */ \
 0x15, 0x01,        /*       Logical Minimum (1) */ \
 0x35, 0x01,        /*       Physical Minimum (1) */ \
-0x45, 0x0C,        /*       Physical Maximum (11) */ \
+0x45, 0x0C,        /*       Physical Maximum (12) */ \
 0x75, 0x08,        /*       Report Size (8) */ \
 0x95, 0x01,        /*       Report Count (1) */ \
 0xB1, 0x00,        /*       Feature (Data,Array,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
@@ -611,9 +612,9 @@
 0xC0,              /*     End Collection */ \
 0x09, 0xAC,        /*     Usage (RAM Pool Available) */ \
 0x15, 0x00,        /*     Logical Minimum (0) */ \
-0x27, 0xFF, 0xFF, 0x00, 0x00,  /*     Logical Maximum (65534) */ \
+0x27, 0xFF, 0xFF, 0x00, 0x00,  /*     Logical Maximum (65535) */ \
 0x35, 0x00,        /*     Physical Minimum (0) */ \
-0x47, 0xFF, 0xFF, 0x00, 0x00,  /*     Physical Maximum (65534) */ \
+0x47, 0xFF, 0xFF, 0x00, 0x00,  /*     Physical Maximum (65535) */ \
 0x75, 0x10,        /*     Report Size (16) */ \
 0x95, 0x01,        /*     Report Count (1) */ \
 0xB1, 0x00,        /*     Feature (Data,Array,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
@@ -626,8 +627,8 @@
 0x95, 0x01,        /*     Report Count (1) */ \
 0x15, 0x00,        /*     Logical Minimum (0) */ \
 0x35, 0x00,        /*     Physical Minimum (0) */ \
-0x27, 0xFF, 0xFF, 0x00, 0x00,  /*     Logical Maximum (65534) */ \
-0x47, 0xFF, 0xFF, 0x00, 0x00,  /*     Physical Maximum (65534) */ \
+0x27, 0xFF, 0xFF, 0x00, 0x00,  /*     Logical Maximum (65535) */ \
+0x47, 0xFF, 0xFF, 0x00, 0x00,  /*     Physical Maximum (65535) */ \
 0xB1, 0x02,        /*     Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
 0x09, 0x83,        /*     Usage (Simultaneous Effects Max) */ \
 0x26, 0xFF, 0x00,  /*     Logical Maximum (255) */ \

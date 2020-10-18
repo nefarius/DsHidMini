@@ -317,9 +317,11 @@ DsHidMini_RetrieveNextInputReport(
 		break;
 	}
 
+	/*
 #ifdef DBG
 	DumpAsHex(">> Report", *Buffer, (ULONG)*BufferSize);
 #endif
+	*/
 
 	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Exit (%!STATUS!)", status);
 
@@ -349,6 +351,11 @@ DsHidMini_GetFeature(
 
 	PPID_POOL_REPORT pPool;
 	PPID_BLOCK_LOAD_REPORT pBlockLoad;
+
+	TraceDbg(TRACE_DSHIDMINIDRV, "-- Packet->reportId: %d, Packet->reportBufferLen: %d",
+	         Packet->reportId,
+	         Packet->reportBufferLen);
+
 
 #ifdef DSHM_FEATURE_FFB
 
@@ -384,14 +391,6 @@ DsHidMini_GetFeature(
 		*ReportSize = Packet->reportBufferLen;
 
 		break;
-
-	default:
-
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! Packet->reportId: %d, Packet->reportBufferLen: %d",
-		         Packet->reportId,
-		         Packet->reportBufferLen);
-
-		break;
 	}
 	
 #endif
@@ -418,7 +417,6 @@ DsHidMini_SetFeature(
 {
 	NTSTATUS status = STATUS_SUCCESS;
 	PDEVICE_CONTEXT pDevCtx;
-	ULONG reportSize = 0;
 
 	UNREFERENCED_PARAMETER(Request);
 
@@ -429,6 +427,11 @@ DsHidMini_SetFeature(
 
 	PPID_CREATE_NEW_EFFECT_REPORT pNewEffect;
 
+	TraceDbg(TRACE_DSHIDMINIDRV, "-- Packet->reportId: %d, Packet->reportBufferLen: %d",
+	         Packet->reportId,
+	         Packet->reportBufferLen);
+
+	DumpAsHex("-- SET_FEATURE.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
 
 #ifdef DSHM_FEATURE_FFB
 
@@ -477,24 +480,14 @@ DsHidMini_SetFeature(
 			break;
 		}
 
-		break;
-
-	default:
-
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! Packet->reportId: %d, Packet->reportBufferLen: %d",
-		         Packet->reportId,
-		         Packet->reportBufferLen);
-
-		DumpAsHex("!! SET_FEATURE.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
-
+		*ReportSize = Packet->reportBufferLen;
+		
 		break;
 	}
 
 #endif
 
-	*ReportSize = reportSize;
-
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit (%!STATUS!)", status);
 
 	return status;
 }
@@ -531,15 +524,22 @@ DsHidMini_WriteReport(
 	_Out_ ULONG* ReportSize
 )
 {
+	NTSTATUS status = STATUS_SUCCESS;
+	
 	UNREFERENCED_PARAMETER(DmfModule);
 	UNREFERENCED_PARAMETER(Request);
-	UNREFERENCED_PARAMETER(Packet);
 	UNREFERENCED_PARAMETER(ReportSize);
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
 	PPID_DEVICE_CONTROL_REPORT pDeviceControl;
 	PPID_DEVICE_GAIN_REPORT pGain;
+
+	TraceDbg(TRACE_DSHIDMINIDRV, "-- Packet->reportId: %d, Packet->reportBufferLen: %d",
+	         Packet->reportId,
+	         Packet->reportBufferLen);
+
+	DumpAsHex("-- WRITE_REPORT.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
 
 #ifdef DSHM_FEATURE_FFB
 
@@ -572,7 +572,7 @@ DsHidMini_WriteReport(
 		}
 
 		*ReportSize = Packet->reportBufferLen;
-
+		
 		break;
 
 	case PID_DEVICE_GAIN_REPORT_ID:
@@ -582,26 +582,18 @@ DsHidMini_WriteReport(
 		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_DEVICE_GAIN_REPORT, DeviceGain: %d", pGain->DeviceGain);
 
 		*ReportSize = Packet->reportBufferLen;
-
-		break;
-
-	default:
-
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! Packet->reportId: %d, Packet->reportBufferLen: %d",
-		         Packet->reportId,
-		         Packet->reportBufferLen);
-
-		DumpAsHex("!! WRITE_REPORT.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
-
+		
 		break;
 	}
 	
 #endif
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit (%!STATUS!)", status);
 
-	return STATUS_SUCCESS;
+	return status;
 }
+
+#pragma region Input Report processing
 
 VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t BufferLength)
 {
@@ -641,9 +633,11 @@ VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t Buf
 			Context->Configuration.MuteDigitalPressureButtons
 		);
 
+		/*
 #ifdef DBG
 		DumpAsHex(">> SINGLE", moduleContext->InputReport, DS3_HID_INPUT_REPORT_SIZE);
 #endif
+		*/
 
 		break;
 	default:
@@ -718,8 +712,6 @@ VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t Buf
 	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 }
 
-#pragma region Input Report processing
-
 //
 // Called when data is available on the USB Interrupt IN pipe.
 //  
@@ -748,19 +740,13 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	QueryPerformanceFrequency(&freq);
 	t1 = &pDevCtx->Connection.Usb.ChargingCycleTimestamp;
 
+	/*
 #ifdef DBG
 	DumpAsHex(">> USB", rdrBuffer, (ULONG)rdrBufferLength);
 #endif
+	*/
 
 	battery = (DS_BATTERY_STATUS)((PUCHAR)rdrBuffer)[30];
-
-#ifdef DBG
-	TraceDbg(
-		TRACE_DSHIDMINIDRV,
-		"++ Battery value: 0x%02X",
-		battery
-	);
-#endif
 
 	//
 	// Check if state has changed to Charged
