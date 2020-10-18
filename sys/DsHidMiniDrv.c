@@ -367,13 +367,13 @@ DsHidMini_GetFeature(
 		
 		pPool = (PPID_POOL_REPORT)Packet->reportBuffer;
 
-		pPool->ReportID = Packet->reportId;
+		pPool->ReportID = PID_POOL_REPORT_ID;
 		pPool->RAMPoolSize = 65535;
 		pPool->SimultaneousEffectsMax = MAX_EFFECT_BLOCKS;
 		pPool->DeviceManagedPool = 1;
 		pPool->SharedParameterBlocks = 0;
 
-		*ReportSize = Packet->reportBufferLen;
+		*ReportSize = sizeof(PID_POOL_REPORT);
 		
 		break;
 
@@ -383,12 +383,12 @@ DsHidMini_GetFeature(
 				
 		pBlockLoad = (PPID_BLOCK_LOAD_REPORT)Packet->reportBuffer;
 
-		pBlockLoad->ReportID = Packet->reportId;
+		pBlockLoad->ReportID = PID_BLOCK_LOAD_REPORT_ID;
 		pBlockLoad->EffectBlockIndex = 1; // TODO: just an example
-		pBlockLoad->BlockLoadStatus = PidBlsSuccess;
+		pBlockLoad->BlockLoadStatus = 1;
 		pBlockLoad->RAMPoolAvailable = 65535;
 
-		*ReportSize = Packet->reportBufferLen;
+		*ReportSize = sizeof(PID_BLOCK_LOAD_REPORT);
 
 		break;
 
