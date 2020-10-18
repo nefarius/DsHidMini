@@ -497,7 +497,7 @@ DsHidMini_WriteReport(
 	DumpAsHex("!! WRITE_REPORT.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
 
 #ifdef DSHM_FEATURE_FFB
-	if (Packet->reportId == 28 && Packet->reportBufferLen == sizeof(USB_FFBReport_DeviceControl_Output_Data_t))
+	if (Packet->reportId == PID_DEVICE_CONTROL_REPORT_ID)
 	{
 		USB_FFBReport_DeviceControl_Output_Data_t* data = (USB_FFBReport_DeviceControl_Output_Data_t*)Packet->
 			reportBuffer;

@@ -1,5 +1,8 @@
 #include "Driver.h"
 #include "DsHid.tmh"
+#ifdef DSHM_FEATURE_FFB
+#include "DsPid.h"
+#endif
 
 #pragma region Obsolete
 
@@ -490,7 +493,7 @@
 0xC0,              /*   End Collection */ \
 0x09, 0x96,        /*   Usage (PID Device Control) */ \
 0xA1, 0x02,        /*   Collection (Logical) */ \
-0x85, 0x1C,        /*     Report ID (28) */ \
+0x85, PID_DEVICE_CONTROL_REPORT_ID,        /*     Report ID (28) */ \
 0x09, 0x97,        /*     Usage (DC Enable Actuators) */ \
 0x09, 0x98,        /*     Usage (DC Disable Actuators) */ \
 0x09, 0x99,        /*     Usage (DC Stop All Effects) */ \
