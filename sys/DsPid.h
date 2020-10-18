@@ -1,25 +1,29 @@
 #pragma once
 
-#define MAX_EFFECT_BLOCKS				0x7F // 127
+// Output report Ids.
+#define PID_SET_EFFECT_REPORT_ID 0x10
+#define PID_SET_ENVELOPE_REPORT_ID 0x11
+#define PID_SET_CONDITION_REPORT_ID 0x12
+#define PID_SET_PERIODIC_REPORT_ID 0x13
+#define PID_SET_CONSTANT_FORCE_REPORT_ID 0x14
+#define PID_SET_RAMP_FORCE_REPORT_ID 0x15
+#define PID_SET_CUSTOM_FORCE_DATA_REPORT_ID 0x16
+#define PID_DOWNLOAD_SAMPLE_REPORT_ID 0x17
+#define PID_EFFECT_OPERATION_REPORT_ID 0x18
+#define PID_DEVICE_CONTROL_REPORT_ID 0x19
+#define PID_BLOCK_FREE_REPORT_ID 0x1A
+#define PID_DEVICE_GAIN_REPORT_ID 0x1B
+#define PID_SET_CUSTOM_FORCE_REPORT_ID 0x1C
 
-/*
- * The Report IDs defined here must match the ones used in the report descriptor.
- */
+// Feature report Ids.
+#define PID_NEW_EFFECT_REPORT_ID 0x20
+#define PID_BLOCK_LOAD_REPORT_ID 0x21
+#define PID_POOL_REPORT_ID 0x22
 
-//
-// Output
-// 
+// Maximum number of EffectIndexBlocks & Simultaneous effects playing.
+#define MAX_EFFECT_BLOCKS 0x7F
 
-#define PID_DEVICE_CONTROL_REPORT_ID	0x1C // 28
-#define PID_DEVICE_GAIN_REPORT_ID		0x1D // 29
-
-//
-// Features
-// 
-
-#define PID_POOL_REPORT_ID				0x13 // 19
-#define PID_CREATE_NEW_EFFECT_REPORT_ID	0x11 // 17
-#define PID_BLOCK_LOAD_REPORT_ID		0x12 // 18
+#define PID_DEVICE_RESET_CMD 0x04 
 
 /** Possible PID device control values */
 typedef enum _PID_DEVICE_CONTROL
