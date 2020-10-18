@@ -25,7 +25,6 @@
 // Maximum number of EffectIndexBlocks & Simultaneous effects playing.
 #define MAX_EFFECT_BLOCKS						0x7F
 
-#define PID_DEVICE_RESET_CMD					0x04 
 
 /** Possible PID device control values */
 typedef enum _PID_DEVICE_CONTROL
@@ -39,7 +38,7 @@ typedef enum _PID_DEVICE_CONTROL
 	
 } PID_DEVICE_CONTROL;
 
-/** Possible PID device control values */
+/** Possible PID effect type values */
 typedef enum _PID_EFFECT_TYPE
 {
 	PidEtConstantForce = 1,
@@ -82,9 +81,11 @@ typedef struct _PID_POOL_REPORT
 
 	UCHAR SimultaneousEffectsMax;
 
-	UINT DeviceManagedPool : 1;
+	UCHAR DeviceManagedPool : 1;
 
-	UINT SharedParameterBlocks : 1;
+	UCHAR SharedParameterBlocks : 1;
+
+	UCHAR : 6; // Padding
 	
 } PID_POOL_REPORT, *PPID_POOL_REPORT;
 

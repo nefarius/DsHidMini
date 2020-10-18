@@ -374,7 +374,7 @@ DsHidMini_GetFeature(
 		pPool->SharedParameterBlocks = 0;
 
 		*ReportSize = Packet->reportBufferLen;
-
+		
 		break;
 
 	case PID_BLOCK_LOAD_REPORT_ID:
@@ -384,20 +384,21 @@ DsHidMini_GetFeature(
 		pBlockLoad = (PPID_BLOCK_LOAD_REPORT)Packet->reportBuffer;
 
 		pBlockLoad->ReportID = Packet->reportId;
-		pBlockLoad->EffectBlockIndex = 2; // TODO: just an example
+		pBlockLoad->EffectBlockIndex = 1; // TODO: just an example
 		pBlockLoad->BlockLoadStatus = PidBlsSuccess;
 		pBlockLoad->RAMPoolAvailable = 65535;
 
 		*ReportSize = Packet->reportBufferLen;
 
 		break;
+
+	default:
+		TraceEvents(TRACE_LEVEL_WARNING, 
+			TRACE_DSHIDMINIDRV, "%!FUNC! Not implemented");
+		break;
 	}
 	
 #endif
-
-#pragma region DEPRECATED
-	
-#pragma endregion
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit (%!STATUS!)", status);
 
@@ -482,6 +483,10 @@ DsHidMini_SetFeature(
 
 		*ReportSize = Packet->reportBufferLen;
 		
+		break;
+	default:
+		TraceEvents(TRACE_LEVEL_WARNING, 
+			TRACE_DSHIDMINIDRV, "%!FUNC! Not implemented");
 		break;
 	}
 
@@ -583,6 +588,11 @@ DsHidMini_WriteReport(
 
 		*ReportSize = Packet->reportBufferLen;
 		
+		break;
+
+	default:
+		TraceEvents(TRACE_LEVEL_WARNING, 
+			TRACE_DSHIDMINIDRV, "%!FUNC! Not implemented");
 		break;
 	}
 	

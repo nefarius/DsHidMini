@@ -25,9 +25,9 @@
 0xC0,              /*   End Collection */ \
 0x09, 0xAC,        /*   Usage (RAM Pool Available) */ \
 0x15, 0x00,        /*   Logical Minimum (0) */ \
-0x27, 0xFF, 0xFF, 0x00, 0x00,  /*   Logical Maximum (65534) */ \
+0x27, 0xFF, 0xFF, 0x00, 0x00,  /*   Logical Maximum (65535) */ \
 0x35, 0x00,        /*   Physical Minimum (0) */ \
-0x47, 0xFF, 0xFF, 0x00, 0x00,  /*   Physical Maximum (65534) */ \
+0x47, 0xFF, 0xFF, 0x00, 0x00,  /*   Physical Maximum (65535) */ \
 0x75, 0x10,        /*   Report Size (16) */ \
 0x95, 0x01,        /*   Report Count (1) */ \
 0xB1, 0x00,        /*   Feature (Data,Array,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
