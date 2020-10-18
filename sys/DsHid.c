@@ -111,9 +111,9 @@
 0x81, 0x02,        /*     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position) */ \
 0x09, 0x22,        /*     Usage (0x22) */ \
 0x15, 0x01,        /*     Logical Minimum (1) */ \
-0x25, 0x28,        /*     Logical Maximum (40) */ \
+0x25, MAX_EFFECT_BLOCKS,        /*     Logical Maximum (127) */ \
 0x35, 0x01,        /*     Physical Minimum (1) */ \
-0x45, 0x28,        /*     Physical Maximum (40) */ \
+0x45, MAX_EFFECT_BLOCKS,        /*     Physical Maximum (127) */ \
 0x75, 0x07,        /*     Report Size (7) */ \
 0x95, 0x01,        /*     Report Count (1) */ \
 0x81, 0x02,        /*     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position) */ \
@@ -123,9 +123,9 @@
 0x85, 0x11,        /*     Report ID (17) */ \
 0x09, 0x22,        /*     Usage (0x22) */ \
 0x15, 0x01,        /*     Logical Minimum (1) */ \
-0x25, 0x28,        /*     Logical Maximum (40) */ \
+0x25, MAX_EFFECT_BLOCKS,        /*     Logical Maximum (127) */ \
 0x35, 0x01,        /*     Physical Minimum (1) */ \
-0x45, 0x28,        /*     Physical Maximum (40) */ \
+0x45, MAX_EFFECT_BLOCKS,        /*     Physical Maximum (127) */ \
 0x75, 0x08,        /*     Report Size (8) */ \
 0x95, 0x01,        /*     Report Count (1) */ \
 0x91, 0x02,        /*     Output (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
@@ -231,9 +231,9 @@
 0x85, 0x12,        /*     Report ID (18) */ \
 0x09, 0x22,        /*     Usage (0x22) */ \
 0x15, 0x01,        /*     Logical Minimum (1) */ \
-0x25, 0x28,        /*     Logical Maximum (40) */ \
+0x25, MAX_EFFECT_BLOCKS,        /*     Logical Maximum (127) */ \
 0x35, 0x01,        /*     Physical Minimum (1) */ \
-0x45, 0x28,        /*     Physical Maximum (40) */ \
+0x45, MAX_EFFECT_BLOCKS,        /*     Physical Maximum (127) */ \
 0x75, 0x08,        /*     Report Size (8) */ \
 0x95, 0x01,        /*     Report Count (1) */ \
 0x91, 0x02,        /*     Output (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
@@ -263,9 +263,9 @@
 0x85, 0x13,        /*     Report ID (19) */ \
 0x09, 0x22,        /*     Usage (0x22) */ \
 0x15, 0x01,        /*     Logical Minimum (1) */ \
-0x25, 0x28,        /*     Logical Maximum (40) */ \
+0x25, MAX_EFFECT_BLOCKS,        /*     Logical Maximum (127) */ \
 0x35, 0x01,        /*     Physical Minimum (1) */ \
-0x45, 0x28,        /*     Physical Maximum (40) */ \
+0x45, MAX_EFFECT_BLOCKS,        /*     Physical Maximum (127) */ \
 0x75, 0x08,        /*     Report Size (8) */ \
 0x95, 0x01,        /*     Report Count (1) */ \
 0x91, 0x02,        /*     Output (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
@@ -321,9 +321,9 @@
 0x85, 0x14,        /*     Report ID (20) */ \
 0x09, 0x22,        /*     Usage (0x22) */ \
 0x15, 0x01,        /*     Logical Minimum (1) */ \
-0x25, 0x28,        /*     Logical Maximum (40) */ \
+0x25, MAX_EFFECT_BLOCKS,        /*     Logical Maximum (127) */ \
 0x35, 0x01,        /*     Physical Minimum (1) */ \
-0x45, 0x28,        /*     Physical Maximum (40) */ \
+0x45, MAX_EFFECT_BLOCKS,        /*     Physical Maximum (127) */ \
 0x75, 0x08,        /*     Report Size (8) */ \
 0x95, 0x01,        /*     Report Count (1) */ \
 0x91, 0x02,        /*     Output (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
@@ -371,9 +371,9 @@
 0x85, 0x15,        /*     Report ID (21) */ \
 0x09, 0x22,        /*     Usage (0x22) */ \
 0x15, 0x01,        /*     Logical Minimum (1) */ \
-0x25, 0x28,        /*     Logical Maximum (40) */ \
+0x25, MAX_EFFECT_BLOCKS,        /*     Logical Maximum (127) */ \
 0x35, 0x01,        /*     Physical Minimum (1) */ \
-0x45, 0x28,        /*     Physical Maximum (40) */ \
+0x45, MAX_EFFECT_BLOCKS,        /*     Physical Maximum (127) */ \
 0x75, 0x08,        /*     Report Size (8) */ \
 0x95, 0x01,        /*     Report Count (1) */ \
 0x91, 0x02,        /*     Output (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
@@ -391,9 +391,9 @@
 0x85, 0x16,        /*     Report ID (22) */ \
 0x09, 0x22,        /*     Usage (0x22) */ \
 0x15, 0x01,        /*     Logical Minimum (1) */ \
-0x25, 0x28,        /*     Logical Maximum (40) */ \
+0x25, MAX_EFFECT_BLOCKS,        /*     Logical Maximum (127) */ \
 0x35, 0x01,        /*     Physical Minimum (1) */ \
-0x45, 0x28,        /*     Physical Maximum (40) */ \
+0x45, MAX_EFFECT_BLOCKS,        /*     Physical Maximum (127) */ \
 0x75, 0x08,        /*     Report Size (8) */ \
 0x95, 0x01,        /*     Report Count (1) */ \
 0x91, 0x02,        /*     Output (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
@@ -412,9 +412,9 @@
 0x85, 0x17,        /*     Report ID (23) */ \
 0x09, 0x22,        /*     Usage (0x22) */ \
 0x15, 0x01,        /*     Logical Minimum (1) */ \
-0x25, 0x28,        /*     Logical Maximum (40) */ \
+0x25, MAX_EFFECT_BLOCKS,        /*     Logical Maximum (127) */ \
 0x35, 0x01,        /*     Physical Minimum (1) */ \
-0x45, 0x28,        /*     Physical Maximum (40) */ \
+0x45, MAX_EFFECT_BLOCKS,        /*     Physical Maximum (127) */ \
 0x75, 0x08,        /*     Report Size (8) */ \
 0x95, 0x01,        /*     Report Count (1) */ \
 0x91, 0x02,        /*     Output (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
@@ -455,9 +455,9 @@
 0x85, 0x1A,        /*     Report ID (26) */ \
 0x09, 0x22,        /*     Usage (0x22) */ \
 0x15, 0x01,        /*     Logical Minimum (1) */ \
-0x25, 0x28,        /*     Logical Maximum (40) */ \
+0x25, MAX_EFFECT_BLOCKS,        /*     Logical Maximum (127) */ \
 0x35, 0x01,        /*     Physical Minimum (1) */ \
-0x45, 0x28,        /*     Physical Maximum (40) */ \
+0x45, MAX_EFFECT_BLOCKS,        /*     Physical Maximum (127) */ \
 0x75, 0x08,        /*     Report Size (8) */ \
 0x95, 0x01,        /*     Report Count (1) */ \
 0x91, 0x02,        /*     Output (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
@@ -483,10 +483,10 @@
 0xA1, 0x02,        /*   Collection (Logical) */ \
 0x85, 0x1B,        /*     Report ID (27) */ \
 0x09, 0x22,        /*     Usage (0x22) */ \
-0x25, 0x28,        /*     Logical Maximum (40) */ \
+0x25, MAX_EFFECT_BLOCKS,        /*     Logical Maximum (127) */ \
 0x15, 0x01,        /*     Logical Minimum (1) */ \
 0x35, 0x01,        /*     Physical Minimum (1) */ \
-0x45, 0x28,        /*     Physical Maximum (40) */ \
+0x45, MAX_EFFECT_BLOCKS,        /*     Physical Maximum (127) */ \
 0x75, 0x08,        /*     Report Size (8) */ \
 0x95, 0x01,        /*     Report Count (1) */ \
 0x91, 0x02,        /*     Output (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
@@ -521,9 +521,9 @@
 0x85, 0x1E,        /*     Report ID (30) */ \
 0x09, 0x22,        /*     Usage (0x22) */ \
 0x15, 0x01,        /*     Logical Minimum (1) */ \
-0x25, 0x28,        /*     Logical Maximum (40) */ \
+0x25, MAX_EFFECT_BLOCKS,        /*     Logical Maximum (127) */ \
 0x35, 0x01,        /*     Physical Minimum (1) */ \
-0x45, 0x28,        /*     Physical Maximum (40) */ \
+0x45, MAX_EFFECT_BLOCKS,        /*     Physical Maximum (127) */ \
 0x75, 0x08,        /*     Report Size (8) */ \
 0x95, 0x01,        /*     Report Count (1) */ \
 0x91, 0x02,        /*     Output (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
