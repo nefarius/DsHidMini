@@ -9,7 +9,7 @@
 0x75, 0x08,        /*   Report Size (8) */ \
 0x95, 0x01,        /*   Report Count (1) */ \
 0x91, 0x02,        /*   Output (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
-0x09, 0x6C,        /*   Usage (0x6C) */ \
+0x09, 0x6C,        /*   Usage (Custom Force Data Offset) */ \
 0x15, 0x00,        /*   Logical Minimum (0) */ \
 0x26, 0x10, 0x27,  /*   Logical Maximum (10000) */ \
 0x35, 0x00,        /*   Physical Minimum (0) */ \
@@ -17,7 +17,7 @@
 0x75, 0x10,        /*   Report Size (16) */ \
 0x95, 0x01,        /*   Report Count (1) */ \
 0x91, 0x02,        /*   Output (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \
-0x09, 0x69,        /*   Usage (0x69) */ \
+0x09, 0x69,        /*   Usage (Custom Force Data) */ \
 0x15, 0x81,        /*   Logical Minimum (-127) */ \
 0x25, 0x7F,        /*   Logical Maximum (127) */ \
 0x35, 0x00,        /*   Physical Minimum (0) */ \
