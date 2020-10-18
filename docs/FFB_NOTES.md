@@ -230,6 +230,18 @@ HKLM,%szSWFFPro%\OEMForceFeedback\Effects\{e84cd1c8-81fa-11d0-94ab-0080c74c7e95}
 
 **Delete this entire key** to remove outdated values 👉 `Computer\HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties`
 
+```c
+ public enum DeviceControlEnum
+        {
+            EnableActuactors = 1,
+            DisableActuactors = 2,
+            StopAllEffects = 3,
+            Reset = 4,
+            Pause = 5,
+            Continue = 6
+        }
+```
+
 ## Example traces
 
 ```text

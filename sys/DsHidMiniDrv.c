@@ -348,10 +348,9 @@ DsHidMini_GetFeature(
 
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
-	TraceDbg(TRACE_DSHIDMINIDRV, "!! Packet->reportId: %d, Packet->reportBufferLen: %d, id: %d", 
+	TraceDbg(TRACE_DSHIDMINIDRV, "!! Packet->reportId: %d, Packet->reportBufferLen: %d", 
 		Packet->reportId,
-		Packet->reportBufferLen, 
-		Packet->reportId >> 4);
+		Packet->reportBufferLen);
 	
 	//DumpAsHex("!! GET_FEATURE.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
 
@@ -506,22 +505,22 @@ DsHidMini_WriteReport(
 		switch (data->control)
 		{
 		case 1:
-			TraceDbg(TRACE_DSHIDMINIDRV, "!! data->control: Enable Actuators");
+			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Enable Actuators");
 			break;
 		case 2:
-			TraceDbg(TRACE_DSHIDMINIDRV, "!! data->control: Disable Actuators");
+			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Disable Actuators");
+			break;
+		case 3:
+			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Stop All Effects");
 			break;
 		case 4:
-			TraceDbg(TRACE_DSHIDMINIDRV, "!! data->control: Stop All Effects");
+			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Reset");
 			break;
-		case 8:
-			TraceDbg(TRACE_DSHIDMINIDRV, "!! data->control: Reset");
+		case 5:
+			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Pause");
 			break;
-		case 16:
-			TraceDbg(TRACE_DSHIDMINIDRV, "!! data->control: Pause");
-			break;
-		case 32:
-			TraceDbg(TRACE_DSHIDMINIDRV, "!! data->control: Continue");
+		case 6:
+			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Continue");
 			break;
 		}
 		

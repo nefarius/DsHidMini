@@ -60,6 +60,7 @@
     <ClInclude Include="DsCommon.h" />
     <ClInclude Include="DsHid.h" />
     <ClInclude Include="DsHidMiniDrv.h" />
+    <ClInclude Include="DsPid.h" />
     <ClInclude Include="DsUsb.h" />
     <ClInclude Include="FFBTypes.h" />
     <ClInclude Include="ini.h" />
