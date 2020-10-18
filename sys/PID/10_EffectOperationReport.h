@@ -1,12 +1,12 @@
 0x05, 0x0F,        /* Usage Page (PID Page) */ \
 0x09, 0x77,        /* Usage (Effect Operation Report) */ \
 0xA1, 0x02,        /* Collection (Logical) */ \
-0x85, 0x0D,        /*   Report ID (13) */ \
-0x09, 0x22,        /*   Usage (0x22) */ \
+0x85, PID_EFFECT_OPERATION_REPORT_ID,        /*   Report ID () */ \
+0x09, 0x22,        /*   Usage (Effect Block Index) */ \
 0x15, 0x01,        /*   Logical Minimum (1) */ \
-0x25, 0x0A,        /*   Logical Maximum (10) */ \
+0x25, MAX_EFFECT_BLOCKS,        /*   Logical Maximum () */ \
 0x35, 0x01,        /*   Physical Minimum (1) */ \
-0x45, 0x0A,        /*   Physical Maximum (10) */ \
+0x45, MAX_EFFECT_BLOCKS,        /*   Physical Maximum () */ \
 0x75, 0x08,        /*   Report Size (8) */ \
 0x95, 0x01,        /*   Report Count (1) */ \
 0x91, 0x02,        /*   Output (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile) */ \

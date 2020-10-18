@@ -1,20 +1,20 @@
-0x09, 0xAB,        /* Usage (0xAB) */ \
+0x09, 0xAB,        /* Usage (Create New Effect Report) */ \
 0xA1, 0x02,        /* Collection (Logical) */ \
-0x85, 0x0D,        /*   Report ID (13) */ \
-0x09, 0x25,        /*   Usage (0x25) */ \
+0x85, PID_NEW_EFFECT_REPORT_ID,        /*   Report ID () */ \
+0x09, 0x25,        /*   Usage (Effect Type) */ \
 0xA1, 0x02,        /*   Collection (Logical) */ \
-0x09, 0x26,        /*     Usage (0x26) */ \
-0x09, 0x27,        /*     Usage (0x27) */ \
-0x09, 0x30,        /*     Usage (0x30) */ \
-0x09, 0x31,        /*     Usage (0x31) */ \
-0x09, 0x32,        /*     Usage (0x32) */ \
-0x09, 0x33,        /*     Usage (0x33) */ \
-0x09, 0x34,        /*     Usage (0x34) */ \
-0x09, 0x40,        /*     Usage (0x40) */ \
-0x09, 0x41,        /*     Usage (0x41) */ \
-0x09, 0x42,        /*     Usage (0x42) */ \
-0x09, 0x43,        /*     Usage (0x43) */ \
-0x09, 0x28,        /*     Usage (0x28) */ \
+0x09, 0x26,        /*     Usage (ET Constant Force ) */ \
+0x09, 0x27,        /*     Usage (ET Ramp) */ \
+0x09, 0x30,        /*     Usage (ET Square) */ \
+0x09, 0x31,        /*     Usage (ET Sine) */ \
+0x09, 0x32,        /*     Usage (ET Triangle) */ \
+0x09, 0x33,        /*     Usage (ET Sawtooth Up) */ \
+0x09, 0x34,        /*     Usage (ET Sawtooth Down) */ \
+0x09, 0x40,        /*     Usage (ET Spring) */ \
+0x09, 0x41,        /*     Usage (ET Damper) */ \
+0x09, 0x42,        /*     Usage (ET Inertia) */ \
+0x09, 0x43,        /*     Usage (ET Friction) */ \
+0x09, 0x28,        /*     Usage (ET Custom Force Data) */ \
 0x25, 0x0C,        /*     Logical Maximum (12) */ \
 0x15, 0x01,        /*     Logical Minimum (1) */ \
 0x35, 0x01,        /*     Physical Minimum (1) */ \

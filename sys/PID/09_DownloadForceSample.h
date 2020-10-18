@@ -1,6 +1,6 @@
 0x09, 0x66,        /* Usage (Download Force Sample) */ \
 0xA1, 0x02,        /* Collection (Logical) */ \
-0x85, 0x0D,        /*   Report ID (13) */ \
+0x85, PID_DOWNLOAD_SAMPLE_REPORT_ID,        /*   Report ID () */ \
 0x05, 0x01,        /*   Usage Page (Generic Desktop Ctrls) */ \
 0x09, 0x30,        /*   Usage (X) */ \
 0x09, 0x31,        /*   Usage (Y) */ \
