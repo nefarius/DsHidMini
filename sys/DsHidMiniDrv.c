@@ -437,7 +437,7 @@ DsHidMini_SetFeature(
 
 	switch (Packet->reportId)
 	{
-	case PID_CREATE_NEW_EFFECT_REPORT_ID:
+	case PID_NEW_EFFECT_REPORT_ID:
 
 		pNewEffect = (PPID_CREATE_NEW_EFFECT_REPORT)Packet->reportBuffer;
 

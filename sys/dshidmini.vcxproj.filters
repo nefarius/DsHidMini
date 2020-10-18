@@ -17,6 +17,9 @@
       <UniqueIdentifier>{8E41214B-6785-4CFE-B992-037D68949A14}</UniqueIdentifier>
       <Extensions>inf;inv;inx;mof;mc;</Extensions>
     </Filter>
+    <Filter Include="Header Files\PID">
+      <UniqueIdentifier>{758e0301-057e-4139-adda-e5a61e5e8392}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Inf Include="dshidmini.inf">
@@ -74,6 +77,57 @@
     </ClInclude>
     <ClInclude Include="DsPid.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PID\01_PIDStateReport.h">
+      <Filter>Header Files\PID</Filter>
+    </ClInclude>
+    <ClInclude Include="PID\02_SetEffectReport.h">
+      <Filter>Header Files\PID</Filter>
+    </ClInclude>
+    <ClInclude Include="PID\03_SetEnvelopeReport.h">
+      <Filter>Header Files\PID</Filter>
+    </ClInclude>
+    <ClInclude Include="PID\04_SetConditionReport.h">
+      <Filter>Header Files\PID</Filter>
+    </ClInclude>
+    <ClInclude Include="PID\05_SetPeriodicReport.h">
+      <Filter>Header Files\PID</Filter>
+    </ClInclude>
+    <ClInclude Include="PID\06_SetConstantForceReport.h">
+      <Filter>Header Files\PID</Filter>
+    </ClInclude>
+    <ClInclude Include="PID\07_SetRampForceReport.h">
+      <Filter>Header Files\PID</Filter>
+    </ClInclude>
+    <ClInclude Include="PID\08_CustomForceDataReport.h">
+      <Filter>Header Files\PID</Filter>
+    </ClInclude>
+    <ClInclude Include="PID\09_DownloadForceSample.h">
+      <Filter>Header Files\PID</Filter>
+    </ClInclude>
+    <ClInclude Include="PID\10_EffectOperationReport.h">
+      <Filter>Header Files\PID</Filter>
+    </ClInclude>
+    <ClInclude Include="PID\11_PIDBlockFreeReport.h">
+      <Filter>Header Files\PID</Filter>
+    </ClInclude>
+    <ClInclude Include="PID\12_PIDDeviceControl.h">
+      <Filter>Header Files\PID</Filter>
+    </ClInclude>
+    <ClInclude Include="PID\13_DeviceGainReport.h">
+      <Filter>Header Files\PID</Filter>
+    </ClInclude>
+    <ClInclude Include="PID\14_SetCustomForceReport.h">
+      <Filter>Header Files\PID</Filter>
+    </ClInclude>
+    <ClInclude Include="PID\15_CreateNewEffectReport.h">
+      <Filter>Header Files\PID</Filter>
+    </ClInclude>
+    <ClInclude Include="PID\16_PIDBlockLoadReport.h">
+      <Filter>Header Files\PID</Filter>
+    </ClInclude>
+    <ClInclude Include="PID\17_PIDPoolReport.h">
+      <Filter>Header Files\PID</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

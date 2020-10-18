@@ -888,7 +888,23 @@ CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_Single_Mode[] =
 	0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
 	0xC0,              //   End Collection
 #ifdef DSHM_FEATURE_FFB
-	FFB_DESCRIPTOR_SEGMENT
+#include "PID/01_PIDStateReport.h"
+#include "PID/02_SetEffectReport.h"
+#include "PID/03_SetEnvelopeReport.h"
+#include "PID/04_SetConditionReport.h"
+#include "PID/05_SetPeriodicReport.h"
+#include "PID/06_SetConstantForceReport.h"
+#include "PID/07_SetRampForceReport.h"
+#include "PID/08_CustomForceDataReport.h"
+#include "PID/09_DownloadForceSample.h"
+#include "PID/10_EffectOperationReport.h"
+#include "PID/11_PIDBlockFreeReport.h"
+#include "PID/12_PIDDeviceControl.h"
+#include "PID/13_DeviceGainReport.h"
+#include "PID/14_SetCustomForceReport.h"
+#include "PID/15_CreateNewEffectReport.h"
+#include "PID/16_PIDBlockLoadReport.h"
+#include "PID/17_PIDPoolReport.h"
 #endif
 	0xC0,              // End Collection
 };
