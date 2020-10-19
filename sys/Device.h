@@ -1,5 +1,6 @@
 #pragma once
 #include <DmfModule.h>
+#include "uthash.h"
 
 
 EXTERN_C_START
@@ -132,6 +133,18 @@ VOID FORCEINLINE DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(
 	Configuration->DisableAutoPairing = FALSE;
 }
 
+typedef struct _FFB_ATTRIBUTES
+{
+	UCHAR EffectBlockIndex;
+
+	PID_EFFECT_TYPE EffectType;
+
+	BOOLEAN Reported;
+	
+	UT_hash_handle hh; /* makes this structure hashable */
+	
+} FFB_ATTRIBUTES, *PFFB_ATTRIBUTES;
+
 typedef struct _DEVICE_CONTEXT
 {
 	//
@@ -201,6 +214,7 @@ DECLARE_DMF_MODULE(DsHidMini)
 
 typedef struct
 {
+	// 
 	// Underlying VHIDMINI2 support.
 	//
 	DMFMODULE DmfModuleVirtualHidMini;
@@ -209,6 +223,11 @@ typedef struct
 	// Input report
 	// 
 	UCHAR InputReport[DS3_HID_INPUT_REPORT_SIZE];
+
+	//
+	// Force Feedback State Info
+	// 
+	PFFB_ATTRIBUTES FfbAttributes;
 
 } DMF_CONTEXT_DsHidMini;
 

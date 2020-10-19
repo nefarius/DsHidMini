@@ -268,3 +268,20 @@ DsHidMini_WriteReport	2020/10/16-23:43:11.204	TRACE_LEVEL_INFORMATION	DsHidMini_
 DsHidMini_WriteReport	2020/10/16-23:43:11.204	TRACE_LEVEL_INFORMATION	!! Packet->reportId: 28, Packet->reportBufferLen: 2
 DsHidMini_WriteReport	2020/10/16-23:43:11.204	TRACE_LEVEL_INFORMATION	DsHidMini_WriteReport Exit
 ```
+
+```text
+!! PID_POOL_REPORT_ID
+!! DC Reset
+!! PID_DEVICE_GAIN_REPORT, DeviceGain: 10000
+!! PID_CREATE_NEW_EFFECT_REPORT
+!! ET Constant Force
+!! PID_BLOCK_LOAD_REPORT_ID
+!! PID_SET_CONSTANT_FORCE_REPORT, Magnitude: 0
+!! PPID_SET_EFFECT_REPORT, EffectBlockIndex: 1
+!! PID_SET_CONSTANT_FORCE_REPORT, Magnitude: 10000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1
+!! PID_BLOCK_FREE_REPORT, EffectBlockIndex: 1
+!! DC Reset
+```

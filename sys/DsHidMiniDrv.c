@@ -345,6 +345,8 @@ DsHidMini_GetFeature(
 
 	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
 
+	PFFB_ATTRIBUTES pEntry = NULL;
+	
 	PPID_POOL_REPORT pPool;
 	PPID_BLOCK_LOAD_REPORT pBlockLoad;
 
@@ -362,27 +364,48 @@ DsHidMini_GetFeature(
 		
 		pPool = (PPID_POOL_REPORT)Packet->reportBuffer;
 
+		/*
+		 * Static information about the fictitious device memory pool.
+		 * Since we manage everything in software, size constraints 
+		 * are not an issue and we can report the maximum values.
+		 */
+		
 		pPool->ReportId = PID_POOL_REPORT_ID;
 		pPool->RamPoolSize = 65535;
 		pPool->SimultaneousEffectsMax = MAX_EFFECT_BLOCKS;
 		pPool->DeviceManagedPool = 1;
 		pPool->SharedParameterBlocks = 0;
-
+				
 		*ReportSize = sizeof(PID_POOL_REPORT) - 1;
 		
 		break;
 
 	case PID_BLOCK_LOAD_REPORT_ID:
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_BLOCK_LOAD_REPORT_ID");
-				
 		pBlockLoad = (PPID_BLOCK_LOAD_REPORT)Packet->reportBuffer;
 
 		pBlockLoad->ReportId = PID_BLOCK_LOAD_REPORT_ID;
-		pBlockLoad->EffectBlockIndex = 1; // TODO: just an example
-		pBlockLoad->BlockLoadStatus = PidBlsSuccess;
 		pBlockLoad->RamPoolAvailable = 65535;
+		pBlockLoad->BlockLoadStatus = PidBlsFull;
 
+		//
+		// Here we should have at least one new effect block index ready
+		// 
+		for (pEntry = pModCtx->FfbAttributes; pEntry != NULL; pEntry = pEntry->hh.next)
+		{
+			/** Skip if already in use. */
+			if (pEntry->Reported)
+				continue;
+
+			pEntry->Reported = TRUE; // mark as claimed/in use
+			pBlockLoad->EffectBlockIndex = pEntry->EffectBlockIndex;
+			pBlockLoad->BlockLoadStatus = PidBlsSuccess;
+			break;
+		}
+
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_BLOCK_LOAD_REPORT_ID (EffectBlockIndex: %d)",
+			pBlockLoad->EffectBlockIndex);
+		
 		*ReportSize = sizeof(PID_BLOCK_LOAD_REPORT) - 1;
 
 		break;
@@ -425,6 +448,8 @@ DsHidMini_SetFeature(
 	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
 
 	UNREFERENCED_PARAMETER(pModCtx);
+
+	PFFB_ATTRIBUTES pEntry = NULL;
 	
 	PPID_NEW_EFFECT_REPORT pNewEffect;
 
@@ -437,6 +462,33 @@ DsHidMini_SetFeature(
 		pNewEffect = (PPID_NEW_EFFECT_REPORT)Packet->reportBuffer;
 
 		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_CREATE_NEW_EFFECT_REPORT");
+
+		//
+		// Look for free effect block index and allocate new entry
+		// 
+		for (UCHAR index = 1; index < MAX_EFFECT_BLOCKS; index++)
+		{
+			HASH_FIND(hh, pModCtx->FfbAttributes, &index, sizeof(UCHAR), pEntry);
+
+			if (pEntry == NULL)
+			{
+				pEntry = (PFFB_ATTRIBUTES)malloc(sizeof(FFB_ATTRIBUTES));
+				pEntry->EffectBlockIndex = index; // next free index
+				pEntry->EffectType = pNewEffect->EffectType; // effect type requested
+				pEntry->Reported = FALSE; // index allocated but not claimed yet
+				HASH_ADD(hh, pModCtx->FfbAttributes, EffectBlockIndex, sizeof(UCHAR), pEntry);
+				break;
+			}
+		}
+
+		//
+		// Whoops, guess we're full!
+		// 
+		if (pEntry == NULL)
+		{
+			status = STATUS_INVALID_PARAMETER;
+			break;
+		}
 
 		switch (pNewEffect->EffectType)
 		{
@@ -538,7 +590,7 @@ DsHidMini_WriteReport(
 
 	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
 
-	UNREFERENCED_PARAMETER(pModCtx);
+	PFFB_ATTRIBUTES pEntry = NULL;
 	
 	PPID_DEVICE_CONTROL_REPORT pDeviceControl;
 	PPID_DEVICE_GAIN_REPORT pGain;
@@ -570,6 +622,13 @@ DsHidMini_WriteReport(
 			break;
 		case PidDcReset:
 			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Reset");
+
+			HASH_CLEAR(hh, pModCtx->FfbAttributes);
+
+			//
+			// TODO: stop/reset rumble motors
+			// 
+			
 			break;
 		case PidDcPause:
 			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Pause");
@@ -656,6 +715,21 @@ DsHidMini_WriteReport(
 		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_BLOCK_FREE_REPORT, EffectBlockIndex: %d",
 		         pBlockFree->EffectBlockIndex);
 
+		//
+		// Lookup our entry in the list
+		// 
+		HASH_FIND(hh, pModCtx->FfbAttributes, &pBlockFree->EffectBlockIndex, sizeof(UCHAR), pEntry);
+
+		//
+		// Remove from list
+		// 
+		HASH_DEL(pModCtx->FfbAttributes, pEntry);
+
+		//
+		// Free memory
+		// 
+		free(pEntry);
+		
 		*ReportSize = Packet->reportBufferLen;
 		
 		break;

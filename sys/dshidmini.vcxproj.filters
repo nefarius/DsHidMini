@@ -126,6 +126,9 @@
     <ClInclude Include="PID\PIDTypes.h">
       <Filter>Header Files\PID</Filter>
     </ClInclude>
+    <ClInclude Include="uthash.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Device.c">
