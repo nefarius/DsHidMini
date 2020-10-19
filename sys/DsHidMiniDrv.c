@@ -368,7 +368,7 @@ DsHidMini_GetFeature(
 		pPool->DeviceManagedPool = 1;
 		pPool->SharedParameterBlocks = 0;
 
-		*ReportSize = sizeof(PID_POOL_REPORT);
+		*ReportSize = sizeof(PID_POOL_REPORT) - 1;
 		
 		break;
 
@@ -383,7 +383,7 @@ DsHidMini_GetFeature(
 		pBlockLoad->BlockLoadStatus = 1;
 		pBlockLoad->RAMPoolAvailable = 65535;
 
-		*ReportSize = sizeof(PID_BLOCK_LOAD_REPORT);
+		*ReportSize = sizeof(PID_BLOCK_LOAD_REPORT) - 1;
 
 		break;
 
