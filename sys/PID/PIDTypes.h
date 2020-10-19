@@ -1,6 +1,6 @@
 #pragma once
 
-#define PID_INPUT_REPORT_ID						0x02
+#define PID_INPUT_REPORT_ID						0x04 // 4
 
 // Output report Ids.
 #define PID_SET_EFFECT_REPORT_ID				0x10 // 16

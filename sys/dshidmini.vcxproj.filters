@@ -75,9 +75,6 @@
     <ClInclude Include="Debugging.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DsPid.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="PID\01_PIDStateReport.h">
       <Filter>Header Files\PID</Filter>
     </ClInclude>
@@ -127,6 +124,9 @@
       <Filter>Header Files\PID</Filter>
     </ClInclude>
     <ClInclude Include="PID\17_PIDPoolReport.h">
+      <Filter>Header Files\PID</Filter>
+    </ClInclude>
+    <ClInclude Include="PID\PIDTypes.h">
       <Filter>Header Files\PID</Filter>
     </ClInclude>
   </ItemGroup>

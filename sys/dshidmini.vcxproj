@@ -60,7 +60,6 @@
     <ClInclude Include="DsCommon.h" />
     <ClInclude Include="DsHid.h" />
     <ClInclude Include="DsHidMiniDrv.h" />
-    <ClInclude Include="DsPid.h" />
     <ClInclude Include="DsUsb.h" />
     <ClInclude Include="FFBTypes.h" />
     <ClInclude Include="ini.h" />
@@ -81,6 +80,7 @@
     <ClInclude Include="PID\15_CreateNewEffectReport.h" />
     <ClInclude Include="PID\16_PIDBlockLoadReport.h" />
     <ClInclude Include="PID\17_PIDPoolReport.h" />
+    <ClInclude Include="PID\PIDTypes.h" />
     <ClInclude Include="Power.h" />
     <ClInclude Include="IpcSocket.h" />
     <ClInclude Include="resource.h" />

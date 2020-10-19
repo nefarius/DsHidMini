@@ -1,7 +1,7 @@
 #include "Driver.h"
 #include "DsHid.tmh"
 #ifdef DSHM_FEATURE_FFB
-#include "DsPid.h"
+#include "PID/PIDTypes.h"
 #endif
 
 #pragma region DS3 HID Report Descriptor (Split Device Mode)

@@ -21,7 +21,7 @@ extern unsigned int numInstances;
 #include <DmfModules.Library.h>
 #include "DsHid.h"
 #ifdef DSHM_FEATURE_FFB
-#include "DsPid.h"
+#include "PID/PIDTypes.h"
 #endif
 #include "DsCommon.h"
 #include "device.h"
