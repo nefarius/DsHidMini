@@ -61,7 +61,6 @@
     <ClInclude Include="DsHid.h" />
     <ClInclude Include="DsHidMiniDrv.h" />
     <ClInclude Include="DsUsb.h" />
-    <ClInclude Include="FFBTypes.h" />
     <ClInclude Include="ini.h" />
     <ClInclude Include="PID\01_PIDStateReport.h" />
     <ClInclude Include="PID\02_SetEffectReport.h" />

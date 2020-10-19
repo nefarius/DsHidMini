@@ -33,11 +33,6 @@ extern unsigned int numInstances;
 #include "DsBth.h"
 #include "Config.h"
 
-#ifdef DSHM_FEATURE_FFB
-#include <inttypes.h>
-#include "FFBTypes.h"
-#endif
-
 
 EXTERN_C_START
 

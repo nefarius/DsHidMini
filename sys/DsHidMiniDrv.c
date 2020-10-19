@@ -362,8 +362,8 @@ DsHidMini_GetFeature(
 		
 		pPool = (PPID_POOL_REPORT)Packet->reportBuffer;
 
-		pPool->ReportID = PID_POOL_REPORT_ID;
-		pPool->RAMPoolSize = 65535;
+		pPool->ReportId = PID_POOL_REPORT_ID;
+		pPool->RamPoolSize = 65535;
 		pPool->SimultaneousEffectsMax = MAX_EFFECT_BLOCKS;
 		pPool->DeviceManagedPool = 1;
 		pPool->SharedParameterBlocks = 0;
@@ -378,10 +378,10 @@ DsHidMini_GetFeature(
 				
 		pBlockLoad = (PPID_BLOCK_LOAD_REPORT)Packet->reportBuffer;
 
-		pBlockLoad->ReportID = PID_BLOCK_LOAD_REPORT_ID;
+		pBlockLoad->ReportId = PID_BLOCK_LOAD_REPORT_ID;
 		pBlockLoad->EffectBlockIndex = 1; // TODO: just an example
-		pBlockLoad->BlockLoadStatus = 1;
-		pBlockLoad->RAMPoolAvailable = 65535;
+		pBlockLoad->BlockLoadStatus = PidBlsSuccess;
+		pBlockLoad->RamPoolAvailable = 65535;
 
 		*ReportSize = sizeof(PID_BLOCK_LOAD_REPORT) - 1;
 
@@ -425,7 +425,7 @@ DsHidMini_SetFeature(
 
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
-	PPID_CREATE_NEW_EFFECT_REPORT pNewEffect;
+	PPID_NEW_EFFECT_REPORT pNewEffect;
 
 #ifdef DSHM_FEATURE_FFB
 
@@ -433,7 +433,7 @@ DsHidMini_SetFeature(
 	{
 	case PID_NEW_EFFECT_REPORT_ID:
 
-		pNewEffect = (PPID_CREATE_NEW_EFFECT_REPORT)Packet->reportBuffer;
+		pNewEffect = (PPID_NEW_EFFECT_REPORT)Packet->reportBuffer;
 
 		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_CREATE_NEW_EFFECT_REPORT");
 
@@ -538,7 +538,11 @@ DsHidMini_WriteReport(
 
 	PPID_DEVICE_CONTROL_REPORT pDeviceControl;
 	PPID_DEVICE_GAIN_REPORT pGain;
-
+	PPID_SET_CONDITION_REPORT pSetCondition;
+	PPID_SET_EFFECT_REPORT pSetEffect;
+	PPID_SET_PERIODIC_REPORT pSetPeriodic;
+	PPID_SET_CONSTANT_FORCE_REPORT pSetConstant;
+	
 #ifdef DSHM_FEATURE_FFB
 
 	switch (Packet->reportId)
@@ -547,7 +551,7 @@ DsHidMini_WriteReport(
 
 		pDeviceControl = (PPID_DEVICE_CONTROL_REPORT)Packet->reportBuffer;
 
-		switch (pDeviceControl->Control)
+		switch (pDeviceControl->DeviceControlCommand)
 		{
 		case PidDcEnableActuators:
 			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Enable Actuators");
@@ -570,17 +574,62 @@ DsHidMini_WriteReport(
 		}
 
 		*ReportSize = Packet->reportBufferLen;
-		
+
 		break;
 
 	case PID_DEVICE_GAIN_REPORT_ID:
 
 		pGain = (PPID_DEVICE_GAIN_REPORT)Packet->reportBuffer;
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_DEVICE_GAIN_REPORT, DeviceGain: %d", pGain->DeviceGain);
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_DEVICE_GAIN_REPORT, DeviceGain: %d",
+		         pGain->DeviceGain);
 
 		*ReportSize = Packet->reportBufferLen;
-		
+
+		break;
+
+	case PID_SET_CONDITION_REPORT_ID:
+
+		pSetCondition = (PPID_SET_CONDITION_REPORT)Packet->reportBuffer;
+
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_SET_CONDITION_REPORT, EffectBlockIndex: %d",
+		         pSetCondition->EffectBlockIndex);
+
+		*ReportSize = Packet->reportBufferLen;
+
+		break;
+
+	case PID_SET_EFFECT_REPORT_ID:
+
+		pSetEffect = (PPID_SET_EFFECT_REPORT)Packet->reportBuffer;
+
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! PPID_SET_EFFECT_REPORT, EffectBlockIndex: %d",
+		         pSetEffect->EffectBlockIndex);
+
+		*ReportSize = Packet->reportBufferLen;
+
+		break;
+
+	case PID_SET_PERIODIC_REPORT_ID:
+
+		pSetPeriodic = (PPID_SET_PERIODIC_REPORT)Packet->reportBuffer;
+
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: %d",
+		         pSetPeriodic->EffectBlockIndex);
+
+		*ReportSize = Packet->reportBufferLen;
+
+		break;
+
+	case PID_SET_CONSTANT_FORCE_REPORT_ID:
+
+		pSetConstant = (PPID_SET_CONSTANT_FORCE_REPORT)Packet->reportBuffer;
+
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_SET_CONSTANT_FORCE_REPORT, EffectBlockIndex: %d",
+		         pSetConstant->EffectBlockIndex);
+
+		*ReportSize = Packet->reportBufferLen;
+
 		break;
 
 	default:

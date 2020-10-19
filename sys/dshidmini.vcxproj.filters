@@ -69,9 +69,6 @@
     <ClInclude Include="ini.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FFBTypes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Debugging.h">
       <Filter>Header Files</Filter>
     </ClInclude>
