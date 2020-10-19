@@ -55,6 +55,7 @@ typedef enum _PID_EFFECT_TYPE
 	
 } PID_EFFECT_TYPE;
 
+/** Possible values indicating block load status */
 typedef enum _PID_BLOCK_LOAD_STATUS
 {
 	PidBlsSuccess = 1,

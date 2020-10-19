@@ -340,17 +340,17 @@ DsHidMini_GetFeature(
 )
 {
 	NTSTATUS status = STATUS_SUCCESS;
-	PDEVICE_CONTEXT pDevCtx;
 
 	UNREFERENCED_PARAMETER(Request);
 
-
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
-
-	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
+	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
 
 	PPID_POOL_REPORT pPool;
 	PPID_BLOCK_LOAD_REPORT pBlockLoad;
+
+	UNREFERENCED_PARAMETER(pModCtx);
+	
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
 #ifdef DSHM_FEATURE_FFB
 
@@ -416,15 +416,16 @@ DsHidMini_SetFeature(
 )
 {
 	NTSTATUS status = STATUS_SUCCESS;
-	PDEVICE_CONTEXT pDevCtx;
 
 	UNREFERENCED_PARAMETER(Request);
 
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
-	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
+	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
 
+	UNREFERENCED_PARAMETER(pModCtx);
+	
 	PPID_NEW_EFFECT_REPORT pNewEffect;
 
 #ifdef DSHM_FEATURE_FFB
@@ -530,18 +531,23 @@ DsHidMini_WriteReport(
 {
 	NTSTATUS status = STATUS_SUCCESS;
 	
-	UNREFERENCED_PARAMETER(DmfModule);
 	UNREFERENCED_PARAMETER(Request);
 	UNREFERENCED_PARAMETER(ReportSize);
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
+	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
+
+	UNREFERENCED_PARAMETER(pModCtx);
+	
 	PPID_DEVICE_CONTROL_REPORT pDeviceControl;
 	PPID_DEVICE_GAIN_REPORT pGain;
 	PPID_SET_CONDITION_REPORT pSetCondition;
 	PPID_SET_EFFECT_REPORT pSetEffect;
 	PPID_SET_PERIODIC_REPORT pSetPeriodic;
 	PPID_SET_CONSTANT_FORCE_REPORT pSetConstant;
+	PPID_EFFECT_OPERATION_REPORT pEffectOperation;
+	PPID_BLOCK_FREE_REPORT pBlockFree;
 	
 #ifdef DSHM_FEATURE_FFB
 
@@ -625,13 +631,35 @@ DsHidMini_WriteReport(
 
 		pSetConstant = (PPID_SET_CONSTANT_FORCE_REPORT)Packet->reportBuffer;
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_SET_CONSTANT_FORCE_REPORT, EffectBlockIndex: %d",
-		         pSetConstant->EffectBlockIndex);
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_SET_CONSTANT_FORCE_REPORT, Magnitude: %d",
+		         pSetConstant->Magnitude);
 
 		*ReportSize = Packet->reportBufferLen;
 
 		break;
 
+	case PID_EFFECT_OPERATION_REPORT_ID:
+
+		pEffectOperation = (PPID_EFFECT_OPERATION_REPORT)Packet->reportBuffer;
+
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: %d",
+		         pEffectOperation->EffectBlockIndex);
+		
+		*ReportSize = Packet->reportBufferLen;
+		
+		break;
+
+	case PID_BLOCK_FREE_REPORT_ID:
+
+		pBlockFree = (PPID_BLOCK_FREE_REPORT)Packet->reportBuffer;
+
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_BLOCK_FREE_REPORT, EffectBlockIndex: %d",
+		         pBlockFree->EffectBlockIndex);
+
+		*ReportSize = Packet->reportBufferLen;
+		
+		break;
+		
 	default:
 		TraceEvents(TRACE_LEVEL_WARNING,
 		            TRACE_DSHIDMINIDRV, "%!FUNC! Not implemented");
