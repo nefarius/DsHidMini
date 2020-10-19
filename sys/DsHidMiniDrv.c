@@ -668,8 +668,23 @@ DsHidMini_WriteReport(
 
 		pSetEffect = (PPID_SET_EFFECT_REPORT)Packet->reportBuffer;
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! PPID_SET_EFFECT_REPORT, EffectBlockIndex: %d",
-		         pSetEffect->EffectBlockIndex);
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! SET_EFFECT_REPORT, EffectBlockIndex: %d, " \
+			"EffectType: %d, Duration: %d, TriggerRepeatInterval: %d, "\
+			"SamplePeriod: %d, Gain: %d, TriggerButton: %d, AxesEnableX: %d, AxesEnableY: %d, " \
+			"DirectionEnable: %d, DirectionInstance1: %d, DirectionInstance2: %d, StartDelay: %d",
+		         pSetEffect->EffectBlockIndex,
+				pSetEffect->EffectType,
+				pSetEffect->Duration,
+				pSetEffect->TriggerRepeatInterval,
+				pSetEffect->SamplePeriod,
+				pSetEffect->Gain,
+				pSetEffect->TriggerButton,
+				pSetEffect->AxesEnableX,
+				pSetEffect->AxesEnableY,
+				pSetEffect->DirectionEnable,
+				pSetEffect->DirectionInstance1,
+				pSetEffect->DirectionInstance2,
+				pSetEffect->StartDelay);
 
 		*ReportSize = Packet->reportBufferLen;
 
@@ -679,8 +694,14 @@ DsHidMini_WriteReport(
 
 		pSetPeriodic = (PPID_SET_PERIODIC_REPORT)Packet->reportBuffer;
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: %d",
-		         pSetPeriodic->EffectBlockIndex);
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_SET_PERIODIC_REPORT, " \
+			"EffectBlockIndex: %d, Magnitude: %d, Offset: %d, Phase: %d, Period: %d",
+		         pSetPeriodic->EffectBlockIndex,
+		         pSetPeriodic->Magnitude,
+		         pSetPeriodic->Offset,
+		         pSetPeriodic->Phase,
+		         pSetPeriodic->Period
+		);
 
 		*ReportSize = Packet->reportBufferLen;
 
@@ -701,8 +722,11 @@ DsHidMini_WriteReport(
 
 		pEffectOperation = (PPID_EFFECT_OPERATION_REPORT)Packet->reportBuffer;
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: %d",
-		         pEffectOperation->EffectBlockIndex);
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: %d, " \
+			"EffectOperation: %d, LoopCount: %d",
+		         pEffectOperation->EffectBlockIndex,
+			pEffectOperation->EffectOperation,
+			pEffectOperation->LoopCount);
 		
 		*ReportSize = Packet->reportBufferLen;
 		
