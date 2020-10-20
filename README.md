@@ -36,10 +36,10 @@ Rough road map with useful features (in no particular order):
   - Might be redundant due to existing tools
 - Add configurable Turbo Mode for buttons ⬇️
   - Might be redundant due to existing tools
-- Test and document setup with PCSX2, RetroArch
+- Test and document setup with PCSX2, RetroArch ⚡
 - Implement/expose rumble support via PID/FFB ⚡
 - Implement/expose gyro and accelerometer via some channel ❓
-- Bluetooth: replace current verbose code with `DMF_ContinuousRequestTarget`
+- Bluetooth: replace current verbose code with `DMF_ContinuousRequestTarget` ⬇️
 
 ## How it works
 
