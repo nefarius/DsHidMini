@@ -17,6 +17,8 @@ TBD
 - Custom LED states indicate battery charge level
   - Wired: Charging will cycle through 1 to 4, if fully charged will stay on 4
   - Wireless: 4 = Full, 3 = High, 2 = Medium/low, 1 = Low/dying
+- **Rumble exposure via Force Feedback**
+  - The rumble motors are exposed as Force Feedback effects, allowing for great game compatibility
 
 ### Planned/Work in progress
 
