@@ -77,3 +77,4 @@ You can build individual projects of the solution within Visual Studio.
 - [Driver installation and updating made easy: DPInst.exe](https://docs.microsoft.com/en-us/archive/blogs/svengruenitz/driver-installation-and-updating-made-easy-dpinst-exe)
 - [inih (INI Not Invented Here)](https://github.com/benhoyt/inih)
 - [The HID Page](http://janaxelson.com/hidpage.htm)
+- [FirstPlatoLV/EmuController](https://github.com/FirstPlatoLV/EmuController)
