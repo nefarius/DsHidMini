@@ -748,39 +748,11 @@ DsHidMini_WriteReport(
 
 		if (pSetConstant->EffectBlockIndex % 2 == 0)
 		{
-			switch (pDevCtx->ConnectionType)
-			{
-			case DsDeviceConnectionTypeUsb:
-
-				DS3_USB_SET_SMALL_RUMBLE_STRENGTH(pDevCtx->Connection.Usb.OutputReport, rumbleValue);
-				break;
-
-			case DsDeviceConnectionTypeBth:
-
-				DS3_BTH_SET_SMALL_RUMBLE_STRENGTH((PUCHAR)WdfMemoryGetBuffer(
-					                                  pDevCtx->Connection.Bth.HidControl.WriteMemory,
-					                                  NULL
-				                                  ), rumbleValue);
-				break;
-			}
+			DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, rumbleValue);
 		}
 		else
 		{
-			switch (pDevCtx->ConnectionType)
-			{
-			case DsDeviceConnectionTypeUsb:
-
-				DS3_USB_SET_LARGE_RUMBLE_STRENGTH(pDevCtx->Connection.Usb.OutputReport, rumbleValue);
-				break;
-
-			case DsDeviceConnectionTypeBth:
-
-				DS3_BTH_SET_LARGE_RUMBLE_STRENGTH((PUCHAR)WdfMemoryGetBuffer(
-					                                  pDevCtx->Connection.Bth.HidControl.WriteMemory,
-					                                  NULL
-				                                  ), rumbleValue);
-				break;
-			}
+			DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, rumbleValue);
 		}
 		
 		*ReportSize = Packet->reportBufferLen;
@@ -800,37 +772,17 @@ DsHidMini_WriteReport(
 		switch (pEffectOperation->EffectOperation)
 		{
 		case PidEoStart:
+
+			(void)Ds_SendOutputReport(pDevCtx);
 			
-			switch (pDevCtx->ConnectionType)
-			{
-			case DsDeviceConnectionTypeUsb:
-
-				(void)SendControlRequest(
-					pDevCtx,
-					BmRequestHostToDevice,
-					BmRequestClass,
-					SetReport,
-					USB_SETUP_VALUE(HidReportRequestTypeOutput, HidReportRequestIdOne),
-					0,
-					(PVOID)pDevCtx->Connection.Usb.OutputReport,
-					DS3_USB_HID_OUTPUT_REPORT_SIZE);
-
-				break;
-
-			case DsDeviceConnectionTypeBth:
-
-				(void)DsBth_SendHidControlWriteRequestAsync(pDevCtx);
-
-				break;
-			}
-
 			break;
 
 		case PidEoStop:
 
-			//
-			// TODO: implement me!
-			// 
+			DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, 0);
+			DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, 0);
+			
+			(void)Ds_SendOutputReport(pDevCtx);
 			
 			break;
 		}
@@ -1396,6 +1348,8 @@ NTSTATUS Ds_SendOutputReport(PDEVICE_CONTEXT Context)
 
 		return DsBth_SendHidControlWriteRequestAsync(Context);
 	}
+
+	return STATUS_INVALID_PARAMETER;
 }
 
 VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
