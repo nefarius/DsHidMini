@@ -589,6 +589,7 @@ DsHidMini_WriteReport(
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
+	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
 		
 #ifdef DSHM_FEATURE_FFB
@@ -603,6 +604,8 @@ DsHidMini_WriteReport(
 	PPID_SET_CONSTANT_FORCE_REPORT pSetConstant;
 	PPID_EFFECT_OPERATION_REPORT pEffectOperation;
 	PPID_BLOCK_FREE_REPORT pBlockFree;
+
+	UCHAR rumbleValue = 0;
 	
 	switch (Packet->reportId)
 	{
@@ -712,8 +715,29 @@ DsHidMini_WriteReport(
 
 		pSetConstant = (PPID_SET_CONSTANT_FORCE_REPORT)Packet->reportBuffer;
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_SET_CONSTANT_FORCE_REPORT, Magnitude: %d",
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_SET_CONSTANT_FORCE_REPORT, EffectBlockIndex: %d, Magnitude: %d",
+		         pSetConstant->EffectBlockIndex,
 		         pSetConstant->Magnitude);
+
+		rumbleValue = (UCHAR)(pSetConstant->Magnitude / 10000.0f * 255.0f);
+
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! DS3 Rumble Value: %d",
+		         rumbleValue);
+
+		//
+		// TODO: move to common function to support BTH as well
+		// 
+		if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
+		{
+			if (pSetConstant->EffectBlockIndex % 2 == 0)
+			{
+				DS3_USB_SET_SMALL_RUMBLE_STRENGTH(pDevCtx->Connection.Usb.OutputReport, rumbleValue);
+			}
+			else
+			{
+				DS3_USB_SET_LARGE_RUMBLE_STRENGTH(pDevCtx->Connection.Usb.OutputReport, rumbleValue);
+			}
+		}
 
 		*ReportSize = Packet->reportBufferLen;
 
@@ -723,11 +747,28 @@ DsHidMini_WriteReport(
 
 		pEffectOperation = (PPID_EFFECT_OPERATION_REPORT)Packet->reportBuffer;
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: %d, " \
-			"EffectOperation: %d, LoopCount: %d",
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: %d, "
+		         "EffectOperation: %d, LoopCount: %d",
 		         pEffectOperation->EffectBlockIndex,
-			pEffectOperation->EffectOperation,
-			pEffectOperation->LoopCount);
+		         pEffectOperation->EffectOperation,
+		         pEffectOperation->LoopCount);
+
+		if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb
+			&& pEffectOperation->EffectOperation == PidEoStart)
+		{
+			//
+			// TODO: move to common function to support BTH as well
+			// 
+			(void)SendControlRequest(
+				pDevCtx,
+				BmRequestHostToDevice,
+				BmRequestClass,
+				SetReport,
+				USB_SETUP_VALUE(HidReportRequestTypeOutput, HidReportRequestIdOne),
+				0,
+				(PVOID)pDevCtx->Connection.Usb.OutputReport,
+				DS3_USB_HID_OUTPUT_REPORT_SIZE);
+		}
 		
 		*ReportSize = Packet->reportBufferLen;
 		

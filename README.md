@@ -41,7 +41,8 @@ Rough road map with useful features (in no particular order):
 - Implement/expose rumble support via PID/FFB ⚡
   - Craft and test necessary PID section for report descriptor ✔️
   - Add OEM registry values for DirectInput to detect effects ✔️
-  - Decode and implement output and feature reports 🚧
+  - Decode and implement output and feature reports ✔️
+    - Currently only `Constant Force` effect is implemented
 - Implement/expose gyro and accelerometer via some channel ❓
 - Bluetooth: replace current verbose code with `DMF_ContinuousRequestTarget` ⬇️
 
