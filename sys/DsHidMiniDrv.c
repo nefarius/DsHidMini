@@ -32,6 +32,28 @@ DMF_MODULE_DECLARE_CONTEXT(DsHidMini)
 DMF_MODULE_DECLARE_CONFIG(DsHidMini)
 
 
+NTSTATUS static DS3_SEND_OUTPUT_REPORT(
+	PDEVICE_CONTEXT Context)
+{
+	switch (Context->ConnectionType)
+	{
+	case DsDeviceConnectionTypeUsb:
+
+		return SendControlRequest(
+			Context,
+			BmRequestHostToDevice,
+			BmRequestClass,
+			SetReport,
+			USB_SETUP_VALUE(HidReportRequestTypeOutput, HidReportRequestIdOne),
+			0,
+			(PVOID)Context->Connection.Usb.OutputReport,
+			DS3_USB_HID_OUTPUT_REPORT_SIZE);
+
+	case DsDeviceConnectionTypeBth:
+
+		return DsBth_SendHidControlWriteRequestAsync(Context);
+	}
+}
 
 //
 // Bootstrap DMF initialization
@@ -724,21 +746,43 @@ DsHidMini_WriteReport(
 		TraceDbg(TRACE_DSHIDMINIDRV, "!! DS3 Rumble Value: %d",
 		         rumbleValue);
 
-		//
-		// TODO: move to common function to support BTH as well
-		// 
-		if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
+		if (pSetConstant->EffectBlockIndex % 2 == 0)
 		{
-			if (pSetConstant->EffectBlockIndex % 2 == 0)
+			switch (pDevCtx->ConnectionType)
 			{
+			case DsDeviceConnectionTypeUsb:
+
 				DS3_USB_SET_SMALL_RUMBLE_STRENGTH(pDevCtx->Connection.Usb.OutputReport, rumbleValue);
-			}
-			else
-			{
-				DS3_USB_SET_LARGE_RUMBLE_STRENGTH(pDevCtx->Connection.Usb.OutputReport, rumbleValue);
+				break;
+
+			case DsDeviceConnectionTypeBth:
+
+				DS3_BTH_SET_SMALL_RUMBLE_STRENGTH((PUCHAR)WdfMemoryGetBuffer(
+					                                  pDevCtx->Connection.Bth.HidControl.WriteMemory,
+					                                  NULL
+				                                  ), rumbleValue);
+				break;
 			}
 		}
+		else
+		{
+			switch (pDevCtx->ConnectionType)
+			{
+			case DsDeviceConnectionTypeUsb:
 
+				DS3_USB_SET_LARGE_RUMBLE_STRENGTH(pDevCtx->Connection.Usb.OutputReport, rumbleValue);
+				break;
+
+			case DsDeviceConnectionTypeBth:
+
+				DS3_BTH_SET_LARGE_RUMBLE_STRENGTH((PUCHAR)WdfMemoryGetBuffer(
+					                                  pDevCtx->Connection.Bth.HidControl.WriteMemory,
+					                                  NULL
+				                                  ), rumbleValue);
+				break;
+			}
+		}
+		
 		*ReportSize = Packet->reportBufferLen;
 
 		break;
@@ -753,21 +797,42 @@ DsHidMini_WriteReport(
 		         pEffectOperation->EffectOperation,
 		         pEffectOperation->LoopCount);
 
-		if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb
-			&& pEffectOperation->EffectOperation == PidEoStart)
+		switch (pEffectOperation->EffectOperation)
 		{
+		case PidEoStart:
+			
+			switch (pDevCtx->ConnectionType)
+			{
+			case DsDeviceConnectionTypeUsb:
+
+				(void)SendControlRequest(
+					pDevCtx,
+					BmRequestHostToDevice,
+					BmRequestClass,
+					SetReport,
+					USB_SETUP_VALUE(HidReportRequestTypeOutput, HidReportRequestIdOne),
+					0,
+					(PVOID)pDevCtx->Connection.Usb.OutputReport,
+					DS3_USB_HID_OUTPUT_REPORT_SIZE);
+
+				break;
+
+			case DsDeviceConnectionTypeBth:
+
+				(void)DsBth_SendHidControlWriteRequestAsync(pDevCtx);
+
+				break;
+			}
+
+			break;
+
+		case PidEoStop:
+
 			//
-			// TODO: move to common function to support BTH as well
+			// TODO: implement me!
 			// 
-			(void)SendControlRequest(
-				pDevCtx,
-				BmRequestHostToDevice,
-				BmRequestClass,
-				SetReport,
-				USB_SETUP_VALUE(HidReportRequestTypeOutput, HidReportRequestIdOne),
-				0,
-				(PVOID)pDevCtx->Connection.Usb.OutputReport,
-				DS3_USB_HID_OUTPUT_REPORT_SIZE);
+			
+			break;
 		}
 		
 		*ReportSize = Packet->reportBufferLen;
@@ -1310,6 +1375,28 @@ Exit:
 }
 
 #pragma endregion
+
+NTSTATUS Ds_SendOutputReport(PDEVICE_CONTEXT Context)
+{
+	switch (Context->ConnectionType)
+	{
+	case DsDeviceConnectionTypeUsb:
+
+		return SendControlRequest(
+			Context,
+			BmRequestHostToDevice,
+			BmRequestClass,
+			SetReport,
+			USB_SETUP_VALUE(HidReportRequestTypeOutput, HidReportRequestIdOne),
+			0,
+			(PVOID)Context->Connection.Usb.OutputReport,
+			DS3_USB_HID_OUTPUT_REPORT_SIZE);
+
+	case DsDeviceConnectionTypeBth:
+
+		return DsBth_SendHidControlWriteRequestAsync(Context);
+	}
+}
 
 VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
 {

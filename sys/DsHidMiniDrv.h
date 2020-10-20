@@ -1,5 +1,4 @@
 #pragma once
-#pragma once
 
 VOID FORCEINLINE REVERSE_BYTE_ARRAY(PUCHAR start, int size)
 {
@@ -12,7 +11,6 @@ VOID FORCEINLINE REVERSE_BYTE_ARRAY(PUCHAR start, int size)
         *hi-- = swap;
     }
 }
-
 
 NTSTATUS
 DsHidMini_GetInputReport(
@@ -63,5 +61,7 @@ DsHidMini_WriteReport(
 );
 
 VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t BufferLength);
+
+NTSTATUS Ds_SendOutputReport(PDEVICE_CONTEXT Context);
 
 VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength);
