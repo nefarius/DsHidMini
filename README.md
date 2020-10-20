@@ -1,3 +1,5 @@
+![Icon](assets/noun_playstation_1595830.png)
+
 # DsHidMini
 
 Virtual HID Mini-user-mode driver for Sony DualShock 3 Controllers
