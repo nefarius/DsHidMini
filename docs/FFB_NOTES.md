@@ -269,6 +269,8 @@ DsHidMini_WriteReport	2020/10/16-23:43:11.204	TRACE_LEVEL_INFORMATION	!! Packet-
 DsHidMini_WriteReport	2020/10/16-23:43:11.204	TRACE_LEVEL_INFORMATION	DsHidMini_WriteReport Exit
 ```
 
+Example Constant Force test
+
 ```text
 !! PID_POOL_REPORT_ID
 !! DC Reset
@@ -284,4 +286,1009 @@ DsHidMini_WriteReport	2020/10/16-23:43:11.204	TRACE_LEVEL_INFORMATION	DsHidMini_
 !! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1
 !! PID_BLOCK_FREE_REPORT, EffectBlockIndex: 1
 !! DC Reset
+```
+
+Rumble Racing example
+
+```text
+!! PID_POOL_REPORT_ID
+!! DC Reset
+!! PID_DEVICE_GAIN_REPORT, DeviceGain: 10000
+!! PID_CREATE_NEW_EFFECT_REPORT
+!! ET Square
+!! PID_BLOCK_LOAD_REPORT_ID (EffectBlockIndex: 1)
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 0, Phase: 0, Period: 0
+!! SET_EFFECT_REPORT, EffectBlockIndex: 1, EffectType: 3, Duration: 1000, TriggerRepeatInterval: 0, SamplePeriod: 0, Gain: 10000, TriggerButton: 255, AxesEnableX: 0, AxesEnableY: 0, DirectionEnable: 1, DirectionInstance1: 9000, DirectionInstance2: 0, StartDelay: 0
+!! PID_CREATE_NEW_EFFECT_REPORT
+!! ET Sine
+!! PID_BLOCK_LOAD_REPORT_ID (EffectBlockIndex: 2)
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 2, Magnitude: 0, Offset: 0, Phase: 0, Period: 0
+!! SET_EFFECT_REPORT, EffectBlockIndex: 2, EffectType: 4, Duration: 1000, TriggerRepeatInterval: 0, SamplePeriod: 0, Gain: 10000, TriggerButton: 255, AxesEnableX: 0, AxesEnableY: 0, DirectionEnable: 1, DirectionInstance1: 17999, DirectionInstance2: 0, StartDelay: 0
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 7254, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 7254, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4549, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4549, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2980, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2980, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1411, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1411, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 0, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2470, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2470, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 901, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 901, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 0, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2274, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2274, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 705, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 705, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 0, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2196, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2196, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 627, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 627, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2745, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2745, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2901, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2901, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 431, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 431, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3137, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3137, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2784, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2784, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3019, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3019, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1450, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1450, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3137, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3137, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2745, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2745, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1176, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1176, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3607, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3607, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2549, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2549, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2745, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2745, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3098, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3098, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1529, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1529, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4078, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4078, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2431, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2431, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3490, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3490, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2941, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2941, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2549, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2549, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 980, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 980, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2941, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2941, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3647, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3647, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2078, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2078, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4156, Phase: 0, Period: 2000
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4156, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4156, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4039, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4039, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2470, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2470, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 901, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 901, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 0, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2823, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2823, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2784, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2784, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2784, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2784, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3803, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3803, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2823, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2823, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1254, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1254, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 0, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3372, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3372, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3686, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3686, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3294, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3294, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 5686, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 5686, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 5137, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 5137, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 8235, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 8235, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 5019, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 5019, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 5843, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 5843, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 6901, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 6901, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3647, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3647, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3176, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3176, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4196, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4196, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3764, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3764, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2196, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2196, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2941, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2941, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3529, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3529, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1960, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1960, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 392, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 392, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 0, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2941, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2941, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1372, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1372, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 0, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 6784, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 6784, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 5725, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 5725, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4588, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4588, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 10000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 10000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3254, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3254, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 10000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 10000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 6313, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 6313, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4274, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4274, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2705, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2705, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2980, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2980, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 431, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 431, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3490, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3490, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3215, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3215, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2235, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2235, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 666, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 666, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 0, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2823, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2823, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3450, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3450, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2196, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2196, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 627, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 627, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 0, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3294, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3294, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1725, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1725, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 156, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 156, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 0, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 5372, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 2, Magnitude: 0, Offset: 10000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 2, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 6196, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 2, Magnitude: 0, Offset: 10000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 2, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 6196, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 2, Magnitude: 0, Offset: 10000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 2, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4549, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 2, Magnitude: 0, Offset: 10000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 2, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4549, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 2, Magnitude: 0, Offset: 10000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 2, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4352, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 2, Magnitude: 0, Offset: 0, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 2, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4352, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4039, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4039, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4156, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4156, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2588, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2588, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1019, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1019, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 0, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 9215, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 9215, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 9215, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 9215, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 9215, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 9215, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 5058, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 5058, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 6431, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 6431, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2509, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2509, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 941, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 941, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 0, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4352, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4352, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 8705, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 2, Magnitude: 0, Offset: 10000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 2, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 8705, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 2, Magnitude: 0, Offset: 10000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 2, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 5960, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 2, Magnitude: 0, Offset: 0, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 2, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 5960, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4313, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4313, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3333, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3333, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2901, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2901, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 8784, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 8784, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 8784, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 6431, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4862, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4862, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3294, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 2, Magnitude: 0, Offset: 10000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 2, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3294, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 2, Magnitude: 0, Offset: 10000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 2, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1725, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 2, Magnitude: 0, Offset: 0, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 2, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1725, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3882, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3882, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4196, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4196, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2627, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2627, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3294, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3294, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4196, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4196, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2627, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2627, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3058, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3058, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3725, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3725, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 6784, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 6784, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2235, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2235, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3372, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3372, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1803, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1803, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 235, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 235, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4352, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4352, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4078, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4078, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2509, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2509, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3686, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3686, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3490, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3490, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3098, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3098, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4901, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4901, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3686, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3686, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2980, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2980, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2627, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2627, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3647, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3647, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2862, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2862, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2862, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4823, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4274, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4274, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4705, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4705, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4470, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4470, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4039, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4039, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4117, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4117, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4627, Phase: 0, Period: 2000
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4627, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4627, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4470, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4470, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4784, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4784, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 5019, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 5019, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 5019, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 5019, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4431, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4431, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3803, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3803, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4470, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4470, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4392, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4392, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3803, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3803, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4196, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4196, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4078, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4078, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3803, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3803, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4705, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4705, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4862, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4862, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4588, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4588, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4117, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4117, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4431, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4431, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4627, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4627, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4627, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4627, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 6000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 6000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 5372, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 5372, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4941, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4941, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4941, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4745, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4392, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4392, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4196, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4196, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4078, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4078, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2509, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2509, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3254, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3254, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3568, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3568, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3490, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3490, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4235, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4235, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2666, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2666, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3215, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3215, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3764, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3764, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3019, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3019, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1450, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1450, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2784, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2784, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1215, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1215, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 0, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 7019, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 2, Magnitude: 0, Offset: 10000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 2, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 7019, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 2, Magnitude: 0, Offset: 10000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 2, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2980, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 2, Magnitude: 0, Offset: 10000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 2, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2980, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 2, Magnitude: 0, Offset: 10000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 2, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1411, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 2, Magnitude: 0, Offset: 10000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 2, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1411, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 2, Magnitude: 0, Offset: 10000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 2, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 0, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 2, Magnitude: 0, Offset: 10000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 2, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 2, Magnitude: 0, Offset: 10000, Phase: 0, Period: 2000
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 2, Magnitude: 0, Offset: 10000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 2, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2862, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 2, Magnitude: 0, Offset: 0, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 2, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2862, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1294, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1294, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 0, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3098, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3098, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2196, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2196, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 627, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 627, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 0, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2784, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2784, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2745, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2745, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2235, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2235, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 666, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 666, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 0, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4117, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4117, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2549, Phase: 0, Period: 2000
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2549, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2549, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2235, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2235, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3098, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3098, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1529, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1529, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3725, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3725, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2745, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2745, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 6000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 6000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 7058, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 7058, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3960, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3960, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2941, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2941, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 5058, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 5058, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4196, Phase: 0, Period: 2000
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4196, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4196, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3647, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3647, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3450, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3450, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4196, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 4196, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3411, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3411, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1843, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1843, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3607, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3607, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2039, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2039, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 470, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 470, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3098, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3098, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3058, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3058, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1490, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 1490, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3098, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 3098, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2901, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2901, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2000, Phase: 0, Period: 2000
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 2000, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 431, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 431, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
+!! PID_SET_PERIODIC_REPORT, EffectBlockIndex: 1, Magnitude: 0, Offset: 0, Phase: 0, Period: 2000
+!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: 1, EffectOperation: 1, LoopCount: 1
 ```

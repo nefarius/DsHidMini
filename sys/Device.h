@@ -133,6 +133,7 @@ VOID FORCEINLINE DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(
 	Configuration->DisableAutoPairing = FALSE;
 }
 
+#ifdef DSHM_FEATURE_FFB
 typedef struct _FFB_ATTRIBUTES
 {
 	UCHAR EffectBlockIndex;
@@ -144,6 +145,7 @@ typedef struct _FFB_ATTRIBUTES
 	UT_hash_handle hh; /* makes this structure hashable */
 	
 } FFB_ATTRIBUTES, *PFFB_ATTRIBUTES;
+#endif
 
 typedef struct _DEVICE_CONTEXT
 {
@@ -224,11 +226,13 @@ typedef struct
 	// 
 	UCHAR InputReport[DS3_HID_INPUT_REPORT_SIZE];
 
+#ifdef DSHM_FEATURE_FFB
 	//
 	// Force Feedback State Info
 	// 
 	PFFB_ATTRIBUTES FfbAttributes;
-
+#endif
+	
 } DMF_CONTEXT_DsHidMini;
 
 _Function_class_(DMF_ChildModulesAdd)

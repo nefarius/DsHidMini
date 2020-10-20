@@ -345,17 +345,17 @@ DsHidMini_GetFeature(
 
 	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
 
-	PFFB_ATTRIBUTES pEntry = NULL;
-	
-	PPID_POOL_REPORT pPool;
-	PPID_BLOCK_LOAD_REPORT pBlockLoad;
-
 	UNREFERENCED_PARAMETER(pModCtx);
 	
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
 #ifdef DSHM_FEATURE_FFB
 
+	PFFB_ATTRIBUTES pEntry = NULL;
+	
+	PPID_POOL_REPORT pPool;
+	PPID_BLOCK_LOAD_REPORT pBlockLoad;
+	
 	switch (Packet->reportId)
 	{
 	case PID_POOL_REPORT_ID:
@@ -449,12 +449,13 @@ DsHidMini_SetFeature(
 
 	UNREFERENCED_PARAMETER(pModCtx);
 
-	PFFB_ATTRIBUTES pEntry = NULL;
-	
-	PPID_NEW_EFFECT_REPORT pNewEffect;
 
 #ifdef DSHM_FEATURE_FFB
 
+	PFFB_ATTRIBUTES pEntry = NULL;
+	
+	PPID_NEW_EFFECT_REPORT pNewEffect;
+	
 	switch (Packet->reportId)
 	{
 	case PID_NEW_EFFECT_REPORT_ID:
@@ -589,7 +590,9 @@ DsHidMini_WriteReport(
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
 	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
-
+		
+#ifdef DSHM_FEATURE_FFB
+	
 	PFFB_ATTRIBUTES pEntry = NULL;
 	
 	PPID_DEVICE_CONTROL_REPORT pDeviceControl;
@@ -601,8 +604,6 @@ DsHidMini_WriteReport(
 	PPID_EFFECT_OPERATION_REPORT pEffectOperation;
 	PPID_BLOCK_FREE_REPORT pBlockFree;
 	
-#ifdef DSHM_FEATURE_FFB
-
 	switch (Packet->reportId)
 	{
 	case PID_DEVICE_CONTROL_REPORT_ID:

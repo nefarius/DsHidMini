@@ -64,6 +64,15 @@ typedef enum _PID_BLOCK_LOAD_STATUS
 	
 } PID_BLOCK_LOAD_STATUS;
 
+/** Possible values for effect operation */
+typedef enum _PID_EFFECT_OPERATION
+{
+	PidEoStart = 1,
+	PidEoStartSolo = 2,
+	PidEoStop = 3
+	
+} PID_EFFECT_OPERATION;
+
 #include <pshpack1.h>
 
 //
