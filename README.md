@@ -92,3 +92,4 @@ You can build individual projects of the solution within Visual Studio.
 - [inih (INI Not Invented Here)](https://github.com/benhoyt/inih)
 - [The HID Page](http://janaxelson.com/hidpage.htm)
 - [uthash - a hash table for C structures](https://github.com/troydhanson/uthash)
+- [FirstPlatoLV/EmuController](https://github.com/FirstPlatoLV/EmuController)
