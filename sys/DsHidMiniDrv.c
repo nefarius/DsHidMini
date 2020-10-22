@@ -620,25 +620,26 @@ DsHidMini_WriteReport(
 		case PidDcDisableActuators:
 			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Disable Actuators");
 			break;
-		case PidDcStopAllEffects:
-			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Stop All Effects");
-			break;
 		case PidDcReset:
 			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Reset");
 
 			HASH_CLEAR(hh, pModCtx->FfbAttributes);
-
+			// Fall through
+		case PidDcStopAllEffects:
+			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Stop All Effects");
 			DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, 0);
 			DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, 0);
-			
+
 			(void)Ds_SendOutputReport(pDevCtx);
-			
+
 			break;
 		case PidDcPause:
 			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Pause");
 			break;
 		case PidDcContinue:
 			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Continue");
+			break;
+		default:
 			break;
 		}
 
@@ -672,23 +673,23 @@ DsHidMini_WriteReport(
 
 		pSetEffect = (PPID_SET_EFFECT_REPORT)Packet->reportBuffer;
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! SET_EFFECT_REPORT, EffectBlockIndex: %d, " \
-			"EffectType: %d, Duration: %d, TriggerRepeatInterval: %d, "\
-			"SamplePeriod: %d, Gain: %d, TriggerButton: %d, AxesEnableX: %d, AxesEnableY: %d, " \
-			"DirectionEnable: %d, DirectionInstance1: %d, DirectionInstance2: %d, StartDelay: %d",
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! SET_EFFECT_REPORT, EffectBlockIndex: %d, "
+		         "EffectType: %d, Duration: %d, TriggerRepeatInterval: %d, "
+		         "SamplePeriod: %d, Gain: %d, TriggerButton: %d, AxesEnableX: %d, AxesEnableY: %d, "
+		         "DirectionEnable: %d, DirectionInstance1: %d, DirectionInstance2: %d, StartDelay: %d",
 		         pSetEffect->EffectBlockIndex,
-				pSetEffect->EffectType,
-				pSetEffect->Duration,
-				pSetEffect->TriggerRepeatInterval,
-				pSetEffect->SamplePeriod,
-				pSetEffect->Gain,
-				pSetEffect->TriggerButton,
-				pSetEffect->AxesEnableX,
-				pSetEffect->AxesEnableY,
-				pSetEffect->DirectionEnable,
-				pSetEffect->DirectionInstance1,
-				pSetEffect->DirectionInstance2,
-				pSetEffect->StartDelay);
+		         pSetEffect->EffectType,
+		         pSetEffect->Duration,
+		         pSetEffect->TriggerRepeatInterval,
+		         pSetEffect->SamplePeriod,
+		         pSetEffect->Gain,
+		         pSetEffect->TriggerButton,
+		         pSetEffect->AxesEnableX,
+		         pSetEffect->AxesEnableY,
+		         pSetEffect->DirectionEnable,
+		         pSetEffect->DirectionInstance1,
+		         pSetEffect->DirectionInstance2,
+		         pSetEffect->StartDelay);
 
 		*ReportSize = Packet->reportBufferLen;
 
@@ -698,8 +699,8 @@ DsHidMini_WriteReport(
 
 		pSetPeriodic = (PPID_SET_PERIODIC_REPORT)Packet->reportBuffer;
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_SET_PERIODIC_REPORT, " \
-			"EffectBlockIndex: %d, Magnitude: %d, Offset: %d, Phase: %d, Period: %d",
+		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_SET_PERIODIC_REPORT, "
+		         "EffectBlockIndex: %d, Magnitude: %d, Offset: %d, Phase: %d, Period: %d",
 		         pSetPeriodic->EffectBlockIndex,
 		         pSetPeriodic->Magnitude,
 		         pSetPeriodic->Offset,
@@ -762,6 +763,8 @@ DsHidMini_WriteReport(
 			
 			(void)Ds_SendOutputReport(pDevCtx);
 			
+			break;
+		default:
 			break;
 		}
 		
@@ -1325,9 +1328,10 @@ NTSTATUS Ds_SendOutputReport(PDEVICE_CONTEXT Context)
 	case DsDeviceConnectionTypeBth:
 
 		return DsBth_SendHidControlWriteRequestAsync(Context);
-	}
 
-	return STATUS_INVALID_PARAMETER;
+	default:
+		return STATUS_INVALID_PARAMETER;
+	}
 }
 
 VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
