@@ -628,9 +628,10 @@ DsHidMini_WriteReport(
 
 			HASH_CLEAR(hh, pModCtx->FfbAttributes);
 
-			//
-			// TODO: stop/reset rumble motors
-			// 
+			DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, 0);
+			DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, 0);
+			
+			(void)Ds_SendOutputReport(pDevCtx);
 			
 			break;
 		case PidDcPause:
