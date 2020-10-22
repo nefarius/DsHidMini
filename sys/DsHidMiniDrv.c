@@ -32,29 +32,6 @@ DMF_MODULE_DECLARE_CONTEXT(DsHidMini)
 DMF_MODULE_DECLARE_CONFIG(DsHidMini)
 
 
-NTSTATUS static DS3_SEND_OUTPUT_REPORT(
-	PDEVICE_CONTEXT Context)
-{
-	switch (Context->ConnectionType)
-	{
-	case DsDeviceConnectionTypeUsb:
-
-		return SendControlRequest(
-			Context,
-			BmRequestHostToDevice,
-			BmRequestClass,
-			SetReport,
-			USB_SETUP_VALUE(HidReportRequestTypeOutput, HidReportRequestIdOne),
-			0,
-			(PVOID)Context->Connection.Usb.OutputReport,
-			DS3_USB_HID_OUTPUT_REPORT_SIZE);
-
-	case DsDeviceConnectionTypeBth:
-
-		return DsBth_SendHidControlWriteRequestAsync(Context);
-	}
-}
-
 //
 // Bootstrap DMF initialization
 // 
