@@ -12,7 +12,10 @@ TBD
 
 - Bluetooth support if used in conjunction with [BthPS3](https://github.com/ViGEm/BthPS3)
 - Automatically pairs the controller to Windows Bluetooth (if Bluetooth host radio is present)
-- Sony `sixaxis.sys` compatibility (both wired **and wireless**)
+- Multiple configurable HID Report Descriptors for wide range of compatibility
+  - Single Gamepad device exposing all controls including **pressure sensitive buttons**
+  - Split/multi device emulation to overcome DirectInput axis limits
+  - Sony `sixaxis.sys` emulation (both wired **and wireless**)
 - Quick disconnect (on Bluetooth) by pressing `L1 + R1 + PS` together for over one second
 - Custom LED states indicate battery charge level
   - Wired: Charging will cycle through 1 to 4, if fully charged will stay on 4
