@@ -240,6 +240,17 @@ DsHidMini_EvtDevicePrepareHardware(
 				&controlTransferBuffer[4],
 				sizeof(BD_ADDR));
 
+			TraceEvents(TRACE_LEVEL_INFORMATION,
+			            TRACE_POWER,
+			            "Device address: %02X:%02X:%02X:%02X:%02X:%02X",
+			            pCtx->DeviceAddress.Address[0],
+			            pCtx->DeviceAddress.Address[1],
+			            pCtx->DeviceAddress.Address[2],
+			            pCtx->DeviceAddress.Address[3],
+			            pCtx->DeviceAddress.Address[4],
+			            pCtx->DeviceAddress.Address[5]
+			);
+			
 			//
 			// Request host BTH address
 			// 
