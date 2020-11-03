@@ -50,6 +50,7 @@ Rough road map with useful features (in no particular order):
     - Currently only `Constant Force` effect is implemented
 - Implement/expose gyro and accelerometer via some channel ❓
 - Bluetooth: replace current verbose code with `DMF_ContinuousRequestTarget` ⬇️
+- Add option to chose between event based and periodic output report sending ⚡
 
 #### Key explanation
 
