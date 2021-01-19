@@ -23,45 +23,6 @@ TBD
 - **Rumble exposure via Force Feedback**
   - The rumble motors are exposed as Force Feedback effects, allowing for great game compatibility
 
-### Planned/Work in progress
-
-Rough road map with useful features (in no particular order):
-
-- Implement support for Navigation controller ⚡
-  - Add USB and Bluetooth Hardware IDs to INF ✔️
-  - Adapt feature report for setting/getting Bluetooth master address
-- Implement auto-disconnect on wireless after idle timeout to save battery ⚡
-- Implement/expose more options to control pairing behavior ⬇️
-- UI tool for configuration file ⬇️
-- UDP server for `cemuhook` compatibility ❓
-  - See [ds4drv](https://github.com/TheDrHax/ds4drv-cemuhook)
-- Test/fix power behavior (like, what happens when the system wants to sleep with controllers connected etc.) ⚡
-- Integrate ViGEm client SDK for XInput support ⚡
-- Add remapping capabilities ⬇️
-  - See [jfes](https://github.com/dmitrii-eremin/jfes)
-  - Might be redundant due to existing tools
-- Add configurable Turbo Mode for buttons ⬇️
-  - Might be redundant due to existing tools
-- Test and document setup with PCSX2, RetroArch ⚡
-- Implement/expose rumble support via PID/FFB ⚡
-  - Craft and test necessary PID section for report descriptor ✔️
-  - Add OEM registry values for DirectInput to detect effects ✔️
-  - Decode and implement output and feature reports ✔️
-    - Currently only `Constant Force` effect is implemented
-- Implement/expose gyro and accelerometer via some channel ❓
-- Bluetooth: replace current verbose code with `DMF_ContinuousRequestTarget` ⬇️
-- Add option to chose between event based and periodic output report sending ⚡
-
-#### Key explanation
-
-| Emoji | Meaning |
-|---|---|
-| ⚡ | High priority/interest |
-| ⬇️ | Low priority |
-| ❓ | Potentially useful |
-| ✔️ | Implemented/functional |
-| 🚧 | Currently in progress |
-
 ## How it works
 
 TBD
