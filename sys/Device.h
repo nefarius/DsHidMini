@@ -33,7 +33,7 @@ struct USB_DEVICE_CONTEXT
 	PUCHAR OutputReport;
 
 	//
-	// Timestamp to calculate charing cycle state change
+	// Timestamp to calculate charging cycle state change
 	// 
 	LARGE_INTEGER ChargingCycleTimestamp;
 };
