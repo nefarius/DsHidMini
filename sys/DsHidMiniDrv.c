@@ -46,58 +46,71 @@ DMF_DsHidMini_Create(
 	_Out_ DMFMODULE* DmfModule
 )
 {
-	NTSTATUS ntStatus;
+	NTSTATUS status;
 	DMF_MODULE_DESCRIPTOR dsHidMiniDesc;
 	DMF_CALLBACKS_DMF dsHidMiniCallbacks;
 	PDEVICE_CONTEXT pDevCtx;
+		
 
 	PAGED_CODE();
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
-	pDevCtx = DeviceGetContext(Device);
-
-	//
-	// Set defaults
-	// 
-	DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(&pDevCtx->Configuration);
-
-	//
-	// Load volatile configuration
-	// 
-	DsConfig_Load(pDevCtx);
-
-	DMF_CALLBACKS_DMF_INIT(&dsHidMiniCallbacks);
-	dsHidMiniCallbacks.ChildModulesAdd = DMF_DsHidMini_ChildModulesAdd;
-	dsHidMiniCallbacks.DeviceOpen = DMF_DsHidMini_Open;
-	dsHidMiniCallbacks.DeviceClose = DMF_DsHidMini_Close;
-
-	DMF_MODULE_DESCRIPTOR_INIT_CONTEXT_TYPE(dsHidMiniDesc,
-		DsHidMini,
-		DMF_CONTEXT_DsHidMini,
-		DMF_MODULE_OPTIONS_PASSIVE,
-		DMF_MODULE_OPEN_OPTION_OPEN_PrepareHardware);
-
-	dsHidMiniDesc.CallbacksDmf = &dsHidMiniCallbacks;
-
-	ntStatus = DMF_ModuleCreate(Device,
-		DmfModuleAttributes,
-		ObjectAttributes,
-		&dsHidMiniDesc,
-		DmfModule);
-	if (!NT_SUCCESS(ntStatus))
+	do
 	{
-		TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV, "DMF_ModuleCreate fails: ntStatus=%!STATUS!", ntStatus);
-		goto Exit;
-	}
+		pDevCtx = DeviceGetContext(Device);
 
-Exit:
+		//
+		// Set defaults
+		// 
+		DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(&pDevCtx->Configuration);
+
+		//
+		// Load volatile configuration
+		// 
+		DsConfig_Load(pDevCtx);
+
+		//
+		// Set Virtual HID Mini properties
+		// 
+		DMF_CALLBACKS_DMF_INIT(&dsHidMiniCallbacks);
+		dsHidMiniCallbacks.ChildModulesAdd = DMF_DsHidMini_ChildModulesAdd;
+		dsHidMiniCallbacks.DeviceOpen = DMF_DsHidMini_Open;
+		dsHidMiniCallbacks.DeviceClose = DMF_DsHidMini_Close;
+
+		DMF_MODULE_DESCRIPTOR_INIT_CONTEXT_TYPE(dsHidMiniDesc,
+		                                        DsHidMini,
+		                                        DMF_CONTEXT_DsHidMini,
+		                                        DMF_MODULE_OPTIONS_PASSIVE,
+		                                        DMF_MODULE_OPEN_OPTION_OPEN_PrepareHardware);
+
+		dsHidMiniDesc.CallbacksDmf = &dsHidMiniCallbacks;
+
+		status = DMF_ModuleCreate(
+			Device,
+			DmfModuleAttributes,
+			ObjectAttributes,
+			&dsHidMiniDesc,
+			DmfModule);
+		if (!NT_SUCCESS(status))
+		{
+			TraceEvents(TRACE_LEVEL_ERROR,
+			            TRACE_DSHIDMINIDRV,
+			            "DMF_ModuleCreate failed with status %!STATUS!",
+			            status
+			);
+			break;
+		}
+	}
+	while (FALSE);
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 
-	return(ntStatus);
+	return (status);
 }
 #pragma code_seg()
+
+#pragma region DMF Initialization and clean-up
 
 //
 // Bootstraps VirtualHidMini DMF module
@@ -116,6 +129,9 @@ DMF_DsHidMini_ChildModulesAdd(
 	DMF_CONTEXT_DsHidMini* moduleContext;
 	DMF_CONFIG_VirtualHidMini vHidCfg;
 	PDEVICE_CONTEXT pDevCtx;
+
+	DMF_CONFIG_ScheduledTask dmfSchedulerCfg;
+	WDF_OBJECT_ATTRIBUTES wdfAttributes;
 
 	PAGED_CODE();
 
@@ -187,10 +203,36 @@ DMF_DsHidMini_ChildModulesAdd(
 	vHidCfg.Strings = G_DsHidMini_Strings;
 	vHidCfg.NumberOfStrings = ARRAYSIZE(G_DsHidMini_Strings);
 
-	DMF_DmfModuleAdd(DmfModuleInit,
+	DMF_DmfModuleAdd(
+		DmfModuleInit,
 		&moduleAttributes,
 		WDF_NO_OBJECT_ATTRIBUTES,
-		&moduleContext->DmfModuleVirtualHidMini);
+		&moduleContext->DmfModuleVirtualHidMini
+	);
+
+	//
+	// Scheduler for serialized periodic output report dispatcher
+	// 
+
+	DMF_CONFIG_ScheduledTask_AND_ATTRIBUTES_INIT(
+		&dmfSchedulerCfg,
+		&moduleAttributes
+	);
+
+	dmfSchedulerCfg.EvtScheduledTaskCallback = DMF_OutputReportScheduledTaskCallback;
+	dmfSchedulerCfg.CallbackContext = pDevCtx;
+	dmfSchedulerCfg.PersistenceType = ScheduledTask_Persistence_NotPersistentAcrossReboots;
+	dmfSchedulerCfg.ExecutionMode = ScheduledTask_ExecutionMode_Deferred;
+	dmfSchedulerCfg.ExecuteWhen = ScheduledTask_ExecuteWhen_Other; // we control start
+	dmfSchedulerCfg.TimerPeriodMsOnSuccess = 10;
+	dmfSchedulerCfg.TimerPeriodMsOnFail = 10;
+
+	DMF_DmfModuleAdd(
+		DmfModuleInit,
+		&moduleAttributes,
+		WDF_NO_OBJECT_ATTRIBUTES,
+		&pDevCtx->OutputReportScheduler
+	);
 
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 }
@@ -250,6 +292,10 @@ DMF_DsHidMini_Close(
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 }
 #pragma code_seg()
+
+#pragma endregion
+
+#pragma region DMF Virtual HID Mini-specific
 
 NTSTATUS
 DsHidMini_GetInputReport(
@@ -817,6 +863,8 @@ DsHidMini_WriteReport(
 	return status;
 }
 
+#pragma endregion
+
 #pragma region Input Report processing
 
 VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t BufferLength)
@@ -982,15 +1030,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 
 		DS3_USB_SET_LED(pDevCtx->Connection.Usb.OutputReport, DS3_LED_4);
 
-		(void)SendControlRequest(
-			pDevCtx,
-			BmRequestHostToDevice,
-			BmRequestClass,
-			SetReport,
-			USB_SETUP_VALUE(HidReportRequestTypeOutput, HidReportRequestIdOne),
-			0,
-			(PVOID)pDevCtx->Connection.Usb.OutputReport,
-			DS3_USB_HID_OUTPUT_REPORT_SIZE);
+		(void)Ds_SendOutputReport(pDevCtx);
 	}
 	//
 	// If charging, cycle LEDs
@@ -1028,15 +1068,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 
 			DS3_USB_SET_LED(pDevCtx->Connection.Usb.OutputReport, led);
 
-			(void)SendControlRequest(
-				pDevCtx,
-				BmRequestHostToDevice,
-				BmRequestClass,
-				SetReport,
-				USB_SETUP_VALUE(HidReportRequestTypeOutput, HidReportRequestIdOne),
-				0,
-				(PVOID)pDevCtx->Connection.Usb.OutputReport,
-				DS3_USB_HID_OUTPUT_REPORT_SIZE);
+			(void)Ds_SendOutputReport(pDevCtx);
 		}
 	}
 	else
@@ -1309,29 +1341,69 @@ Exit:
 
 #pragma endregion
 
-NTSTATUS Ds_SendOutputReport(PDEVICE_CONTEXT Context)
+#pragma region Output Report processing
+
+ScheduledTask_Result_Type
+DMF_OutputReportScheduledTaskCallback(
+	_In_ DMFMODULE DmfModule,
+	_In_ VOID* CallbackContext,
+	_In_ WDF_POWER_DEVICE_STATE PreviousState)
 {
-	switch (Context->ConnectionType)
+	UNREFERENCED_PARAMETER(DmfModule);
+	UNREFERENCED_PARAMETER(PreviousState);
+
+	NTSTATUS status;
+	PDEVICE_CONTEXT pDevCtx = (PDEVICE_CONTEXT)CallbackContext;
+	
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+	
+	switch (pDevCtx->ConnectionType)
 	{
 	case DsDeviceConnectionTypeUsb:
 
-		return SendControlRequest(
-			Context,
+		status = SendControlRequest(
+			pDevCtx,
 			BmRequestHostToDevice,
 			BmRequestClass,
 			SetReport,
 			USB_SETUP_VALUE(HidReportRequestTypeOutput, HidReportRequestIdOne),
 			0,
-			(PVOID)Context->Connection.Usb.OutputReport,
+			(PVOID)pDevCtx->Connection.Usb.OutputReport,
 			DS3_USB_HID_OUTPUT_REPORT_SIZE);
+
+		break;
 
 	case DsDeviceConnectionTypeBth:
 
-		return DsBth_SendHidControlWriteRequestAsync(Context);
+		status = DsBth_SendHidControlWriteRequestAsync(pDevCtx);
+
+		break;
 
 	default:
-		return STATUS_INVALID_PARAMETER;
+		status = STATUS_INVALID_PARAMETER;
 	}
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit (status: %!STATUS!)", status);
+	
+	return ScheduledTask_WorkResult_SuccessButTryAgain;
+}
+
+#pragma endregion
+
+NTSTATUS Ds_SendOutputReport(PDEVICE_CONTEXT Context)
+{
+	NTSTATUS status;
+	
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+	
+	status =  DMF_ScheduledTask_ExecuteNowDeferred(
+		Context->OutputReportScheduler,
+		Context
+	);
+
+	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit (status: %!STATUS!)", status);
+
+	return status;
 }
 
 VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)

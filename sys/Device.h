@@ -160,6 +160,11 @@ typedef struct _DEVICE_CONTEXT
 	DMFMODULE DsHidMiniModule;
 
 	//
+	// Periodic task scheduler to send output reports
+	// 
+	DMFMODULE OutputReportScheduler;
+	
+	//
 	// Type of connection (wired, wireless)
 	// 
 	DS_CONNECTION_TYPE ConnectionType;
@@ -268,5 +273,7 @@ NTSTATUS
 dshidminiCreateDevice(
 	_Inout_ PWDFDEVICE_INIT DeviceInit
 );
+
+EVT_DMF_ScheduledTask_Callback DMF_OutputReportScheduledTaskCallback;
 
 EXTERN_C_END
