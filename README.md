@@ -1,4 +1,4 @@
-![Icon](assets/noun_playstation_128x128.png)
+<img src="assets/noun_playstation_128x128.png" align="right" />
 
 # DsHidMini
 
