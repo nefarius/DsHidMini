@@ -10,7 +10,7 @@ TBD
 
 ## Features
 
-- Bluetooth support if used in conjunction with [BthPS3](https://github.com/ViGEm/BthPS3)
+- **Bluetooth support** if used in conjunction with [BthPS3](https://github.com/ViGEm/BthPS3)
 - Automatically pairs the controller to Windows Bluetooth (if Bluetooth host radio is present)
 - Multiple configurable HID Report Descriptors for wide range of compatibility
   - Single Gamepad device exposing all controls including **pressure sensitive buttons**
