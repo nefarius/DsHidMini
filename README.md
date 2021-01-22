@@ -4,6 +4,8 @@
 
 Virtual HID Mini-user-mode driver for Sony DualShock 3 Controllers
 
+[![Discord](https://img.shields.io/discord/346756263763378176.svg)](https://discord.vigem.org/) [![Website](https://img.shields.io/website-up-down-green-red/https/vigem.org.svg?label=ViGEm.org)](https://vigem.org/)
+
 ## Summary
 
 TBD
