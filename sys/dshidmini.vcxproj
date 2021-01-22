@@ -81,7 +81,6 @@
     <ClInclude Include="PID\17_PIDPoolReport.h" />
     <ClInclude Include="PID\PIDTypes.h" />
     <ClInclude Include="Power.h" />
-    <ClInclude Include="IpcSocket.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Trace.h" />
     <ClInclude Include="uthash.h" />
