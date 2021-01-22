@@ -9,6 +9,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Driver", "Driver", "{774E55
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "App", "App", "{CE492389-7FB3-4DC4-9AFF-B7A04F70F891}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", "build\_build.csproj", "{30CAEA37-74D5-4219-AF2D-827F12FF6ECF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -49,6 +51,24 @@ Global
 		{BEAF5753-7811-465B-8FED-CFB114DA66A5}.Release|x86.ActiveCfg = Release|Win32
 		{BEAF5753-7811-465B-8FED-CFB114DA66A5}.Release|x86.Build.0 = Release|Win32
 		{BEAF5753-7811-465B-8FED-CFB114DA66A5}.Release|x86.Deploy.0 = Release|Win32
+		{30CAEA37-74D5-4219-AF2D-827F12FF6ECF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{30CAEA37-74D5-4219-AF2D-827F12FF6ECF}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{30CAEA37-74D5-4219-AF2D-827F12FF6ECF}.Debug|ARM.Build.0 = Debug|Any CPU
+		{30CAEA37-74D5-4219-AF2D-827F12FF6ECF}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{30CAEA37-74D5-4219-AF2D-827F12FF6ECF}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{30CAEA37-74D5-4219-AF2D-827F12FF6ECF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{30CAEA37-74D5-4219-AF2D-827F12FF6ECF}.Debug|x64.Build.0 = Debug|Any CPU
+		{30CAEA37-74D5-4219-AF2D-827F12FF6ECF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{30CAEA37-74D5-4219-AF2D-827F12FF6ECF}.Debug|x86.Build.0 = Debug|Any CPU
+		{30CAEA37-74D5-4219-AF2D-827F12FF6ECF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{30CAEA37-74D5-4219-AF2D-827F12FF6ECF}.Release|ARM.ActiveCfg = Release|Any CPU
+		{30CAEA37-74D5-4219-AF2D-827F12FF6ECF}.Release|ARM.Build.0 = Release|Any CPU
+		{30CAEA37-74D5-4219-AF2D-827F12FF6ECF}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{30CAEA37-74D5-4219-AF2D-827F12FF6ECF}.Release|ARM64.Build.0 = Release|Any CPU
+		{30CAEA37-74D5-4219-AF2D-827F12FF6ECF}.Release|x64.ActiveCfg = Release|Any CPU
+		{30CAEA37-74D5-4219-AF2D-827F12FF6ECF}.Release|x64.Build.0 = Release|Any CPU
+		{30CAEA37-74D5-4219-AF2D-827F12FF6ECF}.Release|x86.ActiveCfg = Release|Any CPU
+		{30CAEA37-74D5-4219-AF2D-827F12FF6ECF}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
