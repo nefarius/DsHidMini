@@ -325,31 +325,31 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 	pDevCtx = DeviceGetContext(Device);
 	isTargetStarted = FALSE;
 
-	TraceInformation(TRACE_POWER, "%!FUNC! Entry");
+	FuncEntry(TRACE_POWER);
 
 	UNREFERENCED_PARAMETER(PreviousState);
 
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
 	{
-		//
-		// Since continuous reader is configured for this interrupt-pipe, we must explicitly start
-		// the I/O target to get the framework to post read requests.
-		//
-		status = WdfIoTargetStart(WdfUsbTargetPipeGetIoTarget(pDevCtx->Connection.Usb.InterruptInPipe));
-		if (!NT_SUCCESS(status)) {
-			TraceError( TRACE_POWER, "Failed to start interrupt read pipe %!STATUS!", status);
-			goto End;
-		}
+		do {
+			//
+			// Since continuous reader is configured for this interrupt-pipe, we must explicitly start
+			// the I/O target to get the framework to post read requests.
+			//
+			status = WdfIoTargetStart(WdfUsbTargetPipeGetIoTarget(pDevCtx->Connection.Usb.InterruptInPipe));
+			if (!NT_SUCCESS(status)) {
+				TraceError(TRACE_POWER, "Failed to start interrupt read pipe %!STATUS!", status);
+				break;
+			}
 
-		status = WdfIoTargetStart(WdfUsbTargetPipeGetIoTarget(pDevCtx->Connection.Usb.InterruptOutPipe));
-		if (!NT_SUCCESS(status)) {
-			TraceError( TRACE_POWER, "Failed to start interrupt write pipe %!STATUS!", status);
-			goto End;
-		}
+			status = WdfIoTargetStart(WdfUsbTargetPipeGetIoTarget(pDevCtx->Connection.Usb.InterruptOutPipe));
+			if (!NT_SUCCESS(status)) {
+				TraceError(TRACE_POWER, "Failed to start interrupt write pipe %!STATUS!", status);
+				break;
+			}
 
-		isTargetStarted = TRUE;
-
-	End:
+			isTargetStarted = TRUE;
+		} while (FALSE);
 
 		if (!NT_SUCCESS(status)) {
 			//
@@ -405,7 +405,7 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 		}
 	}
 
-	TraceInformation(TRACE_POWER, "%!FUNC! Exit");
+	FuncExit(TRACE_POWER, "status: %!STATUS!", status);
 
 	return status;
 }
