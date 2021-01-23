@@ -1395,12 +1395,10 @@ NTSTATUS Ds_SendOutputReport(PDEVICE_CONTEXT Context)
 	
 	FuncEntry(TRACE_DSHIDMINIDRV);
 	
-	if (FALSE) {
-		status = DMF_ScheduledTask_ExecuteNowDeferred(
-			Context->OutputReportScheduler,
-			Context
-		);
-	}
+	status = DMF_ScheduledTask_ExecuteNowDeferred(
+		Context->OutputReportScheduler,
+		Context
+	);
 
 	FuncExit(TRACE_DSHIDMINIDRV, "status: %!STATUS!", status);
 
