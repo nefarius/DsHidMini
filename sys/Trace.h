@@ -1,25 +1,4 @@
-/*++
-
-Module Name:
-
-    Internal.h
-
-Abstract:
-
-    This module contains the local type definitions for the
-    driver.
-
-Environment:
-
-    Windows User-Mode Driver Framework 2
-
---*/
-
-//
-// Define the tracing flags.
-//
-// Tracing GUID - 4eefa829-ba06-44ff-906e-8082a387206f
-//
+#pragma once
 
 #define WPP_CONTROL_GUIDS                                              \
     /* {F59F6F9B-A539-4846-9DE8-EFC2C43D0A91} */ \
@@ -27,6 +6,7 @@ Environment:
         DmfLibraryTraceGuid, (F59F6F9B,A539,4846,9DE8,EFC2C43D0A91), \
         WPP_DEFINE_BIT(DMF_TRACE) \
     ) \
+    /* {4eefa829-ba06-44ff-906e-8082a387206f} */ \
     WPP_DEFINE_CONTROL_GUID(                                           \
         DsHidMiniTraceGuid, (4eefa829,ba06,44ff,906e,8082a387206f),    \
         WPP_DEFINE_BIT(MYDRIVER_ALL_INFO)                              \
@@ -83,11 +63,3 @@ Environment:
 // USEPREFIX(TraceVerbose, "%!STDPREFIX! [%!FUNC!] ");
 // USEPREFIX(FuncExitNoReturn, "%!STDPREFIX! [%!FUNC!] <--");
 // end_wpp
-
-//
-//
-// Driver specific #defines
-//
-#if UMDF_VERSION_MAJOR == 2 && UMDF_VERSION_MINOR == 0
-    #define MYDRIVER_TRACING_ID      L"Microsoft\\UMDF2.0\\dshidmini V1.0"
-#endif
