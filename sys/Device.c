@@ -29,7 +29,7 @@ dshidminiCreateDevice(
 	WDF_DEVICE_PROPERTY_DATA		devProp;
 	DEVPROPTYPE						propType;
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
+	TraceInformation(TRACE_DEVICE, "%!FUNC! Entry");
 
 	dmfDeviceInit = DMF_DmfDeviceInitAllocate(DeviceInit);
 
@@ -81,7 +81,7 @@ dshidminiCreateDevice(
 		);
 		if (!NT_SUCCESS(status))
 		{
-			TraceEvents(TRACE_LEVEL_ERROR,
+			TraceError(
 				TRACE_DEVICE,
 				"WdfDeviceQueryProperty failed with status %!STATUS!",
 				status
@@ -110,7 +110,7 @@ dshidminiCreateDevice(
 
 			if (!NT_SUCCESS(status))
 			{
-				TraceEvents(TRACE_LEVEL_ERROR,
+				TraceError(
 					TRACE_DEVICE,
 					"WdfDeviceQueryProperty failed with status %!STATUS!",
 					status
@@ -136,7 +136,7 @@ dshidminiCreateDevice(
 		);
 		if (!NT_SUCCESS(status))
 		{
-			TraceEvents(TRACE_LEVEL_ERROR,
+			TraceError(
 				TRACE_DEVICE,
 				"WdfDeviceAllocAndQueryPropertyEx failed with status %!STATUS!",
 				status
@@ -190,7 +190,7 @@ Exit:
 		DMF_DmfDeviceInitFree(&dmfDeviceInit);
 	}
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
+	TraceInformation(TRACE_DEVICE, "%!FUNC! Exit");
 
 	return status;
 }
@@ -230,7 +230,7 @@ DmfDeviceModulesAdd(
 
 	PAGED_CODE();
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
+	TraceInformation(TRACE_DEVICE, "%!FUNC! Entry");
 
 	deviceContext = DeviceGetContext(Device);
 
@@ -244,6 +244,6 @@ DmfDeviceModulesAdd(
 		WDF_NO_OBJECT_ATTRIBUTES,
 		&deviceContext->DsHidMiniModule);
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
+	TraceInformation(TRACE_DEVICE, "%!FUNC! Exit");
 }
 #pragma code_seg()

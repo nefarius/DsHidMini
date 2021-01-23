@@ -53,7 +53,7 @@ DMF_DsHidMini_Create(
 
 	PAGED_CODE();
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+	TraceInformation(TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
 	do
 	{
@@ -93,7 +93,7 @@ DMF_DsHidMini_Create(
 			DmfModule);
 		if (!NT_SUCCESS(status))
 		{
-			TraceEvents(TRACE_LEVEL_ERROR,
+			TraceError(
 			            TRACE_DSHIDMINIDRV,
 			            "DMF_ModuleCreate failed with status %!STATUS!",
 			            status
@@ -103,7 +103,7 @@ DMF_DsHidMini_Create(
 	}
 	while (FALSE);
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
+	TraceInformation(TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 
 	return (status);
 }
@@ -136,7 +136,7 @@ DMF_DsHidMini_ChildModulesAdd(
 
 	UNREFERENCED_PARAMETER(DmfParentModuleAttributes);
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+	TraceInformation(TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
 	moduleContext = DMF_CONTEXT_GET(DmfModule);
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
@@ -175,7 +175,7 @@ DMF_DsHidMini_ChildModulesAdd(
 
 		break;
 	default:
-		TraceEvents(TRACE_LEVEL_ERROR,
+		TraceError(
 			TRACE_DSHIDMINIDRV,
 			"Unknown HID Device Mode: 0x%02X", pDevCtx->Configuration.HidDeviceMode);
 		return;
@@ -233,7 +233,7 @@ DMF_DsHidMini_ChildModulesAdd(
 		&pDevCtx->OutputReportScheduler
 	);
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
+	TraceInformation(TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 }
 #pragma code_seg()
 
@@ -253,14 +253,14 @@ DMF_DsHidMini_Open(
 
 	PAGED_CODE();
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+	TraceInformation(TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
 	//
 	// Increase pad instance count
 	// 
 	numInstances++;
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
+	TraceInformation(TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 
 	return status;
 }
@@ -279,7 +279,7 @@ DMF_DsHidMini_Close(
 
 	PAGED_CODE();
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+	TraceInformation(TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
@@ -288,7 +288,7 @@ DMF_DsHidMini_Close(
 	// 
 	numInstances--;
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
+	TraceInformation(TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 }
 #pragma code_seg()
 
@@ -309,9 +309,9 @@ DsHidMini_GetInputReport(
 	UNREFERENCED_PARAMETER(Packet);
 	UNREFERENCED_PARAMETER(ReportSize);
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+	TraceInformation(TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
+	TraceInformation(TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 
 	return STATUS_UNSUCCESSFUL;
 }
@@ -391,7 +391,7 @@ DsHidMini_GetFeature(
 
 	UNREFERENCED_PARAMETER(pModCtx);
 	
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+	TraceInformation(TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
 #ifdef DSHM_FEATURE_FFB
 
@@ -466,7 +466,7 @@ DsHidMini_GetFeature(
 	
 #endif
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit (%!STATUS!)", status);
+	TraceInformation(TRACE_DSHIDMINIDRV, "%!FUNC! Exit (%!STATUS!)", status);
 
 	return status;
 }
@@ -487,7 +487,7 @@ DsHidMini_SetFeature(
 	UNREFERENCED_PARAMETER(Request);
 
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+	TraceInformation(TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
 	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
 
@@ -589,7 +589,7 @@ DsHidMini_SetFeature(
 
 #endif
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit (%!STATUS!)", status);
+	TraceInformation(TRACE_DSHIDMINIDRV, "%!FUNC! Exit (%!STATUS!)", status);
 
 	return status;
 }
@@ -607,13 +607,13 @@ DsHidMini_SetOutputReport(
 	UNREFERENCED_PARAMETER(Packet);
 	UNREFERENCED_PARAMETER(ReportSize);
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+	TraceInformation(TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
 	//
 	// TODO: implement me!
 	// 
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
+	TraceInformation(TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
 
 	return STATUS_NOT_IMPLEMENTED;
 }
@@ -631,7 +631,7 @@ DsHidMini_WriteReport(
 	UNREFERENCED_PARAMETER(Request);
 	UNREFERENCED_PARAMETER(ReportSize);
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+	TraceInformation(TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 
 	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
@@ -857,7 +857,7 @@ DsHidMini_WriteReport(
 	
 #endif
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit (%!STATUS!)", status);
+	TraceInformation(TRACE_DSHIDMINIDRV, "%!FUNC! Exit (%!STATUS!)", status);
 
 	return status;
 }
@@ -924,7 +924,7 @@ VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t Buf
 	);
 	if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
 	{
-		TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
+		TraceError( TRACE_DSHIDMINIDRV,
 			"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
 	}
 
@@ -948,7 +948,7 @@ VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t Buf
 		);
 		if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
 		{
-			TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
+			TraceError( TRACE_DSHIDMINIDRV,
 				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
 		}
 	}
@@ -973,7 +973,7 @@ VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t Buf
 		);
 		if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
 		{
-			TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
+			TraceError( TRACE_DSHIDMINIDRV,
 				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
 		}
 	}
@@ -1129,7 +1129,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	if (!NT_SUCCESS(Params->IoStatus.Status)
 		|| Params->Parameters.Ioctl.Output.Length < BTHPS3_SIXAXIS_HID_INPUT_REPORT_SIZE)
 	{
-		TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSHIDMINIDRV,
+		TraceError( TRACE_DSHIDMINIDRV,
 			"%!FUNC! failed with status %!STATUS!", Params->IoStatus.Status);
 
 		goto resendRequest;
@@ -1140,7 +1140,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 		&bufferLength);
 
 #ifdef DBG
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "!! buffer: 0x%p, bufferLength: %d",
+	TraceInformation(TRACE_DSHIDMINIDRV, "!! buffer: 0x%p, bufferLength: %d",
 		buffer, (ULONG)bufferLength);
 
 	DumpAsHex(">> BTH", buffer, (ULONG)bufferLength);
@@ -1255,7 +1255,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 
 			if (!NT_SUCCESS(status))
 			{
-				TraceEvents(TRACE_LEVEL_ERROR,
+				TraceError(
 					TRACE_DSHIDMINIDRV,
 					"Sending disconnect request failed with status %!STATUS!",
 					status
@@ -1285,7 +1285,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	status = WdfRequestReuse(Request, &params);
 	if (!NT_SUCCESS(status))
 	{
-		TraceEvents(TRACE_LEVEL_ERROR,
+		TraceError(
 			TRACE_DSHIDMINIDRV,
 			"WdfRequestReuse failed with status %!STATUS!",
 			status
@@ -1304,7 +1304,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	);
 	if (!NT_SUCCESS(status))
 	{
-		TraceEvents(TRACE_LEVEL_ERROR,
+		TraceError(
 			TRACE_DSHIDMINIDRV,
 			"WdfIoTargetFormatRequestForIoctl failed with status %!STATUS!",
 			status
@@ -1326,7 +1326,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	}
 	if (!NT_SUCCESS(status))
 	{
-		TraceEvents(TRACE_LEVEL_ERROR,
+		TraceError(
 			TRACE_DSHIDMINIDRV,
 			"WdfRequestSend failed with status %!STATUS!",
 			status
@@ -1354,7 +1354,7 @@ DMF_OutputReportScheduledTaskCallback(
 	NTSTATUS status;
 	PDEVICE_CONTEXT pDevCtx = (PDEVICE_CONTEXT)CallbackContext;
 	
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+	TraceInformation(TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
 	
 	switch (pDevCtx->ConnectionType)
 	{
@@ -1382,7 +1382,7 @@ DMF_OutputReportScheduledTaskCallback(
 		status = STATUS_INVALID_PARAMETER;
 	}
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit (status: %!STATUS!)", status);
+	TraceInformation(TRACE_DSHIDMINIDRV, "%!FUNC! Exit (status: %!STATUS!)", status);
 	
 	return ScheduledTask_WorkResult_SuccessButTryAgain;
 }
@@ -1425,7 +1425,7 @@ VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
 			sprintf_s(&dumpBuffer[i * 2], dumpBufferLength, "%02X", ((PUCHAR)Buffer)[i]);
 		}
 
-		TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV,
+		TraceInformation(TRACE_DSHIDMINIDRV,
 		            "%s - Buffer length: %04d, buffer content: %s",
 		            Prefix,
 		            BufferLength,

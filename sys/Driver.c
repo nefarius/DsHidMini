@@ -42,7 +42,7 @@ DriverEntry(
     WPP_INIT_TRACING( DriverObject, RegistryPath );
 #endif
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");
+    TraceInformation(TRACE_DRIVER, "%!FUNC! Entry");
 
     //
     // Register a cleanup callback so that we can call WPP_CLEANUP when
@@ -63,7 +63,7 @@ DriverEntry(
                              );
 
     if (!NT_SUCCESS(status)) {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_DRIVER, "WdfDriverCreate failed %!STATUS!", status);
+        TraceError( TRACE_DRIVER, "WdfDriverCreate failed %!STATUS!", status);
 #if UMDF_VERSION_MAJOR == 2 && UMDF_VERSION_MINOR == 0
         WPP_CLEANUP();
 #else
@@ -72,7 +72,7 @@ DriverEntry(
         return status;
     }
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Exit");
+    TraceInformation(TRACE_DRIVER, "%!FUNC! Exit");
 
     return status;
 }
@@ -87,11 +87,11 @@ dshidminiEvtDeviceAdd(
 
     UNREFERENCED_PARAMETER(Driver);
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");
+    TraceInformation(TRACE_DRIVER, "%!FUNC! Entry");
 
     status = dshidminiCreateDevice(DeviceInit);
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Exit");
+    TraceInformation(TRACE_DRIVER, "%!FUNC! Exit");
 
     return status;
 }
@@ -103,7 +103,7 @@ dshidminiEvtDriverContextCleanup(
 {
     UNREFERENCED_PARAMETER(DriverObject);
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");
+    TraceInformation(TRACE_DRIVER, "%!FUNC! Entry");
 
     //
     // Stop WPP Tracing

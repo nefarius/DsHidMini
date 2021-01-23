@@ -19,7 +19,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 
 	PAGED_CODE();
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSBTH, "%!FUNC! Entry");
+	TraceInformation(TRACE_DSBTH, "%!FUNC! Entry");
 
 	pDeviceContext = DeviceGetContext(Device);
 
@@ -35,7 +35,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 	);
 	if (!NT_SUCCESS(status))
 	{
-		TraceEvents(TRACE_LEVEL_ERROR,
+		TraceError(
 			TRACE_DSBTH,
 			"WdfRequestCreate failed with status %!STATUS!",
 			status
@@ -56,7 +56,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 	);
 	if (!NT_SUCCESS(status))
 	{
-		TraceEvents(TRACE_LEVEL_ERROR,
+		TraceError(
 			TRACE_DSBTH,
 			"WdfMemoryCreate failed with status %!STATUS!",
 			status
@@ -78,7 +78,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 	);
 	if (!NT_SUCCESS(status))
 	{
-		TraceEvents(TRACE_LEVEL_ERROR,
+		TraceError(
 			TRACE_DSBTH,
 			"WdfRequestCreate failed with status %!STATUS!",
 			status
@@ -99,7 +99,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 	);
 	if (!NT_SUCCESS(status))
 	{
-		TraceEvents(TRACE_LEVEL_ERROR,
+		TraceError(
 			TRACE_DSBTH,
 			"WdfMemoryCreate failed with status %!STATUS!",
 			status
@@ -133,7 +133,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 	);
 	if (!NT_SUCCESS(status))
 	{
-		TraceEvents(TRACE_LEVEL_ERROR,
+		TraceError(
 			TRACE_DSBTH,
 			"WdfRequestCreate failed with status %!STATUS!",
 			status
@@ -154,7 +154,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 	);
 	if (!NT_SUCCESS(status))
 	{
-		TraceEvents(TRACE_LEVEL_ERROR,
+		TraceError(
 			TRACE_DSBTH,
 			"WdfMemoryCreate failed with status %!STATUS!",
 			status
@@ -185,7 +185,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 	);
 	if (!NT_SUCCESS(status))
 	{
-		TraceEvents(TRACE_LEVEL_ERROR,
+		TraceError(
 			TRACE_DSBTH,
 			"WdfTimerCreate (HidControlConsume) failed with status %!STATUS!",
 			status
@@ -214,7 +214,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 	);
 	if (!NT_SUCCESS(status))
 	{
-		TraceEvents(TRACE_LEVEL_ERROR,
+		TraceError(
 			TRACE_DSBTH,
 			"WdfTimerCreate (HidOutputReport) failed with status %!STATUS!",
 			status
@@ -239,7 +239,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 	);
 	if (!NT_SUCCESS(status))
 	{
-		TraceEvents(TRACE_LEVEL_ERROR,
+		TraceError(
 			TRACE_DSBTH,
 			"WdfWaitLockCreate (HidControl.WriteLock) failed with status %!STATUS!",
 			status
@@ -249,7 +249,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 
 #pragma endregion 
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSBTH, "%!FUNC! Exit");
+	TraceInformation(TRACE_DSBTH, "%!FUNC! Exit");
 
 	return status;
 }
@@ -279,7 +279,7 @@ NTSTATUS DsBth_SendHidControlWriteRequest(PDEVICE_CONTEXT Context)
 		NULL
 	);
 	if (!NT_SUCCESS(status)) {
-		TraceEvents(TRACE_LEVEL_ERROR,
+		TraceError(
 			TRACE_DSBTH,
 			"WdfIoTargetSendInternalIoctlSynchronously failed with status %!STATUS!",
 			status
@@ -298,7 +298,7 @@ NTSTATUS DsBth_SendHidControlWriteRequest(PDEVICE_CONTEXT Context)
 	);
 	if (!NT_SUCCESS(status))
 	{
-		TraceEvents(TRACE_LEVEL_ERROR,
+		TraceError(
 			TRACE_DSBTH,
 			"WdfRequestReuse failed with status %!STATUS!",
 			status
@@ -331,7 +331,7 @@ NTSTATUS DsBth_SendHidControlWriteRequestAsync(PDEVICE_CONTEXT Context)
 	);
 	if (!NT_SUCCESS(status))
 	{
-		TraceEvents(TRACE_LEVEL_ERROR,
+		TraceError(
 			TRACE_DSBTH,
 			"WdfIoTargetFormatRequestForIoctl failed with status %!STATUS!",
 			status
@@ -353,7 +353,7 @@ NTSTATUS DsBth_SendHidControlWriteRequestAsync(PDEVICE_CONTEXT Context)
 	}
 	if (!NT_SUCCESS(status))
 	{
-		TraceEvents(TRACE_LEVEL_ERROR,
+		TraceError(
 			TRACE_DSBTH,
 			"WdfRequestSend failed with status %!STATUS!",
 			status
@@ -388,7 +388,7 @@ NTSTATUS DsBth_SendHidInterruptWriteRequest(PDEVICE_CONTEXT Context)
 		NULL
 	);
 	if (!NT_SUCCESS(status)) {
-		TraceEvents(TRACE_LEVEL_ERROR,
+		TraceError(
 			TRACE_DSBTH,
 			"WdfIoTargetSendInternalIoctlSynchronously failed with status %!STATUS!",
 			status
@@ -407,7 +407,7 @@ NTSTATUS DsBth_SendHidInterruptWriteRequest(PDEVICE_CONTEXT Context)
 	);
 	if (!NT_SUCCESS(status))
 	{
-		TraceEvents(TRACE_LEVEL_ERROR,
+		TraceError(
 			TRACE_DSBTH,
 			"WdfRequestReuse failed with status %!STATUS!",
 			status
@@ -490,7 +490,7 @@ DsBth_EvtControlReadTimerFunc(
 	}
 
 	if (!NT_SUCCESS(status)) {
-		TraceEvents(TRACE_LEVEL_ERROR,
+		TraceError(
 			TRACE_DSBTH,
 			"WdfIoTargetSendInternalIoctlSynchronously failed with status %!STATUS!",
 			status
@@ -513,7 +513,7 @@ DsBth_EvtControlReadTimerFunc(
 	);
 	if (!NT_SUCCESS(status))
 	{
-		TraceEvents(TRACE_LEVEL_ERROR,
+		TraceError(
 			TRACE_DSBTH,
 			"WdfRequestReuse failed with status %!STATUS!",
 			status
@@ -544,7 +544,7 @@ DsBth_EvtControlWriteTimerFunc(
 	PDEVICE_CONTEXT		pDevCtx;
 	PUCHAR				buffer;
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSBTH, "%!FUNC! Exit");
+	TraceInformation(TRACE_DSBTH, "%!FUNC! Exit");
 
 	pDevCtx = DeviceGetContext(WdfTimerGetParentObject(Timer));
 
@@ -585,14 +585,14 @@ DsBth_EvtControlWriteTimerFunc(
 	status = DsBth_SendHidControlWriteRequestAsync(pDevCtx);
 	if (!NT_SUCCESS(status))
 	{
-		TraceEvents(TRACE_LEVEL_ERROR,
+		TraceError(
 			TRACE_DSBTH,
 			"DsBth_SendHidControlWriteRequestAsync failed with status %!STATUS!",
 			status
 		);
 	}
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSBTH, "%!FUNC! Exit");
+	TraceInformation(TRACE_DSBTH, "%!FUNC! Exit");
 }
 
 //
@@ -624,7 +624,7 @@ void DsBth_HidControlWriteRequestCompletionRoutine(
 		status = WdfRequestReuse(Request, &params);
 		if (!NT_SUCCESS(status))
 		{
-			TraceEvents(TRACE_LEVEL_ERROR,
+			TraceError(
 				TRACE_DSBTH,
 				"WdfRequestReuse failed with status %!STATUS!",
 				status

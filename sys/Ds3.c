@@ -84,7 +84,7 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(PDEVICE_CONTEXT Context)
 
 	if (!hFind)
 	{
-		TraceEvents(TRACE_LEVEL_ERROR, TRACE_DS3,
+		TraceError( TRACE_DS3,
 			"BluetoothFindFirstRadio failed: 0x%X", GetLastError());
 		goto Exit;
 	}
@@ -99,7 +99,7 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(PDEVICE_CONTEXT Context)
 
 	if (ERROR_SUCCESS != ret)
 	{
-		TraceEvents(TRACE_LEVEL_ERROR, TRACE_DS3,
+		TraceError( TRACE_DS3,
 			"BluetoothGetRadioInfo failed: 0x%X", ret);
 		goto Exit;
 	}
@@ -146,7 +146,7 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(PDEVICE_CONTEXT Context)
 
 	if (!NT_SUCCESS(status))
 	{
-		TraceEvents(TRACE_LEVEL_ERROR, TRACE_DS3,
+		TraceError( TRACE_DS3,
 			"Setting host address failed with %!STATUS!", status);
 		goto Exit;
 	}
@@ -171,7 +171,7 @@ Exit:
 // 
 VOID DsBth_Ds3Init(PDEVICE_CONTEXT Context)
 {
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DS3, "%!FUNC! Entry");
+	TraceInformation(TRACE_DS3, "%!FUNC! Entry");
 
 	// 
 	// "Magic packet"
@@ -192,7 +192,7 @@ VOID DsBth_Ds3Init(PDEVICE_CONTEXT Context)
 		&MemoryHandle,
 		&buffer);
 	if (!NT_SUCCESS(status)) {
-		TraceEvents(TRACE_LEVEL_ERROR,
+		TraceError(
 			TRACE_DS3,
 			"WdfMemoryCreate failed with status %!STATUS!",
 			status
@@ -218,12 +218,12 @@ VOID DsBth_Ds3Init(PDEVICE_CONTEXT Context)
 	WdfObjectDelete(MemoryHandle);
 
 	if (!NT_SUCCESS(status)) {
-		TraceEvents(TRACE_LEVEL_ERROR,
+		TraceError(
 			TRACE_DS3,
 			"WdfIoTargetSendInternalIoctlSynchronously failed with status %!STATUS!",
 			status
 		);
 	}
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DS3, "%!FUNC! Exit");
+	TraceInformation(TRACE_DS3, "%!FUNC! Exit");
 }

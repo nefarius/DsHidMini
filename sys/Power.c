@@ -18,7 +18,7 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 
 	PAGED_CODE();
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER, "%!FUNC! Entry");
+	TraceInformation(TRACE_POWER, "%!FUNC! Entry");
 
 	//
 	// TODO: can be moved to D0Entry?
@@ -46,7 +46,7 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 		);
 		if (!NT_SUCCESS(status))
 		{
-			TraceEvents(TRACE_LEVEL_ERROR,
+			TraceError(
 				TRACE_POWER,
 				"WdfIoTargetFormatRequestForIoctl failed with status %!STATUS!",
 				status
@@ -68,7 +68,7 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 		}
 		if (!NT_SUCCESS(status))
 		{
-			TraceEvents(TRACE_LEVEL_ERROR,
+			TraceError(
 				TRACE_POWER,
 				"WdfRequestSend failed with status %!STATUS!",
 				status
@@ -95,7 +95,7 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 #pragma endregion
 	}
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER, "%!FUNC! Exit");
+	TraceInformation(TRACE_POWER, "%!FUNC! Exit");
 
 	return status;
 }
@@ -122,7 +122,7 @@ DsHidMini_EvtDevicePrepareHardware(
 	UNREFERENCED_PARAMETER(ResourcesRaw);
 	UNREFERENCED_PARAMETER(ResourcesTranslated);
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER, "%!FUNC! Entry");
+	TraceInformation(TRACE_POWER, "%!FUNC! Entry");
 
 	pCtx = DeviceGetContext(Device);
 
@@ -138,7 +138,7 @@ DsHidMini_EvtDevicePrepareHardware(
 		);
 
 		if (!NT_SUCCESS(status)) {
-			TraceEvents(TRACE_LEVEL_ERROR, TRACE_POWER,
+			TraceError( TRACE_POWER,
 				"WdfUsbTargetDeviceCreateWithParameters failed %!STATUS!", status);
 			return status;
 		}
@@ -159,7 +159,7 @@ DsHidMini_EvtDevicePrepareHardware(
 		);
 
 		if (!NT_SUCCESS(status)) {
-			TraceEvents(TRACE_LEVEL_ERROR, TRACE_POWER,
+			TraceError( TRACE_POWER,
 				"WdfUsbTargetDeviceSelectConfig failed %!STATUS!", status);
 			return status;
 		}
@@ -186,14 +186,14 @@ DsHidMini_EvtDevicePrepareHardware(
 
 			if (WdfUsbPipeTypeInterrupt == pipeInfo.PipeType &&
 				WdfUsbTargetPipeIsInEndpoint(pipe)) {
-				TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER,
+				TraceInformation(TRACE_POWER,
 					"InterruptReadPipe is 0x%p\n", pipe);
 				pCtx->Connection.Usb.InterruptInPipe = pipe;
 			}
 
 			if (WdfUsbPipeTypeInterrupt == pipeInfo.PipeType &&
 				WdfUsbTargetPipeIsOutEndpoint(pipe)) {
-				TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER,
+				TraceInformation(TRACE_POWER,
 					"InterruptWritePipe is 0x%p\n", pipe);
 				pCtx->Connection.Usb.InterruptOutPipe = pipe;
 			}
@@ -202,7 +202,7 @@ DsHidMini_EvtDevicePrepareHardware(
 		if (!pCtx->Connection.Usb.InterruptInPipe || !pCtx->Connection.Usb.InterruptOutPipe)
 		{
 			status = STATUS_INVALID_DEVICE_STATE;
-			TraceEvents(TRACE_LEVEL_ERROR, TRACE_POWER,
+			TraceError( TRACE_POWER,
 				"Device is not configured properly %!STATUS!\n",
 				status);
 
@@ -230,7 +230,7 @@ DsHidMini_EvtDevicePrepareHardware(
 
 			if (!NT_SUCCESS(status))
 			{
-				TraceEvents(TRACE_LEVEL_ERROR, TRACE_POWER,
+				TraceError( TRACE_POWER,
 					"Requesting device address failed with %!STATUS!", status);
 				return status;
 			}
@@ -266,7 +266,7 @@ DsHidMini_EvtDevicePrepareHardware(
 
 			if (!NT_SUCCESS(status))
 			{
-				TraceEvents(TRACE_LEVEL_ERROR, TRACE_POWER,
+				TraceError( TRACE_POWER,
 					"Requesting host address failed with %!STATUS!", status);
 				return status;
 			}
@@ -305,7 +305,7 @@ DsHidMini_EvtDevicePrepareHardware(
 		}
 	}
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER, "%!FUNC! Exit (%!STATUS!)", status);
+	TraceInformation(TRACE_POWER, "%!FUNC! Exit (%!STATUS!)", status);
 
 	return status;
 }
@@ -325,7 +325,7 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 	pDevCtx = DeviceGetContext(Device);
 	isTargetStarted = FALSE;
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER, "%!FUNC! Entry");
+	TraceInformation(TRACE_POWER, "%!FUNC! Entry");
 
 	UNREFERENCED_PARAMETER(PreviousState);
 
@@ -337,13 +337,13 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 		//
 		status = WdfIoTargetStart(WdfUsbTargetPipeGetIoTarget(pDevCtx->Connection.Usb.InterruptInPipe));
 		if (!NT_SUCCESS(status)) {
-			TraceEvents(TRACE_LEVEL_ERROR, TRACE_POWER, "Failed to start interrupt read pipe %!STATUS!", status);
+			TraceError( TRACE_POWER, "Failed to start interrupt read pipe %!STATUS!", status);
 			goto End;
 		}
 
 		status = WdfIoTargetStart(WdfUsbTargetPipeGetIoTarget(pDevCtx->Connection.Usb.InterruptOutPipe));
 		if (!NT_SUCCESS(status)) {
-			TraceEvents(TRACE_LEVEL_ERROR, TRACE_POWER, "Failed to start interrupt write pipe %!STATUS!", status);
+			TraceError( TRACE_POWER, "Failed to start interrupt write pipe %!STATUS!", status);
 			goto End;
 		}
 
@@ -380,14 +380,14 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 
 			if (!NT_SUCCESS(status))
 			{
-				TraceEvents(TRACE_LEVEL_ERROR, TRACE_POWER,
+				TraceError( TRACE_POWER,
 				            "DsUsb_Ds3PairToFirstRadio failed with status %!STATUS!",
 				            status);
 			}
 		}
 		else
 		{
-			TraceEvents(TRACE_LEVEL_INFORMATION, 
+			TraceInformation(
 				TRACE_POWER, 
 				"Auto-pairing disabled in device configuration");
 		}
@@ -399,13 +399,13 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 
 		if (!NT_SUCCESS(status))
 		{
-			TraceEvents(TRACE_LEVEL_ERROR, TRACE_POWER,
+			TraceError( TRACE_POWER,
 				"DsUsb_Ds3Init failed with status %!STATUS!",
 				status);
 		}
 	}
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER, "%!FUNC! Exit");
+	TraceInformation(TRACE_POWER, "%!FUNC! Exit");
 
 	return status;
 }
@@ -422,7 +422,7 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 
 	UNREFERENCED_PARAMETER(TargetState);
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER, "%!FUNC! Entry");
+	TraceInformation(TRACE_POWER, "%!FUNC! Entry");
 
 	pDevCtx = DeviceGetContext(Device);
 
@@ -447,7 +447,7 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 		WdfIoTargetStop(pDevCtx->Connection.Bth.BthIoTarget, WdfIoTargetCancelSentIo);
 	}
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_POWER, "%!FUNC! Exit");
+	TraceInformation(TRACE_POWER, "%!FUNC! Exit");
 
 	return STATUS_SUCCESS;
 }

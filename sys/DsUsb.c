@@ -61,7 +61,7 @@ SendControlRequest(
 
 	if (!NT_SUCCESS(status))
 	{
-		TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSUSB,
+		TraceError( TRACE_DSUSB,
 			"WdfUsbTargetDeviceSendControlTransferSynchronously failed with status %!STATUS! (%d)\n",
 			status, bytesTransferred);
 	}
@@ -81,7 +81,7 @@ DsUsbConfigContReaderForInterruptEndPoint(
 	NTSTATUS status;
 	PDEVICE_CONTEXT pDeviceContext;
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSUSB, "%!FUNC! Entry");
+	TraceInformation(TRACE_DSUSB, "%!FUNC! Entry");
 
 	pDeviceContext = DeviceGetContext(Device);
 
@@ -103,13 +103,13 @@ DsUsbConfigContReaderForInterruptEndPoint(
 		&contReaderConfig);
 
 	if (!NT_SUCCESS(status)) {
-		TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSUSB,
+		TraceError( TRACE_DSUSB,
 			"WdfUsbTargetPipeConfigContinuousReader failed %x\n",
 			status);
 		return status;
 	}
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSUSB, "%!FUNC! Exit");
+	TraceInformation(TRACE_DSUSB, "%!FUNC! Exit");
 
 	return status;
 }
@@ -127,7 +127,7 @@ DsUsbEvtUsbInterruptReadersFailed(
 	UNREFERENCED_PARAMETER(UsbdStatus);
 	UNREFERENCED_PARAMETER(Pipe);
 
-	TraceEvents(TRACE_LEVEL_ERROR, TRACE_DSUSB,
+	TraceError( TRACE_DSUSB,
 		"DsUsbEvtUsbInterruptReadersFailed called with status %!STATUS!",
 		Status);
 
