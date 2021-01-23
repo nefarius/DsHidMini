@@ -7,12 +7,15 @@
 
 EVT_DMF_DEVICE_MODULES_ADD DmfDeviceModulesAdd;
 
+#pragma code_seg("PAGED")
+DMF_DEFAULT_DRIVERCLEANUP(dshidminiEvtDriverContextCleanup)
 
 //
 // Bootstrap device
 // 
 NTSTATUS
-dshidminiCreateDevice(
+dshidminiEvtDeviceAdd(
+	_In_    WDFDRIVER       Driver,
 	_Inout_ PWDFDEVICE_INIT DeviceInit
 )
 {
@@ -28,6 +31,8 @@ dshidminiCreateDevice(
 	ULONG							bufSize;
 	WDF_DEVICE_PROPERTY_DATA		devProp;
 	DEVPROPTYPE						propType;
+
+	UNREFERENCED_PARAMETER(Driver);
 
 	TraceInformation(TRACE_DEVICE, "%!FUNC! Entry");
 
@@ -194,6 +199,7 @@ Exit:
 
 	return status;
 }
+#pragma code_seg()
 
 //
 // Free context memory

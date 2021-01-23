@@ -266,13 +266,6 @@ DMF_DsHidMini_Close(
 	_In_ DMFMODULE DmfModule
 );
 
-//
-// Function to initialize the device and its callbacks
-//
-NTSTATUS
-dshidminiCreateDevice(
-	_Inout_ PWDFDEVICE_INIT DeviceInit
-);
 
 EVT_DMF_ScheduledTask_Callback DMF_OutputReportScheduledTaskCallback;
 
