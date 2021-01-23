@@ -66,9 +66,6 @@
     <ClInclude Include="ini.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Debugging.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="PID\01_PIDStateReport.h">
       <Filter>Header Files\PID</Filter>
     </ClInclude>

@@ -497,7 +497,7 @@ DsBth_EvtControlReadTimerFunc(
 		);
 	}
 
-	TraceDbg(TRACE_DSBTH,
+	TraceVerbose(TRACE_DSBTH,
 		"++ Control bytes consumed: %d",
 		(ULONG)bufferLength
 	);

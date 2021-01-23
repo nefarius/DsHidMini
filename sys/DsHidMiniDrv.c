@@ -1,6 +1,5 @@
 #include "Driver.h"
 #include "DsHidMiniDrv.tmh"
-#include "Debugging.h"
 
 
 PWSTR G_DsHidMini_Strings[] =
@@ -405,7 +404,7 @@ DsHidMini_GetFeature(
 	{
 	case PID_POOL_REPORT_ID:
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_POOL_REPORT_ID");
+		TraceVerbose(TRACE_DSHIDMINIDRV, "!! PID_POOL_REPORT_ID");
 		
 		pPool = (PPID_POOL_REPORT)Packet->reportBuffer;
 
@@ -448,7 +447,7 @@ DsHidMini_GetFeature(
 			break;
 		}
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_BLOCK_LOAD_REPORT_ID (EffectBlockIndex: %d)",
+		TraceVerbose(TRACE_DSHIDMINIDRV, "!! PID_BLOCK_LOAD_REPORT_ID (EffectBlockIndex: %d)",
 			pBlockLoad->EffectBlockIndex);
 		
 		*ReportSize = sizeof(PID_BLOCK_LOAD_REPORT) - 1;
@@ -459,7 +458,7 @@ DsHidMini_GetFeature(
 		TraceEvents(TRACE_LEVEL_WARNING, 
 			TRACE_DSHIDMINIDRV, "%!FUNC! Not implemented");
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "-- Packet->reportId: %d, Packet->reportBufferLen: %d",
+		TraceVerbose(TRACE_DSHIDMINIDRV, "-- Packet->reportId: %d, Packet->reportBufferLen: %d",
 	         Packet->reportId,
 	         Packet->reportBufferLen);
 		break;
@@ -507,7 +506,7 @@ DsHidMini_SetFeature(
 
 		pNewEffect = (PPID_NEW_EFFECT_REPORT)Packet->reportBuffer;
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_CREATE_NEW_EFFECT_REPORT");
+		TraceVerbose(TRACE_DSHIDMINIDRV, "!! PID_CREATE_NEW_EFFECT_REPORT");
 
 		//
 		// Look for free effect block index and allocate new entry
@@ -539,37 +538,37 @@ DsHidMini_SetFeature(
 		switch (pNewEffect->EffectType)
 		{
 		case PidEtConstantForce:
-			TraceDbg(TRACE_DSHIDMINIDRV, "!! ET Constant Force");
+			TraceVerbose(TRACE_DSHIDMINIDRV, "!! ET Constant Force");
 			break;
 		case PidEtRamp:
-			TraceDbg(TRACE_DSHIDMINIDRV, "!! ET Ramp");
+			TraceVerbose(TRACE_DSHIDMINIDRV, "!! ET Ramp");
 			break;
 		case PidEtSquare:
-			TraceDbg(TRACE_DSHIDMINIDRV, "!! ET Square");
+			TraceVerbose(TRACE_DSHIDMINIDRV, "!! ET Square");
 			break;
 		case PidEtSine:
-			TraceDbg(TRACE_DSHIDMINIDRV, "!! ET Sine");
+			TraceVerbose(TRACE_DSHIDMINIDRV, "!! ET Sine");
 			break;
 		case PidEtTriangle:
-			TraceDbg(TRACE_DSHIDMINIDRV, "!! ET Triangle");
+			TraceVerbose(TRACE_DSHIDMINIDRV, "!! ET Triangle");
 			break;
 		case PidEtSawtoothUp:
-			TraceDbg(TRACE_DSHIDMINIDRV, "!! ET Sawtooth Up");
+			TraceVerbose(TRACE_DSHIDMINIDRV, "!! ET Sawtooth Up");
 			break;
 		case PidEtSawtoothDown:
-			TraceDbg(TRACE_DSHIDMINIDRV, "!! ET Sawtooth Down");
+			TraceVerbose(TRACE_DSHIDMINIDRV, "!! ET Sawtooth Down");
 			break;
 		case PidEtSpring:
-			TraceDbg(TRACE_DSHIDMINIDRV, "!! ET Spring");
+			TraceVerbose(TRACE_DSHIDMINIDRV, "!! ET Spring");
 			break;
 		case PidEtDamper:
-			TraceDbg(TRACE_DSHIDMINIDRV, "!! ET Damper");
+			TraceVerbose(TRACE_DSHIDMINIDRV, "!! ET Damper");
 			break;
 		case PidEtInertia:
-			TraceDbg(TRACE_DSHIDMINIDRV, "!! ET Inertia");
+			TraceVerbose(TRACE_DSHIDMINIDRV, "!! ET Inertia");
 			break;
 		case PidEtFriction:
-			TraceDbg(TRACE_DSHIDMINIDRV, "!! ET Friction");
+			TraceVerbose(TRACE_DSHIDMINIDRV, "!! ET Friction");
 			break;
 		}
 
@@ -580,7 +579,7 @@ DsHidMini_SetFeature(
 		TraceEvents(TRACE_LEVEL_WARNING,
 		            TRACE_DSHIDMINIDRV, "%!FUNC! Not implemented");
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "-- Packet->reportId: %d, Packet->reportBufferLen: %d",
+		TraceVerbose(TRACE_DSHIDMINIDRV, "-- Packet->reportId: %d, Packet->reportBufferLen: %d",
 		         Packet->reportId,
 		         Packet->reportBufferLen);
 
@@ -661,18 +660,18 @@ DsHidMini_WriteReport(
 		switch (pDeviceControl->DeviceControlCommand)
 		{
 		case PidDcEnableActuators:
-			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Enable Actuators");
+			TraceVerbose(TRACE_DSHIDMINIDRV, "!! DC Enable Actuators");
 			break;
 		case PidDcDisableActuators:
-			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Disable Actuators");
+			TraceVerbose(TRACE_DSHIDMINIDRV, "!! DC Disable Actuators");
 			break;
 		case PidDcReset:
-			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Reset");
+			TraceVerbose(TRACE_DSHIDMINIDRV, "!! DC Reset");
 
 			HASH_CLEAR(hh, pModCtx->FfbAttributes);
 			// Fall through
 		case PidDcStopAllEffects:
-			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Stop All Effects");
+			TraceVerbose(TRACE_DSHIDMINIDRV, "!! DC Stop All Effects");
 			DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, 0);
 			DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, 0);
 
@@ -680,10 +679,10 @@ DsHidMini_WriteReport(
 
 			break;
 		case PidDcPause:
-			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Pause");
+			TraceVerbose(TRACE_DSHIDMINIDRV, "!! DC Pause");
 			break;
 		case PidDcContinue:
-			TraceDbg(TRACE_DSHIDMINIDRV, "!! DC Continue");
+			TraceVerbose(TRACE_DSHIDMINIDRV, "!! DC Continue");
 			break;
 		default:
 			break;
@@ -697,7 +696,7 @@ DsHidMini_WriteReport(
 
 		pGain = (PPID_DEVICE_GAIN_REPORT)Packet->reportBuffer;
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_DEVICE_GAIN_REPORT, DeviceGain: %d",
+		TraceVerbose(TRACE_DSHIDMINIDRV, "!! PID_DEVICE_GAIN_REPORT, DeviceGain: %d",
 		         pGain->DeviceGain);
 
 		*ReportSize = Packet->reportBufferLen;
@@ -708,7 +707,7 @@ DsHidMini_WriteReport(
 
 		pSetCondition = (PPID_SET_CONDITION_REPORT)Packet->reportBuffer;
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_SET_CONDITION_REPORT, EffectBlockIndex: %d",
+		TraceVerbose(TRACE_DSHIDMINIDRV, "!! PID_SET_CONDITION_REPORT, EffectBlockIndex: %d",
 		         pSetCondition->EffectBlockIndex);
 
 		*ReportSize = Packet->reportBufferLen;
@@ -719,7 +718,7 @@ DsHidMini_WriteReport(
 
 		pSetEffect = (PPID_SET_EFFECT_REPORT)Packet->reportBuffer;
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! SET_EFFECT_REPORT, EffectBlockIndex: %d, "
+		TraceVerbose(TRACE_DSHIDMINIDRV, "!! SET_EFFECT_REPORT, EffectBlockIndex: %d, "
 		         "EffectType: %d, Duration: %d, TriggerRepeatInterval: %d, "
 		         "SamplePeriod: %d, Gain: %d, TriggerButton: %d, AxesEnableX: %d, AxesEnableY: %d, "
 		         "DirectionEnable: %d, DirectionInstance1: %d, DirectionInstance2: %d, StartDelay: %d",
@@ -745,7 +744,7 @@ DsHidMini_WriteReport(
 
 		pSetPeriodic = (PPID_SET_PERIODIC_REPORT)Packet->reportBuffer;
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_SET_PERIODIC_REPORT, "
+		TraceVerbose(TRACE_DSHIDMINIDRV, "!! PID_SET_PERIODIC_REPORT, "
 		         "EffectBlockIndex: %d, Magnitude: %d, Offset: %d, Phase: %d, Period: %d",
 		         pSetPeriodic->EffectBlockIndex,
 		         pSetPeriodic->Magnitude,
@@ -762,13 +761,13 @@ DsHidMini_WriteReport(
 
 		pSetConstant = (PPID_SET_CONSTANT_FORCE_REPORT)Packet->reportBuffer;
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_SET_CONSTANT_FORCE_REPORT, EffectBlockIndex: %d, Magnitude: %d",
+		TraceVerbose(TRACE_DSHIDMINIDRV, "!! PID_SET_CONSTANT_FORCE_REPORT, EffectBlockIndex: %d, Magnitude: %d",
 		         pSetConstant->EffectBlockIndex,
 		         pSetConstant->Magnitude);
 
 		rumbleValue = (UCHAR)(pSetConstant->Magnitude / 10000.0f * 255.0f);
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! DS3 Rumble Value: %d",
+		TraceVerbose(TRACE_DSHIDMINIDRV, "!! DS3 Rumble Value: %d",
 		         rumbleValue);
 
 		if (pSetConstant->EffectBlockIndex % 2 == 0)
@@ -788,7 +787,7 @@ DsHidMini_WriteReport(
 
 		pEffectOperation = (PPID_EFFECT_OPERATION_REPORT)Packet->reportBuffer;
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: %d, "
+		TraceVerbose(TRACE_DSHIDMINIDRV, "!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: %d, "
 		         "EffectOperation: %d, LoopCount: %d",
 		         pEffectOperation->EffectBlockIndex,
 		         pEffectOperation->EffectOperation,
@@ -822,7 +821,7 @@ DsHidMini_WriteReport(
 
 		pBlockFree = (PPID_BLOCK_FREE_REPORT)Packet->reportBuffer;
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "!! PID_BLOCK_FREE_REPORT, EffectBlockIndex: %d",
+		TraceVerbose(TRACE_DSHIDMINIDRV, "!! PID_BLOCK_FREE_REPORT, EffectBlockIndex: %d",
 		         pBlockFree->EffectBlockIndex);
 
 		//
@@ -848,7 +847,7 @@ DsHidMini_WriteReport(
 		TraceEvents(TRACE_LEVEL_WARNING,
 		            TRACE_DSHIDMINIDRV, "%!FUNC! Not implemented");
 
-		TraceDbg(TRACE_DSHIDMINIDRV, "-- Packet->reportId: %d, Packet->reportBufferLen: %d",
+		TraceVerbose(TRACE_DSHIDMINIDRV, "-- Packet->reportId: %d, Packet->reportBufferLen: %d",
 		         Packet->reportId,
 		         Packet->reportBufferLen);
 
@@ -1108,7 +1107,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	UNREFERENCED_PARAMETER(Target);
 
 #ifdef DBG
-	TraceDbg(
+	TraceVerbose(
 		TRACE_DSHIDMINIDRV,
 		"++ Completion status: %!STATUS!",
 		Params->IoStatus.Status
@@ -1175,7 +1174,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	// 
 	if (pDeviceContext->BatteryStatus != battery)
 	{
-		TraceDbg(
+		TraceVerbose(
 			TRACE_DSHIDMINIDRV,
 			"Battery status changed to %d",
 			battery
@@ -1392,16 +1391,18 @@ DMF_OutputReportScheduledTaskCallback(
 
 NTSTATUS Ds_SendOutputReport(PDEVICE_CONTEXT Context)
 {
-	NTSTATUS status;
+	NTSTATUS status = STATUS_SUCCESS;
 	
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+	FuncEntry(TRACE_DSHIDMINIDRV);
 	
-	status =  DMF_ScheduledTask_ExecuteNowDeferred(
-		Context->OutputReportScheduler,
-		Context
-	);
+	if (FALSE) {
+		status = DMF_ScheduledTask_ExecuteNowDeferred(
+			Context->OutputReportScheduler,
+			Context
+		);
+	}
 
-	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DSHIDMINIDRV, "%!FUNC! Exit (status: %!STATUS!)", status);
+	FuncExit(TRACE_DSHIDMINIDRV, "status: %!STATUS!", status);
 
 	return status;
 }

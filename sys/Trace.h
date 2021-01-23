@@ -75,7 +75,6 @@ Environment:
 // FUNC TraceInformation{LEVEL=TRACE_LEVEL_INFORMATION}(FLAGS, MSG, ...);
 // FUNC TraceVerbose{LEVEL=TRACE_LEVEL_VERBOSE}(FLAGS, MSG, ...);
 // FUNC FuncExitNoReturn{LEVEL=TRACE_LEVEL_VERBOSE}(FLAGS);
-// FUNC TraceDbg{LEVEL=TRACE_LEVEL_INFORMATION}(FLAGS, MSG, ...);
 // USEPREFIX(FuncEntry, "%!STDPREFIX! [%!FUNC!] --> Entry");
 // USEPREFIX(FuncEntryArguments, "%!STDPREFIX! [%!FUNC!] --> Entry <");
 // USEPREFIX(FuncExit, "%!STDPREFIX! [%!FUNC!] <-- Exit <");
