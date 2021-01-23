@@ -27,10 +27,8 @@ Environment:
         DmfLibraryTraceGuid, (F59F6F9B,A539,4846,9DE8,EFC2C43D0A91), \
         WPP_DEFINE_BIT(DMF_TRACE) \
     ) \
-                                                                       \
     WPP_DEFINE_CONTROL_GUID(                                           \
-        DsHidMiniTraceGuid, (4eefa829,ba06,44ff,906e,8082a387206f),                  \
-                                                                       \
+        DsHidMiniTraceGuid, (4eefa829,ba06,44ff,906e,8082a387206f),    \
         WPP_DEFINE_BIT(MYDRIVER_ALL_INFO)                              \
         WPP_DEFINE_BIT(TRACE_DRIVER)                                   \
         WPP_DEFINE_BIT(TRACE_DEVICE)                                   \
@@ -41,21 +39,10 @@ Environment:
         WPP_DEFINE_BIT(TRACE_DS3)                                      \
         WPP_DEFINE_BIT(TRACE_DSBTH)                                    \
         WPP_DEFINE_BIT(TRACE_CONFIG)                                   \
-        )                             
+        )                                                              \
 
-
-#define WPP_FLAG_LEVEL_LOGGER(flag, level)                              \
-    WPP_LEVEL_LOGGER(flag)
-
-#define WPP_FLAG_LEVEL_ENABLED(flag, level)                             \
-    (WPP_LEVEL_ENABLED(flag) &&                                         \
-     WPP_CONTROL(WPP_BIT_ ## flag).Level >= level)
-
-#define WPP_LEVEL_FLAGS_LOGGER(lvl,flags) \
-           WPP_LEVEL_LOGGER(flags)
-
-#define WPP_LEVEL_FLAGS_ENABLED(lvl, flags) \
-           (WPP_LEVEL_ENABLED(flags) && WPP_CONTROL(WPP_BIT_ ## flags).Level >= lvl)
+#define WPP_LEVEL_FLAGS_LOGGER(lvl,flags) WPP_LEVEL_LOGGER(flags)
+#define WPP_LEVEL_FLAGS_ENABLED(lvl, flags) (WPP_LEVEL_ENABLED(flags) && WPP_CONTROL(WPP_BIT_ ## flags).Level  >= lvl)
 
 //
 // This comment block is scanned by the trace preprocessor to define our

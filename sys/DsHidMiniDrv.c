@@ -1354,7 +1354,7 @@ DMF_OutputReportScheduledTaskCallback(
 	NTSTATUS status;
 	PDEVICE_CONTEXT pDevCtx = (PDEVICE_CONTEXT)CallbackContext;
 	
-	TraceInformation(TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+	FuncEntry(TRACE_DSHIDMINIDRV);
 	
 	switch (pDevCtx->ConnectionType)
 	{
@@ -1382,7 +1382,7 @@ DMF_OutputReportScheduledTaskCallback(
 		status = STATUS_INVALID_PARAMETER;
 	}
 
-	TraceInformation(TRACE_DSHIDMINIDRV, "%!FUNC! Exit (status: %!STATUS!)", status);
+	FuncExit(TRACE_DSHIDMINIDRV, "status: %!STATUS!", status);
 	
 	return ScheduledTask_WorkResult_SuccessButTryAgain;
 }
