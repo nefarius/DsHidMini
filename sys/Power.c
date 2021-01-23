@@ -139,7 +139,7 @@ DsHidMini_EvtDevicePrepareHardware(
 
 		if (!NT_SUCCESS(status)) {
 			TraceError( TRACE_POWER,
-				"WdfUsbTargetDeviceCreateWithParameters failed %!STATUS!", status);
+				"WdfUsbTargetDeviceCreate failed with status %!STATUS!", status);
 			return status;
 		}
 	}
