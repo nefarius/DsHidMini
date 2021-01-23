@@ -1003,7 +1003,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	UNREFERENCED_PARAMETER(Pipe);
 	UNREFERENCED_PARAMETER(NumBytesTransferred);
 
-	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Entry");
+	FuncEntry(TRACE_DSHIDMINIDRV);
 
 	pDevCtx = DeviceGetContext(Context);
 	rdrBuffer = WdfMemoryGetBuffer(Buffer, &rdrBufferLength);
@@ -1077,7 +1077,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	
 	Ds_ProcessHidInputReport(pDevCtx, rdrBuffer, rdrBufferLength);
 
-	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
+	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
 }
 
 //
