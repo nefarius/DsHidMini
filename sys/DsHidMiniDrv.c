@@ -129,9 +129,7 @@ DMF_DsHidMini_ChildModulesAdd(
 	DMF_CONFIG_VirtualHidMini vHidCfg;
 	PDEVICE_CONTEXT pDevCtx;
 
-	DMF_CONFIG_ScheduledTask dmfSchedulerCfg;
-	WDF_OBJECT_ATTRIBUTES wdfAttributes;
-
+	
 	PAGED_CODE();
 
 	UNREFERENCED_PARAMETER(DmfParentModuleAttributes);
@@ -207,30 +205,6 @@ DMF_DsHidMini_ChildModulesAdd(
 		&moduleAttributes,
 		WDF_NO_OBJECT_ATTRIBUTES,
 		&moduleContext->DmfModuleVirtualHidMini
-	);
-
-	//
-	// Scheduler for serialized periodic output report dispatcher
-	// 
-
-	DMF_CONFIG_ScheduledTask_AND_ATTRIBUTES_INIT(
-		&dmfSchedulerCfg,
-		&moduleAttributes
-	);
-
-	dmfSchedulerCfg.EvtScheduledTaskCallback = DMF_OutputReportScheduledTaskCallback;
-	dmfSchedulerCfg.CallbackContext = pDevCtx;
-	dmfSchedulerCfg.PersistenceType = ScheduledTask_Persistence_NotPersistentAcrossReboots;
-	dmfSchedulerCfg.ExecutionMode = ScheduledTask_ExecutionMode_Deferred;
-	dmfSchedulerCfg.ExecuteWhen = ScheduledTask_ExecuteWhen_Other; // we control start
-	dmfSchedulerCfg.TimerPeriodMsOnSuccess = 10;
-	dmfSchedulerCfg.TimerPeriodMsOnFail = 10;
-
-	DMF_DmfModuleAdd(
-		DmfModuleInit,
-		&moduleAttributes,
-		WDF_NO_OBJECT_ATTRIBUTES,
-		&pDevCtx->OutputReportScheduler
 	);
 
 	TraceInformation(TRACE_DSHIDMINIDRV, "%!FUNC! Exit");
@@ -1384,7 +1358,7 @@ DMF_OutputReportScheduledTaskCallback(
 
 	FuncExit(TRACE_DSHIDMINIDRV, "status: %!STATUS!", status);
 	
-	return ScheduledTask_WorkResult_SuccessButTryAgain;
+	return ScheduledTask_WorkResult_Success;
 }
 
 #pragma endregion

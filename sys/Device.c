@@ -233,6 +233,7 @@ DmfDeviceModulesAdd(
 	PDEVICE_CONTEXT deviceContext;
 	DMF_MODULE_ATTRIBUTES moduleAttributes;
 	DMF_CONFIG_DsHidMini dsHidMiniCfg;
+	DMF_CONFIG_ScheduledTask dmfSchedulerCfg;
 
 	PAGED_CODE();
 
@@ -240,15 +241,41 @@ DmfDeviceModulesAdd(
 
 	deviceContext = DeviceGetContext(Device);
 
+	//
+	// Scheduler for serialized periodic output report dispatcher
+	// 
+
+	DMF_CONFIG_ScheduledTask_AND_ATTRIBUTES_INIT(
+		&dmfSchedulerCfg,
+		&moduleAttributes
+	);
+
+	dmfSchedulerCfg.EvtScheduledTaskCallback = DMF_OutputReportScheduledTaskCallback;
+	dmfSchedulerCfg.CallbackContext = deviceContext;
+	dmfSchedulerCfg.PersistenceType = ScheduledTask_Persistence_NotPersistentAcrossReboots;
+	dmfSchedulerCfg.ExecutionMode = ScheduledTask_ExecutionMode_Deferred;
+	dmfSchedulerCfg.ExecuteWhen = ScheduledTask_ExecuteWhen_Other; // we control start
+	dmfSchedulerCfg.TimerPeriodMsOnSuccess = 10;
+	dmfSchedulerCfg.TimerPeriodMsOnFail = 10;
+
+	DMF_DmfModuleAdd(
+		DmfModuleInit,
+		&moduleAttributes,
+		WDF_NO_OBJECT_ATTRIBUTES,
+		&deviceContext->OutputReportScheduler
+	);
+
 	DMF_CONFIG_DsHidMini_AND_ATTRIBUTES_INIT(
 		&dsHidMiniCfg,
 		&moduleAttributes
 	);
 
-	DMF_DmfModuleAdd(DmfModuleInit,
+	DMF_DmfModuleAdd(
+		DmfModuleInit,
 		&moduleAttributes,
 		WDF_NO_OBJECT_ATTRIBUTES,
-		&deviceContext->DsHidMiniModule);
+		&deviceContext->DsHidMiniModule
+	);
 
 	TraceInformation(TRACE_DEVICE, "%!FUNC! Exit");
 }
