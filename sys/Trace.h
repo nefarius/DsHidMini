@@ -1,4 +1,3 @@
-#pragma once
 
 #define WPP_CONTROL_GUIDS                                              \
     /* {F59F6F9B-A539-4846-9DE8-EFC2C43D0A91} */ \
