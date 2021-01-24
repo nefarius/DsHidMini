@@ -40,6 +40,10 @@ const UCHAR G_Ds3BthHidOutputReport[] = {
 // 
 NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context)
 {
+	NTSTATUS status;
+
+	FuncEntry(TRACE_DS3);
+	
 	// 
 	// "Magic packet"
 	// 
@@ -47,7 +51,7 @@ NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context)
 		0x42, 0x0C, 0x00, 0x00
 	};
 
-	return SendControlRequest(
+	status = SendControlRequest(
 		Context,
 		BmRequestHostToDevice,
 		BmRequestClass,
@@ -57,6 +61,10 @@ NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context)
 		hidCommandEnable,
 		ARRAYSIZE(hidCommandEnable)
 	);
+
+	FuncExit(TRACE_DS3, "status=%!STATUS!", status);
+	
+	return status;
 }
 
 //
@@ -71,6 +79,8 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(PDEVICE_CONTEXT Context)
 	BLUETOOTH_RADIO_INFO info;
 	DWORD ret;
 
+	FuncEntry(TRACE_DS3);
+	
 	params.dwSize = sizeof(BLUETOOTH_FIND_RADIO_PARAMS);
 	info.dwSize = sizeof(BLUETOOTH_RADIO_INFO);
 
@@ -84,7 +94,8 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(PDEVICE_CONTEXT Context)
 
 	if (!hFind)
 	{
-		TraceError( TRACE_DS3,
+		TraceError(
+			TRACE_DS3,
 			"BluetoothFindFirstRadio failed: 0x%X", GetLastError());
 		goto Exit;
 	}
@@ -99,7 +110,8 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(PDEVICE_CONTEXT Context)
 
 	if (ERROR_SUCCESS != ret)
 	{
-		TraceError( TRACE_DS3,
+		TraceError(
+			TRACE_DS3,
 			"BluetoothGetRadioInfo failed: 0x%X", ret);
 		goto Exit;
 	}
@@ -146,7 +158,8 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(PDEVICE_CONTEXT Context)
 
 	if (!NT_SUCCESS(status))
 	{
-		TraceError( TRACE_DS3,
+		TraceError(
+			TRACE_DS3,
 			"Setting host address failed with %!STATUS!", status);
 		goto Exit;
 	}
@@ -163,6 +176,8 @@ Exit:
 	if (hFind)
 		CloseHandle(hFind);
 
+	FuncExit(TRACE_DS3, "status=%!STATUS!", status);
+	
 	return status;
 }
 
@@ -171,7 +186,7 @@ Exit:
 // 
 VOID DsBth_Ds3Init(PDEVICE_CONTEXT Context)
 {
-	TraceInformation(TRACE_DS3, "%!FUNC! Entry");
+	FuncEntry(TRACE_DS3);
 
 	// 
 	// "Magic packet"
@@ -225,5 +240,5 @@ VOID DsBth_Ds3Init(PDEVICE_CONTEXT Context)
 		);
 	}
 
-	TraceInformation(TRACE_DS3, "%!FUNC! Exit");
+	FuncExitNoReturn(TRACE_DS3);
 }
