@@ -1,5 +1,3 @@
-#pragma once
-
 #pragma data_seg("SHARED")
 extern unsigned int numInstances;
 #pragma data_seg()
@@ -25,13 +23,15 @@ extern unsigned int numInstances;
 #endif
 #include "DsCommon.h"
 #include "device.h"
-#include "trace.h"
+
 #include "DsHidMiniDrv.h"
 #include "Power.h"
 #include "DsUsb.h"
 #include "Ds3.h"
 #include "DsBth.h"
 #include "Config.h"
+
+#include "trace.h"
 
 
 EXTERN_C_START

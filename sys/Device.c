@@ -1,6 +1,6 @@
 
-#include "driver.h"
-#include "device.tmh"
+#include "Driver.h"
+#include "Device.tmh"
 #include <DmfModule.h>
 #include <devpkey.h>
 

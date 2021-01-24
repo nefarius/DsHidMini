@@ -14,8 +14,8 @@ Environment:
 
 --*/
 
-#include "driver.h"
-#include "driver.tmh"
+#include "Driver.h"
+#include "Driver.tmh"
 
 unsigned int numInstances = 0;
 
