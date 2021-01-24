@@ -220,7 +220,7 @@ void DsHidMini_EvtDeviceContextCleanup(
 }
 
 //
-// Bootstrap out own module
+// Bootstrap our own module
 // 
 #pragma code_seg("PAGED")
 _IRQL_requires_max_(PASSIVE_LEVEL)
