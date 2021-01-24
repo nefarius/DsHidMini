@@ -1,14 +1,10 @@
 
 #define WPP_CONTROL_GUIDS                                              \
-    /* {F59F6F9B-A539-4846-9DE8-EFC2C43D0A91} */ \
-    WPP_DEFINE_CONTROL_GUID( \
-        DmfLibraryTraceGuid, (F59F6F9B,A539,4846,9DE8,EFC2C43D0A91), \
-        WPP_DEFINE_BIT(DMF_TRACE) \
-    ) \
     /* {A56A946C-AC5C-4E2F-9179-6821272856C6} */ \
     WPP_DEFINE_CONTROL_GUID(                                           \
         DsHidMiniTraceGuid, (A56A946C,AC5C,4E2F,9179,6821272856C6),    \
         WPP_DEFINE_BIT(MYDRIVER_ALL_INFO)                              \
+        WPP_DEFINE_BIT(DMF_TRACE)                                      \
         WPP_DEFINE_BIT(TRACE_DRIVER)                                   \
         WPP_DEFINE_BIT(TRACE_DEVICE)                                   \
         WPP_DEFINE_BIT(TRACE_DSHID)                                    \
