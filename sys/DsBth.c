@@ -19,7 +19,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 
 	PAGED_CODE();
 
-	TraceInformation(TRACE_DSBTH, "%!FUNC! Entry");
+	FuncEntry(TRACE_DSBTH);
 
 	pDeviceContext = DeviceGetContext(Device);
 
@@ -249,7 +249,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 
 #pragma endregion 
 
-	TraceInformation(TRACE_DSBTH, "%!FUNC! Exit");
+	FuncExit(TRACE_DSBTH, "status=%!STATUS!", status);
 
 	return status;
 }
@@ -263,6 +263,8 @@ NTSTATUS DsBth_SendHidControlWriteRequest(PDEVICE_CONTEXT Context)
 	WDF_MEMORY_DESCRIPTOR		memDesc;
 	WDF_REQUEST_REUSE_PARAMS    params;
 
+	FuncEntry(TRACE_DSBTH);
+	
 	WDF_MEMORY_DESCRIPTOR_INIT_HANDLE(
 		&memDesc,
 		Context->Connection.Bth.HidControl.WriteMemory,
@@ -305,6 +307,8 @@ NTSTATUS DsBth_SendHidControlWriteRequest(PDEVICE_CONTEXT Context)
 		);
 	}
 
+	FuncExit(TRACE_DSBTH, "status=%!STATUS!", status);
+
 	return status;
 }
 
@@ -315,6 +319,8 @@ NTSTATUS DsBth_SendHidControlWriteRequestAsync(PDEVICE_CONTEXT Context)
 {
 	NTSTATUS status;
 
+	FuncEntry(TRACE_DSBTH);
+	
 	if (!NT_SUCCESS(WdfWaitLockAcquire(Context->Connection.Bth.HidControl.WriteLock, 0)))
 	{
 		return STATUS_DEVICE_BUSY;
@@ -360,60 +366,8 @@ NTSTATUS DsBth_SendHidControlWriteRequestAsync(PDEVICE_CONTEXT Context)
 		);
 	}
 
-	return status;
-}
-
-//
-// Send HID Interrupt OUT Request (TODO: unused)
-// 
-NTSTATUS DsBth_SendHidInterruptWriteRequest(PDEVICE_CONTEXT Context)
-{
-	NTSTATUS					status;
-	WDF_MEMORY_DESCRIPTOR		memDesc;
-	WDF_REQUEST_REUSE_PARAMS    params;
-
-	WDF_MEMORY_DESCRIPTOR_INIT_HANDLE(
-		&memDesc,
-		Context->Connection.Bth.HidInterrupt.WriteMemory,
-		NULL
-	);
-
-	status = WdfIoTargetSendIoctlSynchronously(
-		Context->Connection.Bth.BthIoTarget,
-		Context->Connection.Bth.HidInterrupt.WriteRequest,
-		IOCTL_BTHPS3_HID_INTERRUPT_WRITE,
-		&memDesc,
-		NULL,
-		NULL,
-		NULL
-	);
-	if (!NT_SUCCESS(status)) {
-		TraceError(
-			TRACE_DSBTH,
-			"WdfIoTargetSendInternalIoctlSynchronously failed with status %!STATUS!",
-			status
-		);
-		return status;
-	}
-
-	WDF_REQUEST_REUSE_PARAMS_INIT(
-		&params,
-		WDF_REQUEST_REUSE_NO_FLAGS,
-		STATUS_SUCCESS
-	);
-	status = WdfRequestReuse(
-		Context->Connection.Bth.HidInterrupt.WriteRequest,
-		&params
-	);
-	if (!NT_SUCCESS(status))
-	{
-		TraceError(
-			TRACE_DSBTH,
-			"WdfRequestReuse failed with status %!STATUS!",
-			status
-		);
-	}
-
+	FuncExit(TRACE_DSBTH, "status=%!STATUS!", status);
+	
 	return status;
 }
 
@@ -422,9 +376,12 @@ NTSTATUS DsBth_SendHidInterruptWriteRequest(PDEVICE_CONTEXT Context)
 // 
 NTSTATUS DsBth_SendDisconnectRequest(PDEVICE_CONTEXT Context)
 {
+	NTSTATUS status;
 	BLUETOOTH_ADDRESS address;
 	WDF_MEMORY_DESCRIPTOR memDesc;
 	UCHAR buffer[sizeof(BLUETOOTH_ADDRESS)];
+
+	FuncEntry(TRACE_DSBTH);
 
 	RtlZeroMemory(buffer, sizeof(BLUETOOTH_ADDRESS));
 	RtlCopyMemory(buffer, &Context->DeviceAddress, sizeof(Context->DeviceAddress));
@@ -440,7 +397,7 @@ NTSTATUS DsBth_SendDisconnectRequest(PDEVICE_CONTEXT Context)
 	//
 	// Send disconnect request
 	// 
-	return WdfIoTargetSendIoctlSynchronously(
+	status = WdfIoTargetSendIoctlSynchronously(
 		Context->Connection.Bth.BthIoTarget,
 		NULL, // use internal request object
 		IOCTL_BTH_DISCONNECT_DEVICE,
@@ -449,6 +406,10 @@ NTSTATUS DsBth_SendDisconnectRequest(PDEVICE_CONTEXT Context)
 		NULL,
 		NULL
 	);
+
+	FuncExit(TRACE_DSBTH, "status=%!STATUS!", status);
+	
+	return status;
 }
 
 //
@@ -466,69 +427,74 @@ DsBth_EvtControlReadTimerFunc(
 	size_t						bufferLength = 0;
 	WDF_REQUEST_REUSE_PARAMS    params;
 
-	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSBTH, "%!FUNC! Exit");
+	FuncEntry(TRACE_DSBTH);
 
-	pDevCtx = DeviceGetContext(WdfTimerGetParentObject(Timer));
-
-	WDF_MEMORY_DESCRIPTOR_INIT_HANDLE(&memDesc,
-		pDevCtx->Connection.Bth.HidControl.ReadMemory,
-		NULL);
-
-	status = WdfIoTargetSendIoctlSynchronously(
-		pDevCtx->Connection.Bth.BthIoTarget,
-		pDevCtx->Connection.Bth.HidControl.ReadRequest,
-		IOCTL_BTHPS3_HID_CONTROL_READ,
-		NULL,
-		&memDesc,
-		NULL,
-		&bufferLength
-	);
-
-	if (status == STATUS_DEVICE_NOT_CONNECTED)
+	do
 	{
-		goto Exit;
-	}
+		pDevCtx = DeviceGetContext(WdfTimerGetParentObject(Timer));
 
-	if (!NT_SUCCESS(status)) {
-		TraceError(
-			TRACE_DSBTH,
-			"WdfIoTargetSendInternalIoctlSynchronously failed with status %!STATUS!",
-			status
+		WDF_MEMORY_DESCRIPTOR_INIT_HANDLE(
+			&memDesc,
+			pDevCtx->Connection.Bth.HidControl.ReadMemory,
+			NULL
+		);
+
+		status = WdfIoTargetSendIoctlSynchronously(
+			pDevCtx->Connection.Bth.BthIoTarget,
+			pDevCtx->Connection.Bth.HidControl.ReadRequest,
+			IOCTL_BTHPS3_HID_CONTROL_READ,
+			NULL,
+			&memDesc,
+			NULL,
+			&bufferLength
+		);
+
+		if (status == STATUS_DEVICE_NOT_CONNECTED)
+		{
+			break;
+		}
+
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DSBTH,
+				"WdfIoTargetSendInternalIoctlSynchronously failed with status %!STATUS!",
+				status
+			);
+		}
+
+		TraceVerbose(TRACE_DSBTH,
+		             "++ Control bytes consumed: %d",
+		             (ULONG)bufferLength
+		);
+
+		WDF_REQUEST_REUSE_PARAMS_INIT(
+			&params,
+			WDF_REQUEST_REUSE_NO_FLAGS,
+			STATUS_SUCCESS
+		);
+		status = WdfRequestReuse(
+			pDevCtx->Connection.Bth.HidControl.ReadRequest,
+			&params
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DSBTH,
+				"WdfRequestReuse failed with status %!STATUS!",
+				status
+			);
+			break;
+		}
+
+		WdfTimerStart(
+			pDevCtx->Connection.Bth.Timers.HidControlConsume,
+			WDF_REL_TIMEOUT_IN_MS(0x0A)
 		);
 	}
+	while (FALSE);
 
-	TraceVerbose(TRACE_DSBTH,
-		"++ Control bytes consumed: %d",
-		(ULONG)bufferLength
-	);
-
-	WDF_REQUEST_REUSE_PARAMS_INIT(
-		&params,
-		WDF_REQUEST_REUSE_NO_FLAGS,
-		STATUS_SUCCESS
-	);
-	status = WdfRequestReuse(
-		pDevCtx->Connection.Bth.HidControl.ReadRequest,
-		&params
-	);
-	if (!NT_SUCCESS(status))
-	{
-		TraceError(
-			TRACE_DSBTH,
-			"WdfRequestReuse failed with status %!STATUS!",
-			status
-		);
-		goto Exit;
-	}
-
-	WdfTimerStart(
-		pDevCtx->Connection.Bth.Timers.HidControlConsume,
-		WDF_REL_TIMEOUT_IN_MS(0x0A)
-	);
-
-Exit:
-
-	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSBTH, "%!FUNC! Exit");
+	FuncExitNoReturn(TRACE_DSBTH);
 }
 
 //
@@ -544,7 +510,7 @@ DsBth_EvtControlWriteTimerFunc(
 	PDEVICE_CONTEXT		pDevCtx;
 	PUCHAR				buffer;
 
-	TraceInformation(TRACE_DSBTH, "%!FUNC! Exit");
+	FuncEntry(TRACE_DSBTH);
 
 	pDevCtx = DeviceGetContext(WdfTimerGetParentObject(Timer));
 
@@ -582,17 +548,9 @@ DsBth_EvtControlWriteTimerFunc(
 	DS3_BTH_SET_LARGE_RUMBLE_DURATION(buffer, 0xFE);
 	DS3_BTH_SET_LARGE_RUMBLE_STRENGTH(buffer, 0x00);
 
-	status = DsBth_SendHidControlWriteRequestAsync(pDevCtx);
-	if (!NT_SUCCESS(status))
-	{
-		TraceError(
-			TRACE_DSBTH,
-			"DsBth_SendHidControlWriteRequestAsync failed with status %!STATUS!",
-			status
-		);
-	}
+	(void)Ds_SendOutputReport(pDevCtx);
 
-	TraceInformation(TRACE_DSBTH, "%!FUNC! Exit");
+	FuncExitNoReturn(TRACE_DSBTH);
 }
 
 //
@@ -612,7 +570,7 @@ void DsBth_HidControlWriteRequestCompletionRoutine(
 	UNREFERENCED_PARAMETER(Target);
 	UNREFERENCED_PARAMETER(Context);
 
-	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSBTH, "%!FUNC! Entry");
+	FuncEntry(TRACE_DSBTH);
 
 	if (Params->IoStatus.Status != STATUS_DEVICE_NOT_CONNECTED)
 	{
@@ -634,5 +592,5 @@ void DsBth_HidControlWriteRequestCompletionRoutine(
 
 	WdfWaitLockRelease(pDevCtx->Connection.Bth.HidControl.WriteLock);
 
-	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DSBTH, "%!FUNC! Exit");
+	FuncExitNoReturn(TRACE_DSBTH);
 }

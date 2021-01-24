@@ -42,7 +42,6 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 
 NTSTATUS DsBth_SendHidControlWriteRequest(PDEVICE_CONTEXT Context);
 NTSTATUS DsBth_SendHidControlWriteRequestAsync(PDEVICE_CONTEXT Context);
-NTSTATUS DsBth_SendHidInterruptWriteRequest(PDEVICE_CONTEXT Context);
 
 EVT_WDF_REQUEST_COMPLETION_ROUTINE DsBth_HidInterruptReadRequestCompletionRoutine;
 EVT_WDF_REQUEST_COMPLETION_ROUTINE DsBth_HidControlWriteRequestCompletionRoutine;

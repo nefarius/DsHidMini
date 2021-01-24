@@ -22,6 +22,8 @@ SendControlRequest(
 	WDF_MEMORY_DESCRIPTOR           memDesc;
 	ULONG                           bytesTransferred;
 
+	FuncEntry(TRACE_DSUSB);
+	
 	WDF_REQUEST_SEND_OPTIONS_INIT(
 		&sendOptions,
 		WDF_REQUEST_SEND_OPTION_TIMEOUT
@@ -61,11 +63,13 @@ SendControlRequest(
 
 	if (!NT_SUCCESS(status))
 	{
-		TraceError( TRACE_DSUSB,
+		TraceError(TRACE_DSUSB,
 			"WdfUsbTargetDeviceSendControlTransferSynchronously failed with status %!STATUS! (%d)\n",
 			status, bytesTransferred);
 	}
 
+	FuncExit(TRACE_DSUSB, "status=%!STATUS!", status);
+	
 	return status;
 }
 
@@ -79,11 +83,11 @@ DsUsbConfigContReaderForInterruptEndPoint(
 {
 	WDF_USB_CONTINUOUS_READER_CONFIG contReaderConfig;
 	NTSTATUS status;
-	PDEVICE_CONTEXT pDeviceContext;
+	PDEVICE_CONTEXT pDevCtx;
 
-	TraceInformation(TRACE_DSUSB, "%!FUNC! Entry");
+	FuncEntry(TRACE_DSUSB);
 
-	pDeviceContext = DeviceGetContext(Device);
+	pDevCtx = DeviceGetContext(Device);
 
 	WDF_USB_CONTINUOUS_READER_CONFIG_INIT(&contReaderConfig,
 		DsUsb_EvtUsbInterruptPipeReadComplete,
@@ -99,17 +103,19 @@ DsUsbConfigContReaderForInterruptEndPoint(
 	// By default, framework queues two requests to the target
 	// endpoint. Driver can configure up to 10 requests with CONFIG macro.
 	//
-	status = WdfUsbTargetPipeConfigContinuousReader(pDeviceContext->Connection.Usb.InterruptInPipe,
-		&contReaderConfig);
+	status = WdfUsbTargetPipeConfigContinuousReader(
+		pDevCtx->Connection.Usb.InterruptInPipe,
+		&contReaderConfig
+	);
 
-	if (!NT_SUCCESS(status)) {
-		TraceError( TRACE_DSUSB,
-			"WdfUsbTargetPipeConfigContinuousReader failed %x\n",
-			status);
-		return status;
+	if (!NT_SUCCESS(status))
+	{
+		TraceError(TRACE_DSUSB,
+		           "WdfUsbTargetPipeConfigContinuousReader failed %x\n",
+		           status);
 	}
 
-	TraceInformation(TRACE_DSUSB, "%!FUNC! Exit");
+	FuncExit(TRACE_DSUSB, "status=%!STATUS!", status);
 
 	return status;
 }
@@ -127,9 +133,11 @@ DsUsbEvtUsbInterruptReadersFailed(
 	UNREFERENCED_PARAMETER(UsbdStatus);
 	UNREFERENCED_PARAMETER(Pipe);
 
-	TraceError( TRACE_DSUSB,
-		"DsUsbEvtUsbInterruptReadersFailed called with status %!STATUS!",
-		Status);
+	TraceError(
+		TRACE_DSUSB,
+		"%!FUNC! called with status %!STATUS!",
+		Status
+	);
 
 	return TRUE;
 }

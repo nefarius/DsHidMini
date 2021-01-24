@@ -34,7 +34,7 @@ dshidminiEvtDeviceAdd(
 
 	UNREFERENCED_PARAMETER(Driver);
 
-	TraceInformation(TRACE_DEVICE, "%!FUNC! Entry");
+	FuncEntry(TRACE_DEVICE);
 
 	dmfDeviceInit = DMF_DmfDeviceInitAllocate(DeviceInit);
 
@@ -195,7 +195,7 @@ Exit:
 		DMF_DmfDeviceInitFree(&dmfDeviceInit);
 	}
 
-	TraceInformation(TRACE_DEVICE, "%!FUNC! Exit");
+	FuncExit(TRACE_DEVICE, "status=%!STATUS!", status);
 
 	return status;
 }
@@ -208,6 +208,8 @@ void DsHidMini_EvtDeviceContextCleanup(
 	WDFOBJECT Object
 )
 {
+	FuncEntry(TRACE_DEVICE);
+	
 	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Object);
 
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
@@ -217,6 +219,8 @@ void DsHidMini_EvtDeviceContextCleanup(
 			free(pDevCtx->Connection.Usb.OutputReport);
 		}
 	}
+
+	FuncExitNoReturn(TRACE_DEVICE);
 }
 
 //
@@ -237,7 +241,7 @@ DmfDeviceModulesAdd(
 
 	PAGED_CODE();
 
-	TraceInformation(TRACE_DEVICE, "%!FUNC! Entry");
+	FuncEntry(TRACE_DEVICE);
 
 	deviceContext = DeviceGetContext(Device);
 
@@ -265,6 +269,10 @@ DmfDeviceModulesAdd(
 		&deviceContext->OutputReportScheduler
 	);
 
+	//
+	// Virtual HID Mini Module
+	// 
+	
 	DMF_CONFIG_DsHidMini_AND_ATTRIBUTES_INIT(
 		&dsHidMiniCfg,
 		&moduleAttributes
@@ -277,6 +285,6 @@ DmfDeviceModulesAdd(
 		&deviceContext->DsHidMiniModule
 	);
 
-	TraceInformation(TRACE_DEVICE, "%!FUNC! Exit");
+	FuncExitNoReturn(TRACE_DEVICE);
 }
 #pragma code_seg()

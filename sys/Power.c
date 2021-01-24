@@ -18,7 +18,7 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 
 	PAGED_CODE();
 
-	TraceInformation(TRACE_POWER, "%!FUNC! Entry");
+	FuncEntry(TRACE_POWER);
 
 	//
 	// TODO: can be moved to D0Entry?
@@ -95,7 +95,7 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 #pragma endregion
 	}
 
-	TraceInformation(TRACE_POWER, "%!FUNC! Exit");
+	FuncExit(TRACE_POWER, "status=%!STATUS!", status);
 
 	return status;
 }
@@ -122,7 +122,7 @@ DsHidMini_EvtDevicePrepareHardware(
 	UNREFERENCED_PARAMETER(ResourcesRaw);
 	UNREFERENCED_PARAMETER(ResourcesTranslated);
 
-	TraceInformation(TRACE_POWER, "%!FUNC! Entry");
+	FuncEntry(TRACE_POWER);
 
 	pCtx = DeviceGetContext(Device);
 
@@ -298,7 +298,7 @@ DsHidMini_EvtDevicePrepareHardware(
 		}
 	}
 
-	TraceInformation(TRACE_POWER, "%!FUNC! Exit (%!STATUS!)", status);
+	FuncExit(TRACE_POWER, "status=%!STATUS!", status);
 
 	return status;
 }
@@ -388,7 +388,7 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 		}
 	}
 
-	FuncExit(TRACE_POWER, "status: %!STATUS!", status);
+	FuncExit(TRACE_POWER, "status=%!STATUS!", status);
 
 	return status;
 }
@@ -405,7 +405,7 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 
 	UNREFERENCED_PARAMETER(TargetState);
 
-	TraceInformation(TRACE_POWER, "%!FUNC! Entry");
+	FuncEntry(TRACE_POWER);
 
 	pDevCtx = DeviceGetContext(Device);
 
@@ -426,7 +426,7 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 		WdfIoTargetStop(pDevCtx->Connection.Bth.BthIoTarget, WdfIoTargetCancelSentIo);
 	}
 
-	TraceInformation(TRACE_POWER, "%!FUNC! Exit");
+	FuncExitNoReturn(TRACE_POWER);
 
 	return STATUS_SUCCESS;
 }
