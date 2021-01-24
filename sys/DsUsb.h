@@ -5,7 +5,7 @@ const __declspec(selectany) LONGLONG DEFAULT_CONTROL_TRANSFER_TIMEOUT = 5 * -1 *
 #define CONTROL_TRANSFER_BUFFER_LENGTH      64
 
 NTSTATUS
-SendControlRequest(
+USB_SendControlRequest(
     _In_ PDEVICE_CONTEXT Context,
     _In_ WDF_USB_BMREQUEST_DIRECTION Direction,
     _In_ WDF_USB_BMREQUEST_TYPE Type,

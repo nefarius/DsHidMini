@@ -211,7 +211,7 @@ DsHidMini_EvtDevicePrepareHardware(
 			//
 			// Request device MAC address
 			// 
-			status = SendControlRequest(
+			status = USB_SendControlRequest(
 				pCtx,
 				BmRequestDeviceToHost,
 				BmRequestClass,
@@ -247,7 +247,7 @@ DsHidMini_EvtDevicePrepareHardware(
 			//
 			// Request host BTH address
 			// 
-			status = SendControlRequest(
+			status = USB_SendControlRequest(
 				pCtx,
 				BmRequestDeviceToHost,
 				BmRequestClass,
@@ -272,7 +272,7 @@ DsHidMini_EvtDevicePrepareHardware(
 			//
 			// Send initial output report
 			// 
-			status = SendControlRequest(
+			status = USB_SendControlRequest(
 				pCtx,
 				BmRequestHostToDevice,
 				BmRequestClass,

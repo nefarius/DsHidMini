@@ -51,7 +51,7 @@ NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context)
 		0x42, 0x0C, 0x00, 0x00
 	};
 
-	status = SendControlRequest(
+	status = USB_SendControlRequest(
 		Context,
 		BmRequestHostToDevice,
 		BmRequestClass,
@@ -147,7 +147,7 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(PDEVICE_CONTEXT Context)
 		//
 		// Submit new host address
 		// 
-		status = SendControlRequest(
+		status = USB_SendControlRequest(
 			Context,
 			BmRequestHostToDevice,
 			BmRequestClass,

@@ -6,7 +6,7 @@
 // Sends a custom buffer to the device's control endpoint.
 // 
 NTSTATUS
-SendControlRequest(
+USB_SendControlRequest(
 	_In_ PDEVICE_CONTEXT Context,
 	_In_ WDF_USB_BMREQUEST_DIRECTION Direction,
 	_In_ WDF_USB_BMREQUEST_TYPE Type,

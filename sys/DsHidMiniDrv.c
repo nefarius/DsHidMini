@@ -1346,7 +1346,7 @@ DMF_OutputReportScheduledTaskCallback(
 	{
 	case DsDeviceConnectionTypeUsb:
 
-		status = SendControlRequest(
+		status = USB_SendControlRequest(
 			pDevCtx,
 			BmRequestHostToDevice,
 			BmRequestClass,
