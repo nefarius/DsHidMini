@@ -190,16 +190,9 @@ DsHidMini_EvtDevicePrepareHardware(
 					"InterruptReadPipe is 0x%p\n", pipe);
 				pCtx->Connection.Usb.InterruptInPipe = pipe;
 			}
-
-			if (WdfUsbPipeTypeInterrupt == pipeInfo.PipeType &&
-				WdfUsbTargetPipeIsOutEndpoint(pipe)) {
-				TraceInformation(TRACE_POWER,
-					"InterruptWritePipe is 0x%p\n", pipe);
-				pCtx->Connection.Usb.InterruptOutPipe = pipe;
-			}
 		}
 
-		if (!pCtx->Connection.Usb.InterruptInPipe || !pCtx->Connection.Usb.InterruptOutPipe)
+		if (!pCtx->Connection.Usb.InterruptInPipe)
 		{
 			status = STATUS_INVALID_DEVICE_STATE;
 			TraceError( TRACE_POWER,
@@ -342,12 +335,6 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 				break;
 			}
 
-			status = WdfIoTargetStart(WdfUsbTargetPipeGetIoTarget(pDevCtx->Connection.Usb.InterruptOutPipe));
-			if (!NT_SUCCESS(status)) {
-				TraceError(TRACE_POWER, "Failed to start interrupt write pipe %!STATUS!", status);
-				break;
-			}
-
 			isTargetStarted = TRUE;
 		} while (FALSE);
 
@@ -359,10 +346,6 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 			if (isTargetStarted) {
 				WdfIoTargetStop(
 					WdfUsbTargetPipeGetIoTarget(pDevCtx->Connection.Usb.InterruptInPipe),
-					WdfIoTargetCancelSentIo
-				);
-				WdfIoTargetStop(WdfUsbTargetPipeGetIoTarget(
-					pDevCtx->Connection.Usb.InterruptOutPipe),
 					WdfIoTargetCancelSentIo
 				);
 			}
@@ -430,10 +413,6 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 	{
 		WdfIoTargetStop(WdfUsbTargetPipeGetIoTarget(
 			pDevCtx->Connection.Usb.InterruptInPipe),
-			WdfIoTargetCancelSentIo
-		);
-		WdfIoTargetStop(WdfUsbTargetPipeGetIoTarget(
-			pDevCtx->Connection.Usb.InterruptOutPipe),
 			WdfIoTargetCancelSentIo
 		);
 	}

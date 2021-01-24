@@ -23,11 +23,6 @@ struct USB_DEVICE_CONTEXT
 	WDFUSBPIPE InterruptInPipe;
 
 	//
-	// USB Interrupt (out) pipe handle
-	// 
-	WDFUSBPIPE InterruptOutPipe;
-
-	//
 	// Output report buffer
 	// 
 	PUCHAR OutputReport;
