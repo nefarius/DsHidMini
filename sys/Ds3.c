@@ -84,92 +84,92 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(PDEVICE_CONTEXT Context)
 	params.dwSize = sizeof(BLUETOOTH_FIND_RADIO_PARAMS);
 	info.dwSize = sizeof(BLUETOOTH_RADIO_INFO);
 
-	//
-	// Grab first (active) radio
-	// 
-	hFind = BluetoothFindFirstRadio(
-		&params,
-		&hRadio
-	);
+	do {
+		//
+		// Grab first (active) radio
+		// 
+		hFind = BluetoothFindFirstRadio(
+			&params,
+			&hRadio
+		);
 
-	if (!hFind)
-	{
-		TraceError(
+		if (!hFind)
+		{
+			TraceError(
+				TRACE_DS3,
+				"BluetoothFindFirstRadio failed: 0x%X", GetLastError());
+			break;
+		}
+
+		//
+		// Get radio info (address)
+		// 
+		ret = BluetoothGetRadioInfo(
+			hRadio,
+			&info
+		);
+
+		if (ERROR_SUCCESS != ret)
+		{
+			TraceError(
+				TRACE_DS3,
+				"BluetoothGetRadioInfo failed: 0x%X", ret);
+			break;
+		}
+
+		//
+		// Align address to expected format/order
+		// 
+		REVERSE_BYTE_ARRAY(&info.address.rgBytes[0], sizeof(BD_ADDR));
+
+		TraceInformation(
 			TRACE_DS3,
-			"BluetoothFindFirstRadio failed: 0x%X", GetLastError());
-		goto Exit;
-	}
+			"Updating host address from %02X:%02X:%02X:%02X:%02X:%02X to %02X:%02X:%02X:%02X:%02X:%02X",
+			Context->HostAddress.Address[0],
+			Context->HostAddress.Address[1],
+			Context->HostAddress.Address[2],
+			Context->HostAddress.Address[3],
+			Context->HostAddress.Address[4],
+			Context->HostAddress.Address[5],
+			info.address.rgBytes[0],
+			info.address.rgBytes[1],
+			info.address.rgBytes[2],
+			info.address.rgBytes[3],
+			info.address.rgBytes[4],
+			info.address.rgBytes[5]
+		);
 
-	//
-	// Get radio info (address)
-	// 
-	ret = BluetoothGetRadioInfo(
-		hRadio,
-		&info
-	);
+		UCHAR controlBuffer[SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH];
+		RtlZeroMemory(controlBuffer, SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH);
 
-	if (ERROR_SUCCESS != ret)
-	{
-		TraceError(
-			TRACE_DS3,
-			"BluetoothGetRadioInfo failed: 0x%X", ret);
-		goto Exit;
-	}
+		RtlCopyMemory(&controlBuffer[2], &info.address, sizeof(BD_ADDR));
 
-	//
-	// Align address to expected format/order
-	// 
-	REVERSE_BYTE_ARRAY(&info.address.rgBytes[0], sizeof(BD_ADDR));
-	
-	TraceEvents(TRACE_LEVEL_INFORMATION,
-		TRACE_DS3,
-		"Updating host address from %02X:%02X:%02X:%02X:%02X:%02X to %02X:%02X:%02X:%02X:%02X:%02X",
-		Context->HostAddress.Address[0],
-		Context->HostAddress.Address[1],
-		Context->HostAddress.Address[2],
-		Context->HostAddress.Address[3],
-		Context->HostAddress.Address[4],
-		Context->HostAddress.Address[5],
-		info.address.rgBytes[0],
-		info.address.rgBytes[1],
-		info.address.rgBytes[2],
-		info.address.rgBytes[3],
-		info.address.rgBytes[4],
-		info.address.rgBytes[5]
-	);
+		//
+		// Submit new host address
+		// 
+		status = SendControlRequest(
+			Context,
+			BmRequestHostToDevice,
+			BmRequestClass,
+			SetReport,
+			Ds3FeatureHostAddress,
+			0,
+			controlBuffer,
+			SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH);
 
-	UCHAR controlBuffer[SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH];
-	RtlZeroMemory(controlBuffer, SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH);
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DS3,
+				"Setting host address failed with %!STATUS!", status);
+			break;
+		}
 
-	RtlCopyMemory(&controlBuffer[2], &info.address, sizeof(BD_ADDR));
-
-	//
-	// Submit new host address
-	// 
-	status = SendControlRequest(
-		Context,
-		BmRequestHostToDevice,
-		BmRequestClass,
-		SetReport,
-		Ds3FeatureHostAddress,
-		0,
-		controlBuffer,
-		SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH);
-
-	if (!NT_SUCCESS(status))
-	{
-		TraceError(
-			TRACE_DS3,
-			"Setting host address failed with %!STATUS!", status);
-		goto Exit;
-	}
-
-	//
-	// Update in device context after success
-	// 
-	RtlCopyMemory(&Context->HostAddress, &info.address, sizeof(BD_ADDR));
-
-Exit:
+		//
+		// Update in device context after success
+		// 
+		RtlCopyMemory(&Context->HostAddress, &info.address, sizeof(BD_ADDR));
+	} while (FALSE);
 
 	if (hRadio)
 		CloseHandle(hRadio);
