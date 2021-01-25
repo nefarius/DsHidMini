@@ -264,4 +264,6 @@ DMF_DsHidMini_Close(
 
 EVT_DMF_ScheduledTask_Callback DMF_OutputReportScheduledTaskCallback;
 
+EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL DSHM_EvtWdfIoQueueIoDeviceControl;
+
 EXTERN_C_END

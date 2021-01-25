@@ -31,6 +31,8 @@ dshidminiEvtDeviceAdd(
 	ULONG							bufSize;
 	WDF_DEVICE_PROPERTY_DATA		devProp;
 	DEVPROPTYPE						propType;
+	WDFQUEUE						queue;
+	WDF_IO_QUEUE_CONFIG				queueConfig;
 
 	UNREFERENCED_PARAMETER(Driver);
 
@@ -174,6 +176,31 @@ dshidminiEvtDeviceAdd(
 			);
 		}
 
+		//
+		// Provide and hook our own default queue to handle weird cases
+		//
+
+		WDF_IO_QUEUE_CONFIG_INIT_DEFAULT_QUEUE(&queueConfig, WdfIoQueueDispatchParallel);
+		queueConfig.PowerManaged = WdfTrue;
+		queueConfig.EvtIoDeviceControl = DSHM_EvtWdfIoQueueIoDeviceControl;
+		DMF_DmfDeviceInitHookQueueConfig(dmfDeviceInit, &queueConfig);
+		
+		ntStatus = WdfIoQueueCreate(
+			device, 
+			&queueConfig, 
+			WDF_NO_OBJECT_ATTRIBUTES, 
+			&queue
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"WdfIoQueueCreate failed with status %!STATUS!",
+				status
+			);
+			goto Exit;
+		}
+
 		// Create the DMF Modules this Client driver will use.
 		//
 		dmfCallbacks.EvtDmfDeviceModulesAdd = DmfDeviceModulesAdd;
@@ -288,3 +315,38 @@ DmfDeviceModulesAdd(
 	FuncExitNoReturn(TRACE_DEVICE);
 }
 #pragma code_seg()
+
+void DSHM_EvtWdfIoQueueIoDeviceControl(
+	WDFQUEUE Queue,
+	WDFREQUEST Request,
+	size_t OutputBufferLength,
+	size_t InputBufferLength,
+	ULONG IoControlCode
+)
+{
+	NTSTATUS status = STATUS_NOT_IMPLEMENTED;
+
+	UNREFERENCED_PARAMETER(Queue);
+	UNREFERENCED_PARAMETER(OutputBufferLength);
+	UNREFERENCED_PARAMETER(InputBufferLength);
+
+	FuncEntry(TRACE_DEVICE);
+
+	switch (IoControlCode)
+	{
+	case IOCTL_HID_DEVICERESET_NOTIFICATION:
+		TraceVerbose(
+			TRACE_DEVICE,
+			"IOCTL_HID_DEVICERESET_NOTIFICATION not supported"
+		);
+		status = STATUS_NOT_SUPPORTED;
+		break;
+	default:
+		TraceVerbose(TRACE_DEVICE, "Unhandled I/O control code 0x%X", IoControlCode);
+		break;
+	}
+
+	FuncExitNoReturn(TRACE_DEVICE);
+
+	WdfRequestComplete(Request, status);
+}
