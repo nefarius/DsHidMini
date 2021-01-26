@@ -24,6 +24,7 @@ extern unsigned int numInstances;
 #include "DsCommon.h"
 #include "device.h"
 
+#include "dshmguid.h"
 #include "DsHidMiniDrv.h"
 #include "Power.h"
 #include "DsUsb.h"

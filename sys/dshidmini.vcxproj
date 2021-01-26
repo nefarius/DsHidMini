@@ -59,6 +59,7 @@
     <ClInclude Include="DsCommon.h" />
     <ClInclude Include="DsHid.h" />
     <ClInclude Include="DsHidMiniDrv.h" />
+    <ClInclude Include="dshmguid.h" />
     <ClInclude Include="DsUsb.h" />
     <ClInclude Include="ini.h" />
     <ClInclude Include="PID\01_PIDStateReport.h" />

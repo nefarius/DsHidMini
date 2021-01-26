@@ -22,7 +22,6 @@ dshidminiEvtDeviceAdd(
 	WDF_OBJECT_ATTRIBUTES			deviceAttributes;
 	WDFDEVICE						device;
 	NTSTATUS						status;
-	NTSTATUS						ntStatus;
 	PDMFDEVICE_INIT					dmfDeviceInit;
 	DMF_EVENT_CALLBACKS				dmfCallbacks;
 	WDF_PNPPOWER_EVENT_CALLBACKS	pnpPowerCallbacks;
@@ -185,7 +184,7 @@ dshidminiEvtDeviceAdd(
 		queueConfig.EvtIoDeviceControl = DSHM_EvtWdfIoQueueIoDeviceControl;
 		DMF_DmfDeviceInitHookQueueConfig(dmfDeviceInit, &queueConfig);
 		
-		ntStatus = WdfIoQueueCreate(
+		status = WdfIoQueueCreate(
 			device, 
 			&queueConfig, 
 			WDF_NO_OBJECT_ATTRIBUTES, 
@@ -201,15 +200,34 @@ dshidminiEvtDeviceAdd(
 			goto Exit;
 		}
 
+		//
+		// Expose interface for applications to find us
+		// 
+
+		status = WdfDeviceCreateDeviceInterface(
+			device,
+			&GUID_DEVINTERFACE_DSHIDMINI,
+			NULL
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"WdfDeviceCreateDeviceInterface failed with status %!STATUS!",
+				status
+			);
+			goto Exit;
+		}
+		
 		// Create the DMF Modules this Client driver will use.
 		//
 		dmfCallbacks.EvtDmfDeviceModulesAdd = DmfDeviceModulesAdd;
 		DMF_DmfDeviceInitSetEventCallbacks(dmfDeviceInit,
 			&dmfCallbacks);
 
-		ntStatus = DMF_ModulesCreate(device,
+		status = DMF_ModulesCreate(device,
 			&dmfDeviceInit);
-		if (!NT_SUCCESS(ntStatus))
+		if (!NT_SUCCESS(status))
 		{
 			goto Exit;
 		}
