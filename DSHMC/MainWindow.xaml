@@ -7,6 +7,7 @@
                              xmlns:adonisUi="clr-namespace:AdonisUI;assembly=AdonisUI"
                              xmlns:adonisControls="clr-namespace:AdonisUI.Controls;assembly=AdonisUI"
                              mc:Ignorable="d"
+                             ResizeMode="NoResize" WindowStartupLocation="CenterScreen"
                              Title="MainWindow" Height="450" Width="800">
     <Grid>
         
