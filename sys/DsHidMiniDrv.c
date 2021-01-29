@@ -1006,6 +1006,26 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	battery = (DS_BATTERY_STATUS)((PUCHAR)rdrBuffer)[30];
 
 	//
+	// Update battery status property
+	// 
+	if (battery != pDevCtx->BatteryStatus)
+	{
+		WDF_DEVICE_PROPERTY_DATA propertyData;
+
+		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_BatteryStatus);
+		propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+		propertyData.Lcid = LOCALE_NEUTRAL;
+
+		(void)WdfDeviceAssignProperty(
+			(WDFDEVICE)Context,
+			&propertyData,
+			DEVPROP_TYPE_BYTE,
+			sizeof(BYTE),
+			&battery
+		);
+	}
+
+	//
 	// Check if state has changed to Charged
 	// 
 	if (battery == DsBatteryStatusCharged
@@ -1165,6 +1185,25 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 			"Battery status changed to %d",
 			battery
 		);
+
+		//
+		// Update battery status property
+		// 
+
+		WDF_DEVICE_PROPERTY_DATA propertyData;
+
+		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_BatteryStatus);
+		propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+		propertyData.Lcid = LOCALE_NEUTRAL;
+
+		(void)WdfDeviceAssignProperty(
+			(WDFDEVICE)Context,
+			&propertyData,
+			DEVPROP_TYPE_BYTE,
+			sizeof(BYTE),
+			&battery
+		);
+		
 
 		outputBuffer = WdfMemoryGetBuffer(
 			pDeviceContext->Connection.Bth.HidControl.WriteMemory,
