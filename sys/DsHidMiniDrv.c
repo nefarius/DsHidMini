@@ -1197,7 +1197,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 		propertyData.Lcid = LOCALE_NEUTRAL;
 
 		(void)WdfDeviceAssignProperty(
-			(WDFDEVICE)Context,
+			(WDFDEVICE)WdfObjectContextGetObject(Context),
 			&propertyData,
 			DEVPROP_TYPE_BYTE,
 			sizeof(BYTE),
