@@ -21,27 +21,27 @@ typedef enum _DS_DEVICE_TYPE
     //
     // Unknown device type
     // 
-    DS_DEVICE_TYPE_UNKNOWN,
+    DsDeviceTypeUnknown,
 
     //
     // Sony DualShock 3 Controller
     // 
-    DS_DEVICE_TYPE_PS3_DUALSHOCK,
+    DsDeviceTypeSixaxis,
 
+    //
+	// Sony Navigation Controller
+	// 
+	DsDeviceTypeNavigation,
+
+	//
+	// Sony Motion Controller
+	// 
+	DsDeviceTypeMotion,
+	
     //
     // Sony DualShock 4 Controller
     // 
-    DS_DEVICE_TYPE_PS4_DUALSHOCK,
-
-    //
-    // Sony Navigation Controller
-    // 
-    DS_DEVICE_TYPE_PS3_NAVIGATION,
-
-    //
-    // Sony Motion Controller
-    // 
-    DS_DEVICE_TYPE_PS3_MOTION
+    DsDeviceTypeWireless
 
 } DS_DEVICE_TYPE, * PDS_DEVICE_TYPE;
 
@@ -70,55 +70,6 @@ typedef enum _DS_BATTERY_STATUS
     DsBatteryStatusCharged = 0xEF
 	
 } DS_BATTERY_STATUS, *PDS_BATTERY_STATUS;
-
-/**
- * \enum    _DS_FEATURE_TYPE
- *
- * \brief   Supported feature requests. These values must match the IDs in the report descriptor.
- */
-typedef enum _DS_FEATURE_TYPE
-{
-    //
-    // Receive controller-embedded Bluetooth host address
-    // 
-    DS_FEATURE_TYPE_GET_HOST_BD_ADDR = 0xC0,
-
-    //
-    // Update controller-embedded Bluetooth host address
-    // 
-    DS_FEATURE_TYPE_SET_HOST_BD_ADDR = 0xC1,
-
-    //
-    // Receive controller-embedded Bluetooth address
-    // 
-    DS_FEATURE_TYPE_GET_DEVICE_BD_ADDR = 0xC2,
-
-    //
-    // Receive device type (DS3, DS4, ...)
-    // 
-    DS_FEATURE_TYPE_GET_DEVICE_TYPE = 0xC3,
-
-    //
-    // Receive device connection type (USB, Bluetooth)
-    // 
-    DS_FEATURE_TYPE_GET_CONNECTION_TYPE = 0xC4,
-
-    //
-    // Receive current volatile configuration properties
-    // 
-    DS_FEATURE_TYPE_GET_DEVICE_CONFIG = 0xC5,
-
-    //
-    // Update current volatile configuration properties
-    // 
-    DS_FEATURE_TYPE_SET_DEVICE_CONFIG = 0xC6,
-
-	//
-	// Receive current battery status
-	// 
-    DS_FEATURE_TYPE_GET_BATTERY_STATUS = 0xC7
-
-} DS_FEATURE_TYPE, * PDS_FEATURE_TYPE;
 
 typedef enum _DS_HID_DEVICE_MODE
 {
