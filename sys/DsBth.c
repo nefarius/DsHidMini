@@ -449,7 +449,7 @@ DsBth_EvtControlReadTimerFunc(
 			&bufferLength
 		);
 
-		if (status == STATUS_DEVICE_NOT_CONNECTED)
+		if (status == STATUS_DEVICE_NOT_CONNECTED || status == STATUS_CANCELLED)
 		{
 			break;
 		}

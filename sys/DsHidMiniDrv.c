@@ -1110,8 +1110,6 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
-	UNREFERENCED_PARAMETER(Target);
-
 #ifdef DBG
 	TraceVerbose(
 		TRACE_DSHIDMINIDRV,
@@ -1125,6 +1123,13 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	// 
 	if (Params->IoStatus.Status == STATUS_DEVICE_NOT_CONNECTED)
 	{
+		TraceVerbose(TRACE_DSHIDMINIDRV, "Device has been disconnected");
+		goto Exit;
+	}
+	
+	if (Params->IoStatus.Status == STATUS_CANCELLED)
+	{
+		TraceVerbose(TRACE_DSHIDMINIDRV, "I/O Target has cancelled requests");
 		goto Exit;
 	}
 

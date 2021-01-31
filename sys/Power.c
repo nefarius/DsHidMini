@@ -419,10 +419,9 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
 	{
-		WdfTimerStop(pDevCtx->Connection.Bth.Timers.HidOutputReport, TRUE);
-		WdfTimerStop(pDevCtx->Connection.Bth.Timers.HidControlConsume, TRUE);
+		WdfTimerStop(pDevCtx->Connection.Bth.Timers.HidOutputReport, FALSE);
+		WdfTimerStop(pDevCtx->Connection.Bth.Timers.HidControlConsume, FALSE);
 
-		//(void)DsBth_SendDisconnectRequest(pDevCtx);
 		WdfIoTargetStop(pDevCtx->Connection.Bth.BthIoTarget, WdfIoTargetCancelSentIo);
 	}
 
