@@ -31,7 +31,7 @@ dshidminiEvtDeviceAdd(
 	WDF_DEVICE_PROPERTY_DATA		devProp;
 	DEVPROPTYPE						propType;
 	WDFQUEUE						queue;
-	WDF_IO_QUEUE_CONFIG				queueConfig;
+	WDF_IO_QUEUE_CONFIG				queueConfig;	
 
 	UNREFERENCED_PARAMETER(Driver);
 
@@ -73,8 +73,18 @@ dshidminiEvtDeviceAdd(
 
 	status = WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device);
 
-	if (NT_SUCCESS(status))
+	do
 	{
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"WdfDeviceCreate failed with status %!STATUS!",
+				status
+			);
+			break;
+		}
+
 		//
 		// Query enumerator name to discover connection type
 		// 
@@ -92,7 +102,7 @@ dshidminiEvtDeviceAdd(
 				"WdfDeviceQueryProperty failed with status %!STATUS!",
 				status
 			);
-			goto Exit;
+			break;
 		}
 
 		pDevCtx = DeviceGetContext(device);
@@ -118,10 +128,10 @@ dshidminiEvtDeviceAdd(
 			{
 				TraceError(
 					TRACE_DEVICE,
-					"WdfDeviceQueryProperty failed with status %!STATUS!",
+					"DsHidMini_BthConnectionContextInit failed with status %!STATUS!",
 					status
 				);
-				goto Exit;
+				break;
 			}
 		}
 
@@ -147,30 +157,69 @@ dshidminiEvtDeviceAdd(
 				"WdfDeviceAllocAndQueryPropertyEx failed with status %!STATUS!",
 				status
 			);
-			goto Exit;
+			break;
 		}
 
-		TraceEvents(TRACE_LEVEL_INFORMATION,
+		TraceVerbose(
 			TRACE_DEVICE,
-			"!! DEVPKEY_Device_InstanceId: %ws",
+			"DEVPKEY_Device_InstanceId: %ws",
 			WdfMemoryGetBuffer(pDevCtx->InstanceId, NULL)
 		);
 
+		//
+		// Fetch and convert device address from device property
+		// 
 		if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
 		{
+			WDFMEMORY deviceAddressMemory;
+			WDF_DEVICE_PROPERTY_DATA_INIT(&devProp, &DEVPKEY_Bluetooth_DeviceAddress);
+
 			//
-			// TODO: cheap but quick; extract MAC address from InstanceId
+			// Get device property (returns wide hex string)
 			// 
-			PCWSTR buf = WdfMemoryGetBuffer(pDevCtx->InstanceId, NULL);
-			*(PULONGLONG)&pDevCtx->DeviceAddress = (ULONGLONG)wcstoll(
-				&buf[(wcslen(buf) - (sizeof(BD_ADDR) * sizeof(WCHAR)))],
-				NULL,
+			status = WdfDeviceAllocAndQueryPropertyEx(
+				device,
+				&devProp,
+				NonPagedPoolNx,
+				WDF_NO_OBJECT_ATTRIBUTES,
+				&deviceAddressMemory,
+				&propType
+			);
+			if (!NT_SUCCESS(status))
+			{
+				TraceError(
+					TRACE_DEVICE,
+					"WdfDeviceAllocAndQueryPropertyEx failed with status %!STATUS!",
+					status
+				);
+				break;
+			}
+
+			//
+			// Convert hex string into UINT64
+			// 
+			UINT64 hostAddress = wcstoull(
+				WdfMemoryGetBuffer(deviceAddressMemory, NULL), 
+				L'\0', 
 				16
 			);
 
-			TraceEvents(TRACE_LEVEL_INFORMATION,
+			WdfObjectDelete(deviceAddressMemory);
+
+			//
+			// Convert to MAC address type
+			// 
+
+			pDevCtx->DeviceAddress.Address[0] = (UCHAR)((hostAddress >> (8 * 0)) & 0xFF);
+			pDevCtx->DeviceAddress.Address[1] = (UCHAR)((hostAddress >> (8 * 1)) & 0xFF);
+			pDevCtx->DeviceAddress.Address[2] = (UCHAR)((hostAddress >> (8 * 2)) & 0xFF);
+			pDevCtx->DeviceAddress.Address[3] = (UCHAR)((hostAddress >> (8 * 3)) & 0xFF);
+			pDevCtx->DeviceAddress.Address[4] = (UCHAR)((hostAddress >> (8 * 4)) & 0xFF);
+			pDevCtx->DeviceAddress.Address[5] = (UCHAR)((hostAddress >> (8 * 5)) & 0xFF);
+			
+			TraceVerbose(
 				TRACE_DEVICE,
-				"!! DeviceAddress: %012llX",
+				"Device address: %012llX",
 				*(PULONGLONG)&pDevCtx->DeviceAddress
 			);
 		}
@@ -183,11 +232,11 @@ dshidminiEvtDeviceAdd(
 		queueConfig.PowerManaged = WdfTrue;
 		queueConfig.EvtIoDeviceControl = DSHM_EvtWdfIoQueueIoDeviceControl;
 		DMF_DmfDeviceInitHookQueueConfig(dmfDeviceInit, &queueConfig);
-		
+
 		status = WdfIoQueueCreate(
-			device, 
-			&queueConfig, 
-			WDF_NO_OBJECT_ATTRIBUTES, 
+			device,
+			&queueConfig,
+			WDF_NO_OBJECT_ATTRIBUTES,
 			&queue
 		);
 		if (!NT_SUCCESS(status))
@@ -197,7 +246,7 @@ dshidminiEvtDeviceAdd(
 				"WdfIoQueueCreate failed with status %!STATUS!",
 				status
 			);
-			goto Exit;
+			break;
 		}
 
 		//
@@ -216,24 +265,26 @@ dshidminiEvtDeviceAdd(
 				"WdfDeviceCreateDeviceInterface failed with status %!STATUS!",
 				status
 			);
-			goto Exit;
+			break;
 		}
-		
+
 		// Create the DMF Modules this Client driver will use.
 		//
 		dmfCallbacks.EvtDmfDeviceModulesAdd = DmfDeviceModulesAdd;
-		DMF_DmfDeviceInitSetEventCallbacks(dmfDeviceInit,
-			&dmfCallbacks);
+		DMF_DmfDeviceInitSetEventCallbacks(
+			dmfDeviceInit,
+			&dmfCallbacks
+		);
 
-		status = DMF_ModulesCreate(device,
-			&dmfDeviceInit);
+		status = DMF_ModulesCreate(
+			device,
+			&dmfDeviceInit
+		);
 		if (!NT_SUCCESS(status))
 		{
-			goto Exit;
+			break;
 		}
-	}
-
-Exit:
+	} while (FALSE);
 
 	if (dmfDeviceInit != NULL)
 	{
