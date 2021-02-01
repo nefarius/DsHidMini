@@ -14,15 +14,10 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 	NTSTATUS				status = STATUS_SUCCESS;
 	PDEVICE_CONTEXT			pDeviceContext;
 
-	UNREFERENCED_PARAMETER(Device);
-
 	PAGED_CODE();
 
 	FuncEntry(TRACE_POWER);
 
-	//
-	// TODO: can be moved to D0Entry?
-	// 
 
 	pDeviceContext = DeviceGetContext(Device);
 
