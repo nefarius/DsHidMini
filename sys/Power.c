@@ -11,8 +11,11 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 	WDFDEVICE  Device
 )
 {
-	NTSTATUS				status = STATUS_SUCCESS;
-	PDEVICE_CONTEXT			pDevCtx;
+	NTSTATUS status = STATUS_SUCCESS;
+	PDEVICE_CONTEXT pDevCtx;
+	WDF_DEVICE_PROPERTY_DATA propertyData;
+	WCHAR deviceAddress[13];
+	UINT64 hostAddress = 0;
 
 	PAGED_CODE();
 
@@ -21,7 +24,80 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 
 	pDevCtx = DeviceGetContext(Device);
 
+	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
+	{
+		//
+		// Set device address property
+		// 
+		
+		if(swprintf_s(
+			deviceAddress, 
+			ARRAYSIZE(deviceAddress) * sizeof(WCHAR), 
+			L"%02X%02X%02X%02X%02X%02X",
+			pDevCtx->DeviceAddress.Address[0],
+			pDevCtx->DeviceAddress.Address[1],
+			pDevCtx->DeviceAddress.Address[2],
+			pDevCtx->DeviceAddress.Address[3],
+			pDevCtx->DeviceAddress.Address[4],
+			pDevCtx->DeviceAddress.Address[5]
+		) != -1)
+		{
+			WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_Bluetooth_DeviceAddress);
+			propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+			propertyData.Lcid = LOCALE_NEUTRAL;
 
+			status = WdfDeviceAssignProperty(
+				Device,
+				&propertyData,
+				DEVPROP_TYPE_STRING,
+				ARRAYSIZE(deviceAddress) * sizeof(WCHAR),
+				deviceAddress
+			);
+
+			if (!NT_SUCCESS(status))
+			{
+				TraceError(
+					TRACE_POWER,
+					"Setting DEVPKEY_Bluetooth_DeviceAddress failed with status %!STATUS!",
+					status
+				);
+			}
+		}
+
+		//
+		// Set host radio address property
+		// 
+
+		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_BluetoothRadio_Address);
+		propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+		propertyData.Lcid = LOCALE_NEUTRAL;
+
+		hostAddress = (UINT64)(pDevCtx->HostAddress.Address[5]) |
+			(UINT64)(pDevCtx->HostAddress.Address[4]) << 8 |
+			(UINT64)(pDevCtx->HostAddress.Address[3]) << 16 |
+			(UINT64)(pDevCtx->HostAddress.Address[2]) << 24 |
+			(UINT64)(pDevCtx->HostAddress.Address[1]) << 32 |
+			(UINT64)(pDevCtx->HostAddress.Address[0]) << 40;
+		
+		status = WdfDeviceAssignProperty(
+			Device,
+			&propertyData,
+			DEVPROP_TYPE_UINT64,
+			sizeof(UINT64),
+			&hostAddress
+		);
+
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_POWER,
+				"Setting DEVPKEY_BluetoothRadio_Address failed with status %!STATUS!",
+				status
+			);
+		}
+
+		status = STATUS_SUCCESS;
+	}
 	
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
 	{
