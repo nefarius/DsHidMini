@@ -65,6 +65,30 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 		}
 
 		//
+		// Attempt automatic pairing
+		// 
+		if (!pDevCtx->Configuration.DisableAutoPairing)
+		{
+			//
+			// Auto-pair to first found radio
+			// 
+			status = DsUsb_Ds3PairToFirstRadio(pDevCtx);
+
+			if (!NT_SUCCESS(status))
+			{
+				TraceError(TRACE_POWER,
+					"DsUsb_Ds3PairToFirstRadio failed with status %!STATUS!",
+					status);
+			}
+		}
+		else
+		{
+			TraceInformation(
+				TRACE_POWER,
+				"Auto-pairing disabled in device configuration");
+		}
+
+		//
 		// Set host radio address property
 		// 
 
@@ -488,30 +512,6 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 					WdfIoTargetCancelSentIo
 				);
 			}
-		}
-
-		//
-		// Attempt automatic pairing
-		// 
-		if (!pDevCtx->Configuration.DisableAutoPairing)
-		{
-			//
-			// Auto-pair to first found radio
-			// 
-			status = DsUsb_Ds3PairToFirstRadio(pDevCtx);
-
-			if (!NT_SUCCESS(status))
-			{
-				TraceError( TRACE_POWER,
-				            "DsUsb_Ds3PairToFirstRadio failed with status %!STATUS!",
-				            status);
-			}
-		}
-		else
-		{
-			TraceInformation(
-				TRACE_POWER, 
-				"Auto-pairing disabled in device configuration");
 		}
 
 		//
