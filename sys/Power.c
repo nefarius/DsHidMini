@@ -12,31 +12,33 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 )
 {
 	NTSTATUS				status = STATUS_SUCCESS;
-	PDEVICE_CONTEXT			pDeviceContext;
+	PDEVICE_CONTEXT			pDevCtx;
 
 	PAGED_CODE();
 
 	FuncEntry(TRACE_POWER);
 
 
-	pDeviceContext = DeviceGetContext(Device);
+	pDevCtx = DeviceGetContext(Device);
 
-	if (pDeviceContext->ConnectionType == DsDeviceConnectionTypeBth)
+
+	
+	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
 	{
 		//
 		// Send magic packet, starts input report sending
 		// 
-		DsBth_Ds3Init(pDeviceContext);
+		DsBth_Ds3Init(pDevCtx);
 
 #pragma region HID Interrupt Read
 
 		status = WdfIoTargetFormatRequestForIoctl(
-			pDeviceContext->Connection.Bth.BthIoTarget,
-			pDeviceContext->Connection.Bth.HidInterrupt.ReadRequest,
+			pDevCtx->Connection.Bth.BthIoTarget,
+			pDevCtx->Connection.Bth.HidInterrupt.ReadRequest,
 			IOCTL_BTHPS3_HID_INTERRUPT_READ,
 			NULL,
 			NULL,
-			pDeviceContext->Connection.Bth.HidInterrupt.ReadMemory,
+			pDevCtx->Connection.Bth.HidInterrupt.ReadMemory,
 			NULL
 		);
 		if (!NT_SUCCESS(status))
@@ -49,17 +51,17 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 		}
 
 		WdfRequestSetCompletionRoutine(
-			pDeviceContext->Connection.Bth.HidInterrupt.ReadRequest,
+			pDevCtx->Connection.Bth.HidInterrupt.ReadRequest,
 			DsBth_HidInterruptReadRequestCompletionRoutine,
-			pDeviceContext
+			pDevCtx
 		);
 
 		if (WdfRequestSend(
-			pDeviceContext->Connection.Bth.HidInterrupt.ReadRequest,
-			pDeviceContext->Connection.Bth.BthIoTarget,
+			pDevCtx->Connection.Bth.HidInterrupt.ReadRequest,
+			pDevCtx->Connection.Bth.BthIoTarget,
 			WDF_NO_SEND_OPTIONS
 		) == FALSE) {
-			status = WdfRequestGetStatus(pDeviceContext->Connection.Bth.HidInterrupt.ReadRequest);
+			status = WdfRequestGetStatus(pDevCtx->Connection.Bth.HidInterrupt.ReadRequest);
 		}
 		if (!NT_SUCCESS(status))
 		{
@@ -77,13 +79,13 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 		//
 		// Send initial output report
 		// 
-		status = DsBth_SendHidControlWriteRequestAsync(pDeviceContext);
+		status = DsBth_SendHidControlWriteRequestAsync(pDevCtx);
 
 		//
 		// Send preset output report (delayed)
 		// 
 		WdfTimerStart(
-			pDeviceContext->Connection.Bth.Timers.HidOutputReport,
+			pDevCtx->Connection.Bth.Timers.HidOutputReport,
 			WDF_REL_TIMEOUT_IN_SEC(1)
 		);
 
