@@ -213,6 +213,9 @@ DMF_DsHidMini_ChildModulesAdd(
 }
 #pragma code_seg()
 
+//
+// Read/refresh configuration here after power-up
+// 
 #pragma code_seg("PAGE")
 _Function_class_(DMF_Open)
 _IRQL_requires_max_(PASSIVE_LEVEL)
@@ -236,7 +239,6 @@ DMF_DsHidMini_Open(
 
 	moduleContext = DMF_CONTEXT_GET(DmfModule);
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
-	
 	pHidCfg = DMF_ModuleConfigGet(moduleContext->DmfModuleVirtualHidMini);
 
 	//
@@ -251,7 +253,7 @@ DMF_DsHidMini_Open(
 	pHidCfg->HidDeviceAttributes.VersionNumber = pDevCtx->VersionNumber;
 		
 	//
-	// Increase pad instance count
+	// Increase pad instance count (TODO: unused)
 	// 
 	numInstances++;
 
@@ -278,6 +280,10 @@ DMF_DsHidMini_Close(
 
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
+	//
+	// TODO: free resources if necessary, save configuration
+	// 
+	
 	UNREFERENCED_PARAMETER(pDevCtx);
 
 	//
