@@ -82,7 +82,7 @@ DMF_DsHidMini_Create(
 			DsHidMini,
 			DMF_CONTEXT_DsHidMini,
 			DMF_MODULE_OPTIONS_PASSIVE,
-			DMF_MODULE_OPEN_OPTION_OPEN_PrepareHardware
+			DMF_MODULE_OPEN_OPTION_OPEN_D0EntrySystemPowerUp
 		);
 
 		dsHidMiniDesc.CallbacksDmf = &dsHidMiniCallbacks;
@@ -223,14 +223,33 @@ DMF_DsHidMini_Open(
 	_In_ DMFMODULE DmfModule
 )
 {
-	NTSTATUS			status = STATUS_SUCCESS;
-
+	NTSTATUS status = STATUS_SUCCESS;
+	DMF_CONTEXT_DsHidMini* moduleContext;
+	DMF_CONFIG_VirtualHidMini* pHidCfg;
+	PDEVICE_CONTEXT pDevCtx;
+	
 	UNREFERENCED_PARAMETER(DmfModule);
 
 	PAGED_CODE();
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
+	moduleContext = DMF_CONTEXT_GET(DmfModule);
+	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
+	
+	pHidCfg = DMF_ModuleConfigGet(moduleContext->DmfModuleVirtualHidMini);
+
+	//
+	// Update settings queried in PrepareHardware
+	// 
+	
+	pHidCfg->VendorId = pDevCtx->VendorId;
+	pHidCfg->ProductId = pDevCtx->ProductId;
+	pHidCfg->VersionNumber = pDevCtx->VersionNumber;
+	pHidCfg->HidDeviceAttributes.VendorID = pDevCtx->VendorId;
+	pHidCfg->HidDeviceAttributes.ProductID = pDevCtx->ProductId;
+	pHidCfg->HidDeviceAttributes.VersionNumber = pDevCtx->VersionNumber;
+		
 	//
 	// Increase pad instance count
 	// 
