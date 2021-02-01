@@ -118,6 +118,9 @@ DsHidMini_EvtDevicePrepareHardware(
 	WDFUSBPIPE                              pipe;
 	WDF_USB_PIPE_INFORMATION                pipeInfo;
 	UCHAR									controlTransferBuffer[CONTROL_TRANSFER_BUFFER_LENGTH];
+	WDF_DEVICE_PROPERTY_DATA				propertyData;
+	ULONG									requiredSize = 0;
+	DEVPROPTYPE								propertyType;
 
 	UNREFERENCED_PARAMETER(ResourcesRaw);
 	UNREFERENCED_PARAMETER(ResourcesTranslated);
@@ -138,8 +141,11 @@ DsHidMini_EvtDevicePrepareHardware(
 		);
 
 		if (!NT_SUCCESS(status)) {
-			TraceError( TRACE_POWER,
-				"WdfUsbTargetDeviceCreate failed with status %!STATUS!", status);
+			TraceError( 
+				TRACE_POWER,
+				"WdfUsbTargetDeviceCreate failed with status %!STATUS!", 
+				status
+			);
 			return status;
 		}
 	}
@@ -149,6 +155,16 @@ DsHidMini_EvtDevicePrepareHardware(
 	// 
 	if (pCtx->ConnectionType == DsDeviceConnectionTypeUsb)
 	{
+		WdfUsbTargetDeviceGetDeviceDescriptor(
+			pCtx->Connection.Usb.UsbDevice,
+			&pCtx->Connection.Usb.UsbDeviceDescriptor
+		);
+
+		pCtx->VendorId = pCtx->Connection.Usb.UsbDeviceDescriptor.idVendor;
+		TraceVerbose(TRACE_POWER, "[USB] VID: 0x%04X", pCtx->VendorId);
+		pCtx->ProductId = pCtx->Connection.Usb.UsbDeviceDescriptor.idProduct;
+		TraceVerbose(TRACE_POWER, "[USB] PID: 0x%04X", pCtx->ProductId);
+		
 #pragma region USB Interface & Pipe settings
 
 		WDF_USB_DEVICE_SELECT_CONFIG_PARAMS_INIT_SINGLE_INTERFACE(&configParams);
@@ -298,6 +314,56 @@ DsHidMini_EvtDevicePrepareHardware(
 		}
 	}
 
+	//
+	// Grab device properties exposed via BthPS3
+	// 
+	if (pCtx->ConnectionType == DsDeviceConnectionTypeBth)
+	{
+		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_Bluetooth_DeviceVID);
+
+		status = WdfDeviceQueryPropertyEx(
+			Device,
+			&propertyData,
+			sizeof(USHORT),
+			&pCtx->VendorId,
+			&requiredSize,
+			&propertyType
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_POWER,
+				"Requesting DEVPKEY_Bluetooth_DeviceVID failed with %!STATUS!", 
+				status
+			);
+			return status;
+		}
+
+		TraceVerbose(TRACE_POWER, "[BTH] VID: 0x%04X", pCtx->VendorId);
+
+		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_Bluetooth_DevicePID);
+
+		status = WdfDeviceQueryPropertyEx(
+			Device,
+			&propertyData,
+			sizeof(USHORT),
+			&pCtx->ProductId,
+			&requiredSize,
+			&propertyType
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_POWER,
+				"Requesting DEVPKEY_Bluetooth_DevicePID failed with %!STATUS!",
+				status
+			);
+			return status;
+		}
+
+		TraceVerbose(TRACE_POWER, "[BTH] PID: 0x%04X", pCtx->ProductId);
+	}
+
 	FuncExit(TRACE_POWER, "status=%!STATUS!", status);
 
 	return status;
@@ -387,7 +453,7 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 				status);
 		}
 	}
-
+	
 	FuncExit(TRACE_POWER, "status=%!STATUS!", status);
 
 	return status;

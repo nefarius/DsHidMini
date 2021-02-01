@@ -84,21 +84,6 @@ static int inih_read_cfg_handler(void* user, const char* section, const char* na
 		TraceVerbose(TRACE_CONFIG, "Updating MuteDigitalPressureButtons to 0x%04X",
 		         pCtx->Configuration.MuteDigitalPressureButtons);
 	}
-	else if (MATCH("VendorId"))
-	{
-		pCtx->Configuration.VendorId = (USHORT)strtol(value, NULL, 16);
-		TraceVerbose(TRACE_CONFIG, "Updating VendorId to 0x%04X", pCtx->Configuration.VendorId);
-	}
-	else if (MATCH("ProductId"))
-	{
-		pCtx->Configuration.ProductId = (USHORT)strtol(value, NULL, 16);
-		TraceVerbose(TRACE_CONFIG, "Updating ProductId to 0x%04X", pCtx->Configuration.ProductId);
-	}
-	else if (MATCH("VersionNumber"))
-	{
-		pCtx->Configuration.VersionNumber = (USHORT)strtol(value, NULL, 16);
-		TraceVerbose(TRACE_CONFIG, "Updating VersionNumber to 0x%04X", pCtx->Configuration.VersionNumber);
-	}
 	else if (MATCH("DisableAutoPairing"))
 	{
 		pCtx->Configuration.DisableAutoPairing = strtol(value, NULL, 10) > 0;

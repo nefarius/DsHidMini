@@ -144,9 +144,9 @@ DMF_DsHidMini_ChildModulesAdd(
 	DMF_CONFIG_VirtualHidMini_AND_ATTRIBUTES_INIT(&vHidCfg,
 		&moduleAttributes);
 
-	vHidCfg.VendorId = pDevCtx->Configuration.VendorId;
-	vHidCfg.ProductId = pDevCtx->Configuration.ProductId;
-	vHidCfg.VersionNumber = pDevCtx->Configuration.VersionNumber;
+	vHidCfg.VendorId = pDevCtx->VendorId;
+	vHidCfg.ProductId = pDevCtx->ProductId;
+	vHidCfg.VersionNumber = pDevCtx->VersionNumber;
 
 	switch (pDevCtx->Configuration.HidDeviceMode)
 	{
@@ -181,9 +181,9 @@ DMF_DsHidMini_ChildModulesAdd(
 		return;
 	}
 
-	vHidCfg.HidDeviceAttributes.VendorID = pDevCtx->Configuration.VendorId;
-	vHidCfg.HidDeviceAttributes.ProductID = pDevCtx->Configuration.ProductId;
-	vHidCfg.HidDeviceAttributes.VersionNumber = pDevCtx->Configuration.VersionNumber;
+	vHidCfg.HidDeviceAttributes.VendorID = pDevCtx->VendorId;
+	vHidCfg.HidDeviceAttributes.ProductID = pDevCtx->ProductId;
+	vHidCfg.HidDeviceAttributes.VersionNumber = pDevCtx->VersionNumber;
 	vHidCfg.HidDeviceAttributes.Size = sizeof(HID_DEVICE_ATTRIBUTES);
 
 	vHidCfg.GetInputReport = DsHidMini_GetInputReport;

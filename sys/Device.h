@@ -13,6 +13,11 @@ struct USB_DEVICE_CONTEXT
 	WDFUSBDEVICE UsbDevice;
 
 	//
+	// Device descriptor
+	// 
+	USB_DEVICE_DESCRIPTOR UsbDeviceDescriptor;
+
+	//
 	// USB interface object
 	// 
 	WDFUSBINTERFACE UsbInterface;
@@ -122,9 +127,6 @@ VOID FORCEINLINE DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(
 {
 	Configuration->HidDeviceMode = DsHidMiniDeviceModeSixaxisCompatible;
 	Configuration->MuteDigitalPressureButtons = FALSE;
-	Configuration->VendorId = 0x054C;
-	Configuration->ProductId = 0x0268;
-	Configuration->VersionNumber = 0x0101;
 	Configuration->DisableAutoPairing = FALSE;
 }
 
@@ -193,6 +195,24 @@ typedef struct _DEVICE_CONTEXT
 
 	} Connection;
 
+	//
+	// Vendor ID as reported by hardware
+	// 
+	USHORT VendorId;
+
+	//
+	// Product ID as reported by hardware
+	// 
+	USHORT ProductId;
+
+	//
+	// Version number (rarely used)
+	// 
+	USHORT VersionNumber;
+
+	//
+	// Disk-stored driver configuration
+	// 
 	DS_DRIVER_CONFIGURATION Configuration;
 
 } DEVICE_CONTEXT, * PDEVICE_CONTEXT;

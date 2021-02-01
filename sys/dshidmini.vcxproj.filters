@@ -126,6 +126,9 @@
     <ClInclude Include="dshmguid.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DsInternal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Device.c">

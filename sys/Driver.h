@@ -25,6 +25,7 @@ extern unsigned int numInstances;
 #include "device.h"
 
 #include "dshmguid.h"
+#include "DsInternal.h"
 #include "DsHidMiniDrv.h"
 #include "Power.h"
 #include "DsUsb.h"
@@ -32,7 +33,7 @@ extern unsigned int numInstances;
 #include "DsBth.h"
 #include "Config.h"
 
-#include "trace.h"
+#include "Trace.h"
 
 
 EXTERN_C_START
