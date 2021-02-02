@@ -1,9 +1,6 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
@@ -58,22 +55,6 @@ namespace DSHMC
             }
 
             return IntPtr.Zero;
-        }
-
-        private static IEnumerable<int> FindDriveIndices(uint value)
-        {
-            return new BitArray(new[] {(int) value}) // Up to 31 drive indices can be accepted.
-                .Cast<bool>()
-                .Select((x, index) => x ? index : -1)
-                .Where(x => x >= 0);
-        }
-
-        private static IEnumerable<char> ConvertIndicesToLetters(int[] indices)
-        {
-            return Enumerable.Range('A', 'Z' - 'A' + 1)
-                .Select((x, index) => new {Letter = (char) x, Index = index})
-                .Where(x => indices.Contains(x.Index))
-                .Select(x => x.Letter);
         }
 
         #region Win32
