@@ -1,11 +1,18 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using DSHMC.Annotations;
 
 namespace DSHMC
 {
-    class DsHidMiniDeviceViewModel : INotifyPropertyChanged
+    internal class DsHidMiniDeviceCollectionViewModel : INotifyPropertyChanged
     {
+        public DsHidMiniDeviceCollectionViewModel()
+        {
+            Devices = new ObservableCollection<DsHidMiniDeviceViewModel>();
+        }
+
+        public ObservableCollection<DsHidMiniDeviceViewModel> Devices { get; set; }
         public event PropertyChangedEventHandler PropertyChanged;
 
         [NotifyPropertyChangedInvocator]

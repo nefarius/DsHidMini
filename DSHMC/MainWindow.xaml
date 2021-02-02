@@ -10,6 +10,8 @@
                              ResizeMode="NoResize" WindowStartupLocation="CenterScreen"
                              Title="MainWindow" Height="450" Width="800">
     <Grid>
-        
+        <TabControl>
+
+        </TabControl>
     </Grid>
 </adonisControls:AdonisWindow>
