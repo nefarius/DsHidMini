@@ -53,8 +53,8 @@
     <Reference Include="Costura, Version=4.1.0.0, Culture=neutral, PublicKeyToken=9919ef960d84173d, processorArchitecture=MSIL">
       <HintPath>..\packages\Costura.Fody.4.1.0\lib\net40\Costura.dll</HintPath>
     </Reference>
-    <Reference Include="Nefarius.Devcon, Version=1.4.35.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Nefarius.Devcon.1.4.35\lib\net461\Nefarius.Devcon.dll</HintPath>
+    <Reference Include="Nefarius.Devcon, Version=1.4.36.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Nefarius.Devcon.1.4.36\lib\net461\Nefarius.Devcon.dll</HintPath>
     </Reference>
     <Reference Include="PropertyChanged, Version=3.3.1.0, Culture=neutral, PublicKeyToken=ee3ee20bcf148ddd, processorArchitecture=MSIL">
       <HintPath>..\packages\PropertyChanged.Fody.3.3.1\lib\net40\PropertyChanged.dll</HintPath>
