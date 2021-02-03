@@ -15,40 +15,16 @@ namespace DSHMC
     {
         private readonly DeviceNotificationListener _listener = new DeviceNotificationListener();
 
+        private readonly DsHidMiniDeviceCollectionViewModel _vm = new DsHidMiniDeviceCollectionViewModel();
+
         public MainWindow()
         {
             InitializeComponent();
-            
-            var instance = 0;
 
-            return;
+            DataContext = _vm;
 
-            while (Devcon.Find(
-                DsHidMiniDriver.DeviceInterfaceGuid,
-                out var path,
-                out var instanceId,
-                instance++))
-            {
-                using (var device = Device.GetDeviceByInstanceId(instanceId))
-                {
-                    var enumerator = device.GetProperty<string>(DevicePropertyDevice.EnumeratorName);
-
-                    var friendlyName = device.GetProperty<string>(DevicePropertyDevice.FriendlyName);
-
-                    var manufacturer = device.GetProperty<string>(DevicePropertyDevice.Manufacturer);
-
-                    var battery =
-                        (DsHidMiniDriver.DsBatteryStatus) device.GetProperty<byte>(
-                            DsHidMiniDriver.BatteryStatusProperty);
-
-                    var mode =
-                        (DsHidMiniDriver.DsHidDeviceMode) device.GetProperty<byte>(
-                            DsHidMiniDriver.HidDeviceModeProperty);
-
-                    var lastConnected =
-                        device.GetProperty<DateTimeOffset>(DsHidMiniDriver.BluetoothLastConnectedTimeProperty);
-                }
-            }
+            _vm.Devices.Add(new DsHidMiniDeviceViewModel("PLAYSTATION(R)3 Controller", "Bluetooth"));
+            _vm.Devices.Add(new DsHidMiniDeviceViewModel("PLAYSTATION(R)3 Controller", "USB"));
         }
 
         protected override void OnSourceInitialized(EventArgs e)

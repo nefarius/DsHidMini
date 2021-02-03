@@ -1,17 +1,19 @@
 ﻿using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using DSHMC.Annotations;
 
 namespace DSHMC
 {
-    class DsHidMiniDeviceViewModel : INotifyPropertyChanged
+    public class DsHidMiniDeviceViewModel : INotifyPropertyChanged
     {
+        public DsHidMiniDeviceViewModel(string name, string type)
+        {
+            DisplayName = name;
+            ConnectionType = type;
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
-        [NotifyPropertyChangedInvocator]
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
+        public string DisplayName { get; }
+
+        public string ConnectionType { get; }
     }
 }
