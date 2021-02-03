@@ -76,7 +76,25 @@ namespace DSHMC
         /// <param name="obj">The device path.</param>
         private void ListenerOnDeviceArrived(string obj)
         {
-            
+            using (var device = Device.GetDeviceByInterfaceId(obj))
+            {
+                var enumerator = device.GetProperty<string>(DevicePropertyDevice.EnumeratorName);
+
+                var friendlyName = device.GetProperty<string>(DevicePropertyDevice.FriendlyName);
+
+                var manufacturer = device.GetProperty<string>(DevicePropertyDevice.Manufacturer);
+
+                var battery =
+                    (DsHidMiniDriver.DsBatteryStatus) device.GetProperty<byte>(
+                        DsHidMiniDriver.BatteryStatusProperty);
+
+                var mode =
+                    (DsHidMiniDriver.DsHidDeviceMode) device.GetProperty<byte>(
+                        DsHidMiniDriver.HidDeviceModeProperty);
+
+                var lastConnected =
+                    device.GetProperty<DateTimeOffset>(DsHidMiniDriver.BluetoothLastConnectedTimeProperty);
+            }
         }
 
         protected override void OnClosing(CancelEventArgs e)
