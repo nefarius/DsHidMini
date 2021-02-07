@@ -18,6 +18,11 @@ struct USB_DEVICE_CONTEXT
 	USB_DEVICE_DESCRIPTOR UsbDeviceDescriptor;
 
 	//
+	// Product string
+	// 
+	WDFMEMORY ProductString;
+
+	//
 	// USB interface object
 	// 
 	WDFUSBINTERFACE UsbInterface;

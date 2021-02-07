@@ -10,7 +10,8 @@ extern unsigned int numInstances;
 /* Enable Force Feedback features */
 #define DSHM_FEATURE_FFB
 
-#include <windows.h>
+#include <Windows.h>
+#include <devpkey.h>
 #include <wdf.h>
 #include <initguid.h>
 #include <usb.h>
@@ -22,7 +23,7 @@ extern unsigned int numInstances;
 #include "PID/PIDTypes.h"
 #endif
 #include "DsCommon.h"
-#include "device.h"
+#include "Device.h"
 
 #include "dshmguid.h"
 #include "DsInternal.h"

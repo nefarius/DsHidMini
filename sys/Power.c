@@ -2,6 +2,7 @@
 #include "Power.tmh"
 
 
+
 //
 // Start Bluetooth communication here
 // 
@@ -16,6 +17,8 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 	WDF_DEVICE_PROPERTY_DATA propertyData;
 	WCHAR deviceAddress[13];
 	UINT64 hostAddress = 0;
+	size_t friendlyNameSize = 0;
+	PWSTR friendlyName;
 
 	PAGED_CODE();
 
@@ -26,6 +29,36 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
 	{
+		//
+		// Set friendly name
+		// 
+
+		friendlyName = WdfMemoryGetBuffer(
+			pDevCtx->Connection.Usb.ProductString,
+			&friendlyNameSize
+		);
+		
+		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_Device_FriendlyName);
+		propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+		propertyData.Lcid = LOCALE_NEUTRAL;
+
+		status = WdfDeviceAssignProperty(
+			Device,
+			&propertyData,
+			DEVPROP_TYPE_STRING,
+			(ULONG)friendlyNameSize + sizeof(L'\0'),
+			friendlyName
+		);
+
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_POWER,
+				"Setting DEVPKEY_Device_FriendlyName failed with status %!STATUS!",
+				status
+			);
+		}
+		
 		//
 		// Set device address property
 		// 
@@ -278,6 +311,27 @@ DsHidMini_EvtDevicePrepareHardware(
 		}
 
 		pCtx->Connection.Usb.UsbInterface = configParams.Types.SingleInterface.ConfiguredUsbInterface;
+
+		//
+		// Grab product name to use as FriendlyName
+		// 
+		status = WdfUsbTargetDeviceAllocAndQueryString(
+			pCtx->Connection.Usb.UsbDevice,
+			WDF_NO_OBJECT_ATTRIBUTES,
+			&pCtx->Connection.Usb.ProductString,
+			NULL,
+			pCtx->Connection.Usb.UsbDeviceDescriptor.iProduct,
+			0x0409
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceEvents(
+				TRACE_LEVEL_WARNING,
+				TRACE_DEVICE,
+				"Requesting iProduct failed (status: 0x%x), device might not support this string",
+				status
+			);
+		}
 
 		//
 		// Get pipe handles
