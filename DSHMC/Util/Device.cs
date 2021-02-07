@@ -63,19 +63,8 @@ namespace Nefarius.DsHidMini.Util
             if (ret != SetupApiWrapper.ConfigManagerResult.Success)
                 throw new Win32Exception(Marshal.GetLastWin32Error());
 
-            uint nBytes = 0;
-
-            ret = SetupApiWrapper.CM_Get_Device_ID_Size(
-                ref nBytes,
-                _instanceHandle,
-                0
-            );
-
-            if (ret != SetupApiWrapper.ConfigManagerResult.Success)
-                throw new Win32Exception(Marshal.GetLastWin32Error());
-
-            nBytes += (uint) Marshal.SizeOf(typeof(char));
-
+            uint nBytes = 256;
+            
             var ptrInstanceBuf = Marshal.AllocHGlobal((int) nBytes);
 
             try
@@ -90,7 +79,7 @@ namespace Nefarius.DsHidMini.Util
                 if (ret != SetupApiWrapper.ConfigManagerResult.Success)
                     throw new Win32Exception(Marshal.GetLastWin32Error());
 
-                DeviceId = (Marshal.PtrToStringAuto(ptrInstanceBuf) ?? string.Empty).ToUpper();
+                DeviceId = (Marshal.PtrToStringUni(ptrInstanceBuf) ?? string.Empty).ToUpper();
             }
             finally
             {
@@ -108,11 +97,6 @@ namespace Nefarius.DsHidMini.Util
         ///     The device ID.
         /// </summary>
         public string DeviceId { get; }
-
-        /// <summary>
-        ///     The interface ID.
-        /// </summary>
-        public string InterfaceId { get; protected set; }
 
         /// <summary>
         ///     Return device identified by instance ID.
@@ -147,6 +131,18 @@ namespace Nefarius.DsHidMini.Util
         /// <returns>A <see cref="Device" />.</returns>
         public static Device GetDeviceByInterfaceId(string symbolicLink, DeviceLocationFlags flags)
         {
+            var instanceId = GetInstanceIdFromInterfaceId(symbolicLink);
+
+            return GetDeviceByInstanceId(instanceId, flags);
+        }
+
+        /// <summary>
+        ///     Resolves Interface ID/Symbolic link/Device path to Instance ID.
+        /// </summary>
+        /// <param name="symbolicLink">The device interface path/ID/symbolic link name.</param>
+        /// <returns>The Instance ID.</returns>
+        public static string GetInstanceIdFromInterfaceId(string symbolicLink)
+        {
             var property = DevicePropertyDevice.InstanceId.ToNativeType();
 
             var buffer = IntPtr.Zero;
@@ -168,11 +164,7 @@ namespace Nefarius.DsHidMini.Util
                 if (ret != SetupApiWrapper.ConfigManagerResult.Success)
                     throw new Win32Exception(Marshal.GetLastWin32Error());
 
-                var instanceId = Marshal.PtrToStringUni(buffer);
-
-                var device = GetDeviceByInstanceId(instanceId, flags);
-                device.InterfaceId = symbolicLink;
-                return device;
+                return Marshal.PtrToStringUni(buffer);
             }
             finally
             {

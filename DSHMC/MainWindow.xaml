@@ -4,15 +4,17 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:mvvm="clr-namespace:Nefarius.DsHidMini.MVVM"
+        xmlns:wpfUtil="clr-namespace:Nefarius.DsHidMini.Util.WPF"
+        xmlns:mini="clr-namespace:Nefarius.DsHidMini"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Window.DataContext>
-        <mvvm:DeviceCollectionViewModel/>
+        <mvvm:DeviceCollectionViewModel />
     </Window.DataContext>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="300"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="300" />
+            <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
         <GroupBox Grid.Column="0"
@@ -28,8 +30,8 @@
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
 
-                            <TextBlock Grid.Column="0" Text="{Binding DisplayName}"/>
-                            <TextBlock Grid.Column="1" Text="{Binding Path=ConnectionType}"/>
+                            <TextBlock Grid.Column="0" Text="{Binding DisplayName}" />
+                            <TextBlock Grid.Column="1" Text="{Binding Path=ConnectionType}" />
                         </Grid>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
@@ -40,18 +42,30 @@
                   Header="Device Details">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition/>
-                    <ColumnDefinition/>
+                    <ColumnDefinition />
+                    <ColumnDefinition />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
-                    <RowDefinition/>
-                    <RowDefinition/>
-                    <RowDefinition/>
-                    <RowDefinition/>
+                    <RowDefinition />
+                    <RowDefinition />
+                    <RowDefinition />
+                    <RowDefinition />
+                    <RowDefinition />
+                    <RowDefinition />
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Grid.Column="0" 
-                           Text="{Binding Path=SelectedDevice.DeviceAddress}"/>
+                <TextBlock Grid.Row="0" Grid.Column="0"
+                           Text="{Binding Path=SelectedDevice.InstanceId}" />
+
+                <TextBlock Grid.Row="1" Grid.Column="0"
+                           Text="{Binding Path=SelectedDevice.DeviceAddress}" />
+
+                <TextBlock Grid.Row="2" Grid.Column="0"
+                           Text="{Binding Path=SelectedDevice.LastConnected}" />
+
+                <ComboBox Grid.Row="3" Grid.Column="0"
+                          ItemsSource="{Binding Source={wpfUtil:EnumBindingSource {x:Type mini:DsHidDeviceMode}}}"
+                          SelectedItem="{Binding Path=SelectedDevice.HidEmulationMode, Mode=OneWay}" />
             </Grid>
         </GroupBox>
     </Grid>

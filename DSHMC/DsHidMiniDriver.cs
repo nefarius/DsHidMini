@@ -1,5 +1,7 @@
 ﻿using System;
+using System.ComponentModel;
 using Nefarius.DsHidMini.Util;
+using Nefarius.DsHidMini.Util.WPF;
 
 namespace Nefarius.DsHidMini
 {
@@ -35,31 +37,35 @@ namespace Nefarius.DsHidMini
         public static DevicePropertyKey BluetoothLastConnectedTimeProperty => CustomDeviceProperty.CreateCustomDeviceProperty(
             Guid.Parse("{0x2bd67d8b, 0x8beb, 0x48d5, {0x87, 0xe0, 0x6c, 0xda, 0x34, 0x28, 0x04, 0x0a}}"), 11,
             typeof(DateTimeOffset));
+    }
 
-        /// <summary>
-        ///     Battery status values.
-        /// </summary>
-        public enum DsBatteryStatus : byte
-        {
-            None = 0x00,
-            Dying = 0x01,
-            Low = 0x02,
-            Medium = 0x03,
-            High = 0x04,
-            Full = 0x05,
-            Charging = 0xEE,
-            Charged = 0xEF
-        }
+    /// <summary>
+    ///     Battery status values.
+    /// </summary>
+    [TypeConverter(typeof(EnumDescriptionTypeConverter))]
+    public enum DsBatteryStatus : byte
+    {
+        None = 0x00,
+        Dying = 0x01,
+        Low = 0x02,
+        Medium = 0x03,
+        High = 0x04,
+        Full = 0x05,
+        Charging = 0xEE,
+        Charged = 0xEF
+    }
 
-        /// <summary>
-        ///     HID device emulation modes.
-        /// </summary>
-        public enum DsHidDeviceMode : byte
-        {
-            Unknown = 0x00,
-            Single = 0x01,
-            Multi = 0x02,
-            SixaxisCompatible = 0x03
-        }
+    /// <summary>
+    ///     HID device emulation modes.
+    /// </summary>
+    [TypeConverter(typeof(EnumDescriptionTypeConverter))]
+    public enum DsHidDeviceMode : byte
+    {
+        [Description("Single device mode")]
+        Single = 0x01,
+        [Description("Multi device mode")]
+        Multi = 0x02,
+        [Description("SIXAXIS.SYS compatible mode")]
+        SixaxisCompatible = 0x03
     }
 }

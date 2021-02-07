@@ -1,54 +1,88 @@
 ﻿using System;
 using System.ComponentModel;
 using Nefarius.DsHidMini.Util;
-using Device = Nefarius.DsHidMini.Util.Device;
 
 namespace Nefarius.DsHidMini.MVVM
 {
     public class DeviceViewModel : INotifyPropertyChanged
     {
-        private readonly string _deviceAddress;
+        private readonly Device _device;
 
         public DeviceViewModel(Device device)
         {
-            InterfaceId = device.InterfaceId;
-
-            var enumerator = device.GetProperty<string>(DevicePropertyDevice.EnumeratorName);
-
-            ConnectionType = enumerator.Equals("USB", StringComparison.InvariantCultureIgnoreCase)
-                ? "USB"
-                : "Bluetooth";
-
-            DisplayName = device.GetProperty<string>(DevicePropertyDevice.FriendlyName);
-
-            _deviceAddress = device.GetProperty<string>(DsHidMiniDriver.DeviceAddressProperty);
-
-            DeviceAddress = _deviceAddress.ToUpper();
-            var insertedCount = 0;
-            for (var i = 2; i < _deviceAddress.Length; i = i + 2)
-                DeviceAddress = DeviceAddress.Insert(i + insertedCount++, ":");
+            _device = device;
 
             var manufacturer = device.GetProperty<string>(DevicePropertyDevice.Manufacturer);
 
             var battery =
-                (DsHidMiniDriver.DsBatteryStatus) device.GetProperty<byte>(
+                (DsBatteryStatus) device.GetProperty<byte>(
                     DsHidMiniDriver.BatteryStatusProperty);
 
             var mode =
-                (DsHidMiniDriver.DsHidDeviceMode) device.GetProperty<byte>(
+                (DsHidDeviceMode) device.GetProperty<byte>(
                     DsHidMiniDriver.HidDeviceModeProperty);
-
-            var lastConnected =
-                device.GetProperty<DateTimeOffset>(DsHidMiniDriver.BluetoothLastConnectedTimeProperty);
         }
 
-        public string InterfaceId { get; }
+        public DsHidDeviceMode HidEmulationMode
+        {
+            get =>
+                (DsHidDeviceMode) _device.GetProperty<byte>(
+                    DsHidMiniDriver.HidDeviceModeProperty);
+            set
+            {
+                var t = value;
+            }
+        }
 
-        public string DeviceAddress { get; }
+        /// <summary>
+        ///     The device Instance ID.
+        /// </summary>
+        public string InstanceId => _device.InstanceId;
 
-        public string DisplayName { get; }
+        /// <summary>
+        ///     The Bluetooth MAC address of this device.
+        /// </summary>
+        public string DeviceAddress
+        {
+            get
+            {
+                var deviceAddress = _device.GetProperty<string>(DsHidMiniDriver.DeviceAddressProperty).ToUpper();
 
-        public string ConnectionType { get; }
+                var friendlyAddress = deviceAddress;
+
+                var insertedCount = 0;
+                for (var i = 2; i < deviceAddress.Length; i = i + 2)
+                    friendlyAddress = friendlyAddress.Insert(i + insertedCount++, ":");
+
+                return friendlyAddress;
+            }
+        }
+
+        /// <summary>
+        ///     The friendly (product) name of this device.
+        /// </summary>
+        public string DisplayName => _device.GetProperty<string>(DevicePropertyDevice.FriendlyName);
+
+        /// <summary>
+        ///     The connection protocol used by this device.
+        /// </summary>
+        public string ConnectionType
+        {
+            get
+            {
+                var enumerator = _device.GetProperty<string>(DevicePropertyDevice.EnumeratorName);
+
+                return enumerator.Equals("USB", StringComparison.InvariantCultureIgnoreCase)
+                    ? "USB"
+                    : "Bluetooth";
+            }
+        }
+
+        /// <summary>
+        ///     Last time this device has been seen connected (applies to Bluetooth connected devices only).
+        /// </summary>
+        public DateTimeOffset LastConnected =>
+            _device.GetProperty<DateTimeOffset>(DsHidMiniDriver.BluetoothLastConnectedTimeProperty);
 
         public event PropertyChangedEventHandler PropertyChanged;
     }
