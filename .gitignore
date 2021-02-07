@@ -339,3 +339,4 @@ ASALocalRun/
 # BeatPulse healthcheck temp database
 healthchecksdb
 /docs/WinDbg_Log.txt
+/_DSHMC

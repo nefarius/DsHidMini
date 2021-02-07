@@ -54,6 +54,13 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="DsHidMiniDriver.cs" />
+    <Compile Include="Util\SetupApiWrapper.cs" />
+    <Compile Include="Util\Devcon.cs" />
+    <Compile Include="Util\Device.cs" />
+    <Compile Include="Util\Device.Properties.cs" />
+    <Compile Include="Util\DeviceNotificationListener.cs" />
+    <Compile Include="Util\DevicePropertyKey.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -68,6 +75,8 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MVVM\DeviceCollectionViewModel.cs" />
+    <Compile Include="MVVM\DeviceViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
