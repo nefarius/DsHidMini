@@ -1,14 +1,15 @@
 ﻿using System;
 using System.ComponentModel;
-using Nefarius.Devcon;
+using Nefarius.DsHidMini.Util;
+using Device = Nefarius.DsHidMini.Util.Device;
 
-namespace DSHMC
+namespace Nefarius.DsHidMini.MVVM
 {
-    public class DsHidMiniDeviceViewModel : INotifyPropertyChanged
+    public class DeviceViewModel : INotifyPropertyChanged
     {
         private readonly string _deviceAddress;
 
-        public DsHidMiniDeviceViewModel(Device device)
+        public DeviceViewModel(Device device)
         {
             InterfaceId = device.InterfaceId;
 

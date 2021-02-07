@@ -4,8 +4,9 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using DSHMC;
 
-namespace DSHMC
+namespace Nefarius.DsHidMini.Util
 {
     /// <summary>
     ///     https://gist.github.com/emoacht/73eff195317e387f4cda

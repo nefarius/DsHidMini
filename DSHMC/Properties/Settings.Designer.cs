@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace DSHMC.Properties {
+namespace Nefarius.DsHidMini.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]

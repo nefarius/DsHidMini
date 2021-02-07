@@ -1,7 +1,7 @@
 ﻿using System;
-using Nefarius.Devcon;
+using Nefarius.DsHidMini.Util;
 
-namespace DSHMC
+namespace Nefarius.DsHidMini
 {
     public static class DsHidMiniDriver
     {

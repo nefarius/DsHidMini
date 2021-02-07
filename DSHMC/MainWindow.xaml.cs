@@ -3,9 +3,11 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
-using Nefarius.Devcon;
+using Nefarius.DsHidMini.MVVM;
+using Nefarius.DsHidMini.Util;
+using Device = Nefarius.DsHidMini.Util.Device;
 
-namespace DSHMC
+namespace Nefarius.DsHidMini
 {
     /// <summary>
     ///     Interaction logic for MainWindow.xaml
@@ -14,7 +16,7 @@ namespace DSHMC
     {
         private readonly DeviceNotificationListener _listener = new DeviceNotificationListener();
 
-        private readonly DsHidMiniDeviceCollectionViewModel _vm = new DsHidMiniDeviceCollectionViewModel();
+        private readonly DeviceCollectionViewModel _vm = new DeviceCollectionViewModel();
 
         [DllImport("kernel32.dll")]
         public static extern IntPtr LoadLibrary(string dllToLoad);
@@ -33,9 +35,9 @@ namespace DSHMC
             base.OnSourceInitialized(e);
 
             var instance = 0;
-            while (Devcon.Find(DsHidMiniDriver.DeviceInterfaceGuid, out var path, out var instanceId, instance))
+            while (Util.Devcon.Find(DsHidMiniDriver.DeviceInterfaceGuid, out var path, out var instanceId, instance))
             {
-                _vm.Devices.Add(new DsHidMiniDeviceViewModel(Device.GetDeviceByInstanceId(instanceId)));
+                _vm.Devices.Add(new DeviceViewModel(Device.GetDeviceByInstanceId(instanceId)));
             }
 
             _listener.DeviceArrived += ListenerOnDeviceArrived;
@@ -63,7 +65,7 @@ namespace DSHMC
         /// <param name="obj">The device path.</param>
         private void ListenerOnDeviceArrived(string obj)
         {
-            _vm.Devices.Add(new DsHidMiniDeviceViewModel(Device.GetDeviceByInterfaceId(obj)));
+            _vm.Devices.Add(new DeviceViewModel(Device.GetDeviceByInterfaceId(obj)));
         }
 
         protected override void OnClosing(CancelEventArgs e)
