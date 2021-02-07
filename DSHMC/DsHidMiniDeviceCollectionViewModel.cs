@@ -12,6 +12,8 @@ namespace DSHMC
 
         public ObservableCollection<DsHidMiniDeviceViewModel> Devices { get; set; }
 
+        public DsHidMiniDeviceViewModel SelectedDevice { get; set; }
+
         public event PropertyChangedEventHandler PropertyChanged;
     }
 }

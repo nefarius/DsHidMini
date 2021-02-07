@@ -1,9 +1,8 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Threading.Tasks;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Interop;
-using AdonisUI.Controls;
 using Nefarius.Devcon;
 
 namespace DSHMC
@@ -11,28 +10,36 @@ namespace DSHMC
     /// <summary>
     ///     Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : AdonisWindow
+    public partial class MainWindow : Window
     {
         private readonly DeviceNotificationListener _listener = new DeviceNotificationListener();
 
         private readonly DsHidMiniDeviceCollectionViewModel _vm = new DsHidMiniDeviceCollectionViewModel();
 
+        [DllImport("kernel32.dll")]
+        public static extern IntPtr LoadLibrary(string dllToLoad);
+
         public MainWindow()
         {
             InitializeComponent();
 
-            DataContext = _vm;
+            LoadLibrary("cfgmgr32.dll");
 
-            _vm.Devices.Add(new DsHidMiniDeviceViewModel("PLAYSTATION(R)3 Controller", "Bluetooth"));
-            _vm.Devices.Add(new DsHidMiniDeviceViewModel("PLAYSTATION(R)3 Controller", "USB"));
+            DataContext = _vm;
         }
 
         protected override void OnSourceInitialized(EventArgs e)
         {
             base.OnSourceInitialized(e);
 
-            _listener.DeviceArrived+= ListenerOnDeviceArrived;
-            _listener.DeviceRemoved+=ListenerOnDeviceRemoved;
+            var instance = 0;
+            while (Devcon.Find(DsHidMiniDriver.DeviceInterfaceGuid, out var path, out var instanceId, instance))
+            {
+                _vm.Devices.Add(new DsHidMiniDeviceViewModel(Device.GetDeviceByInstanceId(instanceId)));
+            }
+
+            _listener.DeviceArrived += ListenerOnDeviceArrived;
+            _listener.DeviceRemoved += ListenerOnDeviceRemoved;
 
             _listener.StartListen(this);
         }
@@ -43,7 +50,11 @@ namespace DSHMC
         /// <param name="obj">The device path.</param>
         private void ListenerOnDeviceRemoved(string obj)
         {
-            
+            var itemsToRemove = _vm.Devices.Where(
+                i => _vm.Devices.All(d => d.InterfaceId == obj)).ToList();
+
+            foreach (var item in itemsToRemove)
+                _vm.Devices.Remove(item);
         }
 
         /// <summary>
@@ -52,25 +63,7 @@ namespace DSHMC
         /// <param name="obj">The device path.</param>
         private void ListenerOnDeviceArrived(string obj)
         {
-            using (var device = Device.GetDeviceByInterfaceId(obj))
-            {
-                var enumerator = device.GetProperty<string>(DevicePropertyDevice.EnumeratorName);
-
-                var friendlyName = device.GetProperty<string>(DevicePropertyDevice.FriendlyName);
-
-                var manufacturer = device.GetProperty<string>(DevicePropertyDevice.Manufacturer);
-
-                var battery =
-                    (DsHidMiniDriver.DsBatteryStatus) device.GetProperty<byte>(
-                        DsHidMiniDriver.BatteryStatusProperty);
-
-                var mode =
-                    (DsHidMiniDriver.DsHidDeviceMode) device.GetProperty<byte>(
-                        DsHidMiniDriver.HidDeviceModeProperty);
-
-                var lastConnected =
-                    device.GetProperty<DateTimeOffset>(DsHidMiniDriver.BluetoothLastConnectedTimeProperty);
-            }
+            _vm.Devices.Add(new DsHidMiniDeviceViewModel(Device.GetDeviceByInterfaceId(obj)));
         }
 
         protected override void OnClosing(CancelEventArgs e)

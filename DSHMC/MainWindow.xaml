@@ -1,4 +1,4 @@
-﻿<adonisControls:AdonisWindow x:Class="DSHMC.MainWindow"
+﻿<Window x:Class="DSHMC.MainWindow"
                              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -9,9 +9,14 @@
                              mc:Ignorable="d"
                              ResizeMode="NoResize" WindowStartupLocation="CenterScreen"
                              Title="DsHidMini Control Tool" Height="450" Width="800">
-    <adonisControls:AdonisWindow.DataContext>
+    <!--
+    <Window.Style>
+        <Style TargetType="Window" BasedOn="{StaticResource {x:Type Window}}"/>
+    </Window.Style>
+    -->
+    <Window.DataContext>
         <local:DsHidMiniDeviceCollectionViewModel/>
-    </adonisControls:AdonisWindow.DataContext>
+    </Window.DataContext>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="300"/>
@@ -21,7 +26,9 @@
         <GroupBox Grid.Column="0"
                   Header="DsHidMini Devices"
                   Margin="{adonisUi:Space 1}">
-            <ListBox ItemsSource="{Binding Path=Devices}">
+            <ListBox ItemsSource="{Binding Path=Devices}"
+                     SelectedItem="{Binding Path=SelectedDevice, Mode=TwoWay}"
+                     SelectionMode="Single">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <Grid>
@@ -41,7 +48,21 @@
         <GroupBox Grid.Column="1"
                   Header="Device Details"
                   Margin="{adonisUi:Space 1}">
-            
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" 
+                           Text="{Binding Path=SelectedDevice.DeviceAddress}"/>
+            </Grid>
         </GroupBox>
     </Grid>
-</adonisControls:AdonisWindow>
+</Window>
