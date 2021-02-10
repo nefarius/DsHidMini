@@ -34,126 +34,137 @@
         <BooleanToVisibilityConverter x:Key="VisibleIfTrueConverter" />
     </controls:AdonisWindow.Resources>
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="300" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
-        <!-- Device list -->
-        <GroupBox Grid.Column="0"
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Device list -->
+            <GroupBox Grid.Column="0"
                   Header="DsHidMini Devices"
                   Margin="{adonisUi:Space 1}">
-            <Grid>
-                <ListBox ItemsSource="{Binding Path=Devices}"
+                <Grid>
+                    <ListBox ItemsSource="{Binding Path=Devices}"
                          SelectedItem="{Binding Path=SelectedDevice, Mode=TwoWay}"
                          SelectionMode="Single">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="200" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="200" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
 
-                                <TextBlock Grid.Column="0" Text="{Binding DisplayName}" />
-                                <TextBlock Grid.Column="1" Text="{Binding Path=ConnectionType}" />
-                            </Grid>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                                    <TextBlock Grid.Column="0" Text="{Binding DisplayName}" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Path=ConnectionType}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
 
-                <TextBlock Text="No compatible devices found"
+                    <TextBlock Text="No compatible devices found"
                            HorizontalAlignment="Center"
                            Padding="20"
                            Visibility="{Binding Path=HasNoDevices, Converter={StaticResource VisibleIfTrueConverter}}" />
-            </Grid>
-        </GroupBox>
+                </Grid>
+            </GroupBox>
 
-        <!-- Device details -->
-        <GroupBox Grid.Column="1"
+            <!-- Device details -->
+            <GroupBox Grid.Column="1"
                   Header="Device Details"
                   Margin="{adonisUi:Space 1}">
-            <Grid Visibility="{Binding Path=HasDeviceSelected, Converter={StaticResource VisibleIfTrueConverter}}">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="20" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
+                <Grid Visibility="{Binding Path=HasDeviceSelected, Converter={StaticResource VisibleIfTrueConverter}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="20" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
 
-                <Grid.Resources>
-                    <Style x:Key="CenterAlignedTextBlockStyle" TargetType="{x:Type TextBlock}"
+                    <Grid.Resources>
+                        <Style x:Key="CenterAlignedTextBlockStyle" TargetType="{x:Type TextBlock}"
                            BasedOn="{StaticResource {x:Type TextBlock}}">
-                        <Setter Property="VerticalAlignment" Value="Center" />
-                    </Style>
+                            <Setter Property="VerticalAlignment" Value="Center" />
+                        </Style>
 
-                    <Style x:Key="ReadOnlyTextBoxStyle" TargetType="{x:Type TextBox}"
+                        <Style x:Key="ReadOnlyTextBoxStyle" TargetType="{x:Type TextBox}"
                            BasedOn="{StaticResource {x:Type TextBox}}">
-                        <Setter Property="IsReadOnly" Value="True" />
-                        <Setter Property="HorizontalAlignment" Value="Left" />
-                    </Style>
+                            <Setter Property="IsReadOnly" Value="True" />
+                            <Setter Property="HorizontalAlignment" Value="Left" />
+                        </Style>
 
-                    <Style TargetType="TextBlock" BasedOn="{StaticResource CenterAlignedTextBlockStyle}" />
-                    <Style TargetType="TextBox" BasedOn="{StaticResource ReadOnlyTextBoxStyle}" />
-                </Grid.Resources>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource CenterAlignedTextBlockStyle}" />
+                        <Style TargetType="TextBox" BasedOn="{StaticResource ReadOnlyTextBoxStyle}" />
+                    </Grid.Resources>
 
-                <TextBlock Grid.Row="0" Grid.Column="0">Instance ID:</TextBlock>
-                <TextBox Grid.Row="0" Grid.Column="2"
+                    <TextBlock Grid.Row="0" Grid.Column="0">Instance ID:</TextBlock>
+                    <TextBox Grid.Row="0" Grid.Column="2"
                          Width="280"
                          Margin="{adonisUi:Space 1}"
                          Text="{Binding Path=SelectedDevice.InstanceId, Mode=OneWay}" />
 
-                <TextBlock Grid.Row="1" Grid.Column="0">Device address:</TextBlock>
-                <TextBox Grid.Row="1" Grid.Column="2"
-                         Width="120"
+                    <TextBlock Grid.Row="1" Grid.Column="0">Device address:</TextBlock>
+                    <TextBox Grid.Row="1" Grid.Column="2"
+                         Width="115"
                          Margin="{adonisUi:Space 1}"
                          Text="{Binding Path=SelectedDevice.DeviceAddress, Mode=OneWay}" />
 
-                <TextBlock Grid.Row="2" Grid.Column="0">Host address:</TextBlock>
-                <TextBox Grid.Row="2" Grid.Column="2"
-                         Width="120"
+                    <TextBlock Grid.Row="2" Grid.Column="0">Host address:</TextBlock>
+                    <TextBox Grid.Row="2" Grid.Column="2"
+                         Width="115"
                          Margin="{adonisUi:Space 1}"
                          Text="{Binding Path=SelectedDevice.HostAddress, Mode=OneWay}" />
 
-                <TextBlock Grid.Row="3" Grid.Column="0">Battery status:</TextBlock>
-                <ComboBox Grid.Row="3" Grid.Column="2" Width="80" HorizontalAlignment="Left"
+                    <TextBlock Grid.Row="3" Grid.Column="0">Battery status:</TextBlock>
+                    <ComboBox Grid.Row="3" Grid.Column="2" Width="80" HorizontalAlignment="Left"
                           Margin="{adonisUi:Space 1}"
                           IsEnabled="False"
                           ItemsSource="{Binding Source={wpfUtil:EnumBindingSource {x:Type mini:DsBatteryStatus}}}"
                           SelectedItem="{Binding Path=SelectedDevice.BatteryStatus, Mode=OneWay}" />
 
-                <TextBlock Grid.Row="4" Grid.Column="0">Last connected (wireless):</TextBlock>
-                <TextBox Grid.Row="4" Grid.Column="2"
-                         Width="160"
+                    <TextBlock Grid.Row="4" Grid.Column="0">Last connected (wireless):</TextBlock>
+                    <TextBox Grid.Row="4" Grid.Column="2"
+                         Width="165"
                          Margin="{adonisUi:Space 1}"
                          extensions:WatermarkExtension.Watermark="Unavailable"
                          Text="{Binding Path=SelectedDevice.LastConnected, Mode=OneWay}" />
 
-                <TextBlock Grid.Row="5" Grid.Column="0">HID device mode:</TextBlock>
-                <ComboBox Grid.Row="5" Grid.Column="2" Width="200" HorizontalAlignment="Left"
+                    <TextBlock Grid.Row="5" Grid.Column="0">HID device mode:</TextBlock>
+                    <ComboBox Grid.Row="5" Grid.Column="2" Width="200" HorizontalAlignment="Left"
                           Margin="{adonisUi:Space 1}"
                           IsEnabled="{Binding Path=IsEditable}"
                           ItemsSource="{Binding Source={wpfUtil:EnumBindingSource {x:Type mini:DsHidDeviceMode}}}"
                           SelectedItem="{Binding Path=SelectedDevice.HidEmulationMode}" />
 
-                <Button Grid.Row="6" Grid.Column="2"
+                    <Button Grid.Row="6" Grid.Column="2"
                         Width="100"
                         HorizontalAlignment="Right"
                         Margin="{adonisUi:Space 2}"
                         Visibility="{Binding Path=IsEditable, Converter={StaticResource VisibleIfTrueConverter}}"
                         Click="ApplyChanges_Click">
-                    Apply changes
-                </Button>
-            </Grid>
-        </GroupBox>
+                        Apply changes
+                    </Button>
+                </Grid>
+            </GroupBox>
+        </Grid>
+
+        <StatusBar Grid.Row="1">
+            <StatusBarItem>Run as Administrator to change settings.</StatusBarItem>
+        </StatusBar>
     </Grid>
 </controls:AdonisWindow>
