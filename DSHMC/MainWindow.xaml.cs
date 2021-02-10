@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Linq;
 using System.Windows;
+using AdonisUI.Controls;
 using Nefarius.DsHidMini.MVVM;
 using Nefarius.DsHidMini.Util;
 
@@ -10,7 +10,7 @@ namespace Nefarius.DsHidMini
     /// <summary>
     ///     Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : AdonisWindow
     {
         private readonly DeviceNotificationListener _listener = new DeviceNotificationListener();
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Threading;
 using Nefarius.DsHidMini.Util;
 
 namespace Nefarius.DsHidMini.MVVM
@@ -8,19 +9,18 @@ namespace Nefarius.DsHidMini.MVVM
     {
         private readonly Device _device;
 
+        private readonly Timer _batteryQuery;
+
         public DeviceViewModel(Device device)
         {
             _device = device;
-            
-            var manufacturer = device.GetProperty<string>(DevicePropertyDevice.Manufacturer);
 
-            var battery =
-                (DsBatteryStatus) device.GetProperty<byte>(
-                    DsHidMiniDriver.BatteryStatusProperty);
+            _batteryQuery = new Timer(UpdateBatteryStatus, null, 1000, 1000);
+        }
 
-            var mode =
-                (DsHidDeviceMode) device.GetProperty<byte>(
-                    DsHidMiniDriver.HidDeviceModeProperty);
+        private void UpdateBatteryStatus(object state)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("BatteryStatus"));
         }
 
         /// <summary>
@@ -85,6 +85,12 @@ namespace Nefarius.DsHidMini.MVVM
                 return friendlyAddress;
             }
         }
+
+        /// <summary>
+        ///     Current battery status.
+        /// </summary>
+        public DsBatteryStatus BatteryStatus =>
+            (DsBatteryStatus) _device.GetProperty<byte>(DsHidMiniDriver.BatteryStatusProperty);
 
         /// <summary>
         ///     The friendly (product) name of this device.

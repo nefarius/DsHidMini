@@ -45,13 +45,19 @@ namespace Nefarius.DsHidMini
     [TypeConverter(typeof(EnumDescriptionTypeConverter))]
     public enum DsBatteryStatus : byte
     {
-        None = 0x00,
+        [Description("Dying")]
         Dying = 0x01,
+        [Description("Low")]
         Low = 0x02,
+        [Description("Medium")]
         Medium = 0x03,
+        [Description("High")]
         High = 0x04,
+        [Description("Full")]
         Full = 0x05,
+        [Description("Charging")]
         Charging = 0xEE,
+        [Description("Charged")]
         Charged = 0xEF
     }
 
