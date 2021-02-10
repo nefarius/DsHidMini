@@ -9,11 +9,23 @@ namespace Nefarius.DsHidMini.MVVM
         public DeviceCollectionViewModel()
         {
             Devices = new ObservableCollection<DeviceViewModel>();
+
+            Devices.CollectionChanged += (sender, args) =>
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("HasNoDevices"));
+            };
         }
 
         public ObservableCollection<DeviceViewModel> Devices { get; set; }
 
         public DeviceViewModel SelectedDevice { get; set; }
+
+        /// <summary>
+        ///     Is a device currently selected.
+        /// </summary>
+        public bool HasDeviceSelected => SelectedDevice != null;
+
+        public bool HasNoDevices => Devices.Count == 0;
 
         /// <summary>
         ///     Helper to check if run with elevated privileges.
@@ -27,6 +39,11 @@ namespace Nefarius.DsHidMini.MVVM
                     .IsWellKnown(WellKnownSidType.BuiltinAdministratorsSid);
             }
         }
+
+        /// <summary>
+        ///     Is it possible to edit the selected device.
+        /// </summary>
+        public bool IsEditable => IsElevated && HasDeviceSelected;
 
         public event PropertyChangedEventHandler PropertyChanged;
     }

@@ -69,5 +69,10 @@ namespace Nefarius.DsHidMini
 
             _listener.EndListen();
         }
+
+        private void ApplyChanges_Click(object sender, RoutedEventArgs e)
+        {
+            _vm.SelectedDevice.ApplyChanges();
+        }
     }
 }

@@ -9,13 +9,18 @@
         xmlns:adonisUi="clr-namespace:AdonisUI;assembly=AdonisUI"
         xmlns:extensions="clr-namespace:AdonisUI.Extensions;assembly=AdonisUI"
         mc:Ignorable="d"
-        Title="DsHidMini Control" Height="450" Width="800">
+        Title="DsHidMini Control" 
+        Height="450" Width="800"
+        WindowStartupLocation="CenterScreen">
     <Window.Style>
         <Style TargetType="Window" BasedOn="{StaticResource {x:Type Window}}" />
     </Window.Style>
     <Window.DataContext>
         <mvvm:DeviceCollectionViewModel />
     </Window.DataContext>
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="VisibleIfTrueConverter" />
+    </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="300" />
@@ -26,30 +31,37 @@
         <GroupBox Grid.Column="0"
                   Header="DsHidMini Devices"
                   Margin="{adonisUi:Space 1}">
-            <ListBox ItemsSource="{Binding Path=Devices}"
-                     SelectedItem="{Binding Path=SelectedDevice, Mode=TwoWay}"
-                     SelectionMode="Single">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="200" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
+            <Grid>
+                <ListBox ItemsSource="{Binding Path=Devices}"
+                         SelectedItem="{Binding Path=SelectedDevice, Mode=TwoWay}"
+                         SelectionMode="Single">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="200" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
 
-                            <TextBlock Grid.Column="0" Text="{Binding DisplayName}" />
-                            <TextBlock Grid.Column="1" Text="{Binding Path=ConnectionType}" />
-                        </Grid>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+                                <TextBlock Grid.Column="0" Text="{Binding DisplayName}" />
+                                <TextBlock Grid.Column="1" Text="{Binding Path=ConnectionType}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <TextBlock Text="No compatible devices found"
+                           HorizontalAlignment="Center"
+                           Padding="20"
+                           Visibility="{Binding Path=HasNoDevices, Converter={StaticResource VisibleIfTrueConverter}}" />
+            </Grid>
         </GroupBox>
 
         <!-- Device details -->
         <GroupBox Grid.Column="1"
                   Header="Device Details"
                   Margin="{adonisUi:Space 1}">
-            <Grid>
+            <Grid Visibility="{Binding Path=HasDeviceSelected, Converter={StaticResource VisibleIfTrueConverter}}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="20" />
@@ -84,7 +96,7 @@
 
                 <TextBlock Grid.Row="0" Grid.Column="0">Instance ID:</TextBlock>
                 <TextBox Grid.Row="0" Grid.Column="2"
-                         Width="400"
+                         Width="280"
                          Margin="{adonisUi:Space 1}"
                          Text="{Binding Path=SelectedDevice.InstanceId, Mode=OneWay}" />
 
@@ -110,11 +122,17 @@
                 <TextBlock Grid.Row="4" Grid.Column="0">HID device mode:</TextBlock>
                 <ComboBox Grid.Row="4" Grid.Column="2" Width="200" HorizontalAlignment="Left"
                           Margin="{adonisUi:Space 1}"
+                          IsEnabled="{Binding Path=IsEditable}"
                           ItemsSource="{Binding Source={wpfUtil:EnumBindingSource {x:Type mini:DsHidDeviceMode}}}"
                           SelectedItem="{Binding Path=SelectedDevice.HidEmulationMode, Mode=OneWay}" />
 
                 <Button Grid.Row="5" Grid.Column="2"
-                        IsEnabled="{Binding Path=IsElevated}">Apply settings</Button>
+                        Width="100"
+                        HorizontalAlignment="Right"
+                        Visibility="{Binding Path=IsEditable, Converter={StaticResource VisibleIfTrueConverter}}"
+                        Click="ApplyChanges_Click">
+                    Apply settings
+                </Button>
             </Grid>
         </GroupBox>
     </Grid>

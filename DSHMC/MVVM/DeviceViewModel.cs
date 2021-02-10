@@ -23,6 +23,11 @@ namespace Nefarius.DsHidMini.MVVM
                     DsHidMiniDriver.HidDeviceModeProperty);
         }
 
+        public void ApplyChanges()
+        {
+            _device.Restart();
+        }
+
         /// <summary>
         ///     Current HID device emulation mode.
         /// </summary>
