@@ -15,7 +15,7 @@ namespace Nefarius.DsHidMini.MVVM
         {
             _device = device;
 
-            _batteryQuery = new Timer(UpdateBatteryStatus, null, 1000, 1000);
+            _batteryQuery = new Timer(UpdateBatteryStatus, null, 10000, 10000);
         }
 
         private void UpdateBatteryStatus(object state)
