@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Reflection;
 using System.Security.Principal;
 
 namespace Nefarius.DsHidMini.MVVM
@@ -44,6 +45,8 @@ namespace Nefarius.DsHidMini.MVVM
         ///     Is it possible to edit the selected device.
         /// </summary>
         public bool IsEditable => IsElevated && HasDeviceSelected;
+
+        public string Version => $"Version: {Assembly.GetEntryAssembly().GetName().Version}";
 
         public event PropertyChangedEventHandler PropertyChanged;
     }

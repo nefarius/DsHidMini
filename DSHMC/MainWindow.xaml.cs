@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Windows;
 using AdonisUI.Controls;
 using Nefarius.DsHidMini.MVVM;
@@ -73,6 +74,11 @@ namespace Nefarius.DsHidMini
         private void ApplyChanges_Click(object sender, RoutedEventArgs e)
         {
             _vm.SelectedDevice.ApplyChanges();
+        }
+
+        private void Help_OnClick(object sender, RoutedEventArgs e)
+        {
+            Process.Start("https://vigem.org/projects/DsHidMini/");
         }
     }
 }

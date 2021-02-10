@@ -1,25 +1,38 @@
 ﻿<controls:AdonisWindow x:Class="Nefarius.DsHidMini.MainWindow"
-              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-              xmlns:mvvm="clr-namespace:Nefarius.DsHidMini.MVVM"
-              xmlns:wpfUtil="clr-namespace:Nefarius.DsHidMini.Util.WPF"
-              xmlns:mini="clr-namespace:Nefarius.DsHidMini"
-              xmlns:adonisUi="clr-namespace:AdonisUI;assembly=AdonisUI"
-              xmlns:extensions="clr-namespace:AdonisUI.Extensions;assembly=AdonisUI"
-              xmlns:controls="clr-namespace:AdonisUI.Controls;assembly=AdonisUI"
-              mc:Ignorable="d"
-              Title="DsHidMini Control" 
-              Height="450" Width="800"
-              ResizeMode="NoResize"
-              WindowStartupLocation="CenterScreen">
-    <Window.DataContext>
+                       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                       xmlns:mvvm="clr-namespace:Nefarius.DsHidMini.MVVM"
+                       xmlns:wpfUtil="clr-namespace:Nefarius.DsHidMini.Util.WPF"
+                       xmlns:mini="clr-namespace:Nefarius.DsHidMini"
+                       xmlns:adonisUi="clr-namespace:AdonisUI;assembly=AdonisUI"
+                       xmlns:extensions="clr-namespace:AdonisUI.Extensions;assembly=AdonisUI"
+                       xmlns:controls="clr-namespace:AdonisUI.Controls;assembly=AdonisUI"
+                       mc:Ignorable="d"
+                       Title="DsHidMini Control"
+                       Height="450" Width="800"
+                       ResizeMode="NoResize"
+                       WindowStartupLocation="CenterScreen">
+    <controls:AdonisWindow.TitleBarContent>
+        <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+            <TextBlock Margin="{adonisUi:Space 1}"
+                       Text="{Binding Path=Version}" />
+            <Button Content="?"
+                    Style="{DynamicResource {x:Static adonisUi:Styles.WindowButton}}"
+                    Click="Help_OnClick"
+                    FontFamily="Segoe UI"
+                    FontSize="14"/>
+        </StackPanel>
+    </controls:AdonisWindow.TitleBarContent>
+
+    <controls:AdonisWindow.DataContext>
         <mvvm:DeviceCollectionViewModel />
-    </Window.DataContext>
-    <Window.Resources>
+    </controls:AdonisWindow.DataContext>
+    <controls:AdonisWindow.Resources>
         <BooleanToVisibilityConverter x:Key="VisibleIfTrueConverter" />
-    </Window.Resources>
+    </controls:AdonisWindow.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="300" />
