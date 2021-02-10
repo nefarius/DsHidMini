@@ -23,6 +23,9 @@ namespace Nefarius.DsHidMini.MVVM
                     DsHidMiniDriver.HidDeviceModeProperty);
         }
 
+        /// <summary>
+        ///     Apply changes by requesting device restart.
+        /// </summary>
         public void ApplyChanges()
         {
             _device.Restart();

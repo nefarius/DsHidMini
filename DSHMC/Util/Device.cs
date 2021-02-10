@@ -103,20 +103,24 @@ namespace Nefarius.DsHidMini.Util
         /// </summary>
         public void Restart()
         {
-            //
-            // TODO: implement me!
-            // 
-
             var ret = SetupApiWrapper.CM_Query_And_Remove_SubTree(
                 _instanceHandle,
                 IntPtr.Zero, IntPtr.Zero, 0,
                 SetupApiWrapper.CM_QUERY_AND_REMOVE_SUBTREE_FLAGS.CM_REMOVE_NO_RESTART
             );
 
+            if (ret != SetupApiWrapper.ConfigManagerResult.Success)
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+
             ret = SetupApiWrapper.CM_Setup_DevNode(
                 _instanceHandle,
                 SetupApiWrapper.CM_SETUP_DEVINST_FLAGS.CM_SETUP_DEVNODE_READY
             );
+
+            if (ret != SetupApiWrapper.ConfigManagerResult.NoSuchDevinst
+                && ret != SetupApiWrapper.ConfigManagerResult.Success)
+                if (ret != SetupApiWrapper.ConfigManagerResult.Success)
+                    throw new Win32Exception(Marshal.GetLastWin32Error());
         }
 
         /// <summary>
