@@ -11,7 +11,7 @@ namespace Nefarius.DsHidMini.MVVM
         public DeviceViewModel(Device device)
         {
             _device = device;
-
+            
             var manufacturer = device.GetProperty<string>(DevicePropertyDevice.Manufacturer);
 
             var battery =
@@ -23,6 +23,9 @@ namespace Nefarius.DsHidMini.MVVM
                     DsHidMiniDriver.HidDeviceModeProperty);
         }
 
+        /// <summary>
+        ///     Current HID device emulation mode.
+        /// </summary>
         public DsHidDeviceMode HidEmulationMode
         {
             get =>
@@ -52,6 +55,26 @@ namespace Nefarius.DsHidMini.MVVM
 
                 var insertedCount = 0;
                 for (var i = 2; i < deviceAddress.Length; i = i + 2)
+                    friendlyAddress = friendlyAddress.Insert(i + insertedCount++, ":");
+
+                return friendlyAddress;
+            }
+        }
+
+        /// <summary>
+        ///     The Bluetooth MAC address of the host radio this device is currently paired to.
+        /// </summary>
+        public string HostAddress
+        {
+            get
+            {
+                var hostAddress = _device.GetProperty<ulong>(DsHidMiniDriver.HostAddressProperty).ToString("X12")
+                    .ToUpper();
+
+                var friendlyAddress = hostAddress;
+
+                var insertedCount = 0;
+                for (var i = 2; i < hostAddress.Length; i = i + 2)
                     friendlyAddress = friendlyAddress.Insert(i + insertedCount++, ":");
 
                 return friendlyAddress;

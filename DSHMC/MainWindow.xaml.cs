@@ -43,11 +43,11 @@ namespace Nefarius.DsHidMini
         /// <param name="obj">The device path.</param>
         private void ListenerOnDeviceRemoved(string obj)
         {
-            var itemsToRemove = _vm.Devices.Where(
-                i => _vm.Devices.All(d => d.InstanceId == Device.GetInstanceIdFromInterfaceId(obj))).ToList();
+            _vm.Devices.Clear();
 
-            foreach (var item in itemsToRemove)
-                _vm.Devices.Remove(item);
+            var instance = 0;
+            while (Devcon.Find(DsHidMiniDriver.DeviceInterfaceGuid, out var path, out var instanceId, instance++))
+                _vm.Devices.Add(new DeviceViewModel(Device.GetDeviceByInstanceId(instanceId)));
         }
 
         /// <summary>
@@ -56,7 +56,11 @@ namespace Nefarius.DsHidMini
         /// <param name="obj">The device path.</param>
         private void ListenerOnDeviceArrived(string obj)
         {
-            _vm.Devices.Add(new DeviceViewModel(Device.GetDeviceByInterfaceId(obj)));
+            _vm.Devices.Clear();
+
+            var instance = 0;
+            while (Devcon.Find(DsHidMiniDriver.DeviceInterfaceGuid, out var path, out var instanceId, instance++))
+                _vm.Devices.Add(new DeviceViewModel(Device.GetDeviceByInstanceId(instanceId)));
         }
 
         protected override void OnClosing(CancelEventArgs e)

@@ -109,17 +109,17 @@ namespace Nefarius.DsHidMini.Util
                 // (U)Int16
                 if (managedType == typeof(short)
                     || managedType == typeof(ushort))
-                    return (T) (object) Marshal.ReadInt16(buffer);
+                    return (T) (object) (ushort) Marshal.ReadInt16(buffer);
 
                 // (U)Int32
                 if (managedType == typeof(int)
                     || managedType == typeof(uint))
-                    return (T) (object) Marshal.ReadInt32(buffer);
+                    return (T) (object) (uint) Marshal.ReadInt32(buffer);
 
                 // (U)Int64
                 if (managedType == typeof(long)
                     || managedType == typeof(ulong))
-                    return (T) (object) Marshal.ReadInt64(buffer);
+                    return (T) (object) (ulong) Marshal.ReadInt64(buffer);
 
                 // FILETIME/DateTimeOffset
                 if (managedType == typeof(DateTimeOffset))

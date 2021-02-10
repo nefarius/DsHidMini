@@ -99,6 +99,23 @@ namespace Nefarius.DsHidMini.Util
         public string DeviceId { get; }
 
         /// <summary>
+        ///     Attempts to restart this device.
+        /// </summary>
+        public void Restart()
+        {
+            var ret = SetupApiWrapper.CM_Query_And_Remove_SubTree(
+                _instanceHandle,
+                IntPtr.Zero, IntPtr.Zero, 0,
+                SetupApiWrapper.CM_QUERY_AND_REMOVE_SUBTREE_FLAGS.CM_REMOVE_NO_RESTART
+            );
+
+            ret = SetupApiWrapper.CM_Setup_DevNode(
+                _instanceHandle,
+                SetupApiWrapper.CM_SETUP_DEVINST_FLAGS.CM_SETUP_DEVNODE_READY
+            );
+        }
+
+        /// <summary>
         ///     Return device identified by instance ID.
         /// </summary>
         /// <param name="instanceId">The instance ID of the device.</param>

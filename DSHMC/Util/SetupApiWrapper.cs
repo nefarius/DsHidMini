@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Runtime.InteropServices;
 
 namespace Nefarius.DsHidMini.Util
@@ -90,7 +91,24 @@ namespace Nefarius.DsHidMini.Util
         internal const uint CM_REENUMERATE_RETRY_INSTALLATION = 0x00000002;
 
         internal const uint CM_REENUMERATE_ASYNCHRONOUS = 0x00000004;
-        
+
+        internal enum CM_QUERY_AND_REMOVE_SUBTREE_FLAGS : uint
+        {
+            CM_REMOVE_UI_OK = 0x00000000,
+            CM_REMOVE_UI_NOT_OK = 0x00000001,
+            CM_REMOVE_NO_RESTART = 0x00000002,
+            CM_REMOVE_BITS = 0x00000003
+        }
+
+        internal enum CM_SETUP_DEVINST_FLAGS : uint
+        {
+            CM_SETUP_DEVNODE_READY = 0x00000000, // Reenable problem devinst
+            CM_SETUP_DEVINST_READY = CM_SETUP_DEVNODE_READY,
+            CM_SETUP_DOWNLOAD = 0x00000001, // Get info about devinst
+            CM_SETUP_WRITE_LOG_CONFS = 0x00000002,
+            CM_SETUP_PROP_CHANGE = 0x00000003
+        }
+
         internal enum CM_LOCATE_DEVNODE_FLAG : uint
         {
             CM_LOCATE_DEVNODE_NORMAL = 0x00000000,
@@ -243,6 +261,23 @@ namespace Nefarius.DsHidMini.Util
         internal const uint INSTALLFLAG_FORCE             = 0x00000001;  // Force the installation of the specified driver
         internal const uint INSTALLFLAG_READONLY          = 0x00000002;  // Do a read-only install (no file copy)
         internal const uint INSTALLFLAG_NONINTERACTIVE    = 0x00000004;
+
+        internal enum PNP_VETO_TYPE : uint
+        {
+            PNP_VetoTypeUnknown,            // Name is unspecified
+            PNP_VetoLegacyDevice,           // Name is an Instance Path
+            PNP_VetoPendingClose,           // Name is an Instance Path
+            PNP_VetoWindowsApp,             // Name is a Module
+            PNP_VetoWindowsService,         // Name is a Service
+            PNP_VetoOutstandingOpen,        // Name is an Instance Path
+            PNP_VetoDevice,                 // Name is an Instance Path
+            PNP_VetoDriver,                 // Name is a Driver Service Name
+            PNP_VetoIllegalDeviceRequest,   // Name is an Instance Path
+            PNP_VetoInsufficientPower,      // Name is unspecified
+            PNP_VetoNonDisableable,         // Name is an Instance Path
+            PNP_VetoLegacyDriver,           // Name is a Service
+            PNP_VetoInsufficientRights      // Name is unspecified
+        }
 
         #endregion
 
@@ -422,6 +457,30 @@ namespace Nefarius.DsHidMini.Util
             IntPtr PropertyBuffer,
             ref uint PropertyBufferSize,
             uint ulFlags // reserved
+        );
+
+        [DllImport("Cfgmgr32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        internal static extern ConfigManagerResult CM_Query_And_Remove_SubTree(
+            uint dnAncestor,
+            ref PNP_VETO_TYPE pVetoType,
+            string pszVetoName,
+            uint ulNameLength,
+            CM_QUERY_AND_REMOVE_SUBTREE_FLAGS ulFlags
+        );
+
+        [DllImport("Cfgmgr32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        internal static extern ConfigManagerResult CM_Query_And_Remove_SubTree(
+            uint dnAncestor,
+            IntPtr pVetoType,
+            IntPtr pszVetoName,
+            uint ulNameLength,
+            CM_QUERY_AND_REMOVE_SUBTREE_FLAGS ulFlags
+        );
+
+        [DllImport("Cfgmgr32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        internal static extern ConfigManagerResult CM_Setup_DevNode(
+            uint dnDevInst,
+            CM_SETUP_DEVINST_FLAGS ulFlags
         );
 
         #endregion

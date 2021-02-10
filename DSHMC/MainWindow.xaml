@@ -6,8 +6,13 @@
         xmlns:mvvm="clr-namespace:Nefarius.DsHidMini.MVVM"
         xmlns:wpfUtil="clr-namespace:Nefarius.DsHidMini.Util.WPF"
         xmlns:mini="clr-namespace:Nefarius.DsHidMini"
+        xmlns:adonisUi="clr-namespace:AdonisUI;assembly=AdonisUI"
+        xmlns:extensions="clr-namespace:AdonisUI.Extensions;assembly=AdonisUI"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="DsHidMini Control" Height="450" Width="800">
+    <Window.Style>
+        <Style TargetType="Window" BasedOn="{StaticResource {x:Type Window}}" />
+    </Window.Style>
     <Window.DataContext>
         <mvvm:DeviceCollectionViewModel />
     </Window.DataContext>
@@ -17,8 +22,10 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
+        <!-- Device list -->
         <GroupBox Grid.Column="0"
-                  Header="DsHidMini Devices">
+                  Header="DsHidMini Devices"
+                  Margin="{adonisUi:Space 1}">
             <ListBox ItemsSource="{Binding Path=Devices}"
                      SelectedItem="{Binding Path=SelectedDevice, Mode=TwoWay}"
                      SelectionMode="Single">
@@ -38,34 +45,76 @@
             </ListBox>
         </GroupBox>
 
+        <!-- Device details -->
         <GroupBox Grid.Column="1"
-                  Header="Device Details">
+                  Header="Device Details"
+                  Margin="{adonisUi:Space 1}">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition />
-                    <ColumnDefinition />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="20" />
+                    <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
-                    <RowDefinition />
-                    <RowDefinition />
-                    <RowDefinition />
-                    <RowDefinition />
-                    <RowDefinition />
-                    <RowDefinition />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Grid.Column="0"
-                           Text="{Binding Path=SelectedDevice.InstanceId}" />
+                <Grid.Resources>
+                    <Style x:Key="CenterAlignedTextBlockStyle" TargetType="{x:Type TextBlock}"
+                           BasedOn="{StaticResource {x:Type TextBlock}}">
+                        <Setter Property="VerticalAlignment" Value="Center" />
+                    </Style>
 
-                <TextBlock Grid.Row="1" Grid.Column="0"
-                           Text="{Binding Path=SelectedDevice.DeviceAddress}" />
+                    <Style x:Key="ReadOnlyTextBoxStyle" TargetType="{x:Type TextBox}"
+                           BasedOn="{StaticResource {x:Type TextBox}}">
+                        <Setter Property="IsReadOnly" Value="True" />
+                        <Setter Property="HorizontalAlignment" Value="Left" />
+                    </Style>
 
-                <TextBlock Grid.Row="2" Grid.Column="0"
-                           Text="{Binding Path=SelectedDevice.LastConnected}" />
+                    <Style TargetType="TextBlock" BasedOn="{StaticResource CenterAlignedTextBlockStyle}" />
+                    <Style TargetType="TextBox" BasedOn="{StaticResource ReadOnlyTextBoxStyle}" />
+                </Grid.Resources>
 
-                <ComboBox Grid.Row="3" Grid.Column="0"
+                <TextBlock Grid.Row="0" Grid.Column="0">Instance ID:</TextBlock>
+                <TextBox Grid.Row="0" Grid.Column="2"
+                         Width="400"
+                         Margin="{adonisUi:Space 1}"
+                         Text="{Binding Path=SelectedDevice.InstanceId, Mode=OneWay}" />
+
+                <TextBlock Grid.Row="1" Grid.Column="0">Device address:</TextBlock>
+                <TextBox Grid.Row="1" Grid.Column="2"
+                         Width="120"
+                         Margin="{adonisUi:Space 1}"
+                         Text="{Binding Path=SelectedDevice.DeviceAddress, Mode=OneWay}" />
+
+                <TextBlock Grid.Row="2" Grid.Column="0">Host address:</TextBlock>
+                <TextBox Grid.Row="2" Grid.Column="2"
+                         Width="120"
+                         Margin="{adonisUi:Space 1}"
+                         Text="{Binding Path=SelectedDevice.HostAddress, Mode=OneWay}" />
+
+                <TextBlock Grid.Row="3" Grid.Column="0">Last connected (wireless):</TextBlock>
+                <TextBox Grid.Row="3" Grid.Column="2"
+                         Width="160"
+                         Margin="{adonisUi:Space 1}"
+                         extensions:WatermarkExtension.Watermark="Unavailable"
+                         Text="{Binding Path=SelectedDevice.LastConnected, Mode=OneWay}" />
+
+                <TextBlock Grid.Row="4" Grid.Column="0">HID device mode:</TextBlock>
+                <ComboBox Grid.Row="4" Grid.Column="2" Width="200" HorizontalAlignment="Left"
+                          Margin="{adonisUi:Space 1}"
                           ItemsSource="{Binding Source={wpfUtil:EnumBindingSource {x:Type mini:DsHidDeviceMode}}}"
                           SelectedItem="{Binding Path=SelectedDevice.HidEmulationMode, Mode=OneWay}" />
+
+                <Button Grid.Row="5" Grid.Column="2"
+                        IsEnabled="{Binding Path=IsElevated}">Apply settings</Button>
             </Grid>
         </GroupBox>
     </Grid>
