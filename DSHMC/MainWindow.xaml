@@ -131,7 +131,7 @@
                         HorizontalAlignment="Right"
                         Visibility="{Binding Path=IsEditable, Converter={StaticResource VisibleIfTrueConverter}}"
                         Click="ApplyChanges_Click">
-                    Apply changesBTHPS3BUS\{53F88889-1AAF-4353-A047-556B69EC6DA6}\B&4799736&0&A
+                    Apply changes
                 </Button>
             </Grid>
         </GroupBox>
