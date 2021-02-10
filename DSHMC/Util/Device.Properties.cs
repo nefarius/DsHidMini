@@ -135,6 +135,103 @@ namespace Nefarius.DsHidMini.Util
             }
         }
 
+        /// <summary>
+        ///     Creates or updates an existing property with a given value.
+        /// </summary>
+        /// <typeparam name="T">The type of the property.</typeparam>
+        /// <param name="propertyKey">The <see cref="DevicePropertyKey"/> to update.</param>
+        /// <param name="propertyValue">The value to set.</param>
+        public void SetProperty<T>(DevicePropertyKey propertyKey, T propertyValue)
+        {
+            if (typeof(T) != propertyKey.PropertyType)
+                throw new ArgumentException(
+                    "The supplied object type doesn't match the property type.",
+                    nameof(propertyKey)
+                );
+
+            var managedType = typeof(T);
+
+            var nativePropKey = propertyKey.ToNativeType();
+
+            var nativePropType = NativeToManagedTypeMap.FirstOrDefault(t => t.Value == managedType).Key;
+
+            uint propBufSize = 0;
+
+            IntPtr buffer = IntPtr.Zero;
+
+            #region Don't look, nasty trickery
+
+            /*
+             * Handle some native to managed conversions
+             */
+
+            // Regular strings
+            if (managedType == typeof(string))
+            {
+                var value = (string) (object) propertyValue;
+                buffer = Marshal.StringToHGlobalUni(value);
+                propBufSize = (uint) ((value.Length + 1) * 2);
+            }
+
+            // Double-null-terminated string to list
+            //if (managedType == typeof(string[]))
+            //    return (T) (object) Marshal.PtrToStringUni(buffer, (int) size / 2).TrimEnd('\0').Split('\0')
+            //        .ToArray();
+
+            // Byte & SByte
+            if (managedType == typeof(sbyte)
+                || managedType == typeof(byte))
+            {
+                var value = (byte) (object) propertyValue;
+                propBufSize = (uint) Marshal.SizeOf(managedType);
+                buffer = Marshal.AllocHGlobal((int) propBufSize);
+                Marshal.WriteByte(buffer, value);
+            }
+            /*
+            // (U)Int16
+            if (managedType == typeof(short)
+                || managedType == typeof(ushort))
+                return (T) (object) (ushort) Marshal.ReadInt16(buffer);
+
+            // (U)Int32
+            if (managedType == typeof(int)
+                || managedType == typeof(uint))
+                return (T) (object) (uint) Marshal.ReadInt32(buffer);
+
+            // (U)Int64
+            if (managedType == typeof(long)
+                || managedType == typeof(ulong))
+                return (T) (object) (ulong) Marshal.ReadInt64(buffer);
+
+            // FILETIME/DateTimeOffset
+            if (managedType == typeof(DateTimeOffset))
+                return (T) (object) DateTimeOffset.FromFileTime(Marshal.ReadInt64(buffer));
+            */
+            #endregion
+
+            if (buffer == IntPtr.Zero)
+                throw new NotImplementedException("Type not supported.");
+
+            try
+            {
+                var ret = SetupApiWrapper.CM_Set_DevNode_Property(
+                    _instanceHandle,
+                    ref nativePropKey,
+                    nativePropType,
+                    buffer,
+                    propBufSize,
+                    0
+                );
+
+                if (ret != SetupApiWrapper.ConfigManagerResult.Success)
+                    throw new Win32Exception(Marshal.GetLastWin32Error());
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(buffer);
+            }
+        }
+
         private SetupApiWrapper.ConfigManagerResult GetProperty(
             SetupApiWrapper.DevPropKey propertyKey,
             out SetupApiWrapper.DevPropType propertyType,

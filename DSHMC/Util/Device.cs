@@ -103,6 +103,10 @@ namespace Nefarius.DsHidMini.Util
         /// </summary>
         public void Restart()
         {
+            //
+            // TODO: implement me!
+            // 
+
             var ret = SetupApiWrapper.CM_Query_And_Remove_SubTree(
                 _instanceHandle,
                 IntPtr.Zero, IntPtr.Zero, 0,

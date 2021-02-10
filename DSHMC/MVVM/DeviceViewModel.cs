@@ -36,10 +36,7 @@ namespace Nefarius.DsHidMini.MVVM
             get =>
                 (DsHidDeviceMode) _device.GetProperty<byte>(
                     DsHidMiniDriver.HidDeviceModeProperty);
-            set
-            {
-                var t = value;
-            }
+            set => _device.SetProperty(DsHidMiniDriver.HidDeviceModeProperty, (byte) value);
         }
 
         /// <summary>
