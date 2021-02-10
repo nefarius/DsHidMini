@@ -260,6 +260,32 @@ DsHidMini_EvtDevicePrepareHardware(
 	pCtx = DeviceGetContext(Device);
 
 	//
+	// Read common properties
+	// 
+
+	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_HidDeviceMode);
+
+	status = WdfDeviceQueryPropertyEx(
+		Device,
+		&propertyData,
+		sizeof(UCHAR),
+		&pCtx->Configuration.HidDeviceMode,
+		&requiredSize,
+		&propertyType
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceError(
+			TRACE_POWER,
+			"Requesting DEVPKEY_DsHidMini_HidDeviceMode failed with %!STATUS!",
+			status
+		);
+		return status;
+	}
+
+	TraceVerbose(TRACE_POWER, "[COM] HidDeviceMode: 0x%02X", pCtx->Configuration.HidDeviceMode);
+	
+	//
 	// Initialize USB framework object
 	// 
 	if (pCtx->ConnectionType == DsDeviceConnectionTypeUsb

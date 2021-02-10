@@ -73,12 +73,7 @@ static int inih_read_cfg_handler(void* user, const char* section, const char* na
 
 	TraceVerbose(TRACE_CONFIG, "Checking for InstanceId \"%s\" vs section \"%s\"", instId, section);
 
-	if (MATCH("HidDeviceMode"))
-	{
-		pCtx->Configuration.HidDeviceMode = (DS_HID_DEVICE_MODE)strtol(value, NULL, 10);
-		TraceVerbose(TRACE_CONFIG, "Updating HidDeviceMode to 0x%04X", pCtx->Configuration.HidDeviceMode);
-	}
-	else if (MATCH("MuteDigitalPressureButtons"))
+	if (MATCH("MuteDigitalPressureButtons"))
 	{
 		pCtx->Configuration.MuteDigitalPressureButtons = strtol(value, NULL, 10) > 0;
 		TraceVerbose(TRACE_CONFIG, "Updating MuteDigitalPressureButtons to 0x%04X",

@@ -66,6 +66,7 @@ DMF_DsHidMini_Create(
 
 		//
 		// Load volatile configuration
+		// TODO: deprecated
 		// 
 		DsConfig_Load(pDevCtx);
 
@@ -251,7 +252,39 @@ DMF_DsHidMini_Open(
 	pHidCfg->HidDeviceAttributes.VendorID = pDevCtx->VendorId;
 	pHidCfg->HidDeviceAttributes.ProductID = pDevCtx->ProductId;
 	pHidCfg->HidDeviceAttributes.VersionNumber = pDevCtx->VersionNumber;
-		
+
+	switch (pDevCtx->Configuration.HidDeviceMode)
+	{
+	case DsHidMiniDeviceModeSingle:
+
+		pHidCfg->HidDescriptor = &G_Ds3HidDescriptor_Single_Mode;
+		pHidCfg->HidDescriptorLength = sizeof(G_Ds3HidDescriptor_Single_Mode);
+		pHidCfg->HidReportDescriptor = G_Ds3HidReportDescriptor_Single_Mode;
+		pHidCfg->HidReportDescriptorLength = G_Ds3HidDescriptor_Single_Mode.DescriptorList[0].wReportLength;
+
+		break;
+	case DsHidMiniDeviceModeMulti:
+
+		pHidCfg->HidDescriptor = &G_Ds3HidDescriptor_Split_Mode;
+		pHidCfg->HidDescriptorLength = sizeof(G_Ds3HidDescriptor_Split_Mode);
+		pHidCfg->HidReportDescriptor = G_Ds3HidReportDescriptor_Split_Mode;
+		pHidCfg->HidReportDescriptorLength = G_Ds3HidDescriptor_Split_Mode.DescriptorList[0].wReportLength;
+
+		break;
+	case DsHidMiniDeviceModeSixaxisCompatible:
+
+		pHidCfg->HidDescriptor = &G_SixaxisHidDescriptor;
+		pHidCfg->HidDescriptorLength = sizeof(G_SixaxisHidDescriptor);
+		pHidCfg->HidReportDescriptor = G_SixaxisHidReportDescriptor;
+		pHidCfg->HidReportDescriptorLength = G_SixaxisHidDescriptor.DescriptorList[0].wReportLength;
+
+		break;
+	default:
+		TraceError(
+			TRACE_DSHIDMINIDRV,
+			"Unknown HID Device Mode: 0x%02X", pDevCtx->Configuration.HidDeviceMode);
+	}
+	
 	//
 	// Increase pad instance count (TODO: unused)
 	// 
