@@ -250,6 +250,27 @@ dshidminiEvtDeviceAdd(
 		}
 
 		//
+		// Create lock
+		// 
+				
+		WDF_OBJECT_ATTRIBUTES_INIT(&deviceAttributes);
+		deviceAttributes.ParentObject = device;
+		
+		status = WdfWaitLockCreate(
+			&deviceAttributes,
+			&pDevCtx->OutputReportLock
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"WdfWaitLockCreate failed with status %!STATUS!",
+				status
+			);
+			break;
+		}
+		
+		//
 		// Expose interface for applications to find us
 		// 
 

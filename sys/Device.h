@@ -165,6 +165,11 @@ typedef struct _DEVICE_CONTEXT
 	// Periodic task scheduler to send output reports
 	// 
 	DMFMODULE OutputReportScheduler;
+
+	//
+	// Lock protecting output report scheduler callback
+	// 
+	WDFWAITLOCK OutputReportLock;
 	
 	//
 	// Type of connection (wired, wireless)
