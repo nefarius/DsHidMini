@@ -26,6 +26,10 @@ namespace Nefarius.DsHidMini
             Guid.Parse("{0x52fac1da, 0x5a52, 0x40f5, {0xa1, 0x23, 0x36, 0x7f, 0x76, 0xf, 0x8b, 0xc2}}"), 3,
             typeof(byte));
 
+        public static DevicePropertyKey OutputReportTimerPeriodMsProperty => CustomDeviceProperty.CreateCustomDeviceProperty(
+            Guid.Parse("{0x52fac1da, 0x5a52, 0x40f5, {0xa1, 0x23, 0x36, 0x7f, 0x76, 0xf, 0x8b, 0xc2}}"), 4,
+            typeof(UInt32));
+
         public static DevicePropertyKey HostAddressProperty => CustomDeviceProperty.CreateCustomDeviceProperty(
             Guid.Parse("{0xa92f26ca, 0xeda7, 0x4b1d, {0x9d, 0xb2, 0x27, 0xb6, 0x8a, 0xa5, 0xa2, 0xeb}}"), 1,
             typeof(UInt64));
