@@ -375,7 +375,8 @@ DmfDeviceModulesAdd(
 	dmfSchedulerCfg.CallbackContext = deviceContext;
 	dmfSchedulerCfg.PersistenceType = ScheduledTask_Persistence_NotPersistentAcrossReboots;
 	dmfSchedulerCfg.ExecutionMode = ScheduledTask_ExecutionMode_Deferred;
-	dmfSchedulerCfg.ExecuteWhen = ScheduledTask_ExecuteWhen_Other; // we control start
+	dmfSchedulerCfg.ExecuteWhen = ScheduledTask_ExecuteWhen_D0Entry;
+	dmfSchedulerCfg.TimeMsBeforeInitialCall = 1000;
 	dmfSchedulerCfg.TimerPeriodMsOnSuccess = 10;
 	dmfSchedulerCfg.TimerPeriodMsOnFail = 10;
 

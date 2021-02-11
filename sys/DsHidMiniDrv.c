@@ -1443,6 +1443,8 @@ DMF_OutputReportScheduledTaskCallback(
 	PDEVICE_CONTEXT pDevCtx = (PDEVICE_CONTEXT)CallbackContext;
 	
 	FuncEntry(TRACE_DSHIDMINIDRV);
+
+	WdfWaitLockAcquire(pDevCtx->OutputReportLock, NULL);
 	
 	switch (pDevCtx->ConnectionType)
 	{
@@ -1469,6 +1471,8 @@ DMF_OutputReportScheduledTaskCallback(
 	default:
 		status = STATUS_INVALID_PARAMETER;
 	}
+
+	WdfWaitLockRelease(pDevCtx->OutputReportLock);
 
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 	
