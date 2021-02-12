@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Threading;
+using FontAwesome5;
 using Nefarius.DsHidMini.Util;
 
 namespace Nefarius.DsHidMini.MVVM
@@ -98,6 +99,30 @@ namespace Nefarius.DsHidMini.MVVM
         public DsBatteryStatus BatteryStatus =>
             (DsBatteryStatus) _device.GetProperty<byte>(DsHidMiniDriver.BatteryStatusProperty);
 
+        public EFontAwesomeIcon BatteryIcon
+        {
+            get
+            {
+                switch(BatteryStatus)
+                {
+                    case DsBatteryStatus.Charged:
+                    case DsBatteryStatus.Charging:
+                    case DsBatteryStatus.Full:
+                        return EFontAwesomeIcon.Solid_BatteryFull;
+                    case DsBatteryStatus.High:
+                        return EFontAwesomeIcon.Solid_BatteryThreeQuarters;
+                    case DsBatteryStatus.Medium:
+                        return EFontAwesomeIcon.Solid_BatteryHalf;
+                    case DsBatteryStatus.Low:
+                        return EFontAwesomeIcon.Solid_BatteryQuarter;
+                    case DsBatteryStatus.Dying:
+                        return EFontAwesomeIcon.Solid_BatteryEmpty;
+                    default:
+                        return EFontAwesomeIcon.Solid_BatteryEmpty;
+                }
+            }
+        }
+
         /// <summary>
         ///     The friendly (product) name of this device.
         /// </summary>
@@ -114,15 +139,15 @@ namespace Nefarius.DsHidMini.MVVM
         /// <summary>
         ///     The connection protocol used by this device.
         /// </summary>
-        public string ConnectionType
+        public EFontAwesomeIcon ConnectionType
         {
             get
             {
                 var enumerator = _device.GetProperty<string>(DevicePropertyDevice.EnumeratorName);
 
                 return enumerator.Equals("USB", StringComparison.InvariantCultureIgnoreCase)
-                    ? "USB"
-                    : "Bluetooth";
+                    ? EFontAwesomeIcon.Brands_Usb
+                    : EFontAwesomeIcon.Brands_Bluetooth;
             }
         }
 

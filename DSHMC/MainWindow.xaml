@@ -9,6 +9,7 @@
                        xmlns:adonisUi="clr-namespace:AdonisUI;assembly=AdonisUI"
                        xmlns:extensions="clr-namespace:AdonisUI.Extensions;assembly=AdonisUI"
                        xmlns:controls="clr-namespace:AdonisUI.Controls;assembly=AdonisUI"
+                       xmlns:fa="http://schemas.fontawesome.com/icons/"
                        mc:Ignorable="d"
                        Title="DsHidMini Control"
                        Height="500" Width="800"
@@ -39,7 +40,7 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        
+
         <TabControl Grid.Row="0">
             <TabItem Header="Devices">
                 <Grid Grid.Row="0">
@@ -60,12 +61,18 @@
                                     <DataTemplate>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="200" />
+                                                <ColumnDefinition Width="Auto" />
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
 
-                                            <TextBlock Grid.Column="0" Text="{Binding DisplayName}" />
-                                            <TextBlock Grid.Column="1" Text="{Binding Path=ConnectionType}" />
+                                            <fa:ImageAwesome Grid.Column="0" 
+                                                             Icon="{Binding Path=ConnectionType}" 
+                                                              Margin="{adonisUi:Space 1}"
+                                                             Width="16"
+                                                             HorizontalAlignment="Right"/>
+                                            <TextBlock Grid.Column="1" 
+                                                       Text="{Binding DisplayName}"
+                                                       VerticalAlignment="Center"/>
                                         </Grid>
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
@@ -134,11 +141,18 @@
                          Text="{Binding Path=SelectedDevice.HostAddress, Mode=OneWay}" />
 
                             <TextBlock Grid.Row="3" Grid.Column="0">Battery status:</TextBlock>
-                            <ComboBox Grid.Row="3" Grid.Column="2" Width="80" HorizontalAlignment="Left"
+                            <DockPanel  Grid.Row="3" Grid.Column="2" LastChildFill="False">
+                                <ComboBox Width="80" HorizontalAlignment="Left"
                           Margin="{adonisUi:Space 1}"
                           IsEnabled="False"
                           ItemsSource="{Binding Source={wpfUtil:EnumBindingSource {x:Type mini:DsBatteryStatus}}}"
                           SelectedItem="{Binding Path=SelectedDevice.BatteryStatus, Mode=OneWay}" />
+                                <fa:ImageAwesome
+                                                             Icon="{Binding Path=SelectedDevice.BatteryIcon}" 
+                                                              VerticalAlignment="Center"
+                                                             Width="16"
+                                                             />
+                            </DockPanel>
 
                             <TextBlock Grid.Row="4" Grid.Column="0">Last connected (wireless):</TextBlock>
                             <TextBox Grid.Row="4" Grid.Column="2"
@@ -211,7 +225,7 @@
                 </Grid>
             </TabItem>
         </TabControl>
-        
+
         <StatusBar Grid.Row="1">
             <StatusBarItem>Run as Administrator to change settings.</StatusBarItem>
         </StatusBar>

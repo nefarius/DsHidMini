@@ -63,3 +63,4 @@ You can build individual projects of the solution within Visual Studio.
 - [The HID Page](http://janaxelson.com/hidpage.htm)
 - [uthash - a hash table for C structures](https://github.com/troydhanson/uthash)
 - [FirstPlatoLV/EmuController](https://github.com/FirstPlatoLV/EmuController)
+- [FontAwesome5](https://github.com/MartinTopfstedt/FontAwesome5)
