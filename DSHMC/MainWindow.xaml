@@ -34,14 +34,14 @@
         <BooleanToVisibilityConverter x:Key="VisibleIfTrueConverter" />
     </controls:AdonisWindow.Resources>
 
-    <TabControl>
-        <TabItem Header="Devices">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <TabControl Grid.Row="0">
+            <TabItem Header="Devices">
                 <Grid Grid.Row="0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="300" />
@@ -180,12 +180,41 @@
                         </Grid>
                     </GroupBox>
                 </Grid>
+            </TabItem>
 
-                <StatusBar Grid.Row="1">
-                    <StatusBarItem>Run as Administrator to change settings.</StatusBarItem>
-                </StatusBar>
-            </Grid>
-        </TabItem>
-    </TabControl>
+            <TabItem Header="Driver">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+
+                    <GroupBox Header="Global driver settings"
+                          Margin="{adonisUi:Space 1}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <CheckBox Grid.Row="0"
+                                  IsEnabled="{Binding Path=IsElevated}"
+                                  Margin="{adonisUi:Space 1}"
+                                  IsChecked="{Binding Path=VerboseOn}">Enable verbose logging</CheckBox>
+                        </Grid>
+                    </GroupBox>
+                </Grid>
+            </TabItem>
+        </TabControl>
+        
+        <StatusBar Grid.Row="1">
+            <StatusBarItem>Run as Administrator to change settings.</StatusBarItem>
+        </StatusBar>
+    </Grid>
 
 </controls:AdonisWindow>

@@ -74,6 +74,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="DsHidMiniDriver.cs" />
+    <Compile Include="Util\RegistryHelpers.cs" />
     <Compile Include="Util\SetupApiWrapper.cs" />
     <Compile Include="Util\Devcon.cs" />
     <Compile Include="Util\Device.cs" />
