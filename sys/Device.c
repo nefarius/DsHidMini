@@ -220,8 +220,6 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 	WDF_DEVICE_PROPERTY_DATA devProp;
 	DEVPROPTYPE propType;
 	WDF_OBJECT_ATTRIBUTES attributes;
-	ULONG requiredSize = 0;
-	DEVPROPTYPE propertyType;
 	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 
 	FuncEntry(TRACE_DEVICE);
@@ -291,56 +289,6 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 			"DEVPKEY_Device_InstanceId: %ws",
 			WdfMemoryGetBuffer(pDevCtx->InstanceId, NULL)
 		);
-
-		//
-		// Common properties
-		// 
-
-		WDF_DEVICE_PROPERTY_DATA_INIT(&devProp, &DEVPKEY_DsHidMini_HidDeviceMode);
-
-		status = WdfDeviceQueryPropertyEx(
-			Device,
-			&devProp,
-			sizeof(UCHAR),
-			&pDevCtx->Configuration.HidDeviceMode,
-			&requiredSize,
-			&propertyType
-		);
-		if (!NT_SUCCESS(status))
-		{
-			TraceError(
-				TRACE_DEVICE,
-				"Requesting DEVPKEY_DsHidMini_HidDeviceMode failed with %!STATUS!",
-				status
-			);
-			return status;
-		}
-
-		TraceVerbose(TRACE_DEVICE, "[COM] HidDeviceMode: 0x%02X",
-			pDevCtx->Configuration.HidDeviceMode);
-
-		WDF_DEVICE_PROPERTY_DATA_INIT(&devProp, &DEVPKEY_DsHidMini_OutputReportTimerPeriodMs);
-
-		status = WdfDeviceQueryPropertyEx(
-			Device,
-			&devProp,
-			sizeof(ULONG),
-			&pDevCtx->Configuration.OutputReportTimerPeriodMs,
-			&requiredSize,
-			&propertyType
-		);
-		if (!NT_SUCCESS(status))
-		{
-			TraceError(
-				TRACE_DEVICE,
-				"Requesting DEVPKEY_DsHidMini_OutputReportTimerPeriodMs failed with %!STATUS!",
-				status
-			);
-			return status;
-		}
-
-		TraceVerbose(TRACE_DEVICE, "[COM] OutputReportTimerPeriodMs: %d",
-			pDevCtx->Configuration.OutputReportTimerPeriodMs);
 		
 		//
 		// Fetch and convert device address from device property

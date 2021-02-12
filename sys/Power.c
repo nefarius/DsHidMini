@@ -242,7 +242,7 @@ DsHidMini_EvtDevicePrepareHardware(
 )
 {
 	NTSTATUS                                status = STATUS_SUCCESS;
-	PDEVICE_CONTEXT                         pCtx;
+	PDEVICE_CONTEXT                         pDevCtx;
 	WDF_USB_DEVICE_SELECT_CONFIG_PARAMS     configParams;
 	UCHAR                                   index;
 	WDFUSBPIPE                              pipe;
@@ -257,17 +257,51 @@ DsHidMini_EvtDevicePrepareHardware(
 
 	FuncEntry(TRACE_POWER);
 
-	pCtx = DeviceGetContext(Device);
+	pDevCtx = DeviceGetContext(Device);
+
+	//
+	// Common properties
+	// 
+
+	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_HidDeviceMode);
+	pDevCtx->Configuration.HidDeviceMode = DsHidMiniDeviceModeSixaxisCompatible;
+
+	(void)WdfDeviceQueryPropertyEx(
+		Device,
+		&propertyData,
+		sizeof(UCHAR),
+		&pDevCtx->Configuration.HidDeviceMode,
+		&requiredSize,
+		&propertyType
+	);
+
+	TraceVerbose(TRACE_POWER, "[COM] HidDeviceMode: 0x%02X",
+		pDevCtx->Configuration.HidDeviceMode);
+
+	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_OutputReportTimerPeriodMs);
+	pDevCtx->Configuration.OutputReportTimerPeriodMs = 250;
+
+	(void)WdfDeviceQueryPropertyEx(
+		Device,
+		&propertyData,
+		sizeof(ULONG),
+		&pDevCtx->Configuration.OutputReportTimerPeriodMs,
+		&requiredSize,
+		&propertyType
+	);
+
+	TraceVerbose(TRACE_POWER, "[COM] OutputReportTimerPeriodMs: %d",
+		pDevCtx->Configuration.OutputReportTimerPeriodMs);
 	
 	//
 	// Initialize USB framework object
 	// 
-	if (pCtx->ConnectionType == DsDeviceConnectionTypeUsb
-		&& pCtx->Connection.Usb.UsbDevice == NULL)
+	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb
+		&& pDevCtx->Connection.Usb.UsbDevice == NULL)
 	{
 		status = WdfUsbTargetDeviceCreate(Device,
 			WDF_NO_OBJECT_ATTRIBUTES,
-			&pCtx->Connection.Usb.UsbDevice
+			&pDevCtx->Connection.Usb.UsbDevice
 		);
 
 		if (!NT_SUCCESS(status)) {
@@ -283,23 +317,23 @@ DsHidMini_EvtDevicePrepareHardware(
 	//
 	// Grab pipes and meta information
 	// 
-	if (pCtx->ConnectionType == DsDeviceConnectionTypeUsb)
+	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
 	{
 		WdfUsbTargetDeviceGetDeviceDescriptor(
-			pCtx->Connection.Usb.UsbDevice,
-			&pCtx->Connection.Usb.UsbDeviceDescriptor
+			pDevCtx->Connection.Usb.UsbDevice,
+			&pDevCtx->Connection.Usb.UsbDeviceDescriptor
 		);
 
-		pCtx->VendorId = pCtx->Connection.Usb.UsbDeviceDescriptor.idVendor;
-		TraceVerbose(TRACE_POWER, "[USB] VID: 0x%04X", pCtx->VendorId);
-		pCtx->ProductId = pCtx->Connection.Usb.UsbDeviceDescriptor.idProduct;
-		TraceVerbose(TRACE_POWER, "[USB] PID: 0x%04X", pCtx->ProductId);
+		pDevCtx->VendorId = pDevCtx->Connection.Usb.UsbDeviceDescriptor.idVendor;
+		TraceVerbose(TRACE_POWER, "[USB] VID: 0x%04X", pDevCtx->VendorId);
+		pDevCtx->ProductId = pDevCtx->Connection.Usb.UsbDeviceDescriptor.idProduct;
+		TraceVerbose(TRACE_POWER, "[USB] PID: 0x%04X", pDevCtx->ProductId);
 		
 #pragma region USB Interface & Pipe settings
 
 		WDF_USB_DEVICE_SELECT_CONFIG_PARAMS_INIT_SINGLE_INTERFACE(&configParams);
 
-		status = WdfUsbTargetDeviceSelectConfig(pCtx->Connection.Usb.UsbDevice,
+		status = WdfUsbTargetDeviceSelectConfig(pDevCtx->Connection.Usb.UsbDevice,
 			WDF_NO_OBJECT_ATTRIBUTES,
 			&configParams
 		);
@@ -310,17 +344,17 @@ DsHidMini_EvtDevicePrepareHardware(
 			return status;
 		}
 
-		pCtx->Connection.Usb.UsbInterface = configParams.Types.SingleInterface.ConfiguredUsbInterface;
+		pDevCtx->Connection.Usb.UsbInterface = configParams.Types.SingleInterface.ConfiguredUsbInterface;
 
 		//
 		// Grab product name to use as FriendlyName
 		// 
 		status = WdfUsbTargetDeviceAllocAndQueryString(
-			pCtx->Connection.Usb.UsbDevice,
+			pDevCtx->Connection.Usb.UsbDevice,
 			WDF_NO_OBJECT_ATTRIBUTES,
-			&pCtx->Connection.Usb.ProductString,
+			&pDevCtx->Connection.Usb.ProductString,
 			NULL,
-			pCtx->Connection.Usb.UsbDeviceDescriptor.iProduct,
+			pDevCtx->Connection.Usb.UsbDeviceDescriptor.iProduct,
 			0x0409
 		);
 		if (!NT_SUCCESS(status))
@@ -336,12 +370,12 @@ DsHidMini_EvtDevicePrepareHardware(
 		//
 		// Get pipe handles
 		//
-		for (index = 0; index < WdfUsbInterfaceGetNumConfiguredPipes(pCtx->Connection.Usb.UsbInterface); index++) {
+		for (index = 0; index < WdfUsbInterfaceGetNumConfiguredPipes(pDevCtx->Connection.Usb.UsbInterface); index++) {
 
 			WDF_USB_PIPE_INFORMATION_INIT(&pipeInfo);
 
 			pipe = WdfUsbInterfaceGetConfiguredPipe(
-				pCtx->Connection.Usb.UsbInterface,
+				pDevCtx->Connection.Usb.UsbInterface,
 				index, //PipeIndex,
 				&pipeInfo
 			);
@@ -355,11 +389,11 @@ DsHidMini_EvtDevicePrepareHardware(
 				WdfUsbTargetPipeIsInEndpoint(pipe)) {
 				TraceInformation(TRACE_POWER,
 					"InterruptReadPipe is 0x%p\n", pipe);
-				pCtx->Connection.Usb.InterruptInPipe = pipe;
+				pDevCtx->Connection.Usb.InterruptInPipe = pipe;
 			}
 		}
 
-		if (!pCtx->Connection.Usb.InterruptInPipe)
+		if (!pDevCtx->Connection.Usb.InterruptInPipe)
 		{
 			status = STATUS_INVALID_DEVICE_STATE;
 			TraceError( TRACE_POWER,
@@ -379,7 +413,7 @@ DsHidMini_EvtDevicePrepareHardware(
 			// Request device MAC address
 			// 
 			status = USB_SendControlRequest(
-				pCtx,
+				pDevCtx,
 				BmRequestDeviceToHost,
 				BmRequestClass,
 				GetReport,
@@ -396,26 +430,26 @@ DsHidMini_EvtDevicePrepareHardware(
 			}
 
 			RtlCopyMemory(
-				&pCtx->DeviceAddress,
+				&pDevCtx->DeviceAddress,
 				&controlTransferBuffer[4],
 				sizeof(BD_ADDR));
 
 			TraceEvents(TRACE_LEVEL_INFORMATION,
 			            TRACE_POWER,
 			            "Device address: %02X:%02X:%02X:%02X:%02X:%02X",
-			            pCtx->DeviceAddress.Address[0],
-			            pCtx->DeviceAddress.Address[1],
-			            pCtx->DeviceAddress.Address[2],
-			            pCtx->DeviceAddress.Address[3],
-			            pCtx->DeviceAddress.Address[4],
-			            pCtx->DeviceAddress.Address[5]
+			            pDevCtx->DeviceAddress.Address[0],
+			            pDevCtx->DeviceAddress.Address[1],
+			            pDevCtx->DeviceAddress.Address[2],
+			            pDevCtx->DeviceAddress.Address[3],
+			            pDevCtx->DeviceAddress.Address[4],
+			            pDevCtx->DeviceAddress.Address[5]
 			);
 			
 			//
 			// Request host BTH address
 			// 
 			status = USB_SendControlRequest(
-				pCtx,
+				pDevCtx,
 				BmRequestDeviceToHost,
 				BmRequestClass,
 				GetReport,
@@ -432,7 +466,7 @@ DsHidMini_EvtDevicePrepareHardware(
 			}
 
 			RtlCopyMemory(
-				&pCtx->HostAddress,
+				&pDevCtx->HostAddress,
 				&controlTransferBuffer[2],
 				sizeof(BD_ADDR));
 
@@ -440,7 +474,7 @@ DsHidMini_EvtDevicePrepareHardware(
 			// Send initial output report
 			// 
 			status = USB_SendControlRequest(
-				pCtx,
+				pDevCtx,
 				BmRequestHostToDevice,
 				BmRequestClass,
 				SetReport,
@@ -452,12 +486,12 @@ DsHidMini_EvtDevicePrepareHardware(
 			//
 			// Copy output report for later modification and reuse
 			// 
-			if (!pCtx->Connection.Usb.OutputReport)
+			if (!pDevCtx->Connection.Usb.OutputReport)
 			{
-				pCtx->Connection.Usb.OutputReport = malloc(DS3_USB_HID_OUTPUT_REPORT_SIZE);
+				pDevCtx->Connection.Usb.OutputReport = malloc(DS3_USB_HID_OUTPUT_REPORT_SIZE);
 
 				RtlCopyMemory(
-					pCtx->Connection.Usb.OutputReport,
+					pDevCtx->Connection.Usb.OutputReport,
 					G_Ds3UsbHidOutputReport,
 					DS3_USB_HID_OUTPUT_REPORT_SIZE
 				);
@@ -468,7 +502,7 @@ DsHidMini_EvtDevicePrepareHardware(
 	//
 	// Grab device properties exposed via BthPS3
 	// 
-	if (pCtx->ConnectionType == DsDeviceConnectionTypeBth)
+	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
 	{
 		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_Bluetooth_DeviceVID);
 
@@ -476,7 +510,7 @@ DsHidMini_EvtDevicePrepareHardware(
 			Device,
 			&propertyData,
 			sizeof(USHORT),
-			&pCtx->VendorId,
+			&pDevCtx->VendorId,
 			&requiredSize,
 			&propertyType
 		);
@@ -490,7 +524,7 @@ DsHidMini_EvtDevicePrepareHardware(
 			return status;
 		}
 
-		TraceVerbose(TRACE_POWER, "[BTH] VID: 0x%04X", pCtx->VendorId);
+		TraceVerbose(TRACE_POWER, "[BTH] VID: 0x%04X", pDevCtx->VendorId);
 
 		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_Bluetooth_DevicePID);
 
@@ -498,7 +532,7 @@ DsHidMini_EvtDevicePrepareHardware(
 			Device,
 			&propertyData,
 			sizeof(USHORT),
-			&pCtx->ProductId,
+			&pDevCtx->ProductId,
 			&requiredSize,
 			&propertyType
 		);
@@ -512,7 +546,7 @@ DsHidMini_EvtDevicePrepareHardware(
 			return status;
 		}
 
-		TraceVerbose(TRACE_POWER, "[BTH] PID: 0x%04X", pCtx->ProductId);
+		TraceVerbose(TRACE_POWER, "[BTH] PID: 0x%04X", pDevCtx->ProductId);
 	}
 
 	FuncExit(TRACE_POWER, "status=%!STATUS!", status);
