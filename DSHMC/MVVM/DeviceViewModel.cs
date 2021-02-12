@@ -101,7 +101,15 @@ namespace Nefarius.DsHidMini.MVVM
         /// <summary>
         ///     The friendly (product) name of this device.
         /// </summary>
-        public string DisplayName => _device.GetProperty<string>(DevicePropertyDevice.FriendlyName);
+        public string DisplayName
+        {
+            get
+            {
+                var name = _device.GetProperty<string>(DevicePropertyDevice.FriendlyName);
+
+                return string.IsNullOrEmpty(name) ? "<failed to retrieve device name>" : name;
+            }
+        }
 
         /// <summary>
         ///     The connection protocol used by this device.
