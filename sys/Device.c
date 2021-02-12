@@ -26,10 +26,6 @@ dshidminiEvtDeviceAdd(
 	DMF_EVENT_CALLBACKS				dmfCallbacks;
 	WDF_PNPPOWER_EVENT_CALLBACKS	pnpPowerCallbacks;
 	PDEVICE_CONTEXT					pDevCtx;
-	WCHAR							enumeratorName[200];
-	ULONG							bufSize;
-	WDF_DEVICE_PROPERTY_DATA		devProp;
-	DEVPROPTYPE						propType;
 	WDFQUEUE						queue;
 	WDF_IO_QUEUE_CONFIG				queueConfig;	
 
@@ -86,37 +82,21 @@ dshidminiEvtDeviceAdd(
 		}
 
 		//
-		// Query enumerator name to discover connection type
-		// 
-		status = WdfDeviceQueryProperty(
-			device,
-			DevicePropertyEnumeratorName,
-			ARRAYSIZE(enumeratorName),
-			(PVOID)enumeratorName,
-			&bufSize
-		);
+		// Read device properties
+		// 	
+		status = DsDevice_ReadProperties(device);
 		if (!NT_SUCCESS(status))
 		{
-			TraceError(
-				TRACE_DEVICE,
-				"WdfDeviceQueryProperty failed with status %!STATUS!",
-				status
-			);
 			break;
 		}
 
 		pDevCtx = DeviceGetContext(device);
 
 		//
-		// Early device type detection, using enumerator name
+		// Bluetooth-specific initialization
 		// 
-		if (wcscmp(L"USB", enumeratorName) == 0)
+		if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
 		{
-			pDevCtx->ConnectionType = DsDeviceConnectionTypeUsb;
-		}
-		else
-		{
-			pDevCtx->ConnectionType = DsDeviceConnectionTypeBth;
 			pDevCtx->Connection.Bth.BthIoTarget = WdfDeviceGetIoTarget(device);
 
 			//
@@ -133,95 +113,6 @@ dshidminiEvtDeviceAdd(
 				);
 				break;
 			}
-		}
-
-		WDF_DEVICE_PROPERTY_DATA_INIT(&devProp, &DEVPKEY_Device_InstanceId);
-		WDF_OBJECT_ATTRIBUTES_INIT(&deviceAttributes);
-		deviceAttributes.ParentObject = device;
-
-		//
-		// Query device instance string for configuration
-		// 
-		status = WdfDeviceAllocAndQueryPropertyEx(
-			device,
-			&devProp,
-			NonPagedPoolNx,
-			&deviceAttributes,
-			&pDevCtx->InstanceId,
-			&propType
-		);
-		if (!NT_SUCCESS(status))
-		{
-			TraceError(
-				TRACE_DEVICE,
-				"WdfDeviceAllocAndQueryPropertyEx failed with status %!STATUS!",
-				status
-			);
-			break;
-		}
-
-		TraceVerbose(
-			TRACE_DEVICE,
-			"DEVPKEY_Device_InstanceId: %ws",
-			WdfMemoryGetBuffer(pDevCtx->InstanceId, NULL)
-		);
-
-		//
-		// Fetch and convert device address from device property
-		// 
-		if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
-		{
-			WDFMEMORY deviceAddressMemory;
-			WDF_DEVICE_PROPERTY_DATA_INIT(&devProp, &DEVPKEY_Bluetooth_DeviceAddress);
-
-			//
-			// Get device property (returns wide hex string)
-			// 
-			status = WdfDeviceAllocAndQueryPropertyEx(
-				device,
-				&devProp,
-				NonPagedPoolNx,
-				WDF_NO_OBJECT_ATTRIBUTES,
-				&deviceAddressMemory,
-				&propType
-			);
-			if (!NT_SUCCESS(status))
-			{
-				TraceError(
-					TRACE_DEVICE,
-					"WdfDeviceAllocAndQueryPropertyEx failed with status %!STATUS!",
-					status
-				);
-				break;
-			}
-
-			//
-			// Convert hex string into UINT64
-			// 
-			UINT64 hostAddress = wcstoull(
-				WdfMemoryGetBuffer(deviceAddressMemory, NULL), 
-				L'\0', 
-				16
-			);
-
-			WdfObjectDelete(deviceAddressMemory);
-
-			//
-			// Convert to MAC address type
-			// 
-
-			pDevCtx->DeviceAddress.Address[0] = (UCHAR)((hostAddress >> (8 * 0)) & 0xFF);
-			pDevCtx->DeviceAddress.Address[1] = (UCHAR)((hostAddress >> (8 * 1)) & 0xFF);
-			pDevCtx->DeviceAddress.Address[2] = (UCHAR)((hostAddress >> (8 * 2)) & 0xFF);
-			pDevCtx->DeviceAddress.Address[3] = (UCHAR)((hostAddress >> (8 * 3)) & 0xFF);
-			pDevCtx->DeviceAddress.Address[4] = (UCHAR)((hostAddress >> (8 * 4)) & 0xFF);
-			pDevCtx->DeviceAddress.Address[5] = (UCHAR)((hostAddress >> (8 * 5)) & 0xFF);
-			
-			TraceVerbose(
-				TRACE_DEVICE,
-				"Device address: %012llX",
-				*(PULONGLONG)&pDevCtx->DeviceAddress
-			);
 		}
 
 		//
@@ -319,6 +210,203 @@ dshidminiEvtDeviceAdd(
 #pragma code_seg()
 
 //
+// Read device properties
+// 
+NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
+{
+	NTSTATUS status;
+	WCHAR enumeratorName[200];
+	ULONG bufSize;
+	WDF_DEVICE_PROPERTY_DATA devProp;
+	DEVPROPTYPE propType;
+	WDF_OBJECT_ATTRIBUTES attributes;
+	ULONG requiredSize = 0;
+	DEVPROPTYPE propertyType;
+	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+
+	FuncEntry(TRACE_DEVICE);
+	
+	do
+	{
+		//
+		// Query enumerator name to discover connection type
+		// 
+		status = WdfDeviceQueryProperty(
+			Device,
+			DevicePropertyEnumeratorName,
+			ARRAYSIZE(enumeratorName),
+			(PVOID)enumeratorName,
+			&bufSize
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"WdfDeviceQueryProperty failed with status %!STATUS!",
+				status
+			);
+			break;
+		}
+		
+		//
+		// Early device type detection, using enumerator name
+		// 
+		if (_wcsicmp(L"USB", enumeratorName) == 0)
+		{
+			pDevCtx->ConnectionType = DsDeviceConnectionTypeUsb;
+		}
+		else
+		{
+			pDevCtx->ConnectionType = DsDeviceConnectionTypeBth;
+		}
+
+		WDF_DEVICE_PROPERTY_DATA_INIT(&devProp, &DEVPKEY_Device_InstanceId);
+		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
+		attributes.ParentObject = Device;
+
+		//
+		// Query device instance string for configuration
+		// TODO: deprecated
+		// 
+		status = WdfDeviceAllocAndQueryPropertyEx(
+			Device,
+			&devProp,
+			NonPagedPoolNx,
+			&attributes,
+			&pDevCtx->InstanceId,
+			&propType
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"WdfDeviceAllocAndQueryPropertyEx failed with status %!STATUS!",
+				status
+			);
+			break;
+		}
+
+		TraceVerbose(
+			TRACE_DEVICE,
+			"DEVPKEY_Device_InstanceId: %ws",
+			WdfMemoryGetBuffer(pDevCtx->InstanceId, NULL)
+		);
+
+		//
+		// Common properties
+		// 
+
+		WDF_DEVICE_PROPERTY_DATA_INIT(&devProp, &DEVPKEY_DsHidMini_HidDeviceMode);
+
+		status = WdfDeviceQueryPropertyEx(
+			Device,
+			&devProp,
+			sizeof(UCHAR),
+			&pDevCtx->Configuration.HidDeviceMode,
+			&requiredSize,
+			&propertyType
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"Requesting DEVPKEY_DsHidMini_HidDeviceMode failed with %!STATUS!",
+				status
+			);
+			return status;
+		}
+
+		TraceVerbose(TRACE_DEVICE, "[COM] HidDeviceMode: 0x%02X",
+			pDevCtx->Configuration.HidDeviceMode);
+
+		WDF_DEVICE_PROPERTY_DATA_INIT(&devProp, &DEVPKEY_DsHidMini_OutputReportTimerPeriodMs);
+
+		status = WdfDeviceQueryPropertyEx(
+			Device,
+			&devProp,
+			sizeof(ULONG),
+			&pDevCtx->Configuration.OutputReportTimerPeriodMs,
+			&requiredSize,
+			&propertyType
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"Requesting DEVPKEY_DsHidMini_OutputReportTimerPeriodMs failed with %!STATUS!",
+				status
+			);
+			return status;
+		}
+
+		TraceVerbose(TRACE_DEVICE, "[COM] OutputReportTimerPeriodMs: %d",
+			pDevCtx->Configuration.OutputReportTimerPeriodMs);
+		
+		//
+		// Fetch and convert device address from device property
+		// 
+		if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
+		{
+			WDFMEMORY deviceAddressMemory;
+			WDF_DEVICE_PROPERTY_DATA_INIT(&devProp, &DEVPKEY_Bluetooth_DeviceAddress);
+
+			//
+			// Get device property (returns wide hex string)
+			// 
+			status = WdfDeviceAllocAndQueryPropertyEx(
+				Device,
+				&devProp,
+				NonPagedPoolNx,
+				WDF_NO_OBJECT_ATTRIBUTES,
+				&deviceAddressMemory,
+				&propType
+			);
+			if (!NT_SUCCESS(status))
+			{
+				TraceError(
+					TRACE_DEVICE,
+					"WdfDeviceAllocAndQueryPropertyEx failed with status %!STATUS!",
+					status
+				);
+				break;
+			}
+
+			//
+			// Convert hex string into UINT64
+			// 
+			UINT64 hostAddress = wcstoull(
+				WdfMemoryGetBuffer(deviceAddressMemory, NULL),
+				L'\0',
+				16
+			);
+
+			WdfObjectDelete(deviceAddressMemory);
+
+			//
+			// Convert to MAC address type
+			// 
+
+			pDevCtx->DeviceAddress.Address[0] = (UCHAR)((hostAddress >> (8 * 0)) & 0xFF);
+			pDevCtx->DeviceAddress.Address[1] = (UCHAR)((hostAddress >> (8 * 1)) & 0xFF);
+			pDevCtx->DeviceAddress.Address[2] = (UCHAR)((hostAddress >> (8 * 2)) & 0xFF);
+			pDevCtx->DeviceAddress.Address[3] = (UCHAR)((hostAddress >> (8 * 3)) & 0xFF);
+			pDevCtx->DeviceAddress.Address[4] = (UCHAR)((hostAddress >> (8 * 4)) & 0xFF);
+			pDevCtx->DeviceAddress.Address[5] = (UCHAR)((hostAddress >> (8 * 5)) & 0xFF);
+
+			TraceVerbose(
+				TRACE_DEVICE,
+				"Device address: %012llX",
+				*(PULONGLONG)&pDevCtx->DeviceAddress
+			);
+		}
+	} while (FALSE);
+
+	FuncExit(TRACE_DEVICE, "status=%!STATUS!", status);
+	
+	return status;
+}
+
+//
 // Free context memory
 // 
 void DsHidMini_EvtDeviceContextCleanup(
@@ -351,7 +439,7 @@ DmfDeviceModulesAdd(
 	_In_ PDMFMODULE_INIT DmfModuleInit
 )
 {
-	PDEVICE_CONTEXT deviceContext;
+	PDEVICE_CONTEXT pDevCtx;
 	DMF_MODULE_ATTRIBUTES moduleAttributes;
 	DMF_CONFIG_DsHidMini dsHidMiniCfg;
 	DMF_CONFIG_ScheduledTask dmfSchedulerCfg;
@@ -360,7 +448,7 @@ DmfDeviceModulesAdd(
 
 	FuncEntry(TRACE_DEVICE);
 
-	deviceContext = DeviceGetContext(Device);
+	pDevCtx = DeviceGetContext(Device);
 
 	//
 	// Scheduler for serialized periodic output report dispatcher
@@ -372,19 +460,19 @@ DmfDeviceModulesAdd(
 	);
 
 	dmfSchedulerCfg.EvtScheduledTaskCallback = DMF_OutputReportScheduledTaskCallback;
-	dmfSchedulerCfg.CallbackContext = deviceContext;
+	dmfSchedulerCfg.CallbackContext = pDevCtx;
 	dmfSchedulerCfg.PersistenceType = ScheduledTask_Persistence_NotPersistentAcrossReboots;
 	dmfSchedulerCfg.ExecutionMode = ScheduledTask_ExecutionMode_Deferred;
 	dmfSchedulerCfg.ExecuteWhen = ScheduledTask_ExecuteWhen_D0Entry;
 	dmfSchedulerCfg.TimeMsBeforeInitialCall = 1000;
-	dmfSchedulerCfg.TimerPeriodMsOnSuccess = 10;
-	dmfSchedulerCfg.TimerPeriodMsOnFail = 10;
+	dmfSchedulerCfg.TimerPeriodMsOnSuccess = pDevCtx->Configuration.OutputReportTimerPeriodMs;
+	dmfSchedulerCfg.TimerPeriodMsOnFail = pDevCtx->Configuration.OutputReportTimerPeriodMs;
 
 	DMF_DmfModuleAdd(
 		DmfModuleInit,
 		&moduleAttributes,
 		WDF_NO_OBJECT_ATTRIBUTES,
-		&deviceContext->OutputReportScheduler
+		&pDevCtx->OutputReportScheduler
 	);
 
 	//
@@ -400,7 +488,7 @@ DmfDeviceModulesAdd(
 		DmfModuleInit,
 		&moduleAttributes,
 		WDF_NO_OBJECT_ATTRIBUTES,
-		&deviceContext->DsHidMiniModule
+		&pDevCtx->DsHidMiniModule
 	);
 
 	FuncExitNoReturn(TRACE_DEVICE);

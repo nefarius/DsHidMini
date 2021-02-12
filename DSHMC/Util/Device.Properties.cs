@@ -192,12 +192,17 @@ namespace Nefarius.DsHidMini.Util
             if (managedType == typeof(short)
                 || managedType == typeof(ushort))
                 return (T) (object) (ushort) Marshal.ReadInt16(buffer);
-
+            */
             // (U)Int32
             if (managedType == typeof(int)
                 || managedType == typeof(uint))
-                return (T) (object) (uint) Marshal.ReadInt32(buffer);
-
+            {
+                var value = (uint) (object) propertyValue;
+                propBufSize = (uint) Marshal.SizeOf(managedType);
+                buffer = Marshal.AllocHGlobal((int) propBufSize);
+                Marshal.WriteInt32(buffer, (int)value);
+            }
+            /*
             // (U)Int64
             if (managedType == typeof(long)
                 || managedType == typeof(ulong))

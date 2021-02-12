@@ -151,7 +151,22 @@
                           ItemsSource="{Binding Source={wpfUtil:EnumBindingSource {x:Type mini:DsHidDeviceMode}}}"
                           SelectedItem="{Binding Path=SelectedDevice.HidEmulationMode}" />
 
-                    <Button Grid.Row="6" Grid.Column="2"
+                    <TextBlock Grid.Row="6" Grid.Column="0">Output report timer period:</TextBlock>
+                    <DockPanel Grid.Row="6" Grid.Column="2">
+                        <Slider Width="160"
+                                AutoToolTipPlacement="TopLeft" AutoToolTipPrecision="0"
+                                Minimum="10"
+                                TickFrequency="10"
+                                Maximum="10000"
+                                IsSnapToTickEnabled="True"
+                                Margin="{adonisUi:Space 1}"
+                                IsEnabled="{Binding Path=IsEditable}"
+                                Value="{Binding Path=SelectedDevice.OutputReportTimerPeriodMs}" />
+                        <TextBlock Text="{Binding Path=SelectedDevice.OutputReportTimerPeriodMs}" />
+                        <TextBlock Margin="5,0,0,0">Milliseconds</TextBlock>
+                    </DockPanel>
+
+                    <Button Grid.Row="7" Grid.Column="2"
                         Width="100"
                         HorizontalAlignment="Right"
                         Margin="{adonisUi:Space 2}"

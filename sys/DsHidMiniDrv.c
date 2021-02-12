@@ -326,6 +326,7 @@ DMF_DsHidMini_Close(
 
 	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
 }
+
 #pragma code_seg()
 
 #pragma endregion

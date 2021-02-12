@@ -42,6 +42,12 @@ namespace Nefarius.DsHidMini.MVVM
             set => _device.SetProperty(DsHidMiniDriver.HidDeviceModeProperty, (byte) value);
         }
 
+        public uint OutputReportTimerPeriodMs
+        {
+            get => _device.GetProperty<uint>(DsHidMiniDriver.OutputReportTimerPeriodMsProperty);
+            set => _device.SetProperty(DsHidMiniDriver.OutputReportTimerPeriodMsProperty, value);
+        }
+
         /// <summary>
         ///     The device Instance ID.
         /// </summary>

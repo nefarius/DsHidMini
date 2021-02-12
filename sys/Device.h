@@ -296,4 +296,9 @@ EVT_DMF_ScheduledTask_Callback DMF_OutputReportScheduledTaskCallback;
 
 EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL DSHM_EvtWdfIoQueueIoDeviceControl;
 
+NTSTATUS
+DsDevice_ReadProperties(
+	WDFDEVICE Device
+);
+
 EXTERN_C_END
