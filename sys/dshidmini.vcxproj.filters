@@ -60,9 +60,6 @@
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ini.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="PID\01_PIDStateReport.h">
       <Filter>Header Files\PID</Filter>
     </ClInclude>
@@ -150,9 +147,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DsBth.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ini.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -46,7 +46,6 @@
     <ClCompile Include="DsHid.c" />
     <ClCompile Include="DsHidMiniDrv.c" />
     <ClCompile Include="DsUsb.c" />
-    <ClCompile Include="ini.c" />
     <ClCompile Include="Power.c" />
   </ItemGroup>
   <ItemGroup>
@@ -60,7 +59,6 @@
     <ClInclude Include="dshmguid.h" />
     <ClInclude Include="DsInternal.h" />
     <ClInclude Include="DsUsb.h" />
-    <ClInclude Include="ini.h" />
     <ClInclude Include="PID\01_PIDStateReport.h" />
     <ClInclude Include="PID\02_SetEffectReport.h" />
     <ClInclude Include="PID\03_SetEnvelopeReport.h" />
