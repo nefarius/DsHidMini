@@ -12,7 +12,7 @@
                        xmlns:fa="http://schemas.fontawesome.com/icons/"
                        mc:Ignorable="d"
                        Title="DsHidMini Control"
-                       Height="600" Width="800"
+                       Height="580" Width="800"
                        ResizeMode="NoResize"
                        WindowStartupLocation="CenterScreen">
     <controls:AdonisWindow.TitleBarContent>
@@ -210,7 +210,7 @@
                             <!-- Properties which can be adapted during device lifetime -->
                             <GroupBox>
                                 <GroupBox.Header>
-                                    <DockPanel LastChildFill="False">
+                                    <DockPanel LastChildFill="False" ToolTip="Changes to these settings will apply instantly">
                                         <fa:ImageAwesome Icon="Solid_Fire" Height="16"/>
                                         <TextBlock Margin="10,0,0,0">Hot-reloadable settings</TextBlock>
                                     </DockPanel>
