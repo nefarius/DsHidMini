@@ -365,6 +365,10 @@ void DsHidMini_EvtDeviceContextCleanup(
 	
 	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Object);
 
+	if (pDevCtx->ConfigurationReloadEvent) {
+		CloseHandle(pDevCtx->ConfigurationReloadEvent);
+	}
+
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
 	{
 		if (pDevCtx->Connection.Usb.OutputReport)

@@ -225,6 +225,11 @@ typedef struct _DEVICE_CONTEXT
 	// 
 	DS_DRIVER_CONFIGURATION Configuration;
 
+	//
+	// Event to listen for to hot-reload properties
+	//
+	HANDLE ConfigurationReloadEvent;
+
 } DEVICE_CONTEXT, * PDEVICE_CONTEXT;
 
 //

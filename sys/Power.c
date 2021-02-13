@@ -19,6 +19,7 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 	UINT64 hostAddress = 0;
 	size_t friendlyNameSize = 0;
 	PWSTR friendlyName;
+	WCHAR eventName[49];
 
 	PAGED_CODE();
 
@@ -65,7 +66,7 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 		
 		if(swprintf_s(
 			deviceAddress, 
-			ARRAYSIZE(deviceAddress) * sizeof(WCHAR), 
+			ARRAYSIZE(deviceAddress), 
 			L"%02X%02X%02X%02X%02X%02X",
 			pDevCtx->DeviceAddress.Address[0],
 			pDevCtx->DeviceAddress.Address[1],
@@ -223,6 +224,34 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 		);
 
 #pragma endregion
+	}
+
+	swprintf_s(
+		eventName,
+		ARRAYSIZE(eventName),
+		L"Global\\DsHidMiniConfigHotReloadEvent%012llX",
+		*(PULONGLONG)&pDevCtx->DeviceAddress
+	);
+
+	TraceVerbose(
+		TRACE_POWER,
+		"Configuration reload event name: %ls",
+		eventName
+	);
+
+	pDevCtx->ConfigurationReloadEvent = CreateEvent(
+		NULL,
+		FALSE,
+		FALSE,
+		eventName
+	);
+
+	if (pDevCtx->ConfigurationReloadEvent == NULL)
+	{
+		TraceError(
+			TRACE_POWER,
+			"Failed to create reload event"
+		);
 	}
 
 	FuncExit(TRACE_POWER, "status=%!STATUS!", status);
