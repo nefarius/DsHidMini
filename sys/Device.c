@@ -354,6 +354,18 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 	return status;
 }
 
+VOID DsDevice_HotReloadConfiguration(PDEVICE_CONTEXT Context)
+{
+	UNREFERENCED_PARAMETER(Context);
+
+	// TODO: implement me
+
+	TraceVerbose(
+		TRACE_DEVICE,
+		"Hot-reload triggered"
+	);
+}	
+
 //
 // Free context memory
 // 

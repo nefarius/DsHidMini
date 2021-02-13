@@ -306,4 +306,9 @@ DsDevice_ReadProperties(
 	WDFDEVICE Device
 );
 
+VOID
+DsDevice_HotReloadConfiguration(
+	PDEVICE_CONTEXT Context
+);
+
 EXTERN_C_END
