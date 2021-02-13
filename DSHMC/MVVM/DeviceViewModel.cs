@@ -109,6 +109,9 @@ namespace Nefarius.DsHidMini.MVVM
         public DsBatteryStatus BatteryStatus =>
             (DsBatteryStatus)_device.GetProperty<byte>(DsHidMiniDriver.BatteryStatusProperty);
 
+        /// <summary>
+        ///     Return a battery icon depending on the charge.
+        /// </summary>
         public EFontAwesomeIcon BatteryIcon
         {
             get
