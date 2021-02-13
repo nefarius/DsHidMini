@@ -42,15 +42,7 @@ namespace Nefarius.DsHidMini.MVVM
         /// <summary>
         ///     Helper to check if run with elevated privileges.
         /// </summary>
-        public bool IsElevated
-        {
-            get
-            {
-                var securityIdentifier = WindowsIdentity.GetCurrent().Owner;
-                return !(securityIdentifier is null) && securityIdentifier
-                    .IsWellKnown(WellKnownSidType.BuiltinAdministratorsSid);
-            }
-        }
+        public bool IsElevated => SecurityUtil.IsElevated;
 
         /// <summary>
         ///     Is it possible to edit the selected device.

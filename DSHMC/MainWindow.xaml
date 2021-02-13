@@ -132,7 +132,7 @@
                             <TextBox Grid.Row="1" Grid.Column="2"
                          Width="115"
                          Margin="{adonisUi:Space 1}"
-                         Text="{Binding Path=SelectedDevice.DeviceAddress, Mode=OneWay}" />
+                         Text="{Binding Path=SelectedDevice.DeviceAddressFriendly, Mode=OneWay}" />
 
                             <TextBlock Grid.Row="2" Grid.Column="0">Host address:</TextBlock>
                             <TextBox Grid.Row="2" Grid.Column="2"

@@ -12,9 +12,16 @@ namespace Nefarius.DsHidMini.MVVM
 
         private readonly Timer _batteryQuery;
 
+        private readonly EventWaitHandle _configReloadEvent;
+
         public DeviceViewModel(Device device)
         {
             _device = device;
+
+            if (SecurityUtil.IsElevated)
+                _configReloadEvent = EventWaitHandle.OpenExisting(
+                    $"Global\\DsHidMiniConfigHotReloadEvent{DeviceAddress}"
+                    );
 
             _batteryQuery = new Timer(UpdateBatteryStatus, null, 10000, 10000);
         }
@@ -38,9 +45,9 @@ namespace Nefarius.DsHidMini.MVVM
         public DsHidDeviceMode HidEmulationMode
         {
             get =>
-                (DsHidDeviceMode) _device.GetProperty<byte>(
+                (DsHidDeviceMode)_device.GetProperty<byte>(
                     DsHidMiniDriver.HidDeviceModeProperty);
-            set => _device.SetProperty(DsHidMiniDriver.HidDeviceModeProperty, (byte) value);
+            set => _device.SetProperty(DsHidMiniDriver.HidDeviceModeProperty, (byte)value);
         }
 
         public uint OutputReportTimerPeriodMs
@@ -57,16 +64,19 @@ namespace Nefarius.DsHidMini.MVVM
         /// <summary>
         ///     The Bluetooth MAC address of this device.
         /// </summary>
-        public string DeviceAddress
+        public string DeviceAddress => _device.GetProperty<string>(DsHidMiniDriver.DeviceAddressProperty).ToUpper();
+
+        /// <summary>
+        ///     The Bluetooth MAC address of this device.
+        /// </summary>
+        public string DeviceAddressFriendly
         {
             get
             {
-                var deviceAddress = _device.GetProperty<string>(DsHidMiniDriver.DeviceAddressProperty).ToUpper();
-
-                var friendlyAddress = deviceAddress;
+                var friendlyAddress = DeviceAddress;
 
                 var insertedCount = 0;
-                for (var i = 2; i < deviceAddress.Length; i = i + 2)
+                for (var i = 2; i < DeviceAddress.Length; i = i + 2)
                     friendlyAddress = friendlyAddress.Insert(i + insertedCount++, ":");
 
                 return friendlyAddress;
@@ -97,13 +107,13 @@ namespace Nefarius.DsHidMini.MVVM
         ///     Current battery status.
         /// </summary>
         public DsBatteryStatus BatteryStatus =>
-            (DsBatteryStatus) _device.GetProperty<byte>(DsHidMiniDriver.BatteryStatusProperty);
+            (DsBatteryStatus)_device.GetProperty<byte>(DsHidMiniDriver.BatteryStatusProperty);
 
         public EFontAwesomeIcon BatteryIcon
         {
             get
             {
-                switch(BatteryStatus)
+                switch (BatteryStatus)
                 {
                     case DsBatteryStatus.Charged:
                     case DsBatteryStatus.Charging:

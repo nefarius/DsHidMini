@@ -239,8 +239,21 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 		eventName
 	);
 
+	TCHAR* szSD = TEXT("D:")        // Discretionary ACL.
+		TEXT("(A;OICI;GA;;;BA)");   // Allow full control to administrators.
+	TEXT("(A;OICI;GA;;;SY)");   // Allow full control to the local system.
+	SECURITY_ATTRIBUTES sa;
+	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+	sa.bInheritHandle = FALSE;
+	ConvertStringSecurityDescriptorToSecurityDescriptor(
+		szSD, 
+		SDDL_REVISION_1, 
+		&((&sa)->lpSecurityDescriptor), 
+		NULL
+	);
+
 	pDevCtx->ConfigurationReloadEvent = CreateEvent(
-		NULL,
+		&sa,
 		FALSE,
 		FALSE,
 		eventName
