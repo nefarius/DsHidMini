@@ -226,6 +226,15 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 #pragma endregion
 	}
 
+	//
+	// Read hot-reloadable properties
+	//
+	DsDevice_HotReloadConfiguration(pDevCtx);
+
+	//
+	// Register global event to listen for changes on
+	//
+
 	swprintf_s(
 		eventName,
 		ARRAYSIZE(eventName),

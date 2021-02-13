@@ -57,9 +57,6 @@
     <ClInclude Include="DsCommon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Config.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -150,9 +147,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Ds3.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Config.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DsBth.c">

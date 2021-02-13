@@ -65,12 +65,6 @@ DMF_DsHidMini_Create(
 		DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(&pDevCtx->Configuration);
 
 		//
-		// Load volatile configuration
-		// TODO: deprecated
-		// 
-		DsConfig_Load(pDevCtx);
-
-		//
 		// Set Virtual HID Mini properties
 		// 
 		DMF_CALLBACKS_DMF_INIT(&dsHidMiniCallbacks);

@@ -32,7 +32,6 @@ extern unsigned int numInstances;
 #include "DsUsb.h"
 #include "Ds3.h"
 #include "DsBth.h"
-#include "Config.h"
 
 #include "Trace.h"
 
