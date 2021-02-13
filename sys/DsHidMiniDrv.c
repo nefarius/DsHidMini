@@ -1485,7 +1485,7 @@ DMF_OutputReportScheduledTaskCallback(
 
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 	
-	return ScheduledTask_WorkResult_SuccessButTryAgain;
+	return NT_SUCCESS(status) ? ScheduledTask_WorkResult_SuccessButTryAgain : ScheduledTask_WorkResult_Fail;
 }
 
 #pragma endregion
