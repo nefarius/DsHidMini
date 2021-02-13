@@ -12,7 +12,7 @@
                        xmlns:fa="http://schemas.fontawesome.com/icons/"
                        mc:Ignorable="d"
                        Title="DsHidMini Control"
-                       Height="500" Width="800"
+                       Height="600" Width="800"
                        ResizeMode="NoResize"
                        WindowStartupLocation="CenterScreen">
     <controls:AdonisWindow.TitleBarContent>
@@ -89,88 +89,91 @@
                     <GroupBox Grid.Column="1"
                   Header="Device Details"
                   Margin="{adonisUi:Space 1}">
-                        <Grid Visibility="{Binding Path=HasDeviceSelected, Converter={StaticResource VisibleIfTrueConverter}}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="20" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
+                        <StackPanel Visibility="{Binding Path=HasDeviceSelected, Converter={StaticResource VisibleIfTrueConverter}}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="20" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
 
-                            <Grid.Resources>
-                                <Style x:Key="CenterAlignedTextBlockStyle" TargetType="{x:Type TextBlock}"
+                                <Grid.Resources>
+                                    <Style x:Key="CenterAlignedTextBlockStyle" TargetType="{x:Type TextBlock}"
                            BasedOn="{StaticResource {x:Type TextBlock}}">
-                                    <Setter Property="VerticalAlignment" Value="Center" />
-                                </Style>
+                                        <Setter Property="VerticalAlignment" Value="Center" />
+                                    </Style>
 
-                                <Style x:Key="ReadOnlyTextBoxStyle" TargetType="{x:Type TextBox}"
+                                    <Style x:Key="ReadOnlyTextBoxStyle" TargetType="{x:Type TextBox}"
                            BasedOn="{StaticResource {x:Type TextBox}}">
-                                    <Setter Property="IsReadOnly" Value="True" />
-                                    <Setter Property="HorizontalAlignment" Value="Left" />
-                                </Style>
+                                        <Setter Property="IsReadOnly" Value="True" />
+                                        <Setter Property="HorizontalAlignment" Value="Left" />
+                                    </Style>
 
-                                <Style TargetType="TextBlock" BasedOn="{StaticResource CenterAlignedTextBlockStyle}" />
-                                <Style TargetType="TextBox" BasedOn="{StaticResource ReadOnlyTextBoxStyle}" />
-                            </Grid.Resources>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource CenterAlignedTextBlockStyle}" />
+                                    <Style TargetType="TextBox" BasedOn="{StaticResource ReadOnlyTextBoxStyle}" />
+                                </Grid.Resources>
 
-                            <TextBlock Grid.Row="0" Grid.Column="0">Instance ID:</TextBlock>
-                            <TextBox Grid.Row="0" Grid.Column="2"
+                                <TextBlock Grid.Row="0" Grid.Column="0">Instance ID:</TextBlock>
+                                <TextBox Grid.Row="0" Grid.Column="2"
                          Width="280"
                          Margin="{adonisUi:Space 1}"
                          Text="{Binding Path=SelectedDevice.InstanceId, Mode=OneWay}" />
 
-                            <TextBlock Grid.Row="1" Grid.Column="0">Device address:</TextBlock>
-                            <TextBox Grid.Row="1" Grid.Column="2"
+                                <TextBlock Grid.Row="1" Grid.Column="0">Device address:</TextBlock>
+                                <TextBox Grid.Row="1" Grid.Column="2"
                          Width="115"
                          Margin="{adonisUi:Space 1}"
                          Text="{Binding Path=SelectedDevice.DeviceAddressFriendly, Mode=OneWay}" />
 
-                            <TextBlock Grid.Row="2" Grid.Column="0">Host address:</TextBlock>
-                            <TextBox Grid.Row="2" Grid.Column="2"
+                                <TextBlock Grid.Row="2" Grid.Column="0">Host address:</TextBlock>
+                                <TextBox Grid.Row="2" Grid.Column="2"
                          Width="115"
                          Margin="{adonisUi:Space 1}"
                          Text="{Binding Path=SelectedDevice.HostAddress, Mode=OneWay}" />
 
-                            <TextBlock Grid.Row="3" Grid.Column="0">Battery status:</TextBlock>
-                            <DockPanel  Grid.Row="3" Grid.Column="2" LastChildFill="False">
-                                <ComboBox Width="80" HorizontalAlignment="Left"
+                                <TextBlock Grid.Row="3" Grid.Column="0">Battery status:</TextBlock>
+                                <DockPanel  Grid.Row="3" Grid.Column="2" LastChildFill="False">
+                                    <ComboBox Width="80" HorizontalAlignment="Left"
                           Margin="{adonisUi:Space 1}"
                           IsEnabled="False"
                           ItemsSource="{Binding Source={wpfUtil:EnumBindingSource {x:Type mini:DsBatteryStatus}}}"
                           SelectedItem="{Binding Path=SelectedDevice.BatteryStatus, Mode=OneWay}" />
-                                <fa:ImageAwesome
+                                    <fa:ImageAwesome
                                                              Icon="{Binding Path=SelectedDevice.BatteryIcon}" 
                                                               VerticalAlignment="Center"
                                                              Width="16"
                                                              />
-                            </DockPanel>
+                                </DockPanel>
 
-                            <TextBlock Grid.Row="4" Grid.Column="0">Last connected (wireless):</TextBlock>
-                            <TextBox Grid.Row="4" Grid.Column="2"
+                                <TextBlock Grid.Row="4" Grid.Column="0">Last connected (wireless):</TextBlock>
+                                <TextBox Grid.Row="4" Grid.Column="2"
                          Width="165"
                          Margin="{adonisUi:Space 1}"
                          extensions:WatermarkExtension.Watermark="Unavailable"
                          Text="{Binding Path=SelectedDevice.LastConnected, Mode=OneWay}" />
 
-                            <TextBlock Grid.Row="5" Grid.Column="0">HID device mode:</TextBlock>
-                            <ComboBox Grid.Row="5" Grid.Column="2" Width="200" HorizontalAlignment="Left"
+                                <TextBlock Grid.Row="5" Grid.Column="0">HID device mode:</TextBlock>
+                                <ComboBox Grid.Row="5" Grid.Column="2" Width="200" HorizontalAlignment="Left"
                           Margin="{adonisUi:Space 1}"
                           IsEnabled="{Binding Path=IsEditable}"
                           ItemsSource="{Binding Source={wpfUtil:EnumBindingSource {x:Type mini:DsHidDeviceMode}}}"
                           SelectedItem="{Binding Path=SelectedDevice.HidEmulationMode}" />
 
-                            <TextBlock Grid.Row="6" Grid.Column="0">Output report timer period:</TextBlock>
-                            <DockPanel Grid.Row="6" Grid.Column="2">
-                                <Slider Width="160"
+                                <TextBlock Grid.Row="6" Grid.Column="0">Output report timer period:</TextBlock>
+                                <DockPanel Grid.Row="6" Grid.Column="2">
+                                    <Slider Width="160"
                                 AutoToolTipPlacement="TopLeft" AutoToolTipPrecision="0"
                                 Minimum="10"
                                 TickFrequency="10"
@@ -179,19 +182,44 @@
                                 Margin="{adonisUi:Space 1}"
                                 IsEnabled="{Binding Path=IsEditable}"
                                 Value="{Binding Path=SelectedDevice.OutputReportTimerPeriodMs}" />
-                                <TextBlock Text="{Binding Path=SelectedDevice.OutputReportTimerPeriodMs}" />
-                                <TextBlock Margin="5,0,0,0">Milliseconds</TextBlock>
-                            </DockPanel>
+                                    <TextBlock Text="{Binding Path=SelectedDevice.OutputReportTimerPeriodMs}" />
+                                    <TextBlock Margin="5,0,0,0">Milliseconds</TextBlock>
+                                </DockPanel>
 
-                            <Button Grid.Row="7" Grid.Column="2"
+                                <Button Grid.Row="8" Grid.Column="2"
                         Width="100"
                         HorizontalAlignment="Right"
                         Margin="{adonisUi:Space 2}"
-                        Visibility="{Binding Path=IsEditable, Converter={StaticResource VisibleIfTrueConverter}}"
+                        IsEnabled="{Binding Path=IsEditable}"
                         Click="ApplyChanges_Click">
-                                Apply changes
-                            </Button>
-                        </Grid>
+                                    Apply changes
+                                </Button>
+                            </Grid>
+                            
+                            <!-- Properties which can be adapted during device lifetime -->
+                            <GroupBox>
+                                <GroupBox.Header>
+                                    <DockPanel LastChildFill="False">
+                                        <fa:ImageAwesome Icon="Solid_Fire" Height="16"/>
+                                        <TextBlock Margin="10,0,0,0">Hot-reloadable settings</TextBlock>
+                                    </DockPanel>
+                                </GroupBox.Header>
+                                
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+
+                                    <CheckBox Grid.Row="0"
+                                              Margin="{adonisUi:Space 1}"
+                                              IsEnabled="{Binding Path=IsEditable}"
+                                              IsChecked="{Binding Path=SelectedDevice.MuteDigitalPressureButtons}">
+                                        Mute digital pressure buttons
+                                    </CheckBox>
+                                </Grid>
+                            </GroupBox>
+                        </StackPanel>
                     </GroupBox>
                 </Grid>
             </TabItem>

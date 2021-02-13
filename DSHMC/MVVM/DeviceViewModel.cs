@@ -12,16 +12,9 @@ namespace Nefarius.DsHidMini.MVVM
 
         private readonly Timer _batteryQuery;
 
-        private readonly EventWaitHandle _configReloadEvent;
-
         public DeviceViewModel(Device device)
         {
             _device = device;
-
-            if (SecurityUtil.IsElevated)
-                _configReloadEvent = EventWaitHandle.OpenExisting(
-                    $"Global\\DsHidMiniConfigHotReloadEvent{DeviceAddress}"
-                    );
 
             _batteryQuery = new Timer(UpdateBatteryStatus, null, 10000, 10000);
         }
@@ -37,6 +30,22 @@ namespace Nefarius.DsHidMini.MVVM
         public void ApplyChanges()
         {
             _device.Restart();
+        }
+
+        public bool MuteDigitalPressureButtons
+        {
+            get => _device.GetProperty<byte>(DsHidMiniDriver.MuteDigitalPressureButtonsProperty) > 0;
+            set
+            {
+                using (var evt = EventWaitHandle.OpenExisting(
+                    $"Global\\DsHidMiniConfigHotReloadEvent{DeviceAddress}"
+                    ))
+                {
+                    _device.SetProperty(DsHidMiniDriver.MuteDigitalPressureButtonsProperty, (byte)(value ? 1 : 0));
+
+                    evt.Set();
+                }
+            }
         }
 
         /// <summary>
