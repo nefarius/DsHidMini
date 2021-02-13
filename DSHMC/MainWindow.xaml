@@ -18,10 +18,21 @@
     <controls:AdonisWindow.TitleBarContent>
         <StackPanel Orientation="Horizontal"
                     HorizontalAlignment="Right">
+            
+            <StackPanel.Resources>
+                <BooleanToVisibilityConverter x:Key="VisibleIfTrueConverter" />
+            </StackPanel.Resources>
+            
             <TextBlock Margin="{adonisUi:Space 1}"
-                       Text="{Binding Path=Version}" />
+                       Visibility="{Binding Path=IsElevated, Converter={StaticResource VisibleIfTrueConverter}}" 
+                       Text="[Administrator]"
+                       ToolTip="Running with elevated privileges"/>
+            <TextBlock Margin="{adonisUi:Space 1}"
+                       Text="{Binding Path=Version}"
+                       ToolTip="Version of this utility"/>
             <Button Content="?"
                     Style="{DynamicResource {x:Static adonisUi:Styles.WindowButton}}"
+                    ToolTip="Open online help"
                     Click="Help_OnClick"
                     FontFamily="Segoe UI"
                     FontSize="14"/>
