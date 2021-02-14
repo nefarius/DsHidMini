@@ -354,6 +354,18 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 	return status;
 }
 
+VOID CALLBACK 
+DsDevice_HotRealodEventCallback(
+	_In_ PVOID   lpParameter,
+	_In_ BOOLEAN TimerOrWaitFired
+) 
+{
+	PDEVICE_CONTEXT pDevCtx = (PDEVICE_CONTEXT)lpParameter;
+	UNREFERENCED_PARAMETER(TimerOrWaitFired);
+
+	DsDevice_HotReloadConfiguration(pDevCtx);
+}
+
 //
 // Read device properties which can be refreshed during runtime
 //
@@ -391,10 +403,6 @@ void DsHidMini_EvtDeviceContextCleanup(
 	FuncEntry(TRACE_DEVICE);
 	
 	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Object);
-
-	if (pDevCtx->ConfigurationReloadEvent) {
-		CloseHandle(pDevCtx->ConfigurationReloadEvent);
-	}
 
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
 	{

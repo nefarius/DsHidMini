@@ -230,6 +230,11 @@ typedef struct _DEVICE_CONTEXT
 	//
 	HANDLE ConfigurationReloadEvent;
 
+	//
+	// Wait handle
+	//
+	HANDLE ConfigurationReloadWaitHandle;
+
 } DEVICE_CONTEXT, * PDEVICE_CONTEXT;
 
 //
@@ -304,6 +309,12 @@ EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL DSHM_EvtWdfIoQueueIoDeviceControl;
 NTSTATUS
 DsDevice_ReadProperties(
 	WDFDEVICE Device
+);
+
+VOID CALLBACK
+DsDevice_HotRealodEventCallback(
+	_In_ PVOID   lpParameter,
+	_In_ BOOLEAN TimerOrWaitFired
 );
 
 VOID

@@ -377,14 +377,6 @@ DsHidMini_RetrieveNextInputReport(
 	moduleContext = DMF_CONTEXT_GET(dmfModuleParent);
 	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
-	//
-	// Check if hot-reloadable properties have been updated
-	//
-	if (WaitForSingleObject(pDevCtx->ConfigurationReloadEvent, 0) == WAIT_OBJECT_0)
-	{
-		DsDevice_HotReloadConfiguration(pDevCtx);
-	}
-
 	*Buffer = moduleContext->InputReport;
 
 	switch (pDevCtx->Configuration.HidDeviceMode)

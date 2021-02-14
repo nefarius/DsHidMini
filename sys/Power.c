@@ -276,6 +276,23 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 		);
 	}
 
+	BOOL ret = RegisterWaitForSingleObject(
+		&pDevCtx->ConfigurationReloadWaitHandle,
+		pDevCtx->ConfigurationReloadEvent,
+		DsDevice_HotRealodEventCallback,
+		pDevCtx,
+		INFINITE,
+		WT_EXECUTELONGFUNCTION
+	);
+
+	if (!ret)
+	{
+		TraceError(
+			TRACE_POWER,
+			"Failed to register wait for reload event"
+		);
+	}
+
 	FuncExit(TRACE_POWER, "status=%!STATUS!", status);
 
 	return status;
@@ -686,6 +703,14 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 	FuncEntry(TRACE_POWER);
 
 	pDevCtx = DeviceGetContext(Device);
+
+	if (pDevCtx->ConfigurationReloadWaitHandle) {
+		UnregisterWait(pDevCtx->ConfigurationReloadWaitHandle);
+	}
+
+	if (pDevCtx->ConfigurationReloadEvent) {
+		CloseHandle(pDevCtx->ConfigurationReloadEvent);
+	}
 
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
 	{
