@@ -50,3 +50,9 @@ NTSTATUS DsBth_SendDisconnectRequest(PDEVICE_CONTEXT Context);
 
 EVT_WDF_TIMER DsBth_EvtControlReadTimerFunc;
 EVT_WDF_TIMER DsBth_EvtControlWriteTimerFunc;
+
+VOID CALLBACK
+DsBth_DisconnectEventCallback(
+	_In_ PVOID   lpParameter,
+	_In_ BOOLEAN TimerOrWaitFired
+);

@@ -594,3 +594,15 @@ void DsBth_HidControlWriteRequestCompletionRoutine(
 
 	FuncExitNoReturn(TRACE_DSBTH);
 }
+
+VOID CALLBACK
+DsBth_DisconnectEventCallback(
+	_In_ PVOID   lpParameter,
+	_In_ BOOLEAN TimerOrWaitFired
+)
+{
+	PDEVICE_CONTEXT pDevCtx = (PDEVICE_CONTEXT)lpParameter;
+	UNREFERENCED_PARAMETER(TimerOrWaitFired);
+
+	(void)DsBth_SendDisconnectRequest(pDevCtx);
+}

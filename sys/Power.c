@@ -20,6 +20,7 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 	size_t friendlyNameSize = 0;
 	PWSTR friendlyName;
 	WCHAR eventName[49];
+	WCHAR dcEventName[44];
 
 	PAGED_CODE();
 
@@ -30,6 +31,54 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
 	{
+		swprintf_s(
+			deviceAddress,
+			ARRAYSIZE(deviceAddress),
+			L"%02X%02X%02X%02X%02X%02X",
+			pDevCtx->DeviceAddress.Address[0],
+			pDevCtx->DeviceAddress.Address[1],
+			pDevCtx->DeviceAddress.Address[2],
+			pDevCtx->DeviceAddress.Address[3],
+			pDevCtx->DeviceAddress.Address[4],
+			pDevCtx->DeviceAddress.Address[5]
+		);
+
+		//
+		// Disconnect Bluetooth connection, if detected
+		//
+
+		swprintf_s(
+			dcEventName,
+			ARRAYSIZE(dcEventName),
+			L"Global\\DsHidMiniDisconnectEvent%ls",
+			deviceAddress
+		);
+
+		HANDLE dcEvent = OpenEvent(
+			SYNCHRONIZE | EVENT_MODIFY_STATE,
+			FALSE,
+			dcEventName
+		);
+
+		if (dcEvent != NULL)
+		{
+			TraceVerbose(
+				TRACE_POWER,
+				"Found existing event %ls, signalling disconnect",
+				dcEventName
+			);
+
+			SetEvent(dcEvent);
+			CloseHandle(dcEvent);
+		}
+		else
+		{
+			TraceError(
+				TRACE_POWER,
+				"GetLastError: %d", GetLastError()
+			);
+		}
+
 		//
 		// Set friendly name
 		// 
@@ -64,39 +113,26 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 		// Set device address property
 		// 
 		
-		if(swprintf_s(
-			deviceAddress, 
-			ARRAYSIZE(deviceAddress), 
-			L"%02X%02X%02X%02X%02X%02X",
-			pDevCtx->DeviceAddress.Address[0],
-			pDevCtx->DeviceAddress.Address[1],
-			pDevCtx->DeviceAddress.Address[2],
-			pDevCtx->DeviceAddress.Address[3],
-			pDevCtx->DeviceAddress.Address[4],
-			pDevCtx->DeviceAddress.Address[5]
-		) != -1)
+		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_Bluetooth_DeviceAddress);
+		propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+		propertyData.Lcid = LOCALE_NEUTRAL;
+
+		status = WdfDeviceAssignProperty(
+			Device,
+			&propertyData,
+			DEVPROP_TYPE_STRING,
+			ARRAYSIZE(deviceAddress) * sizeof(WCHAR),
+			deviceAddress
+		);
+
+		if (!NT_SUCCESS(status))
 		{
-			WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_Bluetooth_DeviceAddress);
-			propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
-			propertyData.Lcid = LOCALE_NEUTRAL;
-
-			status = WdfDeviceAssignProperty(
-				Device,
-				&propertyData,
-				DEVPROP_TYPE_STRING,
-				ARRAYSIZE(deviceAddress) * sizeof(WCHAR),
-				deviceAddress
+			TraceError(
+				TRACE_POWER,
+				"Setting DEVPKEY_Bluetooth_DeviceAddress failed with status %!STATUS!",
+				status
 			);
-
-			if (!NT_SUCCESS(status))
-			{
-				TraceError(
-					TRACE_POWER,
-					"Setting DEVPKEY_Bluetooth_DeviceAddress failed with status %!STATUS!",
-					status
-				);
-			}
-		}
+		}		
 
 		//
 		// Attempt automatic pairing
@@ -159,6 +195,13 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 	
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
 	{
+		swprintf_s(
+			deviceAddress,
+			ARRAYSIZE(deviceAddress),
+			L"%012llX",
+			*(PULONGLONG)&pDevCtx->DeviceAddress
+		);
+
 		//
 		// Send magic packet, starts input report sending
 		// 
@@ -224,6 +267,71 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 		);
 
 #pragma endregion
+
+#pragma region Disconnect event handler
+
+		swprintf_s(
+			dcEventName,
+			ARRAYSIZE(dcEventName),
+			L"Global\\DsHidMiniDisconnectEvent%ls",
+			deviceAddress
+		);
+
+		TraceVerbose(
+			TRACE_POWER,
+			"Disconnect event name: %ls",
+			dcEventName
+		);
+
+		TCHAR* szSD = TEXT("D:(A;;0x001F0003;;;BA)(A;;0x00100002;;;AU)");
+		SECURITY_ATTRIBUTES sa;
+		sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+		sa.bInheritHandle = FALSE;
+		ConvertStringSecurityDescriptorToSecurityDescriptor(
+			szSD,
+			SDDL_REVISION_1,
+			&((&sa)->lpSecurityDescriptor),
+			NULL
+		);
+
+		if (pDevCtx->Connection.Bth.DisconnectEvent) {
+			CloseHandle(pDevCtx->Connection.Bth.DisconnectEvent);
+			pDevCtx->Connection.Bth.DisconnectEvent = NULL;
+		}
+
+		pDevCtx->Connection.Bth.DisconnectEvent = CreateEvent(
+			&sa,
+			FALSE,
+			FALSE,
+			dcEventName
+		);
+
+		if (pDevCtx->Connection.Bth.DisconnectEvent == NULL)
+		{
+			TraceError(
+				TRACE_POWER,
+				"Failed to create disconnect event"
+			);
+		}
+
+		BOOL ret = RegisterWaitForSingleObject(
+			&pDevCtx->Connection.Bth.DisconnectWaitHandle,
+			pDevCtx->Connection.Bth.DisconnectEvent,
+			DsBth_DisconnectEventCallback,
+			pDevCtx,
+			INFINITE,
+			WT_EXECUTELONGFUNCTION | WT_EXECUTEONLYONCE
+		);
+
+		if (!ret)
+		{
+			TraceError(
+				TRACE_POWER,
+				"Failed to register wait for disconnect event"
+			);
+		}
+
+#pragma endregion
 	}
 
 	//
@@ -238,8 +346,8 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 	swprintf_s(
 		eventName,
 		ARRAYSIZE(eventName),
-		L"Global\\DsHidMiniConfigHotReloadEvent%012llX",
-		*(PULONGLONG)&pDevCtx->DeviceAddress
+		L"Global\\DsHidMiniConfigHotReloadEvent%ls",
+		deviceAddress
 	);
 
 	TraceVerbose(
@@ -260,6 +368,11 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 		&((&sa)->lpSecurityDescriptor), 
 		NULL
 	);
+
+	if (pDevCtx->ConfigurationReloadEvent) {
+		CloseHandle(pDevCtx->ConfigurationReloadEvent);
+		pDevCtx->ConfigurationReloadEvent = NULL;
+	}
 
 	pDevCtx->ConfigurationReloadEvent = CreateEvent(
 		&sa,
@@ -706,10 +819,12 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 
 	if (pDevCtx->ConfigurationReloadWaitHandle) {
 		UnregisterWait(pDevCtx->ConfigurationReloadWaitHandle);
+		pDevCtx->ConfigurationReloadWaitHandle = NULL;
 	}
 
 	if (pDevCtx->ConfigurationReloadEvent) {
 		CloseHandle(pDevCtx->ConfigurationReloadEvent);
+		pDevCtx->ConfigurationReloadEvent = NULL;
 	}
 
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
@@ -722,6 +837,16 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
 	{
+		if (pDevCtx->Connection.Bth.DisconnectWaitHandle) {
+			UnregisterWait(pDevCtx->Connection.Bth.DisconnectWaitHandle);
+			pDevCtx->Connection.Bth.DisconnectWaitHandle = NULL;
+		}
+
+		if (pDevCtx->Connection.Bth.DisconnectEvent) {
+			CloseHandle(pDevCtx->Connection.Bth.DisconnectEvent);
+			pDevCtx->Connection.Bth.DisconnectEvent = NULL;
+		}
+
 		WdfTimerStop(pDevCtx->Connection.Bth.Timers.HidOutputReport, FALSE);
 		WdfTimerStop(pDevCtx->Connection.Bth.Timers.HidControlConsume, FALSE);
 

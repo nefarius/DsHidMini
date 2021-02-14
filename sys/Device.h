@@ -121,6 +121,16 @@ struct BTH_DEVICE_CONTEXT
 	// Timestamp to calculate quick disconnect combo detection
 	// 
 	LARGE_INTEGER QuickDisconnectTimestamp;
+
+	//
+	// Event to listen for to disconnect
+	//
+	HANDLE DisconnectEvent;
+
+	//
+	// Wait handle
+	//
+	HANDLE DisconnectWaitHandle;
 };
 
 //
