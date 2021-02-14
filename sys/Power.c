@@ -44,42 +44,6 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 		);
 
 		//
-		// Disconnect Bluetooth connection, if detected
-		//
-
-		swprintf_s(
-			dcEventName,
-			ARRAYSIZE(dcEventName),
-			L"Global\\DsHidMiniDisconnectEvent%ls",
-			deviceAddress
-		);
-
-		HANDLE dcEvent = OpenEvent(
-			SYNCHRONIZE | EVENT_MODIFY_STATE,
-			FALSE,
-			dcEventName
-		);
-
-		if (dcEvent != NULL)
-		{
-			TraceVerbose(
-				TRACE_POWER,
-				"Found existing event %ls, signalling disconnect",
-				dcEventName
-			);
-
-			SetEvent(dcEvent);
-			CloseHandle(dcEvent);
-		}
-		else
-		{
-			TraceError(
-				TRACE_POWER,
-				"GetLastError: %d", GetLastError()
-			);
-		}
-
-		//
 		// Set friendly name
 		// 
 
@@ -432,6 +396,8 @@ DsHidMini_EvtDevicePrepareHardware(
 	WDF_DEVICE_PROPERTY_DATA				propertyData;
 	ULONG									requiredSize = 0;
 	DEVPROPTYPE								propertyType;
+	WCHAR deviceAddress[13];
+	WCHAR dcEventName[44];
 
 	UNREFERENCED_PARAMETER(ResourcesRaw);
 	UNREFERENCED_PARAMETER(ResourcesTranslated);
@@ -625,6 +591,54 @@ DsHidMini_EvtDevicePrepareHardware(
 			            pDevCtx->DeviceAddress.Address[4],
 			            pDevCtx->DeviceAddress.Address[5]
 			);
+
+			swprintf_s(
+				deviceAddress,
+				ARRAYSIZE(deviceAddress),
+				L"%02X%02X%02X%02X%02X%02X",
+				pDevCtx->DeviceAddress.Address[0],
+				pDevCtx->DeviceAddress.Address[1],
+				pDevCtx->DeviceAddress.Address[2],
+				pDevCtx->DeviceAddress.Address[3],
+				pDevCtx->DeviceAddress.Address[4],
+				pDevCtx->DeviceAddress.Address[5]
+			);
+
+			//
+			// Disconnect Bluetooth connection, if detected
+			//
+
+			swprintf_s(
+				dcEventName,
+				ARRAYSIZE(dcEventName),
+				L"Global\\DsHidMiniDisconnectEvent%ls",
+				deviceAddress
+			);
+
+			HANDLE dcEvent = OpenEvent(
+				SYNCHRONIZE | EVENT_MODIFY_STATE,
+				FALSE,
+				dcEventName
+			);
+
+			if (dcEvent != NULL)
+			{
+				TraceVerbose(
+					TRACE_POWER,
+					"Found existing event %ls, signalling disconnect",
+					dcEventName
+				);
+
+				SetEvent(dcEvent);
+				CloseHandle(dcEvent);
+			}
+			else
+			{
+				TraceError(
+					TRACE_POWER,
+					"GetLastError: %d", GetLastError()
+				);
+			}
 			
 			//
 			// Request host BTH address

@@ -604,5 +604,8 @@ DsBth_DisconnectEventCallback(
 	PDEVICE_CONTEXT pDevCtx = (PDEVICE_CONTEXT)lpParameter;
 	UNREFERENCED_PARAMETER(TimerOrWaitFired);
 
+	UnregisterWait(pDevCtx->ConfigurationReloadWaitHandle);
+	CloseHandle(pDevCtx->ConfigurationReloadEvent);
+
 	(void)DsBth_SendDisconnectRequest(pDevCtx);
 }
