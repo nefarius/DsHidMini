@@ -4,20 +4,13 @@
 
 PWSTR G_DsHidMini_Strings[] =
 {
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	L"DsHidMini Device" // TODO: populate properly
+	L"String 0" // TODO: bug in DMF module? Seems required for serial string to work
 };
 
-#define MAXIMUM_STRING_LENGTH           (126 * sizeof(WCHAR))
 #define DSHIDMINI_DEVICE_STRING          L"DS3 Compatible HID Device"
 #define DSHIDMINI_MANUFACTURER_STRING    L"Nefarius Software Solutions e.U."
 #define DSHIDMINI_PRODUCT_STRING         L"DS3 Compatible HID Device"
 #define DSHIDMINI_SERIAL_NUMBER_STRING   L"TODO: use device address"
-#define DSHIDMINI_DEVICE_STRING_INDEX    5
 
 
 // This macro declares the following function:
@@ -139,48 +132,6 @@ DMF_DsHidMini_ChildModulesAdd(
 	DMF_CONFIG_VirtualHidMini_AND_ATTRIBUTES_INIT(&vHidCfg,
 		&moduleAttributes);
 
-	vHidCfg.VendorId = pDevCtx->VendorId;
-	vHidCfg.ProductId = pDevCtx->ProductId;
-	vHidCfg.VersionNumber = pDevCtx->VersionNumber;
-
-	switch (pDevCtx->Configuration.HidDeviceMode)
-	{
-	case DsHidMiniDeviceModeSingle:
-
-		vHidCfg.HidDescriptor = &G_Ds3HidDescriptor_Single_Mode;
-		vHidCfg.HidDescriptorLength = sizeof(G_Ds3HidDescriptor_Single_Mode);
-		vHidCfg.HidReportDescriptor = G_Ds3HidReportDescriptor_Single_Mode;
-		vHidCfg.HidReportDescriptorLength = G_Ds3HidDescriptor_Single_Mode.DescriptorList[0].wReportLength;
-
-		break;
-	case DsHidMiniDeviceModeMulti:
-
-		vHidCfg.HidDescriptor = &G_Ds3HidDescriptor_Split_Mode;
-		vHidCfg.HidDescriptorLength = sizeof(G_Ds3HidDescriptor_Split_Mode);
-		vHidCfg.HidReportDescriptor = G_Ds3HidReportDescriptor_Split_Mode;
-		vHidCfg.HidReportDescriptorLength = G_Ds3HidDescriptor_Split_Mode.DescriptorList[0].wReportLength;
-
-		break;
-	case DsHidMiniDeviceModeSixaxisCompatible:
-
-		vHidCfg.HidDescriptor = &G_SixaxisHidDescriptor;
-		vHidCfg.HidDescriptorLength = sizeof(G_SixaxisHidDescriptor);
-		vHidCfg.HidReportDescriptor = G_SixaxisHidReportDescriptor;
-		vHidCfg.HidReportDescriptorLength = G_SixaxisHidDescriptor.DescriptorList[0].wReportLength;
-
-		break;
-	default:
-		TraceError(
-			TRACE_DSHIDMINIDRV,
-			"Unknown HID Device Mode: 0x%02X", pDevCtx->Configuration.HidDeviceMode);
-		return;
-	}
-
-	vHidCfg.HidDeviceAttributes.VendorID = pDevCtx->VendorId;
-	vHidCfg.HidDeviceAttributes.ProductID = pDevCtx->ProductId;
-	vHidCfg.HidDeviceAttributes.VersionNumber = pDevCtx->VersionNumber;
-	vHidCfg.HidDeviceAttributes.Size = sizeof(HID_DEVICE_ATTRIBUTES);
-
 	vHidCfg.GetInputReport = DsHidMini_GetInputReport;
 	vHidCfg.GetFeature = DsHidMini_GetFeature;
 	vHidCfg.SetFeature = DsHidMini_SetFeature;
@@ -195,7 +146,7 @@ DMF_DsHidMini_ChildModulesAdd(
 	vHidCfg.StringSerialNumber = DSHIDMINI_SERIAL_NUMBER_STRING;
 
 	vHidCfg.Strings = G_DsHidMini_Strings;
-	vHidCfg.NumberOfStrings = ARRAYSIZE(G_DsHidMini_Strings);
+	vHidCfg.NumberOfStrings = 1;
 
 	DMF_DmfModuleAdd(
 		DmfModuleInit,
