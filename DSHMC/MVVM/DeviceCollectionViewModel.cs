@@ -3,7 +3,6 @@ using Nefarius.DsHidMini.Util;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Reflection;
-using System.Security.Principal;
 
 namespace Nefarius.DsHidMini.MVVM
 {
@@ -65,23 +64,16 @@ namespace Nefarius.DsHidMini.MVVM
             {
                 using (RegistryKey key = RegistryHelpers.GetRegistryKey(ParametersKey))
                 {
-                    if (key != null)
-                    {
-                        var value = key.GetValue("VerboseOn");
-                        return (value == null) ? false : ((int)value) > 0;
-                    }
-
-                    return false;
+                    if (key == null) return false;
+                    var value = key.GetValue("VerboseOn");
+                    return (value != null) && ((int)value) > 0;
                 }
             }
             set
             {
                 using (RegistryKey key = RegistryHelpers.GetRegistryKey(ParametersKey, true))
                 {
-                    if (key != null)
-                    {
-                        key.SetValue("VerboseOn", value ? 1 : 0, RegistryValueKind.DWord);
-                    }
+                    key?.SetValue("VerboseOn", value ? 1 : 0, RegistryValueKind.DWord);
                 }
             }
         }

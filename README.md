@@ -59,7 +59,6 @@ You can build individual projects of the solution within Visual Studio.
 - [Summary of the DPInst XML Elements](https://web.archive.org/web/20120623222252/http://msdn.microsoft.com/en-us/library/ff553383.aspx)
 - [dpinst XML Element](https://docs.microsoft.com/en-us/windows-hardware/drivers/install/dpinst-xml-element)
 - [Driver installation and updating made easy: DPInst.exe](https://docs.microsoft.com/en-us/archive/blogs/svengruenitz/driver-installation-and-updating-made-easy-dpinst-exe)
-- [inih (INI Not Invented Here)](https://github.com/benhoyt/inih)
 - [The HID Page](http://janaxelson.com/hidpage.htm)
 - [uthash - a hash table for C structures](https://github.com/troydhanson/uthash)
 - [FirstPlatoLV/EmuController](https://github.com/FirstPlatoLV/EmuController)
