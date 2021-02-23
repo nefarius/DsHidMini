@@ -246,7 +246,8 @@
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
 
-                    <GroupBox Header="Global driver settings"
+                    <!-- Global DsHidMini driver settings -->
+                    <GroupBox Header="Global DsHidMini driver settings"
                           Margin="{adonisUi:Space 1}">
                         <Grid>
                             <Grid.RowDefinitions>
