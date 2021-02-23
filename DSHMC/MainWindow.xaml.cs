@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 using AdonisUI.Controls;
+using Nefarius.DsHidMini.Drivers;
 using Nefarius.DsHidMini.MVVM;
 using Nefarius.DsHidMini.Util;
 

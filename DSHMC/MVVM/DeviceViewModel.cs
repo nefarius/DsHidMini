@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Threading;
 using FontAwesome5;
+using Nefarius.DsHidMini.Drivers;
 using Nefarius.DsHidMini.Util;
 
 namespace Nefarius.DsHidMini.MVVM

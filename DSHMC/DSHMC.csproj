@@ -79,7 +79,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="DsHidMiniDriver.cs" />
+    <Compile Include="Drivers\DsHidMiniDriver.cs" />
     <Compile Include="Util\RegistryHelpers.cs" />
     <Compile Include="Util\SecurityUtil.cs" />
     <Compile Include="Util\SetupApiWrapper.cs" />
@@ -138,6 +138,7 @@
   <ItemGroup>
     <Resource Include="controller.ico" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Fody.6.3.0\build\Fody.targets" Condition="Exists('..\packages\Fody.6.3.0\build\Fody.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

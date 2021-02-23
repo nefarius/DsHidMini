@@ -3,7 +3,7 @@ using System.ComponentModel;
 using Nefarius.DsHidMini.Util;
 using Nefarius.DsHidMini.Util.WPF;
 
-namespace Nefarius.DsHidMini
+namespace Nefarius.DsHidMini.Drivers
 {
     public static class DsHidMiniDriver
     {

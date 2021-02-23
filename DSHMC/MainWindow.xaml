@@ -10,6 +10,7 @@
                        xmlns:extensions="clr-namespace:AdonisUI.Extensions;assembly=AdonisUI"
                        xmlns:controls="clr-namespace:AdonisUI.Controls;assembly=AdonisUI"
                        xmlns:fa="http://schemas.fontawesome.com/icons/"
+                       xmlns:drivers="clr-namespace:Nefarius.DsHidMini.Drivers"
                        mc:Ignorable="d"
                        Title="DsHidMini Control"
                        Height="580" Width="800"
@@ -159,7 +160,7 @@
                                     <ComboBox Width="80" HorizontalAlignment="Left"
                           Margin="{adonisUi:Space 1}"
                           IsEnabled="False"
-                          ItemsSource="{Binding Source={wpfUtil:EnumBindingSource {x:Type mini:DsBatteryStatus}}}"
+                          ItemsSource="{Binding Source={wpfUtil:EnumBindingSource {x:Type drivers:DsBatteryStatus}}}"
                           SelectedItem="{Binding Path=SelectedDevice.BatteryStatus, Mode=OneWay}" />
                                     <fa:ImageAwesome
                                                              Icon="{Binding Path=SelectedDevice.BatteryIcon}" 
@@ -179,7 +180,7 @@
                                 <ComboBox Grid.Row="5" Grid.Column="2" Width="200" HorizontalAlignment="Left"
                           Margin="{adonisUi:Space 1}"
                           IsEnabled="{Binding Path=IsEditable}"
-                          ItemsSource="{Binding Source={wpfUtil:EnumBindingSource {x:Type mini:DsHidDeviceMode}}}"
+                          ItemsSource="{Binding Source={wpfUtil:EnumBindingSource {x:Type drivers:DsHidDeviceMode}}}"
                           SelectedItem="{Binding Path=SelectedDevice.HidEmulationMode}" />
 
                                 <TextBlock Grid.Row="6" Grid.Column="0">Output report timer period:</TextBlock>
