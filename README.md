@@ -29,6 +29,8 @@ DsHidMini is a self-contained, low footprint and feature-rich [user-mode driver]
 - Supports the [**RPCS3 PlayStation 3 Emulator**](https://pcsx2.net/)
   - Controller gets picked up by DualShock 3 handler with all device features
 
+Take a look at the [Roadmap](https://vigem.org/projects/DsHidMini/Roadmap/) for other planned or in-progress features.
+
 ## How it works
 
 TBD
