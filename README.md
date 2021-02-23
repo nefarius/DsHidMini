@@ -8,7 +8,7 @@ Virtual HID Mini-user-mode driver for Sony DualShock 3 Controllers
 
 ## Summary
 
-TBD
+DsHidMini is a self-contained, low footprint and feature-rich [user-mode driver](https://docs.microsoft.com/en-us/windows-hardware/drivers/wdf/overview-of-the-umdf) for Microsoft Windows 10. It presents the controller as a configurable variety of fully standard-compliant HID devices to the system and all games built on common APIs like [DirectInput](https://docs.microsoft.com/en-us/previous-versions/windows/desktop/ee416842(v=vs.85)), [Raw Input](https://docs.microsoft.com/en-us/windows/win32/inputdev/raw-input) and the low-level [HID API](https://docs.microsoft.com/en-us/windows-hardware/drivers/hid/introduction-to-hid-concepts). Optional XInput-emulation further increases the support in modern games built with only Xbox controllers in mind. The driver supports both wired connections by handling USB communication and wireless connections by building upon the [BthPS3](https://github.com/ViGEm/BthPS3) driver suite. An optional .NET configuration tool is provided to alter driver behavior to fine-tune it to specific games or other use-cases.
 
 ## Features
 
@@ -25,7 +25,9 @@ TBD
 - **Rumble exposure via Force Feedback**
   - The rumble motors are exposed as Force Feedback effects, allowing for great game compatibility
 - Supports the [**PCSX2 PlayStation 2 Emulator**](https://pcsx2.net/)
+  - Controller gets picked up by LilyPad plugin with all device features
 - Supports the [**RPCS3 PlayStation 3 Emulator**](https://pcsx2.net/)
+  - Controller gets picked up by DualShock 3 handler with all device features
 
 ## How it works
 
