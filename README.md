@@ -33,6 +33,14 @@ DsHidMini is a self-contained, low footprint and feature-rich [user-mode driver]
 
 TBD
 
+## Licensing
+
+This solution contains **BSD-3-Clause** licensed components. For details, please consult the individual `LICENSE` files.
+
+## Environment
+
+DsHidMini components (drivers, utilities) are developed, designed and tested for Windows 10, version 1507 (Threshold 1) or newer (x86, x64).
+
 ## How to build
 
 ### Prerequisites
