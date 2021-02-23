@@ -36,7 +36,9 @@ namespace Nefarius.DsHidMini.Drivers
                     Kernel32.SafeObjectHandle.Null
                 ))
                 {
-                    return !handle.IsInvalid;
+                    var error = (Win32ErrorCode)Marshal.GetLastWin32Error();
+
+                    return (error == Win32ErrorCode.ERROR_SUCCESS || error == Win32ErrorCode.ERROR_ACCESS_DENIED);
                 }
             }
         }

@@ -5,7 +5,6 @@
                        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                        xmlns:mvvm="clr-namespace:Nefarius.DsHidMini.MVVM"
                        xmlns:wpfUtil="clr-namespace:Nefarius.DsHidMini.Util.WPF"
-                       xmlns:mini="clr-namespace:Nefarius.DsHidMini"
                        xmlns:adonisUi="clr-namespace:AdonisUI;assembly=AdonisUI"
                        xmlns:extensions="clr-namespace:AdonisUI.Extensions;assembly=AdonisUI"
                        xmlns:controls="clr-namespace:AdonisUI.Controls;assembly=AdonisUI"
@@ -19,24 +18,24 @@
     <controls:AdonisWindow.TitleBarContent>
         <StackPanel Orientation="Horizontal"
                     HorizontalAlignment="Right">
-            
+
             <StackPanel.Resources>
                 <BooleanToVisibilityConverter x:Key="VisibleIfTrueConverter" />
             </StackPanel.Resources>
-            
+
             <TextBlock Margin="{adonisUi:Space 1}"
-                       Visibility="{Binding Path=IsElevated, Converter={StaticResource VisibleIfTrueConverter}}" 
+                       Visibility="{Binding Path=IsElevated, Converter={StaticResource VisibleIfTrueConverter}}"
                        Text="[Administrator]"
-                       ToolTip="Running with elevated privileges"/>
+                       ToolTip="Running with elevated privileges" />
             <TextBlock Margin="{adonisUi:Space 1}"
                        Text="{Binding Path=Version}"
-                       ToolTip="Version of this utility"/>
+                       ToolTip="Version of this utility" />
             <Button Content="?"
                     Style="{DynamicResource {x:Static adonisUi:Styles.WindowButton}}"
                     ToolTip="Open online help"
                     Click="Help_OnClick"
                     FontFamily="Segoe UI"
-                    FontSize="14"/>
+                    FontSize="14" />
         </StackPanel>
     </controls:AdonisWindow.TitleBarContent>
 
@@ -49,13 +48,13 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <TabControl Grid.Row="0">
             <TabItem Header="Devices">
-                <Grid Grid.Row="0">
+                <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="300" />
                         <ColumnDefinition Width="*" />
@@ -63,12 +62,12 @@
 
                     <!-- Device list -->
                     <GroupBox Grid.Column="0"
-                  Header="DsHidMini Devices"
-                  Margin="{adonisUi:Space 1}">
+                              Header="DsHidMini Devices"
+                              Margin="{adonisUi:Space 1}">
                         <Grid>
                             <ListBox ItemsSource="{Binding Path=Devices}"
-                         SelectedItem="{Binding Path=SelectedDevice, Mode=TwoWay}"
-                         SelectionMode="Single">
+                                     SelectedItem="{Binding Path=SelectedDevice, Mode=TwoWay}"
+                                     SelectionMode="Single">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <Grid>
@@ -77,31 +76,32 @@
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
 
-                                            <fa:ImageAwesome Grid.Column="0" 
-                                                             Icon="{Binding Path=ConnectionType}" 
-                                                              Margin="{adonisUi:Space 1}"
+                                            <fa:ImageAwesome Grid.Column="0"
+                                                             Icon="{Binding Path=ConnectionType}"
+                                                             Margin="{adonisUi:Space 1}"
                                                              Width="16"
-                                                             HorizontalAlignment="Right"/>
-                                            <TextBlock Grid.Column="1" 
+                                                             HorizontalAlignment="Right" />
+                                            <TextBlock Grid.Column="1"
                                                        Text="{Binding DisplayName}"
-                                                       VerticalAlignment="Center"/>
+                                                       VerticalAlignment="Center" />
                                         </Grid>
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
                             </ListBox>
 
                             <TextBlock Text="No compatible devices found"
-                           HorizontalAlignment="Center"
-                           Padding="20"
-                           Visibility="{Binding Path=HasNoDevices, Converter={StaticResource VisibleIfTrueConverter}}" />
+                                       HorizontalAlignment="Center"
+                                       Padding="20"
+                                       Visibility="{Binding Path=HasNoDevices, Converter={StaticResource VisibleIfTrueConverter}}" />
                         </Grid>
                     </GroupBox>
 
                     <!-- Device details -->
                     <GroupBox Grid.Column="1"
-                  Header="Device Details"
-                  Margin="{adonisUi:Space 1}">
-                        <StackPanel Visibility="{Binding Path=HasDeviceSelected, Converter={StaticResource VisibleIfTrueConverter}}">
+                              Header="Device Details"
+                              Margin="{adonisUi:Space 1}">
+                        <StackPanel
+                            Visibility="{Binding Path=HasDeviceSelected, Converter={StaticResource VisibleIfTrueConverter}}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -123,104 +123,105 @@
 
                                 <Grid.Resources>
                                     <Style x:Key="CenterAlignedTextBlockStyle" TargetType="{x:Type TextBlock}"
-                           BasedOn="{StaticResource {x:Type TextBlock}}">
+                                           BasedOn="{StaticResource {x:Type TextBlock}}">
                                         <Setter Property="VerticalAlignment" Value="Center" />
                                     </Style>
 
                                     <Style x:Key="ReadOnlyTextBoxStyle" TargetType="{x:Type TextBox}"
-                           BasedOn="{StaticResource {x:Type TextBox}}">
+                                           BasedOn="{StaticResource {x:Type TextBox}}">
                                         <Setter Property="IsReadOnly" Value="True" />
                                         <Setter Property="HorizontalAlignment" Value="Left" />
                                     </Style>
 
-                                    <Style TargetType="TextBlock" BasedOn="{StaticResource CenterAlignedTextBlockStyle}" />
+                                    <Style TargetType="TextBlock"
+                                           BasedOn="{StaticResource CenterAlignedTextBlockStyle}" />
                                     <Style TargetType="TextBox" BasedOn="{StaticResource ReadOnlyTextBoxStyle}" />
                                 </Grid.Resources>
 
                                 <TextBlock Grid.Row="0" Grid.Column="0">Instance ID:</TextBlock>
                                 <TextBox Grid.Row="0" Grid.Column="2"
-                         Width="280"
-                         Margin="{adonisUi:Space 1}"
-                         Text="{Binding Path=SelectedDevice.InstanceId, Mode=OneWay}" />
+                                         Width="280"
+                                         Margin="{adonisUi:Space 1}"
+                                         Text="{Binding Path=SelectedDevice.InstanceId, Mode=OneWay}" />
 
                                 <TextBlock Grid.Row="1" Grid.Column="0">Device address:</TextBlock>
                                 <TextBox Grid.Row="1" Grid.Column="2"
-                         Width="115"
-                         Margin="{adonisUi:Space 1}"
-                         Text="{Binding Path=SelectedDevice.DeviceAddressFriendly, Mode=OneWay}" />
+                                         Width="115"
+                                         Margin="{adonisUi:Space 1}"
+                                         Text="{Binding Path=SelectedDevice.DeviceAddressFriendly, Mode=OneWay}" />
 
                                 <TextBlock Grid.Row="2" Grid.Column="0">Host address:</TextBlock>
                                 <TextBox Grid.Row="2" Grid.Column="2"
-                         Width="115"
-                         Margin="{adonisUi:Space 1}"
-                         Text="{Binding Path=SelectedDevice.HostAddress, Mode=OneWay}" />
+                                         Width="115"
+                                         Margin="{adonisUi:Space 1}"
+                                         Text="{Binding Path=SelectedDevice.HostAddress, Mode=OneWay}" />
 
                                 <TextBlock Grid.Row="3" Grid.Column="0">Battery status:</TextBlock>
-                                <DockPanel  Grid.Row="3" Grid.Column="2" LastChildFill="False">
+                                <DockPanel Grid.Row="3" Grid.Column="2" LastChildFill="False">
                                     <ComboBox Width="80" HorizontalAlignment="Left"
-                          Margin="{adonisUi:Space 1}"
-                          IsEnabled="False"
-                          ItemsSource="{Binding Source={wpfUtil:EnumBindingSource {x:Type drivers:DsBatteryStatus}}}"
-                          SelectedItem="{Binding Path=SelectedDevice.BatteryStatus, Mode=OneWay}" />
+                                              Margin="{adonisUi:Space 1}"
+                                              IsEnabled="False"
+                                              ItemsSource="{Binding Source={wpfUtil:EnumBindingSource {x:Type drivers:DsBatteryStatus}}}"
+                                              SelectedItem="{Binding Path=SelectedDevice.BatteryStatus, Mode=OneWay}" />
                                     <fa:ImageAwesome
-                                                             Icon="{Binding Path=SelectedDevice.BatteryIcon}" 
-                                                              VerticalAlignment="Center"
-                                                             Width="16"
-                                                             />
+                                        Icon="{Binding Path=SelectedDevice.BatteryIcon}"
+                                        VerticalAlignment="Center"
+                                        Width="16" />
                                 </DockPanel>
 
                                 <TextBlock Grid.Row="4" Grid.Column="0">Last connected (wireless):</TextBlock>
                                 <TextBox Grid.Row="4" Grid.Column="2"
-                         Width="165"
-                         Margin="{adonisUi:Space 1}"
-                         extensions:WatermarkExtension.Watermark="Unavailable"
-                         Text="{Binding Path=SelectedDevice.LastConnected, Mode=OneWay}" />
+                                         Width="165"
+                                         Margin="{adonisUi:Space 1}"
+                                         extensions:WatermarkExtension.Watermark="Unavailable"
+                                         Text="{Binding Path=SelectedDevice.LastConnected, Mode=OneWay}" />
 
                                 <TextBlock Grid.Row="5" Grid.Column="0">HID device mode:</TextBlock>
                                 <ComboBox Grid.Row="5" Grid.Column="2" Width="200" HorizontalAlignment="Left"
-                          Margin="{adonisUi:Space 1}"
-                          IsEnabled="{Binding Path=IsEditable}"
-                          ItemsSource="{Binding Source={wpfUtil:EnumBindingSource {x:Type drivers:DsHidDeviceMode}}}"
-                          SelectedItem="{Binding Path=SelectedDevice.HidEmulationMode}" />
+                                          Margin="{adonisUi:Space 1}"
+                                          IsEnabled="{Binding Path=IsEditable}"
+                                          ItemsSource="{Binding Source={wpfUtil:EnumBindingSource {x:Type drivers:DsHidDeviceMode}}}"
+                                          SelectedItem="{Binding Path=SelectedDevice.HidEmulationMode}" />
 
                                 <TextBlock Grid.Row="6" Grid.Column="0">Output report timer period:</TextBlock>
                                 <DockPanel Grid.Row="6" Grid.Column="2">
                                     <Slider Width="160"
-                                AutoToolTipPlacement="TopLeft" AutoToolTipPrecision="0"
-                                Minimum="10"
-                                TickFrequency="10"
-                                Maximum="10000"
-                                IsSnapToTickEnabled="True"
-                                Margin="{adonisUi:Space 1}"
-                                IsEnabled="{Binding Path=IsEditable}"
-                                Value="{Binding Path=SelectedDevice.OutputReportTimerPeriodMs}" />
+                                            AutoToolTipPlacement="TopLeft" AutoToolTipPrecision="0"
+                                            Minimum="10"
+                                            TickFrequency="10"
+                                            Maximum="10000"
+                                            IsSnapToTickEnabled="True"
+                                            Margin="{adonisUi:Space 1}"
+                                            IsEnabled="{Binding Path=IsEditable}"
+                                            Value="{Binding Path=SelectedDevice.OutputReportTimerPeriodMs}" />
                                     <TextBlock Text="{Binding Path=SelectedDevice.OutputReportTimerPeriodMs}" />
                                     <TextBlock Margin="5,0,0,0">Milliseconds</TextBlock>
                                 </DockPanel>
 
                                 <Button Grid.Row="8" Grid.Column="2"
-                        Width="100"
-                        HorizontalAlignment="Right"
-                        Margin="{adonisUi:Space 2}"
-                        IsEnabled="{Binding Path=IsEditable}"
-                        Click="ApplyChanges_Click">
+                                        Width="100"
+                                        HorizontalAlignment="Right"
+                                        Margin="{adonisUi:Space 2}"
+                                        IsEnabled="{Binding Path=IsEditable}"
+                                        Click="ApplyChanges_Click">
                                     Apply changes
                                 </Button>
                             </Grid>
-                            
+
                             <!-- Properties which can be adapted during device lifetime -->
                             <GroupBox>
                                 <GroupBox.Header>
-                                    <DockPanel LastChildFill="False" ToolTip="Changes to these settings will apply instantly">
-                                        <fa:ImageAwesome Icon="Solid_Fire" Height="16"/>
+                                    <DockPanel LastChildFill="False"
+                                               ToolTip="Changes to these settings will apply instantly">
+                                        <fa:ImageAwesome Icon="Solid_Fire" Height="16" />
                                         <TextBlock Margin="10,0,0,0">Hot-reloadable settings</TextBlock>
                                     </DockPanel>
                                 </GroupBox.Header>
-                                
+
                                 <Grid>
                                     <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
                                     </Grid.RowDefinitions>
 
                                     <CheckBox Grid.Row="0"
@@ -236,31 +237,125 @@
                 </Grid>
             </TabItem>
 
-            <TabItem Header="Driver">
+            <TabItem Header="Drivers">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition/>
-                        <RowDefinition/>
+                        <RowDefinition />
+                        <RowDefinition />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition/>
-                        <ColumnDefinition/>
+                        <ColumnDefinition />
+                        <ColumnDefinition />
                     </Grid.ColumnDefinitions>
 
-                    <!-- Global DsHidMini driver settings -->
-                    <GroupBox Header="Global DsHidMini driver settings"
-                          Margin="{adonisUi:Space 1}">
+                    <!-- DsHidMini driver settings -->
+                    <GroupBox Header="DsHidMini driver settings"
+                              Grid.Row="0" Grid.Column="0"
+                              Margin="{adonisUi:Space 1}">
                         <Grid>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
 
                             <CheckBox Grid.Row="0"
-                                  IsEnabled="{Binding Path=IsElevated}"
-                                  Margin="{adonisUi:Space 1}"
-                                  IsChecked="{Binding Path=VerboseOn}">Enable verbose logging</CheckBox>
+                                      IsEnabled="{Binding Path=IsElevated}"
+                                      Margin="{adonisUi:Space 1}"
+                                      IsChecked="{Binding Path=VerboseOn}">
+                                Enable verbose logging
+                            </CheckBox>
+                        </Grid>
+                    </GroupBox>
+
+                    <GroupBox Header="BthPS3 driver settings"
+                              Grid.Row="0" Grid.Column="1"
+                              Margin="{adonisUi:Space 1}">
+                        <Grid>
+                            <!-- Visible section if Filter is available -->
+                            <Grid
+                                Visibility="{Binding Path=IsFilterAvailable, Converter={StaticResource VisibleIfTrueConverter}}">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
+                                <CheckBox Grid.Row="0"
+                                          IsEnabled="False"
+                                          Margin="{adonisUi:Space 1}"
+                                          IsChecked="{Binding Path=IsFilterEnabled, Mode=OneWay}">
+                                    PSM patching enabled
+                                </CheckBox>
+
+                                <CheckBox Grid.Row="1"
+                                          IsEnabled="False"
+                                          Margin="{adonisUi:Space 1}"
+                                          IsChecked="{Binding Path=IsRawPDODisabled, Mode=OneWay}">
+                                    RAW PDO disabled
+                                </CheckBox>
+
+                                <StackPanel Grid.Row="2"
+                                            Visibility="{Binding Path=AreBthPS3SettingsCorrect, Converter={StaticResource VisibleIfTrueConverter}}">
+                                    <TextBlock Margin="{adonisUi:Space 1}"
+                                               TextWrapping="Wrap"
+                                               TextAlignment="Justify">
+                                        Everything seems to be fine.
+                                    </TextBlock>
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="2"
+                                            Visibility="{Binding Path=AreBthPS3SettingsIncorrect, Converter={StaticResource VisibleIfTrueConverter}}">
+
+                                    <TextBlock Margin="{adonisUi:Space 1}"
+                                               TextWrapping="Wrap"
+                                               TextAlignment="Justify">
+                                        Settings incompatible, hit the button below to fix them.
+                                    </TextBlock>
+
+                                    <Button Margin="{adonisUi:Space 1}"
+                                            HorizontalAlignment="Left"
+                                            Click="RectifyBthPS3Settings_OnClick">
+                                        Rectify settings
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Visible section if Filter is not available -->
+                            <StackPanel
+                                Visibility="{Binding Path=IsFilterUnavailable, Converter={StaticResource VisibleIfTrueConverter}}">
+                                <TextBlock HorizontalAlignment="Center"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Justify"
+                                           Margin="{adonisUi:Space 1}">
+                                    Bluetooth stack and/or BthPS3 not available. Please ensure Bluetooth is working (with vanilla drivers) and BthPS3 is installed to use and configure wireless features.
+                                    Run this tool as Administrator to unlock changing settings.
+                                </TextBlock>
+
+                                <Button Margin="{adonisUi:Space 1}"
+                                        Click="DownloadBthPS3_OnClick"
+                                        HorizontalAlignment="Center">
+                                    Download BthPS3
+                                </Button>
+
+                                <Button Margin="{adonisUi:Space 1}"
+                                        Click="OpenHelp_OnClick"
+                                        HorizontalAlignment="Center">
+                                    Open online help
+                                </Button>
+                            </StackPanel>
+
+                            <!-- Visible section if missing permissions -->
+                            <StackPanel
+                                Visibility="{Binding Path=IsMissingPermissions, Converter={StaticResource VisibleIfTrueConverter}}">
+                                <TextBlock HorizontalAlignment="Center"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Justify"
+                                           Margin="{adonisUi:Space 1}">
+                                    Run this tool as Administrator to unlock these settings.
+                                </TextBlock>
+                            </StackPanel>
                         </Grid>
                     </GroupBox>
                 </Grid>

@@ -1,8 +1,9 @@
-﻿using Microsoft.Win32;
-using Nefarius.DsHidMini.Util;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Reflection;
+using Microsoft.Win32;
+using Nefarius.DsHidMini.Drivers;
+using Nefarius.DsHidMini.Util;
 
 namespace Nefarius.DsHidMini.MVVM
 {
@@ -44,6 +45,11 @@ namespace Nefarius.DsHidMini.MVVM
         public bool IsElevated => SecurityUtil.IsElevated;
 
         /// <summary>
+        ///     True if run as regular, non-administrative user.
+        /// </summary>
+        public bool IsMissingPermissions => !IsElevated;
+
+        /// <summary>
         ///     Is it possible to edit the selected device.
         /// </summary>
         public bool IsEditable => IsElevated && HasDeviceSelected;
@@ -53,7 +59,8 @@ namespace Nefarius.DsHidMini.MVVM
         /// </summary>
         public string Version => $"Version: {Assembly.GetEntryAssembly().GetName().Version}";
 
-        private static string ParametersKey => "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\WUDF\\Services\\dshidmini\\Parameters";
+        private static string ParametersKey =>
+            "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\WUDF\\Services\\dshidmini\\Parameters";
 
         /// <summary>
         ///     Indicates if verbose logging is on or off.
@@ -62,22 +69,48 @@ namespace Nefarius.DsHidMini.MVVM
         {
             get
             {
-                using (RegistryKey key = RegistryHelpers.GetRegistryKey(ParametersKey))
+                using (var key = RegistryHelpers.GetRegistryKey(ParametersKey))
                 {
                     if (key == null) return false;
                     var value = key.GetValue("VerboseOn");
-                    return (value != null) && ((int)value) > 0;
+                    return value != null && (int) value > 0;
                 }
             }
             set
             {
-                using (RegistryKey key = RegistryHelpers.GetRegistryKey(ParametersKey, true))
+                using (var key = RegistryHelpers.GetRegistryKey(ParametersKey, true))
                 {
                     key?.SetValue("VerboseOn", value ? 1 : 0, RegistryValueKind.DWord);
                 }
             }
         }
 
+        public bool IsFilterAvailable => IsElevated && BthPS3FilterDriver.IsFilterAvailable;
+
+        public bool IsFilterUnavailable => IsElevated && !BthPS3FilterDriver.IsFilterAvailable;
+
+        public bool IsFilterEnabled
+        {
+            get => IsElevated && BthPS3FilterDriver.IsFilterEnabled;
+            set => BthPS3FilterDriver.IsFilterEnabled = value;
+        }
+
+        public bool IsRawPDODisabled => !BthPS3ProfileDriver.RawPDO;
+
+        public bool AreBthPS3SettingsCorrect =>
+            IsElevated && !BthPS3ProfileDriver.RawPDO && BthPS3FilterDriver.IsFilterEnabled;
+
+        public bool AreBthPS3SettingsIncorrect =>
+            IsElevated && (BthPS3ProfileDriver.RawPDO || !BthPS3FilterDriver.IsFilterEnabled);
+
         public event PropertyChangedEventHandler PropertyChanged;
+
+        public void RefreshProperties()
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("IsFilterEnabled"));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("IsRawPDODisabled"));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("AreBthPS3SettingsIncorrect"));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("AreBthPS3SettingsCorrect"));
+        }
     }
 }
