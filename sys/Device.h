@@ -276,6 +276,11 @@ typedef struct
 	// 
 	UCHAR InputReport[DS3_HID_INPUT_REPORT_SIZE];
 
+	//
+	// Raw input report for SIXAXIS.SYS GET_FEATURE report
+	// 
+	UCHAR GetFeatureReport[SIXAXIS_HID_GET_FEATURE_REPORT_SIZE];
+
 #ifdef DSHM_FEATURE_FFB
 	//
 	// Force Feedback State Info

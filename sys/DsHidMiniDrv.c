@@ -375,9 +375,8 @@ DsHidMini_GetFeature(
 
 	UNREFERENCED_PARAMETER(Request);
 
+	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
-
-	UNREFERENCED_PARAMETER(pModCtx);
 	
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
@@ -439,6 +438,37 @@ DsHidMini_GetFeature(
 			pBlockLoad->EffectBlockIndex);
 		
 		*ReportSize = sizeof(PID_BLOCK_LOAD_REPORT) - 1;
+
+		break;
+
+		//
+		// GET_FEATURE for ID 0 in SIXAXIS.SYS emulation mode
+		// 
+	case 0x00:
+
+		if (pDevCtx->Configuration.HidDeviceMode != DsHidMiniDeviceModeSixaxisCompatible)
+		{
+			status = STATUS_NOT_IMPLEMENTED;
+			break;
+		}
+
+		//
+		// Copy last received raw report to buffer
+		// 
+		RtlCopyMemory(
+			Packet->reportBuffer,
+			pModCtx->GetFeatureReport,
+			Packet->reportBufferLen < SIXAXIS_HID_GET_FEATURE_REPORT_SIZE ? Packet->reportBufferLen :
+			SIXAXIS_HID_GET_FEATURE_REPORT_SIZE
+		);
+
+		//
+		// Alter report ID header to expected values
+		// 
+		Packet->reportBuffer[0] = 0x00;
+		Packet->reportBuffer[1] = 0x3F;
+
+		*ReportSize = Packet->reportBufferLen - 1;
 
 		break;
 
@@ -858,16 +888,16 @@ DsHidMini_WriteReport(
 
 VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t BufferLength)
 {
-	NTSTATUS				status;
-	DMFMODULE               dmfModule;
-	DMF_CONTEXT_DsHidMini* moduleContext;
+	NTSTATUS status;
+	DMFMODULE dmfModule;
+	DMF_CONTEXT_DsHidMini* pModCtx;
 
 	UNREFERENCED_PARAMETER(BufferLength);
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
 	dmfModule = (DMFMODULE)Context->DsHidMiniModule;
-	moduleContext = DMF_CONTEXT_GET(dmfModule);
+	pModCtx = DMF_CONTEXT_GET(dmfModule);
 
 #pragma region HID Input Report (ID 01) processing
 
@@ -877,12 +907,12 @@ VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t Buf
 
 		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 			Buffer,
-			moduleContext->InputReport,
+			pModCtx->InputReport,
 			Context->Configuration.MuteDigitalPressureButtons
 		);
 
 #ifdef DBG
-		DumpAsHex(">> MULTI", moduleContext->InputReport, DS3_HID_INPUT_REPORT_SIZE);
+		DumpAsHex(">> MULTI", pModCtx->InputReport, DS3_HID_INPUT_REPORT_SIZE);
 #endif
 
 		break;
@@ -890,7 +920,7 @@ VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t Buf
 
 		DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
 			Buffer,
-			moduleContext->InputReport,
+			pModCtx->InputReport,
 			Context->Configuration.MuteDigitalPressureButtons
 		);
 
@@ -909,7 +939,7 @@ VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t Buf
 	// Notify new Input Report is available
 	// 
 	status = DMF_VirtualHidMini_InputReportGenerate(
-		moduleContext->DmfModuleVirtualHidMini,
+		pModCtx->DmfModuleVirtualHidMini,
 		DsHidMini_RetrieveNextInputReport
 	);
 	if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
@@ -926,14 +956,14 @@ VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t Buf
 	{
 		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
 			Buffer,
-			moduleContext->InputReport
+			pModCtx->InputReport
 		);
 
 		//
 		// Notify new Input Report is available
 		// 
 		status = DMF_VirtualHidMini_InputReportGenerate(
-			moduleContext->DmfModuleVirtualHidMini,
+			pModCtx->DmfModuleVirtualHidMini,
 			DsHidMini_RetrieveNextInputReport
 		);
 		if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
@@ -951,14 +981,14 @@ VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t Buf
 	{
 		DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
 			Buffer,
-			moduleContext->InputReport
+			pModCtx->InputReport
 		);
 
 		//
 		// Notify new Input Report is available
 		// 
 		status = DMF_VirtualHidMini_InputReportGenerate(
-			moduleContext->DmfModuleVirtualHidMini,
+			pModCtx->DmfModuleVirtualHidMini,
 			DsHidMini_RetrieveNextInputReport
 		);
 		if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
@@ -983,12 +1013,13 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	WDFCONTEXT  Context
 )
 {
-	PDEVICE_CONTEXT         pDevCtx;
-	size_t                  rdrBufferLength;
-	LPVOID                  rdrBuffer;
-	LARGE_INTEGER			freq, * t1, t2;
-	LONGLONG				ms;
-	DS_BATTERY_STATUS		battery;
+	PDEVICE_CONTEXT pDevCtx;
+	size_t rdrBufferLength;
+	LPVOID rdrBuffer;
+	LARGE_INTEGER freq, * t1, t2;
+	LONGLONG ms;
+	DS_BATTERY_STATUS battery;
+	DMF_CONTEXT_DsHidMini* pModCtx;
 
 	UNREFERENCED_PARAMETER(Pipe);
 	UNREFERENCED_PARAMETER(NumBytesTransferred);
@@ -996,17 +1027,29 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
 	pDevCtx = DeviceGetContext(Context);
+	pModCtx = DMF_CONTEXT_GET((DMFMODULE)pDevCtx->DsHidMiniModule);
 	rdrBuffer = WdfMemoryGetBuffer(Buffer, &rdrBufferLength);
 
 	QueryPerformanceFrequency(&freq);
 	t1 = &pDevCtx->Connection.Usb.ChargingCycleTimestamp;
 
-	/*
 #ifdef DBG
 	DumpAsHex(">> USB", rdrBuffer, (ULONG)rdrBufferLength);
 #endif
-	*/
 
+	//
+	// Handle special case of SIXAXIS.SYS emulation
+	// 
+	if (pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
+	{
+		RtlCopyMemory(
+			pModCtx->GetFeatureReport,
+			rdrBuffer,
+			(rdrBufferLength < SIXAXIS_HID_GET_FEATURE_REPORT_SIZE) ? rdrBufferLength :
+			SIXAXIS_HID_GET_FEATURE_REPORT_SIZE
+		);
+	}
+	
 	battery = (DS_BATTERY_STATUS)((PUCHAR)rdrBuffer)[30];
 
 	//
@@ -1100,16 +1143,17 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	WDFCONTEXT Context
 )
 {
-	NTSTATUS                    status;
-	PUCHAR                      buffer;
-	size_t                      bufferLength;
-	PUCHAR						inputBuffer;
-	WDF_REQUEST_REUSE_PARAMS    params;
-	PDEVICE_CONTEXT				pDeviceContext;
-	LARGE_INTEGER				freq, * t1, t2;
-	LONGLONG					ms;
-	DS_BATTERY_STATUS			battery;
-	PUCHAR						outputBuffer;
+	NTSTATUS status;
+	PUCHAR buffer;
+	size_t bufferLength;
+	PUCHAR inputBuffer;
+	WDF_REQUEST_REUSE_PARAMS params;
+	PDEVICE_CONTEXT pDevCtx;
+	LARGE_INTEGER freq, * t1, t2;
+	LONGLONG ms;
+	DS_BATTERY_STATUS battery;
+	PUCHAR outputBuffer;
+	DMF_CONTEXT_DsHidMini* pModCtx;
 
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
@@ -1137,9 +1181,10 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 		goto Exit;
 	}
 
-	pDeviceContext = (PDEVICE_CONTEXT)Context;
+	pDevCtx = (PDEVICE_CONTEXT)Context;
+	pModCtx = DMF_CONTEXT_GET((DMFMODULE)pDevCtx->DsHidMiniModule);
 	QueryPerformanceFrequency(&freq);
-	t1 = &pDeviceContext->Connection.Bth.QuickDisconnectTimestamp;
+	t1 = &pDevCtx->Connection.Bth.QuickDisconnectTimestamp;
 
 	if (!NT_SUCCESS(Params->IoStatus.Status)
 		|| Params->Parameters.Ioctl.Output.Length < BTHPS3_SIXAXIS_HID_INPUT_REPORT_SIZE)
@@ -1180,6 +1225,19 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	inputBuffer = &buffer[1];
 
 	//
+	// Handle special case of SIXAXIS.SYS emulation
+	// 
+	if (pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
+	{
+		RtlCopyMemory(
+			pModCtx->GetFeatureReport,
+			inputBuffer,
+			((bufferLength - 1) < SIXAXIS_HID_GET_FEATURE_REPORT_SIZE) ? (bufferLength - 1) :
+			SIXAXIS_HID_GET_FEATURE_REPORT_SIZE
+		);
+	}
+
+	//
 	// Grab battery info
 	// 
 	battery = (DS_BATTERY_STATUS)((PUCHAR)inputBuffer)[30];
@@ -1187,7 +1245,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	//
 	// React if last known state differs from current state
 	// 
-	if (pDeviceContext->BatteryStatus != battery)
+	if (pDevCtx->BatteryStatus != battery)
 	{
 		TraceVerbose(
 			TRACE_DSHIDMINIDRV,
@@ -1215,7 +1273,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 		
 
 		outputBuffer = WdfMemoryGetBuffer(
-			pDeviceContext->Connection.Bth.HidControl.WriteMemory,
+			pDevCtx->Connection.Bth.HidControl.WriteMemory,
 			NULL
 		);
 
@@ -1244,13 +1302,13 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 				break;
 			}
 
-			(void)Ds_SendOutputReport(pDeviceContext);
+			(void)Ds_SendOutputReport(pDevCtx);
 		}
 
 		//
 		// Update battery status
 		// 
-		pDeviceContext->BatteryStatus = battery;
+		pDevCtx->BatteryStatus = battery;
 	}
 
 	//
@@ -1263,7 +1321,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 			"!! Quick disconnect combination detected"
 		);
 
-		if (pDeviceContext->Connection.Bth.QuickDisconnectTimestamp.QuadPart == 0)
+		if (pDevCtx->Connection.Bth.QuickDisconnectTimestamp.QuadPart == 0)
 		{
 			QueryPerformanceCounter(t1);
 		}
@@ -1285,7 +1343,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 			//
 			// Send disconnect request
 			// 
-			status = DsBth_SendDisconnectRequest(pDeviceContext);
+			status = DsBth_SendDisconnectRequest(pDevCtx);
 
 			if (!NT_SUCCESS(status))
 			{
@@ -1304,10 +1362,10 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	}
 	else
 	{
-		pDeviceContext->Connection.Bth.QuickDisconnectTimestamp.QuadPart = 0;
+		pDevCtx->Connection.Bth.QuickDisconnectTimestamp.QuadPart = 0;
 	}
 
-	Ds_ProcessHidInputReport(pDeviceContext, inputBuffer, bufferLength - 1);
+	Ds_ProcessHidInputReport(pDevCtx, inputBuffer, bufferLength - 1);
 
 	resendRequest:
 
@@ -1328,12 +1386,12 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	}
 
 	status = WdfIoTargetFormatRequestForIoctl(
-		pDeviceContext->Connection.Bth.BthIoTarget,
-		pDeviceContext->Connection.Bth.HidInterrupt.ReadRequest,
+		pDevCtx->Connection.Bth.BthIoTarget,
+		pDevCtx->Connection.Bth.HidInterrupt.ReadRequest,
 		IOCTL_BTHPS3_HID_INTERRUPT_READ,
 		NULL,
 		NULL,
-		pDeviceContext->Connection.Bth.HidInterrupt.ReadMemory,
+		pDevCtx->Connection.Bth.HidInterrupt.ReadMemory,
 		NULL
 	);
 	if (!NT_SUCCESS(status))
@@ -1346,17 +1404,17 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	}
 
 	WdfRequestSetCompletionRoutine(
-		pDeviceContext->Connection.Bth.HidInterrupt.ReadRequest,
+		pDevCtx->Connection.Bth.HidInterrupt.ReadRequest,
 		DsBth_HidInterruptReadRequestCompletionRoutine,
-		pDeviceContext
+		pDevCtx
 	);
 
 	if (WdfRequestSend(
-		pDeviceContext->Connection.Bth.HidInterrupt.ReadRequest,
-		pDeviceContext->Connection.Bth.BthIoTarget,
+		pDevCtx->Connection.Bth.HidInterrupt.ReadRequest,
+		pDevCtx->Connection.Bth.BthIoTarget,
 		WDF_NO_SEND_OPTIONS
 	) == FALSE) {
-		status = WdfRequestGetStatus(pDeviceContext->Connection.Bth.HidInterrupt.ReadRequest);
+		status = WdfRequestGetStatus(pDevCtx->Connection.Bth.HidInterrupt.ReadRequest);
 	}
 	if (!NT_SUCCESS(status))
 	{

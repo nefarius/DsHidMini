@@ -24,6 +24,8 @@ TBD
   - Wireless: 4 = Full, 3 = High, 2 = Medium/low, 1 = Low/dying
 - **Rumble exposure via Force Feedback**
   - The rumble motors are exposed as Force Feedback effects, allowing for great game compatibility
+- Supports [**PCSX2 PlayStation 2 Emulator**](https://pcsx2.net/)
+- Supports [**RPCS3 PlayStation 3 Emulator**](https://pcsx2.net/)
 
 ## How it works
 
