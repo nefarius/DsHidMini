@@ -15,7 +15,17 @@ namespace Nefarius.DsHidMini.MVVM
 
             Devices.CollectionChanged += (sender, args) =>
             {
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("HasNoDevices"));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasNoDevices)));
+
+                if (args.NewItems == null)
+                    return;
+
+                foreach (DeviceViewModel item in args.NewItems)
+                    item.PropertyChanged += (o, eventArgs) =>
+                    {
+                        PropertyChanged?.Invoke(this,
+                            new PropertyChangedEventArgs(nameof(IsPressureMutingSupported)));
+                    };
             };
         }
 
@@ -102,6 +112,8 @@ namespace Nefarius.DsHidMini.MVVM
 
         public bool AreBthPS3SettingsIncorrect =>
             IsElevated && (BthPS3ProfileDriver.RawPDO || !BthPS3FilterDriver.IsFilterEnabled);
+
+        public bool IsPressureMutingSupported => IsEditable && SelectedDevice.IsPressureMutingSupported;
 
         public event PropertyChangedEventHandler PropertyChanged;
 

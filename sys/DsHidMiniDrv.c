@@ -862,6 +862,25 @@ DsHidMini_WriteReport(
 		*ReportSize = Packet->reportBufferLen;
 		
 		break;
+
+		//
+		// WRITE_REPORT for ID 0 in SIXAXIS.SYS emulation mode
+		// 
+	case 0x00:
+
+		if (pDevCtx->Configuration.HidDeviceMode != DsHidMiniDeviceModeSixaxisCompatible)
+		{
+			status = STATUS_NOT_IMPLEMENTED;
+			break;
+		}
+
+		DS3_SET_SMALL_RUMBLE_DURATION(pDevCtx, Packet->reportBuffer[4]);
+		DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[5]);
+
+		DS3_SET_LARGE_RUMBLE_DURATION(pDevCtx, Packet->reportBuffer[6]);
+		DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[7]);
+
+		break;
 		
 	default:
 		TraceEvents(TRACE_LEVEL_WARNING,

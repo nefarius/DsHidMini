@@ -57,7 +57,11 @@ namespace Nefarius.DsHidMini.MVVM
             get =>
                 (DsHidDeviceMode)_device.GetProperty<byte>(
                     DsHidMiniDriver.HidDeviceModeProperty);
-            set => _device.SetProperty(DsHidMiniDriver.HidDeviceModeProperty, (byte)value);
+            set
+            {
+                _device.SetProperty(DsHidMiniDriver.HidDeviceModeProperty, (byte) value); 
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsPressureMutingSupported)));
+            }
         }
 
         public uint OutputReportTimerPeriodMs
@@ -179,6 +183,8 @@ namespace Nefarius.DsHidMini.MVVM
         /// </summary>
         public DateTimeOffset LastConnected =>
             _device.GetProperty<DateTimeOffset>(DsHidMiniDriver.BluetoothLastConnectedTimeProperty);
+
+        public bool IsPressureMutingSupported => HidEmulationMode != DsHidDeviceMode.SixaxisCompatible;
 
         public event PropertyChangedEventHandler PropertyChanged;
     }

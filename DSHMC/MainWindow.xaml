@@ -13,7 +13,7 @@
                        mc:Ignorable="d"
                        Title="DsHidMini Control"
                        Height="580" Width="800"
-                       ResizeMode="NoResize"
+                       ResizeMode="CanMinimize"
                        WindowStartupLocation="CenterScreen">
     <controls:AdonisWindow.TitleBarContent>
         <StackPanel Orientation="Horizontal"
@@ -226,7 +226,7 @@
 
                                     <CheckBox Grid.Row="0"
                                               Margin="{adonisUi:Space 1}"
-                                              IsEnabled="{Binding Path=IsEditable}"
+                                              IsEnabled="{Binding Path=SelectedDevice.IsPressureMutingSupported}"
                                               IsChecked="{Binding Path=SelectedDevice.MuteDigitalPressureButtons}">
                                         Mute digital pressure buttons
                                     </CheckBox>
