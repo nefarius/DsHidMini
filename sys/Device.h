@@ -131,6 +131,11 @@ struct BTH_DEVICE_CONTEXT
 	// Wait handle
 	//
 	HANDLE DisconnectWaitHandle;
+
+	//
+	// Timestamp to calculate idle disconnect
+	// 
+	LARGE_INTEGER IdleDisconnectTimestamp;
 };
 
 //

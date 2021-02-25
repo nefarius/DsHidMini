@@ -1213,7 +1213,6 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	pDevCtx = (PDEVICE_CONTEXT)Context;
 	pModCtx = DMF_CONTEXT_GET((DMFMODULE)pDevCtx->DsHidMiniModule);
 	QueryPerformanceFrequency(&freq);
-	t1 = &pDevCtx->Connection.Bth.QuickDisconnectTimestamp;
 
 	if (!NT_SUCCESS(Params->IoStatus.Status)
 		|| Params->Parameters.Ioctl.Output.Length < BTHPS3_SIXAXIS_HID_INPUT_REPORT_SIZE)
@@ -1350,6 +1349,8 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 			"!! Quick disconnect combination detected"
 		);
 
+		t1 = &pDevCtx->Connection.Bth.QuickDisconnectTimestamp;
+
 		if (pDevCtx->Connection.Bth.QuickDisconnectTimestamp.QuadPart == 0)
 		{
 			QueryPerformanceCounter(t1);
@@ -1394,6 +1395,58 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 		pDevCtx->Connection.Bth.QuickDisconnectTimestamp.QuadPart = 0;
 	}
 
+	//
+	// Idle disconnect detection
+	// 
+	if (DS3_RAW_IS_IDLE(inputBuffer))
+	{
+		t1 = &pDevCtx->Connection.Bth.IdleDisconnectTimestamp;
+
+		if (pDevCtx->Connection.Bth.IdleDisconnectTimestamp.QuadPart == 0)
+		{
+			QueryPerformanceCounter(t1);
+		}
+
+		QueryPerformanceCounter(&t2);
+
+		ms = (t2.QuadPart - t1->QuadPart) / (freq.QuadPart / 1000);
+
+		//
+		// 3 minutes passed
+		// TODO: turn this into a configurable property
+		// 
+		if (ms > 180000)
+		{
+			TraceEvents(TRACE_LEVEL_INFORMATION,
+				TRACE_DSHIDMINIDRV,
+				"!! Idle timeout detected, sending disconnect request"
+			);
+
+			//
+			// Send disconnect request
+			// 
+			status = DsBth_SendDisconnectRequest(pDevCtx);
+
+			if (!NT_SUCCESS(status))
+			{
+				TraceError(
+					TRACE_DSHIDMINIDRV,
+					"Sending disconnect request failed with status %!STATUS!",
+					status
+				);
+			}
+
+			//
+			// No further processing
+			// 
+			return;
+		}
+	}
+	else
+	{
+		pDevCtx->Connection.Bth.IdleDisconnectTimestamp.QuadPart = 0;
+	}
+	
 	Ds_ProcessHidInputReport(pDevCtx, inputBuffer, bufferLength - 1);
 
 	resendRequest:
