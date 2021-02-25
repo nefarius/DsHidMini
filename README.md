@@ -19,6 +19,7 @@ DsHidMini is a self-contained, low footprint and feature-rich [user-mode driver]
   - Split/multi device emulation to overcome DirectInput axis limits
   - Sony `sixaxis.sys` emulation (both wired **and wireless**)
 - Quick disconnect (on Bluetooth) by pressing `L1 + R1 + PS` together for over one second
+- Automatic disconnect (on Bluetooth) after idle timeout (3 minutes) expired to conserve battery
 - Custom LED states indicate battery charge level
   - Wired: Charging will cycle through 1 to 4, if fully charged will stay on 4
   - Wireless: 4 = Full, 3 = High, 2 = Medium/low, 1 = Low/dying
