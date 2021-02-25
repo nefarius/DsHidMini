@@ -50,6 +50,7 @@ DsHidMini components (drivers, utilities) are developed, designed and tested for
 - [Step 1: Install Visual Studio 2019](<https://docs.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk#download-icon-step-1-install-visual-studio-2019>)
 - [Step 2: Install WDK for Windows 10, version 2004](<https://docs.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk#download-icon-step-2-install-wdk-for-windows-10-version-2004>)
 - [Step 3: Clone the Driver Module Framework (DMF)](https://github.com/microsoft/DMF) into the same parent directory.
+  - **Important:** until fixed upstream, [apply this patch to DMF](./assets/dmf_vhidmini_sixaxis_patch.diff) before building
   - Build the `DmfU` project with Release and Debug configurations for all architectures (x64 and Win32).
 
 You can build individual projects of the solution within Visual Studio.
