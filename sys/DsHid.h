@@ -22,6 +22,66 @@ extern CONST HID_DESCRIPTOR G_SixaxisHidDescriptor_2;
 #define SIXAXIS_HID_INPUT_REPORT_SIZE			0x0C
 #define SIXAXIS_HID_GET_FEATURE_REPORT_SIZE		0x31
 
+#define DS3_RAW_SLIDER_IDLE_THRESHOLD			0x05 // 5
+#define DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER		0x73 // 115
+#define DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER		0x87 // 135
+
+/**
+ * Checks if the controller state is "idle" (no button pressed, no axis engaged). Jitter
+ * compensation is applied to avoid false-positives.
+ *
+ * @author	Benjamin "Nefarius" Höglinger-Stelzer
+ * @date	25.02.2021
+ *
+ * @param 	Input	The input.
+ *
+ * @returns	TRUE if idle, FALSE otherwise.
+ */
+BOOLEAN FORCEINLINE DS3_RAW_IS_IDLE(
+	_In_ PUCHAR Input
+)
+{
+	//
+	// Button states
+	// 
+
+	if (Input[2] || Input[3] || Input[4])
+	{
+		return FALSE;
+	}
+
+	//
+	// Axes
+	// 
+	
+	for (UCHAR i = 6; i < 9; i++)
+	{
+		if (Input[i] < DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER
+			|| Input[i] > DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER)
+		{
+			return FALSE;
+		}
+	}
+
+	//
+	// Sliders
+	// 
+
+	for (UCHAR i = 18; i < 19; i++)
+	{
+		if (Input[i] > DS3_RAW_SLIDER_IDLE_THRESHOLD)
+		{
+			return FALSE;
+		}
+	}
+
+	//
+	// If we end up here, some movement is going on
+	// 
+	
+	return TRUE;
+}
+
 VOID FORCEINLINE DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 	_In_ PUCHAR Input,
 	_Out_ PUCHAR Output,
