@@ -905,7 +905,17 @@ DsHidMini_WriteReport(
 
 #pragma region Input Report processing
 
-VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t BufferLength)
+/**
+ * Process a raw input report depending on HID emulation mode.
+ *
+ * @author	Benjamin "Nefarius" Höglinger-Stelzer
+ * @date	25.02.2021
+ *
+ * @param 	Context			The context.
+ * @param 	Buffer			The buffer.
+ * @param 	BufferLength	Length of the buffer.
+ */
+void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t BufferLength)
 {
 	NTSTATUS status;
 	DMFMODULE dmfModule;
@@ -1035,7 +1045,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	PDEVICE_CONTEXT pDevCtx;
 	size_t rdrBufferLength;
 	LPVOID rdrBuffer;
-	LARGE_INTEGER freq, * t1, t2;
+	LARGE_INTEGER freq, *t1, t2;
 	LONGLONG ms;
 	DS_BATTERY_STATUS battery;
 	DMF_CONTEXT_DsHidMini* pModCtx;
