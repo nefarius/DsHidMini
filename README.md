@@ -27,7 +27,7 @@ DsHidMini is a self-contained, low footprint and feature-rich [user-mode driver]
   - The rumble motors are exposed as Force Feedback effects, allowing for great game compatibility
 - Supports the [**PCSX2 PlayStation 2 Emulator**](https://pcsx2.net/)
   - Controller gets picked up by LilyPad plugin with all device features
-- Supports the [**RPCS3 PlayStation 3 Emulator**](https://pcsx2.net/)
+- Supports the [**RPCS3 PlayStation 3 Emulator**](https://rpcs3.net/)
   - Controller gets picked up by DualShock 3 handler with all device features
 
 Take a look at the [Roadmap](https://vigem.org/projects/DsHidMini/Roadmap/) for other planned or in-progress features.
@@ -51,7 +51,7 @@ DsHidMini components (drivers, utilities) are developed, designed and tested for
 - [Step 1: Install Visual Studio 2019](<https://docs.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk#download-icon-step-1-install-visual-studio-2019>)
 - [Step 2: Install WDK for Windows 10, version 2004](<https://docs.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk#download-icon-step-2-install-wdk-for-windows-10-version-2004>)
 - [Step 3: Clone the Driver Module Framework (DMF)](https://github.com/microsoft/DMF) into the same parent directory.
-  - **Important:** until fixed upstream, [apply this patch to DMF](./assets/dmf_vhidmini_sixaxis_patch.diff) before building
+  - **Important:** requires *at least* [`v1.1.83`](https://github.com/microsoft/DMF/releases/tag/v1.1.83) or newer
   - Build the `DmfU` project with Release and Debug configurations for all architectures (x64 and Win32).
 
 You can build individual projects of the solution within Visual Studio.
