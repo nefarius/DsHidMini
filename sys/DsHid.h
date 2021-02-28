@@ -14,10 +14,6 @@ extern CONST HID_REPORT_DESCRIPTOR G_SixaxisHidReportDescriptor[];
 
 extern CONST HID_DESCRIPTOR G_SixaxisHidDescriptor;
 
-extern CONST HID_REPORT_DESCRIPTOR G_SixaxisHidReportDescriptor_2[];
-
-extern CONST HID_DESCRIPTOR G_SixaxisHidDescriptor_2;
-
 #define DS3_HID_INPUT_REPORT_SIZE				0x27
 #define SIXAXIS_HID_INPUT_REPORT_SIZE			0x0C
 #define SIXAXIS_HID_GET_FEATURE_REPORT_SIZE		0x31
