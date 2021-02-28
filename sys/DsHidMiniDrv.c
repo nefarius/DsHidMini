@@ -880,6 +880,8 @@ DsHidMini_WriteReport(
 		DS3_SET_LARGE_RUMBLE_DURATION(pDevCtx, Packet->reportBuffer[6]);
 		DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[7]);
 
+		DS3_SET_LED(pDevCtx, Packet->reportBuffer[12]);
+		
 		break;
 		
 	default:
