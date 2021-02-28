@@ -80,6 +80,13 @@ typedef enum _DS_HID_DEVICE_MODE
 
 } DS_HID_DEVICE_MODE, * PDS_HID_DEVICE_MODE;
 
+typedef enum _DS_OUTPUT_REPORT_MODE
+{
+    Ds3OutputReportModeDriverHandled = 0,
+    Ds3OutputReportModeWriteReportPassThrough
+
+} DS_OUTPUT_REPORT_MODE, * PDS_OUTPUT_REPORT_MODE;
+
 #include <pshpack1.h>
 
 //

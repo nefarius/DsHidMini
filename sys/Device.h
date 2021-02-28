@@ -175,16 +175,24 @@ typedef struct _DEVICE_CONTEXT
 	// VirtualHidMini DMF module
 	// 
 	DMFMODULE DsHidMiniModule;
+	
+	struct
+	{
+		//
+		// Periodic task scheduler to send output reports
+		// 
+		DMFMODULE Scheduler;
 
-	//
-	// Periodic task scheduler to send output reports
-	// 
-	DMFMODULE OutputReportScheduler;
+		//
+		// Lock protecting output report scheduler callback
+		// 
+		WDFWAITLOCK Lock;
 
-	//
-	// Lock protecting output report scheduler callback
-	// 
-	WDFWAITLOCK OutputReportLock;
+		//
+		// Output report mode of operation
+		// 
+		DS_OUTPUT_REPORT_MODE Mode;
+	} OutputReport;
 	
 	//
 	// Type of connection (wired, wireless)

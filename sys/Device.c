@@ -149,7 +149,7 @@ dshidminiEvtDeviceAdd(
 		
 		status = WdfWaitLockCreate(
 			&deviceAttributes,
-			&pDevCtx->OutputReportLock
+			&pDevCtx->OutputReport.Lock
 		);
 		if (!NT_SUCCESS(status))
 		{
@@ -459,7 +459,7 @@ DmfDeviceModulesAdd(
 		DmfModuleInit,
 		&moduleAttributes,
 		WDF_NO_OBJECT_ATTRIBUTES,
-		&pDevCtx->OutputReportScheduler
+		&pDevCtx->OutputReport.Scheduler
 	);
 
 	//

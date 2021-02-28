@@ -1532,7 +1532,7 @@ DMF_OutputReportScheduledTaskCallback(
 	
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
-	WdfWaitLockAcquire(pDevCtx->OutputReportLock, NULL);
+	WdfWaitLockAcquire(pDevCtx->OutputReport.Lock, NULL);
 	
 	switch (pDevCtx->ConnectionType)
 	{
@@ -1560,7 +1560,7 @@ DMF_OutputReportScheduledTaskCallback(
 		status = STATUS_INVALID_PARAMETER;
 	}
 
-	WdfWaitLockRelease(pDevCtx->OutputReportLock);
+	WdfWaitLockRelease(pDevCtx->OutputReport.Lock);
 
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 	
@@ -1576,7 +1576,7 @@ NTSTATUS Ds_SendOutputReport(PDEVICE_CONTEXT Context)
 	FuncEntry(TRACE_DSHIDMINIDRV);
 	
 	status = DMF_ScheduledTask_ExecuteNow(
-		Context->OutputReportScheduler,
+		Context->OutputReport.Scheduler,
 		Context
 	);
 
