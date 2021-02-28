@@ -144,6 +144,13 @@ VOID FORCEINLINE DS3_SET_LARGE_RUMBLE_STRENGTH(
 }
 
 
+typedef enum _DS3_OUTPUT_REPORT_MODE
+{
+	Ds3OutputReportModeDriverHandled = 0,
+	Ds3OutputReportModeWriteReportPassThrough
+	
+} DS3_OUTPUT_REPORT_MODE, *PDS3_OUTPUT_REPORT_MODE;
+
 typedef enum _USB_HID_REQUEST
 {
     // Class-Specific Requests
