@@ -874,6 +874,11 @@ DsHidMini_WriteReport(
 			break;
 		}
 
+		//
+		// External output report overrides internal behaviour, keep note
+		// 
+		pDevCtx->OutputReport.Mode = Ds3OutputReportModeWriteReportPassThrough;
+
 		DS3_SET_SMALL_RUMBLE_DURATION(pDevCtx, Packet->reportBuffer[4]);
 		DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[5]);
 
@@ -881,6 +886,8 @@ DsHidMini_WriteReport(
 		DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[7]);
 
 		DS3_SET_LED(pDevCtx, Packet->reportBuffer[12]);
+
+		(void)Ds_SendOutputReport(pDevCtx);
 		
 		break;
 		
@@ -1111,9 +1118,12 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	{
 		pDevCtx->BatteryStatus = battery;
 
-		DS3_USB_SET_LED(pDevCtx->Connection.Usb.OutputReport, DS3_LED_4);
+		if (pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled)
+		{
+			DS3_USB_SET_LED(pDevCtx->Connection.Usb.OutputReport, DS3_LED_4);
 
-		(void)Ds_SendOutputReport(pDevCtx);
+			(void)Ds_SendOutputReport(pDevCtx);
+		}
 	}
 	//
 	// If charging, cycle LEDs
@@ -1149,9 +1159,12 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 				led = DS3_LED_1;
 			}
 
-			DS3_USB_SET_LED(pDevCtx->Connection.Usb.OutputReport, led);
+			if (pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled)
+			{
+				DS3_USB_SET_LED(pDevCtx->Connection.Usb.OutputReport, led);
 
-			(void)Ds_SendOutputReport(pDevCtx);
+				(void)Ds_SendOutputReport(pDevCtx);
+			}
 		}
 	}
 	else
@@ -1256,6 +1269,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 
 	//
 	// Handle special case of SIXAXIS.SYS emulation
+	// TODO: fix sensor translation
 	// 
 	if (pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
 	{
@@ -1312,27 +1326,30 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 		// 
 		if (DS3_BTH_GET_LED(outputBuffer) != 0x00)
 		{
-			switch (battery)
+			if (pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled)
 			{
-			case DsBatteryStatusCharged:
-			case DsBatteryStatusFull:
-			case DsBatteryStatusHigh:
-				DS3_BTH_SET_LED(outputBuffer, DS3_LED_4);
-				break;
-			case DsBatteryStatusMedium:
-				DS3_BTH_SET_LED(outputBuffer, DS3_LED_3);
-				break;
-			case DsBatteryStatusLow:
-				DS3_BTH_SET_LED(outputBuffer, DS3_LED_2);
-				break;
-			case DsBatteryStatusDying:
-				DS3_BTH_SET_LED(outputBuffer, DS3_LED_1);
-				break;
-			default:
-				break;
-			}
+				switch (battery)
+				{
+				case DsBatteryStatusCharged:
+				case DsBatteryStatusFull:
+				case DsBatteryStatusHigh:
+					DS3_BTH_SET_LED(outputBuffer, DS3_LED_4);
+					break;
+				case DsBatteryStatusMedium:
+					DS3_BTH_SET_LED(outputBuffer, DS3_LED_3);
+					break;
+				case DsBatteryStatusLow:
+					DS3_BTH_SET_LED(outputBuffer, DS3_LED_2);
+					break;
+				case DsBatteryStatusDying:
+					DS3_BTH_SET_LED(outputBuffer, DS3_LED_1);
+					break;
+				default:
+					break;
+				}
 
-			(void)Ds_SendOutputReport(pDevCtx);
+				(void)Ds_SendOutputReport(pDevCtx);
+			}
 		}
 
 		//
