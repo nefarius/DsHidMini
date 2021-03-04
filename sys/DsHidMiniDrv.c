@@ -224,6 +224,14 @@ DMF_DsHidMini_Open(
 		pHidCfg->HidReportDescriptorLength = G_SixaxisHidDescriptor.DescriptorList[0].wReportLength;
 
 		break;
+	case DsHidMiniDeviceModeDualShock4Rev1Compatible:
+
+		pHidCfg->HidDescriptor = &G_DualShock4Rev1HidDescriptor;
+		pHidCfg->HidDescriptorLength = sizeof(G_DualShock4Rev1HidDescriptor);
+		pHidCfg->HidReportDescriptor = G_DualShock4Rev1HidReportDescriptor;
+		pHidCfg->HidReportDescriptorLength = G_DualShock4Rev1HidDescriptor.DescriptorList[0].wReportLength;
+
+		break;
 	default:
 		TraceError(
 			TRACE_DSHIDMINIDRV,
@@ -334,10 +342,13 @@ DsHidMini_RetrieveNextInputReport(
 	{
 	case DsHidMiniDeviceModeSingle:
 	case DsHidMiniDeviceModeMulti:
-		*BufferSize = DS3_HID_INPUT_REPORT_SIZE;
+		*BufferSize = DS3_SPLIT_SINGLE_HID_INPUT_REPORT_SIZE;
 		break;
 	case DsHidMiniDeviceModeSixaxisCompatible:
 		*BufferSize = SIXAXIS_HID_INPUT_REPORT_SIZE;
+		break;
+	case DsHidMiniDeviceModeDualShock4Rev1Compatible:
+		*BufferSize = DS3_DS4REV1_HID_INPUT_REPORT_SIZE;
 		break;
 	default:
 		TraceError(
@@ -950,7 +961,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t Buf
 		);
 
 #ifdef DBG
-		DumpAsHex(">> MULTI", pModCtx->InputReport, DS3_HID_INPUT_REPORT_SIZE);
+		DumpAsHex(">> MULTI", pModCtx->InputReport, DS3_SPLIT_SINGLE_HID_INPUT_REPORT_SIZE);
 #endif
 
 		break;
@@ -964,7 +975,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t Buf
 
 		/*
 #ifdef DBG
-		DumpAsHex(">> SINGLE", moduleContext->InputReport, DS3_HID_INPUT_REPORT_SIZE);
+		DumpAsHex(">> SINGLE", moduleContext->InputReport, DS3_SPLIT_SINGLE_HID_INPUT_REPORT_SIZE);
 #endif
 		*/
 
@@ -1038,6 +1049,31 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t Buf
 
 #pragma endregion
 
+#pragma region HID Input Report (DualShock 4 Rev1 compatible) processing
+
+	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeDualShock4Rev1Compatible)
+	{
+		DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
+			Buffer,
+			pModCtx->InputReport
+		);
+
+		//
+		// Notify new Input Report is available
+		// 
+		status = DMF_VirtualHidMini_InputReportGenerate(
+			pModCtx->DmfModuleVirtualHidMini,
+			DsHidMini_RetrieveNextInputReport
+		);
+		if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
+		{
+			TraceError(TRACE_DSHIDMINIDRV,
+				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
+		}
+	}
+
+#pragma endregion
+	
 	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
 }
 

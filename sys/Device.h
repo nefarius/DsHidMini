@@ -287,7 +287,7 @@ typedef struct
 	//
 	// Input report
 	// 
-	UCHAR InputReport[DS3_HID_INPUT_REPORT_SIZE];
+	UCHAR InputReport[DS3_COMMON_MAX_HID_INPUT_REPORT_SIZE];
 
 	//
 	// Raw input report for SIXAXIS.SYS GET_FEATURE report

@@ -78,6 +78,8 @@ namespace Nefarius.DsHidMini.Drivers
         [Description("Multi device mode")] Multi = 0x02,
 
         [Description("SIXAXIS.SYS compatible mode")]
-        SixaxisCompatible = 0x03
+        SixaxisCompatible = 0x03,
+        [Description("DS4Windows compatible mode")]
+        DualShock4Rev1Compatible = 0x04
     }
 }
