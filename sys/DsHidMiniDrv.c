@@ -231,6 +231,16 @@ DMF_DsHidMini_Open(
 		pHidCfg->HidReportDescriptor = G_DualShock4Rev1HidReportDescriptor;
 		pHidCfg->HidReportDescriptorLength = G_DualShock4Rev1HidDescriptor.DescriptorList[0].wReportLength;
 
+		//
+		// TODO: remove, test code!
+		// 
+		pHidCfg->VendorId = pDevCtx->VendorId = 0x1532;
+		pHidCfg->ProductId = pDevCtx->ProductId = 0x1009;
+		pHidCfg->VersionNumber = pDevCtx->VersionNumber;
+		pHidCfg->HidDeviceAttributes.VendorID = pDevCtx->VendorId;
+		pHidCfg->HidDeviceAttributes.ProductID = pDevCtx->ProductId;
+		pHidCfg->HidDeviceAttributes.VersionNumber = pDevCtx->VersionNumber;
+		
 		break;
 	default:
 		TraceError(
