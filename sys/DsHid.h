@@ -78,7 +78,7 @@ BOOLEAN FORCEINLINE DS3_RAW_IS_IDLE(
 	}
 
 	//
-	// If we end up here, some movement is going on
+	// If we end up here, no movement is going on
 	// 
 	
 	return TRUE;

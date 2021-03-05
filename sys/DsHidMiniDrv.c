@@ -1104,6 +1104,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	LONGLONG ms;
 	DS_BATTERY_STATUS battery;
 	DMF_CONTEXT_DsHidMini* pModCtx;
+	PDS3_RAW_INPUT_REPORT pInReport;
 
 	UNREFERENCED_PARAMETER(Pipe);
 	UNREFERENCED_PARAMETER(NumBytesTransferred);
@@ -1132,6 +1133,13 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 			(rdrBufferLength < SIXAXIS_HID_GET_FEATURE_REPORT_SIZE) ? rdrBufferLength :
 			SIXAXIS_HID_GET_FEATURE_REPORT_SIZE
 		);
+
+		pInReport = (PDS3_RAW_INPUT_REPORT)pModCtx->GetFeatureReport;
+
+		pInReport->AccelerometerX = 0x03FF - _byteswap_ushort(pInReport->AccelerometerX);
+		pInReport->AccelerometerY = _byteswap_ushort(pInReport->AccelerometerY);
+		pInReport->AccelerometerZ = _byteswap_ushort(pInReport->AccelerometerZ);
+		pInReport->Gyroscope = _byteswap_ushort(pInReport->Gyroscope);
 	}
 	
 	battery = (DS_BATTERY_STATUS)((PUCHAR)rdrBuffer)[30];
@@ -1244,6 +1252,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	DS_BATTERY_STATUS battery;
 	PUCHAR outputBuffer;
 	DMF_CONTEXT_DsHidMini* pModCtx;
+	PDS3_RAW_INPUT_REPORT pInReport;
 
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
@@ -1315,7 +1324,6 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 
 	//
 	// Handle special case of SIXAXIS.SYS emulation
-	// TODO: fix sensor translation
 	// 
 	if (pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
 	{
@@ -1325,6 +1333,13 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 			((bufferLength - 1) < SIXAXIS_HID_GET_FEATURE_REPORT_SIZE) ? (bufferLength - 1) :
 			SIXAXIS_HID_GET_FEATURE_REPORT_SIZE
 		);
+
+		pInReport = (PDS3_RAW_INPUT_REPORT)pModCtx->GetFeatureReport;
+
+		pInReport->AccelerometerX = 0x03FF - _byteswap_ushort(pInReport->AccelerometerX);
+		pInReport->AccelerometerY = _byteswap_ushort(pInReport->AccelerometerY);
+		pInReport->AccelerometerZ = _byteswap_ushort(pInReport->AccelerometerZ);
+		pInReport->Gyroscope = _byteswap_ushort(pInReport->Gyroscope);
 	}
 
 	//
