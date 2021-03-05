@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using System.Windows;
 using AdonisUI.Controls;
 using Nefarius.DsHidMini.Drivers;
@@ -72,9 +73,19 @@ namespace Nefarius.DsHidMini
             _listener.EndListen();
         }
 
-        private void ApplyChanges_Click(object sender, RoutedEventArgs e)
+        private async void ApplyChanges_Click(object sender, RoutedEventArgs e)
         {
-            _vm.SelectedDevice.ApplyChanges();
+            await Task.Run(() =>
+            {
+                try
+                {
+                    _vm.SelectedDevice.ApplyChanges();
+                }
+                catch
+                {
+                    // TODO: handle better
+                }
+            });
         }
 
         private void Help_OnClick(object sender, RoutedEventArgs e)
