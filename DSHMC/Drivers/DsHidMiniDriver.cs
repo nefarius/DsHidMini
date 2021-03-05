@@ -74,12 +74,9 @@ namespace Nefarius.DsHidMini.Drivers
     [TypeConverter(typeof(EnumDescriptionTypeConverter))]
     public enum DsHidDeviceMode : byte
     {
-        [Description("PCSX2 compatible mode")] Single = 0x01,
-        [Description("DirectInput compatible mode")] Multi = 0x02,
-
-        [Description("SIXAXIS.SYS compatible mode")]
-        SixaxisCompatible = 0x03,
-        [Description("DS4Windows compatible mode")]
-        DualShock4Rev1Compatible = 0x04
+        [Description("SDF (PCSX2)")] Single = 0x01,
+        [Description("GPJ (Generic DirectInput)")] Multi = 0x02,
+        [Description("SXS (Steam, RPCS3)")] SixaxisCompatible = 0x03,
+        [Description("DS4 (DS4Windows)")] DualShock4Rev1Compatible = 0x04
     }
 }

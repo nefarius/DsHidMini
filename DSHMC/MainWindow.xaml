@@ -177,7 +177,7 @@
                                          Text="{Binding Path=SelectedDevice.LastConnected, Mode=OneWay}" />
 
                                 <TextBlock Grid.Row="5" Grid.Column="0">HID device mode:</TextBlock>
-                                <ComboBox Grid.Row="5" Grid.Column="2" Width="200" HorizontalAlignment="Left"
+                                <ComboBox Grid.Row="5" Grid.Column="2" Width="160" HorizontalAlignment="Left"
                                           Margin="{adonisUi:Space 1}"
                                           IsEnabled="{Binding Path=IsEditable}"
                                           ItemsSource="{Binding Source={wpfUtil:EnumBindingSource {x:Type drivers:DsHidDeviceMode}}}"
