@@ -664,7 +664,7 @@ DsHidMini_WriteReport(
 	_Out_ ULONG* ReportSize
 )
 {
-	NTSTATUS status = STATUS_SUCCESS;
+	NTSTATUS status = STATUS_NOT_IMPLEMENTED;
 	
 	UNREFERENCED_PARAMETER(Request);
 	UNREFERENCED_PARAMETER(ReportSize);
@@ -714,7 +714,7 @@ DsHidMini_WriteReport(
 			DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, 0);
 
 			(void)Ds_SendOutputReport(pDevCtx);
-
+			
 			break;
 		case PidDcPause:
 			TraceVerbose(TRACE_DSHIDMINIDRV, "!! DC Pause");
@@ -728,6 +728,8 @@ DsHidMini_WriteReport(
 
 		*ReportSize = Packet->reportBufferLen;
 
+		status = STATUS_SUCCESS;
+		
 		break;
 
 	case PID_DEVICE_GAIN_REPORT_ID:
@@ -738,6 +740,8 @@ DsHidMini_WriteReport(
 		         pGain->DeviceGain);
 
 		*ReportSize = Packet->reportBufferLen;
+
+		status = STATUS_SUCCESS;
 
 		break;
 
@@ -750,6 +754,8 @@ DsHidMini_WriteReport(
 
 		*ReportSize = Packet->reportBufferLen;
 
+		status = STATUS_SUCCESS;
+		
 		break;
 
 	case PID_SET_EFFECT_REPORT_ID:
@@ -776,6 +782,8 @@ DsHidMini_WriteReport(
 
 		*ReportSize = Packet->reportBufferLen;
 
+		status = STATUS_SUCCESS;
+		
 		break;
 
 	case PID_SET_PERIODIC_REPORT_ID:
@@ -793,6 +801,8 @@ DsHidMini_WriteReport(
 
 		*ReportSize = Packet->reportBufferLen;
 
+		status = STATUS_SUCCESS;
+		
 		break;
 
 	case PID_SET_CONSTANT_FORCE_REPORT_ID:
@@ -819,6 +829,8 @@ DsHidMini_WriteReport(
 		
 		*ReportSize = Packet->reportBufferLen;
 
+		status = STATUS_SUCCESS;
+		
 		break;
 
 	case PID_EFFECT_OPERATION_REPORT_ID:
@@ -852,6 +864,8 @@ DsHidMini_WriteReport(
 		}
 		
 		*ReportSize = Packet->reportBufferLen;
+
+		status = STATUS_SUCCESS;
 		
 		break;
 
@@ -878,25 +892,32 @@ DsHidMini_WriteReport(
 		free(pEntry);
 		
 		*ReportSize = Packet->reportBufferLen;
+
+		status = STATUS_SUCCESS;
 		
 		break;
+	}
+	
+#endif
 
-		//
-		// WRITE_REPORT for ID 0 in SIXAXIS.SYS emulation mode
-		// 
-	case 0x00:
+	//
+	// Handle other non-FFB cases
+	// 
 
-		if (pDevCtx->Configuration.HidDeviceMode != DsHidMiniDeviceModeSixaxisCompatible)
-		{
-			status = STATUS_NOT_IMPLEMENTED;
-			break;
-		}
-
+	//
+	// SIXAXIS.SYS emulation
+	// 
+	if (Packet->reportId == 0x00 && pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
+	{
 		//
 		// External output report overrides internal behaviour, keep note
 		// 
 		pDevCtx->OutputReport.Mode = Ds3OutputReportModeWriteReportPassThrough;
 
+		//
+		// TODO: copy entire report
+		// 
+		
 		DS3_SET_SMALL_RUMBLE_DURATION(pDevCtx, Packet->reportBuffer[4]);
 		DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[5]);
 
@@ -906,23 +927,45 @@ DsHidMini_WriteReport(
 		DS3_SET_LED(pDevCtx, Packet->reportBuffer[12]);
 
 		(void)Ds_SendOutputReport(pDevCtx);
-		
-		break;
-		
-	default:
-		TraceEvents(TRACE_LEVEL_WARNING,
-		            TRACE_DSHIDMINIDRV, "%!FUNC! Not implemented");
 
-		TraceVerbose(TRACE_DSHIDMINIDRV, "-- Packet->reportId: %d, Packet->reportBufferLen: %d",
-		         Packet->reportId,
-		         Packet->reportBufferLen);
+		status = STATUS_SUCCESS;
+	}
+
+	//
+	// DS4 Rev1 emulation
+	// 
+	if (Packet->reportId == 0x05 && pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeDualShock4Rev1Compatible)
+	{
+		//
+		// External output report overrides internal behaviour, keep note
+		// 
+		pDevCtx->OutputReport.Mode = Ds3OutputReportModeWriteReportPassThrough;
+
+		DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[4]);
+		DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[5]);
+
+		(void)Ds_SendOutputReport(pDevCtx);
+
+		status = STATUS_SUCCESS;
+	}
+
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(
+			TRACE_LEVEL_WARNING,
+			TRACE_DSHIDMINIDRV, "%!FUNC! Not implemented"
+		);
+
+		TraceVerbose(
+			TRACE_DSHIDMINIDRV,
+			"-- Packet->reportId: %d, Packet->reportBufferLen: %d",
+			Packet->reportId,
+			Packet->reportBufferLen
+		);
 
 		DumpAsHex("-- WRITE_REPORT.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
-		break;
 	}
 	
-#endif
-
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 
 	return status;
