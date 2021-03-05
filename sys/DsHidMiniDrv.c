@@ -1492,10 +1492,10 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 		ms = (t2.QuadPart - t1->QuadPart) / (freq.QuadPart / 1000);
 
 		//
-		// 3 minutes passed
+		// 5 minutes passed
 		// TODO: turn this into a configurable property
 		// 
-		if (ms > 180000)
+		if (ms > 300000)
 		{
 			TraceEvents(TRACE_LEVEL_INFORMATION,
 				TRACE_DSHIDMINIDRV,
