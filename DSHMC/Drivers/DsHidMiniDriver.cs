@@ -74,8 +74,8 @@ namespace Nefarius.DsHidMini.Drivers
     [TypeConverter(typeof(EnumDescriptionTypeConverter))]
     public enum DsHidDeviceMode : byte
     {
-        [Description("Single device mode")] Single = 0x01,
-        [Description("Multi device mode")] Multi = 0x02,
+        [Description("PCSX2 compatible mode")] Single = 0x01,
+        [Description("DirectInput compatible mode")] Multi = 0x02,
 
         [Description("SIXAXIS.SYS compatible mode")]
         SixaxisCompatible = 0x03,

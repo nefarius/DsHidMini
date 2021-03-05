@@ -184,7 +184,8 @@ namespace Nefarius.DsHidMini.MVVM
         public DateTimeOffset LastConnected =>
             _device.GetProperty<DateTimeOffset>(DsHidMiniDriver.BluetoothLastConnectedTimeProperty);
 
-        public bool IsPressureMutingSupported => HidEmulationMode != DsHidDeviceMode.SixaxisCompatible;
+        public bool IsPressureMutingSupported =>
+            HidEmulationMode == DsHidDeviceMode.Single || HidEmulationMode == DsHidDeviceMode.Multi;
 
         public event PropertyChangedEventHandler PropertyChanged;
     }
