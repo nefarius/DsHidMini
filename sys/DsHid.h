@@ -28,6 +28,11 @@ extern CONST HID_DESCRIPTOR G_DualShock4Rev1HidDescriptor;
 #define DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER		0x73 // 115
 #define DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER		0x87 // 135
 
+// Artificial identifiers to ease detection
+// 
+#define DS3_DS4REV1_HID_VID						0x7331
+#define DS3_DS4REV1_HID_PID						0x0001
+
 /**
  * Checks if the controller state is "idle" (no button pressed, no axis engaged). Jitter
  * compensation is applied to avoid false-positives.
@@ -376,7 +381,8 @@ VOID FORCEINLINE DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
 
 VOID FORCEINLINE DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
 	_In_ PUCHAR Input,
-	_Out_ PUCHAR Output
+	_Out_ PUCHAR Output,
+	_In_ BOOLEAN IsWired
 )
 {
 	// Report ID
@@ -393,6 +399,9 @@ VOID FORCEINLINE DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
 
 	// PS button
 	Output[7] &= ~0x01; // Clear button bit
+
+	// Battery + cable info
+	Output[30] &= ~0xF; // Clear lower 4 bits
 	
 	// Translate D-Pad to HAT format
 	switch (Input[2] & ~0xF)
@@ -445,4 +454,46 @@ VOID FORCEINLINE DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
 
 	// PS button
 	Output[7] |= Input[4] & 0x01;
+
+	if (IsWired)
+	{
+		// Wired sets a flag
+		Output[30] |= 0x10;
+
+		switch ((DS_BATTERY_STATUS)Input[30])
+		{
+		case DsBatteryStatusCharging:
+			Output[30] |= 10; // 100%
+			break;
+		case DsBatteryStatusCharged:
+		case DsBatteryStatusFull:
+			Output[30] |= 11; // Charged
+			break;
+		}
+	}
+	else
+	{
+		// Clear flag
+		Output[30] &= ~0x10;
+
+		switch ((DS_BATTERY_STATUS)Input[30])
+		{
+		case DsBatteryStatusCharged:
+		case DsBatteryStatusFull:
+			Output[30] |= 10;
+			break;
+		case DsBatteryStatusHigh:
+			Output[30] |= 8;
+			break;
+		case DsBatteryStatusMedium:
+			Output[30] |= 5;
+			break;
+		case DsBatteryStatusLow:
+			Output[30] |= 2;
+			break;
+		case DsBatteryStatusDying:
+			Output[30] |= 1;
+			break;
+		}
+	}
 }

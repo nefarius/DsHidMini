@@ -18,11 +18,11 @@ extern unsigned int numInstances;
 #include <wdfusb.h>
 
 #include <DmfModules.Library.h>
+#include "DsCommon.h"
 #include "DsHid.h"
 #ifdef DSHM_FEATURE_FFB
 #include "PID/PIDTypes.h"
 #endif
-#include "DsCommon.h"
 #include "Device.h"
 
 #include "dshmguid.h"

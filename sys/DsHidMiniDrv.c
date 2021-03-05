@@ -231,11 +231,8 @@ DMF_DsHidMini_Open(
 		pHidCfg->HidReportDescriptor = G_DualShock4Rev1HidReportDescriptor;
 		pHidCfg->HidReportDescriptorLength = G_DualShock4Rev1HidDescriptor.DescriptorList[0].wReportLength;
 
-		//
-		// TODO: remove, test code!
-		// 
-		pHidCfg->VendorId = pDevCtx->VendorId = 0x1532;
-		pHidCfg->ProductId = pDevCtx->ProductId = 0x1009;
+		pHidCfg->VendorId = pDevCtx->VendorId = DS3_DS4REV1_HID_VID;
+		pHidCfg->ProductId = pDevCtx->ProductId = DS3_DS4REV1_HID_PID;
 		pHidCfg->VersionNumber = pDevCtx->VersionNumber;
 		pHidCfg->HidDeviceAttributes.VendorID = pDevCtx->VendorId;
 		pHidCfg->HidDeviceAttributes.ProductID = pDevCtx->ProductId;
@@ -1065,7 +1062,8 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t Buf
 	{
 		DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
 			Buffer,
-			pModCtx->InputReport
+			pModCtx->InputReport,
+			(Context->ConnectionType == DsDeviceConnectionTypeUsb) ? TRUE : FALSE
 		);
 
 		//
