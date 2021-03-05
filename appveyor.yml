@@ -8,6 +8,11 @@ configuration:
 install:
 - cmd: git submodule -q update --init
 - cmd: git clone -q https://github.com/microsoft/DMF.git C:\projects\DMF
+before_build:
+- ps: Invoke-WebRequest "https://github.com/nefarius/vpatch/releases/latest/download/vpatch.exe" -OutFile vpatch.exe
+- cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\sys\dshidmini.vcxproj" --vcxproj.inf-time-stamp
+- cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\sys\dshidmini.rc" --resource.file-version --resource.product-version
+- cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\DSHMC\Properties\AssemblyInfo.cs" --assembly.version --assembly.file-version
 build_script:
 - cmd: .\build.cmd
 artifacts:
