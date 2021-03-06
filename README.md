@@ -58,6 +58,8 @@ You can build individual projects of the solution within Visual Studio.
 
 ## Sources & 3rd party credits
 
+The following awesome resources have made this project possible:
+
 - [Eleccelerator Wiki - DualShock 3](http://eleccelerator.com/wiki/index.php?title=DualShock_3)
 - [Eleccelerator - USB Descriptor and Request Parser](http://eleccelerator.com/usbdescreqparser/)
 - [HID Usage Tables](https://usb.org/sites/default/files/documents/hut1_12v2.pdf)

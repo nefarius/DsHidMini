@@ -944,6 +944,51 @@ DsHidMini_WriteReport(
 		DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[4]);
 		DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[5]);
 
+		// Color values (RGB)
+		// 
+		UCHAR r = Packet->reportBuffer[6];
+		UCHAR g = Packet->reportBuffer[7];
+		UCHAR b = Packet->reportBuffer[8];
+
+		//
+		// Single color RED intensity indicates battery level
+		// 
+		if (g == 0x00 && b == 0x00)
+		{
+			if (r >= 192)
+				DS3_SET_LED(pDevCtx, DS3_LED_4);
+			else if (r >= 128)
+				DS3_SET_LED(pDevCtx, DS3_LED_3);
+			else if (r >= 64)
+				DS3_SET_LED(pDevCtx, DS3_LED_2);
+			else
+				DS3_SET_LED(pDevCtx, DS3_LED_1);
+		}
+		//
+		// Decode custom LED status from color RED intensity
+		// 
+		else if (g == 0xFF && b == 0xFF)
+		{
+			switch (r)
+			{
+			case 1:
+				DS3_SET_LED(pDevCtx, DS3_LED_1);
+				break;
+			case 2:
+				DS3_SET_LED(pDevCtx, DS3_LED_2);
+				break;
+			case 3:
+				DS3_SET_LED(pDevCtx, DS3_LED_3);
+				break;
+			case 4:
+				DS3_SET_LED(pDevCtx, DS3_LED_4);
+				break;
+			default:
+				// No change
+				break;
+			}
+		}
+		
 		(void)Ds_SendOutputReport(pDevCtx);
 
 		status = STATUS_SUCCESS;
