@@ -389,7 +389,7 @@ DsHidMini_GetFeature(
 	_Out_ ULONG* ReportSize
 )
 {
-	NTSTATUS status = STATUS_SUCCESS;
+	NTSTATUS status = STATUS_NOT_IMPLEMENTED;
 
 	UNREFERENCED_PARAMETER(Request);
 
@@ -426,6 +426,8 @@ DsHidMini_GetFeature(
 		pPool->SharedParameterBlocks = 0;
 				
 		*ReportSize = sizeof(PID_POOL_REPORT) - 1;
+
+		status = STATUS_SUCCESS;
 		
 		break;
 
@@ -457,19 +459,15 @@ DsHidMini_GetFeature(
 		
 		*ReportSize = sizeof(PID_BLOCK_LOAD_REPORT) - 1;
 
+		status = STATUS_SUCCESS;
+		
 		break;
+	}
+	
+#endif
 
-		//
-		// GET_FEATURE for ID 0 in SIXAXIS.SYS emulation mode
-		// 
-	case 0x00:
-
-		if (pDevCtx->Configuration.HidDeviceMode != DsHidMiniDeviceModeSixaxisCompatible)
-		{
-			status = STATUS_NOT_IMPLEMENTED;
-			break;
-		}
-
+	if (Packet->reportId == 0x00 && pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
+	{
 		//
 		// Copy last received raw report to buffer
 		// 
@@ -488,20 +486,41 @@ DsHidMini_GetFeature(
 
 		*ReportSize = Packet->reportBufferLen - 1;
 
-		break;
+		status = STATUS_SUCCESS;
+	}
+	else if (
+		Packet->reportId == 0x12
+		&& Packet->reportBufferLen == 64
+		&& pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeDualShock4Rev1Compatible
+		)
+	{
+		RtlCopyMemory(
+			&Packet->reportBuffer[1],
+			&pDevCtx->DeviceAddress,
+			sizeof(BD_ADDR)
+		);
 
-	default:
-		TraceEvents(TRACE_LEVEL_WARNING, 
-			TRACE_DSHIDMINIDRV, "%!FUNC! Not implemented");
+		*ReportSize = Packet->reportBufferLen - 1;
 
-		TraceVerbose(TRACE_DSHIDMINIDRV, "-- Packet->reportId: %d, Packet->reportBufferLen: %d",
-	         Packet->reportId,
-	         Packet->reportBufferLen);
-		break;
+		status = STATUS_SUCCESS;
 	}
 	
-#endif
+	if (!NT_SUCCESS(status))
+	{
+		TraceEvents(
+			TRACE_LEVEL_WARNING,
+			TRACE_DSHIDMINIDRV, 
+			"%!FUNC! Not implemented"
+		);
 
+		TraceVerbose(
+			TRACE_DSHIDMINIDRV,
+			"-- Packet->reportId: %d, Packet->reportBufferLen: %d",
+			Packet->reportId,
+			Packet->reportBufferLen
+		);
+	}
+	
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 
 	return status;

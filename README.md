@@ -42,7 +42,9 @@ This solution contains **BSD-3-Clause** licensed components. For details, please
 
 ## Environment
 
-DsHidMini components (drivers, utilities) are developed, designed and tested for Windows 10, version 1507 (Threshold 1) or newer (x86, x64).
+DsHidMini components (drivers, utilities) are designed for **Windows 10**, version 1507 (Threshold 1) or newer (x86, x64).
+
+The dependencies used in DsHidMini don't exist in Windows 7/8/8.1 so they can't be supported.
 
 ## How to build
 
@@ -55,6 +57,14 @@ DsHidMini components (drivers, utilities) are developed, designed and tested for
   - Build the `DmfU` project with Release and Debug configurations for all architectures (x64 and Win32).
 
 You can build individual projects of the solution within Visual Studio.
+
+## Documentation
+
+Take a look at the [project page](https://vigem.org/projects/DsHidMini/) for more information.
+
+## Installation
+
+Pre-built binaries and instructions are provided [on the releases page](../../releases).
 
 ## Sources & 3rd party credits
 
