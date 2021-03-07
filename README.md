@@ -18,6 +18,7 @@ DsHidMini is a self-contained, low footprint and feature-rich [user-mode driver]
   - Single Gamepad device exposing all controls including **pressure sensitive buttons**
   - Split/multi device emulation to overcome DirectInput axis limits
   - Sony `sixaxis.sys` emulation (both wired **and wireless**)
+  - **DualShock 4 emulation** for compatibility with [DS4Windows](https://github.com/Ryochan7/DS4Windows)
 - Quick disconnect (on Bluetooth) by pressing `L1 + R1 + PS` together for over one second
 - Automatic disconnect (on Bluetooth) after idle timeout (5 minutes) expired to conserve battery
 - Custom LED states indicate battery charge level
@@ -29,16 +30,22 @@ DsHidMini is a self-contained, low footprint and feature-rich [user-mode driver]
   - Controller gets picked up by LilyPad plugin with all device features
 - Supports the [**RPCS3 PlayStation 3 Emulator**](https://rpcs3.net/)
   - Controller gets picked up by DualShock 3 handler with all device features
+- Supports [DS4Windows](https://github.com/Ryochan7/DS4Windows)
+  - Controller gets presented as a DualShock 4 compatible variant
 
 Take a look at the [Roadmap](https://vigem.org/projects/DsHidMini/Roadmap/) for other planned or in-progress features.
 
 ## How it works
 
-TBD
+DsHidMini is a filter driver sitting below `mshidumdf.sys` and acts as a function driver for USB and Bluetooth through the [User-mode Driver Framework Reflector](https://docs.microsoft.com/en-us/windows-hardware/drivers/wdf/detailed-view-of-the-umdf-architecture), handling translation of incoming HID I/O traffic to underlying USB/Bluetooth I/O and vice versa. On USB it replaces the Windows stock drivers for the Sony hardware and presents the device as a variety of user-configurable HID devices (see documentation). On Bluetooth in conjunction with BthPS3 it replaces the need for [Shibari](https://github.com/ViGEm/Shibari) as the driver directly communicates over wireless channels and takes care of the necessary translation logic. As a user-mode driver it has limited access to the registry, therefore device-specific settings are stored and retrieved using the [Unified Device Property Model](https://docs.microsoft.com/en-us/windows-hardware/drivers/install/unified-device-property-model--windows-vista-and-later-) API.
 
 ## Licensing
 
 This solution contains **BSD-3-Clause** licensed components. For details, please consult the individual `LICENSE` files.
+
+This is a community project and not affiliated with Sony Interactive Entertainment Inc. in any way.
+
+"PlayStation", "PSP", "PS2", "PS one", "DUALSHOCK" and "SIXAXIS" are registered trademarks of Sony Interactive Entertainment Inc.
 
 ## Environment
 
