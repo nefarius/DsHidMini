@@ -124,3 +124,5 @@ if ($NoSigning -eq $false) {
     # sign with only one certificate
     Invoke-Expression "& `"$signTool`" sign /v /ac `"$crossCert`" /n `"$certName`" /tr $timestampUrl /fd sha256 /td sha256 $files"
 }
+
+Compress-Archive -Path ".\artifacts\bin\*" -DestinationPath ".\artifacts\dshidmini_v$BuildVersion.zip"
