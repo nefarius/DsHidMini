@@ -1031,16 +1031,26 @@ VOID DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
 		Output[5] |= 8 & 0xF;
 		break;
 	}
-
+	
 	// Face buttons
-	Output[5] |= (REVERSE_BITS(Input[3]) & 0xF0);
-
+	Output[5] |= ((REVERSE_BITS(Input[3]) << 4) & 0xF0);
+		
 	// Select to Share
 	Output[6] |= ((Input[2] & 0x01) << 4);
 
 	// Start to Options
-	Output[6] |= (((Input[2] >> 3) & 0x01) << 4);
+	Output[6] |= (((Input[2] >> 3) & 0x01) << 5);
 
+	// L1, L2, R1, R2
+	Output[6] |= (((Input[3] >> 2) & 0x01) << 0);
+	Output[6] |= (((Input[3] >> 0) & 0x01) << 2);
+	Output[6] |= (((Input[3] >> 3) & 0x01) << 1);
+	Output[6] |= (((Input[3] >> 1) & 0x01) << 3);
+
+	// L3, R3
+	Output[6] |= (((Input[2] >> 1) & 0x01) << 6);
+	Output[6] |= (((Input[2] >> 2) & 0x01) << 7);
+	
 	// Thumb axes
 	Output[1] = Input[6]; // LTX
 	Output[2] = Input[7]; // LTY
