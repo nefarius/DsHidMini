@@ -18,7 +18,8 @@ build_script:
 - cmd: .\build.cmd
 artifacts:
 - path: 'bin**\$(APPVEYOR_PROJECT_NAME)\*.inf'
-- path: 'bin**\$(APPVEYOR_PROJECT_NAME)\*.sys'
+- path: 'bin**\$(APPVEYOR_PROJECT_NAME)\*.cat'
+- path: 'bin**\$(APPVEYOR_PROJECT_NAME)\*.dll'
 - path: 'bin**\*.pdb'
 - path: 'bin\*.exe'
 deploy:
