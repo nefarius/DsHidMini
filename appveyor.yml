@@ -5,6 +5,9 @@ platform:
 - x64
 configuration:
 - Release
+skip_commits:
+  files:
+    - '**/*.md'
 install:
 - cmd: git submodule -q update --init
 - cmd: git clone -q https://github.com/microsoft/DMF.git C:\projects\DMF
