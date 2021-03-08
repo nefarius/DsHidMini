@@ -988,24 +988,10 @@ DsHidMini_WriteReport(
 		// 
 		else if (g == 0xFF && b == 0xFF)
 		{
-			switch (r)
-			{
-			case 1:
-				DS3_SET_LED(pDevCtx, DS3_LED_1);
-				break;
-			case 2:
-				DS3_SET_LED(pDevCtx, DS3_LED_2);
-				break;
-			case 3:
-				DS3_SET_LED(pDevCtx, DS3_LED_3);
-				break;
-			case 4:
-				DS3_SET_LED(pDevCtx, DS3_LED_4);
-				break;
-			default:
-				// No change
-				break;
-			}
+			if (r == 0x00)
+				DS3_SET_LED(pDevCtx, DS3_LED_OFF);
+			else if (r >= 0x01 && r <= 0x0F)
+				DS3_SET_LED(pDevCtx, r << 1);
 		}
 		
 		(void)Ds_SendOutputReport(pDevCtx);
