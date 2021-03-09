@@ -30,6 +30,10 @@
             <TextBlock Margin="{adonisUi:Space 1}"
                        Text="{Binding Path=Version}"
                        ToolTip="Version of this utility" />
+            <TextBlock Visibility="{Binding Path=IsUpdateAvailable, Converter={StaticResource VisibleIfTrueConverter}}"
+                       Margin="{adonisUi:Space 1}">
+                <Hyperlink NavigateUri="https://github.com/ViGEm/DsHidMini/releases/latest" Click="ReleasesHyperlink_OnClick">Newer version available!</Hyperlink>
+            </TextBlock>
             <Button Content="?"
                     Style="{DynamicResource {x:Static adonisUi:Styles.WindowButton}}"
                     ToolTip="Open online help"

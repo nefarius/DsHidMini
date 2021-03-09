@@ -4,6 +4,7 @@ using System.Reflection;
 using Microsoft.Win32;
 using Nefarius.DsHidMini.Drivers;
 using Nefarius.DsHidMini.Util;
+using Nefarius.DsHidMini.Util.Web;
 
 namespace Nefarius.DsHidMini.MVVM
 {
@@ -68,6 +69,11 @@ namespace Nefarius.DsHidMini.MVVM
         ///     Version to display in window title.
         /// </summary>
         public string Version => $"Version: {Assembly.GetEntryAssembly().GetName().Version}";
+
+        /// <summary>
+        ///     True if GitHub version is newer than own version.
+        /// </summary>
+        public bool IsUpdateAvailable => Updater.IsUpdateAvailable;
 
         private static string ParametersKey =>
             "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\WUDF\\Services\\dshidmini\\Parameters";

@@ -3,10 +3,12 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Documents;
 using AdonisUI.Controls;
 using Nefarius.DsHidMini.Drivers;
 using Nefarius.DsHidMini.MVVM;
 using Nefarius.DsHidMini.Util;
+using Nefarius.DsHidMini.Util.Web;
 
 namespace Nefarius.DsHidMini
 {
@@ -21,6 +23,8 @@ namespace Nefarius.DsHidMini
 
         public MainWindow()
         {
+            var t = Updater.IsUpdateAvailable;
+
             InitializeComponent();
 
             DataContext = _vm;
@@ -109,6 +113,11 @@ namespace Nefarius.DsHidMini
             BthPS3FilterDriver.IsFilterEnabled = true;
 
             _vm.RefreshProperties();
+        }
+
+        private void ReleasesHyperlink_OnClick(object sender, RoutedEventArgs e)
+        {
+            Process.Start((((Hyperlink)sender).NavigateUri).ToString());
         }
     }
 }
