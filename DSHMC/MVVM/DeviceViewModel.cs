@@ -1,9 +1,11 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Net.NetworkInformation;
 using System.Threading;
 using FontAwesome5;
 using Nefarius.DsHidMini.Drivers;
 using Nefarius.DsHidMini.Util;
+using Nefarius.DsHidMini.Util.Web;
 
 namespace Nefarius.DsHidMini.MVVM
 {
@@ -146,6 +148,21 @@ namespace Nefarius.DsHidMini.MVVM
                         return EFontAwesomeIcon.Solid_BatteryEmpty;
                     default:
                         return EFontAwesomeIcon.Solid_BatteryEmpty;
+                }
+            }
+        }
+
+        public EFontAwesomeIcon GenuineIcon
+        {
+            get
+            {
+                if (Validator.IsGenuineAddress(PhysicalAddress.Parse(DeviceAddress)))
+                {
+                    return EFontAwesomeIcon.Regular_CheckCircle;
+                }
+                else
+                {
+                    return EFontAwesomeIcon.Solid_ExclamationTriangle;
                 }
             }
         }

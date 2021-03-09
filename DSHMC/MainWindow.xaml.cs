@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Documents;
@@ -23,7 +24,7 @@ namespace Nefarius.DsHidMini
 
         public MainWindow()
         {
-            var t = Updater.IsUpdateAvailable;
+            Validator.IsGenuineAddress(PhysicalAddress.Parse("AC7A4D2819AC"));
 
             InitializeComponent();
 

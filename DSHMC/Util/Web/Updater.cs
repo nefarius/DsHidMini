@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 
 namespace Nefarius.DsHidMini.Util.Web
 {
-    public class Updater
+    public static class Updater
     {
         public static Version AssemblyVersion => Assembly.GetEntryAssembly().GetName().Version;
 

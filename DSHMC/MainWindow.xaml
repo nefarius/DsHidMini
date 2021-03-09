@@ -32,7 +32,10 @@
                        ToolTip="Version of this utility" />
             <TextBlock Visibility="{Binding Path=IsUpdateAvailable, Converter={StaticResource VisibleIfTrueConverter}}"
                        Margin="{adonisUi:Space 1}">
-                <Hyperlink NavigateUri="https://github.com/ViGEm/DsHidMini/releases/latest" Click="ReleasesHyperlink_OnClick">Newer version available!</Hyperlink>
+                <Hyperlink NavigateUri="https://github.com/ViGEm/DsHidMini/releases/latest"
+                           Click="ReleasesHyperlink_OnClick">
+                    Newer version available!
+                </Hyperlink>
             </TextBlock>
             <Button Content="?"
                     Style="{DynamicResource {x:Static adonisUi:Styles.WindowButton}}"
@@ -74,7 +77,7 @@
                                      SelectionMode="Single">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
-                                        <Grid>
+                                        <Grid Height="40">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto" />
                                                 <ColumnDefinition Width="*" />
@@ -149,14 +152,24 @@
                                          Text="{Binding Path=SelectedDevice.InstanceId, Mode=OneWay}" />
 
                                 <TextBlock Grid.Row="1" Grid.Column="0">Device address:</TextBlock>
-                                <TextBox Grid.Row="1" Grid.Column="2"
-                                         Width="115"
-                                         Margin="{adonisUi:Space 1}"
-                                         Text="{Binding Path=SelectedDevice.DeviceAddressFriendly, Mode=OneWay}" />
+
+                                <DockPanel Grid.Row="1" Grid.Column="2" LastChildFill="False">
+                                    <TextBox
+                                        Width="140"
+                                        FontFamily="Courier New"
+                                        Margin="{adonisUi:Space 1}"
+                                        Text="{Binding Path=SelectedDevice.DeviceAddressFriendly, Mode=OneWay}" />
+                                    <fa:ImageAwesome
+                                        Icon="{Binding Path=SelectedDevice.GenuineIcon}"
+                                        ToolTip="Genuine controller check"
+                                        VerticalAlignment="Center"
+                                        Width="16" />
+                                </DockPanel>
 
                                 <TextBlock Grid.Row="2" Grid.Column="0">Host address:</TextBlock>
                                 <TextBox Grid.Row="2" Grid.Column="2"
-                                         Width="115"
+                                         Width="140"
+                                         FontFamily="Courier New"
                                          Margin="{adonisUi:Space 1}"
                                          Text="{Binding Path=SelectedDevice.HostAddress, Mode=OneWay}" />
 

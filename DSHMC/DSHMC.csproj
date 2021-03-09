@@ -115,6 +115,7 @@
     <Compile Include="Util\DevicePropertyKey.cs" />
     <Compile Include="Util\Web\GitHubApi.cs" />
     <Compile Include="Util\Web\Updater.cs" />
+    <Compile Include="Util\Web\Validator.cs" />
     <Compile Include="Util\WPF\EnumBindingSourceExtension.cs" />
     <Compile Include="Util\WPF\EnumDescriptionTypeConverter.cs" />
     <Page Include="MainWindow.xaml">
