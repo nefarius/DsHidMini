@@ -57,7 +57,7 @@ namespace Nefarius.DsHidMini.Util.Web
 
                         // Store values in user settings
                         Settings.Default["LastCheckedForUpdate"] = DateTime.UtcNow;
-                        Settings.Default["IsUpdateAvailable"] = version > AssemblyVersion;
+                        Settings.Default["IsUpdateAvailable"] = version.CompareTo(AssemblyVersion) > 0;
                         Settings.Default.Save();
 
                         return (bool) Settings.Default["IsUpdateAvailable"];
