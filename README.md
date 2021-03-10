@@ -80,6 +80,8 @@ Pre-built binaries and instructions are provided [on the releases page](../../re
 
 The following awesome resources have made this project possible:
 
+### References
+
 - [Eleccelerator Wiki - DualShock 3](http://eleccelerator.com/wiki/index.php?title=DualShock_3)
 - [Eleccelerator - USB Descriptor and Request Parser](http://eleccelerator.com/usbdescreqparser/)
 - [HID Usage Tables](https://usb.org/sites/default/files/documents/hut1_12v2.pdf)
@@ -100,4 +102,12 @@ The following awesome resources have made this project possible:
 - [The HID Page](http://janaxelson.com/hidpage.htm)
 - [uthash - a hash table for C structures](https://github.com/troydhanson/uthash)
 - [FirstPlatoLV/EmuController](https://github.com/FirstPlatoLV/EmuController)
+
+### .NET Dependencies
+
+- [Adonis UI](https://benruehl.github.io/adonis-ui/)
 - [FontAwesome5](https://github.com/MartinTopfstedt/FontAwesome5)
+- [ControlzEx](https://github.com/ControlzEx/ControlzEx)
+- [Fody](https://github.com/Fody/Fody)
+- [Costura](https://github.com/Fody/Costura)
+- [Serilog](https://serilog.net/)

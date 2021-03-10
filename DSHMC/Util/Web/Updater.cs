@@ -5,6 +5,7 @@ using System.Net;
 using System.Reflection;
 using Nefarius.DsHidMini.Properties;
 using Newtonsoft.Json;
+using Serilog;
 
 namespace Nefarius.DsHidMini.Util.Web
 {
@@ -21,18 +22,29 @@ namespace Nefarius.DsHidMini.Util.Web
         {
             get
             {
+                Log.Information("Checking for new version, current version is {Version}",
+                    AssemblyVersion);
+
                 // Get cached value
                 var lastChecked = (DateTime) Settings.Default["LastCheckedForUpdate"];
+                Log.Debug("Last checked for update on {LastCheckedForUpdate}", lastChecked);
 
                 // If we already checked today, return cached value to reduce HTTP calls
                 if (lastChecked.AddDays(1) >= DateTime.UtcNow)
-                    return (bool) Settings.Default["IsUpdateAvailable"];
+                {
+                    var storedValue = (bool) Settings.Default["IsUpdateAvailable"];
+                    Log.Information("Update check already occurred within the last day, returning {StoredValue}",
+                        storedValue);
+                    return storedValue;
+                }
 
                 try
                 {
                     // Query for releases/tags and store information
                     using (var client = new WebClient())
                     {
+                        Log.Information("Checking for updates, preparing web request");
+
                         // Required or result is HTTP-403
                         client.Headers["User-Agent"] =
                             "Mozilla/4.0 (Compatible; Windows NT 5.1; MSIE 6.0) " +
@@ -44,6 +56,7 @@ namespace Nefarius.DsHidMini.Util.Web
 
                         // Get JSON objects
                         var result = JsonConvert.DeserializeObject<IList<Root>>(response);
+                        Log.Debug("Found {ReleaseCount} release(s)", result.Count);
 
                         // Top release is latest of interest
                         var latest = result.FirstOrDefault();
@@ -52,19 +65,36 @@ namespace Nefarius.DsHidMini.Util.Web
                         if (latest == null)
                             return false;
 
+                        Log.Debug("Latest tag name: {Tag}", latest.TagName);
+
+                        var tag = new string(latest.TagName.Skip(1).ToArray());
+                        Log.Debug("Stripped tag name: {Tag}", tag);
+
                         // Expected format e.g. "v1.2.3" so strip first character
-                        var version = Version.Parse(new string(latest.TagName.Skip(1).ToArray()));
+                        var version = Version.Parse(tag);
+                        Log.Debug("Tag to version conversion: {Version}", version);
 
                         // Store values in user settings
                         Settings.Default["LastCheckedForUpdate"] = DateTime.UtcNow;
-                        Settings.Default["IsUpdateAvailable"] = version.CompareTo(AssemblyVersion) > 0;
+                        Log.Debug("Updating last checked for update to {Timestamp}",
+                            Settings.Default["LastCheckedForUpdate"]);
+
+                        var isOutdated = version.CompareTo(AssemblyVersion) > 0;
+                        if (isOutdated)
+                            Log.Information("Update available");
+
+                        Settings.Default["IsUpdateAvailable"] = isOutdated;
+                        Log.Debug("Updating update available value to {IsUpdateAvailable}",
+                            isOutdated);
                         Settings.Default.Save();
 
-                        return (bool) Settings.Default["IsUpdateAvailable"];
+                        return isOutdated;
                     }
                 }
-                catch
+                catch(Exception ex)
                 {
+                    Log.Error("Updated check failed: {Exception}", ex);
+
                     // May happen on network issues, ignore
                     return false;
                 }
