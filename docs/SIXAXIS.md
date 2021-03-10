@@ -27,3 +27,11 @@ R2 = Y Rotation
 
 8 = Circle
 9 = Cross
+
+## Sensors/Motion/Gyro/Accel
+
+- https://github.com/RPCS3/rpcs3/blob/master/rpcs3/Input/ds3_pad_handler.cpp#L445
+- https://github.com/RPCS3/rpcs3/blob/master/rpcs3/Input/ds4_pad_handler.cpp#L824
+- https://github.com/nefarius/ScpToolkit/compare/master...rajkosto:master
+- https://github.com/rajkosto/ScpToolkit/blob/master/ScpControl/Usb/Ds3/DS3Cal.cs
+- https://www.psdevwiki.com/ps3/DualShock_3
