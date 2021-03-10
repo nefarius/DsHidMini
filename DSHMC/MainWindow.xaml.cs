@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Documents;
 using AdonisUI.Controls;
 using Nefarius.DsHidMini.Drivers;
@@ -24,7 +25,10 @@ namespace Nefarius.DsHidMini
 
         public MainWindow()
         {
-            Validator.IsGenuineAddress(PhysicalAddress.Parse("AC7A4D2819AC"));
+            ToolTipService.InitialShowDelayProperty.OverrideMetadata(
+                typeof (FrameworkElement), new FrameworkPropertyMetadata(250));
+            ToolTipService.ShowDurationProperty.OverrideMetadata(
+                typeof (FrameworkElement), new FrameworkPropertyMetadata(int.MaxValue));
 
             InitializeComponent();
 

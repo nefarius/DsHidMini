@@ -30,7 +30,7 @@ DsHidMini is a self-contained, low footprint and feature-rich [user-mode driver]
   - Controller gets picked up by LilyPad plugin with all device features
 - Supports the [**RPCS3 PlayStation 3 Emulator**](https://rpcs3.net/)
   - Controller gets picked up by DualShock 3 handler with all device features
-- Supports [**DS4Windows**](https://github.com/Ryochan7/DS4Windows)
+- Supports [**DS4Windows**](https://github.com/Ryochan7/DS4Windows) (requires *at least* Version 2.2.10 or newer)
   - Controller gets presented as a DualShock 4 compatible variant
 - Supports [**RetroArch**](https://www.retroarch.com/) emulation platform
 - Supports [**x360ce**](https://www.x360ce.com/) for XInput emulation
