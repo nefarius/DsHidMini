@@ -692,7 +692,9 @@ DsHidMini_WriteReport(
 
 	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
-		
+	PUCHAR buffer = NULL;
+	size_t bufferSize = 0;
+	
 #ifdef DSHM_FEATURE_FFB
 	
 	PFFB_ATTRIBUTES pEntry = NULL;
@@ -934,16 +936,22 @@ DsHidMini_WriteReport(
 		pDevCtx->OutputReport.Mode = Ds3OutputReportModeWriteReportPassThrough;
 
 		//
-		// TODO: copy entire report
+		// Get raw buffer pointer (connection agnostic)
 		// 
-		
-		DS3_SET_SMALL_RUMBLE_DURATION(pDevCtx, Packet->reportBuffer[4]);
-		DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[5]);
+		DS3_GET_UNIFIED_OUTPUT_REPORT_BUFFER(
+			pDevCtx,
+			&buffer,
+			&bufferSize
+		);
 
-		DS3_SET_LARGE_RUMBLE_DURATION(pDevCtx, Packet->reportBuffer[6]);
-		DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[7]);
-
-		DS3_SET_LED(pDevCtx, Packet->reportBuffer[12]);
+		//
+		// Overwrite with what we received
+		// 
+		RtlCopyMemory(
+			buffer,
+			&Packet->reportBuffer[3],
+			bufferSize
+		);
 
 		(void)Ds_SendOutputReport(pDevCtx);
 
