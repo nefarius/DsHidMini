@@ -35,7 +35,7 @@ struct USB_DEVICE_CONTEXT
 	//
 	// Output report buffer
 	// 
-	PUCHAR OutputReport;
+	WDFMEMORY OutputReportMemory;
 
 	//
 	// Timestamp to calculate charging cycle state change

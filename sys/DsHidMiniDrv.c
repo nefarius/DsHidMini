@@ -1265,7 +1265,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 
 		if (pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled)
 		{
-			DS3_USB_SET_LED(pDevCtx->Connection.Usb.OutputReport, DS3_LED_4);
+			DS3_SET_LED(pDevCtx, DS3_LED_4);
 
 			(void)Ds_SendOutputReport(pDevCtx);
 		}
@@ -1294,7 +1294,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 			// 
 			pDevCtx->Connection.Usb.ChargingCycleTimestamp.QuadPart = 0;
 			
-			UCHAR led = DS3_USB_GET_LED(pDevCtx->Connection.Usb.OutputReport) << 1;
+			UCHAR led = DS3_GET_LED(pDevCtx) << 1;
 
 			//
 			// Cycle through
@@ -1306,7 +1306,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 
 			if (pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled)
 			{
-				DS3_USB_SET_LED(pDevCtx->Connection.Usb.OutputReport, led);
+				DS3_SET_LED(pDevCtx, led);
 
 				(void)Ds_SendOutputReport(pDevCtx);
 			}
@@ -1698,6 +1698,8 @@ DMF_OutputReportScheduledTaskCallback(
 
 	NTSTATUS status;
 	PDEVICE_CONTEXT pDevCtx = (PDEVICE_CONTEXT)CallbackContext;
+	PUCHAR buffer = NULL;
+	size_t bufferSize = 0;
 	
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
@@ -1707,6 +1709,12 @@ DMF_OutputReportScheduledTaskCallback(
 	{
 	case DsDeviceConnectionTypeUsb:
 
+		DS3_GET_UNIFIED_OUTPUT_REPORT_BUFFER(
+			pDevCtx,
+			&buffer,
+			&bufferSize
+		);
+
 		status = USB_SendControlRequest(
 			pDevCtx,
 			BmRequestHostToDevice,
@@ -1714,8 +1722,9 @@ DMF_OutputReportScheduledTaskCallback(
 			SetReport,
 			USB_SETUP_VALUE(HidReportRequestTypeOutput, HidReportRequestIdOne),
 			0,
-			(PVOID)pDevCtx->Connection.Usb.OutputReport,
-			DS3_USB_HID_OUTPUT_REPORT_SIZE);
+			(PVOID)buffer,
+			(ULONG)bufferSize
+		);
 
 		break;
 

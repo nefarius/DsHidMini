@@ -33,6 +33,40 @@ extern const UCHAR G_Ds3BthHidOutputReport[];
 #define DS3_BTH_SET_SMALL_RUMBLE_STRENGTH(_buf_, _str_)  ((_buf_)[4] = (_str_))
 #define DS3_BTH_SET_LARGE_RUMBLE_STRENGTH(_buf_, _str_)  ((_buf_)[6] = (_str_))
 
+VOID FORCEINLINE DS3_GET_UNIFIED_OUTPUT_REPORT_BUFFER(
+	PDEVICE_CONTEXT Context,
+	UCHAR** Buffer,
+	PSIZE_T BufferLength
+)
+{
+	switch (Context->ConnectionType)
+	{
+	case DsDeviceConnectionTypeUsb:
+
+		*Buffer = (PUCHAR)WdfMemoryGetBuffer(
+			Context->Connection.Usb.OutputReportMemory,
+			BufferLength
+		);
+		
+		break;
+
+	case DsDeviceConnectionTypeBth:
+
+		//
+		// Skip first 2 bytes special to Bluetooth
+		// 
+
+		*Buffer = &((PUCHAR)WdfMemoryGetBuffer(
+				Context->Connection.Bth.HidControl.WriteMemory,
+				BufferLength
+			))[2];
+
+		*BufferLength -= 2;
+		
+		break;
+	}
+}
+
 VOID FORCEINLINE DS3_SET_LED(
 	PDEVICE_CONTEXT Context,
 	UCHAR Value
@@ -42,17 +76,48 @@ VOID FORCEINLINE DS3_SET_LED(
 	{
 	case DsDeviceConnectionTypeUsb:
 
-		DS3_USB_SET_LED(Context->Connection.Usb.OutputReport, Value);
+		DS3_USB_SET_LED(
+			(PUCHAR)WdfMemoryGetBuffer(
+				Context->Connection.Usb.OutputReportMemory,
+				NULL
+			), Value);
 		break;
 
 	case DsDeviceConnectionTypeBth:
 
-		DS3_BTH_SET_LED((PUCHAR)WdfMemoryGetBuffer(
-			Context->Connection.Bth.HidControl.WriteMemory,
-			NULL
-		), Value);
+		DS3_BTH_SET_LED(
+			(PUCHAR)WdfMemoryGetBuffer(
+				Context->Connection.Bth.HidControl.WriteMemory,
+				NULL
+			), Value);
 		break;
 	}
+}
+
+UCHAR FORCEINLINE DS3_GET_LED(
+	PDEVICE_CONTEXT Context
+)
+{
+	switch (Context->ConnectionType)
+	{
+	case DsDeviceConnectionTypeUsb:
+
+		return DS3_USB_GET_LED(
+			(PUCHAR)WdfMemoryGetBuffer(
+				Context->Connection.Usb.OutputReportMemory,
+				NULL
+			));
+
+	case DsDeviceConnectionTypeBth:
+
+		return DS3_BTH_GET_LED(
+			(PUCHAR)WdfMemoryGetBuffer(
+				Context->Connection.Bth.HidControl.WriteMemory,
+				NULL
+			));
+	}
+
+	return 0x00;
 }
 
 VOID FORCEINLINE DS3_SET_SMALL_RUMBLE_DURATION(
@@ -64,15 +129,20 @@ VOID FORCEINLINE DS3_SET_SMALL_RUMBLE_DURATION(
 	{
 	case DsDeviceConnectionTypeUsb:
 
-		DS3_USB_SET_SMALL_RUMBLE_DURATION(Context->Connection.Usb.OutputReport, Value);
+		DS3_USB_SET_SMALL_RUMBLE_DURATION(
+			(PUCHAR)WdfMemoryGetBuffer(
+				Context->Connection.Usb.OutputReportMemory,
+				NULL
+			), Value);
 		break;
 
 	case DsDeviceConnectionTypeBth:
 
-		DS3_BTH_SET_SMALL_RUMBLE_DURATION((PUCHAR)WdfMemoryGetBuffer(
-			Context->Connection.Bth.HidControl.WriteMemory,
-			NULL
-		), Value);
+		DS3_BTH_SET_SMALL_RUMBLE_DURATION(
+			(PUCHAR)WdfMemoryGetBuffer(
+				Context->Connection.Bth.HidControl.WriteMemory,
+				NULL
+			), Value);
 		break;
 	}
 }
@@ -86,15 +156,20 @@ VOID FORCEINLINE DS3_SET_SMALL_RUMBLE_STRENGTH(
 	{
 	case DsDeviceConnectionTypeUsb:
 
-		DS3_USB_SET_SMALL_RUMBLE_STRENGTH(Context->Connection.Usb.OutputReport, Value);
+		DS3_USB_SET_SMALL_RUMBLE_STRENGTH(
+			(PUCHAR)WdfMemoryGetBuffer(
+				Context->Connection.Usb.OutputReportMemory,
+				NULL
+			), Value);
 		break;
 
 	case DsDeviceConnectionTypeBth:
 
-		DS3_BTH_SET_SMALL_RUMBLE_STRENGTH((PUCHAR)WdfMemoryGetBuffer(
-			                                  Context->Connection.Bth.HidControl.WriteMemory,
-			                                  NULL
-		                                  ), Value);
+		DS3_BTH_SET_SMALL_RUMBLE_STRENGTH(
+			(PUCHAR)WdfMemoryGetBuffer(
+				Context->Connection.Bth.HidControl.WriteMemory,
+				NULL
+			), Value);
 		break;
 	}
 }
@@ -108,15 +183,20 @@ VOID FORCEINLINE DS3_SET_LARGE_RUMBLE_DURATION(
 	{
 	case DsDeviceConnectionTypeUsb:
 
-		DS3_USB_SET_LARGE_RUMBLE_DURATION(Context->Connection.Usb.OutputReport, Value);
+		DS3_USB_SET_LARGE_RUMBLE_DURATION(
+			(PUCHAR)WdfMemoryGetBuffer(
+				Context->Connection.Usb.OutputReportMemory,
+				NULL
+			), Value);
 		break;
 
 	case DsDeviceConnectionTypeBth:
 
-		DS3_BTH_SET_LARGE_RUMBLE_DURATION((PUCHAR)WdfMemoryGetBuffer(
-			Context->Connection.Bth.HidControl.WriteMemory,
-			NULL
-		), Value);
+		DS3_BTH_SET_LARGE_RUMBLE_DURATION(
+			(PUCHAR)WdfMemoryGetBuffer(
+				Context->Connection.Bth.HidControl.WriteMemory,
+				NULL
+			), Value);
 		break;
 	}
 }
@@ -130,15 +210,20 @@ VOID FORCEINLINE DS3_SET_LARGE_RUMBLE_STRENGTH(
 	{
 	case DsDeviceConnectionTypeUsb:
 
-		DS3_USB_SET_LARGE_RUMBLE_STRENGTH(Context->Connection.Usb.OutputReport, Value);
+		DS3_USB_SET_LARGE_RUMBLE_STRENGTH(
+			(PUCHAR)WdfMemoryGetBuffer(
+				Context->Connection.Usb.OutputReportMemory,
+				NULL
+			), Value);
 		break;
 
 	case DsDeviceConnectionTypeBth:
 
-		DS3_BTH_SET_LARGE_RUMBLE_STRENGTH((PUCHAR)WdfMemoryGetBuffer(
-			                                  Context->Connection.Bth.HidControl.WriteMemory,
-			                                  NULL
-		                                  ), Value);
+		DS3_BTH_SET_LARGE_RUMBLE_STRENGTH(
+			(PUCHAR)WdfMemoryGetBuffer(
+				Context->Connection.Bth.HidControl.WriteMemory,
+				NULL
+			), Value);
 		break;
 	}
 }

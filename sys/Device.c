@@ -404,13 +404,7 @@ void DsHidMini_EvtDeviceContextCleanup(
 	
 	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Object);
 
-	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
-	{
-		if (pDevCtx->Connection.Usb.OutputReport)
-		{
-			free(pDevCtx->Connection.Usb.OutputReport);
-		}
-	}
+	UNREFERENCED_PARAMETER(pDevCtx);
 
 	FuncExitNoReturn(TRACE_DEVICE);
 }

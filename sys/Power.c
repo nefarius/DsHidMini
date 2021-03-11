@@ -386,18 +386,20 @@ DsHidMini_EvtDevicePrepareHardware(
 	WDFCMRESLIST  ResourcesTranslated
 )
 {
-	NTSTATUS                                status = STATUS_SUCCESS;
-	PDEVICE_CONTEXT                         pDevCtx;
-	WDF_USB_DEVICE_SELECT_CONFIG_PARAMS     configParams;
-	UCHAR                                   index;
-	WDFUSBPIPE                              pipe;
-	WDF_USB_PIPE_INFORMATION                pipeInfo;
-	UCHAR									controlTransferBuffer[CONTROL_TRANSFER_BUFFER_LENGTH];
-	WDF_DEVICE_PROPERTY_DATA				propertyData;
-	ULONG									requiredSize = 0;
-	DEVPROPTYPE								propertyType;
+	NTSTATUS status = STATUS_SUCCESS;
+	PDEVICE_CONTEXT pDevCtx;
+	WDF_USB_DEVICE_SELECT_CONFIG_PARAMS configParams;
+	UCHAR index;
+	WDFUSBPIPE pipe;
+	WDF_USB_PIPE_INFORMATION pipeInfo;
+	UCHAR controlTransferBuffer[CONTROL_TRANSFER_BUFFER_LENGTH];
+	WDF_DEVICE_PROPERTY_DATA propertyData;
+	ULONG requiredSize = 0;
+	DEVPROPTYPE propertyType;
 	WCHAR deviceAddress[13];
 	WCHAR dcEventName[44];
+	WDF_OBJECT_ATTRIBUTES attributes;
+	PVOID outReportBuffer = NULL;
 
 	UNREFERENCED_PARAMETER(ResourcesRaw);
 	UNREFERENCED_PARAMETER(ResourcesTranslated);
@@ -679,18 +681,41 @@ DsHidMini_EvtDevicePrepareHardware(
 				DS3_USB_HID_OUTPUT_REPORT_SIZE);
 
 			//
-			// Copy output report for later modification and reuse
+			// Re-create if exists
 			// 
-			if (!pDevCtx->Connection.Usb.OutputReport)
+			if (pDevCtx->Connection.Usb.OutputReportMemory)
 			{
-				pDevCtx->Connection.Usb.OutputReport = malloc(DS3_USB_HID_OUTPUT_REPORT_SIZE);
-
-				RtlCopyMemory(
-					pDevCtx->Connection.Usb.OutputReport,
-					G_Ds3UsbHidOutputReport,
-					DS3_USB_HID_OUTPUT_REPORT_SIZE
-				);
+				WdfObjectDelete(pDevCtx->Connection.Usb.OutputReportMemory);
 			}
+
+			//
+			// Create managed memory object
+			// 
+			WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
+			attributes.ParentObject = Device;
+			status = WdfMemoryCreate(
+				&attributes,
+				NonPagedPoolNx,
+				DS3_POOL_TAG,
+				DS3_USB_HID_OUTPUT_REPORT_SIZE,
+				&pDevCtx->Connection.Usb.OutputReportMemory,
+				&outReportBuffer
+			);
+			if (!NT_SUCCESS(status))
+			{
+				TraceError(TRACE_POWER,
+					"WdfMemoryCreate failed with %!STATUS!", status);
+				return status;
+			}
+
+			//
+			// Fill with default report
+			// 
+			RtlCopyMemory(
+				outReportBuffer,
+				G_Ds3UsbHidOutputReport,
+				DS3_USB_HID_OUTPUT_REPORT_SIZE
+			);
 		}
 	}
 
