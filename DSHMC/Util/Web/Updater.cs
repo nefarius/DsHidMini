@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Reflection;
-using Nefarius.DsHidMini.Properties;
+using Nefarius.DsHidMini.Util.App;
 using Newtonsoft.Json;
 using Serilog;
 
@@ -26,13 +26,13 @@ namespace Nefarius.DsHidMini.Util.Web
                     AssemblyVersion);
 
                 // Get cached value
-                var lastChecked = (DateTime) Settings.Default["LastCheckedForUpdate"];
+                var lastChecked = ApplicationConfiguration.Instance.LastCheckedForUpdate;
                 Log.Debug("Last checked for update on {LastCheckedForUpdate}", lastChecked);
 
                 // If we already checked today, return cached value to reduce HTTP calls
                 if (lastChecked.AddDays(1) >= DateTime.UtcNow)
                 {
-                    var storedValue = (bool) Settings.Default["IsUpdateAvailable"];
+                    var storedValue = ApplicationConfiguration.Instance.IsUpdateAvailable;
                     Log.Information("Update check already occurred within the last day, returning {StoredValue}",
                         storedValue);
                     return storedValue;
@@ -75,18 +75,18 @@ namespace Nefarius.DsHidMini.Util.Web
                         Log.Debug("Tag to version conversion: {Version}", version);
 
                         // Store values in user settings
-                        Settings.Default["LastCheckedForUpdate"] = DateTime.UtcNow;
+                        ApplicationConfiguration.Instance.LastCheckedForUpdate = DateTime.UtcNow;
                         Log.Debug("Updating last checked for update to {Timestamp}",
-                            Settings.Default["LastCheckedForUpdate"]);
+                            ApplicationConfiguration.Instance.LastCheckedForUpdate);
 
                         var isOutdated = version.CompareTo(AssemblyVersion) > 0;
                         if (isOutdated)
                             Log.Information("Update available");
 
-                        Settings.Default["IsUpdateAvailable"] = isOutdated;
+                        ApplicationConfiguration.Instance.IsUpdateAvailable = isOutdated;
                         Log.Debug("Updating update available value to {IsUpdateAvailable}",
                             isOutdated);
-                        Settings.Default.Save();
+                        ApplicationConfiguration.Instance.Save();
 
                         return isOutdated;
                     }
