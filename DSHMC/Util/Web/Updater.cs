@@ -9,10 +9,19 @@ using Serilog;
 
 namespace Nefarius.DsHidMini.Util.Web
 {
+    /// <summary>
+    ///     Checks for updates via GitHub API.
+    /// </summary>
     public static class Updater
     {
+        /// <summary>
+        ///     Gets the control application version.
+        /// </summary>
         public static Version AssemblyVersion => Assembly.GetEntryAssembly().GetName().Version;
 
+        /// <summary>
+        ///     Gets the releases API URI.
+        /// </summary>
         public static Uri ReleasesUri => new Uri("https://api.github.com/repos/ViGEm/DsHidMini/releases");
 
         /// <summary>
@@ -24,6 +33,12 @@ namespace Nefarius.DsHidMini.Util.Web
             {
                 Log.Information("Checking for new version, current version is {Version}",
                     AssemblyVersion);
+
+                if (!ApplicationConfiguration.Instance.IsUpdateCheckEnabled)
+                {
+                    Log.Information("Update check is disabled in configuration");
+                    return false;
+                }
 
                 // Get cached value
                 var lastChecked = ApplicationConfiguration.Instance.LastCheckedForUpdate;

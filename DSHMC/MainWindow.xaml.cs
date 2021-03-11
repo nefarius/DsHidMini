@@ -1,7 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -10,7 +9,6 @@ using AdonisUI.Controls;
 using Nefarius.DsHidMini.Drivers;
 using Nefarius.DsHidMini.MVVM;
 using Nefarius.DsHidMini.Util;
-using Nefarius.DsHidMini.Util.Web;
 
 namespace Nefarius.DsHidMini
 {
@@ -21,7 +19,7 @@ namespace Nefarius.DsHidMini
     {
         private readonly DeviceNotificationListener _listener = new DeviceNotificationListener();
 
-        private readonly DeviceCollectionViewModel _vm = new DeviceCollectionViewModel();
+        private readonly MainViewModel _vm = new MainViewModel();
 
         public MainWindow()
         {

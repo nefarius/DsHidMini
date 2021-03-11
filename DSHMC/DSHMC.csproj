@@ -209,7 +209,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MVVM\DeviceCollectionViewModel.cs" />
+    <Compile Include="MVVM\MainViewModel.cs" />
     <Compile Include="MVVM\DeviceViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>

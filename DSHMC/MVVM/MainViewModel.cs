@@ -4,13 +4,14 @@ using System.Reflection;
 using Microsoft.Win32;
 using Nefarius.DsHidMini.Drivers;
 using Nefarius.DsHidMini.Util;
+using Nefarius.DsHidMini.Util.App;
 using Nefarius.DsHidMini.Util.Web;
 
 namespace Nefarius.DsHidMini.MVVM
 {
-    public class DeviceCollectionViewModel : INotifyPropertyChanged
+    public class MainViewModel : INotifyPropertyChanged
     {
-        public DeviceCollectionViewModel()
+        public MainViewModel()
         {
             Devices = new ObservableCollection<DeviceViewModel>();
 
@@ -29,6 +30,8 @@ namespace Nefarius.DsHidMini.MVVM
                     };
             };
         }
+
+        public ApplicationConfiguration AppConfig => ApplicationConfiguration.Instance;
 
         /// <summary>
         ///     List of detected devices.

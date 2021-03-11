@@ -121,7 +121,7 @@
     </controls:AdonisWindow.TitleBarContent>
 
     <controls:AdonisWindow.DataContext>
-        <mvvm:DeviceCollectionViewModel />
+        <mvvm:MainViewModel />
     </controls:AdonisWindow.DataContext>
     <controls:AdonisWindow.Resources>
         <BooleanToVisibilityConverter x:Key="VisibleIfTrueConverter" />
@@ -134,6 +134,7 @@
         </Grid.RowDefinitions>
 
         <TabControl Grid.Row="0">
+            <!-- Devices -->
             <TabItem Header="Devices">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -549,7 +550,8 @@
                 </Grid>
             </TabItem>
 
-            <TabItem Header="Drivers">
+            <!-- Settings -->
+            <TabItem Header="Settings">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition />
@@ -580,6 +582,7 @@
                         </Grid>
                     </GroupBox>
 
+                    <!-- BthPS3 driver settings -->
                     <GroupBox Header="BthPS3 driver settings"
                               Grid.Row="0" Grid.Column="1"
                               Margin="{adonisUi:Space 1}">
@@ -670,12 +673,138 @@
                             </StackPanel>
                         </Grid>
                     </GroupBox>
+
+                    <!-- DsHidMini Control Tool -->
+                    <GroupBox Header="DsHidMini Control Tool"
+                              Grid.Row="1" Grid.Column="0"
+                              Margin="{adonisUi:Space 1}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <CheckBox Grid.Row="0"
+                                      Margin="{adonisUi:Space 1}"
+                                      IsChecked="{Binding Path=AppConfig.IsLoggingEnabled}">
+                                Enable logging
+                                <CheckBox.ToolTip>
+                                    <ToolTip controlzex:ToolTipAssist.AutoMove="True">
+                                        <ToolTip.Template>
+                                            <ControlTemplate>
+                                                <Grid>
+                                                    <Border Background="Gray"
+                                                            BorderBrush="Black"
+                                                            BorderThickness="1"
+                                                            Opacity="0.9"
+                                                            SnapsToDevicePixels="True" />
+                                                    <StackPanel>
+                                                        <TextBlock Margin="{adonisUi:Space 1}"
+                                                                   Foreground="WhiteSmoke"
+                                                                   FontSize="16"
+                                                                   FontWeight="Bold"
+                                                                   Text="Enable logging to troubleshoot"
+                                                                   TextOptions.TextFormattingMode="Display"
+                                                                   TextOptions.TextRenderingMode="ClearType" />
+                                                        <TextBlock Margin="{adonisUi:Space 1}"
+                                                                   Foreground="WhiteSmoke"
+                                                                   FontSize="16"
+                                                                   Text="Enabling creates a new log file in the logs/ subfolder."
+                                                                   TextOptions.TextFormattingMode="Display"
+                                                                   TextOptions.TextRenderingMode="ClearType" />
+                                                        <TextBlock Margin="{adonisUi:Space 1}"
+                                                                   Foreground="WhiteSmoke"
+                                                                   FontSize="16"
+                                                                   Text="Restart the application to take effect."
+                                                                   TextOptions.TextFormattingMode="Display"
+                                                                   TextOptions.TextRenderingMode="ClearType" />
+                                                    </StackPanel>
+
+
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </ToolTip.Template>
+                                    </ToolTip>
+                                </CheckBox.ToolTip>
+                            </CheckBox>
+
+                            <DockPanel Grid.Row="1" LastChildFill="False">
+                                <CheckBox Margin="{adonisUi:Space 1}"
+                                          IsChecked="{Binding Path=AppConfig.IsUpdateCheckEnabled}">
+                                    Check for updates on startup
+                                </CheckBox>
+                                <fa:ImageAwesome VerticalAlignment="Center" Icon="Brands_InternetExplorer" Height="16" />
+
+                                <DockPanel.ToolTip>
+                                    <ToolTip controlzex:ToolTipAssist.AutoMove="True">
+                                        <ToolTip.Template>
+                                            <ControlTemplate>
+                                                <Grid>
+                                                    <Border Background="Gray"
+                                                            BorderBrush="Black"
+                                                            BorderThickness="1"
+                                                            Opacity="0.9"
+                                                            SnapsToDevicePixels="True" />
+                                                    <StackPanel>
+                                                        <TextBlock Margin="{adonisUi:Space 1}"
+                                                                   Foreground="WhiteSmoke"
+                                                                   FontSize="16"
+                                                                   FontWeight="Bold"
+                                                                   Text="Requires Internet connection"
+                                                                   TextOptions.TextFormattingMode="Display"
+                                                                   TextOptions.TextRenderingMode="ClearType" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </ToolTip.Template>
+                                    </ToolTip>
+                                </DockPanel.ToolTip>
+                            </DockPanel>
+
+                            <DockPanel Grid.Row="2" LastChildFill="False">
+                                <CheckBox Margin="{adonisUi:Space 1}"
+                                          IsChecked="{Binding Path=AppConfig.IsGenuineCheckEnabled}">
+                                    Check if controller is genuine
+                                </CheckBox>
+                                <fa:ImageAwesome VerticalAlignment="Center" Icon="Brands_InternetExplorer" Height="16" />
+
+                                <DockPanel.ToolTip>
+                                    <ToolTip controlzex:ToolTipAssist.AutoMove="True">
+                                        <ToolTip.Template>
+                                            <ControlTemplate>
+                                                <Grid>
+                                                    <Border Background="Gray"
+                                                            BorderBrush="Black"
+                                                            BorderThickness="1"
+                                                            Opacity="0.9"
+                                                            SnapsToDevicePixels="True" />
+                                                    <StackPanel>
+                                                        <TextBlock Margin="{adonisUi:Space 1}"
+                                                                   Foreground="WhiteSmoke"
+                                                                   FontSize="16"
+                                                                   FontWeight="Bold"
+                                                                   Text="Requires Internet connection"
+                                                                   TextOptions.TextFormattingMode="Display"
+                                                                   TextOptions.TextRenderingMode="ClearType" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </ToolTip.Template>
+                                    </ToolTip>
+                                </DockPanel.ToolTip>
+                            </DockPanel>
+
+                        </Grid>
+                    </GroupBox>
                 </Grid>
             </TabItem>
         </TabControl>
 
         <StatusBar Grid.Row="1">
-            <StatusBarItem>Run as Administrator to change settings.</StatusBarItem>
+            <StatusBarItem>Run as Administrator to change device and driver settings.</StatusBarItem>
         </StatusBar>
     </Grid>
 
