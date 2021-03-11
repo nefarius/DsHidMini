@@ -1341,7 +1341,6 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	LARGE_INTEGER freq, * t1, t2;
 	LONGLONG ms;
 	DS_BATTERY_STATUS battery;
-	PUCHAR outputBuffer;
 	DMF_CONTEXT_DsHidMini* pModCtx;
 	PDS3_RAW_INPUT_REPORT pInReport;
 
@@ -1466,17 +1465,11 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 			sizeof(BYTE),
 			&battery
 		);
-		
-
-		outputBuffer = WdfMemoryGetBuffer(
-			pDevCtx->Connection.Bth.HidControl.WriteMemory,
-			NULL
-		);
 
 		//
 		// Don't send update if not initialized yet
 		// 
-		if (DS3_BTH_GET_LED(outputBuffer) != 0x00)
+		if (DS3_GET_LED(pDevCtx) != 0x00)
 		{
 			if (pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled)
 			{
@@ -1485,16 +1478,16 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 				case DsBatteryStatusCharged:
 				case DsBatteryStatusFull:
 				case DsBatteryStatusHigh:
-					DS3_BTH_SET_LED(outputBuffer, DS3_LED_4);
+					DS3_SET_LED(pDevCtx, DS3_LED_4);
 					break;
 				case DsBatteryStatusMedium:
-					DS3_BTH_SET_LED(outputBuffer, DS3_LED_3);
+					DS3_SET_LED(pDevCtx, DS3_LED_3);
 					break;
 				case DsBatteryStatusLow:
-					DS3_BTH_SET_LED(outputBuffer, DS3_LED_2);
+					DS3_SET_LED(pDevCtx, DS3_LED_2);
 					break;
 				case DsBatteryStatusDying:
-					DS3_BTH_SET_LED(outputBuffer, DS3_LED_1);
+					DS3_SET_LED(pDevCtx, DS3_LED_1);
 					break;
 				default:
 					break;
