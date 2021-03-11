@@ -506,19 +506,15 @@ DsBth_EvtControlWriteTimerFunc(
 	WDFTIMER  Timer
 )
 {
-	NTSTATUS			status;
 	PDEVICE_CONTEXT		pDevCtx;
-	PUCHAR				buffer;
 
 	FuncEntry(TRACE_DSBTH);
 
 	pDevCtx = DeviceGetContext(WdfTimerGetParentObject(Timer));
-
-	buffer = WdfMemoryGetBuffer(pDevCtx->Connection.Bth.HidControl.WriteMemory, NULL);
-
+	
 	if (pDevCtx->BatteryStatus == DsBatteryStatusNone)
 	{
-		DS3_BTH_SET_LED(buffer, DS3_LED_1); // TODO: what should the default be?
+		DS3_SET_LED(pDevCtx, DS3_LED_1);
 	}
 	else
 	{
@@ -527,26 +523,26 @@ DsBth_EvtControlWriteTimerFunc(
 		case DsBatteryStatusCharged:
 		case DsBatteryStatusFull:
 		case DsBatteryStatusHigh:
-			DS3_BTH_SET_LED(buffer, DS3_LED_4);
+			DS3_SET_LED(pDevCtx, DS3_LED_4);
 			break;
 		case DsBatteryStatusMedium:
-			DS3_BTH_SET_LED(buffer, DS3_LED_3);
+			DS3_SET_LED(pDevCtx, DS3_LED_3);
 			break;
 		case DsBatteryStatusLow:
-			DS3_BTH_SET_LED(buffer, DS3_LED_2);
+			DS3_SET_LED(pDevCtx, DS3_LED_2);
 			break;
 		case DsBatteryStatusDying:
-			DS3_BTH_SET_LED(buffer, DS3_LED_1);
+			DS3_SET_LED(pDevCtx, DS3_LED_1);
 			break;
 		default:
 			break;
 		}
 	}
 		
-	DS3_BTH_SET_SMALL_RUMBLE_DURATION(buffer, 0xFE);
-	DS3_BTH_SET_SMALL_RUMBLE_STRENGTH(buffer, 0x00);
-	DS3_BTH_SET_LARGE_RUMBLE_DURATION(buffer, 0xFE);
-	DS3_BTH_SET_LARGE_RUMBLE_STRENGTH(buffer, 0x00);
+	DS3_SET_SMALL_RUMBLE_DURATION(pDevCtx, 0xFE);
+	DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, 0x00);
+	DS3_SET_LARGE_RUMBLE_DURATION(pDevCtx, 0xFE);
+	DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, 0x00);
 
 	(void)Ds_SendOutputReport(pDevCtx);
 

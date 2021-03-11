@@ -22,7 +22,7 @@ extern const UCHAR G_Ds3BthHidOutputReport[];
 
 #define DS3_USB_SET_SMALL_RUMBLE_DURATION(_buf_, _dur_)  ((_buf_)[1] = (_dur_))
 #define DS3_USB_SET_LARGE_RUMBLE_DURATION(_buf_, _dur_)  ((_buf_)[3] = (_dur_))
-#define DS3_USB_SET_SMALL_RUMBLE_STRENGTH(_buf_, _str_)  ((_buf_)[2] = (_str_))
+#define DS3_USB_SET_SMALL_RUMBLE_STRENGTH(_buf_, _str_)  ((_buf_)[2] = (_str_) > 0 ? 0x01 : 0x00)
 #define DS3_USB_SET_LARGE_RUMBLE_STRENGTH(_buf_, _str_)  ((_buf_)[4] = (_str_))
 
 #define DS3_BTH_SET_LED(_buf_, _led_)   ((_buf_)[11] = (_led_))
@@ -30,7 +30,7 @@ extern const UCHAR G_Ds3BthHidOutputReport[];
 
 #define DS3_BTH_SET_SMALL_RUMBLE_DURATION(_buf_, _dur_)  ((_buf_)[3] = (_dur_))
 #define DS3_BTH_SET_LARGE_RUMBLE_DURATION(_buf_, _dur_)  ((_buf_)[5] = (_dur_))
-#define DS3_BTH_SET_SMALL_RUMBLE_STRENGTH(_buf_, _str_)  ((_buf_)[4] = (_str_))
+#define DS3_BTH_SET_SMALL_RUMBLE_STRENGTH(_buf_, _str_)  ((_buf_)[4] = (_str_) > 0 ? 0x01 : 0x00)
 #define DS3_BTH_SET_LARGE_RUMBLE_STRENGTH(_buf_, _str_)  ((_buf_)[6] = (_str_))
 
 VOID FORCEINLINE DS3_GET_UNIFIED_OUTPUT_REPORT_BUFFER(
