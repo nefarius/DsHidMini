@@ -255,7 +255,7 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 }
 
 //
-// Send HID Control OUT Request (TODO: unused)
+// Send HID Control OUT Request
 // 
 NTSTATUS DsBth_SendHidControlWriteRequest(PDEVICE_CONTEXT Context)
 {

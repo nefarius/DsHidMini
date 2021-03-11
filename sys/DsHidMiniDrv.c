@@ -1731,7 +1731,7 @@ DMF_OutputReportScheduledTaskCallback(
 
 	case DsDeviceConnectionTypeBth:
 
-		status = DsBth_SendHidControlWriteRequestAsync(pDevCtx);
+		status = DsBth_SendHidControlWriteRequest(pDevCtx);
 
 		break;
 
