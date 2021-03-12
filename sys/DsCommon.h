@@ -97,8 +97,6 @@ typedef struct _DS_DRIVER_CONFIGURATION
 {
     DS_HID_DEVICE_MODE HidDeviceMode;
 
-    ULONG OutputReportTimerPeriodMs;
-	
     BOOLEAN MuteDigitalPressureButtons;
 
 	BOOLEAN DisableAutoPairing;

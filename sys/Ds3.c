@@ -72,19 +72,32 @@ NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context)
 // 
 NTSTATUS DsUsb_Ds3PairToFirstRadio(PDEVICE_CONTEXT Context)
 {
-	NTSTATUS status = STATUS_SUCCESS;
+	NTSTATUS status = STATUS_UNSUCCESSFUL;
 	HANDLE hRadio = NULL;
 	HBLUETOOTH_RADIO_FIND hFind = NULL;
 	BLUETOOTH_FIND_RADIO_PARAMS params;
 	BLUETOOTH_RADIO_INFO info;
 	DWORD ret;
-
+	WDF_DEVICE_PROPERTY_DATA propertyData;
+	
 	FuncEntry(TRACE_DS3);
 	
 	params.dwSize = sizeof(BLUETOOTH_FIND_RADIO_PARAMS);
 	info.dwSize = sizeof(BLUETOOTH_RADIO_INFO);
 
 	do {
+		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_LastPairingStatus);
+		propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+		propertyData.Lcid = LOCALE_NEUTRAL;
+
+		(void)WdfDeviceAssignProperty(
+			(WDFDEVICE)Context,
+			&propertyData,
+			DEVPROP_TYPE_NTSTATUS,
+			sizeof(NTSTATUS),
+			&status
+		);		
+		
 		//
 		// Grab first (active) radio
 		// 
@@ -164,6 +177,18 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(PDEVICE_CONTEXT Context)
 				"Setting host address failed with %!STATUS!", status);
 			break;
 		}
+
+		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_LastPairingStatus);
+		propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+		propertyData.Lcid = LOCALE_NEUTRAL;
+
+		(void)WdfDeviceAssignProperty(
+			(WDFDEVICE)Context,
+			&propertyData,
+			DEVPROP_TYPE_NTSTATUS,
+			sizeof(NTSTATUS),
+			&status
+		);
 
 		//
 		// Update in device context after success
