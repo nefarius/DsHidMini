@@ -1761,7 +1761,7 @@ DMF_OutputReportScheduledTaskCallback(
 
 		TraceVerbose(
 			TRACE_DSHIDMINIDRV,
-			"Time span since last packet was sent: %Iu ms",
+			"Time span since last packet was sent: %I64d ms",
 			ms
 		);
 
