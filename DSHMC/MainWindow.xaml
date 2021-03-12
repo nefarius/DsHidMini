@@ -472,8 +472,8 @@
                                           ItemsSource="{Binding Source={wpfUtil:EnumBindingSource {x:Type drivers:DsHidDeviceMode}}}"
                                           SelectedItem="{Binding Path=SelectedDevice.HidEmulationMode}" />
 
-                                <TextBlock Grid.Row="6" Grid.Column="0">Output report timer period:</TextBlock>
-                                <DockPanel Grid.Row="6" Grid.Column="2">
+                                <TextBlock Grid.Row="6" Grid.Column="0" Visibility="Collapsed">Output report timer period:</TextBlock>
+                                <DockPanel Grid.Row="6" Grid.Column="2" Visibility="Collapsed">
                                     <Slider Width="160"
                                             AutoToolTipPlacement="TopLeft" AutoToolTipPrecision="0"
                                             Minimum="10"
