@@ -166,11 +166,6 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 			*(PULONGLONG)&pDevCtx->DeviceAddress
 		);
 
-		//
-		// Send magic packet, starts input report sending
-		// 
-		DsBth_Ds3Init(pDevCtx);
-
 #pragma region HID Interrupt Read
 
 		status = WdfIoTargetFormatRequestForIoctl(

@@ -511,33 +511,6 @@ DsBth_EvtControlWriteTimerFunc(
 	FuncEntry(TRACE_DSBTH);
 
 	pDevCtx = DeviceGetContext(WdfTimerGetParentObject(Timer));
-	
-	if (pDevCtx->BatteryStatus == DsBatteryStatusNone)
-	{
-		DS3_SET_LED(pDevCtx, DS3_LED_1);
-	}
-	else
-	{
-		switch (pDevCtx->BatteryStatus)
-		{
-		case DsBatteryStatusCharged:
-		case DsBatteryStatusFull:
-		case DsBatteryStatusHigh:
-			DS3_SET_LED(pDevCtx, DS3_LED_4);
-			break;
-		case DsBatteryStatusMedium:
-			DS3_SET_LED(pDevCtx, DS3_LED_3);
-			break;
-		case DsBatteryStatusLow:
-			DS3_SET_LED(pDevCtx, DS3_LED_2);
-			break;
-		case DsBatteryStatusDying:
-			DS3_SET_LED(pDevCtx, DS3_LED_1);
-			break;
-		default:
-			break;
-		}
-	}
 		
 	DS3_SET_SMALL_RUMBLE_DURATION(pDevCtx, 0xFE);
 	DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, 0x00);
@@ -545,6 +518,11 @@ DsBth_EvtControlWriteTimerFunc(
 	DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, 0x00);
 
 	(void)Ds_SendOutputReport(pDevCtx);
+
+	//
+	// Send magic packet, starts input report sending
+	// 
+	DsBth_Ds3Init(pDevCtx);
 
 	FuncExitNoReturn(TRACE_DSBTH);
 }
