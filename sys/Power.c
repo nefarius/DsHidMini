@@ -224,13 +224,12 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 
 		//
 		// Send preset output report (delayed)
+		// Required for compatibility with some SIXAXIS models
 		// 
-		/*
 		WdfTimerStart(
 			pDevCtx->Connection.Bth.Timers.HidOutputReport,
 			WDF_REL_TIMEOUT_IN_SEC(1)
 		);
-		*/
 
 #pragma endregion
 

@@ -185,7 +185,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <DebuggerFlavor>DbgengRemoteDebugger</DebuggerFlavor>
-    <OutDir>$(SolutionDir)bin\$(DDKPlatform)\</OutDir>
+    <OutDir>$(SolutionDir)bin\DEBUG\$(DDKPlatform)\</OutDir>
     <Inf2CatUseLocalTime>true</Inf2CatUseLocalTime>
     <TimeStampServer>http://timestamp.digicert.com</TimeStampServer>
   </PropertyGroup>
@@ -197,7 +197,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebuggerFlavor>DbgengRemoteDebugger</DebuggerFlavor>
-    <OutDir>$(SolutionDir)bin\$(DDKPlatform)\</OutDir>
+    <OutDir>$(SolutionDir)bin\DEBUG\$(DDKPlatform)\</OutDir>
     <Inf2CatUseLocalTime>true</Inf2CatUseLocalTime>
     <TimeStampServer>http://timestamp.digicert.com</TimeStampServer>
   </PropertyGroup>

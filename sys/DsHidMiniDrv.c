@@ -1731,8 +1731,14 @@ DMF_OutputReportScheduledTaskCallback(
 
 	case DsDeviceConnectionTypeBth:
 
+		if (DS3_GET_LED(pDevCtx) == pDevCtx->OutputReport.Cache.LastLED)
+			break;
+
 		status = DsBth_SendHidControlWriteRequest(pDevCtx);
 
+		if (NT_SUCCESS(status))
+			pDevCtx->OutputReport.Cache.LastLED = DS3_GET_LED(pDevCtx);
+		
 		break;
 
 	default:

@@ -214,6 +214,12 @@ typedef struct _DEVICE_CONTEXT
 		// Output report mode of operation
 		// 
 		DS_OUTPUT_REPORT_MODE Mode;
+
+		//
+		// Cached output report meta-data
+		// 
+		DS_OUTPUT_REPORT_CACHE Cache;
+		
 	} OutputReport;
 	
 	//
@@ -249,12 +255,7 @@ typedef struct _DEVICE_CONTEXT
 		struct BTH_DEVICE_CONTEXT Bth;
 
 	} Connection;
-
-	//
-	// Cached output report meta-data
-	// 
-	DS_OUTPUT_REPORT_CACHE OutputReportCache;
-
+		
 	//
 	// Vendor ID as reported by hardware
 	// 

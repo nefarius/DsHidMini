@@ -285,12 +285,13 @@ VOID DS3_SET_LED(
 	switch (Context->ConnectionType)
 	{
 	case DsDeviceConnectionTypeUsb:
-
+		
 		DS3_USB_SET_LED(
 			(PUCHAR)WdfMemoryGetBuffer(
 				Context->Connection.Usb.OutputReportMemory,
 				NULL
 			), Value);
+		
 		break;
 
 	case DsDeviceConnectionTypeBth:
@@ -300,6 +301,7 @@ VOID DS3_SET_LED(
 				Context->Connection.Bth.HidControl.WriteMemory,
 				NULL
 			), Value);
+		
 		break;
 	}
 }
