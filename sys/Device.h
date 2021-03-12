@@ -164,6 +164,28 @@ typedef struct _FFB_ATTRIBUTES
 } FFB_ATTRIBUTES, *PFFB_ATTRIBUTES;
 #endif
 
+/**
+ * Cached output report values to help with rate-control.
+ *
+ * @author	Benjamin "Nefarius" Höglinger-Stelzer
+ * @date	12.03.2021
+ */
+typedef struct _DS_OUTPUT_REPORT_CACHE
+{
+	LARGE_INTEGER LastSentTimestamp;
+	
+	UCHAR LastLED;
+
+	UCHAR LastSmallRumbleDuration;
+
+	UCHAR LastSmallRumbleStrength;
+
+	UCHAR LastLargeRumbleDuration;
+
+	UCHAR LastLargeRumbleStrength;
+	
+} DS_OUTPUT_REPORT_CACHE, *PDS_OUTPUT_REPORT_CACHE;
+
 typedef struct _DEVICE_CONTEXT
 {
 	//
@@ -227,6 +249,11 @@ typedef struct _DEVICE_CONTEXT
 		struct BTH_DEVICE_CONTEXT Bth;
 
 	} Connection;
+
+	//
+	// Cached output report meta-data
+	// 
+	DS_OUTPUT_REPORT_CACHE OutputReportCache;
 
 	//
 	// Vendor ID as reported by hardware
