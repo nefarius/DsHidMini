@@ -444,7 +444,7 @@ DmfDeviceModulesAdd(
 	dmfSchedulerCfg.CallbackContext = pDevCtx;
 	dmfSchedulerCfg.PersistenceType = ScheduledTask_Persistence_NotPersistentAcrossReboots;
 	dmfSchedulerCfg.ExecutionMode = ScheduledTask_ExecutionMode_Deferred;
-	dmfSchedulerCfg.ExecuteWhen = ScheduledTask_ExecuteWhen_Other;
+	dmfSchedulerCfg.ExecuteWhen = ScheduledTask_ExecuteWhen_Other; // Don't use timer
 	dmfSchedulerCfg.TimeMsBeforeInitialCall = 1000;
 	dmfSchedulerCfg.TimerPeriodMsOnSuccess = pDevCtx->Configuration.OutputReportTimerPeriodMs;
 	dmfSchedulerCfg.TimerPeriodMsOnFail = pDevCtx->Configuration.OutputReportTimerPeriodMs;
