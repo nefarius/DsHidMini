@@ -174,15 +174,7 @@ typedef struct _DS_OUTPUT_REPORT_CACHE
 {
 	LARGE_INTEGER LastSentTimestamp;
 	
-	UCHAR LastLED;
-
-	UCHAR LastSmallRumbleDuration;
-
-	UCHAR LastSmallRumbleStrength;
-
-	UCHAR LastLargeRumbleDuration;
-
-	UCHAR LastLargeRumbleStrength;
+	UCHAR LastReport[0x30]; // Introduce const
 	
 } DS_OUTPUT_REPORT_CACHE, *PDS_OUTPUT_REPORT_CACHE;
 

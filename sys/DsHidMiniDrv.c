@@ -1697,25 +1697,36 @@ DMF_OutputReportScheduledTaskCallback(
 	UNREFERENCED_PARAMETER(DmfModule);
 	UNREFERENCED_PARAMETER(PreviousState);
 
-	NTSTATUS status;
+	NTSTATUS status = STATUS_UNSUCCESSFUL;
 	PDEVICE_CONTEXT pDevCtx = (PDEVICE_CONTEXT)CallbackContext;
 	PUCHAR buffer = NULL;
 	size_t bufferSize = 0;
+	LARGE_INTEGER freq, * t1, t2;
+	LONGLONG ms;
 	
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
+	QueryPerformanceFrequency(&freq);
+	
 	WdfWaitLockAcquire(pDevCtx->OutputReport.Lock, NULL);
+
+	t1 = &pDevCtx->OutputReport.Cache.LastSentTimestamp;
+	
+	QueryPerformanceCounter(&t2);
+	
+	//
+	// Get main output report buffer protocol-agnostic
+	// 
+	DS3_GET_UNIFIED_OUTPUT_REPORT_BUFFER(
+		pDevCtx,
+		&buffer,
+		&bufferSize
+	);
 	
 	switch (pDevCtx->ConnectionType)
 	{
 	case DsDeviceConnectionTypeUsb:
-
-		DS3_GET_UNIFIED_OUTPUT_REPORT_BUFFER(
-			pDevCtx,
-			&buffer,
-			&bufferSize
-		);
-
+		
 		status = USB_SendControlRequest(
 			pDevCtx,
 			BmRequestHostToDevice,
@@ -1731,13 +1742,57 @@ DMF_OutputReportScheduledTaskCallback(
 
 	case DsDeviceConnectionTypeBth:
 
-		if (DS3_GET_LED(pDevCtx) == pDevCtx->OutputReport.Cache.LastLED)
+		//
+		// Don't send if no state change has occurred
+		// 
+		if (RtlCompareMemory(
+			buffer,
+			pDevCtx->OutputReport.Cache.LastReport, 
+			bufferSize
+		) == bufferSize)
+		{
 			break;
+		}
 
+		//
+		// Calculate delay, the smaller the more frequent packets are sent
+		// 
+		ms = (t2.QuadPart - t1->QuadPart) / (freq.QuadPart / 1000);
+
+		TraceVerbose(
+			TRACE_DSHIDMINIDRV,
+			"Time span since last packet was sent: %Iu ms",
+			ms
+		);
+
+		//
+		// TODO: improve, emergency dropout
+		// 
+		if (ms < 20)
+		{
+			TraceError(
+				TRACE_DSHIDMINIDRV,
+				"Host is sending too fast, dropping"
+			);
+			break;
+		}
+		
 		status = DsBth_SendHidControlWriteRequest(pDevCtx);
 
 		if (NT_SUCCESS(status))
-			pDevCtx->OutputReport.Cache.LastLED = DS3_GET_LED(pDevCtx);
+		{
+			// 
+			// Store last successful send
+			// 
+
+			QueryPerformanceCounter(t1);
+			
+			RtlCopyMemory(
+				pDevCtx->OutputReport.Cache.LastReport,
+				buffer,
+				bufferSize
+			);
+		}
 		
 		break;
 
