@@ -19,20 +19,24 @@ namespace Nefarius.DsHidMini.Drivers
             Guid.Parse("{0x52fac1da, 0x5a52, 0x40f5, {0xa1, 0x23, 0x36, 0x7f, 0x76, 0xf, 0x8b, 0xc2}}"), 2,
             typeof(byte));
 
-        public static DevicePropertyKey LastPairingStatusProperty => CustomDeviceProperty.CreateCustomDeviceProperty(
-            Guid.Parse("{0x52fac1da, 0x5a52, 0x40f5, {0xa1, 0x23, 0x36, 0x7f, 0x76, 0xf, 0x8b, 0xc2}}"), 3,
-            typeof(ulong));
-
         /// <summary>
         ///     Unified Device Property exposing current HID device emulation mode.
         /// </summary>
         public static DevicePropertyKey HidDeviceModeProperty => CustomDeviceProperty.CreateCustomDeviceProperty(
-            Guid.Parse("{0x52fac1da, 0x5a52, 0x40f5, {0xa1, 0x23, 0x36, 0x7f, 0x76, 0xf, 0x8b, 0xc2}}"), 50,
+            Guid.Parse("{0x52fac1da, 0x5a52, 0x40f5, {0xa1, 0x23, 0x36, 0x7f, 0x76, 0xf, 0x8b, 0xc2}}"), 3,
             typeof(byte));
+
+        /// <summary>
+        ///      Unified Device Property exposing output report timer delay (in ms).
+        /// </summary>
+        public static DevicePropertyKey OutputReportTimerPeriodMsProperty =>
+            CustomDeviceProperty.CreateCustomDeviceProperty(
+                Guid.Parse("{0x52fac1da, 0x5a52, 0x40f5, {0xa1, 0x23, 0x36, 0x7f, 0x76, 0xf, 0x8b, 0xc2}}"), 4,
+                typeof(uint));
 
         public static DevicePropertyKey MuteDigitalPressureButtonsProperty =>
            CustomDeviceProperty.CreateCustomDeviceProperty(
-               Guid.Parse("{0x52fac1da, 0x5a52, 0x40f5, {0xa1, 0x23, 0x36, 0x7f, 0x76, 0xf, 0x8b, 0xc2}}"), 52,
+               Guid.Parse("{0x52fac1da, 0x5a52, 0x40f5, {0xa1, 0x23, 0x36, 0x7f, 0x76, 0xf, 0x8b, 0xc2}}"), 5,
                typeof(byte));
 
         public static DevicePropertyKey HostAddressProperty => CustomDeviceProperty.CreateCustomDeviceProperty(
