@@ -320,9 +320,6 @@
   <ItemGroup>
     <Xml Include="dpinst.xml" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="DsHidMini.Example.ini" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
