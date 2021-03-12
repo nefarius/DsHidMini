@@ -220,15 +220,17 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 		//
 		// Send initial output report
 		// 
-		status = DsBth_SendHidControlWriteRequestAsync(pDevCtx);
+		status = Ds_SendOutputReport(pDevCtx);
 
 		//
 		// Send preset output report (delayed)
 		// 
+		/*
 		WdfTimerStart(
 			pDevCtx->Connection.Bth.Timers.HidOutputReport,
 			WDF_REL_TIMEOUT_IN_SEC(1)
 		);
+		*/
 
 #pragma endregion
 
