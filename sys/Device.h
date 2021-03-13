@@ -33,6 +33,11 @@ struct USB_DEVICE_CONTEXT
 	WDFUSBPIPE InterruptInPipe;
 
 	//
+	// USB Interrupt (in) pipe handle
+	// 
+	WDFUSBPIPE InterruptOutPipe;
+
+	//
 	// Output report buffer
 	// 
 	WDFMEMORY OutputReportMemory;

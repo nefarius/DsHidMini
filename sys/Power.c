@@ -538,8 +538,15 @@ DsHidMini_EvtDevicePrepareHardware(
 			if (WdfUsbPipeTypeInterrupt == pipeInfo.PipeType &&
 				WdfUsbTargetPipeIsInEndpoint(pipe)) {
 				TraceInformation(TRACE_POWER,
-					"InterruptReadPipe is 0x%p\n", pipe);
+					"InterruptReadPipe is 0x%p", pipe);
 				pDevCtx->Connection.Usb.InterruptInPipe = pipe;
+			}
+
+			if (WdfUsbPipeTypeInterrupt == pipeInfo.PipeType &&
+				WdfUsbTargetPipeIsOutEndpoint(pipe)) {
+				TraceInformation(TRACE_POWER,
+					"InterruptWritePipe is 0x%p", pipe);
+				pDevCtx->Connection.Usb.InterruptOutPipe = pipe;
 			}
 		}
 
