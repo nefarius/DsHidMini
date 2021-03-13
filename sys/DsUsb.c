@@ -121,6 +121,96 @@ DsUsbConfigContReaderForInterruptEndPoint(
 }
 
 //
+// Send buffer to Interrupt OUT endpoint asynchronously
+// 
+NTSTATUS
+USB_WriteInterruptPipeAsync(
+	WDFIOTARGET IoTarget, 
+	WDFUSBPIPE Pipe, 
+	PVOID Buffer, 
+	size_t BufferLength
+)
+{
+	NTSTATUS                        status;
+	WDFREQUEST                      request;
+	WDF_OBJECT_ATTRIBUTES           attribs;
+	WDFMEMORY                       memory;
+	PVOID                           writeBufferPointer;
+
+	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
+
+	status = WdfRequestCreate(&attribs,
+		IoTarget,
+		&request);
+	if (!NT_SUCCESS(status)) {
+		TraceError(
+			TRACE_DSUSB,
+			"WdfRequestCreate failed with status %!STATUS!",
+			status
+		);
+		return status;
+	}
+
+	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
+	attribs.ParentObject = request;
+
+	status = WdfMemoryCreate(&attribs,
+		NonPagedPoolNx,
+		DS3_POOL_TAG,
+		BufferLength,
+		&memory,
+		&writeBufferPointer);
+	if (!NT_SUCCESS(status)) {
+		TraceError(
+			TRACE_DSUSB,
+			"WdfMemoryCreate failed with status %!STATUS!",
+			status
+		);
+		return status;
+	}
+
+	RtlCopyMemory(writeBufferPointer, Buffer, BufferLength);
+
+	status = WdfUsbTargetPipeFormatRequestForWrite(
+		Pipe,
+		request,
+		memory,
+		NULL
+	);
+	if (!NT_SUCCESS(status)) {
+		TraceError(
+			TRACE_DSUSB,
+			"WdfUsbTargetPipeFormatRequestForWrite failed with status %!STATUS!",
+			status
+		);
+		return status;
+	}
+
+	WdfRequestSetCompletionRoutine(
+		request,
+		EvtUsbRequestCompletionRoutine,
+		NULL
+	);
+
+	if (WdfRequestSend(request,
+		IoTarget,
+		NULL) == FALSE)
+	{
+		status = WdfRequestGetStatus(request);
+	}
+
+	if (!NT_SUCCESS(status)) {
+		TraceError(
+			TRACE_DSUSB,
+			"WdfRequestSend failed with status %!STATUS!",
+			status
+		);
+	}
+
+	return status;
+}
+
+//
 // Reader failed for some reason
 // 
 BOOLEAN
@@ -140,4 +230,26 @@ DsUsbEvtUsbInterruptReadersFailed(
 	);
 
 	return TRUE;
+}
+
+void EvtUsbRequestCompletionRoutine(
+	WDFREQUEST Request,
+	WDFIOTARGET Target,
+	PWDF_REQUEST_COMPLETION_PARAMS Params,
+	WDFCONTEXT Context
+)
+{
+	UNREFERENCED_PARAMETER(Target);
+#if !DBG
+	UNREFERENCED_PARAMETER(Params);
+#endif
+	UNREFERENCED_PARAMETER(Context);
+
+	TraceVerbose(
+		TRACE_DSUSB,
+		"%!FUNC! completed with status %!STATUS!",
+		Params->IoStatus.Status
+	);
+
+	WdfObjectDelete(Request);
 }

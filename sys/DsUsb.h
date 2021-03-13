@@ -22,3 +22,11 @@ DsUsbConfigContReaderForInterruptEndPoint(
 
 EVT_WDF_USB_READER_COMPLETION_ROUTINE DsUsb_EvtUsbInterruptPipeReadComplete;
 EVT_WDF_USB_READERS_FAILED DsUsbEvtUsbInterruptReadersFailed;
+
+NTSTATUS USB_WriteInterruptPipeAsync(
+    _In_ WDFIOTARGET IoTarget,
+    _In_ WDFUSBPIPE Pipe,
+    _In_ PVOID Buffer,
+    _In_ size_t BufferLength);
+
+EVT_WDF_REQUEST_COMPLETION_ROUTINE EvtUsbRequestCompletionRoutine;
