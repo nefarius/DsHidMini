@@ -39,7 +39,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>gamepad.ico</ApplicationIcon>
+    <ApplicationIcon>FireShock.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="AdonisUI, Version=1.17.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -245,6 +245,9 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="gamepad.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="FireShock.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Fody.6.4.0\build\Fody.targets" Condition="Exists('..\packages\Fody.6.4.0\build\Fody.targets')" />

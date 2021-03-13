@@ -1,4 +1,4 @@
-<img src="assets/noun_playstation_128x128.png" align="right" />
+<img src="assets/FireShock.png" align="right" />
 
 # DsHidMini
 
