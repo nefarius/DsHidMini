@@ -550,12 +550,18 @@ DsHidMini_EvtDevicePrepareHardware(
 			}
 		}
 
-		if (!pDevCtx->Connection.Usb.InterruptInPipe)
+		//
+		// Validate that we got both required pipes
+		// 
+		if (!pDevCtx->Connection.Usb.InterruptInPipe
+			|| !pDevCtx->Connection.Usb.InterruptOutPipe)
 		{
 			status = STATUS_INVALID_DEVICE_STATE;
-			TraceError( TRACE_POWER,
+			TraceError(
+				TRACE_POWER,
 				"Device is not configured properly %!STATUS!\n",
-				status);
+				status
+			);
 
 			return status;
 		}
