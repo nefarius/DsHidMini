@@ -946,6 +946,37 @@
                     </GroupBox>
                 </Grid>
             </TabItem>
+
+            <!-- Troubleshooting (unfinished) -->
+            <TabItem Header="Troubleshooting" Visibility="Collapsed">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+
+                    <GroupBox Header="Diagnostic Trace Session"
+                              Margin="{adonisUi:Space 1}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <Button HorizontalAlignment="Center"
+                                    Width="100"
+                                    Click="ToggleTrace_OnClick">
+                                Start trace
+                            </Button>
+                        </Grid>
+                    </GroupBox>
+                </Grid>
+            </TabItem>
         </TabControl>
 
         <StatusBar Grid.Row="1">
