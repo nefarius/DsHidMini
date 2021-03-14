@@ -36,4 +36,3 @@ deploy:
     appveyor_repo_tag: true
 cache:
 - C:\projects\DMF
-- C:\projects\dshidmini\packages
