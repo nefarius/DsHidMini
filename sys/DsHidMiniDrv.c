@@ -1729,6 +1729,21 @@ DMF_OutputReportScheduledTaskCallback(
 	{
 	case DsDeviceConnectionTypeUsb:
 
+		//
+		// Don't send if no state change has occurred
+		// 
+		if (RtlCompareMemory(
+			buffer,
+			pDevCtx->OutputReport.Cache.LastReport,
+			bufferSize
+		) == bufferSize)
+		{
+			break;
+		}
+
+		//
+		// TODO: alloc only once in context to save overhead
+		// 
 		interruptBuffer = (PUCHAR)malloc(0x31);
 
 		if (interruptBuffer == NULL)
@@ -1745,6 +1760,15 @@ DMF_OutputReportScheduledTaskCallback(
 			0x31 // TODO: introduce const
 		);
 
+		if (NT_SUCCESS(status))
+		{
+			RtlCopyMemory(
+				pDevCtx->OutputReport.Cache.LastReport,
+				buffer,
+				bufferSize
+			);
+		}
+		
 		free(interruptBuffer);
 
 		break;
