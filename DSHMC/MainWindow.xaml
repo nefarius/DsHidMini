@@ -321,8 +321,8 @@
                                     </TextBox.ToolTip>
                                 </TextBox>
 
+                                <!-- Device address -->
                                 <TextBlock Grid.Row="1" Grid.Column="0">Device address:</TextBlock>
-
                                 <DockPanel Grid.Row="1" Grid.Column="2" LastChildFill="False">
                                     <TextBox
                                         Width="140"
@@ -388,6 +388,7 @@
                                     </DockPanel.ToolTip>
                                 </DockPanel>
 
+                                <!-- Host address -->
                                 <TextBlock Grid.Row="2" Grid.Column="0">Host address:</TextBlock>
                                 <TextBox Grid.Row="2" Grid.Column="2"
                                          Width="140"
@@ -420,6 +421,7 @@
                                     </TextBox.ToolTip>
                                 </TextBox>
 
+                                <!-- Battery status -->
                                 <TextBlock Grid.Row="3" Grid.Column="0">Battery status:</TextBlock>
                                 <DockPanel Grid.Row="3" Grid.Column="2" LastChildFill="False">
                                     <ComboBox Width="80" HorizontalAlignment="Left"
@@ -458,19 +460,85 @@
                                     </DockPanel.ToolTip>
                                 </DockPanel>
 
+                                <!-- Last seen -->
                                 <TextBlock Grid.Row="4" Grid.Column="0">Last connected (wireless):</TextBlock>
                                 <TextBox Grid.Row="4" Grid.Column="2"
                                          Width="165"
                                          Margin="{adonisUi:Space 1}"
                                          extensions:WatermarkExtension.Watermark="Unavailable"
-                                         Text="{Binding Path=SelectedDevice.LastConnected, Mode=OneWay}" />
+                                         Text="{Binding Path=SelectedDevice.LastConnected, Mode=OneWay}">
+                                    <TextBox.ToolTip>
+                                        <ToolTip controlzex:ToolTipAssist.AutoMove="True">
+                                            <ToolTip.Template>
+                                                <ControlTemplate>
+                                                    <Grid>
+                                                        <Border Background="Gray"
+                                                                BorderBrush="Black"
+                                                                BorderThickness="1"
+                                                                Opacity="0.9"
+                                                                SnapsToDevicePixels="True" />
+                                                        <StackPanel>
+                                                            <TextBlock Margin="{adonisUi:Space 1}"
+                                                                       Foreground="WhiteSmoke"
+                                                                       FontSize="16"
+                                                                       FontWeight="Bold"
+                                                                       Text="Last time this device has been connected via Bluetooth"
+                                                                       TextOptions.TextFormattingMode="Display"
+                                                                       TextOptions.TextRenderingMode="ClearType" />
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </ToolTip.Template>
+                                        </ToolTip>
+                                    </TextBox.ToolTip>
+                                </TextBox>
 
+                                <!-- HID Device Mode -->
                                 <TextBlock Grid.Row="5" Grid.Column="0">HID device mode:</TextBlock>
-                                <ComboBox Grid.Row="5" Grid.Column="2" Width="160" HorizontalAlignment="Left"
-                                          Margin="{adonisUi:Space 1}"
-                                          IsEnabled="{Binding Path=IsEditable}"
-                                          ItemsSource="{Binding Source={wpfUtil:EnumBindingSource {x:Type drivers:DsHidDeviceMode}}}"
-                                          SelectedItem="{Binding Path=SelectedDevice.HidEmulationMode}" />
+                                <DockPanel Grid.Row="5" Grid.Column="2" LastChildFill="False">
+                                    <ComboBox Width="160" HorizontalAlignment="Left"
+                                              Margin="{adonisUi:Space 1}"
+                                              IsEnabled="{Binding Path=IsEditable}"
+                                              ItemsSource="{Binding Source={wpfUtil:EnumBindingSource {x:Type drivers:DsHidDeviceMode}}}"
+                                              SelectedItem="{Binding Path=SelectedDevice.HidEmulationMode}" />
+
+                                    <DockPanel.ToolTip>
+                                        <ToolTip controlzex:ToolTipAssist.AutoMove="True">
+                                            <ToolTip.Template>
+                                                <ControlTemplate>
+                                                    <Grid>
+                                                        <Border Background="Gray"
+                                                                BorderBrush="Black"
+                                                                BorderThickness="1"
+                                                                Opacity="0.9"
+                                                                SnapsToDevicePixels="True" />
+                                                        <StackPanel>
+                                                            <TextBlock Margin="{adonisUi:Space 1}"
+                                                                       Foreground="WhiteSmoke"
+                                                                       FontSize="16"
+                                                                       FontWeight="Bold"
+                                                                       Text="HID Device Emulation Mode"
+                                                                       TextOptions.TextFormattingMode="Display"
+                                                                       TextOptions.TextRenderingMode="ClearType" />
+                                                            <TextBlock Margin="{adonisUi:Space 1}"
+                                                                       Foreground="WhiteSmoke"
+                                                                       FontSize="16"
+                                                                       Text="Defines how the device is seen by the system and processes."
+                                                                       TextOptions.TextFormattingMode="Display"
+                                                                       TextOptions.TextRenderingMode="ClearType" />
+                                                            <TextBlock Margin="{adonisUi:Space 1}"
+                                                                       Foreground="WhiteSmoke"
+                                                                       FontSize="16"
+                                                                       Text="Consult the online documentation for a comprehensive description."
+                                                                       TextOptions.TextFormattingMode="Display"
+                                                                       TextOptions.TextRenderingMode="ClearType" />
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </ToolTip.Template>
+                                        </ToolTip>
+                                    </DockPanel.ToolTip>
+                                </DockPanel>
 
                                 <TextBlock Grid.Row="6" Grid.Column="0" Visibility="Collapsed">Output report timer period:</TextBlock>
                                 <DockPanel Grid.Row="6" Grid.Column="2" Visibility="Collapsed">
@@ -487,14 +555,54 @@
                                     <TextBlock Margin="5,0,0,0">Milliseconds</TextBlock>
                                 </DockPanel>
 
-                                <Button Grid.Row="8" Grid.Column="2"
+                                <!-- Apply changes -->
+                                <DockPanel Grid.Row="8" Grid.Column="2" LastChildFill="False"
+                                           HorizontalAlignment="Right">
+                                    <Button
                                         Width="100"
-                                        HorizontalAlignment="Right"
                                         Margin="{adonisUi:Space 2}"
                                         IsEnabled="{Binding Path=IsEditable}"
                                         Click="ApplyChanges_Click">
-                                    Apply changes
-                                </Button>
+                                        Apply changes
+                                    </Button>
+                                    <DockPanel.ToolTip>
+                                        <ToolTip controlzex:ToolTipAssist.AutoMove="True">
+                                            <ToolTip.Template>
+                                                <ControlTemplate>
+                                                    <Grid>
+                                                        <Border Background="Gray"
+                                                                BorderBrush="Black"
+                                                                BorderThickness="1"
+                                                                Opacity="0.9"
+                                                                SnapsToDevicePixels="True" />
+                                                        <StackPanel>
+                                                            <TextBlock Margin="{adonisUi:Space 1}"
+                                                                       Foreground="WhiteSmoke"
+                                                                       FontSize="16"
+                                                                       FontWeight="Bold"
+                                                                       Text="Apply changes"
+                                                                       TextOptions.TextFormattingMode="Display"
+                                                                       TextOptions.TextRenderingMode="ClearType" />
+                                                            <TextBlock Margin="{adonisUi:Space 1}"
+                                                                       Foreground="WhiteSmoke"
+                                                                       FontSize="16"
+                                                                       Text="This restarts the device with the current settings."
+                                                                       TextOptions.TextFormattingMode="Display"
+                                                                       TextOptions.TextRenderingMode="ClearType" />
+                                                            <TextBlock Margin="{adonisUi:Space 1}"
+                                                                       Foreground="WhiteSmoke"
+                                                                       FontSize="16"
+                                                                       Text="On Bluetooth it disconnects. Press PS button to reconnect."
+                                                                       TextOptions.TextFormattingMode="Display"
+                                                                       TextOptions.TextRenderingMode="ClearType" />
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </ToolTip.Template>
+                                        </ToolTip>
+                                    </DockPanel.ToolTip>
+                                </DockPanel>
+
                             </Grid>
 
                             <!-- Properties which can be adapted during device lifetime -->
@@ -537,12 +645,49 @@
                                         <RowDefinition Height="*" />
                                     </Grid.RowDefinitions>
 
-                                    <CheckBox Grid.Row="0"
-                                              Margin="{adonisUi:Space 1}"
-                                              IsEnabled="{Binding Path=SelectedDevice.IsPressureMutingSupported}"
-                                              IsChecked="{Binding Path=SelectedDevice.MuteDigitalPressureButtons}">
-                                        Mute digital pressure buttons
-                                    </CheckBox>
+                                    <DockPanel Grid.Row="0" LastChildFill="False">
+                                        <CheckBox Margin="{adonisUi:Space 1}"
+                                                  IsEnabled="{Binding Path=SelectedDevice.IsPressureMutingSupported}"
+                                                  IsChecked="{Binding Path=SelectedDevice.MuteDigitalPressureButtons}">
+                                            Mute digital pressure buttons
+                                        </CheckBox>
+                                        <DockPanel.ToolTip>
+                                            <ToolTip controlzex:ToolTipAssist.AutoMove="True">
+                                                <ToolTip.Template>
+                                                    <ControlTemplate>
+                                                        <Grid>
+                                                            <Border Background="Gray"
+                                                                    BorderBrush="Black"
+                                                                    BorderThickness="1"
+                                                                    Opacity="0.9"
+                                                                    SnapsToDevicePixels="True" />
+                                                            <StackPanel>
+                                                                <TextBlock Margin="{adonisUi:Space 1}"
+                                                                           Foreground="WhiteSmoke"
+                                                                           FontSize="16"
+                                                                           FontWeight="Bold"
+                                                                           Text="Suppress all non-pressure information"
+                                                                           TextOptions.TextFormattingMode="Display"
+                                                                           TextOptions.TextRenderingMode="ClearType" />
+                                                                <TextBlock Margin="{adonisUi:Space 1}"
+                                                                           Foreground="WhiteSmoke"
+                                                                           FontSize="16"
+                                                                           Text="Suppresses/mutes all digital button states while enabled."
+                                                                           TextOptions.TextFormattingMode="Display"
+                                                                           TextOptions.TextRenderingMode="ClearType" />
+                                                                <TextBlock Margin="{adonisUi:Space 1}"
+                                                                           Foreground="WhiteSmoke"
+                                                                           FontSize="16"
+                                                                           Text="Useful for giving pressure axes priority while mapping in an emulator."
+                                                                           TextOptions.TextFormattingMode="Display"
+                                                                           TextOptions.TextRenderingMode="ClearType" />
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </ControlTemplate>
+                                                </ToolTip.Template>
+                                            </ToolTip>
+                                        </DockPanel.ToolTip>
+                                    </DockPanel>
                                 </Grid>
                             </GroupBox>
                         </StackPanel>
