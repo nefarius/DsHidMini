@@ -410,38 +410,9 @@ DsHidMini_EvtDevicePrepareHardware(
 	pDevCtx = DeviceGetContext(Device);
 
 	//
-	// Common properties
+	// Read common properties
 	// 
-
-	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_HidDeviceMode);
-	pDevCtx->Configuration.HidDeviceMode = DsHidMiniDeviceModeSixaxisCompatible;
-
-	(void)WdfDeviceQueryPropertyEx(
-		Device,
-		&propertyData,
-		sizeof(UCHAR),
-		&pDevCtx->Configuration.HidDeviceMode,
-		&requiredSize,
-		&propertyType
-	);
-
-	TraceVerbose(TRACE_POWER, "[COM] HidDeviceMode: 0x%02X",
-		pDevCtx->Configuration.HidDeviceMode);
-
-	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_OutputReportTimerPeriodMs);
-	pDevCtx->Configuration.OutputReportTimerPeriodMs = 250;
-
-	(void)WdfDeviceQueryPropertyEx(
-		Device,
-		&propertyData,
-		sizeof(ULONG),
-		&pDevCtx->Configuration.OutputReportTimerPeriodMs,
-		&requiredSize,
-		&propertyType
-	);
-
-	TraceVerbose(TRACE_POWER, "[COM] OutputReportTimerPeriodMs: %d",
-		pDevCtx->Configuration.OutputReportTimerPeriodMs);
+	DsDevice_ReadConfiguration(Device);
 	
 	//
 	// Initialize USB framework object

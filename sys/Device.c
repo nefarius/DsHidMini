@@ -380,7 +380,7 @@ VOID DsDevice_HotReloadConfiguration(PDEVICE_CONTEXT Context)
 		"Hot-reload triggered"
 	);
 
-	WDF_DEVICE_PROPERTY_DATA_INIT(&propData, &DEVPKEY_DsHidMini_MuteDigitalPressureButtons);
+	WDF_DEVICE_PROPERTY_DATA_INIT(&propData, &DEVPKEY_DsHidMini_HR_MuteDigitalPressureButtons);
 
 	(void)WdfDeviceQueryPropertyEx(
 		device,
@@ -390,7 +390,68 @@ VOID DsDevice_HotReloadConfiguration(PDEVICE_CONTEXT Context)
 		&requiredSize,
 		&propType
 	);
-}	
+}
+
+//
+// Reads variable settings properties
+// 
+VOID DsDevice_ReadConfiguration(WDFDEVICE Device)
+{
+	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	WDF_DEVICE_PROPERTY_DATA propertyData;
+	ULONG requiredSize = 0;
+	DEVPROPTYPE propertyType;
+
+	FuncEntry(TRACE_DEVICE);
+	
+	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_HidDeviceMode);
+	pDevCtx->Configuration.HidDeviceMode = DsHidMiniDeviceModeSixaxisCompatible;
+
+	(void)WdfDeviceQueryPropertyEx(
+		Device,
+		&propertyData,
+		sizeof(UCHAR),
+		&pDevCtx->Configuration.HidDeviceMode,
+		&requiredSize,
+		&propertyType
+	);
+
+	TraceVerbose(TRACE_DEVICE, "[COM] HidDeviceMode: 0x%02X",
+		pDevCtx->Configuration.HidDeviceMode);
+
+	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_IsOutputRateControlEnabled);
+	pDevCtx->Configuration.IsOutputRateControlEnabled = TRUE;
+
+	(void)WdfDeviceQueryPropertyEx(
+		Device,
+		&propertyData,
+		sizeof(UCHAR),
+		&pDevCtx->Configuration.IsOutputRateControlEnabled,
+		&requiredSize,
+		&propertyType
+	);
+
+	TraceVerbose(TRACE_DEVICE, "[COM] IsOutputRateControlEnabled: %d",
+		pDevCtx->Configuration.IsOutputRateControlEnabled);
+
+	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_OutputRateControlPeriodMs);
+	pDevCtx->Configuration.OutputRateControlPeriodMs = 20;
+
+	(void)WdfDeviceQueryPropertyEx(
+		Device,
+		&propertyData,
+		sizeof(UCHAR),
+		&pDevCtx->Configuration.OutputRateControlPeriodMs,
+		&requiredSize,
+		&propertyType
+	);
+
+	TraceVerbose(TRACE_DEVICE, "[COM] OutputRateControlPeriodMs: %d",
+		pDevCtx->Configuration.OutputRateControlPeriodMs);
+
+	FuncExitNoReturn(TRACE_DEVICE);
+}
+
 
 //
 // Bootstrap our own module

@@ -373,4 +373,9 @@ DsDevice_HotReloadConfiguration(
 	PDEVICE_CONTEXT Context
 );
 
+VOID
+DsDevice_ReadConfiguration(
+	WDFDEVICE Device
+);
+
 EXTERN_C_END

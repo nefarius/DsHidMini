@@ -1250,7 +1250,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	{
 		WDF_DEVICE_PROPERTY_DATA propertyData;
 
-		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_BatteryStatus);
+		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RO_BatteryStatus);
 		propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
 		propertyData.Lcid = LOCALE_NEUTRAL;
 
@@ -1462,7 +1462,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 
 		WDF_DEVICE_PROPERTY_DATA propertyData;
 
-		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_BatteryStatus);
+		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RO_BatteryStatus);
 		propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
 		propertyData.Lcid = LOCALE_NEUTRAL;
 
