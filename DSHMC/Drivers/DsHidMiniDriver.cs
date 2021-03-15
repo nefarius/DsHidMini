@@ -12,18 +12,6 @@ namespace Nefarius.DsHidMini.Drivers
         /// </summary>
         public static Guid DeviceInterfaceGuid => Guid.Parse("{399ED672-E0BD-4FB3-AB0C-4955B56FB86A}");
 
-        #region DEPRECATED
-
-        /// <summary>
-        ///     Unified Device Property exposing output report timer delay (in ms).
-        /// </summary>
-        public static DevicePropertyKey OutputReportTimerPeriodMsProperty =>
-            CustomDeviceProperty.CreateCustomDeviceProperty(
-                Guid.Parse("{0x52fac1da, 0x5a52, 0x40f5, {0xa1, 0x23, 0x36, 0x7f, 0x76, 0xf, 0x8b, 0xc2}}"), 4,
-                typeof(uint));
-
-        #endregion
-
         #region Read-only properties
 
         /// <summary>

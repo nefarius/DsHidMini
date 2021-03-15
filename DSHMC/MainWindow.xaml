@@ -13,7 +13,7 @@
                        xmlns:controlzex="urn:controlzex"
                        mc:Ignorable="d"
                        Title="DsHidMini Control"
-                       Height="580" Width="800"
+                       Height="600" Width="800"
                        ResizeMode="CanMinimize"
                        WindowStartupLocation="CenterScreen">
     <controls:AdonisWindow.TitleBarContent>
@@ -540,8 +540,38 @@
                                     </DockPanel.ToolTip>
                                 </DockPanel>
 
-                                <TextBlock Grid.Row="6" Grid.Column="0" Visibility="Collapsed">Output report timer period:</TextBlock>
-                                <DockPanel Grid.Row="6" Grid.Column="2" Visibility="Collapsed">
+                                <!-- Output rate control -->
+                                <TextBlock Grid.Row="6" Grid.Column="0"
+                                           Margin="{adonisUi:Space 0, 1}"
+                                           VerticalAlignment="Top">
+                                    Output rate control:
+                                </TextBlock>
+                                <StackPanel Grid.Row="6" Grid.Column="2">
+                                    <CheckBox Margin="{adonisUi:Space 1}"
+                                              IsChecked="{Binding Path=SelectedDevice.IsOutputRateControlEnabled}">
+                                        Enable output report rate control
+                                    </CheckBox>
+                                    <DockPanel  LastChildFill="False">
+                                        <Slider Width="160"
+                                                AutoToolTipPlacement="TopLeft" AutoToolTipPrecision="0"
+                                                Minimum="5"
+                                                TickFrequency="5"
+                                                Maximum="255"
+                                                IsSnapToTickEnabled="True"
+                                                Margin="{adonisUi:Space 1}"
+                                                IsEnabled="{Binding Path=IsEditable}"
+                                                Value="{Binding Path=SelectedDevice.OutputRateControlPeriodMs}" />
+                                        <TextBlock Text="{Binding Path=SelectedDevice.OutputRateControlPeriodMs}" />
+                                        <TextBlock Margin="5,0,0,0">Milliseconds</TextBlock>
+                                    </DockPanel>
+                                    <CheckBox Margin="{adonisUi:Space 1}"
+                                              IsChecked="{Binding Path=SelectedDevice.IsOutputDeduplicatorEnabled}">
+                                        Enable output report deduplication
+                                    </CheckBox>
+                                </StackPanel>
+
+<!--
+                                <DockPanel Grid.Row="6" Grid.Column="2">
                                     <Slider Width="160"
                                             AutoToolTipPlacement="TopLeft" AutoToolTipPrecision="0"
                                             Minimum="10"
@@ -554,6 +584,7 @@
                                     <TextBlock Text="{Binding Path=SelectedDevice.OutputReportTimerPeriodMs}" />
                                     <TextBlock Margin="5,0,0,0">Milliseconds</TextBlock>
                                 </DockPanel>
+                                -->
 
                                 <!-- Apply changes -->
                                 <DockPanel Grid.Row="8" Grid.Column="2" LastChildFill="False"
@@ -909,6 +940,7 @@
                                 </DockPanel.ToolTip>
                             </DockPanel>
 
+                            <!-- Genuine check -->
                             <DockPanel Grid.Row="2" LastChildFill="False">
                                 <CheckBox Margin="{adonisUi:Space 1}"
                                           IsChecked="{Binding Path=AppConfig.IsGenuineCheckEnabled}">

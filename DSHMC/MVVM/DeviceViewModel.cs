@@ -66,10 +66,22 @@ namespace Nefarius.DsHidMini.MVVM
             }
         }
 
-        public uint OutputReportTimerPeriodMs
+        public bool IsOutputRateControlEnabled
         {
-            get => _device.GetProperty<uint>(DsHidMiniDriver.OutputReportTimerPeriodMsProperty);
-            set => _device.SetProperty(DsHidMiniDriver.OutputReportTimerPeriodMsProperty, value);
+            get => _device.GetProperty<byte>(DsHidMiniDriver.IsOutputRateControlEnabledProperty) > 0;
+            set => _device.SetProperty(DsHidMiniDriver.IsOutputRateControlEnabledProperty, (byte) (value ? 1 : 0));
+        }
+
+        public byte OutputRateControlPeriodMs
+        {
+            get => _device.GetProperty<byte>(DsHidMiniDriver.OutputRateControlPeriodMsProperty);
+            set => _device.SetProperty(DsHidMiniDriver.OutputRateControlPeriodMsProperty, value);
+        }
+
+        public bool IsOutputDeduplicatorEnabled
+        {
+            get => _device.GetProperty<byte>(DsHidMiniDriver.IsOutputDeduplicatorEnabledProperty) > 0;
+            set => _device.SetProperty(DsHidMiniDriver.IsOutputDeduplicatorEnabledProperty, (byte) (value ? 1 : 0));
         }
 
         /// <summary>
