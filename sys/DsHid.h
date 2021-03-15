@@ -24,9 +24,9 @@ extern CONST HID_DESCRIPTOR G_DualShock4Rev1HidDescriptor;
 #define SIXAXIS_HID_INPUT_REPORT_SIZE			0x0C
 #define SIXAXIS_HID_GET_FEATURE_REPORT_SIZE		0x31
 
-#define DS3_RAW_SLIDER_IDLE_THRESHOLD			0x05 // 5
-#define DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER		0x73 // 115
-#define DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER		0x87 // 135
+#define DS3_RAW_SLIDER_IDLE_THRESHOLD			0x7F // 127 ( (256 * 0,5 ) -1 )
+#define DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER		0x3F // 63 ( ( 128 * 0,5 ) - 1 )
+#define DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER		0xC0 // 192 ( ( 128 * 1,5 ) - 1 )
 
 // Artificial identifiers to ease detection
 // 
