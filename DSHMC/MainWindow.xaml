@@ -13,7 +13,7 @@
                        xmlns:controlzex="urn:controlzex"
                        mc:Ignorable="d"
                        Title="DsHidMini Control"
-                       Height="600" Width="800"
+                       Height="580" Width="800"
                        ResizeMode="CanMinimize"
                        WindowStartupLocation="CenterScreen">
     <controls:AdonisWindow.TitleBarContent>
@@ -541,17 +541,113 @@
                                 </DockPanel>
 
                                 <!-- Output rate control -->
-                                <TextBlock Grid.Row="6" Grid.Column="0"
-                                           Margin="{adonisUi:Space 0, 1}"
-                                           VerticalAlignment="Top">
-                                    Output rate control:
-                                </TextBlock>
+                                <Grid Grid.Row="6" Grid.Column="0" Margin="{adonisUi:Space 0, 1}">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Output rate control -->
+                                    <TextBlock Grid.Row="0"
+                                               VerticalAlignment="Top">
+                                        Output rate control:
+                                    </TextBlock>
+                                    <!-- Apply changes -->
+                                    <Grid Grid.Row="2">
+                                        <Button Width="100"
+                                                IsEnabled="{Binding Path=IsEditable}"
+                                                HorizontalAlignment="Left"
+                                                Click="ApplyChanges_Click">
+                                            Apply changes
+                                        </Button>
+
+                                        <Grid.ToolTip>
+                                            <ToolTip controlzex:ToolTipAssist.AutoMove="True">
+                                                <ToolTip.Template>
+                                                    <ControlTemplate>
+                                                        <Grid>
+                                                            <Border Background="Gray"
+                                                                BorderBrush="Black"
+                                                                BorderThickness="1"
+                                                                Opacity="0.9"
+                                                                SnapsToDevicePixels="True" />
+                                                            <StackPanel>
+                                                                <TextBlock Margin="{adonisUi:Space 1}"
+                                                                       Foreground="WhiteSmoke"
+                                                                       FontSize="16"
+                                                                       FontWeight="Bold"
+                                                                       Text="Apply changes"
+                                                                       TextOptions.TextFormattingMode="Display"
+                                                                       TextOptions.TextRenderingMode="ClearType" />
+                                                                <TextBlock Margin="{adonisUi:Space 1}"
+                                                                       Foreground="WhiteSmoke"
+                                                                       FontSize="16"
+                                                                       Text="This restarts the device with the current settings."
+                                                                       TextOptions.TextFormattingMode="Display"
+                                                                       TextOptions.TextRenderingMode="ClearType" />
+                                                                <TextBlock Margin="{adonisUi:Space 1}"
+                                                                       Foreground="WhiteSmoke"
+                                                                       FontSize="16"
+                                                                       Text="On Bluetooth it disconnects. Press PS button to reconnect."
+                                                                       TextOptions.TextFormattingMode="Display"
+                                                                       TextOptions.TextRenderingMode="ClearType" />
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </ControlTemplate>
+                                                </ToolTip.Template>
+                                            </ToolTip>
+                                        </Grid.ToolTip>
+                                    </Grid>
+                                </Grid>
+
+                                <!-- Rate control settings -->
                                 <StackPanel Grid.Row="6" Grid.Column="2">
-                                    <CheckBox Margin="{adonisUi:Space 1}"
+                                    <DockPanel LastChildFill="False">
+                                        <CheckBox Margin="{adonisUi:Space 1}"
+                                              IsEnabled="{Binding Path=IsEditable}"
                                               IsChecked="{Binding Path=SelectedDevice.IsOutputRateControlEnabled}">
-                                        Enable output report rate control
-                                    </CheckBox>
-                                    <DockPanel  LastChildFill="False">
+                                            Enable output report rate control
+                                        </CheckBox>
+
+                                        <DockPanel.ToolTip>
+                                            <ToolTip controlzex:ToolTipAssist.AutoMove="True">
+                                                <ToolTip.Template>
+                                                    <ControlTemplate>
+                                                        <Grid>
+                                                            <Border Background="Gray"
+                                                                BorderBrush="Black"
+                                                                BorderThickness="1"
+                                                                Opacity="0.9"
+                                                                SnapsToDevicePixels="True" />
+                                                            <StackPanel>
+                                                                <TextBlock Margin="{adonisUi:Space 1}"
+                                                                       Foreground="WhiteSmoke"
+                                                                       FontSize="16"
+                                                                       FontWeight="Bold"
+                                                                       Text="Enables or disables the output report rate limiter"
+                                                                       TextOptions.TextFormattingMode="Display"
+                                                                       TextOptions.TextRenderingMode="ClearType" />
+                                                                <TextBlock Margin="{adonisUi:Space 1}"
+                                                                       Foreground="WhiteSmoke"
+                                                                       FontSize="16"
+                                                                       Text="TBD"
+                                                                       TextOptions.TextFormattingMode="Display"
+                                                                       TextOptions.TextRenderingMode="ClearType" />
+                                                                <TextBlock Margin="{adonisUi:Space 1}"
+                                                                       Foreground="WhiteSmoke"
+                                                                       FontSize="16"
+                                                                       Text="TBD"
+                                                                       TextOptions.TextFormattingMode="Display"
+                                                                       TextOptions.TextRenderingMode="ClearType" />
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </ControlTemplate>
+                                                </ToolTip.Template>
+                                            </ToolTip>
+                                        </DockPanel.ToolTip>
+                                    </DockPanel>
+                                    <DockPanel LastChildFill="False">
                                         <Slider Width="160"
                                                 AutoToolTipPlacement="TopLeft" AutoToolTipPrecision="0"
                                                 Minimum="5"
@@ -563,77 +659,90 @@
                                                 Value="{Binding Path=SelectedDevice.OutputRateControlPeriodMs}" />
                                         <TextBlock Text="{Binding Path=SelectedDevice.OutputRateControlPeriodMs}" />
                                         <TextBlock Margin="5,0,0,0">Milliseconds</TextBlock>
-                                    </DockPanel>
-                                    <CheckBox Margin="{adonisUi:Space 1}"
-                                              IsChecked="{Binding Path=SelectedDevice.IsOutputDeduplicatorEnabled}">
-                                        Enable output report deduplication
-                                    </CheckBox>
-                                </StackPanel>
 
-<!--
-                                <DockPanel Grid.Row="6" Grid.Column="2">
-                                    <Slider Width="160"
-                                            AutoToolTipPlacement="TopLeft" AutoToolTipPrecision="0"
-                                            Minimum="10"
-                                            TickFrequency="10"
-                                            Maximum="10000"
-                                            IsSnapToTickEnabled="True"
-                                            Margin="{adonisUi:Space 1}"
-                                            IsEnabled="{Binding Path=IsEditable}"
-                                            Value="{Binding Path=SelectedDevice.OutputReportTimerPeriodMs}" />
-                                    <TextBlock Text="{Binding Path=SelectedDevice.OutputReportTimerPeriodMs}" />
-                                    <TextBlock Margin="5,0,0,0">Milliseconds</TextBlock>
-                                </DockPanel>
-                                -->
-
-                                <!-- Apply changes -->
-                                <DockPanel Grid.Row="8" Grid.Column="2" LastChildFill="False"
-                                           HorizontalAlignment="Right">
-                                    <Button
-                                        Width="100"
-                                        Margin="{adonisUi:Space 2}"
-                                        IsEnabled="{Binding Path=IsEditable}"
-                                        Click="ApplyChanges_Click">
-                                        Apply changes
-                                    </Button>
-                                    <DockPanel.ToolTip>
-                                        <ToolTip controlzex:ToolTipAssist.AutoMove="True">
-                                            <ToolTip.Template>
-                                                <ControlTemplate>
-                                                    <Grid>
-                                                        <Border Background="Gray"
+                                        <DockPanel.ToolTip>
+                                            <ToolTip controlzex:ToolTipAssist.AutoMove="True">
+                                                <ToolTip.Template>
+                                                    <ControlTemplate>
+                                                        <Grid>
+                                                            <Border Background="Gray"
                                                                 BorderBrush="Black"
                                                                 BorderThickness="1"
                                                                 Opacity="0.9"
                                                                 SnapsToDevicePixels="True" />
-                                                        <StackPanel>
-                                                            <TextBlock Margin="{adonisUi:Space 1}"
+                                                            <StackPanel>
+                                                                <TextBlock Margin="{adonisUi:Space 1}"
                                                                        Foreground="WhiteSmoke"
                                                                        FontSize="16"
                                                                        FontWeight="Bold"
-                                                                       Text="Apply changes"
+                                                                       Text="Rate control period (in milliseconds)"
                                                                        TextOptions.TextFormattingMode="Display"
                                                                        TextOptions.TextRenderingMode="ClearType" />
-                                                            <TextBlock Margin="{adonisUi:Space 1}"
+                                                                <TextBlock Margin="{adonisUi:Space 1}"
                                                                        Foreground="WhiteSmoke"
                                                                        FontSize="16"
-                                                                       Text="This restarts the device with the current settings."
+                                                                       Text="TBD"
                                                                        TextOptions.TextFormattingMode="Display"
                                                                        TextOptions.TextRenderingMode="ClearType" />
-                                                            <TextBlock Margin="{adonisUi:Space 1}"
+                                                                <TextBlock Margin="{adonisUi:Space 1}"
                                                                        Foreground="WhiteSmoke"
                                                                        FontSize="16"
-                                                                       Text="On Bluetooth it disconnects. Press PS button to reconnect."
+                                                                       Text="TBD"
                                                                        TextOptions.TextFormattingMode="Display"
                                                                        TextOptions.TextRenderingMode="ClearType" />
-                                                        </StackPanel>
-                                                    </Grid>
-                                                </ControlTemplate>
-                                            </ToolTip.Template>
-                                        </ToolTip>
-                                    </DockPanel.ToolTip>
-                                </DockPanel>
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </ControlTemplate>
+                                                </ToolTip.Template>
+                                            </ToolTip>
+                                        </DockPanel.ToolTip>
+                                    </DockPanel>
 
+                                    <DockPanel LastChildFill="False">
+                                        <CheckBox Margin="{adonisUi:Space 1}"
+                                              IsEnabled="{Binding Path=IsEditable}"
+                                              IsChecked="{Binding Path=SelectedDevice.IsOutputDeduplicatorEnabled}">
+                                            Enable output report deduplication
+                                        </CheckBox>
+
+                                        <DockPanel.ToolTip>
+                                            <ToolTip controlzex:ToolTipAssist.AutoMove="True">
+                                                <ToolTip.Template>
+                                                    <ControlTemplate>
+                                                        <Grid>
+                                                            <Border Background="Gray"
+                                                                BorderBrush="Black"
+                                                                BorderThickness="1"
+                                                                Opacity="0.9"
+                                                                SnapsToDevicePixels="True" />
+                                                            <StackPanel>
+                                                                <TextBlock Margin="{adonisUi:Space 1}"
+                                                                       Foreground="WhiteSmoke"
+                                                                       FontSize="16"
+                                                                       FontWeight="Bold"
+                                                                       Text="Enables or disables the output report deduplicator"
+                                                                       TextOptions.TextFormattingMode="Display"
+                                                                       TextOptions.TextRenderingMode="ClearType" />
+                                                                <TextBlock Margin="{adonisUi:Space 1}"
+                                                                       Foreground="WhiteSmoke"
+                                                                       FontSize="16"
+                                                                       Text="TBD"
+                                                                       TextOptions.TextFormattingMode="Display"
+                                                                       TextOptions.TextRenderingMode="ClearType" />
+                                                                <TextBlock Margin="{adonisUi:Space 1}"
+                                                                       Foreground="WhiteSmoke"
+                                                                       FontSize="16"
+                                                                       Text="TBD"
+                                                                       TextOptions.TextFormattingMode="Display"
+                                                                       TextOptions.TextRenderingMode="ClearType" />
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </ControlTemplate>
+                                                </ToolTip.Template>
+                                            </ToolTip>
+                                        </DockPanel.ToolTip>
+                                    </DockPanel>
+                                </StackPanel>
                             </Grid>
 
                             <!-- Properties which can be adapted during device lifetime -->
