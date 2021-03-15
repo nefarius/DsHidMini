@@ -113,6 +113,9 @@ typedef struct _DS_DRIVER_CONFIGURATION
     /** The output rate control period in milliseconds */
     UCHAR OutputRateControlPeriodMs;
 
+    /** The is output deduplicator enabled */
+    UCHAR IsOutputDeduplicatorEnabled;
+
 } DS_DRIVER_CONFIGURATION, * PDS_DRIVER_CONFIGURATION;
 
 #include <poppack.h>

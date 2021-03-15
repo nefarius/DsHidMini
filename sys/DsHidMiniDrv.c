@@ -1732,11 +1732,12 @@ DMF_OutputReportScheduledTaskCallback(
 		//
 		// Don't send if no state change has occurred
 		// 
-		if (RtlCompareMemory(
-			buffer,
-			pDevCtx->OutputReport.Cache.LastReport,
-			bufferSize
-		) == bufferSize)
+		if (pDevCtx->Configuration.IsOutputDeduplicatorEnabled > 0
+			&& RtlCompareMemory(
+				buffer,
+				pDevCtx->OutputReport.Cache.LastReport,
+				bufferSize
+			) == bufferSize)
 		{
 			break;
 		}
@@ -1778,11 +1779,12 @@ DMF_OutputReportScheduledTaskCallback(
 		//
 		// Don't send if no state change has occurred
 		// 
-		if (RtlCompareMemory(
-			buffer,
-			pDevCtx->OutputReport.Cache.LastReport, 
-			bufferSize
-		) == bufferSize)
+		if (pDevCtx->Configuration.IsOutputDeduplicatorEnabled > 0
+			&& RtlCompareMemory(
+				buffer,
+				pDevCtx->OutputReport.Cache.LastReport,
+				bufferSize
+			) == bufferSize)
 		{
 			break;
 		}
@@ -1801,7 +1803,8 @@ DMF_OutputReportScheduledTaskCallback(
 		//
 		// TODO: improve, emergency dropout
 		// 
-		if (ms < 20)
+		if (pDevCtx->Configuration.IsOutputRateControlEnabled > 0
+			&& ms < pDevCtx->Configuration.OutputRateControlPeriodMs)
 		{
 			TraceError(
 				TRACE_DSHIDMINIDRV,

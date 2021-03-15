@@ -393,7 +393,7 @@ VOID DsDevice_HotReloadConfiguration(PDEVICE_CONTEXT Context)
 }
 
 //
-// Reads variable settings properties
+// Reads variable settings properties. Keep in sync with <dshmguid.h>
 // 
 VOID DsDevice_ReadConfiguration(WDFDEVICE Device)
 {
@@ -419,6 +419,7 @@ VOID DsDevice_ReadConfiguration(WDFDEVICE Device)
 	TraceVerbose(TRACE_DEVICE, "[COM] HidDeviceMode: 0x%02X",
 		pDevCtx->Configuration.HidDeviceMode);
 
+	
 	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_IsOutputRateControlEnabled);
 	pDevCtx->Configuration.IsOutputRateControlEnabled = TRUE;
 
@@ -434,6 +435,7 @@ VOID DsDevice_ReadConfiguration(WDFDEVICE Device)
 	TraceVerbose(TRACE_DEVICE, "[COM] IsOutputRateControlEnabled: %d",
 		pDevCtx->Configuration.IsOutputRateControlEnabled);
 
+	
 	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_OutputRateControlPeriodMs);
 	pDevCtx->Configuration.OutputRateControlPeriodMs = 20;
 
@@ -448,6 +450,22 @@ VOID DsDevice_ReadConfiguration(WDFDEVICE Device)
 
 	TraceVerbose(TRACE_DEVICE, "[COM] OutputRateControlPeriodMs: %d",
 		pDevCtx->Configuration.OutputRateControlPeriodMs);
+
+	
+	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_IsOutputDeduplicatorEnabled);
+	pDevCtx->Configuration.IsOutputDeduplicatorEnabled = TRUE;
+
+	(void)WdfDeviceQueryPropertyEx(
+		Device,
+		&propertyData,
+		sizeof(UCHAR),
+		&pDevCtx->Configuration.IsOutputDeduplicatorEnabled,
+		&requiredSize,
+		&propertyType
+	);
+
+	TraceVerbose(TRACE_DEVICE, "[COM] IsOutputDeduplicatorEnabled: %d",
+		pDevCtx->Configuration.IsOutputDeduplicatorEnabled);
 
 	FuncExitNoReturn(TRACE_DEVICE);
 }
