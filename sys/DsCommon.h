@@ -95,13 +95,23 @@ typedef enum _DS_OUTPUT_REPORT_MODE
 // 
 typedef struct _DS_DRIVER_CONFIGURATION
 {
+    /** The HID device mode */
     DS_HID_DEVICE_MODE HidDeviceMode;
 
+    /** DEPRECATED */
     ULONG OutputReportTimerPeriodMs;
 	
+    /** True to mute digital pressure buttons */
     BOOLEAN MuteDigitalPressureButtons;
 
+	/** UNUSED */
 	BOOLEAN DisableAutoPairing;
+
+    /** True if output rate control is enabled, false if not */
+    BOOLEAN IsOutputRateControlEnabled;
+
+    /** The output rate control period in milliseconds */
+    UCHAR OutputRateControlPeriodMs;
 
 } DS_DRIVER_CONFIGURATION, * PDS_DRIVER_CONFIGURATION;
 
