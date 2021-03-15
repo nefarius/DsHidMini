@@ -292,8 +292,6 @@ typedef struct _DEVICE_CONTEXT
 //
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DEVICE_CONTEXT, DeviceGetContext)
 
-EVT_WDF_OBJECT_CONTEXT_CLEANUP DsHidMini_EvtDeviceContextCleanup;
-
 typedef struct
 {
 	ULONG Dummy;

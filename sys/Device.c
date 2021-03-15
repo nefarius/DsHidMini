@@ -65,7 +65,6 @@ dshidminiEvtDeviceAdd(
 	DMF_DmfFdoSetFilter(dmfDeviceInit);
 
 	WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_CONTEXT);
-	deviceAttributes.EvtCleanupCallback = DsHidMini_EvtDeviceContextCleanup;
 
 	status = WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device);
 
@@ -392,22 +391,6 @@ VOID DsDevice_HotReloadConfiguration(PDEVICE_CONTEXT Context)
 		&propType
 	);
 }	
-
-//
-// Free context memory
-// 
-void DsHidMini_EvtDeviceContextCleanup(
-	WDFOBJECT Object
-)
-{
-	FuncEntry(TRACE_DEVICE);
-	
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Object);
-
-	UNREFERENCED_PARAMETER(pDevCtx);
-
-	FuncExitNoReturn(TRACE_DEVICE);
-}
 
 //
 // Bootstrap our own module
