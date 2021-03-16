@@ -182,6 +182,9 @@
     <Compile Include="Drivers\BthPS3FilterDriver.cs" />
     <Compile Include="Drivers\BthPS3ProfileDriver.cs" />
     <Compile Include="Drivers\DsHidMiniDriver.cs" />
+    <Compile Include="UI\Devices\DeviceDetailsView.xaml.cs">
+      <DependentUpon>DeviceDetailsView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UI\Devices\DeviceListView.xaml.cs">
       <DependentUpon>DeviceListView.xaml</DependentUpon>
     </Compile>
@@ -193,6 +196,9 @@
     </Compile>
     <Compile Include="UI\Settings\DsHidMiniDriverSettingsView.xaml.cs">
       <DependentUpon>DsHidMiniDriverSettingsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UI\TitleBarView.xaml.cs">
+      <DependentUpon>TitleBarView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Util\App\ApplicationConfiguration.cs" />
     <Compile Include="Util\App\JsonApplicationConfiguration.cs" />
@@ -222,6 +228,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="UI\Devices\DeviceDetailsView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="UI\Devices\DeviceListView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -235,6 +245,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UI\Settings\DsHidMiniDriverSettingsView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UI\TitleBarView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

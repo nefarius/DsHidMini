@@ -4,9 +4,100 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:Nefarius.DsHidMini.UI.Settings"
+             xmlns:adonisUi="clr-namespace:AdonisUI;assembly=AdonisUI"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
-    <Grid>
-            
-    </Grid>
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="VisibleIfTrueConverter" />
+    </UserControl.Resources>
+    <GroupBox Header="BthPS3 driver settings"
+              Grid.Row="0" Grid.Column="1"
+              Margin="{adonisUi:Space 1}">
+        <Grid>
+            <!-- Visible section if Filter is available -->
+            <Grid
+                                Visibility="{Binding Path=IsFilterAvailable, Converter={StaticResource VisibleIfTrueConverter}}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <CheckBox Grid.Row="0"
+                                          IsEnabled="False"
+                                          Margin="{adonisUi:Space 1}"
+                                          IsChecked="{Binding Path=IsFilterEnabled, Mode=OneWay}">
+                    PSM patching enabled
+                </CheckBox>
+
+                <CheckBox Grid.Row="1"
+                                          IsEnabled="False"
+                                          Margin="{adonisUi:Space 1}"
+                                          IsChecked="{Binding Path=IsRawPDODisabled, Mode=OneWay}">
+                    RAW PDO disabled
+                </CheckBox>
+
+                <StackPanel Grid.Row="2"
+                                            Visibility="{Binding Path=AreBthPS3SettingsCorrect, Converter={StaticResource VisibleIfTrueConverter}}">
+                    <TextBlock Margin="{adonisUi:Space 1}"
+                                               TextWrapping="Wrap"
+                                               TextAlignment="Justify">
+                                        Everything seems to be fine.
+                    </TextBlock>
+                </StackPanel>
+
+                <StackPanel Grid.Row="2"
+                                            Visibility="{Binding Path=AreBthPS3SettingsIncorrect, Converter={StaticResource VisibleIfTrueConverter}}">
+
+                    <TextBlock Margin="{adonisUi:Space 1}"
+                                               TextWrapping="Wrap"
+                                               TextAlignment="Justify">
+                                        Settings incompatible, hit the button below to fix them.
+                    </TextBlock>
+
+                    <Button Margin="{adonisUi:Space 1}"
+                                            HorizontalAlignment="Left"
+                                            Click="RectifyBthPS3Settings_OnClick">
+                        Rectify settings
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- Visible section if Filter is not available -->
+            <StackPanel
+                                Visibility="{Binding Path=IsFilterUnavailable, Converter={StaticResource VisibleIfTrueConverter}}">
+                <TextBlock HorizontalAlignment="Center"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Justify"
+                                           Margin="{adonisUi:Space 1}">
+                                    Bluetooth stack and/or BthPS3 not available. Please ensure Bluetooth is working (with vanilla drivers) and BthPS3 is installed to use and configure wireless features.
+                                    Run this tool as Administrator to unlock changing settings.
+                </TextBlock>
+
+                <Button Margin="{adonisUi:Space 1}"
+                                        Click="DownloadBthPS3_OnClick"
+                                        HorizontalAlignment="Center">
+                    Download BthPS3
+                </Button>
+
+                <Button Margin="{adonisUi:Space 1}"
+                                        Click="OpenHelp_OnClick"
+                                        HorizontalAlignment="Center">
+                    Open online help
+                </Button>
+            </StackPanel>
+
+            <!-- Visible section if missing permissions -->
+            <StackPanel
+                                Visibility="{Binding Path=IsMissingPermissions, Converter={StaticResource VisibleIfTrueConverter}}">
+                <TextBlock HorizontalAlignment="Center"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Justify"
+                                           Margin="{adonisUi:Space 1}">
+                                    Run this tool as Administrator to unlock these settings.
+                </TextBlock>
+            </StackPanel>
+        </Grid>
+    </GroupBox>
 </UserControl>

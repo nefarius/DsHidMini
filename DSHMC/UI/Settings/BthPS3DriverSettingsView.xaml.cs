@@ -1,28 +1,40 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using Nefarius.DsHidMini.Drivers;
+using Nefarius.DsHidMini.MVVM;
 
 namespace Nefarius.DsHidMini.UI.Settings
 {
     /// <summary>
-    /// Interaction logic for BthPS3DriverSettingsView.xaml
+    ///     Interaction logic for BthPS3DriverSettingsView.xaml
     /// </summary>
     public partial class BthPS3DriverSettingsView : UserControl
     {
         public BthPS3DriverSettingsView()
         {
             InitializeComponent();
+        }
+
+        private void RectifyBthPS3Settings_OnClick(object sender, RoutedEventArgs e)
+        {
+            BthPS3ProfileDriver.RawPDO = false;
+            BthPS3FilterDriver.IsFilterEnabled = true;
+
+            var tb = (Button) e.OriginalSource;
+            var vm = (MainViewModel) tb.DataContext;
+
+            vm.RefreshProperties();
+        }
+
+        private void DownloadBthPS3_OnClick(object sender, RoutedEventArgs e)
+        {
+            Process.Start("https://github.com/ViGEm/BthPS3/releases");
+        }
+
+        private void OpenHelp_OnClick(object sender, RoutedEventArgs e)
+        {
+            Process.Start("https://vigem.org/projects/BthPS3/");
         }
     }
 }

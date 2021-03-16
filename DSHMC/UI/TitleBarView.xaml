@@ -1,0 +1,110 @@
+﻿<UserControl x:Class="Nefarius.DsHidMini.UI.TitleBarView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:adonisUi="clr-namespace:AdonisUI;assembly=AdonisUI"
+             xmlns:controlzex="urn:controlzex"
+             mc:Ignorable="d"
+             d:DesignHeight="50" d:DesignWidth="800">
+    <StackPanel Orientation="Horizontal"
+                HorizontalAlignment="Right">
+
+        <StackPanel.Resources>
+            <BooleanToVisibilityConverter x:Key="VisibleIfTrueConverter" />
+        </StackPanel.Resources>
+
+        <TextBlock Margin="{adonisUi:Space 1}"
+                   Visibility="{Binding Path=IsElevated, Converter={StaticResource VisibleIfTrueConverter}}"
+                   Text="[Administrator]">
+            <TextBlock.ToolTip>
+                <ToolTip controlzex:ToolTipAssist.AutoMove="True">
+                    <ToolTip.Template>
+                        <ControlTemplate>
+                            <Grid>
+                                <Border Background="Gray"
+                                        BorderBrush="Black"
+                                        BorderThickness="1"
+                                        Opacity="0.9"
+                                        SnapsToDevicePixels="True" />
+                                <StackPanel>
+                                    <TextBlock Margin="{adonisUi:Space 1}"
+                                               Foreground="WhiteSmoke"
+                                               FontSize="16"
+                                               FontWeight="Bold"
+                                               Text="Running with elevated privileges"
+                                               TextOptions.TextFormattingMode="Display"
+                                               TextOptions.TextRenderingMode="ClearType" />
+                                </StackPanel>
+                            </Grid>
+                        </ControlTemplate>
+                    </ToolTip.Template>
+                </ToolTip>
+            </TextBlock.ToolTip>
+        </TextBlock>
+        <TextBlock Margin="{adonisUi:Space 1}"
+                   Text="{Binding Path=Version}">
+            <TextBlock.ToolTip>
+                <ToolTip controlzex:ToolTipAssist.AutoMove="True">
+                    <ToolTip.Template>
+                        <ControlTemplate>
+                            <Grid>
+                                <Border Background="Gray"
+                                        BorderBrush="Black"
+                                        BorderThickness="1"
+                                        Opacity="0.9"
+                                        SnapsToDevicePixels="True" />
+                                <StackPanel>
+                                    <TextBlock Margin="{adonisUi:Space 1}"
+                                               Foreground="WhiteSmoke"
+                                               FontSize="16"
+                                               FontWeight="Bold"
+                                               Text="Version of this utility"
+                                               TextOptions.TextFormattingMode="Display"
+                                               TextOptions.TextRenderingMode="ClearType" />
+                                </StackPanel>
+                            </Grid>
+                        </ControlTemplate>
+                    </ToolTip.Template>
+                </ToolTip>
+            </TextBlock.ToolTip>
+        </TextBlock>
+        <TextBlock Visibility="{Binding Path=IsUpdateAvailable, Converter={StaticResource VisibleIfTrueConverter}}"
+                   Margin="{adonisUi:Space 1}">
+            <Hyperlink NavigateUri="https://github.com/ViGEm/DsHidMini/releases/latest"
+                       Click="ReleasesHyperlink_OnClick">
+                Newer version available!
+            </Hyperlink>
+        </TextBlock>
+        <Button Content="?"
+                Style="{DynamicResource {x:Static adonisUi:Styles.WindowButton}}"
+                Click="Help_OnClick"
+                FontFamily="Segoe UI"
+                FontSize="14">
+            <Button.ToolTip>
+                <ToolTip controlzex:ToolTipAssist.AutoMove="True">
+                    <ToolTip.Template>
+                        <ControlTemplate>
+                            <Grid>
+                                <Border Background="Gray"
+                                        BorderBrush="Black"
+                                        BorderThickness="1"
+                                        Opacity="0.9"
+                                        SnapsToDevicePixels="True" />
+                                <StackPanel>
+                                    <TextBlock Margin="{adonisUi:Space 1}"
+                                               Foreground="WhiteSmoke"
+                                               FontSize="16"
+                                               FontWeight="Bold"
+                                               Text="Open online help"
+                                               TextOptions.TextFormattingMode="Display"
+                                               TextOptions.TextRenderingMode="ClearType" />
+                                </StackPanel>
+                            </Grid>
+                        </ControlTemplate>
+                    </ToolTip.Template>
+                </ToolTip>
+            </Button.ToolTip>
+        </Button>
+    </StackPanel>
+</UserControl>

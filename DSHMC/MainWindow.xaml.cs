@@ -83,49 +83,6 @@ namespace Nefarius.DsHidMini
             _listener.EndListen();
         }
 
-        private async void ApplyChanges_Click(object sender, RoutedEventArgs e)
-        {
-            await Task.Run(() =>
-            {
-                try
-                {
-                    _vm.SelectedDevice.ApplyChanges();
-                }
-                catch
-                {
-                    // TODO: handle better
-                }
-            });
-        }
-
-        private void Help_OnClick(object sender, RoutedEventArgs e)
-        {
-            Process.Start("https://vigem.org/projects/DsHidMini/");
-        }
-
-        private void DownloadBthPS3_OnClick(object sender, RoutedEventArgs e)
-        {
-            Process.Start("https://github.com/ViGEm/BthPS3/releases");
-        }
-
-        private void OpenHelp_OnClick(object sender, RoutedEventArgs e)
-        {
-            Process.Start("https://vigem.org/projects/BthPS3/");
-        }
-
-        private void RectifyBthPS3Settings_OnClick(object sender, RoutedEventArgs e)
-        {
-            BthPS3ProfileDriver.RawPDO = false;
-            BthPS3FilterDriver.IsFilterEnabled = true;
-
-            _vm.RefreshProperties();
-        }
-
-        private void ReleasesHyperlink_OnClick(object sender, RoutedEventArgs e)
-        {
-            Process.Start(((Hyperlink) sender).NavigateUri.ToString());
-        }
-
         private bool isTraceRunning = false;
 
         private async void ToggleTrace_OnClick(object sender, RoutedEventArgs e)
