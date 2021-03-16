@@ -1,0 +1,135 @@
+﻿<UserControl x:Class="Nefarius.DsHidMini.UI.Settings.DsHidMiniControlSettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:adonisUi="clr-namespace:AdonisUI;assembly=AdonisUI"
+             xmlns:controlzex="urn:controlzex"
+             xmlns:fa5="http://schemas.fontawesome.com/icons/"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <GroupBox Header="DsHidMini Control Tool"
+              Margin="{adonisUi:Space 1}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <CheckBox Grid.Row="0"
+                      Margin="{adonisUi:Space 1}"
+                      IsChecked="{Binding Path=AppConfig.IsLoggingEnabled}">
+                Enable logging
+                <CheckBox.ToolTip>
+                    <ToolTip controlzex:ToolTipAssist.AutoMove="True">
+                        <ToolTip.Template>
+                            <ControlTemplate>
+                                <Grid>
+                                    <Border Background="Gray"
+                                            BorderBrush="Black"
+                                            BorderThickness="1"
+                                            Opacity="0.9"
+                                            SnapsToDevicePixels="True" />
+                                    <StackPanel>
+                                        <TextBlock Margin="{adonisUi:Space 1}"
+                                                   Foreground="WhiteSmoke"
+                                                   FontSize="16"
+                                                   FontWeight="Bold"
+                                                   Text="Enable logging to troubleshoot"
+                                                   TextOptions.TextFormattingMode="Display"
+                                                   TextOptions.TextRenderingMode="ClearType" />
+                                        <TextBlock Margin="{adonisUi:Space 1}"
+                                                   Foreground="WhiteSmoke"
+                                                   FontSize="16"
+                                                   Text="Enabling creates a new log file in the logs/ subfolder."
+                                                   TextOptions.TextFormattingMode="Display"
+                                                   TextOptions.TextRenderingMode="ClearType" />
+                                        <TextBlock Margin="{adonisUi:Space 1}"
+                                                   Foreground="WhiteSmoke"
+                                                   FontSize="16"
+                                                   Text="Restart the application to take effect."
+                                                   TextOptions.TextFormattingMode="Display"
+                                                   TextOptions.TextRenderingMode="ClearType" />
+                                    </StackPanel>
+
+
+                                </Grid>
+                            </ControlTemplate>
+                        </ToolTip.Template>
+                    </ToolTip>
+                </CheckBox.ToolTip>
+            </CheckBox>
+
+            <DockPanel Grid.Row="1" LastChildFill="False">
+                <CheckBox Margin="{adonisUi:Space 1}"
+                          IsChecked="{Binding Path=AppConfig.IsUpdateCheckEnabled}">
+                    Check for updates on startup
+                </CheckBox>
+                <fa5:ImageAwesome VerticalAlignment="Center" Icon="Brands_InternetExplorer" Height="16" />
+
+                <DockPanel.ToolTip>
+                    <ToolTip controlzex:ToolTipAssist.AutoMove="True">
+                        <ToolTip.Template>
+                            <ControlTemplate>
+                                <Grid>
+                                    <Border Background="Gray"
+                                            BorderBrush="Black"
+                                            BorderThickness="1"
+                                            Opacity="0.9"
+                                            SnapsToDevicePixels="True" />
+                                    <StackPanel>
+                                        <TextBlock Margin="{adonisUi:Space 1}"
+                                                   Foreground="WhiteSmoke"
+                                                   FontSize="16"
+                                                   FontWeight="Bold"
+                                                   Text="Requires Internet connection"
+                                                   TextOptions.TextFormattingMode="Display"
+                                                   TextOptions.TextRenderingMode="ClearType" />
+                                    </StackPanel>
+                                </Grid>
+                            </ControlTemplate>
+                        </ToolTip.Template>
+                    </ToolTip>
+                </DockPanel.ToolTip>
+            </DockPanel>
+
+            <!-- Genuine check -->
+            <DockPanel Grid.Row="2" LastChildFill="False">
+                <CheckBox Margin="{adonisUi:Space 1}"
+                          IsChecked="{Binding Path=AppConfig.IsGenuineCheckEnabled}">
+                    Check if controller is genuine
+                </CheckBox>
+                <fa5:ImageAwesome VerticalAlignment="Center" Icon="Brands_InternetExplorer" Height="16" />
+
+                <DockPanel.ToolTip>
+                    <ToolTip controlzex:ToolTipAssist.AutoMove="True">
+                        <ToolTip.Template>
+                            <ControlTemplate>
+                                <Grid>
+                                    <Border Background="Gray"
+                                            BorderBrush="Black"
+                                            BorderThickness="1"
+                                            Opacity="0.9"
+                                            SnapsToDevicePixels="True" />
+                                    <StackPanel>
+                                        <TextBlock Margin="{adonisUi:Space 1}"
+                                                   Foreground="WhiteSmoke"
+                                                   FontSize="16"
+                                                   FontWeight="Bold"
+                                                   Text="Requires Internet connection"
+                                                   TextOptions.TextFormattingMode="Display"
+                                                   TextOptions.TextRenderingMode="ClearType" />
+                                    </StackPanel>
+                                </Grid>
+                            </ControlTemplate>
+                        </ToolTip.Template>
+                    </ToolTip>
+                </DockPanel.ToolTip>
+            </DockPanel>
+
+        </Grid>
+    </GroupBox>
+</UserControl>
