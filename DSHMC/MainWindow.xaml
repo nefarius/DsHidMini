@@ -650,8 +650,8 @@
                                     <DockPanel LastChildFill="False">
                                         <Slider Width="160"
                                                 AutoToolTipPlacement="TopLeft" AutoToolTipPrecision="0"
-                                                Minimum="5"
-                                                TickFrequency="5"
+                                                Minimum="1"
+                                                TickFrequency="1"
                                                 Maximum="255"
                                                 IsSnapToTickEnabled="True"
                                                 Margin="{adonisUi:Space 1}"
