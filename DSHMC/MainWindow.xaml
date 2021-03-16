@@ -12,6 +12,7 @@
                        xmlns:drivers="clr-namespace:Nefarius.DsHidMini.Drivers"
                        xmlns:controlzex="urn:controlzex"
                        xmlns:settings="clr-namespace:Nefarius.DsHidMini.UI.Settings"
+                       xmlns:devices="clr-namespace:Nefarius.DsHidMini.UI.Devices"
                        mc:Ignorable="d"
                        Title="DsHidMini Control"
                        Height="580" Width="800"
@@ -144,91 +145,7 @@
                     </Grid.ColumnDefinitions>
 
                     <!-- Device list -->
-                    <GroupBox Grid.Column="0"
-                              Header="DsHidMini Devices"
-                              Margin="{adonisUi:Space 1}">
-                        <Grid>
-                            <ListBox ItemsSource="{Binding Path=Devices}"
-                                     SelectedItem="{Binding Path=SelectedDevice, Mode=TwoWay}"
-                                     SelectionMode="Single">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid Height="40">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="*" />
-                                            </Grid.ColumnDefinitions>
-
-                                            <fa:ImageAwesome Grid.Column="0"
-                                                             Icon="{Binding Path=ConnectionType}"
-                                                             Margin="{adonisUi:Space 1}"
-                                                             Width="16"
-                                                             HorizontalAlignment="Right" />
-                                            <TextBlock Grid.Column="1"
-                                                       Text="{Binding DisplayName}"
-                                                       VerticalAlignment="Center" />
-
-                                            <Grid.ToolTip>
-                                                <ToolTip controlzex:ToolTipAssist.AutoMove="True">
-                                                    <ToolTip.Template>
-                                                        <ControlTemplate>
-                                                            <Grid>
-                                                                <Border Background="Gray"
-                                                                        BorderBrush="Black"
-                                                                        BorderThickness="1"
-                                                                        Opacity="0.9"
-                                                                        SnapsToDevicePixels="True" />
-                                                                <StackPanel>
-                                                                    <TextBlock Margin="{adonisUi:Space 1}"
-                                                                               Foreground="WhiteSmoke"
-                                                                               FontSize="16"
-                                                                               FontWeight="Bold"
-                                                                               Text="Controller name and connection type icon"
-                                                                               TextOptions.TextFormattingMode="Display"
-                                                                               TextOptions.TextRenderingMode="ClearType" />
-                                                                    <DockPanel LastChildFill="False">
-                                                                        <fa:ImageAwesome
-                                                                            Icon="Brands_Usb"
-                                                                            VerticalAlignment="Center"
-                                                                            Margin="{adonisUi:Space 1}"
-                                                                            Width="16" />
-                                                                        <TextBlock Margin="{adonisUi:Space 1}"
-                                                                            Foreground="WhiteSmoke"
-                                                                            FontSize="16"
-                                                                            Text="= Controller is connected via USB"
-                                                                            TextOptions.TextFormattingMode="Display"
-                                                                            TextOptions.TextRenderingMode="ClearType" />
-                                                                    </DockPanel>
-                                                                    <DockPanel LastChildFill="False">
-                                                                        <fa:ImageAwesome
-                                                                            Icon="Brands_Bluetooth"
-                                                                            VerticalAlignment="Center"
-                                                                            Margin="{adonisUi:Space 1}"
-                                                                            Width="16" />
-                                                                        <TextBlock Margin="{adonisUi:Space 1}"
-                                                                            Foreground="WhiteSmoke"
-                                                                            FontSize="16"
-                                                                            Text="= Controller is connected via Bluetooth"
-                                                                            TextOptions.TextFormattingMode="Display"
-                                                                            TextOptions.TextRenderingMode="ClearType" />
-                                                                    </DockPanel>
-                                                                </StackPanel>
-                                                            </Grid>
-                                                        </ControlTemplate>
-                                                    </ToolTip.Template>
-                                                </ToolTip>
-                                            </Grid.ToolTip>
-                                        </Grid>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
-
-                            <TextBlock Text="No compatible devices found"
-                                       HorizontalAlignment="Center"
-                                       Padding="20"
-                                       Visibility="{Binding Path=HasNoDevices, Converter={StaticResource VisibleIfTrueConverter}}" />
-                        </Grid>
-                    </GroupBox>
+                    <devices:DeviceListView Grid.Column="0"/>
 
                     <!-- Device details -->
                     <GroupBox Grid.Column="1"

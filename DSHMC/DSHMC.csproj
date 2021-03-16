@@ -182,6 +182,9 @@
     <Compile Include="Drivers\BthPS3FilterDriver.cs" />
     <Compile Include="Drivers\BthPS3ProfileDriver.cs" />
     <Compile Include="Drivers\DsHidMiniDriver.cs" />
+    <Compile Include="UI\Devices\DeviceListView.xaml.cs">
+      <DependentUpon>DeviceListView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UI\Settings\BthPS3DriverSettingsView.xaml.cs">
       <DependentUpon>BthPS3DriverSettingsView.xaml</DependentUpon>
     </Compile>
@@ -219,6 +222,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="UI\Devices\DeviceListView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="UI\Settings\BthPS3DriverSettingsView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
