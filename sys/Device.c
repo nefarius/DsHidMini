@@ -421,7 +421,7 @@ VOID DsDevice_ReadConfiguration(WDFDEVICE Device)
 
 	
 	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_IsOutputRateControlEnabled);
-	pDevCtx->Configuration.IsOutputRateControlEnabled = TRUE;
+	pDevCtx->Configuration.IsOutputRateControlEnabled = FALSE;
 
 	(void)WdfDeviceQueryPropertyEx(
 		Device,
@@ -453,7 +453,7 @@ VOID DsDevice_ReadConfiguration(WDFDEVICE Device)
 
 	
 	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_IsOutputDeduplicatorEnabled);
-	pDevCtx->Configuration.IsOutputDeduplicatorEnabled = TRUE;
+	pDevCtx->Configuration.IsOutputDeduplicatorEnabled = FALSE;
 
 	(void)WdfDeviceQueryPropertyEx(
 		Device,
