@@ -164,6 +164,18 @@ namespace Nefarius.DsHidMini.MVVM
             }
         }
 
+        public EFontAwesomeIcon LastPairingStatusIcon
+        {
+            get
+            {
+                var ntstatus = _device.GetProperty<int>(DsHidMiniDriver.LastPairingStatusProperty);
+
+                return ntstatus == 0
+                    ? EFontAwesomeIcon.Regular_CheckCircle
+                    : EFontAwesomeIcon.Solid_ExclamationTriangle;
+            }
+        }
+
         public EFontAwesomeIcon GenuineIcon
         {
             get

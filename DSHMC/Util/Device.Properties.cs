@@ -114,7 +114,7 @@ namespace Nefarius.DsHidMini.Util
                 // (U)Int32
                 if (managedType == typeof(int)
                     || managedType == typeof(uint))
-                    return (T) (object) (uint) Marshal.ReadInt32(buffer);
+                    return (T) (object) Marshal.ReadInt32(buffer);
 
                 // (U)Int64
                 if (managedType == typeof(long)

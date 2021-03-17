@@ -21,6 +21,10 @@ DEFINE_GUID(GUID_DEVINTERFACE_DSHIDMINI,
 DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RO_BatteryStatus,
 	0x3fecf510, 0xcc94, 0x4fbe, 0x88, 0x39, 0x73, 0x82, 0x1, 0xf8, 0x4d, 0x59, 2); // DEVPROP_TYPE_BYTE
 
+// {3FECF510-CC94-4FBE-8839-738201F84D59}
+DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RO_LastPairingStatus,
+	0x3fecf510, 0xcc94, 0x4fbe, 0x88, 0x39, 0x73, 0x82, 0x1, 0xf8, 0x4d, 0x59, 3); // DEVPROP_TYPE_NTSTATUS
+
 #pragma endregion
 
 #pragma region Boot configuration properties

@@ -72,12 +72,14 @@ NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context)
 // 
 NTSTATUS DsUsb_Ds3PairToFirstRadio(PDEVICE_CONTEXT Context)
 {
-	NTSTATUS status = STATUS_SUCCESS;
+	NTSTATUS status = STATUS_UNSUCCESSFUL;
 	HANDLE hRadio = NULL;
 	HBLUETOOTH_RADIO_FIND hFind = NULL;
 	BLUETOOTH_FIND_RADIO_PARAMS params;
 	BLUETOOTH_RADIO_INFO info;
 	DWORD ret;
+	DWORD error = ERROR_SUCCESS;
+	WDF_DEVICE_PROPERTY_DATA propertyData;
 
 	FuncEntry(TRACE_DS3);
 	
@@ -95,9 +97,12 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(PDEVICE_CONTEXT Context)
 
 		if (!hFind)
 		{
+			error = GetLastError();
 			TraceError(
 				TRACE_DS3,
-				"BluetoothFindFirstRadio failed: 0x%X", GetLastError());
+				"BluetoothFindFirstRadio failed: 0x%X",
+				error
+			);
 			break;
 		}
 
@@ -111,9 +116,12 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(PDEVICE_CONTEXT Context)
 
 		if (ERROR_SUCCESS != ret)
 		{
+			error = ret;
 			TraceError(
 				TRACE_DS3,
-				"BluetoothGetRadioInfo failed: 0x%X", ret);
+				"BluetoothGetRadioInfo failed: 0x%X", 
+				error
+			);
 			break;
 		}
 
@@ -169,6 +177,7 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(PDEVICE_CONTEXT Context)
 		// Update in device context after success
 		// 
 		RtlCopyMemory(&Context->HostAddress, &info.address, sizeof(BD_ADDR));
+		
 	} while (FALSE);
 
 	if (hRadio)
@@ -176,6 +185,45 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(PDEVICE_CONTEXT Context)
 	if (hFind)
 		CloseHandle(hFind);
 
+	//
+	// Translate Win32 error codes to NTSTATUS
+	// 
+	if (!NT_SUCCESS(status))
+	{
+		switch (error)
+		{
+		case ERROR_NO_MORE_ITEMS:
+			status = STATUS_NO_MORE_ENTRIES;
+			break;
+		case ERROR_INVALID_PARAMETER:
+			status = STATUS_INVALID_PARAMETER;
+			break;
+		case ERROR_REVISION_MISMATCH:
+			status = STATUS_REVISION_MISMATCH;
+			break;
+		case ERROR_OUTOFMEMORY:
+			status = STATUS_SECTION_NOT_EXTENDED;
+			break;
+		default:
+			break;
+		}
+	}
+
+	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RO_LastPairingStatus);
+	propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+	propertyData.Lcid = LOCALE_NEUTRAL;
+
+	//
+	// Store in property
+	// 
+	(void)WdfDeviceAssignProperty(
+		(WDFDEVICE)WdfObjectContextGetObject(Context),
+		&propertyData,
+		DEVPROP_TYPE_NTSTATUS,
+		sizeof(NTSTATUS),
+		&status
+	);
+	
 	FuncExit(TRACE_DS3, "status=%!STATUS!", status);
 	
 	return status;
