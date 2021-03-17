@@ -9,6 +9,7 @@
                        xmlns:settings="clr-namespace:Nefarius.DsHidMini.UI.Settings"
                        xmlns:devices="clr-namespace:Nefarius.DsHidMini.UI.Devices"
                        xmlns:ui="clr-namespace:Nefarius.DsHidMini.UI"
+                       xmlns:troubleshooting="clr-namespace:Nefarius.DsHidMini.UI.Troubleshooting"
                        mc:Ignorable="d"
                        Title="DsHidMini Control"
                        Height="580" Width="800"
@@ -70,7 +71,7 @@
             </TabItem>
 
             <!-- Troubleshooting (unfinished) -->
-            <TabItem Header="Troubleshooting" Visibility="Collapsed">
+            <TabItem Header="Troubleshooting (UNFINISHED)" Background="{DynamicResource {x:Static adonisUi:Brushes.ErrorBrush}}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition />
@@ -81,22 +82,8 @@
                         <ColumnDefinition />
                     </Grid.ColumnDefinitions>
 
-                    <GroupBox Header="Diagnostic Trace Session"
-                              Margin="{adonisUi:Space 1}">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
-
-                            <Button HorizontalAlignment="Center"
-                                    Width="100"
-                                    Click="ToggleTrace_OnClick">
-                                Start trace
-                            </Button>
-                        </Grid>
-                    </GroupBox>
+                    <!-- Trace session -->
+                    <troubleshooting:TraceSessionView Grid.Row="0" Grid.Column="0"/>
                 </Grid>
             </TabItem>
         </TabControl>
