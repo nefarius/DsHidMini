@@ -121,19 +121,6 @@ CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_Split_Mode[] =
 	0x09, 0x37,        //     Usage (Dial)
 	0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
 	0xC0,              //   End Collection
-	0x05, 0x02,        //   Usage Page (Sim Ctrls)
-	0x09, 0xBB,        //   Usage (Throttle)
-	0x15, 0x00,        //   Logical Minimum (0)
-	0x26, 0xFF, 0x00,  //   Logical Maximum (255)
-	0x75, 0x08,        //   Report Size (8)
-	0x95, 0x01,        //   Report Count (1)
-	0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-	0x09, 0xC5,        //   Usage (Brake)
-	0x15, 0x00,        //   Logical Minimum (0)
-	0x26, 0xFF, 0x00,  //   Logical Maximum (255)
-	0x75, 0x08,        //   Report Size (8)
-	0x95, 0x01,        //   Report Count (1)
-	0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
 	0xC0,              // End Collection
 };
 
@@ -782,12 +769,6 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
 	Output[6] = Input[23];
 	Output[7] = Input[24];
 	Output[8] = Input[25];
-
-	// Shoulders (pressure)
-	// NOTE: not accessible via DirectInput because of axis limit
-	// TODO: introduce 3rd device?
-	Output[9] = Input[20];
-	Output[10] = Input[21];
 }
 
 VOID DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
