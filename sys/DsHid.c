@@ -52,17 +52,19 @@ CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_Split_Mode[] =
 	0x05, 0x01,        //   Usage Page (Generic Desktop Ctrls)
 	0x09, 0x33,        //   Usage (Rx)
 	0x09, 0x34,        //   Usage (Ry)
+	0x09, 0x36,        //   Usage (Slider)	
+	0x09, 0x37,        //   Usage (Dial)	
 	0x15, 0x00,        //   Logical Minimum (0)
 	0x26, 0xFF, 0x00,  //   Logical Maximum (255)
 	0x75, 0x08,        //   Report Size (8)
-	0x95, 0x02,        //   Report Count (2)
+	0x95, 0x04,        //   Report Count (4)
 	0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
 	0xA1, 0x01,        //   Collection (Application)
 	0x85, 0x01,        //     Report ID (1)
 	0x06, 0x01, 0xFF,  //     Usage Page (Vendor Defined 0xFF01)
 	0x09, 0x01,        //     Usage (0x01)
 	0x75, 0x08,        //     Report Size (8)
-	0x95, 0x1D,        //     Report Count (29)
+	0x95, 0x1B,        //     Report Count (27)
 	0x15, 0x00,        //     Logical Minimum (0)
 	0x26, 0xFF, 0x00,  //     Logical Maximum (255)
 	0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
@@ -119,19 +121,6 @@ CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_Split_Mode[] =
 	0x09, 0x37,        //     Usage (Dial)
 	0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
 	0xC0,              //   End Collection
-	0x05, 0x02,        //   Usage Page (Sim Ctrls)
-	0x09, 0xBB,        //   Usage (Throttle)
-	0x15, 0x00,        //   Logical Minimum (0)
-	0x26, 0xFF, 0x00,  //   Logical Maximum (255)
-	0x75, 0x08,        //   Report Size (8)
-	0x95, 0x01,        //   Report Count (1)
-	0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-	0x09, 0xC5,        //   Usage (Brake)
-	0x15, 0x00,        //   Logical Minimum (0)
-	0x26, 0xFF, 0x00,  //   Logical Maximum (255)
-	0x75, 0x08,        //   Report Size (8)
-	0x95, 0x01,        //   Report Count (1)
-	0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
 	0xC0,              // End Collection
 };
 
@@ -742,6 +731,9 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 		Output[5] |= 8 & 0xF;
 	}
 
+	// PS button
+	Output[7] = Input[4];
+
 	// Thumb axes
 	Output[1] = Input[6]; // LTX
 	Output[2] = Input[7]; // LTY
@@ -749,27 +741,13 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 	Output[4] = Input[9]; // RTY
 
 	// Trigger axes
-	Output[8] = Input[18];
-	Output[9] = Input[19];
-
-	// PS button
-	Output[7] = Input[4];
-
-	// D-Pad (pressure)
-	Output[10] = Input[14];
-	Output[11] = Input[15];
-	Output[12] = Input[16];
-	Output[13] = Input[17];
+	Output[8] = Input[18]; // L2
+	Output[9] = Input[19]; // R2
 
 	// Shoulders (pressure)
-	Output[14] = Input[20];
-	Output[15] = Input[21];
+	Output[10] = Input[20]; // L1
+	Output[11] = Input[21]; // R1
 
-	// Face buttons (pressure)
-	Output[16] = Input[22];
-	Output[17] = Input[23];
-	Output[18] = Input[24];
-	Output[19] = Input[25];
 }
 
 VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
@@ -791,12 +769,6 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
 	Output[6] = Input[23];
 	Output[7] = Input[24];
 	Output[8] = Input[25];
-
-	// Shoulders (pressure)
-	// NOTE: not accessible via DirectInput because of axis limit
-	// TODO: introduce 3rd device?
-	Output[9] = Input[20];
-	Output[10] = Input[21];
 }
 
 VOID DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
@@ -999,6 +971,14 @@ VOID DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
 
 	// Battery + cable info
 	Output[30] &= ~0xF; // Clear lower 4 bits
+
+	// Finger 1 touchpad contact info
+	Output[35] = 0x80; // Set top bit to disable finger contact
+	Output[44] = 0x80; // Set top bit to disable finger contact
+
+	// Finger 2 touchpad contact info
+	Output[39] = 0x80; // Set top bit to disable finger contact
+	Output[48] = 0x80; // Set top bit to disable finger contact
 
 	// Translate D-Pad to HAT format
 	switch (Input[2] & ~0xF)
