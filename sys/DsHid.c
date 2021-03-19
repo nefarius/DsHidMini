@@ -1000,6 +1000,14 @@ VOID DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
 	// Battery + cable info
 	Output[30] &= ~0xF; // Clear lower 4 bits
 
+	// Finger 1 touchpad contact info
+	Output[35] = 0x80; // Set top bit to disable finger contact
+	Output[44] = 0x80; // Set top bit to disable finger contact
+
+	// Finger 2 touchpad contact info
+	Output[39] = 0x80; // Set top bit to disable finger contact
+	Output[48] = 0x80; // Set top bit to disable finger contact
+
 	// Translate D-Pad to HAT format
 	switch (Input[2] & ~0xF)
 	{
