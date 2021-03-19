@@ -744,6 +744,9 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 		Output[5] |= 8 & 0xF;
 	}
 
+	// PS button
+	Output[7] = Input[4];
+
 	// Thumb axes
 	Output[1] = Input[6]; // LTX
 	Output[2] = Input[7]; // LTY
@@ -751,12 +754,8 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 	Output[4] = Input[9]; // RTY
 
 	// Trigger axes
-	Output[8] = Input[18];
-	Output[9] = Input[19];
-
-	// PS button
-	Output[7] = Input[4];
-
+	Output[8] = Input[18]; // L2
+	Output[9] = Input[19]; // R2
 
 	// Shoulders (pressure)
 	Output[10] = Input[20]; // L1
