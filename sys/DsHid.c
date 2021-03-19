@@ -755,21 +755,9 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 	// PS button
 	Output[7] = Input[4];
 
-	// D-Pad (pressure)
-	Output[10] = Input[14];
-	Output[11] = Input[15];
-	Output[12] = Input[16];
-	Output[13] = Input[17];
 
 	// Shoulders (pressure)
-	Output[14] = Input[20];
-	Output[15] = Input[21];
 
-	// Face buttons (pressure)
-	Output[16] = Input[22];
-	Output[17] = Input[23];
-	Output[18] = Input[24];
-	Output[19] = Input[25];
 }
 
 VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
