@@ -52,17 +52,19 @@ CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_Split_Mode[] =
 	0x05, 0x01,        //   Usage Page (Generic Desktop Ctrls)
 	0x09, 0x33,        //   Usage (Rx)
 	0x09, 0x34,        //   Usage (Ry)
+	0x09, 0x36,        //   Usage (Slider)	
+	0x09, 0x37,        //   Usage (Dial)	
 	0x15, 0x00,        //   Logical Minimum (0)
 	0x26, 0xFF, 0x00,  //   Logical Maximum (255)
 	0x75, 0x08,        //   Report Size (8)
-	0x95, 0x02,        //   Report Count (2)
+	0x95, 0x04,        //   Report Count (4)
 	0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
 	0xA1, 0x01,        //   Collection (Application)
 	0x85, 0x01,        //     Report ID (1)
 	0x06, 0x01, 0xFF,  //     Usage Page (Vendor Defined 0xFF01)
 	0x09, 0x01,        //     Usage (0x01)
 	0x75, 0x08,        //     Report Size (8)
-	0x95, 0x1D,        //     Report Count (29)
+	0x95, 0x1B,        //     Report Count (27)
 	0x15, 0x00,        //     Logical Minimum (0)
 	0x26, 0xFF, 0x00,  //     Logical Maximum (255)
 	0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
@@ -757,6 +759,8 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 
 
 	// Shoulders (pressure)
+	Output[10] = Input[20]; // L1
+	Output[11] = Input[21]; // R1
 
 }
 
