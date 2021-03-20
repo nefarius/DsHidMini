@@ -393,7 +393,7 @@ VOID DsDevice_HotReloadConfiguration(PDEVICE_CONTEXT Context)
 }
 
 //
-// Reads variable settings properties. Keep in sync with <dshmguid.h>
+// Reads variable settings properties. Keep in sync with <dshmguid.h> and <dshidmini.inf>
 // 
 VOID DsDevice_ReadConfiguration(WDFDEVICE Device)
 {
