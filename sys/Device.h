@@ -239,6 +239,11 @@ typedef struct _DEVICE_CONTEXT
 	// 
 	DS_BATTERY_STATUS BatteryStatus;
 
+	//
+	// Time of last battery status update
+	// 
+	LARGE_INTEGER BatteryStatusTimestamp;
+
 	union
 	{
 		//

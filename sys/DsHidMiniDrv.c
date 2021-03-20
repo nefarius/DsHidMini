@@ -1444,7 +1444,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	// Grab battery info
 	// 
 	battery = (DS_BATTERY_STATUS)((PUCHAR)inputBuffer)[30];
-
+		
 	//
 	// React if last known state differs from current state
 	// 
@@ -1457,58 +1457,87 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 		);
 
 		//
-		// Update battery status property
+		// Don't update value on every report to avoid jitter
 		// 
 
-		WDF_DEVICE_PROPERTY_DATA propertyData;
+		t1 = &pDevCtx->BatteryStatusTimestamp;
 
-		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RO_BatteryStatus);
-		propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
-		propertyData.Lcid = LOCALE_NEUTRAL;
-
-		(void)WdfDeviceAssignProperty(
-			(WDFDEVICE)WdfObjectContextGetObject(Context),
-			&propertyData,
-			DEVPROP_TYPE_BYTE,
-			sizeof(BYTE),
-			&battery
-		);
-
-		//
-		// Don't send update if not initialized yet
-		// 
-		if (DS3_GET_LED(pDevCtx) != 0x00)
+		if (pDevCtx->BatteryStatusTimestamp.QuadPart == 0)
 		{
-			if (pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled)
-			{
-				switch (battery)
-				{
-				case DsBatteryStatusCharged:
-				case DsBatteryStatusFull:
-				case DsBatteryStatusHigh:
-					DS3_SET_LED(pDevCtx, DS3_LED_4);
-					break;
-				case DsBatteryStatusMedium:
-					DS3_SET_LED(pDevCtx, DS3_LED_3);
-					break;
-				case DsBatteryStatusLow:
-					DS3_SET_LED(pDevCtx, DS3_LED_2);
-					break;
-				case DsBatteryStatusDying:
-					DS3_SET_LED(pDevCtx, DS3_LED_1);
-					break;
-				default:
-					break;
-				}
-
-				(void)Ds_SendOutputReport(pDevCtx);
-			}
+			QueryPerformanceCounter(t1);
 		}
 
+		QueryPerformanceCounter(&t2);
+
+		ms = (t2.QuadPart - t1->QuadPart) / (freq.QuadPart / 1000);
+		
 		//
-		// Update battery status
+		// First ever call or time span has elapsed
 		// 
-		pDevCtx->BatteryStatus = battery;
+		if (pDevCtx->BatteryStatus == DsBatteryStatusNone || ms > 60000)
+		{
+			TraceVerbose(
+				TRACE_DSHIDMINIDRV,
+				"Updating battery status to %d",
+				battery
+			);
+			
+			QueryPerformanceCounter(t1);
+			
+			//
+			// Update battery status property
+			// 
+
+			WDF_DEVICE_PROPERTY_DATA propertyData;
+
+			WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RO_BatteryStatus);
+			propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+			propertyData.Lcid = LOCALE_NEUTRAL;
+
+			(void)WdfDeviceAssignProperty(
+				(WDFDEVICE)WdfObjectContextGetObject(Context),
+				&propertyData,
+				DEVPROP_TYPE_BYTE,
+				sizeof(BYTE),
+				&battery
+			);
+
+			//
+			// Don't send update if not initialized yet
+			// 
+			if (DS3_GET_LED(pDevCtx) != 0x00)
+			{
+				if (pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled)
+				{
+					switch (battery)
+					{
+					case DsBatteryStatusCharged:
+					case DsBatteryStatusFull:
+					case DsBatteryStatusHigh:
+						DS3_SET_LED(pDevCtx, DS3_LED_4);
+						break;
+					case DsBatteryStatusMedium:
+						DS3_SET_LED(pDevCtx, DS3_LED_3);
+						break;
+					case DsBatteryStatusLow:
+						DS3_SET_LED(pDevCtx, DS3_LED_2);
+						break;
+					case DsBatteryStatusDying:
+						DS3_SET_LED(pDevCtx, DS3_LED_1);
+						break;
+					default:
+						break;
+					}
+
+					(void)Ds_SendOutputReport(pDevCtx);
+				}
+			}
+
+			//
+			// Update battery status
+			// 
+			pDevCtx->BatteryStatus = battery;
+		}
 	}
 
 	//
