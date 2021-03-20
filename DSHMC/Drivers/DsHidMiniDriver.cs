@@ -48,6 +48,10 @@ namespace Nefarius.DsHidMini.Drivers
             Guid.Parse("{6D293077-C3D6-4062-9597-BE4389404C02}"), 5,
             typeof(byte));
 
+        public static DevicePropertyKey WirelessIdleTimeoutPeriodMsProperty => CustomDeviceProperty.CreateCustomDeviceProperty(
+            Guid.Parse("{6D293077-C3D6-4062-9597-BE4389404C02}"), 6,
+            typeof(uint));
+
         #endregion
 
         #region Hot-reload changeable properties
