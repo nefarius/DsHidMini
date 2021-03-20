@@ -10,7 +10,7 @@
              xmlns:drivers="clr-namespace:Nefarius.DsHidMini.Drivers"
              xmlns:extensions="clr-namespace:AdonisUI.Extensions;assembly=AdonisUI"
              mc:Ignorable="d"
-             d:DesignHeight="500" d:DesignWidth="450">
+             d:DesignHeight="550" d:DesignWidth="450">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="VisibleIfTrueConverter" />
     </UserControl.Resources>
@@ -364,8 +364,61 @@
                     </DockPanel.ToolTip>
                 </DockPanel>
 
+                <!-- Wireless Idle Timeout -->
+                <TextBlock Grid.Row="6" Grid.Column="0">Idle disconnect period:</TextBlock>
+                <DockPanel Grid.Row="6" Grid.Column="2" LastChildFill="False">
+                    <Slider Width="160"
+                            AutoToolTipPlacement="TopLeft" AutoToolTipPrecision="0"
+                            Minimum="1"
+                            TickFrequency="1"
+                            Maximum="60"
+                            IsSnapToTickEnabled="True"
+                            Margin="{adonisUi:Space 1}"
+                            IsEnabled="{Binding Path=IsEditable}"
+                            Value="{Binding Path=SelectedDevice.WirelessIdleTimeoutPeriodMs}" />
+                    <TextBlock Text="{Binding Path=SelectedDevice.WirelessIdleTimeoutPeriodMs}" />
+                    <TextBlock Margin="5,0,0,0">Minutes</TextBlock>
+
+                    <DockPanel.ToolTip>
+                        <ToolTip controlzex:ToolTipAssist.AutoMove="True">
+                            <ToolTip.Template>
+                                <ControlTemplate>
+                                    <Grid>
+                                        <Border Background="Gray"
+                                                BorderBrush="Black"
+                                                BorderThickness="1"
+                                                Opacity="0.9"
+                                                SnapsToDevicePixels="True" />
+                                        <StackPanel>
+                                            <TextBlock Margin="{adonisUi:Space 1}"
+                                                       Foreground="WhiteSmoke"
+                                                       FontSize="16"
+                                                       FontWeight="Bold"
+                                                       Text="HID Device Emulation Mode"
+                                                       TextOptions.TextFormattingMode="Display"
+                                                       TextOptions.TextRenderingMode="ClearType" />
+                                            <TextBlock Margin="{adonisUi:Space 1}"
+                                                       Foreground="WhiteSmoke"
+                                                       FontSize="16"
+                                                       Text="Defines how the device is seen by the system and processes."
+                                                       TextOptions.TextFormattingMode="Display"
+                                                       TextOptions.TextRenderingMode="ClearType" />
+                                            <TextBlock Margin="{adonisUi:Space 1}"
+                                                       Foreground="WhiteSmoke"
+                                                       FontSize="16"
+                                                       Text="Consult the online documentation for a comprehensive description."
+                                                       TextOptions.TextFormattingMode="Display"
+                                                       TextOptions.TextRenderingMode="ClearType" />
+                                        </StackPanel>
+                                    </Grid>
+                                </ControlTemplate>
+                            </ToolTip.Template>
+                        </ToolTip>
+                    </DockPanel.ToolTip>
+                </DockPanel>
+
                 <!-- Output rate control -->
-                <Grid Grid.Row="6" Grid.Column="0" Margin="{adonisUi:Space 0, 1}">
+                <Grid Grid.Row="7" Grid.Column="0" Margin="{adonisUi:Space 0, 1}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
@@ -426,7 +479,7 @@
                 </Grid>
 
                 <!-- Rate control settings -->
-                <StackPanel Grid.Row="6" Grid.Column="2">
+                <StackPanel Grid.Row="7" Grid.Column="2">
                     <DockPanel LastChildFill="False">
                         <CheckBox Margin="{adonisUi:Space 1}"
                                   IsEnabled="{Binding Path=IsEditable}"

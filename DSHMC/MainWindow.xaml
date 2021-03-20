@@ -12,7 +12,7 @@
                        xmlns:troubleshooting="clr-namespace:Nefarius.DsHidMini.UI.Troubleshooting"
                        mc:Ignorable="d"
                        Title="DsHidMini Control"
-                       Height="580" Width="800"
+                       Height="620" Width="800"
                        ResizeMode="CanMinimize"
                        WindowStartupLocation="CenterScreen">
     <controls:AdonisWindow.TitleBarContent>

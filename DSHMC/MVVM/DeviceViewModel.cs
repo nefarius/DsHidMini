@@ -84,6 +84,12 @@ namespace Nefarius.DsHidMini.MVVM
             set => _device.SetProperty(DsHidMiniDriver.IsOutputDeduplicatorEnabledProperty, (byte) (value ? 1 : 0));
         }
 
+        public uint WirelessIdleTimeoutPeriodMs
+        {
+            get => _device.GetProperty<uint>(DsHidMiniDriver.WirelessIdleTimeoutPeriodMsProperty) / 60000;
+            set => _device.SetProperty(DsHidMiniDriver.WirelessIdleTimeoutPeriodMsProperty, value * 60000);
+        }
+
         /// <summary>
         ///     The device Instance ID.
         /// </summary>
