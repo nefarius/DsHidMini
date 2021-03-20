@@ -394,19 +394,13 @@
                                                        Foreground="WhiteSmoke"
                                                        FontSize="16"
                                                        FontWeight="Bold"
-                                                       Text="HID Device Emulation Mode"
+                                                       Text="Idle disconnect interval when wireless"
                                                        TextOptions.TextFormattingMode="Display"
                                                        TextOptions.TextRenderingMode="ClearType" />
                                             <TextBlock Margin="{adonisUi:Space 1}"
                                                        Foreground="WhiteSmoke"
                                                        FontSize="16"
-                                                       Text="Defines how the device is seen by the system and processes."
-                                                       TextOptions.TextFormattingMode="Display"
-                                                       TextOptions.TextRenderingMode="ClearType" />
-                                            <TextBlock Margin="{adonisUi:Space 1}"
-                                                       Foreground="WhiteSmoke"
-                                                       FontSize="16"
-                                                       Text="Consult the online documentation for a comprehensive description."
+                                                       Text="Automatically disconnects the device after being idle for set period."
                                                        TextOptions.TextFormattingMode="Display"
                                                        TextOptions.TextRenderingMode="ClearType" />
                                         </StackPanel>
@@ -623,7 +617,7 @@
             </Grid>
 
             <!-- Properties which can be adapted during device lifetime -->
-            <GroupBox>
+            <GroupBox Margin="{adonisUi:Space 0, 1}">
                 <GroupBox.Header>
                     <DockPanel LastChildFill="False">
                         <fa5:ImageAwesome Icon="Solid_Fire" Height="16" />
