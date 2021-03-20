@@ -1584,10 +1584,9 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 		ms = (t2.QuadPart - t1->QuadPart) / (freq.QuadPart / 1000);
 
 		//
-		// 5 minutes passed
-		// TODO: turn this into a configurable property
+		// Timeout has been reached
 		// 
-		if (ms > 300000)
+		if (ms > pDevCtx->Configuration.WirelessIdleTimeoutPeriodMs)
 		{
 			TraceEvents(TRACE_LEVEL_INFORMATION,
 				TRACE_DSHIDMINIDRV,

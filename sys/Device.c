@@ -405,7 +405,6 @@ VOID DsDevice_ReadConfiguration(WDFDEVICE Device)
 	FuncEntry(TRACE_DEVICE);
 	
 	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_HidDeviceMode);
-	pDevCtx->Configuration.HidDeviceMode = DsHidMiniDeviceModeSixaxisCompatible;
 
 	(void)WdfDeviceQueryPropertyEx(
 		Device,
@@ -421,7 +420,6 @@ VOID DsDevice_ReadConfiguration(WDFDEVICE Device)
 
 	
 	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_IsOutputRateControlEnabled);
-	pDevCtx->Configuration.IsOutputRateControlEnabled = FALSE;
 
 	(void)WdfDeviceQueryPropertyEx(
 		Device,
@@ -437,7 +435,6 @@ VOID DsDevice_ReadConfiguration(WDFDEVICE Device)
 
 	
 	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_OutputRateControlPeriodMs);
-	pDevCtx->Configuration.OutputRateControlPeriodMs = 20;
 
 	(void)WdfDeviceQueryPropertyEx(
 		Device,
@@ -453,7 +450,6 @@ VOID DsDevice_ReadConfiguration(WDFDEVICE Device)
 
 	
 	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_IsOutputDeduplicatorEnabled);
-	pDevCtx->Configuration.IsOutputDeduplicatorEnabled = FALSE;
 
 	(void)WdfDeviceQueryPropertyEx(
 		Device,
@@ -466,6 +462,21 @@ VOID DsDevice_ReadConfiguration(WDFDEVICE Device)
 
 	TraceVerbose(TRACE_DEVICE, "[COM] IsOutputDeduplicatorEnabled: %d",
 		pDevCtx->Configuration.IsOutputDeduplicatorEnabled);
+
+
+	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_WirelessIdleTimeoutPeriodMs);
+
+	(void)WdfDeviceQueryPropertyEx(
+		Device,
+		&propertyData,
+		sizeof(ULONG),
+		&pDevCtx->Configuration.WirelessIdleTimeoutPeriodMs,
+		&requiredSize,
+		&propertyType
+	);
+
+	TraceVerbose(TRACE_DEVICE, "[COM] WirelessIdleTimeoutPeriodMs: %d",
+		pDevCtx->Configuration.WirelessIdleTimeoutPeriodMs);
 
 	FuncExitNoReturn(TRACE_DEVICE);
 }

@@ -116,6 +116,9 @@ typedef struct _DS_DRIVER_CONFIGURATION
     /** The is output deduplicator enabled */
     UCHAR IsOutputDeduplicatorEnabled;
 
+    /** Idle disconnect period in milliseconds */
+    ULONG WirelessIdleTimeoutPeriodMs;
+	
 } DS_DRIVER_CONFIGURATION, * PDS_DRIVER_CONFIGURATION;
 
 #include <poppack.h>
