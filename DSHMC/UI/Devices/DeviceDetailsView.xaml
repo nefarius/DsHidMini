@@ -145,7 +145,7 @@
                                                 <TextBlock Margin="{adonisUi:Space 1}"
                                                            Foreground="WhiteSmoke"
                                                            FontSize="16"
-                                                           Text="= Controller is probably genuine and should work fine"
+                                                           Text="= Controller is probably genuine and should work fine."
                                                            TextOptions.TextFormattingMode="Display"
                                                            TextOptions.TextRenderingMode="ClearType" />
                                             </DockPanel>
@@ -158,7 +158,7 @@
                                                 <TextBlock Margin="{adonisUi:Space 1}"
                                                            Foreground="WhiteSmoke"
                                                            FontSize="16"
-                                                           Text="= Controller is probably fake and might work partially or not at all"
+                                                           Text="= Controller is probably fake and might work partially or not at all."
                                                            TextOptions.TextFormattingMode="Display"
                                                            TextOptions.TextRenderingMode="ClearType" />
                                             </DockPanel>
@@ -218,7 +218,7 @@
                                                 <TextBlock Margin="{adonisUi:Space 1}"
                                                            Foreground="WhiteSmoke"
                                                            FontSize="16"
-                                                           Text="= Last pairing attempt was successful"
+                                                           Text="= Last pairing attempt was successful."
                                                            TextOptions.TextFormattingMode="Display"
                                                            TextOptions.TextRenderingMode="ClearType" />
                                             </DockPanel>
@@ -231,7 +231,7 @@
                                                 <TextBlock Margin="{adonisUi:Space 1}"
                                                            Foreground="WhiteSmoke"
                                                            FontSize="16"
-                                                           Text="= Last pairing attempt failed, wireless might not work"
+                                                           Text="= Last pairing attempt failed, wireless might not work."
                                                            TextOptions.TextFormattingMode="Display"
                                                            TextOptions.TextRenderingMode="ClearType" />
                                             </DockPanel>
@@ -502,13 +502,13 @@
                                                 <TextBlock Margin="{adonisUi:Space 1}"
                                                            Foreground="WhiteSmoke"
                                                            FontSize="16"
-                                                           Text="TBD"
+                                                           Text="Protects the controller against output packet flooding."
                                                            TextOptions.TextFormattingMode="Display"
                                                            TextOptions.TextRenderingMode="ClearType" />
                                                 <TextBlock Margin="{adonisUi:Space 1}"
                                                            Foreground="WhiteSmoke"
                                                            FontSize="16"
-                                                           Text="TBD"
+                                                           Text="Consult the online documentation for a comprehensive description."
                                                            TextOptions.TextFormattingMode="Display"
                                                            TextOptions.TextRenderingMode="ClearType" />
                                             </StackPanel>
@@ -552,13 +552,13 @@
                                                 <TextBlock Margin="{adonisUi:Space 1}"
                                                            Foreground="WhiteSmoke"
                                                            FontSize="16"
-                                                           Text="TBD"
+                                                           Text="Minimum time span required between output packets."
                                                            TextOptions.TextFormattingMode="Display"
                                                            TextOptions.TextRenderingMode="ClearType" />
                                                 <TextBlock Margin="{adonisUi:Space 1}"
                                                            Foreground="WhiteSmoke"
                                                            FontSize="16"
-                                                           Text="TBD"
+                                                           Text="Consult the online documentation for a comprehensive description."
                                                            TextOptions.TextFormattingMode="Display"
                                                            TextOptions.TextRenderingMode="ClearType" />
                                             </StackPanel>
@@ -597,13 +597,13 @@
                                                 <TextBlock Margin="{adonisUi:Space 1}"
                                                            Foreground="WhiteSmoke"
                                                            FontSize="16"
-                                                           Text="TBD"
+                                                           Text="Ignores identical output requests sent directly after another."
                                                            TextOptions.TextFormattingMode="Display"
                                                            TextOptions.TextRenderingMode="ClearType" />
                                                 <TextBlock Margin="{adonisUi:Space 1}"
                                                            Foreground="WhiteSmoke"
                                                            FontSize="16"
-                                                           Text="TBD"
+                                                           Text="Consult the online documentation for a comprehensive description."
                                                            TextOptions.TextFormattingMode="Display"
                                                            TextOptions.TextRenderingMode="ClearType" />
                                             </StackPanel>
