@@ -71,7 +71,7 @@
             </TabItem>
 
             <!-- Troubleshooting (unfinished) -->
-            <TabItem Header="Troubleshooting (UNFINISHED)" Background="{DynamicResource {x:Static adonisUi:Brushes.ErrorBrush}}">
+            <TabItem Header="Troubleshooting (UNFINISHED)" Visibility="Collapsed" Background="{DynamicResource {x:Static adonisUi:Brushes.ErrorBrush}}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition />
