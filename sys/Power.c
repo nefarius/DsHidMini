@@ -638,12 +638,16 @@ DsHidMini_EvtDevicePrepareHardware(
 				Ds3FeatureHostAddress,
 				0,
 				controlTransferBuffer,
-				CONTROL_TRANSFER_BUFFER_LENGTH);
+				CONTROL_TRANSFER_BUFFER_LENGTH
+			);
 
 			if (!NT_SUCCESS(status))
 			{
-				TraceError( TRACE_POWER,
-					"Requesting host address failed with %!STATUS!", status);
+				TraceError(
+					TRACE_POWER,
+					"Requesting host address failed with %!STATUS!", 
+					status
+				);
 				return status;
 			}
 
@@ -655,15 +659,12 @@ DsHidMini_EvtDevicePrepareHardware(
 			//
 			// Send initial output report
 			// 
-			status = USB_SendControlRequest(
-				pDevCtx,
-				BmRequestHostToDevice,
-				BmRequestClass,
-				SetReport,
-				USB_SETUP_VALUE(HidReportRequestTypeOutput, HidReportRequestIdOne),
-				0,
+			(void)USB_WriteInterruptPipeAsync(
+				WdfUsbTargetDeviceGetIoTarget(pDevCtx->Connection.Usb.UsbDevice),
+				pDevCtx->Connection.Usb.InterruptOutPipe,
 				(PVOID)G_Ds3UsbHidOutputReport,
-				DS3_USB_HID_OUTPUT_REPORT_SIZE);
+				DS3_USB_HID_OUTPUT_REPORT_SIZE
+			);
 
 			//
 			// Re-create if exists
@@ -688,8 +689,11 @@ DsHidMini_EvtDevicePrepareHardware(
 			);
 			if (!NT_SUCCESS(status))
 			{
-				TraceError(TRACE_POWER,
-					"WdfMemoryCreate failed with %!STATUS!", status);
+				TraceError(
+					TRACE_POWER,
+					"WdfMemoryCreate failed with %!STATUS!", 
+					status
+				);
 				return status;
 			}
 
