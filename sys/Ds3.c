@@ -7,6 +7,7 @@
 // Default Output Report for LED & Rumble state changes (USB)
 // 
 const UCHAR G_Ds3UsbHidOutputReport[] = {
+	0x01, /* Report ID */
 	0x00, 0xFF, 0x00, 0xFF, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00,
 	0xFF, 0x27, 0x10, 0x00, 0x32,
@@ -301,11 +302,17 @@ VOID DS3_GET_UNIFIED_OUTPUT_REPORT_BUFFER(
 	{
 	case DsDeviceConnectionTypeUsb:
 
-		*Buffer = (PUCHAR)WdfMemoryGetBuffer(
+		//
+		// Skip Report ID
+		// 
+
+		*Buffer = &((PUCHAR)WdfMemoryGetBuffer(
 			Context->Connection.Usb.OutputReportMemory,
 			BufferLength
-		);
+		))[1];
 
+		*BufferLength -= 1;
+		
 		break;
 
 	case DsDeviceConnectionTypeBth:

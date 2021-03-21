@@ -29,4 +29,9 @@ NTSTATUS USB_WriteInterruptPipeAsync(
     _In_ PVOID Buffer,
     _In_ size_t BufferLength);
 
+NTSTATUS
+USB_WriteInterruptOutSync(
+    _In_ PDEVICE_CONTEXT Context
+);
+
 EVT_WDF_REQUEST_COMPLETION_ROUTINE EvtUsbRequestCompletionRoutine;

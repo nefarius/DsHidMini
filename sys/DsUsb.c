@@ -211,6 +211,39 @@ USB_WriteInterruptPipeAsync(
 }
 
 //
+// Send the Output Report buffer content to the Interrupt OUT endpoint and wait for completion
+// 
+NTSTATUS
+USB_WriteInterruptOutSync(
+	_In_ PDEVICE_CONTEXT Context
+)
+{
+	WDF_MEMORY_DESCRIPTOR  writeBufDesc;
+	ULONG bytesWritten;
+	NTSTATUS status;
+
+	FuncEntry(TRACE_DSUSB);
+	
+	WDF_MEMORY_DESCRIPTOR_INIT_HANDLE(
+		&writeBufDesc,
+		Context->Connection.Usb.OutputReportMemory,
+		NULL
+	);
+	
+	status = WdfUsbTargetPipeWriteSynchronously(
+		Context->Connection.Usb.InterruptOutPipe,
+		NULL,
+		NULL,
+		&writeBufDesc,
+		&bytesWritten
+	);
+
+	FuncExit(TRACE_DSUSB, "status=%!STATUS!", status);
+
+	return status;
+}
+
+//
 // Reader failed for some reason
 // 
 BOOLEAN

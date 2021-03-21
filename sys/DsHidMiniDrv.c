@@ -1731,8 +1731,6 @@ DMF_OutputReportScheduledTaskCallback(
 	size_t bufferSize = 0;
 	LARGE_INTEGER freq, * t1, t2;
 	LONGLONG ms;
-
-	PUCHAR interruptBuffer = NULL;
 	
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
@@ -1770,23 +1768,8 @@ DMF_OutputReportScheduledTaskCallback(
 			break;
 		}
 
-		//
-		// TODO: alloc only once in context to save overhead
-		// 
-		interruptBuffer = (PUCHAR)malloc(0x31);
-
-		if (interruptBuffer == NULL)
-			break;
-
-		interruptBuffer[0] = 0x01; // Report ID
-
-		RtlCopyMemory(&interruptBuffer[1], buffer, bufferSize);
-
-		status = USB_WriteInterruptPipeAsync(
-			WdfUsbTargetDeviceGetIoTarget(pDevCtx->Connection.Usb.UsbDevice),
-			pDevCtx->Connection.Usb.InterruptOutPipe,
-			interruptBuffer,
-			0x31 // TODO: introduce const
+		status = USB_WriteInterruptOutSync(
+			pDevCtx
 		);
 
 		if (NT_SUCCESS(status))
@@ -1798,8 +1781,6 @@ DMF_OutputReportScheduledTaskCallback(
 			);
 		}
 		
-		free(interruptBuffer);
-
 		break;
 
 	case DsDeviceConnectionTypeBth:
