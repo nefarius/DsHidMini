@@ -206,7 +206,7 @@ namespace Nefarius.DsHidMini.MVVM
             {
                 var name = _device.GetProperty<string>(DevicePropertyDevice.FriendlyName);
 
-                return string.IsNullOrEmpty(name) ? "<failed to retrieve device name>" : name;
+                return string.IsNullOrEmpty(name) ? "DS3 Compatible HID Device" : name;
             }
         }
 
