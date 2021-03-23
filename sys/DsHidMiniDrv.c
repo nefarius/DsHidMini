@@ -984,9 +984,9 @@ DsHidMini_WriteReport(
 		{
 			if (r >= 192)
 				DS3_SET_LED(pDevCtx, DS3_LED_4);
-			else if (r >= 128)
+			else if (r >= 129) // should be 128 but needs to be 129 for the "color by battery %"  function to properly work in 50%
 				DS3_SET_LED(pDevCtx, DS3_LED_3);
-			else if (r >= 64)
+			else if (r >= 65) // should be 64 but needs to be 129 for the "color by battery %" function to properly work in 25%
 				DS3_SET_LED(pDevCtx, DS3_LED_2);
 			else
 				DS3_SET_LED(pDevCtx, DS3_LED_1);
