@@ -720,11 +720,11 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 		}
 
 		// Set face buttons
-		Output[5] |= Input[3] & 0xF0;
+		Output[5] |= Input[3] & 0xF0; // OUTPUT: SQUARE [7], CROSS [6], CIRCLE [5], TRIANGLE [4]
 
 		// Remaining buttons
-		Output[6] |= (Input[2] & 0xF);
-		Output[6] |= (Input[3] & 0xF) << 4;
+		Output[6] |= (Input[2] & 0xF); // OUTPUT: START [3], RSB [2], LSB [1], SELECT [0]
+		Output[6] |= (Input[3] & 0xF) << 4; // OUTPUT: R1 [7], L1 [6], R2 [5], L2 [4]
 	}
 	else {
 		// Clear HAT position
@@ -732,7 +732,7 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 	}
 
 	// PS button
-	Output[7] = Input[4];
+	Output[7] = Input[4]; // OUTPUT: PADDING [7-1], PS BUTTON [0]
 
 	// Thumb axes
 	Output[1] = Input[6]; // LTX
@@ -759,16 +759,16 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
 	Output[0] = 0x02;
 
 	// D-Pad (pressure)
-	Output[1] = Input[14];
-	Output[2] = Input[15];
-	Output[3] = Input[16];
-	Output[4] = Input[17];
+	Output[1] = Input[14]; // UP
+	Output[2] = Input[15]; // RIGHT
+	Output[3] = Input[16]; // DOWN
+	Output[4] = Input[17]; // LEFT
 
 	// Face buttons (pressure)
-	Output[5] = Input[22];
-	Output[6] = Input[23];
-	Output[7] = Input[24];
-	Output[8] = Input[25];
+	Output[5] = Input[22]; // TRIANGLE
+	Output[6] = Input[23]; // CIRCLE
+	Output[7] = Input[24]; // CROSS
+	Output[8] = Input[25]; // SQUARE
 }
 
 VOID DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
@@ -824,11 +824,11 @@ VOID DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
 		}
 
 		// Set face buttons
-		Output[5] |= Input[3] & 0xF0;
+		Output[5] |= Input[3] & 0xF0; // OUTPUT: SQUARE[7], CROSS[6], CIRCLE[5], TRIANGLE[4]
 
 		// Remaining buttons
-		Output[6] |= (Input[2] & 0xF);
-		Output[6] |= (Input[3] & 0xF) << 4;
+		Output[6] |= (Input[2] & 0xF);  // OUTPUT: START [3], RSB [2], LSB [1], SELECT [0]
+		Output[6] |= (Input[3] & 0xF) << 4; // OUTPUT: R1 [7], L1 [6], R2 [5], L2 [4]
 	}
 	else {
 		// Clear HAT position
@@ -842,27 +842,27 @@ VOID DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
 	Output[4] = Input[9]; // RTY
 
 	// Trigger axes
-	Output[8] = Input[18];
-	Output[9] = Input[19];
+	Output[8] = Input[18]; // L2
+	Output[9] = Input[19]; // R2
 
 	// PS button
-	Output[7] = Input[4];
+	Output[7] = Input[4]; // OUTPUT: PADDING [7-1], PS BUTTON [0]
 
 	// D-Pad (pressure)
-	Output[10] = Input[14];
-	Output[11] = Input[15];
-	Output[12] = Input[16];
-	Output[13] = Input[17];
+	Output[10] = Input[14]; // UP
+	Output[11] = Input[15]; // RIGHT
+	Output[12] = Input[16]; // DOWN
+	Output[13] = Input[17]; // LEFT
 
 	// Shoulders (pressure)
-	Output[14] = Input[20];
-	Output[15] = Input[21];
+	Output[14] = Input[20]; // L1
+	Output[15] = Input[21]; // R1
 
 	// Face buttons (pressure)
-	Output[16] = Input[22];
-	Output[17] = Input[23];
-	Output[18] = Input[24];
-	Output[19] = Input[25];
+	Output[16] = Input[22]; // TRIANGLE
+	Output[17] = Input[23]; // CIRCLE
+	Output[18] = Input[24]; // CROSS
+	Output[19] = Input[25]; // SQUARE
 }
 
 VOID DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
