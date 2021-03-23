@@ -978,7 +978,7 @@ DsHidMini_WriteReport(
 		UCHAR b = Packet->reportBuffer[8];
 
 		//
-		// Single color RED intensity indicates battery level
+		// Single color RED intensity indicates battery level (Light only a single Led from 1 to 4)
 		// 
 		if (g == 0x00 && b == 0x00)
 		{
