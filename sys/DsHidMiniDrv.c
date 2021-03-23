@@ -992,6 +992,20 @@ DsHidMini_WriteReport(
 				DS3_SET_LED(pDevCtx, DS3_LED_1);
 		}
 		//
+		// Single color RED intensity indicates battery level ("Fill" Leds from 1 to 4)
+		// 
+		else if (g == 0x00 && b == 0xFF)
+		{
+			if (r >= 196)
+				DS3_SET_LED(pDevCtx, 0x1E);
+			else if (r >= 129) // should be 128 but needs to be 129 for the "color by battery %"  function to properly work in 50%
+				DS3_SET_LED(pDevCtx, 0x0E);
+			else if (r >= 65) // should be 64 but needs to be 129 for the "color by battery %" function to properly work in 25%
+				DS3_SET_LED(pDevCtx, 0x06);
+			else
+				DS3_SET_LED(pDevCtx, 0x02);
+		}
+		//
 		// Decode custom LED status from color RED intensity
 		// 
 		else if (g == 0xFF && b == 0xFF)
