@@ -728,6 +728,12 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 		// Remaining buttons
 		Output[6] |= (Input[2] & 0xF); // OUTPUT: START [3], RSB [2], LSB [1], SELECT [0]
 		Output[6] |= (Input[3] & 0xF) << 4; // OUTPUT: R1 [7], L1 [6], R2 [5], L2 [4]
+
+		// D-Pad (Buttons)
+		if (FALSE == TRUE) // "FALSE" is a placeholder for the DHMC option that will allow muting the D-Pad Buttons
+		{
+			Output[7] |= (Input[2] & ~0xF) >> 3; // OUTPUT: LEFT [4], DOWN [3], RIGHT [2], UP [1]
+		}
 	}
 	else {
 		// Clear HAT position
@@ -736,9 +742,6 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 
 	// PS button
 	Output[7] = Input[4] & 0x1; // OUTPUT: PS BUTTON [0]
-
-	// D-Pad buttons
-	Output[7] |= (Input[2] & ~0xF) >> 3; // OUTPUT: LEFT [4], DOWN [3], RIGHT [2], UP [1]
 
 	// Thumb axes
 	Output[1] = Input[6]; // LTX
@@ -838,6 +841,12 @@ VOID DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
 		// Remaining buttons
 		Output[6] |= (Input[2] & 0xF);  // OUTPUT: START [3], RSB [2], LSB [1], SELECT [0]
 		Output[6] |= (Input[3] & 0xF) << 4; // OUTPUT: R1 [7], L1 [6], R2 [5], L2 [4]
+
+		// D-Pad (Buttons)
+		if (FALSE == TRUE) // "FALSE" is a placeholder for the DHMC option that will allow muting the D-Pad Buttons
+		{
+			Output[7] |= (Input[2] & ~0xF) >> 3; // OUTPUT: LEFT [4], DOWN [3], RIGHT [2], UP [1]
+		}
 	}
 	else {
 		// Clear HAT position
@@ -856,9 +865,6 @@ VOID DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
 
 	// PS button
 	Output[7] = Input[4] & 0x1; // OUTPUT: PS BUTTON [0]
-
-	// D-Pad buttons
-	Output[7] |= (Input[2] & ~0xF) >> 3; // OUTPUT: LEFT [4], DOWN [3], RIGHT [2], UP [1]
 
 	// D-Pad (pressure)
 	Output[10] = Input[14]; // UP
