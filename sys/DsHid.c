@@ -691,35 +691,42 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 	if (!MuteDigitalPressureButtons)
 	{
 		// Translate D-Pad to HAT format
-		switch (Input[2] & ~0xF)
+		if (TRUE == TRUE) // Placeholder for DHMC option
 		{
-		case 0x10: // N
-			Output[5] |= 0 & 0xF;
-			break;
-		case 0x30: // NE
-			Output[5] |= 1 & 0xF;
-			break;
-		case 0x20: // E
-			Output[5] |= 2 & 0xF;
-			break;
-		case 0x60: // SE
-			Output[5] |= 3 & 0xF;
-			break;
-		case 0x40: // S
-			Output[5] |= 4 & 0xF;
-			break;
-		case 0xC0: // SW
-			Output[5] |= 5 & 0xF;
-			break;
-		case 0x80: // W
-			Output[5] |= 6 & 0xF;
-			break;
-		case 0x90: // NW
-			Output[5] |= 7 & 0xF;
-			break;
-		default: // Released
+			switch (Input[2] & ~0xF)
+			{
+			case 0x10: // N
+				Output[5] |= 0 & 0xF;
+				break;
+			case 0x30: // NE
+				Output[5] |= 1 & 0xF;
+				break;
+			case 0x20: // E
+				Output[5] |= 2 & 0xF;
+				break;
+			case 0x60: // SE
+				Output[5] |= 3 & 0xF;
+				break;
+			case 0x40: // S
+				Output[5] |= 4 & 0xF;
+				break;
+			case 0xC0: // SW
+				Output[5] |= 5 & 0xF;
+				break;
+			case 0x80: // W
+				Output[5] |= 6 & 0xF;
+				break;
+			case 0x90: // NW
+				Output[5] |= 7 & 0xF;
+				break;
+			default: // Released
+				Output[5] |= 8 & 0xF;
+				break;
+			}
+		}
+		else {
+			// Clear HAT position
 			Output[5] |= 8 & 0xF;
-			break;
 		}
 
 		// Set face buttons
@@ -804,35 +811,42 @@ VOID DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
 	if (!MuteDigitalPressureButtons)
 	{
 		// Translate D-Pad to HAT format
-		switch (Input[2] & ~0xF)
+		if (TRUE == TRUE) // Placeholder for DHMC option
 		{
-		case 0x10: // N
-			Output[5] |= 0 & 0xF;
-			break;
-		case 0x30: // NE
-			Output[5] |= 1 & 0xF;
-			break;
-		case 0x20: // E
-			Output[5] |= 2 & 0xF;
-			break;
-		case 0x60: // SE
-			Output[5] |= 3 & 0xF;
-			break;
-		case 0x40: // S
-			Output[5] |= 4 & 0xF;
-			break;
-		case 0xC0: // SW
-			Output[5] |= 5 & 0xF;
-			break;
-		case 0x80: // W
-			Output[5] |= 6 & 0xF;
-			break;
-		case 0x90: // NW
-			Output[5] |= 7 & 0xF;
-			break;
-		default: // Released
+			switch (Input[2] & ~0xF)
+			{
+			case 0x10: // N
+				Output[5] |= 0 & 0xF;
+				break;
+			case 0x30: // NE
+				Output[5] |= 1 & 0xF;
+				break;
+			case 0x20: // E
+				Output[5] |= 2 & 0xF;
+				break;
+			case 0x60: // SE
+				Output[5] |= 3 & 0xF;
+				break;
+			case 0x40: // S
+				Output[5] |= 4 & 0xF;
+				break;
+			case 0xC0: // SW
+				Output[5] |= 5 & 0xF;
+				break;
+			case 0x80: // W
+				Output[5] |= 6 & 0xF;
+				break;
+			case 0x90: // NW
+				Output[5] |= 7 & 0xF;
+				break;
+			default: // Released
+				Output[5] |= 8 & 0xF;
+				break;
+			}
+		}
+		else {
+			// Clear HAT position
 			Output[5] |= 8 & 0xF;
-			break;
 		}
 
 		// Set face buttons
