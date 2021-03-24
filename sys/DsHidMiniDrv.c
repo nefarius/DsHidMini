@@ -978,32 +978,32 @@ DsHidMini_WriteReport(
 		UCHAR b = Packet->reportBuffer[8];
 
 		//
-		// Single color RED intensity indicates battery level (Light only a single Led from 1 to 4)
+		// Single color RED intensity indicates battery level (Light only a single LED from 1 to 4)
 		// 
 		if (g == 0x00 && b == 0x00)
 		{
 			if (r >= 192)
 				DS3_SET_LED(pDevCtx, DS3_LED_4);
-			else if (r >= 129) // should be 128 but needs to be 129 for the "color by battery %"  function to properly work in 50%
+			else if (r > 128)
 				DS3_SET_LED(pDevCtx, DS3_LED_3);
-			else if (r >= 65) // should be 64 but needs to be 129 for the "color by battery %" function to properly work in 25%
+			else if (r > 64)
 				DS3_SET_LED(pDevCtx, DS3_LED_2);
 			else
 				DS3_SET_LED(pDevCtx, DS3_LED_1);
 		}
 		//
-		// Single color RED intensity indicates battery level ("Fill" Leds from 1 to 4)
+		// Single color RED intensity indicates battery level ("Fill" LEDs from 1 to 4)
 		// 
 		else if (g == 0x00 && b == 0xFF)
 		{
 			if (r >= 196)
-				DS3_SET_LED(pDevCtx, 0x1E);
-			else if (r >= 129) // should be 128 but needs to be 129 for the "color by battery %"  function to properly work in 50%
-				DS3_SET_LED(pDevCtx, 0x0E);
-			else if (r >= 65) // should be 64 but needs to be 129 for the "color by battery %" function to properly work in 25%
-				DS3_SET_LED(pDevCtx, 0x06);
+				DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
+			else if (r > 128)
+				DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3);
+			else if (r > 64)
+				DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2);
 			else
-				DS3_SET_LED(pDevCtx, 0x02);
+				DS3_SET_LED(pDevCtx, DS3_LED_1);
 		}
 		//
 		// Decode custom LED status from color RED intensity
