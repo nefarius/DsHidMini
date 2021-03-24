@@ -748,7 +748,7 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 	}
 
 	// PS button
-	Output[7] = Input[4] & 0x1; // OUTPUT: PS BUTTON [0]
+	Output[7] |= Input[4] & 0x1; // OUTPUT: PS BUTTON [0]
 
 	// Thumb axes
 	Output[1] = Input[6]; // LTX
@@ -878,7 +878,7 @@ VOID DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
 	Output[9] = Input[19]; // R2
 
 	// PS button
-	Output[7] = Input[4] & 0x1; // OUTPUT: PS BUTTON [0]
+	Output[7] |= Input[4] & 0x1; // OUTPUT: PS BUTTON [0]
 
 	// D-Pad (pressure)
 	Output[10] = Input[14]; // UP
