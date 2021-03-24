@@ -35,3 +35,4 @@ R2 = Y Rotation
 - https://github.com/nefarius/ScpToolkit/compare/master...rajkosto:master
 - https://github.com/rajkosto/ScpToolkit/blob/master/ScpControl/Usb/Ds3/DS3Cal.cs
 - https://www.psdevwiki.com/ps3/DualShock_3
+- https://mclab.uunyan.com/lab/sixaxis/sxs004.htm
