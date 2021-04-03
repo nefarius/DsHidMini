@@ -53,11 +53,6 @@ DMF_DsHidMini_Create(
 		pDevCtx = DeviceGetContext(Device);
 
 		//
-		// Set defaults
-		// 
-		DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(&pDevCtx->Configuration);
-
-		//
 		// Set Virtual HID Mini properties
 		// 
 		DMF_CALLBACKS_DMF_INIT(&dsHidMiniCallbacks);
@@ -1729,6 +1724,37 @@ Exit:
 #pragma endregion
 
 #pragma region Output Report processing
+
+ThreadedBufferQueue_BufferDisposition
+DMF_EvtExecuteOutputPacketReceived(
+	_In_ DMFMODULE DmfModule,
+	_In_ UCHAR* ClientWorkBuffer,
+	_In_ ULONG ClientWorkBufferSize,
+	_In_ VOID* ClientWorkBufferContext,
+	_Out_ NTSTATUS* NtStatus
+)
+{
+	NTSTATUS status = STATUS_UNSUCCESSFUL;
+	WDFDEVICE device = DMF_ParentDeviceGet(DmfModule);
+	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(device);
+	PDS_OUTPUT_REPORT_CONTEXT pRepCtx = (PDS_OUTPUT_REPORT_CONTEXT)ClientWorkBufferContext;
+	PUCHAR buffer = ClientWorkBuffer;
+	size_t bufferSize = pRepCtx->BufferSize;
+
+	LARGE_INTEGER freq, * t1, t2;
+	LONGLONG ms;
+	
+	UNREFERENCED_PARAMETER(ClientWorkBufferSize);
+	UNREFERENCED_PARAMETER(NtStatus);
+
+	FuncEntry(TRACE_DSHIDMINIDRV);
+
+
+	
+	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
+	
+	return ThreadedBufferQueue_BufferDisposition_WorkComplete;
+}
 
 ScheduledTask_Result_Type
 DMF_OutputReportScheduledTaskCallback(

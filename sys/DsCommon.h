@@ -83,10 +83,41 @@ typedef enum _DS_HID_DEVICE_MODE
 
 typedef enum _DS_OUTPUT_REPORT_MODE
 {
+	//
+	// DSHM controls output report generation
+	// 
     Ds3OutputReportModeDriverHandled = 0,
+
+	//
+	// Output reports come in from "the outside" and get passed on
+	// 
     Ds3OutputReportModeWriteReportPassThrough
 
 } DS_OUTPUT_REPORT_MODE, * PDS_OUTPUT_REPORT_MODE;
+
+typedef enum _DS_OUTPUT_REPORT_SOURCE
+{
+	//
+	// Request originated from within DSHM itself
+	// 
+    Ds3OutputReportSourceDriver = 0,
+
+	//
+	// Request came in through Force Feedback exposure
+	// 
+    Ds3OutputReportSourceForceFeedback,
+
+	//
+	// Request came in through SXS exposure
+	// 
+    Ds3OutputReportSourcePassThrough,
+
+	//
+	// Request came in from DS4 emulation
+	// 
+    Ds3OutputReportSourceDualShock4
+
+} DS_OUTPUT_REPORT_SOURCE, * PDS_OUTPUT_REPORT_SOURCE;
 
 #include <pshpack1.h>
 

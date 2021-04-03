@@ -494,9 +494,11 @@ DmfDeviceModulesAdd(
 )
 {
 	PDEVICE_CONTEXT pDevCtx;
+	WDF_OBJECT_ATTRIBUTES attributes;
 	DMF_MODULE_ATTRIBUTES moduleAttributes;
 	DMF_CONFIG_DsHidMini dsHidMiniCfg;
 	DMF_CONFIG_ScheduledTask dmfSchedulerCfg;
+	DMF_CONFIG_ThreadedBufferQueue dmfBufferCfg;
 
 	PAGED_CODE();
 
@@ -505,6 +507,33 @@ DmfDeviceModulesAdd(
 	pDevCtx = DeviceGetContext(Device);
 
 	//
+	// Threaded buffer queue used to serialize output report packets
+	// 
+	
+	WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
+	attributes.ParentObject = Device;
+
+	DMF_CONFIG_ThreadedBufferQueue_AND_ATTRIBUTES_INIT(
+		&dmfBufferCfg,
+		&moduleAttributes
+	);
+	moduleAttributes.PassiveLevel = TRUE;
+
+	dmfBufferCfg.EvtThreadedBufferQueueWork = DMF_EvtExecuteOutputPacketReceived;
+	dmfBufferCfg.BufferQueueConfig.SourceSettings.EnableLookAside = FALSE;
+	dmfBufferCfg.BufferQueueConfig.SourceSettings.BufferCount = 10; // TODO: tune
+	dmfBufferCfg.BufferQueueConfig.SourceSettings.BufferSize = DS3_BTH_HID_OUTPUT_REPORT_SIZE;
+	dmfBufferCfg.BufferQueueConfig.SourceSettings.BufferContextSize = sizeof(DS_OUTPUT_REPORT_CONTEXT);
+	dmfBufferCfg.BufferQueueConfig.SourceSettings.PoolType = NonPagedPoolNx;
+
+	DMF_DmfModuleAdd(
+		DmfModuleInit,
+		&moduleAttributes,
+		WDF_NO_OBJECT_ATTRIBUTES,
+		&pDevCtx->OutputReport.Worker
+	);
+	
+	//
 	// Scheduler for serialized periodic output report dispatcher
 	// 
 
@@ -512,7 +541,7 @@ DmfDeviceModulesAdd(
 		&dmfSchedulerCfg,
 		&moduleAttributes
 	);
-
+	
 	dmfSchedulerCfg.EvtScheduledTaskCallback = DMF_OutputReportScheduledTaskCallback;
 	dmfSchedulerCfg.CallbackContext = pDevCtx;
 	dmfSchedulerCfg.PersistenceType = ScheduledTask_Persistence_NotPersistentAcrossReboots;

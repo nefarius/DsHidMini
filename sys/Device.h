@@ -143,18 +143,6 @@ struct BTH_DEVICE_CONTEXT
 	LARGE_INTEGER IdleDisconnectTimestamp;
 };
 
-//
-// Sets default values for device configuration
-// 
-VOID FORCEINLINE DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(
-	PDS_DRIVER_CONFIGURATION Configuration
-)
-{
-	Configuration->HidDeviceMode = DsHidMiniDeviceModeSixaxisCompatible;
-	Configuration->MuteDigitalPressureButtons = FALSE;
-	Configuration->DisableAutoPairing = FALSE;
-}
-
 #ifdef DSHM_FEATURE_FFB
 typedef struct _FFB_ATTRIBUTES
 {
@@ -168,6 +156,31 @@ typedef struct _FFB_ATTRIBUTES
 	
 } FFB_ATTRIBUTES, *PFFB_ATTRIBUTES;
 #endif
+
+/**
+ * Output report context.
+ *
+ * @author	Benjamin "Nefarius" Höglinger-Stelzer
+ * @date	01.04.2021
+ */
+typedef struct _DS_OUTPUT_REPORT_CONTEXT
+{
+	//
+	// Time of packet arrival
+	// 
+	LARGE_INTEGER ReceivedTimestamp;
+
+	//
+	// Actual size of buffer
+	// 
+	size_t BufferSize;
+
+	//
+	// The initiator of this report
+	// 
+	DS_OUTPUT_REPORT_SOURCE ReportSource;
+	
+} DS_OUTPUT_REPORT_CONTEXT, *PDS_OUTPUT_REPORT_CONTEXT;
 
 /**
  * Cached output report values to help with rate-control.
@@ -201,6 +214,11 @@ typedef struct _DEVICE_CONTEXT
 		// Periodic task scheduler to send output reports
 		// 
 		DMFMODULE Scheduler;
+
+		//
+		// Threaded buffer queue worker
+		// 
+		DMFMODULE Worker;
 
 		//
 		// Lock protecting output report scheduler callback
@@ -359,6 +377,8 @@ DMF_DsHidMini_Close(
 
 
 EVT_DMF_ScheduledTask_Callback DMF_OutputReportScheduledTaskCallback;
+
+EVT_DMF_ThreadedBufferQueue_Callback DMF_EvtExecuteOutputPacketReceived;
 
 EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL DSHM_EvtWdfIoQueueIoDeviceControl;
 
