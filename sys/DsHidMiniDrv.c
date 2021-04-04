@@ -1284,7 +1284,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 		{
 			DS3_SET_LED(pDevCtx, DS3_LED_4);
 
-			(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriver);
+			(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverLowPriority);
 		}
 	}
 	//
@@ -1325,7 +1325,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 			{
 				DS3_SET_LED(pDevCtx, led);
 
-				(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriver);
+				(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverLowPriority);
 			}
 		}
 	}
@@ -1538,7 +1538,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 						break;
 					}
 
-					(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriver);
+					(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverLowPriority);
 				}
 			}
 
@@ -1741,6 +1741,7 @@ DMF_EvtExecuteOutputPacketReceived(
 	PUCHAR buffer = ClientWorkBuffer;
 	size_t bufferSize = pRepCtx->BufferSize;
 
+	WDF_MEMORY_DESCRIPTOR memoryDesc;
 	LARGE_INTEGER freq, * t1, t2;
 	LONGLONG ms;
 	
@@ -1749,48 +1750,18 @@ DMF_EvtExecuteOutputPacketReceived(
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
-
-	
-	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
-	
-	return ThreadedBufferQueue_BufferDisposition_WorkComplete;
-}
-
-ScheduledTask_Result_Type
-DMF_OutputReportScheduledTaskCallback(
-	_In_ DMFMODULE DmfModule,
-	_In_ VOID* CallbackContext,
-	_In_ WDF_POWER_DEVICE_STATE PreviousState)
-{
-	UNREFERENCED_PARAMETER(DmfModule);
-	UNREFERENCED_PARAMETER(PreviousState);
-
-	NTSTATUS status = STATUS_UNSUCCESSFUL;
-	PDEVICE_CONTEXT pDevCtx = (PDEVICE_CONTEXT)CallbackContext;
-	PUCHAR buffer = NULL;
-	size_t bufferSize = 0;
-	LARGE_INTEGER freq, * t1, t2;
-	LONGLONG ms;
-	
-	FuncEntry(TRACE_DSHIDMINIDRV);
-
 	QueryPerformanceFrequency(&freq);
-	
-	WdfWaitLockAcquire(pDevCtx->OutputReport.Lock, NULL);
 
 	t1 = &pDevCtx->OutputReport.Cache.LastSentTimestamp;
-	
+
 	QueryPerformanceCounter(&t2);
-	
-	//
-	// Get main output report buffer protocol-agnostic
-	// 
-	DS3_GET_UNIFIED_OUTPUT_REPORT_BUFFER(
-		pDevCtx,
-		&buffer,
-		&bufferSize
+
+	WDF_MEMORY_DESCRIPTOR_INIT_BUFFER(
+		&memoryDesc,
+		buffer,
+		bufferSize
 	);
-	
+
 	switch (pDevCtx->ConnectionType)
 	{
 	case DsDeviceConnectionTypeUsb:
@@ -1809,7 +1780,8 @@ DMF_OutputReportScheduledTaskCallback(
 		}
 
 		status = USB_WriteInterruptOutSync(
-			pDevCtx
+			pDevCtx,
+			&memoryDesc
 		);
 
 		if (NT_SUCCESS(status))
@@ -1820,7 +1792,7 @@ DMF_OutputReportScheduledTaskCallback(
 				bufferSize
 			);
 		}
-		
+
 		break;
 
 	case DsDeviceConnectionTypeBth:
@@ -1861,8 +1833,11 @@ DMF_OutputReportScheduledTaskCallback(
 			);
 			break;
 		}
-		
-		status = DsBth_SendHidControlWriteRequest(pDevCtx);
+
+		status = DsBth_SendHidControlWriteRequest(
+			pDevCtx,
+			&memoryDesc
+		);
 
 		if (NT_SUCCESS(status))
 		{
@@ -1871,25 +1846,25 @@ DMF_OutputReportScheduledTaskCallback(
 			// 
 
 			QueryPerformanceCounter(t1);
-			
+
 			RtlCopyMemory(
 				pDevCtx->OutputReport.Cache.LastReport,
 				buffer,
 				bufferSize
 			);
 		}
-		
+
 		break;
 
 	default:
 		status = STATUS_INVALID_PARAMETER;
 	}
 
-	WdfWaitLockRelease(pDevCtx->OutputReport.Lock);
-
+	*NtStatus = status;
+	
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 	
-	return NT_SUCCESS(status) ? ScheduledTask_WorkResult_SuccessButTryAgain : ScheduledTask_WorkResult_Fail;
+	return ThreadedBufferQueue_BufferDisposition_WorkComplete;
 }
 
 #pragma endregion
@@ -1910,6 +1885,8 @@ Ds_SendOutputReport(
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
 	
+	WdfWaitLockAcquire(Context->OutputReport.Lock, NULL);
+
 	do {
 		//
 		// Grab new buffer to send
@@ -1970,6 +1947,8 @@ Ds_SendOutputReport(
 		);
 
 	} while (FALSE);
+
+	WdfWaitLockRelease(Context->OutputReport.Lock);
 
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 

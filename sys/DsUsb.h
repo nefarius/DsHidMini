@@ -31,7 +31,8 @@ NTSTATUS USB_WriteInterruptPipeAsync(
 
 NTSTATUS
 USB_WriteInterruptOutSync(
-    _In_ PDEVICE_CONTEXT Context
+    _In_ PDEVICE_CONTEXT Context,
+    _In_ PWDF_MEMORY_DESCRIPTOR Memory
 );
 
 EVT_WDF_REQUEST_COMPLETION_ROUTINE EvtUsbRequestCompletionRoutine;

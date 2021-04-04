@@ -215,26 +215,20 @@ USB_WriteInterruptPipeAsync(
 // 
 NTSTATUS
 USB_WriteInterruptOutSync(
-	_In_ PDEVICE_CONTEXT Context
+	_In_ PDEVICE_CONTEXT Context,
+	_In_ PWDF_MEMORY_DESCRIPTOR Memory
 )
 {
-	WDF_MEMORY_DESCRIPTOR  writeBufDesc;
 	ULONG bytesWritten;
 	NTSTATUS status;
 
 	FuncEntry(TRACE_DSUSB);
-	
-	WDF_MEMORY_DESCRIPTOR_INIT_HANDLE(
-		&writeBufDesc,
-		Context->Connection.Usb.OutputReportMemory,
-		NULL
-	);
-	
+		
 	status = WdfUsbTargetPipeWriteSynchronously(
 		Context->Connection.Usb.InterruptOutPipe,
 		NULL,
 		NULL,
-		&writeBufDesc,
+		Memory,
 		&bytesWritten
 	);
 

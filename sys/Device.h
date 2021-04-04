@@ -192,7 +192,7 @@ typedef struct _DS_OUTPUT_REPORT_CACHE
 {
 	LARGE_INTEGER LastSentTimestamp;
 	
-	UCHAR LastReport[0x30]; // Introduce const
+	UCHAR LastReport[0x31]; // Introduce const
 	
 } DS_OUTPUT_REPORT_CACHE, *PDS_OUTPUT_REPORT_CACHE;
 
@@ -370,8 +370,6 @@ DMF_DsHidMini_Close(
 	_In_ DMFMODULE DmfModule
 );
 
-
-EVT_DMF_ScheduledTask_Callback DMF_OutputReportScheduledTaskCallback;
 
 EVT_DMF_ThreadedBufferQueue_Callback DMF_EvtExecuteOutputPacketReceived;
 

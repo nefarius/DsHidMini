@@ -98,9 +98,14 @@ typedef enum _DS_OUTPUT_REPORT_MODE
 typedef enum _DS_OUTPUT_REPORT_SOURCE
 {
 	//
-	// Request originated from within DSHM itself
+	// Request originated from ourself (must not be discarded)
 	// 
-    Ds3OutputReportSourceDriver = 0,
+    Ds3OutputReportSourceDriverHighPriority = 0,
+
+    //
+    // Request originated from ourself (may be discarded)
+    // 
+    Ds3OutputReportSourceDriverLowPriority,
 
 	//
 	// Request came in through Force Feedback exposure

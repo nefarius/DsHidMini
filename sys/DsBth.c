@@ -257,25 +257,22 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 //
 // Send HID Control OUT Request
 // 
-NTSTATUS DsBth_SendHidControlWriteRequest(PDEVICE_CONTEXT Context)
+NTSTATUS 
+DsBth_SendHidControlWriteRequest(
+	_In_ PDEVICE_CONTEXT Context,
+	_In_ PWDF_MEMORY_DESCRIPTOR Memory
+)
 {
 	NTSTATUS					status;
-	WDF_MEMORY_DESCRIPTOR		memDesc;
 	WDF_REQUEST_REUSE_PARAMS    params;
 
 	FuncEntry(TRACE_DSBTH);
 	
-	WDF_MEMORY_DESCRIPTOR_INIT_HANDLE(
-		&memDesc,
-		Context->Connection.Bth.HidControl.WriteMemory,
-		NULL
-	);
-
 	status = WdfIoTargetSendIoctlSynchronously(
 		Context->Connection.Bth.BthIoTarget,
 		Context->Connection.Bth.HidControl.WriteRequest,
 		IOCTL_BTHPS3_HID_CONTROL_WRITE,
-		&memDesc,
+		Memory,
 		NULL,
 		NULL,
 		NULL
@@ -544,7 +541,7 @@ DsBth_EvtControlWriteTimerFunc(
 	DS3_SET_LARGE_RUMBLE_DURATION(pDevCtx, 0xFE);
 	DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, 0x00);
 
-	(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriver);
+	(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverHighPriority);
 
 	FuncExitNoReturn(TRACE_DSBTH);
 }
