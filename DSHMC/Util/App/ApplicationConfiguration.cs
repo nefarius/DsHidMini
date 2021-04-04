@@ -24,16 +24,6 @@ namespace Nefarius.DsHidMini.Util.App
         public static string GlobalConfigFileName => "DsHidMiniControlGlobalConfig";
 
         /// <summary>
-        ///     Gets cached timestamp value of last update check run.
-        /// </summary>
-        public DateTime LastCheckedForUpdate { get; set; }
-
-        /// <summary>
-        ///     True if update is available, false otherwise.
-        /// </summary>
-        public bool IsUpdateAvailable { get; set; } = false;
-
-        /// <summary>
         ///     True if a log file should be generated, false otherwise.
         /// </summary>
         public bool IsLoggingEnabled { get; set; } = false;
