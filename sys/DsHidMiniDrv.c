@@ -1769,7 +1769,8 @@ DMF_EvtExecuteOutputPacketReceived(
 		//
 		// Don't send if no state change has occurred
 		// 
-		if (pDevCtx->Configuration.IsOutputDeduplicatorEnabled > 0
+		if (pRepCtx->ReportSource > Ds3OutputReportSourceDriverHighPriority
+			&& pDevCtx->Configuration.IsOutputDeduplicatorEnabled > 0
 			&& RtlCompareMemory(
 				buffer,
 				pDevCtx->OutputReport.Cache.LastReport,
@@ -1800,7 +1801,8 @@ DMF_EvtExecuteOutputPacketReceived(
 		//
 		// Don't send if no state change has occurred
 		// 
-		if (pDevCtx->Configuration.IsOutputDeduplicatorEnabled > 0
+		if (pRepCtx->ReportSource > Ds3OutputReportSourceDriverHighPriority
+			&& pDevCtx->Configuration.IsOutputDeduplicatorEnabled > 0
 			&& RtlCompareMemory(
 				buffer,
 				pDevCtx->OutputReport.Cache.LastReport,
@@ -1824,7 +1826,8 @@ DMF_EvtExecuteOutputPacketReceived(
 		//
 		// TODO: improve, emergency dropout
 		// 
-		if (pDevCtx->Configuration.IsOutputRateControlEnabled > 0
+		if (pRepCtx->ReportSource > Ds3OutputReportSourceDriverHighPriority
+			&& pDevCtx->Configuration.IsOutputRateControlEnabled > 0
 			&& ms < pDevCtx->Configuration.OutputRateControlPeriodMs)
 		{
 			TraceError(
