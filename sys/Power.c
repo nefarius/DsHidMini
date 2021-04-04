@@ -220,7 +220,7 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 		//
 		// Send initial output report
 		// 
-		status = Ds_SendOutputReport(pDevCtx);
+		status = Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriver);
 
 		//
 		// Send preset output report (delayed)

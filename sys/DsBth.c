@@ -544,7 +544,7 @@ DsBth_EvtControlWriteTimerFunc(
 	DS3_SET_LARGE_RUMBLE_DURATION(pDevCtx, 0xFE);
 	DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, 0x00);
 
-	(void)Ds_SendOutputReport(pDevCtx);
+	(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriver);
 
 	FuncExitNoReturn(TRACE_DSBTH);
 }

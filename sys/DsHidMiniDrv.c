@@ -729,7 +729,7 @@ DsHidMini_WriteReport(
 			DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, 0);
 			DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, 0);
 
-			(void)Ds_SendOutputReport(pDevCtx);
+			(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceForceFeedback);
 			
 			break;
 		case PidDcPause:
@@ -863,7 +863,7 @@ DsHidMini_WriteReport(
 		{
 		case PidEoStart:
 
-			(void)Ds_SendOutputReport(pDevCtx);
+			(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceForceFeedback);
 			
 			break;
 
@@ -872,7 +872,7 @@ DsHidMini_WriteReport(
 			DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, 0);
 			DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, 0);
 			
-			(void)Ds_SendOutputReport(pDevCtx);
+			(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceForceFeedback);
 			
 			break;
 		default:
@@ -948,7 +948,7 @@ DsHidMini_WriteReport(
 			bufferSize
 		);
 
-		(void)Ds_SendOutputReport(pDevCtx);
+		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourcePassThrough);
 
 		status = STATUS_SUCCESS;
 	}
@@ -1011,7 +1011,7 @@ DsHidMini_WriteReport(
 				DS3_SET_LED(pDevCtx, r << 1);
 		}
 		
-		(void)Ds_SendOutputReport(pDevCtx);
+		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDualShock4);
 
 		status = STATUS_SUCCESS;
 	}
@@ -1284,7 +1284,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 		{
 			DS3_SET_LED(pDevCtx, DS3_LED_4);
 
-			(void)Ds_SendOutputReport(pDevCtx);
+			(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriver);
 		}
 	}
 	//
@@ -1325,7 +1325,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 			{
 				DS3_SET_LED(pDevCtx, led);
 
-				(void)Ds_SendOutputReport(pDevCtx);
+				(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriver);
 			}
 		}
 	}
@@ -1538,7 +1538,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 						break;
 					}
 
-					(void)Ds_SendOutputReport(pDevCtx);
+					(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriver);
 				}
 			}
 
@@ -1894,12 +1894,58 @@ DMF_OutputReportScheduledTaskCallback(
 
 #pragma endregion
 
-NTSTATUS Ds_SendOutputReport(PDEVICE_CONTEXT Context)
+NTSTATUS Ds_SendOutputReport(PDEVICE_CONTEXT Context, DS_OUTPUT_REPORT_SOURCE Source)
 {
 	NTSTATUS status;
-	
+	PUCHAR sourceBuffer, sendBuffer;
+	size_t sourceBufferLength;
+	DS_OUTPUT_REPORT_CONTEXT pRepCtx;
+
 	FuncEntry(TRACE_DSHIDMINIDRV);
 	
+	do {
+
+		status = DMF_ThreadedBufferQueue_Fetch(
+			Context->OutputReport.Worker,
+			(PVOID*)&sendBuffer,
+			(PVOID*)&pRepCtx
+		);
+
+		if (!NT_SUCCESS(status)) {
+			TraceError(
+				TRACE_DSHIDMINIDRV,
+				"DMF_ThreadedBufferQueue_Fetch failed with status %!STATUS!",
+				status
+			);
+
+			//
+			// TODO: react to different status codes
+			//
+
+			break;
+		}
+
+		DS3_GET_RAW_OUTPUT_REPORT_BUFFER(
+			Context,
+			&sourceBuffer,
+			&sourceBufferLength
+		);
+
+		// 
+		// Timestamp arrival
+		//
+		QueryPerformanceCounter(&pRepCtx.ReceivedTimestamp);
+		// 
+		// Real buffer length
+		// 
+		pRepCtx.BufferSize = sourceBufferLength;
+		//
+		// Store origin
+		//
+		pRepCtx.ReportSource = Source;
+
+	} while (FALSE);
+
 	status = DMF_ScheduledTask_ExecuteNow(
 		Context->OutputReport.Scheduler,
 		Context
