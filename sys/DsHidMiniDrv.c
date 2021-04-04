@@ -1894,7 +1894,14 @@ DMF_OutputReportScheduledTaskCallback(
 
 #pragma endregion
 
-NTSTATUS Ds_SendOutputReport(PDEVICE_CONTEXT Context, DS_OUTPUT_REPORT_SOURCE Source)
+//
+// Enqueues current output report buffer to get sent to device.
+//
+NTSTATUS 
+Ds_SendOutputReport(
+	PDEVICE_CONTEXT Context, 
+	DS_OUTPUT_REPORT_SOURCE Source
+)
 {
 	NTSTATUS status;
 	PUCHAR sourceBuffer, sendBuffer;
@@ -1904,7 +1911,9 @@ NTSTATUS Ds_SendOutputReport(PDEVICE_CONTEXT Context, DS_OUTPUT_REPORT_SOURCE So
 	FuncEntry(TRACE_DSHIDMINIDRV);
 	
 	do {
-
+		//
+		// Grab new buffer to send
+		//
 		status = DMF_ThreadedBufferQueue_Fetch(
 			Context->OutputReport.Worker,
 			(PVOID*)&sendBuffer,
@@ -1925,6 +1934,9 @@ NTSTATUS Ds_SendOutputReport(PDEVICE_CONTEXT Context, DS_OUTPUT_REPORT_SOURCE So
 			break;
 		}
 
+		//
+		// Get full report (including IDs etc.)
+		//
 		DS3_GET_RAW_OUTPUT_REPORT_BUFFER(
 			Context,
 			&sourceBuffer,
@@ -1944,17 +1956,27 @@ NTSTATUS Ds_SendOutputReport(PDEVICE_CONTEXT Context, DS_OUTPUT_REPORT_SOURCE So
 		//
 		pRepCtx.ReportSource = Source;
 
-	} while (FALSE);
+		//
+		// Copy current report to buffer
+		//
+		RtlCopyMemory(sendBuffer, sourceBuffer, sourceBufferLength);
 
-	status = DMF_ScheduledTask_ExecuteNow(
-		Context->OutputReport.Scheduler,
-		Context
-	);
+		//
+		// Enqueue current report
+		//
+		DMF_ThreadedBufferQueue_Enqueue(
+			Context->OutputReport.Worker,
+			sendBuffer
+		);
+
+	} while (FALSE);
 
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 
 	return status;
 }
+
+#pragma region Diagnostics
 
 VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
 {
@@ -1990,3 +2012,5 @@ VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
 	UNREFERENCED_PARAMETER(BufferLength);
 #endif
 }
+
+#pragma endregion

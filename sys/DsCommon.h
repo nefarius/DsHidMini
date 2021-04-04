@@ -128,9 +128,6 @@ typedef struct _DS_DRIVER_CONFIGURATION
 {
     /** The HID device mode */
     DS_HID_DEVICE_MODE HidDeviceMode;
-
-    /** DEPRECATED */
-    ULONG OutputReportTimerPeriodMs;
 	
     /** True to mute digital pressure buttons */
     BOOLEAN MuteDigitalPressureButtons;

@@ -532,31 +532,6 @@ DmfDeviceModulesAdd(
 		WDF_NO_OBJECT_ATTRIBUTES,
 		&pDevCtx->OutputReport.Worker
 	);
-	
-	//
-	// Scheduler for serialized periodic output report dispatcher
-	// 
-
-	DMF_CONFIG_ScheduledTask_AND_ATTRIBUTES_INIT(
-		&dmfSchedulerCfg,
-		&moduleAttributes
-	);
-	
-	dmfSchedulerCfg.EvtScheduledTaskCallback = DMF_OutputReportScheduledTaskCallback;
-	dmfSchedulerCfg.CallbackContext = pDevCtx;
-	dmfSchedulerCfg.PersistenceType = ScheduledTask_Persistence_NotPersistentAcrossReboots;
-	dmfSchedulerCfg.ExecutionMode = ScheduledTask_ExecutionMode_Deferred;
-	dmfSchedulerCfg.ExecuteWhen = ScheduledTask_ExecuteWhen_Other; // Don't use timer
-	dmfSchedulerCfg.TimeMsBeforeInitialCall = 1000;
-	dmfSchedulerCfg.TimerPeriodMsOnSuccess = pDevCtx->Configuration.OutputReportTimerPeriodMs;
-	dmfSchedulerCfg.TimerPeriodMsOnFail = pDevCtx->Configuration.OutputReportTimerPeriodMs;
-
-	DMF_DmfModuleAdd(
-		DmfModuleInit,
-		&moduleAttributes,
-		WDF_NO_OBJECT_ATTRIBUTES,
-		&pDevCtx->OutputReport.Scheduler
-	);
 
 	//
 	// Virtual HID Mini Module

@@ -211,11 +211,6 @@ typedef struct _DEVICE_CONTEXT
 	struct
 	{
 		//
-		// Periodic task scheduler to send output reports
-		// 
-		DMFMODULE Scheduler;
-
-		//
 		// Threaded buffer queue worker
 		// 
 		DMFMODULE Worker;
