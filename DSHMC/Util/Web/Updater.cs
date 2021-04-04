@@ -40,19 +40,6 @@ namespace Nefarius.DsHidMini.Util.Web
                     return false;
                 }
 
-                // Get cached value
-                var lastChecked = ApplicationConfiguration.Instance.LastCheckedForUpdate;
-                Log.Debug("Last checked for update on {LastCheckedForUpdate}", lastChecked);
-
-                // If we already checked today, return cached value to reduce HTTP calls
-                if (lastChecked.AddDays(1) >= DateTime.UtcNow)
-                {
-                    var storedValue = ApplicationConfiguration.Instance.IsUpdateAvailable;
-                    Log.Information("Update check already occurred within the last day, returning {StoredValue}",
-                        storedValue);
-                    return storedValue;
-                }
-
                 try
                 {
                     // Query for releases/tags and store information
@@ -89,19 +76,10 @@ namespace Nefarius.DsHidMini.Util.Web
                         var version = Version.Parse(tag);
                         Log.Debug("Tag to version conversion: {Version}", version);
 
-                        // Store values in user settings
-                        ApplicationConfiguration.Instance.LastCheckedForUpdate = DateTime.UtcNow;
-                        Log.Debug("Updating last checked for update to {Timestamp}",
-                            ApplicationConfiguration.Instance.LastCheckedForUpdate);
 
                         var isOutdated = version.CompareTo(AssemblyVersion) > 0;
                         if (isOutdated)
                             Log.Information("Update available");
-
-                        ApplicationConfiguration.Instance.IsUpdateAvailable = isOutdated;
-                        Log.Debug("Updating update available value to {IsUpdateAvailable}",
-                            isOutdated);
-                        ApplicationConfiguration.Instance.Save();
 
                         return isOutdated;
                     }
