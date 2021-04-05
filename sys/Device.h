@@ -33,7 +33,7 @@ struct USB_DEVICE_CONTEXT
 	WDFUSBPIPE InterruptInPipe;
 
 	//
-	// USB Interrupt (in) pipe handle
+	// USB Interrupt (out) pipe handle
 	// 
 	WDFUSBPIPE InterruptOutPipe;
 
@@ -112,6 +112,7 @@ struct BTH_DEVICE_CONTEXT
 	{
 		//
 		// Periodic timer to consume pending memory
+		// TODO: call after every output report send instead, safes a timer
 		// 
 		WDFTIMER HidControlConsume;
 
@@ -191,7 +192,10 @@ typedef struct _DS_OUTPUT_REPORT_CONTEXT
 typedef struct _DS_OUTPUT_REPORT_CACHE
 {
 	LARGE_INTEGER LastSentTimestamp;
-	
+
+	//
+	// TODO: replace with WDFMEMORY object
+	// 
 	UCHAR LastReport[0x31]; // Introduce const
 	
 } DS_OUTPUT_REPORT_CACHE, *PDS_OUTPUT_REPORT_CACHE;
@@ -216,7 +220,7 @@ typedef struct _DEVICE_CONTEXT
 		DMFMODULE Worker;
 
 		//
-		// Lock protecting output report scheduler callback
+		// Lock protecting output report buffer access
 		// 
 		WDFWAITLOCK Lock;
 
@@ -287,7 +291,7 @@ typedef struct _DEVICE_CONTEXT
 	USHORT VersionNumber;
 
 	//
-	// Disk-stored driver configuration
+	// Registry-stored driver configuration
 	// 
 	DS_DRIVER_CONFIGURATION Configuration;
 
@@ -297,7 +301,7 @@ typedef struct _DEVICE_CONTEXT
 	HANDLE ConfigurationReloadEvent;
 
 	//
-	// Wait handle
+	// Wait handle for hot-reload
 	//
 	HANDLE ConfigurationReloadWaitHandle;
 
@@ -326,7 +330,7 @@ typedef struct
 	DMFMODULE DmfModuleVirtualHidMini;
 
 	//
-	// Input report
+	// Input report (packet format depends on chosen HID mode)
 	// 
 	UCHAR InputReport[DS3_COMMON_MAX_HID_INPUT_REPORT_SIZE];
 
