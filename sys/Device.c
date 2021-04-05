@@ -494,10 +494,8 @@ DmfDeviceModulesAdd(
 )
 {
 	PDEVICE_CONTEXT pDevCtx;
-	WDF_OBJECT_ATTRIBUTES attributes;
 	DMF_MODULE_ATTRIBUTES moduleAttributes;
 	DMF_CONFIG_DsHidMini dsHidMiniCfg;
-	DMF_CONFIG_ScheduledTask dmfSchedulerCfg;
 	DMF_CONFIG_ThreadedBufferQueue dmfBufferCfg;
 
 	PAGED_CODE();
@@ -509,9 +507,6 @@ DmfDeviceModulesAdd(
 	//
 	// Threaded buffer queue used to serialize output report packets
 	// 
-	
-	WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
-	attributes.ParentObject = Device;
 
 	DMF_CONFIG_ThreadedBufferQueue_AND_ATTRIBUTES_INIT(
 		&dmfBufferCfg,
@@ -524,7 +519,7 @@ DmfDeviceModulesAdd(
 	dmfBufferCfg.BufferQueueConfig.SourceSettings.BufferCount = 10; // TODO: tune
 	dmfBufferCfg.BufferQueueConfig.SourceSettings.BufferSize = DS3_BTH_HID_OUTPUT_REPORT_SIZE;
 	dmfBufferCfg.BufferQueueConfig.SourceSettings.BufferContextSize = sizeof(DS_OUTPUT_REPORT_CONTEXT);
-	dmfBufferCfg.BufferQueueConfig.SourceSettings.PoolType = NonPagedPoolNx;
+	dmfBufferCfg.BufferQueueConfig.SourceSettings.PoolType = PagedPool;
 
 	DMF_DmfModuleAdd(
 		DmfModuleInit,

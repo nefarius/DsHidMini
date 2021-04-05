@@ -1725,6 +1725,8 @@ Exit:
 
 #pragma region Output Report processing
 
+_IRQL_requires_max_(PASSIVE_LEVEL)
+_IRQL_requires_same_
 ThreadedBufferQueue_BufferDisposition
 DMF_EvtExecuteOutputPacketReceived(
 	_In_ DMFMODULE DmfModule,
@@ -1738,7 +1740,6 @@ DMF_EvtExecuteOutputPacketReceived(
 	WDFDEVICE device = DMF_ParentDeviceGet(DmfModule);
 	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(device);
 	PDS_OUTPUT_REPORT_CONTEXT pRepCtx = (PDS_OUTPUT_REPORT_CONTEXT)ClientWorkBufferContext;
-	PUCHAR buffer = ClientWorkBuffer;
 	size_t bufferSize = pRepCtx->BufferSize;
 
 	WDF_MEMORY_DESCRIPTOR memoryDesc;
@@ -1758,7 +1759,7 @@ DMF_EvtExecuteOutputPacketReceived(
 
 	WDF_MEMORY_DESCRIPTOR_INIT_BUFFER(
 		&memoryDesc,
-		buffer,
+		ClientWorkBuffer,
 		bufferSize
 	);
 
@@ -1772,7 +1773,7 @@ DMF_EvtExecuteOutputPacketReceived(
 		if (pRepCtx->ReportSource > Ds3OutputReportSourceDriverHighPriority
 			&& pDevCtx->Configuration.IsOutputDeduplicatorEnabled > 0
 			&& RtlCompareMemory(
-				buffer,
+				ClientWorkBuffer,
 				pDevCtx->OutputReport.Cache.LastReport,
 				bufferSize
 			) == bufferSize)
@@ -1789,7 +1790,7 @@ DMF_EvtExecuteOutputPacketReceived(
 		{
 			RtlCopyMemory(
 				pDevCtx->OutputReport.Cache.LastReport,
-				buffer,
+				ClientWorkBuffer,
 				bufferSize
 			);
 		}
@@ -1804,7 +1805,7 @@ DMF_EvtExecuteOutputPacketReceived(
 		if (pRepCtx->ReportSource > Ds3OutputReportSourceDriverHighPriority
 			&& pDevCtx->Configuration.IsOutputDeduplicatorEnabled > 0
 			&& RtlCompareMemory(
-				buffer,
+				ClientWorkBuffer,
 				pDevCtx->OutputReport.Cache.LastReport,
 				bufferSize
 			) == bufferSize)
@@ -1852,7 +1853,7 @@ DMF_EvtExecuteOutputPacketReceived(
 
 			RtlCopyMemory(
 				pDevCtx->OutputReport.Cache.LastReport,
-				buffer,
+				ClientWorkBuffer,
 				bufferSize
 			);
 		}
@@ -1884,7 +1885,7 @@ Ds_SendOutputReport(
 	NTSTATUS status;
 	PUCHAR sourceBuffer, sendBuffer;
 	size_t sourceBufferLength;
-	DS_OUTPUT_REPORT_CONTEXT pRepCtx;
+	PDS_OUTPUT_REPORT_CONTEXT sendContext;
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
 	
@@ -1897,7 +1898,7 @@ Ds_SendOutputReport(
 		status = DMF_ThreadedBufferQueue_Fetch(
 			Context->OutputReport.Worker,
 			(PVOID*)&sendBuffer,
-			(PVOID*)&pRepCtx
+			(PVOID*)&sendContext
 		);
 
 		if (!NT_SUCCESS(status)) {
@@ -1926,21 +1927,21 @@ Ds_SendOutputReport(
 		// 
 		// Timestamp arrival
 		//
-		QueryPerformanceCounter(&pRepCtx.ReceivedTimestamp);
+		QueryPerformanceCounter(&sendContext->ReceivedTimestamp);
 		// 
 		// Real buffer length
 		// 
-		pRepCtx.BufferSize = sourceBufferLength;
+		sendContext->BufferSize = sourceBufferLength;
 		//
 		// Store origin
 		//
-		pRepCtx.ReportSource = Source;
+		sendContext->ReportSource = Source;
 
 		//
 		// Copy current report to buffer
 		//
 		RtlCopyMemory(sendBuffer, sourceBuffer, sourceBufferLength);
-
+		
 		//
 		// Enqueue current report
 		//
