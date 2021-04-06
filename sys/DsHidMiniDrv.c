@@ -1765,6 +1765,8 @@ DMF_EvtExecuteOutputPacketReceived(
 
 	switch (pDevCtx->ConnectionType)
 	{
+#pragma region DsDeviceConnectionTypeUsb
+		
 	case DsDeviceConnectionTypeUsb:
 
 		//
@@ -1797,6 +1799,10 @@ DMF_EvtExecuteOutputPacketReceived(
 
 		break;
 
+#pragma endregion
+
+#pragma region DsDeviceConnectionTypeBth
+		
 	case DsDeviceConnectionTypeBth:
 
 		//
@@ -1859,6 +1865,8 @@ DMF_EvtExecuteOutputPacketReceived(
 		}
 
 		break;
+
+#pragma endregion
 
 	default:
 		status = STATUS_INVALID_PARAMETER;
