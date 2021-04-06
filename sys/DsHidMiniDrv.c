@@ -1736,6 +1736,7 @@ DMF_EvtExecuteOutputPacketReceived(
 	_Out_ NTSTATUS* NtStatus
 )
 {
+	ThreadedBufferQueue_BufferDisposition retval = ThreadedBufferQueue_BufferDisposition_WorkComplete;
 	NTSTATUS status = STATUS_UNSUCCESSFUL;
 	WDFDEVICE device = DMF_ParentDeviceGet(DmfModule);
 	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(device);
@@ -1745,6 +1746,7 @@ DMF_EvtExecuteOutputPacketReceived(
 	WDF_MEMORY_DESCRIPTOR memoryDesc;
 	LARGE_INTEGER freq, *t1, *t2;
 	LONGLONG ms;
+	ULONGLONG timeout;
 	
 	UNREFERENCED_PARAMETER(ClientWorkBufferSize);
 	UNREFERENCED_PARAMETER(NtStatus);
@@ -1837,16 +1839,61 @@ DMF_EvtExecuteOutputPacketReceived(
 		);
 
 		//
-		// TODO: improve, emergency dropout
+		// Rate limit condition has been detected
 		// 
 		if (pRepCtx->ReportSource > Ds3OutputReportSourceDriverHighPriority
 			&& pDevCtx->Configuration.IsOutputRateControlEnabled > 0
 			&& ms < pDevCtx->Configuration.OutputRateControlPeriodMs)
 		{
-			TraceError(
+			timeout = pDevCtx->Configuration.OutputRateControlPeriodMs - ms;
+			
+			TraceVerbose(
 				TRACE_DSHIDMINIDRV,
-				"Host is sending too fast, dropping"
+				"Host is sending too fast, delaying for %Iu ms",
+				timeout
 			);
+
+			//
+			// Protect, must not run in parallel
+			// 
+			WdfWaitLockAcquire(pDevCtx->OutputReport.Cache.Lock, NULL);
+			{
+				//
+				// We're still in overload condition, drop previous, if any
+				// 
+				if (pDevCtx->OutputReport.Cache.PendingClientBuffer)
+				{
+					DMF_ThreadedBufferQueue_WorkCompleted(
+						pDevCtx->OutputReport.Worker,
+						pDevCtx->OutputReport.Cache.PendingClientBuffer,
+						STATUS_INVALID_DEVICE_REQUEST
+					);
+				}
+
+				//
+				// Overwrite after old one has been cancelled
+				// 
+				pDevCtx->OutputReport.Cache.PendingClientBuffer = ClientWorkBuffer;
+				pDevCtx->OutputReport.Cache.PendingClientBufferContext = ClientWorkBufferContext;
+
+				//
+				// Kick off delay send timer callback
+				// 
+				if (!pDevCtx->OutputReport.Cache.IsScheduled)
+				{
+					pDevCtx->OutputReport.Cache.IsScheduled = WdfTimerStart(
+						pDevCtx->OutputReport.Cache.SendDelayTimer,
+						WDF_REL_TIMEOUT_IN_MS(timeout)
+					);
+				}
+			}
+			WdfWaitLockRelease(pDevCtx->OutputReport.Cache.Lock);
+			
+			//
+			// Keep buffer slot occupied
+			// 
+			retval = ThreadedBufferQueue_BufferDisposition_WorkPending;
+			
 			break;
 		}
 
@@ -1882,7 +1929,7 @@ DMF_EvtExecuteOutputPacketReceived(
 	
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 	
-	return ThreadedBufferQueue_BufferDisposition_WorkComplete;
+	return retval;
 }
 
 void
@@ -1890,9 +1937,84 @@ DSHM_OutputReportDelayTimerElapsed(
 	WDFTIMER Timer
 )
 {
-	UNREFERENCED_PARAMETER(Timer);
-
+	NTSTATUS status;
+	WDFDEVICE device = WdfTimerGetParentObject(Timer);
+	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(device);
+	WDF_MEMORY_DESCRIPTOR memoryDesc;
+	
 	FuncEntry(TRACE_DSHIDMINIDRV);
+
+	WdfWaitLockAcquire(pDevCtx->OutputReport.Cache.Lock, NULL);
+
+	WDF_MEMORY_DESCRIPTOR_INIT_BUFFER(
+		&memoryDesc,
+		pDevCtx->OutputReport.Cache.PendingClientBuffer,
+		(ULONG)pDevCtx->OutputReport.Cache.PendingClientBufferContext->BufferSize
+	);
+	
+	switch (pDevCtx->ConnectionType)
+	{
+#pragma region DsDeviceConnectionTypeUsb
+
+	case DsDeviceConnectionTypeUsb:
+
+		status = USB_WriteInterruptOutSync(
+			pDevCtx,
+			&memoryDesc
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DSHIDMINIDRV,
+				"USB_WriteInterruptOutSync failed with status %!STATUS!",
+				status
+			);
+		}
+		
+		break;
+
+#pragma endregion
+
+#pragma region DsDeviceConnectionTypeBth
+
+	case DsDeviceConnectionTypeBth:
+
+		status = DsBth_SendHidControlWriteRequest(
+			pDevCtx,
+			&memoryDesc
+		);
+
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DSHIDMINIDRV,
+				"DsBth_SendHidControlWriteRequest failed with status %!STATUS!",
+				status
+			);
+		}
+
+		break;
+
+#pragma endregion
+		
+	default:
+		status = STATUS_INVALID_PARAMETER;
+	}
+
+	//
+	// Mark buffer as completed
+	// 
+	DMF_ThreadedBufferQueue_WorkCompleted(
+		pDevCtx->OutputReport.Worker,
+		pDevCtx->OutputReport.Cache.PendingClientBuffer,
+		status
+	);
+
+	pDevCtx->OutputReport.Cache.PendingClientBuffer = NULL;
+
+	pDevCtx->OutputReport.Cache.IsScheduled = FALSE;
+	
+	WdfWaitLockRelease(pDevCtx->OutputReport.Cache.Lock);
 	
 	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
 }

@@ -200,6 +200,20 @@ typedef struct _DS_OUTPUT_REPORT_CACHE
 	// Send delay timer
 	// 
 	WDFTIMER SendDelayTimer;
+
+	//
+	// Pending packet buffer to send
+	// 
+	PVOID PendingClientBuffer;
+
+	//
+	// Pending packet buffer context
+	// 
+	PDS_OUTPUT_REPORT_CONTEXT PendingClientBufferContext;
+
+	WDFWAITLOCK Lock;
+
+	BOOLEAN IsScheduled;
 	
 	//
 	// TODO: replace with WDFMEMORY object
