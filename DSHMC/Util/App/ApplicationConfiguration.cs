@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Windows.Media.Effects;
 
 namespace Nefarius.DsHidMini.Util.App
 {
@@ -16,12 +15,12 @@ namespace Nefarius.DsHidMini.Util.App
                 .Load<ApplicationConfiguration>(
                     GlobalConfigFileName,
                     true,
-                    true));
+                    false));
 
         /// <summary>
         ///     JSON (and schema) file name holding global configuration values.
         /// </summary>
-        public static string GlobalConfigFileName => "DsHidMiniControlGlobalConfig";
+        public static string GlobalConfigFileName => "DSHMC";
 
         /// <summary>
         ///     True if a log file should be generated, false otherwise.
@@ -54,7 +53,7 @@ namespace Nefarius.DsHidMini.Util.App
             JsonApplicationConfiguration.Save(
                 GlobalConfigFileName,
                 this,
-                true);
+                false);
         }
     }
 }
