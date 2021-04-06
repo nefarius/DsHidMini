@@ -1743,7 +1743,7 @@ DMF_EvtExecuteOutputPacketReceived(
 	size_t bufferSize = pRepCtx->BufferSize;
 
 	WDF_MEMORY_DESCRIPTOR memoryDesc;
-	LARGE_INTEGER freq, * t1, t2;
+	LARGE_INTEGER freq, *t1, *t2;
 	LONGLONG ms;
 	
 	UNREFERENCED_PARAMETER(ClientWorkBufferSize);
@@ -1753,9 +1753,15 @@ DMF_EvtExecuteOutputPacketReceived(
 
 	QueryPerformanceFrequency(&freq);
 
+	//
+	// Last successful send timestamp
+	// 
 	t1 = &pDevCtx->OutputReport.Cache.LastSentTimestamp;
 
-	QueryPerformanceCounter(&t2);
+	//
+	// Current request received timestamp
+	// 
+	t2 = &pRepCtx->ReceivedTimestamp;
 
 	WDF_MEMORY_DESCRIPTOR_INIT_BUFFER(
 		&memoryDesc,
@@ -1822,7 +1828,7 @@ DMF_EvtExecuteOutputPacketReceived(
 		//
 		// Calculate delay, the smaller the more frequent packets are sent
 		// 
-		ms = (t2.QuadPart - t1->QuadPart) / (freq.QuadPart / 1000);
+		ms = (t2->QuadPart - t1->QuadPart) / (freq.QuadPart / 1000);
 
 		TraceVerbose(
 			TRACE_DSHIDMINIDRV,
@@ -1877,6 +1883,18 @@ DMF_EvtExecuteOutputPacketReceived(
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 	
 	return ThreadedBufferQueue_BufferDisposition_WorkComplete;
+}
+
+void
+DSHM_OutputReportDelayTimerElapsed(
+	WDFTIMER Timer
+)
+{
+	UNREFERENCED_PARAMETER(Timer);
+
+	FuncEntry(TRACE_DSHIDMINIDRV);
+	
+	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
 }
 
 #pragma endregion

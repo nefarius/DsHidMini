@@ -191,12 +191,20 @@ typedef struct _DS_OUTPUT_REPORT_CONTEXT
  */
 typedef struct _DS_OUTPUT_REPORT_CACHE
 {
+	//
+	// Timestamp of last successful send
+	// 
 	LARGE_INTEGER LastSentTimestamp;
 
 	//
+	// Send delay timer
+	// 
+	WDFTIMER SendDelayTimer;
+	
+	//
 	// TODO: replace with WDFMEMORY object
 	// 
-	UCHAR LastReport[0x31]; // Introduce const
+	UCHAR LastReport[0x32]; // Introduce const
 	
 } DS_OUTPUT_REPORT_CACHE, *PDS_OUTPUT_REPORT_CACHE;
 
@@ -376,6 +384,8 @@ DMF_DsHidMini_Close(
 
 
 EVT_DMF_ThreadedBufferQueue_Callback DMF_EvtExecuteOutputPacketReceived;
+
+EVT_WDF_TIMER DSHM_OutputReportDelayTimerElapsed;
 
 EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL DSHM_EvtWdfIoQueueIoDeviceControl;
 

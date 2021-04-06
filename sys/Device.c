@@ -27,7 +27,8 @@ dshidminiEvtDeviceAdd(
 	WDF_PNPPOWER_EVENT_CALLBACKS	pnpPowerCallbacks;
 	PDEVICE_CONTEXT					pDevCtx;
 	WDFQUEUE						queue;
-	WDF_IO_QUEUE_CONFIG				queueConfig;	
+	WDF_IO_QUEUE_CONFIG				queueConfig;
+	WDF_TIMER_CONFIG				timerCfg;
 
 	UNREFERENCED_PARAMETER(Driver);
 
@@ -155,6 +156,33 @@ dshidminiEvtDeviceAdd(
 			TraceError(
 				TRACE_DEVICE,
 				"WdfWaitLockCreate failed with status %!STATUS!",
+				status
+			);
+			break;
+		}
+
+		//
+		// Create timer
+		// 
+
+		WDF_OBJECT_ATTRIBUTES_INIT(&deviceAttributes);
+		deviceAttributes.ParentObject = device;
+
+		WDF_TIMER_CONFIG_INIT(
+			&timerCfg,
+			DSHM_OutputReportDelayTimerElapsed
+		);
+
+		status = WdfTimerCreate(
+			&timerCfg,
+			&deviceAttributes,
+			&pDevCtx->OutputReport.Cache.SendDelayTimer
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"WdfTimerCreate failed with status %!STATUS!",
 				status
 			);
 			break;
