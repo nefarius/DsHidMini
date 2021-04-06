@@ -332,6 +332,34 @@ VOID DS3_GET_UNIFIED_OUTPUT_REPORT_BUFFER(
 	}
 }
 
+VOID DS3_GET_RAW_OUTPUT_REPORT_BUFFER(
+	PDEVICE_CONTEXT Context,
+	UCHAR** Buffer,
+	PSIZE_T BufferLength
+)
+{
+	switch (Context->ConnectionType)
+	{
+	case DsDeviceConnectionTypeUsb:
+
+		*Buffer = (PUCHAR)WdfMemoryGetBuffer(
+			Context->Connection.Usb.OutputReportMemory,
+			BufferLength
+		);
+
+		break;
+
+	case DsDeviceConnectionTypeBth:
+
+		*Buffer = (PUCHAR)WdfMemoryGetBuffer(
+			Context->Connection.Bth.HidControl.WriteMemory,
+			BufferLength
+		);
+
+		break;
+	}
+}
+
 VOID DS3_SET_LED(
 	PDEVICE_CONTEXT Context,
 	UCHAR Value

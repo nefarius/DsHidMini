@@ -53,11 +53,6 @@ DMF_DsHidMini_Create(
 		pDevCtx = DeviceGetContext(Device);
 
 		//
-		// Set defaults
-		// 
-		DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(&pDevCtx->Configuration);
-
-		//
 		// Set Virtual HID Mini properties
 		// 
 		DMF_CALLBACKS_DMF_INIT(&dsHidMiniCallbacks);
@@ -734,7 +729,7 @@ DsHidMini_WriteReport(
 			DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, 0);
 			DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, 0);
 
-			(void)Ds_SendOutputReport(pDevCtx);
+			(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceForceFeedback);
 			
 			break;
 		case PidDcPause:
@@ -868,7 +863,7 @@ DsHidMini_WriteReport(
 		{
 		case PidEoStart:
 
-			(void)Ds_SendOutputReport(pDevCtx);
+			(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceForceFeedback);
 			
 			break;
 
@@ -877,7 +872,7 @@ DsHidMini_WriteReport(
 			DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, 0);
 			DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, 0);
 			
-			(void)Ds_SendOutputReport(pDevCtx);
+			(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceForceFeedback);
 			
 			break;
 		default:
@@ -953,7 +948,7 @@ DsHidMini_WriteReport(
 			bufferSize
 		);
 
-		(void)Ds_SendOutputReport(pDevCtx);
+		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourcePassThrough);
 
 		status = STATUS_SUCCESS;
 	}
@@ -1016,7 +1011,7 @@ DsHidMini_WriteReport(
 				DS3_SET_LED(pDevCtx, r << 1);
 		}
 		
-		(void)Ds_SendOutputReport(pDevCtx);
+		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDualShock4);
 
 		status = STATUS_SUCCESS;
 	}
@@ -1289,7 +1284,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 		{
 			DS3_SET_LED(pDevCtx, DS3_LED_4);
 
-			(void)Ds_SendOutputReport(pDevCtx);
+			(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverLowPriority);
 		}
 	}
 	//
@@ -1330,7 +1325,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 			{
 				DS3_SET_LED(pDevCtx, led);
 
-				(void)Ds_SendOutputReport(pDevCtx);
+				(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverLowPriority);
 			}
 		}
 	}
@@ -1543,7 +1538,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 						break;
 					}
 
-					(void)Ds_SendOutputReport(pDevCtx);
+					(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverLowPriority);
 				}
 			}
 
@@ -1730,41 +1725,44 @@ Exit:
 
 #pragma region Output Report processing
 
-ScheduledTask_Result_Type
-DMF_OutputReportScheduledTaskCallback(
+_IRQL_requires_max_(PASSIVE_LEVEL)
+_IRQL_requires_same_
+ThreadedBufferQueue_BufferDisposition
+DMF_EvtExecuteOutputPacketReceived(
 	_In_ DMFMODULE DmfModule,
-	_In_ VOID* CallbackContext,
-	_In_ WDF_POWER_DEVICE_STATE PreviousState)
+	_In_ UCHAR* ClientWorkBuffer,
+	_In_ ULONG ClientWorkBufferSize,
+	_In_ VOID* ClientWorkBufferContext,
+	_Out_ NTSTATUS* NtStatus
+)
 {
-	UNREFERENCED_PARAMETER(DmfModule);
-	UNREFERENCED_PARAMETER(PreviousState);
-
 	NTSTATUS status = STATUS_UNSUCCESSFUL;
-	PDEVICE_CONTEXT pDevCtx = (PDEVICE_CONTEXT)CallbackContext;
-	PUCHAR buffer = NULL;
-	size_t bufferSize = 0;
+	WDFDEVICE device = DMF_ParentDeviceGet(DmfModule);
+	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(device);
+	PDS_OUTPUT_REPORT_CONTEXT pRepCtx = (PDS_OUTPUT_REPORT_CONTEXT)ClientWorkBufferContext;
+	size_t bufferSize = pRepCtx->BufferSize;
+
+	WDF_MEMORY_DESCRIPTOR memoryDesc;
 	LARGE_INTEGER freq, * t1, t2;
 	LONGLONG ms;
 	
+	UNREFERENCED_PARAMETER(ClientWorkBufferSize);
+	UNREFERENCED_PARAMETER(NtStatus);
+
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
 	QueryPerformanceFrequency(&freq);
-	
-	WdfWaitLockAcquire(pDevCtx->OutputReport.Lock, NULL);
 
 	t1 = &pDevCtx->OutputReport.Cache.LastSentTimestamp;
-	
+
 	QueryPerformanceCounter(&t2);
-	
-	//
-	// Get main output report buffer protocol-agnostic
-	// 
-	DS3_GET_UNIFIED_OUTPUT_REPORT_BUFFER(
-		pDevCtx,
-		&buffer,
-		&bufferSize
+
+	WDF_MEMORY_DESCRIPTOR_INIT_BUFFER(
+		&memoryDesc,
+		ClientWorkBuffer,
+		bufferSize
 	);
-	
+
 	switch (pDevCtx->ConnectionType)
 	{
 	case DsDeviceConnectionTypeUsb:
@@ -1772,9 +1770,10 @@ DMF_OutputReportScheduledTaskCallback(
 		//
 		// Don't send if no state change has occurred
 		// 
-		if (pDevCtx->Configuration.IsOutputDeduplicatorEnabled > 0
+		if (pRepCtx->ReportSource > Ds3OutputReportSourceDriverHighPriority
+			&& pDevCtx->Configuration.IsOutputDeduplicatorEnabled > 0
 			&& RtlCompareMemory(
-				buffer,
+				ClientWorkBuffer,
 				pDevCtx->OutputReport.Cache.LastReport,
 				bufferSize
 			) == bufferSize)
@@ -1783,18 +1782,19 @@ DMF_OutputReportScheduledTaskCallback(
 		}
 
 		status = USB_WriteInterruptOutSync(
-			pDevCtx
+			pDevCtx,
+			&memoryDesc
 		);
 
 		if (NT_SUCCESS(status))
 		{
 			RtlCopyMemory(
 				pDevCtx->OutputReport.Cache.LastReport,
-				buffer,
+				ClientWorkBuffer,
 				bufferSize
 			);
 		}
-		
+
 		break;
 
 	case DsDeviceConnectionTypeBth:
@@ -1802,9 +1802,10 @@ DMF_OutputReportScheduledTaskCallback(
 		//
 		// Don't send if no state change has occurred
 		// 
-		if (pDevCtx->Configuration.IsOutputDeduplicatorEnabled > 0
+		if (pRepCtx->ReportSource > Ds3OutputReportSourceDriverHighPriority
+			&& pDevCtx->Configuration.IsOutputDeduplicatorEnabled > 0
 			&& RtlCompareMemory(
-				buffer,
+				ClientWorkBuffer,
 				pDevCtx->OutputReport.Cache.LastReport,
 				bufferSize
 			) == bufferSize)
@@ -1826,7 +1827,8 @@ DMF_OutputReportScheduledTaskCallback(
 		//
 		// TODO: improve, emergency dropout
 		// 
-		if (pDevCtx->Configuration.IsOutputRateControlEnabled > 0
+		if (pRepCtx->ReportSource > Ds3OutputReportSourceDriverHighPriority
+			&& pDevCtx->Configuration.IsOutputRateControlEnabled > 0
 			&& ms < pDevCtx->Configuration.OutputRateControlPeriodMs)
 		{
 			TraceError(
@@ -1835,8 +1837,11 @@ DMF_OutputReportScheduledTaskCallback(
 			);
 			break;
 		}
-		
-		status = DsBth_SendHidControlWriteRequest(pDevCtx);
+
+		status = DsBth_SendHidControlWriteRequest(
+			pDevCtx,
+			&memoryDesc
+		);
 
 		if (NT_SUCCESS(status))
 		{
@@ -1845,44 +1850,116 @@ DMF_OutputReportScheduledTaskCallback(
 			// 
 
 			QueryPerformanceCounter(t1);
-			
+
 			RtlCopyMemory(
 				pDevCtx->OutputReport.Cache.LastReport,
-				buffer,
+				ClientWorkBuffer,
 				bufferSize
 			);
 		}
-		
+
 		break;
 
 	default:
 		status = STATUS_INVALID_PARAMETER;
 	}
 
-	WdfWaitLockRelease(pDevCtx->OutputReport.Lock);
-
+	*NtStatus = status;
+	
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 	
-	return NT_SUCCESS(status) ? ScheduledTask_WorkResult_SuccessButTryAgain : ScheduledTask_WorkResult_Fail;
+	return ThreadedBufferQueue_BufferDisposition_WorkComplete;
 }
 
 #pragma endregion
 
-NTSTATUS Ds_SendOutputReport(PDEVICE_CONTEXT Context)
+//
+// Enqueues current output report buffer to get sent to device.
+//
+NTSTATUS 
+Ds_SendOutputReport(
+	PDEVICE_CONTEXT Context, 
+	DS_OUTPUT_REPORT_SOURCE Source
+)
 {
 	NTSTATUS status;
-	
+	PUCHAR sourceBuffer, sendBuffer;
+	size_t sourceBufferLength;
+	PDS_OUTPUT_REPORT_CONTEXT sendContext;
+
 	FuncEntry(TRACE_DSHIDMINIDRV);
 	
-	status = DMF_ScheduledTask_ExecuteNow(
-		Context->OutputReport.Scheduler,
-		Context
-	);
+	WdfWaitLockAcquire(Context->OutputReport.Lock, NULL);
+
+	do {
+		//
+		// Grab new buffer to send
+		//
+		status = DMF_ThreadedBufferQueue_Fetch(
+			Context->OutputReport.Worker,
+			(PVOID*)&sendBuffer,
+			(PVOID*)&sendContext
+		);
+
+		if (!NT_SUCCESS(status)) {
+			TraceError(
+				TRACE_DSHIDMINIDRV,
+				"DMF_ThreadedBufferQueue_Fetch failed with status %!STATUS!",
+				status
+			);
+
+			//
+			// TODO: react to different status codes
+			//
+
+			break;
+		}
+
+		//
+		// Get full report (including IDs etc.)
+		//
+		DS3_GET_RAW_OUTPUT_REPORT_BUFFER(
+			Context,
+			&sourceBuffer,
+			&sourceBufferLength
+		);
+
+		// 
+		// Timestamp arrival
+		//
+		QueryPerformanceCounter(&sendContext->ReceivedTimestamp);
+		// 
+		// Real buffer length
+		// 
+		sendContext->BufferSize = sourceBufferLength;
+		//
+		// Store origin
+		//
+		sendContext->ReportSource = Source;
+
+		//
+		// Copy current report to buffer
+		//
+		RtlCopyMemory(sendBuffer, sourceBuffer, sourceBufferLength);
+		
+		//
+		// Enqueue current report
+		//
+		DMF_ThreadedBufferQueue_Enqueue(
+			Context->OutputReport.Worker,
+			sendBuffer
+		);
+
+	} while (FALSE);
+
+	WdfWaitLockRelease(Context->OutputReport.Lock);
 
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 
 	return status;
 }
+
+#pragma region Diagnostics
 
 VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
 {
@@ -1918,3 +1995,5 @@ VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
 	UNREFERENCED_PARAMETER(BufferLength);
 #endif
 }
+
+#pragma endregion

@@ -40,7 +40,12 @@ NTSTATUS DsHidMini_BthConnectionContextInit(
 	WDFDEVICE Device
 );
 
-NTSTATUS DsBth_SendHidControlWriteRequest(PDEVICE_CONTEXT Context);
+NTSTATUS 
+DsBth_SendHidControlWriteRequest(
+	_In_ PDEVICE_CONTEXT Context,
+	_In_ PWDF_MEMORY_DESCRIPTOR Memory
+);
+
 NTSTATUS DsBth_SendHidControlWriteRequestAsync(PDEVICE_CONTEXT Context);
 
 EVT_WDF_REQUEST_COMPLETION_ROUTINE DsBth_HidInterruptReadRequestCompletionRoutine;

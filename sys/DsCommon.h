@@ -83,10 +83,46 @@ typedef enum _DS_HID_DEVICE_MODE
 
 typedef enum _DS_OUTPUT_REPORT_MODE
 {
+	//
+	// DSHM controls output report generation
+	// 
     Ds3OutputReportModeDriverHandled = 0,
+
+	//
+	// Output reports come in from "the outside" and get passed on
+	// 
     Ds3OutputReportModeWriteReportPassThrough
 
 } DS_OUTPUT_REPORT_MODE, * PDS_OUTPUT_REPORT_MODE;
+
+typedef enum _DS_OUTPUT_REPORT_SOURCE
+{
+	//
+	// Request originated from ourself (must not be discarded)
+	// 
+    Ds3OutputReportSourceDriverHighPriority = 0,
+
+    //
+    // Request originated from ourself (may be discarded)
+    // 
+    Ds3OutputReportSourceDriverLowPriority,
+
+	//
+	// Request came in through Force Feedback exposure
+	// 
+    Ds3OutputReportSourceForceFeedback,
+
+	//
+	// Request came in through SXS exposure
+	// 
+    Ds3OutputReportSourcePassThrough,
+
+	//
+	// Request came in from DS4 emulation
+	// 
+    Ds3OutputReportSourceDualShock4
+
+} DS_OUTPUT_REPORT_SOURCE, * PDS_OUTPUT_REPORT_SOURCE;
 
 #include <pshpack1.h>
 
@@ -97,9 +133,6 @@ typedef struct _DS_DRIVER_CONFIGURATION
 {
     /** The HID device mode */
     DS_HID_DEVICE_MODE HidDeviceMode;
-
-    /** DEPRECATED */
-    ULONG OutputReportTimerPeriodMs;
 	
     /** True to mute digital pressure buttons */
     BOOLEAN MuteDigitalPressureButtons;

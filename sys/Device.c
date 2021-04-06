@@ -496,7 +496,7 @@ DmfDeviceModulesAdd(
 	PDEVICE_CONTEXT pDevCtx;
 	DMF_MODULE_ATTRIBUTES moduleAttributes;
 	DMF_CONFIG_DsHidMini dsHidMiniCfg;
-	DMF_CONFIG_ScheduledTask dmfSchedulerCfg;
+	DMF_CONFIG_ThreadedBufferQueue dmfBufferCfg;
 
 	PAGED_CODE();
 
@@ -505,28 +505,27 @@ DmfDeviceModulesAdd(
 	pDevCtx = DeviceGetContext(Device);
 
 	//
-	// Scheduler for serialized periodic output report dispatcher
+	// Threaded buffer queue used to serialize output report packets
 	// 
 
-	DMF_CONFIG_ScheduledTask_AND_ATTRIBUTES_INIT(
-		&dmfSchedulerCfg,
+	DMF_CONFIG_ThreadedBufferQueue_AND_ATTRIBUTES_INIT(
+		&dmfBufferCfg,
 		&moduleAttributes
 	);
+	moduleAttributes.PassiveLevel = TRUE;
 
-	dmfSchedulerCfg.EvtScheduledTaskCallback = DMF_OutputReportScheduledTaskCallback;
-	dmfSchedulerCfg.CallbackContext = pDevCtx;
-	dmfSchedulerCfg.PersistenceType = ScheduledTask_Persistence_NotPersistentAcrossReboots;
-	dmfSchedulerCfg.ExecutionMode = ScheduledTask_ExecutionMode_Deferred;
-	dmfSchedulerCfg.ExecuteWhen = ScheduledTask_ExecuteWhen_Other; // Don't use timer
-	dmfSchedulerCfg.TimeMsBeforeInitialCall = 1000;
-	dmfSchedulerCfg.TimerPeriodMsOnSuccess = pDevCtx->Configuration.OutputReportTimerPeriodMs;
-	dmfSchedulerCfg.TimerPeriodMsOnFail = pDevCtx->Configuration.OutputReportTimerPeriodMs;
+	dmfBufferCfg.EvtThreadedBufferQueueWork = DMF_EvtExecuteOutputPacketReceived;
+	dmfBufferCfg.BufferQueueConfig.SourceSettings.EnableLookAside = FALSE;
+	dmfBufferCfg.BufferQueueConfig.SourceSettings.BufferCount = 10; // TODO: tune
+	dmfBufferCfg.BufferQueueConfig.SourceSettings.BufferSize = DS3_BTH_HID_OUTPUT_REPORT_SIZE;
+	dmfBufferCfg.BufferQueueConfig.SourceSettings.BufferContextSize = sizeof(DS_OUTPUT_REPORT_CONTEXT);
+	dmfBufferCfg.BufferQueueConfig.SourceSettings.PoolType = PagedPool;
 
 	DMF_DmfModuleAdd(
 		DmfModuleInit,
 		&moduleAttributes,
 		WDF_NO_OBJECT_ATTRIBUTES,
-		&pDevCtx->OutputReport.Scheduler
+		&pDevCtx->OutputReport.Worker
 	);
 
 	//

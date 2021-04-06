@@ -33,7 +33,7 @@ struct USB_DEVICE_CONTEXT
 	WDFUSBPIPE InterruptInPipe;
 
 	//
-	// USB Interrupt (in) pipe handle
+	// USB Interrupt (out) pipe handle
 	// 
 	WDFUSBPIPE InterruptOutPipe;
 
@@ -112,6 +112,7 @@ struct BTH_DEVICE_CONTEXT
 	{
 		//
 		// Periodic timer to consume pending memory
+		// TODO: call after every output report send instead, safes a timer
 		// 
 		WDFTIMER HidControlConsume;
 
@@ -143,18 +144,6 @@ struct BTH_DEVICE_CONTEXT
 	LARGE_INTEGER IdleDisconnectTimestamp;
 };
 
-//
-// Sets default values for device configuration
-// 
-VOID FORCEINLINE DS_DRIVER_CONFIGURATION_INIT_DEFAULTS(
-	PDS_DRIVER_CONFIGURATION Configuration
-)
-{
-	Configuration->HidDeviceMode = DsHidMiniDeviceModeSixaxisCompatible;
-	Configuration->MuteDigitalPressureButtons = FALSE;
-	Configuration->DisableAutoPairing = FALSE;
-}
-
 #ifdef DSHM_FEATURE_FFB
 typedef struct _FFB_ATTRIBUTES
 {
@@ -170,6 +159,31 @@ typedef struct _FFB_ATTRIBUTES
 #endif
 
 /**
+ * Output report context.
+ *
+ * @author	Benjamin "Nefarius" Höglinger-Stelzer
+ * @date	01.04.2021
+ */
+typedef struct _DS_OUTPUT_REPORT_CONTEXT
+{
+	//
+	// Time of packet arrival
+	// 
+	LARGE_INTEGER ReceivedTimestamp;
+
+	//
+	// Actual size of buffer
+	// 
+	size_t BufferSize;
+
+	//
+	// The initiator of this report
+	// 
+	DS_OUTPUT_REPORT_SOURCE ReportSource;
+	
+} DS_OUTPUT_REPORT_CONTEXT, *PDS_OUTPUT_REPORT_CONTEXT;
+
+/**
  * Cached output report values to help with rate-control.
  *
  * @author	Benjamin "Nefarius" Höglinger-Stelzer
@@ -178,8 +192,11 @@ typedef struct _FFB_ATTRIBUTES
 typedef struct _DS_OUTPUT_REPORT_CACHE
 {
 	LARGE_INTEGER LastSentTimestamp;
-	
-	UCHAR LastReport[0x30]; // Introduce const
+
+	//
+	// TODO: replace with WDFMEMORY object
+	// 
+	UCHAR LastReport[0x31]; // Introduce const
 	
 } DS_OUTPUT_REPORT_CACHE, *PDS_OUTPUT_REPORT_CACHE;
 
@@ -198,12 +215,12 @@ typedef struct _DEVICE_CONTEXT
 	struct
 	{
 		//
-		// Periodic task scheduler to send output reports
+		// Threaded buffer queue worker
 		// 
-		DMFMODULE Scheduler;
+		DMFMODULE Worker;
 
 		//
-		// Lock protecting output report scheduler callback
+		// Lock protecting output report buffer access
 		// 
 		WDFWAITLOCK Lock;
 
@@ -274,7 +291,7 @@ typedef struct _DEVICE_CONTEXT
 	USHORT VersionNumber;
 
 	//
-	// Disk-stored driver configuration
+	// Registry-stored driver configuration
 	// 
 	DS_DRIVER_CONFIGURATION Configuration;
 
@@ -284,7 +301,7 @@ typedef struct _DEVICE_CONTEXT
 	HANDLE ConfigurationReloadEvent;
 
 	//
-	// Wait handle
+	// Wait handle for hot-reload
 	//
 	HANDLE ConfigurationReloadWaitHandle;
 
@@ -313,7 +330,7 @@ typedef struct
 	DMFMODULE DmfModuleVirtualHidMini;
 
 	//
-	// Input report
+	// Input report (packet format depends on chosen HID mode)
 	// 
 	UCHAR InputReport[DS3_COMMON_MAX_HID_INPUT_REPORT_SIZE];
 
@@ -358,7 +375,7 @@ DMF_DsHidMini_Close(
 );
 
 
-EVT_DMF_ScheduledTask_Callback DMF_OutputReportScheduledTaskCallback;
+EVT_DMF_ThreadedBufferQueue_Callback DMF_EvtExecuteOutputPacketReceived;
 
 EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL DSHM_EvtWdfIoQueueIoDeviceControl;
 

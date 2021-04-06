@@ -220,7 +220,7 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 		//
 		// Send initial output report
 		// 
-		status = Ds_SendOutputReport(pDevCtx);
+		status = Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverHighPriority);
 
 		//
 		// Send preset output report (delayed)
@@ -823,6 +823,11 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 				status);
 		}
 	}
+
+	//
+	// Start processing received output report packets
+	//
+	DMF_ThreadedBufferQueue_Start(pDevCtx->OutputReport.Worker);
 	
 	FuncExit(TRACE_POWER, "status=%!STATUS!", status);
 
@@ -844,6 +849,11 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 	FuncEntry(TRACE_POWER);
 
 	pDevCtx = DeviceGetContext(Device);
+
+	//
+	// Stop processing received output report packets
+	//
+	DMF_ThreadedBufferQueue_Stop(pDevCtx->OutputReport.Worker);
 
 	if (pDevCtx->ConfigurationReloadWaitHandle) {
 		UnregisterWait(pDevCtx->ConfigurationReloadWaitHandle);
