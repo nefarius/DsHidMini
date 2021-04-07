@@ -565,7 +565,7 @@ DmfDeviceModulesAdd(
 
 	dmfBufferCfg.EvtThreadedBufferQueueWork = DMF_EvtExecuteOutputPacketReceived;
 	dmfBufferCfg.BufferQueueConfig.SourceSettings.EnableLookAside = FALSE;
-	dmfBufferCfg.BufferQueueConfig.SourceSettings.BufferCount = 10; // TODO: tune
+	dmfBufferCfg.BufferQueueConfig.SourceSettings.BufferCount = 20; // TODO: tune
 	dmfBufferCfg.BufferQueueConfig.SourceSettings.BufferSize = DS3_BTH_HID_OUTPUT_REPORT_SIZE;
 	dmfBufferCfg.BufferQueueConfig.SourceSettings.BufferContextSize = sizeof(DS_OUTPUT_REPORT_CONTEXT);
 	dmfBufferCfg.BufferQueueConfig.SourceSettings.PoolType = PagedPool;

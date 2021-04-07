@@ -1725,6 +1725,9 @@ Exit:
 
 #pragma region Output Report processing
 
+//
+// Callback invoked when new output report packet is due to being processed
+// 
 _IRQL_requires_max_(PASSIVE_LEVEL)
 _IRQL_requires_same_
 ThreadedBufferQueue_BufferDisposition
@@ -1768,7 +1771,7 @@ DMF_EvtExecuteOutputPacketReceived(
 	WDF_MEMORY_DESCRIPTOR_INIT_BUFFER(
 		&memoryDesc,
 		ClientWorkBuffer,
-		bufferSize
+		(ULONG)bufferSize
 	);
 
 	switch (pDevCtx->ConnectionType)
@@ -1849,7 +1852,8 @@ DMF_EvtExecuteOutputPacketReceived(
 			
 			TraceVerbose(
 				TRACE_DSHIDMINIDRV,
-				"Host is sending too fast, delaying for %Iu ms",
+				"Rate control triggered, delaying buffer 0x%p for %Iu ms",
+				ClientWorkBuffer,
 				timeout
 			);
 
@@ -1863,10 +1867,17 @@ DMF_EvtExecuteOutputPacketReceived(
 				// 
 				if (pDevCtx->OutputReport.Cache.PendingClientBuffer)
 				{
+					TraceVerbose(
+						TRACE_DSHIDMINIDRV,
+						"Rate control still engaged, replacing buffer 0x%p with 0x%p",
+						pDevCtx->OutputReport.Cache.PendingClientBuffer,
+						ClientWorkBuffer
+					);
+					
 					DMF_ThreadedBufferQueue_WorkCompleted(
 						pDevCtx->OutputReport.Worker,
 						pDevCtx->OutputReport.Cache.PendingClientBuffer,
-						STATUS_INVALID_DEVICE_REQUEST
+						STATUS_INVALID_DEVICE_REQUEST // Has no impact
 					);
 				}
 
@@ -1888,6 +1899,8 @@ DMF_EvtExecuteOutputPacketReceived(
 				}
 			}
 			WdfWaitLockRelease(pDevCtx->OutputReport.Cache.Lock);
+
+			status = STATUS_PENDING; // Has no impact, just for trace
 			
 			//
 			// Keep buffer slot occupied
@@ -1932,6 +1945,9 @@ DMF_EvtExecuteOutputPacketReceived(
 	return retval;
 }
 
+//
+// Callback invoked after delay timer elapsed
+// 
 void
 DSHM_OutputReportDelayTimerElapsed(
 	WDFTIMER Timer
@@ -1940,80 +1956,112 @@ DSHM_OutputReportDelayTimerElapsed(
 	NTSTATUS status;
 	WDFDEVICE device = WdfTimerGetParentObject(Timer);
 	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(device);
+	PUCHAR buffer = pDevCtx->OutputReport.Cache.PendingClientBuffer;
+	ULONG bufferSize = (ULONG)pDevCtx->OutputReport.Cache.PendingClientBufferContext->BufferSize;
 	WDF_MEMORY_DESCRIPTOR memoryDesc;
 	
 	FuncEntry(TRACE_DSHIDMINIDRV);
-
-	WdfWaitLockAcquire(pDevCtx->OutputReport.Cache.Lock, NULL);
-
-	WDF_MEMORY_DESCRIPTOR_INIT_BUFFER(
-		&memoryDesc,
-		pDevCtx->OutputReport.Cache.PendingClientBuffer,
-		(ULONG)pDevCtx->OutputReport.Cache.PendingClientBufferContext->BufferSize
-	);
 	
-	switch (pDevCtx->ConnectionType)
+	//
+	// Protected region
+	// 
+	WdfWaitLockAcquire(pDevCtx->OutputReport.Cache.Lock, NULL);
 	{
+		TraceVerbose(
+			TRACE_DSHIDMINIDRV,
+			"Processing delayed buffer 0x%p",
+			buffer
+		);
+
+		DumpAsHex("Delayed Output Report",
+		          buffer,
+		          bufferSize
+		);
+		
+		WDF_MEMORY_DESCRIPTOR_INIT_BUFFER(
+			&memoryDesc,
+			buffer,
+			bufferSize
+		);
+
+		switch (pDevCtx->ConnectionType)
+		{
 #pragma region DsDeviceConnectionTypeUsb
 
-	case DsDeviceConnectionTypeUsb:
+		case DsDeviceConnectionTypeUsb:
 
-		status = USB_WriteInterruptOutSync(
-			pDevCtx,
-			&memoryDesc
-		);
-		if (!NT_SUCCESS(status))
-		{
-			TraceError(
-				TRACE_DSHIDMINIDRV,
-				"USB_WriteInterruptOutSync failed with status %!STATUS!",
-				status
+			status = USB_WriteInterruptOutSync(
+				pDevCtx,
+				&memoryDesc
 			);
-		}
-		
-		break;
+			
+			if (!NT_SUCCESS(status))
+			{
+				TraceError(
+					TRACE_DSHIDMINIDRV,
+					"USB_WriteInterruptOutSync failed with status %!STATUS!",
+					status
+				);
+			}
+
+			break;
 
 #pragma endregion
 
 #pragma region DsDeviceConnectionTypeBth
 
-	case DsDeviceConnectionTypeBth:
+		case DsDeviceConnectionTypeBth:
 
-		status = DsBth_SendHidControlWriteRequest(
-			pDevCtx,
-			&memoryDesc
-		);
-
-		if (!NT_SUCCESS(status))
-		{
-			TraceError(
-				TRACE_DSHIDMINIDRV,
-				"DsBth_SendHidControlWriteRequest failed with status %!STATUS!",
-				status
+			status = DsBth_SendHidControlWriteRequest(
+				pDevCtx,
+				&memoryDesc
 			);
-		}
 
-		break;
+			if (!NT_SUCCESS(status))
+			{
+				TraceError(
+					TRACE_DSHIDMINIDRV,
+					"DsBth_SendHidControlWriteRequest failed with status %!STATUS!",
+					status
+				);
+			}
+
+			break;
 
 #pragma endregion
+
+		default:
+			status = STATUS_INVALID_PARAMETER;
+		}
+
+		if (NT_SUCCESS(status))
+		{
+			// 
+			// Store last successful send
+			// 
+
+			QueryPerformanceCounter(&pDevCtx->OutputReport.Cache.LastSentTimestamp);
+
+			RtlCopyMemory(
+				pDevCtx->OutputReport.Cache.LastReport,
+				buffer,
+				bufferSize
+			);
+		}
 		
-	default:
-		status = STATUS_INVALID_PARAMETER;
+		//
+		// Mark buffer as completed
+		// 
+		DMF_ThreadedBufferQueue_WorkCompleted(
+			pDevCtx->OutputReport.Worker,
+			pDevCtx->OutputReport.Cache.PendingClientBuffer,
+			status
+		);
+
+		pDevCtx->OutputReport.Cache.PendingClientBuffer = NULL;
+
+		pDevCtx->OutputReport.Cache.IsScheduled = FALSE;
 	}
-
-	//
-	// Mark buffer as completed
-	// 
-	DMF_ThreadedBufferQueue_WorkCompleted(
-		pDevCtx->OutputReport.Worker,
-		pDevCtx->OutputReport.Cache.PendingClientBuffer,
-		status
-	);
-
-	pDevCtx->OutputReport.Cache.PendingClientBuffer = NULL;
-
-	pDevCtx->OutputReport.Cache.IsScheduled = FALSE;
-	
 	WdfWaitLockRelease(pDevCtx->OutputReport.Cache.Lock);
 	
 	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
