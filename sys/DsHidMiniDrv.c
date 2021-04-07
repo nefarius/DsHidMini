@@ -2020,8 +2020,6 @@ DSHM_OutputReportDelayTimerElapsed(
 	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
 }
 
-#pragma endregion
-
 //
 // Enqueues current output report buffer to get sent to device.
 //
@@ -2107,6 +2105,8 @@ Ds_SendOutputReport(
 
 	return status;
 }
+
+#pragma endregion
 
 #pragma region Diagnostics
 

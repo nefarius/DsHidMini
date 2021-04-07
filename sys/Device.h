@@ -211,8 +211,14 @@ typedef struct _DS_OUTPUT_REPORT_CACHE
 	// 
 	PDS_OUTPUT_REPORT_CONTEXT PendingClientBufferContext;
 
+	//
+	// Lock protecting cache field access
+	// 
 	WDFWAITLOCK Lock;
 
+	//
+	// TRUE if the timer is currently scheduled to get executed
+	// 
 	BOOLEAN IsScheduled;
 	
 	//
