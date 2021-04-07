@@ -1956,12 +1956,13 @@ DSHM_OutputReportDelayTimerElapsed(
 	NTSTATUS status;
 	WDFDEVICE device = WdfTimerGetParentObject(Timer);
 	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(device);
-	PUCHAR buffer = pDevCtx->OutputReport.Cache.PendingClientBuffer;
-	ULONG bufferSize = (ULONG)pDevCtx->OutputReport.Cache.PendingClientBufferContext->BufferSize;
-	WDF_MEMORY_DESCRIPTOR memoryDesc;
-	
+	PUCHAR sourceBuffer = pDevCtx->OutputReport.Cache.PendingClientBuffer;
+	PDS_OUTPUT_REPORT_CONTEXT pRepCtx = pDevCtx->OutputReport.Cache.PendingClientBufferContext;
+	PUCHAR targetBuffer;
+	PDS_OUTPUT_REPORT_CONTEXT targetBufferContext;
+
 	FuncEntry(TRACE_DSHIDMINIDRV);
-	
+
 	//
 	// Protected region
 	// 
@@ -1970,87 +1971,39 @@ DSHM_OutputReportDelayTimerElapsed(
 		TraceVerbose(
 			TRACE_DSHIDMINIDRV,
 			"Processing delayed buffer 0x%p",
-			buffer
+			sourceBuffer
 		);
 
-		DumpAsHex("Delayed Output Report",
-		          buffer,
-		          bufferSize
-		);
+		//
+		// Re-queue last cached buffer with high priority
+		// 
 		
-		WDF_MEMORY_DESCRIPTOR_INIT_BUFFER(
-			&memoryDesc,
-			buffer,
-			bufferSize
+		status = DMF_ThreadedBufferQueue_Fetch(
+			pDevCtx->OutputReport.Worker,
+			(PVOID*)&targetBuffer,
+			(PVOID*)&targetBufferContext
 		);
-
-		switch (pDevCtx->ConnectionType)
-		{
-#pragma region DsDeviceConnectionTypeUsb
-
-		case DsDeviceConnectionTypeUsb:
-
-			status = USB_WriteInterruptOutSync(
-				pDevCtx,
-				&memoryDesc
-			);
-			
-			if (!NT_SUCCESS(status))
-			{
-				TraceError(
-					TRACE_DSHIDMINIDRV,
-					"USB_WriteInterruptOutSync failed with status %!STATUS!",
-					status
-				);
-			}
-
-			break;
-
-#pragma endregion
-
-#pragma region DsDeviceConnectionTypeBth
-
-		case DsDeviceConnectionTypeBth:
-
-			status = DsBth_SendHidControlWriteRequest(
-				pDevCtx,
-				&memoryDesc
-			);
-
-			if (!NT_SUCCESS(status))
-			{
-				TraceError(
-					TRACE_DSHIDMINIDRV,
-					"DsBth_SendHidControlWriteRequest failed with status %!STATUS!",
-					status
-				);
-			}
-
-			break;
-
-#pragma endregion
-
-		default:
-			status = STATUS_INVALID_PARAMETER;
-		}
 
 		if (NT_SUCCESS(status))
 		{
-			// 
-			// Store last successful send
-			// 
+			RtlCopyMemory(targetBuffer, sourceBuffer, pRepCtx->BufferSize);
 
-			QueryPerformanceCounter(&pDevCtx->OutputReport.Cache.LastSentTimestamp);
+			targetBufferContext->BufferSize = pRepCtx->BufferSize;
+			targetBufferContext->ReceivedTimestamp = pRepCtx->ReceivedTimestamp;
 
-			RtlCopyMemory(
-				pDevCtx->OutputReport.Cache.LastReport,
-				buffer,
-				bufferSize
+			//
+			// Set to high priority, bypasses rate control for this buffer
+			// 
+			targetBufferContext->ReportSource = Ds3OutputReportSourceDriverHighPriority;
+
+			DMF_ThreadedBufferQueue_Enqueue(
+				pDevCtx->OutputReport.Worker,
+				targetBuffer
 			);
 		}
-		
+
 		//
-		// Mark buffer as completed
+		// Mark original buffer as completed
 		// 
 		DMF_ThreadedBufferQueue_WorkCompleted(
 			pDevCtx->OutputReport.Worker,
@@ -2063,7 +2016,7 @@ DSHM_OutputReportDelayTimerElapsed(
 		pDevCtx->OutputReport.Cache.IsScheduled = FALSE;
 	}
 	WdfWaitLockRelease(pDevCtx->OutputReport.Cache.Lock);
-	
+
 	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
 }
 
