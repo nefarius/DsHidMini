@@ -1725,6 +1725,9 @@ Exit:
 
 #pragma region Output Report processing
 
+//
+// Callback invoked when new output report packet is due to being processed
+// 
 _IRQL_requires_max_(PASSIVE_LEVEL)
 _IRQL_requires_same_
 ThreadedBufferQueue_BufferDisposition
@@ -1736,6 +1739,7 @@ DMF_EvtExecuteOutputPacketReceived(
 	_Out_ NTSTATUS* NtStatus
 )
 {
+	ThreadedBufferQueue_BufferDisposition retval = ThreadedBufferQueue_BufferDisposition_WorkComplete;
 	NTSTATUS status = STATUS_UNSUCCESSFUL;
 	WDFDEVICE device = DMF_ParentDeviceGet(DmfModule);
 	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(device);
@@ -1745,6 +1749,7 @@ DMF_EvtExecuteOutputPacketReceived(
 	WDF_MEMORY_DESCRIPTOR memoryDesc;
 	LARGE_INTEGER freq, *t1, *t2;
 	LONGLONG ms;
+	ULONGLONG timeout;
 	
 	UNREFERENCED_PARAMETER(ClientWorkBufferSize);
 	UNREFERENCED_PARAMETER(NtStatus);
@@ -1766,7 +1771,7 @@ DMF_EvtExecuteOutputPacketReceived(
 	WDF_MEMORY_DESCRIPTOR_INIT_BUFFER(
 		&memoryDesc,
 		ClientWorkBuffer,
-		bufferSize
+		(ULONG)bufferSize
 	);
 
 	switch (pDevCtx->ConnectionType)
@@ -1837,16 +1842,71 @@ DMF_EvtExecuteOutputPacketReceived(
 		);
 
 		//
-		// TODO: improve, emergency dropout
+		// Rate limit condition has been detected
 		// 
 		if (pRepCtx->ReportSource > Ds3OutputReportSourceDriverHighPriority
 			&& pDevCtx->Configuration.IsOutputRateControlEnabled > 0
 			&& ms < pDevCtx->Configuration.OutputRateControlPeriodMs)
 		{
-			TraceError(
+			timeout = pDevCtx->Configuration.OutputRateControlPeriodMs - ms;
+			
+			TraceVerbose(
 				TRACE_DSHIDMINIDRV,
-				"Host is sending too fast, dropping"
+				"Rate control triggered, delaying buffer 0x%p for %Iu ms",
+				ClientWorkBuffer,
+				timeout
 			);
+
+			//
+			// Protect, must not run in parallel
+			// 
+			WdfWaitLockAcquire(pDevCtx->OutputReport.Cache.Lock, NULL);
+			{
+				//
+				// We're still in overload condition, drop previous, if any
+				// 
+				if (pDevCtx->OutputReport.Cache.PendingClientBuffer)
+				{
+					TraceVerbose(
+						TRACE_DSHIDMINIDRV,
+						"Rate control still engaged, replacing buffer 0x%p with 0x%p",
+						pDevCtx->OutputReport.Cache.PendingClientBuffer,
+						ClientWorkBuffer
+					);
+					
+					DMF_ThreadedBufferQueue_WorkCompleted(
+						pDevCtx->OutputReport.Worker,
+						pDevCtx->OutputReport.Cache.PendingClientBuffer,
+						STATUS_INVALID_DEVICE_REQUEST // Has no impact
+					);
+				}
+
+				//
+				// Overwrite after old one has been cancelled
+				// 
+				pDevCtx->OutputReport.Cache.PendingClientBuffer = ClientWorkBuffer;
+				pDevCtx->OutputReport.Cache.PendingClientBufferContext = ClientWorkBufferContext;
+
+				//
+				// Kick off delay send timer callback
+				// 
+				if (!pDevCtx->OutputReport.Cache.IsScheduled)
+				{
+					pDevCtx->OutputReport.Cache.IsScheduled = WdfTimerStart(
+						pDevCtx->OutputReport.Cache.SendDelayTimer,
+						WDF_REL_TIMEOUT_IN_MS(timeout)
+					);
+				}
+			}
+			WdfWaitLockRelease(pDevCtx->OutputReport.Cache.Lock);
+
+			status = STATUS_PENDING; // Has no impact, just for trace
+			
+			//
+			// Keep buffer slot occupied
+			// 
+			retval = ThreadedBufferQueue_BufferDisposition_WorkPending;
+			
 			break;
 		}
 
@@ -1882,22 +1942,83 @@ DMF_EvtExecuteOutputPacketReceived(
 	
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 	
-	return ThreadedBufferQueue_BufferDisposition_WorkComplete;
+	return retval;
 }
 
+//
+// Callback invoked after delay timer elapsed
+// 
 void
 DSHM_OutputReportDelayTimerElapsed(
 	WDFTIMER Timer
 )
 {
-	UNREFERENCED_PARAMETER(Timer);
+	NTSTATUS status;
+	WDFDEVICE device = WdfTimerGetParentObject(Timer);
+	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(device);
+	PUCHAR sourceBuffer = pDevCtx->OutputReport.Cache.PendingClientBuffer;
+	PDS_OUTPUT_REPORT_CONTEXT pRepCtx = pDevCtx->OutputReport.Cache.PendingClientBufferContext;
+	PUCHAR targetBuffer;
+	PDS_OUTPUT_REPORT_CONTEXT targetBufferContext;
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
-	
+
+	//
+	// Protected region
+	// 
+	WdfWaitLockAcquire(pDevCtx->OutputReport.Cache.Lock, NULL);
+	{
+		TraceVerbose(
+			TRACE_DSHIDMINIDRV,
+			"Processing delayed buffer 0x%p",
+			sourceBuffer
+		);
+
+		//
+		// Re-queue last cached buffer with high priority
+		// 
+		
+		status = DMF_ThreadedBufferQueue_Fetch(
+			pDevCtx->OutputReport.Worker,
+			(PVOID*)&targetBuffer,
+			(PVOID*)&targetBufferContext
+		);
+
+		if (NT_SUCCESS(status))
+		{
+			RtlCopyMemory(targetBuffer, sourceBuffer, pRepCtx->BufferSize);
+
+			targetBufferContext->BufferSize = pRepCtx->BufferSize;
+			targetBufferContext->ReceivedTimestamp = pRepCtx->ReceivedTimestamp;
+
+			//
+			// Set to high priority, bypasses rate control for this buffer
+			// 
+			targetBufferContext->ReportSource = Ds3OutputReportSourceDriverHighPriority;
+
+			DMF_ThreadedBufferQueue_Enqueue(
+				pDevCtx->OutputReport.Worker,
+				targetBuffer
+			);
+		}
+
+		//
+		// Mark original buffer as completed
+		// 
+		DMF_ThreadedBufferQueue_WorkCompleted(
+			pDevCtx->OutputReport.Worker,
+			pDevCtx->OutputReport.Cache.PendingClientBuffer,
+			status
+		);
+
+		pDevCtx->OutputReport.Cache.PendingClientBuffer = NULL;
+
+		pDevCtx->OutputReport.Cache.IsScheduled = FALSE;
+	}
+	WdfWaitLockRelease(pDevCtx->OutputReport.Cache.Lock);
+
 	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
 }
-
-#pragma endregion
 
 //
 // Enqueues current output report buffer to get sent to device.
@@ -1984,6 +2105,8 @@ Ds_SendOutputReport(
 
 	return status;
 }
+
+#pragma endregion
 
 #pragma region Diagnostics
 

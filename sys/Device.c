@@ -162,6 +162,27 @@ dshidminiEvtDeviceAdd(
 		}
 
 		//
+		// Create lock
+		// 
+
+		WDF_OBJECT_ATTRIBUTES_INIT(&deviceAttributes);
+		deviceAttributes.ParentObject = device;
+
+		status = WdfWaitLockCreate(
+			&deviceAttributes,
+			&pDevCtx->OutputReport.Cache.Lock
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"WdfWaitLockCreate failed with status %!STATUS!",
+				status
+			);
+			break;
+		}
+
+		//
 		// Create timer
 		// 
 
@@ -544,7 +565,12 @@ DmfDeviceModulesAdd(
 
 	dmfBufferCfg.EvtThreadedBufferQueueWork = DMF_EvtExecuteOutputPacketReceived;
 	dmfBufferCfg.BufferQueueConfig.SourceSettings.EnableLookAside = FALSE;
-	dmfBufferCfg.BufferQueueConfig.SourceSettings.BufferCount = 10; // TODO: tune
+	/*
+	 * TODO: tune to find good value
+	 * - too low: packets might get dropped unintentionally
+	 * - too high: user-noticeable delay may build up
+	 */
+	dmfBufferCfg.BufferQueueConfig.SourceSettings.BufferCount = 10;
 	dmfBufferCfg.BufferQueueConfig.SourceSettings.BufferSize = DS3_BTH_HID_OUTPUT_REPORT_SIZE;
 	dmfBufferCfg.BufferQueueConfig.SourceSettings.BufferContextSize = sizeof(DS_OUTPUT_REPORT_CONTEXT);
 	dmfBufferCfg.BufferQueueConfig.SourceSettings.PoolType = PagedPool;
