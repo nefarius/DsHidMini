@@ -199,50 +199,6 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 		// 
 		DsBth_Ds3Init(pDevCtx);
 
-#pragma region HID Interrupt Read
-
-		status = WdfIoTargetFormatRequestForIoctl(
-			pDevCtx->Connection.Bth.BthIoTarget,
-			pDevCtx->Connection.Bth.HidInterrupt.ReadRequest,
-			IOCTL_BTHPS3_HID_INTERRUPT_READ,
-			NULL,
-			NULL,
-			pDevCtx->Connection.Bth.HidInterrupt.ReadMemory,
-			NULL
-		);
-		if (!NT_SUCCESS(status))
-		{
-			TraceError(
-				TRACE_POWER,
-				"WdfIoTargetFormatRequestForIoctl failed with status %!STATUS!",
-				status
-			);
-		}
-
-		WdfRequestSetCompletionRoutine(
-			pDevCtx->Connection.Bth.HidInterrupt.ReadRequest,
-			DsBth_HidInterruptReadRequestCompletionRoutine,
-			pDevCtx
-		);
-
-		if (WdfRequestSend(
-			pDevCtx->Connection.Bth.HidInterrupt.ReadRequest,
-			pDevCtx->Connection.Bth.BthIoTarget,
-			WDF_NO_SEND_OPTIONS
-		) == FALSE) {
-			status = WdfRequestGetStatus(pDevCtx->Connection.Bth.HidInterrupt.ReadRequest);
-		}
-		if (!NT_SUCCESS(status))
-		{
-			TraceError(
-				TRACE_POWER,
-				"WdfRequestSend failed with status %!STATUS!",
-				status
-			);
-		}
-
-#pragma endregion
-
 #pragma region HID Control Write
 
 		//
@@ -427,9 +383,7 @@ DsHidMini_EvtDevicePrepareHardware(
 	DEVPROPTYPE propertyType;
 	WCHAR deviceAddress[13];
 	WCHAR dcEventName[44];
-	WDF_OBJECT_ATTRIBUTES attributes;
-	PVOID outReportBuffer = NULL;
-
+		
 	UNREFERENCED_PARAMETER(ResourcesRaw);
 	UNREFERENCED_PARAMETER(ResourcesTranslated);
 
@@ -693,46 +647,7 @@ DsHidMini_EvtDevicePrepareHardware(
 				(PVOID)G_Ds3UsbHidOutputReport,
 				DS3_USB_HID_OUTPUT_REPORT_SIZE
 			);
-
-			//
-			// Re-create if exists
-			// 
-			if (pDevCtx->Connection.Usb.OutputReportMemory)
-			{
-				WdfObjectDelete(pDevCtx->Connection.Usb.OutputReportMemory);
-			}
-
-			//
-			// Create managed memory object
-			// 
-			WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
-			attributes.ParentObject = Device;
-			status = WdfMemoryCreate(
-				&attributes,
-				NonPagedPoolNx,
-				DS3_POOL_TAG,
-				DS3_USB_HID_OUTPUT_REPORT_SIZE,
-				&pDevCtx->Connection.Usb.OutputReportMemory,
-				&outReportBuffer
-			);
-			if (!NT_SUCCESS(status))
-			{
-				TraceError(
-					TRACE_POWER,
-					"WdfMemoryCreate failed with %!STATUS!", 
-					status
-				);
-				return status;
-			}
-
-			//
-			// Fill with default report
-			// 
-			RtlCopyMemory(
-				outReportBuffer,
-				G_Ds3UsbHidOutputReport,
-				DS3_USB_HID_OUTPUT_REPORT_SIZE
-			);
+			
 		}
 	}
 
@@ -852,6 +767,28 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 		}
 	}
 
+	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
+	{
+		if (PreviousState == WdfPowerDeviceD3Final)
+		{
+			DMF_DefaultTarget_Get(
+				pDevCtx->Connection.Bth.HidInterrupt.InputStreamerModule,
+				&pDevCtx->Connection.Bth.HidInterrupt.InputStreamerIoTarget
+			);
+			DMF_DefaultTarget_Get(
+				pDevCtx->Connection.Bth.HidControl.OutputWriterModule,
+				&pDevCtx->Connection.Bth.HidControl.OutputWriterIoTarget
+			);
+		}
+		else
+		{
+			// Targets are started by default.
+			//
+			WdfIoTargetStart(pDevCtx->Connection.Bth.HidInterrupt.InputStreamerIoTarget);
+			WdfIoTargetStart(pDevCtx->Connection.Bth.HidControl.OutputWriterIoTarget);
+		}
+	}
+	
 	//
 	// Start processing received output report packets
 	//
@@ -902,7 +839,7 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 	}
 
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
-	{
+	{		
 		if (pDevCtx->Connection.Bth.DisconnectWaitHandle) {
 			UnregisterWait(pDevCtx->Connection.Bth.DisconnectWaitHandle);
 			pDevCtx->Connection.Bth.DisconnectWaitHandle = NULL;
@@ -914,9 +851,18 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 		}
 
 		WdfTimerStop(pDevCtx->Connection.Bth.Timers.HidOutputReport, FALSE);
-		WdfTimerStop(pDevCtx->Connection.Bth.Timers.HidControlConsume, FALSE);
+		
+		WdfIoTargetPurge(
+			pDevCtx->Connection.Bth.HidInterrupt.InputStreamerIoTarget,
+			WdfIoTargetPurgeIoAndWait
+		);
+		WdfIoTargetPurge(
+			pDevCtx->Connection.Bth.HidControl.OutputWriterIoTarget,
+			WdfIoTargetPurgeIoAndWait
+		);
 
-		WdfIoTargetStop(pDevCtx->Connection.Bth.BthIoTarget, WdfIoTargetCancelSentIo);
+		DMF_DefaultTarget_StreamStop(pDevCtx->Connection.Bth.HidInterrupt.InputStreamerModule);
+		DMF_DefaultTarget_StreamStop(pDevCtx->Connection.Bth.HidControl.OutputWriterModule);
 	}
 
 	FuncExitNoReturn(TRACE_POWER);

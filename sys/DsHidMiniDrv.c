@@ -1339,15 +1339,16 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
 }
 
-//
-// Called when data is available on the wireless HID Interrupt channel.
-// 
-void DsBth_HidInterruptReadRequestCompletionRoutine(
-	WDFREQUEST Request,
-	WDFIOTARGET Target,
-	PWDF_REQUEST_COMPLETION_PARAMS Params,
-	WDFCONTEXT Context
-)
+
+_IRQL_requires_max_(DISPATCH_LEVEL)
+_IRQL_requires_same_
+ContinuousRequestTarget_BufferDisposition
+DsBth_HidInterruptReadContinuousRequestCompleted(
+	_In_ DMFMODULE DmfModule,
+	_In_reads_(OutputBufferSize) VOID* OutputBuffer,
+	_In_ size_t OutputBufferSize,
+	_In_ VOID* ClientBufferContextOutput,
+	_In_ NTSTATUS CompletionStatus)
 {
 	NTSTATUS status;
 	PUCHAR buffer;
@@ -1360,7 +1361,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	DS_BATTERY_STATUS battery;
 	DMF_CONTEXT_DsHidMini* pModCtx;
 	PDS3_RAW_INPUT_REPORT pInReport;
-
+	WDFDEVICE device;
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
@@ -1368,41 +1369,22 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	TraceVerbose(
 		TRACE_DSHIDMINIDRV,
 		"++ Completion status: %!STATUS!",
-		Params->IoStatus.Status
+		CompletionStatus
 	);
 #endif
 
-	//
-	// Device has been disconnected, quit requesting inputs
-	// 
-	if (Params->IoStatus.Status == STATUS_DEVICE_NOT_CONNECTED)
+	if (!NT_SUCCESS(CompletionStatus))
 	{
-		TraceVerbose(TRACE_DSHIDMINIDRV, "Device has been disconnected");
-		goto Exit;
-	}
-	
-	if (Params->IoStatus.Status == STATUS_CANCELLED)
-	{
-		TraceVerbose(TRACE_DSHIDMINIDRV, "I/O Target has cancelled requests");
-		goto Exit;
+		return ContinuousRequestTarget_BufferDisposition_ContinuousRequestTargetAndStopStreaming;
 	}
 
-	pDevCtx = (PDEVICE_CONTEXT)Context;
+	device = DMF_ParentDeviceGet(DmfModule);
+	pDevCtx = DeviceGetContext(device);
 	pModCtx = DMF_CONTEXT_GET((DMFMODULE)pDevCtx->DsHidMiniModule);
 	QueryPerformanceFrequency(&freq);
 
-	if (!NT_SUCCESS(Params->IoStatus.Status)
-		|| Params->Parameters.Ioctl.Output.Length < BTHPS3_SIXAXIS_HID_INPUT_REPORT_SIZE)
-	{
-		TraceError( TRACE_DSHIDMINIDRV,
-			"%!FUNC! failed with status %!STATUS!", Params->IoStatus.Status);
-
-		goto resendRequest;
-	}
-
-	buffer = (PUCHAR)WdfMemoryGetBuffer(
-		Params->Parameters.Ioctl.Output.Buffer,
-		&bufferLength);
+	buffer = (PUCHAR)OutputBuffer;
+	bufferLength = OutputBufferSize;
 
 #ifdef DBG
 	TraceInformation(TRACE_DSHIDMINIDRV, "!! buffer: 0x%p, bufferLength: %d",
@@ -1421,7 +1403,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	*/
 	if (buffer[2] == 0xFF)
 	{
-		goto resendRequest;
+		return ContinuousRequestTarget_BufferDisposition_ContinuousRequestTargetAndContinueStreaming;
 	}
 
 	//
@@ -1453,7 +1435,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 	// Grab battery info
 	// 
 	battery = (DS_BATTERY_STATUS)((PUCHAR)inputBuffer)[30];
-		
+
 	//
 	// React if last known state differs from current state
 	// 
@@ -1479,7 +1461,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 		QueryPerformanceCounter(&t2);
 
 		ms = (t2.QuadPart - t1->QuadPart) / (freq.QuadPart / 1000);
-		
+
 		//
 		// First ever call or time span has elapsed
 		// 
@@ -1490,9 +1472,9 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 				"Updating battery status to %d",
 				battery
 			);
-			
+
 			QueryPerformanceCounter(t1);
-			
+
 			//
 			// Update battery status property
 			// 
@@ -1504,7 +1486,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 			propertyData.Lcid = LOCALE_NEUTRAL;
 
 			(void)WdfDeviceAssignProperty(
-				(WDFDEVICE)WdfObjectContextGetObject(Context),
+				device,
 				&propertyData,
 				DEVPROP_TYPE_BYTE,
 				sizeof(BYTE),
@@ -1597,7 +1579,7 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 			//
 			// No further processing
 			// 
-			return;
+			return ContinuousRequestTarget_BufferDisposition_ContinuousRequestTargetAndStopStreaming;
 		}
 	}
 	else
@@ -1648,82 +1630,42 @@ void DsBth_HidInterruptReadRequestCompletionRoutine(
 			//
 			// No further processing
 			// 
-			return;
+			return ContinuousRequestTarget_BufferDisposition_ContinuousRequestTargetAndStopStreaming;
 		}
 	}
 	else
 	{
 		pDevCtx->Connection.Bth.IdleDisconnectTimestamp.QuadPart = 0;
 	}
-	
+
 	Ds_ProcessHidInputReport(pDevCtx, inputBuffer, bufferLength - 1);
 
-	resendRequest:
-
-	WDF_REQUEST_REUSE_PARAMS_INIT(
-		&params,
-		WDF_REQUEST_REUSE_NO_FLAGS,
-		STATUS_SUCCESS
-	);
-	status = WdfRequestReuse(Request, &params);
-	if (!NT_SUCCESS(status))
-	{
-		TraceError(
-			TRACE_DSHIDMINIDRV,
-			"WdfRequestReuse failed with status %!STATUS!",
-			status
-		);
-		return;
-	}
-
-	status = WdfIoTargetFormatRequestForIoctl(
-		pDevCtx->Connection.Bth.BthIoTarget,
-		pDevCtx->Connection.Bth.HidInterrupt.ReadRequest,
-		IOCTL_BTHPS3_HID_INTERRUPT_READ,
-		NULL,
-		NULL,
-		pDevCtx->Connection.Bth.HidInterrupt.ReadMemory,
-		NULL
-	);
-	if (!NT_SUCCESS(status))
-	{
-		TraceError(
-			TRACE_DSHIDMINIDRV,
-			"WdfIoTargetFormatRequestForIoctl failed with status %!STATUS!",
-			status
-		);
-	}
-
-	WdfRequestSetCompletionRoutine(
-		pDevCtx->Connection.Bth.HidInterrupt.ReadRequest,
-		DsBth_HidInterruptReadRequestCompletionRoutine,
-		pDevCtx
-	);
-
-	if (WdfRequestSend(
-		pDevCtx->Connection.Bth.HidInterrupt.ReadRequest,
-		pDevCtx->Connection.Bth.BthIoTarget,
-		WDF_NO_SEND_OPTIONS
-	) == FALSE) {
-		status = WdfRequestGetStatus(pDevCtx->Connection.Bth.HidInterrupt.ReadRequest);
-	}
-	if (!NT_SUCCESS(status))
-	{
-		TraceError(
-			TRACE_DSHIDMINIDRV,
-			"WdfRequestSend failed with status %!STATUS!",
-			status
-		);
-	}
-
-Exit:
-
-	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
+	return ContinuousRequestTarget_BufferDisposition_ContinuousRequestTargetAndContinueStreaming;
 }
 
 #pragma endregion
 
 #pragma region Output Report processing
+
+_IRQL_requires_max_(DISPATCH_LEVEL)
+_IRQL_requires_same_
+VOID
+DsBth_HidControlWriteContinuousRequestCompleted(
+	_In_ DMFMODULE DmfModule,
+	_Out_writes_(*InputBufferSize) VOID* InputBuffer,
+	_Out_ size_t* InputBufferSize,
+	_In_ VOID* ClientBuferContextInput
+)
+{	
+	UNREFERENCED_PARAMETER(DmfModule);
+	UNREFERENCED_PARAMETER(InputBuffer);
+	UNREFERENCED_PARAMETER(InputBufferSize);
+	UNREFERENCED_PARAMETER(ClientBuferContextInput);
+
+	FuncEntry(TRACE_DSHIDMINIDRV);
+
+	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
+}
 
 //
 // Callback invoked when new output report packet is due to being processed
@@ -1750,6 +1692,7 @@ DMF_EvtExecuteOutputPacketReceived(
 	LARGE_INTEGER freq, *t1, *t2;
 	LONGLONG ms;
 	ULONGLONG timeout;
+	size_t bytesWritten;
 	
 	UNREFERENCED_PARAMETER(ClientWorkBufferSize);
 	UNREFERENCED_PARAMETER(NtStatus);
@@ -1910,9 +1853,16 @@ DMF_EvtExecuteOutputPacketReceived(
 			break;
 		}
 
-		status = DsBth_SendHidControlWriteRequest(
-			pDevCtx,
-			&memoryDesc
+		status = DMF_DefaultTarget_SendSynchronously(
+			pDevCtx->Connection.Bth.HidControl.OutputWriterModule,
+			ClientWorkBuffer,
+			bufferSize,
+			NULL,
+			0,
+			ContinuousRequestTarget_RequestType_Ioctl,
+			IOCTL_BTHPS3_HID_CONTROL_WRITE,
+			0,
+			&bytesWritten
 		);
 
 		if (NT_SUCCESS(status))

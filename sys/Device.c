@@ -28,7 +28,7 @@ dshidminiEvtDeviceAdd(
 	PDEVICE_CONTEXT					pDevCtx;
 	WDFQUEUE						queue;
 	WDF_IO_QUEUE_CONFIG				queueConfig;
-	WDF_TIMER_CONFIG				timerCfg;
+	
 
 	UNREFERENCED_PARAMETER(Driver);
 
@@ -92,13 +92,22 @@ dshidminiEvtDeviceAdd(
 
 		pDevCtx = DeviceGetContext(device);
 
+		status = DsDevice_InitContext(device);
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"DsDevice_InitContext failed with status %!STATUS!",
+				status
+			);
+			break;
+		}
+		
 		//
 		// Bluetooth-specific initialization
 		// 
 		if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
 		{
-			pDevCtx->Connection.Bth.BthIoTarget = WdfDeviceGetIoTarget(device);
-
 			//
 			// Initialize all necessary BTH-specific objects
 			// 
@@ -135,75 +144,6 @@ dshidminiEvtDeviceAdd(
 			TraceError(
 				TRACE_DEVICE,
 				"WdfIoQueueCreate failed with status %!STATUS!",
-				status
-			);
-			break;
-		}
-
-		//
-		// Create lock
-		// 
-				
-		WDF_OBJECT_ATTRIBUTES_INIT(&deviceAttributes);
-		deviceAttributes.ParentObject = device;
-		
-		status = WdfWaitLockCreate(
-			&deviceAttributes,
-			&pDevCtx->OutputReport.Lock
-		);
-		if (!NT_SUCCESS(status))
-		{
-			TraceError(
-				TRACE_DEVICE,
-				"WdfWaitLockCreate failed with status %!STATUS!",
-				status
-			);
-			break;
-		}
-
-		//
-		// Create lock
-		// 
-
-		WDF_OBJECT_ATTRIBUTES_INIT(&deviceAttributes);
-		deviceAttributes.ParentObject = device;
-
-		status = WdfWaitLockCreate(
-			&deviceAttributes,
-			&pDevCtx->OutputReport.Cache.Lock
-		);
-		if (!NT_SUCCESS(status))
-		{
-			TraceError(
-				TRACE_DEVICE,
-				"WdfWaitLockCreate failed with status %!STATUS!",
-				status
-			);
-			break;
-		}
-
-		//
-		// Create timer
-		// 
-
-		WDF_OBJECT_ATTRIBUTES_INIT(&deviceAttributes);
-		deviceAttributes.ParentObject = device;
-
-		WDF_TIMER_CONFIG_INIT(
-			&timerCfg,
-			DSHM_OutputReportDelayTimerElapsed
-		);
-
-		status = WdfTimerCreate(
-			&timerCfg,
-			&deviceAttributes,
-			&pDevCtx->OutputReport.Cache.SendDelayTimer
-		);
-		if (!NT_SUCCESS(status))
-		{
-			TraceError(
-				TRACE_DEVICE,
-				"WdfTimerCreate failed with status %!STATUS!",
 				status
 			);
 			break;
@@ -530,6 +470,180 @@ VOID DsDevice_ReadConfiguration(WDFDEVICE Device)
 	FuncExitNoReturn(TRACE_DEVICE);
 }
 
+//
+// Initialize remaining device context fields
+// 
+NTSTATUS
+DsDevice_InitContext(
+	WDFDEVICE Device
+)
+{
+	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	NTSTATUS status = STATUS_SUCCESS;
+	WDF_OBJECT_ATTRIBUTES attributes;
+	PUCHAR outReportBuffer = NULL;
+	WDF_TIMER_CONFIG timerCfg;
+	
+	FuncEntry(TRACE_DEVICE);
+		
+	switch (pDevCtx->ConnectionType)
+	{
+	case DsDeviceConnectionTypeUsb:
+
+		//
+		// Create managed memory object
+		// 
+		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
+		attributes.ParentObject = Device;
+		status = WdfMemoryCreate(
+			&attributes,
+			NonPagedPoolNx,
+			DS3_POOL_TAG,
+			DS3_USB_HID_OUTPUT_REPORT_SIZE,
+			&pDevCtx->OutputReportMemory,
+			(PVOID*)&outReportBuffer
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_POWER,
+				"WdfMemoryCreate failed with %!STATUS!",
+				status
+			);
+			return status;
+		}
+
+		//
+		// Fill with default report
+		// 
+		RtlCopyMemory(
+			outReportBuffer,
+			G_Ds3UsbHidOutputReport,
+			DS3_USB_HID_OUTPUT_REPORT_SIZE
+		);
+
+		break;
+
+	case DsDeviceConnectionTypeBth:
+
+		//
+		// Create managed memory object
+		// 
+		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
+		attributes.ParentObject = Device;
+		status = WdfMemoryCreate(
+			&attributes,
+			NonPagedPoolNx,
+			DS3_POOL_TAG,
+			DS3_USB_HID_OUTPUT_REPORT_SIZE,
+			&pDevCtx->OutputReportMemory,
+			(PVOID*)&outReportBuffer
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_POWER,
+				"WdfMemoryCreate failed with %!STATUS!",
+				status
+			);
+			return status;
+		}
+
+		//
+		// Fill with default report
+		// 
+		RtlCopyMemory(
+			outReportBuffer,
+			G_Ds3BthHidOutputReport,
+			DS3_BTH_HID_OUTPUT_REPORT_SIZE
+		);
+
+		//
+		// Turn flashing LEDs off
+		// 
+		DS3_BTH_SET_LED(outReportBuffer, DS3_LED_OFF);
+
+		break;
+	}
+
+	do
+	{
+		//
+		// Create lock
+		// 
+
+		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
+		attributes.ParentObject = Device;
+
+		status = WdfWaitLockCreate(
+			&attributes,
+			&pDevCtx->OutputReport.Lock
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"WdfWaitLockCreate failed with status %!STATUS!",
+				status
+			);
+			break;
+		}
+
+		//
+		// Create lock
+		// 
+
+		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
+		attributes.ParentObject = Device;
+
+		status = WdfWaitLockCreate(
+			&attributes,
+			&pDevCtx->OutputReport.Cache.Lock
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"WdfWaitLockCreate failed with status %!STATUS!",
+				status
+			);
+			break;
+		}
+
+		//
+		// Create timer
+		// 
+
+		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
+		attributes.ParentObject = Device;
+
+		WDF_TIMER_CONFIG_INIT(
+			&timerCfg,
+			DSHM_OutputReportDelayTimerElapsed
+		);
+
+		status = WdfTimerCreate(
+			&timerCfg,
+			&attributes,
+			&pDevCtx->OutputReport.Cache.SendDelayTimer
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"WdfTimerCreate failed with status %!STATUS!",
+				status
+			);
+			break;
+		}
+	}
+	while (FALSE);
+	
+	FuncExit(TRACE_DEVICE, "status=%!STATUS!", status);
+	
+	return status;
+}
+
 
 //
 // Bootstrap our own module
@@ -546,7 +660,9 @@ DmfDeviceModulesAdd(
 	DMF_MODULE_ATTRIBUTES moduleAttributes;
 	DMF_CONFIG_DsHidMini dsHidMiniCfg;
 	DMF_CONFIG_ThreadedBufferQueue dmfBufferCfg;
-
+	DMF_CONFIG_DefaultTarget bthReaderCfg;
+	DMF_CONFIG_DefaultTarget bthWriterCfg;
+	
 	PAGED_CODE();
 
 	FuncEntry(TRACE_DEVICE);
@@ -582,6 +698,60 @@ DmfDeviceModulesAdd(
 		&pDevCtx->OutputReport.Worker
 	);
 
+	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
+	{
+		//
+		// Default I/O target request streamer for input reports
+		// 
+
+		DMF_CONFIG_DefaultTarget_AND_ATTRIBUTES_INIT(
+			&bthReaderCfg,
+			&moduleAttributes
+		);
+		moduleAttributes.PassiveLevel = TRUE;
+		
+		bthReaderCfg.ContinuousRequestTargetModuleConfig.BufferCountOutput = 1;
+		bthReaderCfg.ContinuousRequestTargetModuleConfig.BufferOutputSize = BTHPS3_SIXAXIS_HID_INPUT_REPORT_SIZE;
+		bthReaderCfg.ContinuousRequestTargetModuleConfig.ContinuousRequestCount = 1;
+		bthReaderCfg.ContinuousRequestTargetModuleConfig.PoolTypeOutput = NonPagedPoolNx;
+		bthReaderCfg.ContinuousRequestTargetModuleConfig.PurgeAndStartTargetInD0Callbacks = FALSE;
+		bthReaderCfg.ContinuousRequestTargetModuleConfig.ContinuousRequestTargetIoctl = IOCTL_BTHPS3_HID_INTERRUPT_READ;
+		bthReaderCfg.ContinuousRequestTargetModuleConfig.EvtContinuousRequestTargetBufferOutput = DsBth_HidInterruptReadContinuousRequestCompleted;
+		bthReaderCfg.ContinuousRequestTargetModuleConfig.RequestType = ContinuousRequestTarget_RequestType_Ioctl;
+		bthReaderCfg.ContinuousRequestTargetModuleConfig.ContinuousRequestTargetMode = ContinuousRequestTarget_Mode_Manual;
+		
+		DMF_DmfModuleAdd(
+			DmfModuleInit,
+			&moduleAttributes,
+			WDF_NO_OBJECT_ATTRIBUTES,
+			&pDevCtx->Connection.Bth.HidInterrupt.InputStreamerModule
+		);
+
+		
+		DMF_CONFIG_DefaultTarget_AND_ATTRIBUTES_INIT(
+			&bthWriterCfg,
+			&moduleAttributes
+		);
+		moduleAttributes.PassiveLevel = TRUE;
+
+		bthWriterCfg.ContinuousRequestTargetModuleConfig.BufferCountInput = 1;
+		bthWriterCfg.ContinuousRequestTargetModuleConfig.BufferInputSize = BTHPS3_SIXAXIS_HID_OUTPUT_REPORT_SIZE;
+		bthWriterCfg.ContinuousRequestTargetModuleConfig.ContinuousRequestCount = 1;
+		bthWriterCfg.ContinuousRequestTargetModuleConfig.PoolTypeInput = NonPagedPoolNx;
+		bthWriterCfg.ContinuousRequestTargetModuleConfig.PurgeAndStartTargetInD0Callbacks = FALSE;
+		bthWriterCfg.ContinuousRequestTargetModuleConfig.ContinuousRequestTargetIoctl = IOCTL_BTHPS3_HID_CONTROL_WRITE;
+		bthWriterCfg.ContinuousRequestTargetModuleConfig.EvtContinuousRequestTargetBufferInput = DsBth_HidControlWriteContinuousRequestCompleted;
+		bthWriterCfg.ContinuousRequestTargetModuleConfig.RequestType = ContinuousRequestTarget_RequestType_Ioctl;
+		bthWriterCfg.ContinuousRequestTargetModuleConfig.ContinuousRequestTargetMode = ContinuousRequestTarget_Mode_Manual;
+
+		DMF_DmfModuleAdd(
+			DmfModuleInit,
+			&moduleAttributes,
+			WDF_NO_OBJECT_ATTRIBUTES,
+			&pDevCtx->Connection.Bth.HidControl.OutputWriterModule
+		);
+	}
+	
 	//
 	// Virtual HID Mini Module
 	// 
@@ -601,6 +771,8 @@ DmfDeviceModulesAdd(
 	FuncExitNoReturn(TRACE_DEVICE);
 }
 #pragma code_seg()
+
+#pragma region I/O Queue Callbacks
 
 void DSHM_EvtWdfIoQueueIoDeviceControl(
 	WDFQUEUE Queue,
@@ -636,3 +808,5 @@ void DSHM_EvtWdfIoQueueIoDeviceControl(
 
 	WdfRequestComplete(Request, status);
 }
+
+#pragma endregion

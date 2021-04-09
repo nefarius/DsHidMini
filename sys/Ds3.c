@@ -244,47 +244,26 @@ VOID DsBth_Ds3Init(PDEVICE_CONTEXT Context)
 		0x53, 0xF4, 0x42, 0x03, 0x00, 0x00
 	};
 
-	NTSTATUS				status;
-	PVOID					buffer = NULL;
-	WDF_MEMORY_DESCRIPTOR	MemoryDescriptor;
-	WDFMEMORY				MemoryHandle = NULL;
+	NTSTATUS status;
+	size_t bytesWritten = 0;
 
-	status = WdfMemoryCreate(NULL,
-		NonPagedPoolNx,
-		DS3_POOL_TAG,
+	status = DMF_DefaultTarget_SendSynchronously(
+		Context->Connection.Bth.HidControl.OutputWriterModule,
+		hidCommandEnable,
 		ARRAYSIZE(hidCommandEnable),
-		&MemoryHandle,
-		&buffer);
-	if (!NT_SUCCESS(status)) {
-		TraceError(
-			TRACE_DS3,
-			"WdfMemoryCreate failed with status %!STATUS!",
-			status
-		);
-	}
-
-	RtlCopyMemory(buffer, hidCommandEnable, ARRAYSIZE(hidCommandEnable));
-
-	WDF_MEMORY_DESCRIPTOR_INIT_HANDLE(&MemoryDescriptor,
-		MemoryHandle,
-		NULL);
-
-	status = WdfIoTargetSendIoctlSynchronously(
-		Context->Connection.Bth.BthIoTarget,
 		NULL,
+		0,
+		ContinuousRequestTarget_RequestType_Ioctl,
 		IOCTL_BTHPS3_HID_CONTROL_WRITE,
-		&MemoryDescriptor,
-		NULL,
-		NULL,
-		NULL
+		0,
+		&bytesWritten
 	);
 
-	WdfObjectDelete(MemoryHandle);
-
-	if (!NT_SUCCESS(status)) {
+	if (!NT_SUCCESS(status))
+	{
 		TraceError(
 			TRACE_DS3,
-			"WdfIoTargetSendInternalIoctlSynchronously failed with status %!STATUS!",
+			"DMF_DefaultTarget_SendSynchronously failed with status %!STATUS!",
 			status
 		);
 	}
@@ -307,7 +286,7 @@ VOID DS3_GET_UNIFIED_OUTPUT_REPORT_BUFFER(
 		// 
 
 		*Buffer = &((PUCHAR)WdfMemoryGetBuffer(
-			Context->Connection.Usb.OutputReportMemory,
+			Context->OutputReportMemory,
 			BufferLength
 		))[1];
 
@@ -322,7 +301,7 @@ VOID DS3_GET_UNIFIED_OUTPUT_REPORT_BUFFER(
 		// 
 
 		*Buffer = &((PUCHAR)WdfMemoryGetBuffer(
-			Context->Connection.Bth.HidControl.WriteMemory,
+			Context->OutputReportMemory,
 			BufferLength
 		))[2];
 
@@ -338,26 +317,10 @@ VOID DS3_GET_RAW_OUTPUT_REPORT_BUFFER(
 	PSIZE_T BufferLength
 )
 {
-	switch (Context->ConnectionType)
-	{
-	case DsDeviceConnectionTypeUsb:
-
-		*Buffer = (PUCHAR)WdfMemoryGetBuffer(
-			Context->Connection.Usb.OutputReportMemory,
-			BufferLength
-		);
-
-		break;
-
-	case DsDeviceConnectionTypeBth:
-
-		*Buffer = (PUCHAR)WdfMemoryGetBuffer(
-			Context->Connection.Bth.HidControl.WriteMemory,
-			BufferLength
-		);
-
-		break;
-	}
+	*Buffer = (PUCHAR)WdfMemoryGetBuffer(
+		Context->OutputReportMemory,
+		BufferLength
+	);
 }
 
 VOID DS3_SET_LED(
@@ -371,7 +334,7 @@ VOID DS3_SET_LED(
 		
 		DS3_USB_SET_LED(
 			(PUCHAR)WdfMemoryGetBuffer(
-				Context->Connection.Usb.OutputReportMemory,
+				Context->OutputReportMemory,
 				NULL
 			), Value);
 		
@@ -381,7 +344,7 @@ VOID DS3_SET_LED(
 
 		DS3_BTH_SET_LED(
 			(PUCHAR)WdfMemoryGetBuffer(
-				Context->Connection.Bth.HidControl.WriteMemory,
+				Context->OutputReportMemory,
 				NULL
 			), Value);
 		
@@ -399,7 +362,7 @@ UCHAR DS3_GET_LED(
 
 		return DS3_USB_GET_LED(
 			(PUCHAR)WdfMemoryGetBuffer(
-				Context->Connection.Usb.OutputReportMemory,
+				Context->OutputReportMemory,
 				NULL
 			));
 
@@ -407,7 +370,7 @@ UCHAR DS3_GET_LED(
 
 		return DS3_BTH_GET_LED(
 			(PUCHAR)WdfMemoryGetBuffer(
-				Context->Connection.Bth.HidControl.WriteMemory,
+				Context->OutputReportMemory,
 				NULL
 			));
 	}
@@ -426,7 +389,7 @@ VOID DS3_SET_SMALL_RUMBLE_DURATION(
 
 		DS3_USB_SET_SMALL_RUMBLE_DURATION(
 			(PUCHAR)WdfMemoryGetBuffer(
-				Context->Connection.Usb.OutputReportMemory,
+				Context->OutputReportMemory,
 				NULL
 			), Value);
 		break;
@@ -435,7 +398,7 @@ VOID DS3_SET_SMALL_RUMBLE_DURATION(
 
 		DS3_BTH_SET_SMALL_RUMBLE_DURATION(
 			(PUCHAR)WdfMemoryGetBuffer(
-				Context->Connection.Bth.HidControl.WriteMemory,
+				Context->OutputReportMemory,
 				NULL
 			), Value);
 		break;
@@ -453,7 +416,7 @@ VOID DS3_SET_SMALL_RUMBLE_STRENGTH(
 
 		DS3_USB_SET_SMALL_RUMBLE_STRENGTH(
 			(PUCHAR)WdfMemoryGetBuffer(
-				Context->Connection.Usb.OutputReportMemory,
+				Context->OutputReportMemory,
 				NULL
 			), Value);
 		break;
@@ -462,7 +425,7 @@ VOID DS3_SET_SMALL_RUMBLE_STRENGTH(
 
 		DS3_BTH_SET_SMALL_RUMBLE_STRENGTH(
 			(PUCHAR)WdfMemoryGetBuffer(
-				Context->Connection.Bth.HidControl.WriteMemory,
+				Context->OutputReportMemory,
 				NULL
 			), Value);
 		break;
@@ -480,7 +443,7 @@ VOID DS3_SET_LARGE_RUMBLE_DURATION(
 
 		DS3_USB_SET_LARGE_RUMBLE_DURATION(
 			(PUCHAR)WdfMemoryGetBuffer(
-				Context->Connection.Usb.OutputReportMemory,
+				Context->OutputReportMemory,
 				NULL
 			), Value);
 		break;
@@ -489,7 +452,7 @@ VOID DS3_SET_LARGE_RUMBLE_DURATION(
 
 		DS3_BTH_SET_LARGE_RUMBLE_DURATION(
 			(PUCHAR)WdfMemoryGetBuffer(
-				Context->Connection.Bth.HidControl.WriteMemory,
+				Context->OutputReportMemory,
 				NULL
 			), Value);
 		break;
@@ -507,7 +470,7 @@ VOID DS3_SET_LARGE_RUMBLE_STRENGTH(
 
 		DS3_USB_SET_LARGE_RUMBLE_STRENGTH(
 			(PUCHAR)WdfMemoryGetBuffer(
-				Context->Connection.Usb.OutputReportMemory,
+				Context->OutputReportMemory,
 				NULL
 			), Value);
 		break;
@@ -516,7 +479,7 @@ VOID DS3_SET_LARGE_RUMBLE_STRENGTH(
 
 		DS3_BTH_SET_LARGE_RUMBLE_STRENGTH(
 			(PUCHAR)WdfMemoryGetBuffer(
-				Context->Connection.Bth.HidControl.WriteMemory,
+				Context->OutputReportMemory,
 				NULL
 			), Value);
 		break;

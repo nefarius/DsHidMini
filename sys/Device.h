@@ -36,12 +36,7 @@ struct USB_DEVICE_CONTEXT
 	// USB Interrupt (out) pipe handle
 	// 
 	WDFUSBPIPE InterruptOutPipe;
-
-	//
-	// Output report buffer
-	// 
-	WDFMEMORY OutputReportMemory;
-
+	
 	//
 	// Timestamp to calculate charging cycle state change
 	// 
@@ -50,72 +45,24 @@ struct USB_DEVICE_CONTEXT
 
 struct BTH_DEVICE_CONTEXT
 {
-	//
-	// Bluetooth PDO I/O target
-	// 
-	WDFIOTARGET BthIoTarget;
-
 	struct
 	{
-		//
-		// Reusable Request for HID Control IN channel
-		// 
-		WDFREQUEST ReadRequest;
+		DMFMODULE OutputWriterModule;
 
-		//
-		// Memory for HID Control IN channel
-		// 
-		WDFMEMORY ReadMemory;
-
-		//
-		// Reusable Request for HID Control OUT channel
-		// 
-		WDFREQUEST WriteRequest;
-
-		//
-		// Memory for HID Control OUT channel
-		// 
-		WDFMEMORY WriteMemory;
-
-		//
-		// Lock to protect async operation
-		// 
-		WDFWAITLOCK WriteLock;
+		WDFIOTARGET OutputWriterIoTarget;
 
 	} HidControl;
-
+	
 	struct
 	{
-		//
-		// Reusable Request for HID Interrupt IN channel
-		// 
-		WDFREQUEST ReadRequest;
+		DMFMODULE InputStreamerModule;
 
-		//
-		// Memory for HID Interrupt IN channel
-		// 
-		WDFMEMORY ReadMemory;
-
-		//
-		// Reusable Request for HID Interrupt OUT channel
-		// 
-		WDFREQUEST WriteRequest;
+		WDFIOTARGET InputStreamerIoTarget;
 		
-		//
-		// Memory for HID Interrupt OUT channel
-		// 
-		WDFMEMORY WriteMemory;
-
 	} HidInterrupt;
 
 	struct
 	{
-		//
-		// Periodic timer to consume pending memory
-		// TODO: call after every output report send instead, safes a timer
-		// 
-		WDFTIMER HidControlConsume;
-
 		//
 		// Delayed Output Report Timer
 		// 
@@ -319,6 +266,11 @@ typedef struct _DEVICE_CONTEXT
 	USHORT VersionNumber;
 
 	//
+	// Output report buffer
+	// 
+	WDFMEMORY OutputReportMemory;
+
+	//
 	// Registry-stored driver configuration
 	// 
 	DS_DRIVER_CONFIGURATION Configuration;
@@ -427,6 +379,11 @@ DsDevice_HotReloadConfiguration(
 
 VOID
 DsDevice_ReadConfiguration(
+	WDFDEVICE Device
+);
+
+NTSTATUS
+DsDevice_InitContext(
 	WDFDEVICE Device
 );
 
