@@ -25,6 +25,7 @@ dshidminiEvtDeviceAdd(
 	PDMFDEVICE_INIT					dmfDeviceInit;
 	DMF_EVENT_CALLBACKS				dmfCallbacks;
 	WDF_PNPPOWER_EVENT_CALLBACKS	pnpPowerCallbacks;
+	PDEVICE_CONTEXT					pDevCtx;
 	WDFQUEUE						queue;
 	WDF_IO_QUEUE_CONFIG				queueConfig;
 	
@@ -89,6 +90,8 @@ dshidminiEvtDeviceAdd(
 			break;
 		}
 
+		pDevCtx = DeviceGetContext(device);
+
 		//
 		// Initialize context
 		// 
@@ -103,29 +106,32 @@ dshidminiEvtDeviceAdd(
 			break;
 		}
 
-		//
-		// Provide and hook our own default queue to handle weird cases
-		//
-
-		WDF_IO_QUEUE_CONFIG_INIT_DEFAULT_QUEUE(&queueConfig, WdfIoQueueDispatchParallel);
-		queueConfig.PowerManaged = WdfTrue;
-		queueConfig.EvtIoDeviceControl = DSHM_EvtWdfIoQueueIoDeviceControl;
-		DMF_DmfDeviceInitHookQueueConfig(dmfDeviceInit, &queueConfig);
-
-		status = WdfIoQueueCreate(
-			device,
-			&queueConfig,
-			WDF_NO_OBJECT_ATTRIBUTES,
-			&queue
-		);
-		if (!NT_SUCCESS(status))
+		if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
 		{
-			TraceError(
-				TRACE_DEVICE,
-				"WdfIoQueueCreate failed with status %!STATUS!",
-				status
+			//
+			// Provide and hook our own default queue to handle weird cases
+			//
+
+			WDF_IO_QUEUE_CONFIG_INIT_DEFAULT_QUEUE(&queueConfig, WdfIoQueueDispatchParallel);
+			queueConfig.PowerManaged = WdfTrue;
+			queueConfig.EvtIoDeviceControl = DSHM_EvtWdfIoQueueIoDeviceControl;
+			DMF_DmfDeviceInitHookQueueConfig(dmfDeviceInit, &queueConfig);
+
+			status = WdfIoQueueCreate(
+				device,
+				&queueConfig,
+				WDF_NO_OBJECT_ATTRIBUTES,
+				&queue
 			);
-			break;
+			if (!NT_SUCCESS(status))
+			{
+				TraceError(
+					TRACE_DEVICE,
+					"WdfIoQueueCreate failed with status %!STATUS!",
+					status
+				);
+				break;
+			}
 		}
 		
 		//
