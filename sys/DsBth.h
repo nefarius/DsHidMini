@@ -36,10 +36,6 @@
 #define IOCTL_BTHPS3_HID_INTERRUPT_WRITE        BUSENUM_W_IOCTL (IOCTL_BTHPS3_BASE + 0x203)
 
 
-NTSTATUS DsHidMini_BthConnectionContextInit(
-	WDFDEVICE Device
-);
-
 EVT_WDF_REQUEST_COMPLETION_ROUTINE DsBth_HidControlWriteRequestCompletionRoutine;
 
 NTSTATUS DsBth_SendDisconnectRequest(PDEVICE_CONTEXT Context);

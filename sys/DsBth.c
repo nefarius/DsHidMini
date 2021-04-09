@@ -5,63 +5,6 @@
 
 
 //
-// Initialize objects required for BTH communication
-// 
-NTSTATUS DsHidMini_BthConnectionContextInit(
-	WDFDEVICE Device
-)
-{
-	NTSTATUS				status;
-	PDEVICE_CONTEXT			pDeviceContext;
-	WDF_OBJECT_ATTRIBUTES	attribs;
-	WDF_TIMER_CONFIG		timerCfg;
-
-	PAGED_CODE();
-
-	FuncEntry(TRACE_DSBTH);
-
-	pDeviceContext = DeviceGetContext(Device);
-
-
-#pragma region Timers
-
-	//
-	// Output Report Delay
-	// 
-
-	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
-	attribs.ParentObject = Device;
-	
-	WDF_TIMER_CONFIG_INIT(
-		&timerCfg,
-		DsBth_EvtControlWriteTimerFunc
-	);
-
-	status = WdfTimerCreate(
-		&timerCfg,
-		&attribs,
-		&pDeviceContext->Connection.Bth.Timers.HidOutputReport
-	);
-	if (!NT_SUCCESS(status))
-	{
-		TraceError(
-			TRACE_DSBTH,
-			"WdfTimerCreate (HidOutputReport) failed with status %!STATUS!",
-			status
-		);
-		return status;
-	}
-
-#pragma endregion
-
-	FuncExit(TRACE_DSBTH, "status=%!STATUS!", status);
-
-	return status;
-}
-
-
-
-//
 // Request device disconnect from host radio
 // 
 NTSTATUS DsBth_SendDisconnectRequest(PDEVICE_CONTEXT Context)

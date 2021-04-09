@@ -25,7 +25,6 @@ dshidminiEvtDeviceAdd(
 	PDMFDEVICE_INIT					dmfDeviceInit;
 	DMF_EVENT_CALLBACKS				dmfCallbacks;
 	WDF_PNPPOWER_EVENT_CALLBACKS	pnpPowerCallbacks;
-	PDEVICE_CONTEXT					pDevCtx;
 	WDFQUEUE						queue;
 	WDF_IO_QUEUE_CONFIG				queueConfig;
 	
@@ -90,8 +89,9 @@ dshidminiEvtDeviceAdd(
 			break;
 		}
 
-		pDevCtx = DeviceGetContext(device);
-
+		//
+		// Initialize context
+		// 
 		status = DsDevice_InitContext(device);
 		if (!NT_SUCCESS(status))
 		{
@@ -101,27 +101,6 @@ dshidminiEvtDeviceAdd(
 				status
 			);
 			break;
-		}
-		
-		//
-		// Bluetooth-specific initialization
-		// 
-		if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
-		{
-			//
-			// Initialize all necessary BTH-specific objects
-			// 
-			status = DsHidMini_BthConnectionContextInit(device);
-
-			if (!NT_SUCCESS(status))
-			{
-				TraceError(
-					TRACE_DEVICE,
-					"DsHidMini_BthConnectionContextInit failed with status %!STATUS!",
-					status
-				);
-				break;
-			}
 		}
 
 		//
@@ -510,7 +489,8 @@ DsDevice_InitContext(
 				"WdfMemoryCreate failed with %!STATUS!",
 				status
 			);
-			return status;
+			
+			break;
 		}
 
 		//
@@ -546,7 +526,8 @@ DsDevice_InitContext(
 				"WdfMemoryCreate failed with %!STATUS!",
 				status
 			);
-			return status;
+			
+			break;
 		}
 
 		//
@@ -563,11 +544,44 @@ DsDevice_InitContext(
 		// 
 		DS3_BTH_SET_LED(outReportBuffer, DS3_LED_OFF);
 
+		//
+		// Output Report Delay
+		// 
+
+		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
+		attributes.ParentObject = Device;
+
+		WDF_TIMER_CONFIG_INIT(
+			&timerCfg,
+			DsBth_EvtControlWriteTimerFunc
+		);
+
+		status = WdfTimerCreate(
+			&timerCfg,
+			&attributes,
+			&pDevCtx->Connection.Bth.Timers.HidOutputReport
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DSBTH,
+				"WdfTimerCreate (HidOutputReport) failed with status %!STATUS!",
+				status
+			);
+			
+			break;
+		}
+
 		break;
 	}
 
 	do
 	{
+		if (!NT_SUCCESS(status))
+		{
+			break;
+		}
+		
 		//
 		// Create lock
 		// 
