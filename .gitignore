@@ -340,3 +340,5 @@ ASALocalRun/
 healthchecksdb
 /docs/WinDbg_Log.txt
 /_DSHMC
+/DSHMC.json
+/DSHMC.schema.json
