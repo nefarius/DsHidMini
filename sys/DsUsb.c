@@ -251,6 +251,9 @@ NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
 	DEVPROPTYPE propertyType;
 	WCHAR deviceAddress[13];
 	WCHAR dcEventName[44];
+	PWSTR friendlyName;
+	size_t friendlyNameSize = 0;
+	UCHAR identification[64];
 
 	FuncEntry(TRACE_DSUSB);
 
@@ -278,6 +281,9 @@ NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
 			}
 		}
 
+		//
+		// Grab details from embedded descriptor
+		// 
 		WdfUsbTargetDeviceGetDeviceDescriptor(
 			pDevCtx->Connection.Usb.UsbDevice,
 			&pDevCtx->Connection.Usb.UsbDeviceDescriptor
@@ -292,9 +298,10 @@ NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
 
 		WDF_USB_DEVICE_SELECT_CONFIG_PARAMS_INIT_SINGLE_INTERFACE(&configParams);
 
-		status = WdfUsbTargetDeviceSelectConfig(pDevCtx->Connection.Usb.UsbDevice,
-		                                        WDF_NO_OBJECT_ATTRIBUTES,
-		                                        &configParams
+		status = WdfUsbTargetDeviceSelectConfig(
+			pDevCtx->Connection.Usb.UsbDevice,
+			WDF_NO_OBJECT_ATTRIBUTES,
+			&configParams
 		);
 
 		if (!NT_SUCCESS(status))
@@ -327,6 +334,38 @@ NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
 				"Requesting iProduct failed (status: 0x%x), device might not support this string",
 				status
 			);
+		}
+		else
+		{
+			//
+			// Set friendly name
+			// 
+
+			friendlyName = WdfMemoryGetBuffer(
+				pDevCtx->Connection.Usb.ProductString,
+				&friendlyNameSize
+			);
+
+			WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_Device_FriendlyName);
+			propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+			propertyData.Lcid = LOCALE_NEUTRAL;
+
+			status = WdfDeviceAssignProperty(
+				Device,
+				&propertyData,
+				DEVPROP_TYPE_STRING,
+				(ULONG)friendlyNameSize + sizeof(L'\0'),
+				friendlyName
+			);
+
+			if (!NT_SUCCESS(status))
+			{
+				TraceError(
+					TRACE_POWER,
+					"Setting DEVPKEY_Device_FriendlyName failed with status %!STATUS!",
+					status
+				);
+			}
 		}
 
 		//
@@ -515,6 +554,37 @@ NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
 			&pDevCtx->HostAddress,
 			&controlTransferBuffer[2],
 			sizeof(BD_ADDR));
+
+#pragma endregion
+
+#pragma region Request Model Identification
+		
+		//
+		// See https://github.com/ViGEm/DsHidMini/issues/50
+		// 
+		if (NT_SUCCESS(USB_SendControlRequest(
+			pDevCtx,
+			BmRequestDeviceToHost,
+			BmRequestClass,
+			GetReport,
+			0x0301,
+			0,
+			identification,
+			ARRAYSIZE(identification)
+		)))
+		{
+			WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RO_IdentificationData);
+			propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+			propertyData.Lcid = LOCALE_NEUTRAL;
+
+			(void)WdfDeviceAssignProperty(
+				Device,
+				&propertyData,
+				DEVPROP_TYPE_BINARY,
+				ARRAYSIZE(identification),
+				identification
+			);
+		}
 
 #pragma endregion
 		

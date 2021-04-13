@@ -193,7 +193,7 @@ dshidminiEvtDeviceAdd(
 #pragma code_seg()
 
 //
-// Read device properties
+// Read device properties available on device creation
 // 
 NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 {

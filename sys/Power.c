@@ -32,32 +32,7 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
 	{
-		//
-		// See https://github.com/ViGEm/DsHidMini/issues/50
-		// 
-		if (NT_SUCCESS(USB_SendControlRequest(
-			pDevCtx,
-			BmRequestDeviceToHost,
-			BmRequestClass,
-			GetReport,
-			0x0301,
-			0,
-			identification,
-			ARRAYSIZE(identification)
-		)))
-		{
-			WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RO_IdentificationData);
-			propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
-			propertyData.Lcid = LOCALE_NEUTRAL;
-
-			(void)WdfDeviceAssignProperty(
-				Device,
-				&propertyData,
-				DEVPROP_TYPE_BINARY,
-				ARRAYSIZE(identification),
-				identification
-			);
-		}
+		
 		
 		swprintf_s(
 			deviceAddress,
@@ -71,35 +46,7 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 			pDevCtx->DeviceAddress.Address[5]
 		);
 
-		//
-		// Set friendly name
-		// 
-
-		friendlyName = WdfMemoryGetBuffer(
-			pDevCtx->Connection.Usb.ProductString,
-			&friendlyNameSize
-		);
 		
-		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_Device_FriendlyName);
-		propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
-		propertyData.Lcid = LOCALE_NEUTRAL;
-
-		status = WdfDeviceAssignProperty(
-			Device,
-			&propertyData,
-			DEVPROP_TYPE_STRING,
-			(ULONG)friendlyNameSize + sizeof(L'\0'),
-			friendlyName
-		);
-
-		if (!NT_SUCCESS(status))
-		{
-			TraceError(
-				TRACE_POWER,
-				"Setting DEVPKEY_Device_FriendlyName failed with status %!STATUS!",
-				status
-			);
-		}
 		
 		//
 		// Set device address property
