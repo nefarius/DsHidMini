@@ -393,7 +393,9 @@ DsHidMini_EvtWdfDeviceSelfManagedIoSuspend(
 		}
 
 		WdfTimerStop(pDevCtx->Connection.Bth.Timers.HidOutputReport, FALSE);
-		WdfTimerStop(pDevCtx->Connection.Bth.Timers.HidControlConsume, FALSE);
+
+		DMF_DefaultTarget_StreamStop(pDevCtx->Connection.Bth.HidInterrupt.InputStreamerModule);
+		DMF_DefaultTarget_StreamStop(pDevCtx->Connection.Bth.HidControl.OutputWriterModule);
 
 		status = DsBth_SendDisconnectRequest(pDevCtx);
 
@@ -855,7 +857,7 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 // Power down
 // 
 NTSTATUS DsHidMini_EvtDeviceD0Exit(
-	_In_ WDFDEVICE              Device,
+	_In_ WDFDEVICE Device,
 	_In_ WDF_POWER_DEVICE_STATE TargetState
 )
 {
@@ -868,36 +870,29 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 
 	pDevCtx = DeviceGetContext(Device);
 
-	if (pDevCtx->ConfigurationReloadWaitHandle) {
+	if (pDevCtx->ConfigurationReloadWaitHandle)
+	{
 		UnregisterWait(pDevCtx->ConfigurationReloadWaitHandle);
 		pDevCtx->ConfigurationReloadWaitHandle = NULL;
 	}
 
-	if (pDevCtx->ConfigurationReloadEvent) {
+	if (pDevCtx->ConfigurationReloadEvent)
+	{
 		CloseHandle(pDevCtx->ConfigurationReloadEvent);
 		pDevCtx->ConfigurationReloadEvent = NULL;
 	}
 
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
 	{
-		WdfIoTargetStop(WdfUsbTargetPipeGetIoTarget(
-			pDevCtx->Connection.Usb.InterruptInPipe),
+		WdfIoTargetStop(
+			WdfUsbTargetPipeGetIoTarget(
+				pDevCtx->Connection.Usb.InterruptInPipe),
 			WdfIoTargetCancelSentIo
 		);
 	}
 
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
-	{		
-		WdfIoTargetPurge(
-			pDevCtx->Connection.Bth.BthIoTarget,
-			WdfIoTargetPurgeIoAndWait
-		);
-		}
-
-	FuncExit(TRACE_POWER, "status=%!STATUS!", status);
-
-		WdfTimerStop(pDevCtx->Connection.Bth.Timers.HidOutputReport, FALSE);
-		
+	{
 		WdfIoTargetPurge(
 			pDevCtx->Connection.Bth.HidInterrupt.InputStreamerIoTarget,
 			WdfIoTargetPurgeIoAndWait
@@ -906,7 +901,9 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 			pDevCtx->Connection.Bth.HidControl.OutputWriterIoTarget,
 			WdfIoTargetPurgeIoAndWait
 		);
-
-		DMF_DefaultTarget_StreamStop(pDevCtx->Connection.Bth.HidInterrupt.InputStreamerModule);
-		DMF_DefaultTarget_StreamStop(pDevCtx->Connection.Bth.HidControl.OutputWriterModule);
 	}
+
+	FuncExit(TRACE_POWER, "status=%!STATUS!", status);
+
+	return status;
+}
