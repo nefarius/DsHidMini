@@ -28,6 +28,7 @@ dshidminiEvtDeviceAdd(
 	PDEVICE_CONTEXT					pDevCtx;
 	WDFQUEUE						queue;
 	WDF_IO_QUEUE_CONFIG				queueConfig;
+	BOOLEAN ret;
 	
 
 	UNREFERENCED_PARAMETER(Driver);
@@ -37,8 +38,16 @@ dshidminiEvtDeviceAdd(
 	dmfDeviceInit = DMF_DmfDeviceInitAllocate(DeviceInit);
 
 	WDF_PNPPOWER_EVENT_CALLBACKS_INIT(&pnpPowerCallbacks);
-	//pnpPowerCallbacks.EvtDeviceSelfManagedIoInit = DsHidMini_EvtWdfDeviceSelfManagedIoInit;
-	pnpPowerCallbacks.EvtDeviceSelfManagedIoSuspend = DsHidMini_EvtWdfDeviceSelfManagedIoSuspend;
+
+	//
+	// Callbacks only relevant to Bluetooth
+	// 
+	if ((NT_SUCCESS(DsDevice_IsUsbDevice(DeviceInit, &ret)) && !ret))
+	{
+		pnpPowerCallbacks.EvtDeviceSelfManagedIoInit = DsHidMini_EvtWdfDeviceSelfManagedIoInit;
+		pnpPowerCallbacks.EvtDeviceSelfManagedIoSuspend = DsHidMini_EvtWdfDeviceSelfManagedIoSuspend;
+	}	
+	
 	pnpPowerCallbacks.EvtDevicePrepareHardware = DsHidMini_EvtDevicePrepareHardware;
 	pnpPowerCallbacks.EvtDeviceD0Entry = DsHidMini_EvtDeviceD0Entry;
 	pnpPowerCallbacks.EvtDeviceD0Exit = DsHidMini_EvtDeviceD0Exit;
@@ -707,6 +716,48 @@ DsDevice_InitContext(
 	
 	FuncExit(TRACE_DEVICE, "status=%!STATUS!", status);
 	
+	return status;
+}
+
+//
+// Checks if this device is a USB device
+// 
+NTSTATUS
+DsDevice_IsUsbDevice(
+	PWDFDEVICE_INIT DeviceInit, 
+	PBOOLEAN Result
+)
+{
+	NTSTATUS status;
+	WCHAR enumeratorName[200];
+	ULONG returnSize;
+	UNICODE_STRING unicodeEnumName, temp;
+
+	status = WdfFdoInitQueryProperty(
+		DeviceInit,
+		DevicePropertyEnumeratorName,
+		sizeof(enumeratorName),
+		enumeratorName,
+		&returnSize
+	);
+	if (!NT_SUCCESS(status))
+	{
+		return status;
+	}
+
+	RtlInitUnicodeString(
+		&unicodeEnumName,
+		enumeratorName
+	);
+
+	RtlInitUnicodeString(
+		&temp,
+		L"USB"
+	);
+
+	if (Result)
+		*Result = RtlCompareUnicodeString(&unicodeEnumName, &temp, TRUE) == 0;
+
 	return status;
 }
 

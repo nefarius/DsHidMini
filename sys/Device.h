@@ -387,4 +387,10 @@ DsDevice_InitContext(
 	WDFDEVICE Device
 );
 
+NTSTATUS
+DsDevice_IsUsbDevice(
+	PWDFDEVICE_INIT DeviceInit,
+	PBOOLEAN Result
+);
+
 EXTERN_C_END

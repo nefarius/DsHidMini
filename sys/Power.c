@@ -461,12 +461,10 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 	_In_ WDF_POWER_DEVICE_STATE PreviousState
 )
 {
-	PDEVICE_CONTEXT         pDevCtx;
-	NTSTATUS                status = STATUS_SUCCESS;
-	BOOLEAN                 isTargetStarted;
+	PDEVICE_CONTEXT pDevCtx;
+	NTSTATUS status = STATUS_SUCCESS;
 
 	pDevCtx = DeviceGetContext(Device);
-	isTargetStarted = FALSE;
 
 	FuncEntry(TRACE_POWER);
 
@@ -474,44 +472,7 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
 	{
-		do {
-			//
-			// Since continuous reader is configured for this interrupt-pipe, we must explicitly start
-			// the I/O target to get the framework to post read requests.
-			//
-			status = WdfIoTargetStart(WdfUsbTargetPipeGetIoTarget(pDevCtx->Connection.Usb.InterruptInPipe));
-			if (!NT_SUCCESS(status)) {
-				TraceError(TRACE_POWER, "Failed to start interrupt read pipe %!STATUS!", status);
-				break;
-			}
-
-			isTargetStarted = TRUE;
-		} while (FALSE);
-
-		if (!NT_SUCCESS(status)) {
-			//
-			// Failure in D0Entry will lead to device being removed. So let us stop the continuous
-			// reader in preparation for the ensuing remove.
-			//
-			if (isTargetStarted) {
-				WdfIoTargetStop(
-					WdfUsbTargetPipeGetIoTarget(pDevCtx->Connection.Usb.InterruptInPipe),
-					WdfIoTargetCancelSentIo
-				);
-			}
-		}
-
-		//
-		// Instruct pad to send input reports
-		// 
-		status = DsUsb_Ds3Init(pDevCtx);
-
-		if (!NT_SUCCESS(status))
-		{
-			TraceError( TRACE_POWER,
-				"DsUsb_Ds3Init failed with status %!STATUS!",
-				status);
-		}
+		status = DsUsb_D0Entry(Device);
 	}
 
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
@@ -577,11 +538,7 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
 	{
-		WdfIoTargetStop(
-			WdfUsbTargetPipeGetIoTarget(
-				pDevCtx->Connection.Usb.InterruptInPipe),
-			WdfIoTargetCancelSentIo
-		);
+		status = DsUdb_D0Exit(Device);
 	}
 
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)

@@ -538,8 +538,42 @@ NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
 NTSTATUS DsUsb_D0Entry(WDFDEVICE Device)
 {
 	NTSTATUS status = STATUS_SUCCESS;
+	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 
 	FuncEntry(TRACE_DSUSB);
+
+	do
+	{
+		//
+		// Since continuous reader is configured for this interrupt-pipe, we must explicitly start
+		// the I/O target to get the framework to post read requests.
+		//
+		status = WdfIoTargetStart(WdfUsbTargetPipeGetIoTarget(pDevCtx->Connection.Usb.InterruptInPipe));
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DSUSB,
+				"Failed to start interrupt read pipe %!STATUS!",
+				status
+			);
+			break;
+		}
+
+		//
+		// Instruct pad to send input reports
+		// 
+		status = DsUsb_Ds3Init(pDevCtx);
+
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_POWER,
+				"DsUsb_Ds3Init failed with status %!STATUS!",
+				status);
+			break;
+		}
+	}
+	while (FALSE);
 
 	FuncExit(TRACE_DSUSB, "status=%!STATUS!", status);
 
@@ -549,8 +583,15 @@ NTSTATUS DsUsb_D0Entry(WDFDEVICE Device)
 NTSTATUS DsUdb_D0Exit(WDFDEVICE Device)
 {
 	NTSTATUS status = STATUS_SUCCESS;
+	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 
 	FuncEntry(TRACE_DSUSB);
+
+	WdfIoTargetStop(
+		WdfUsbTargetPipeGetIoTarget(
+			pDevCtx->Connection.Usb.InterruptInPipe),
+		WdfIoTargetCancelSentIo
+	);
 
 	FuncExit(TRACE_DSUSB, "status=%!STATUS!", status);
 
