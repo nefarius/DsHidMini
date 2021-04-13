@@ -71,7 +71,7 @@ NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context)
 //
 // Auto-pair this device to first found host radio.
 // 
-NTSTATUS DsUsb_Ds3PairToFirstRadio(PDEVICE_CONTEXT Context)
+NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 {
 	NTSTATUS status = STATUS_UNSUCCESSFUL;
 	HANDLE hRadio = NULL;
@@ -81,6 +81,7 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(PDEVICE_CONTEXT Context)
 	DWORD ret;
 	DWORD error = ERROR_SUCCESS;
 	WDF_DEVICE_PROPERTY_DATA propertyData;
+	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 
 	FuncEntry(TRACE_DS3);
 	
@@ -134,12 +135,12 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(PDEVICE_CONTEXT Context)
 		TraceInformation(
 			TRACE_DS3,
 			"Updating host address from %02X:%02X:%02X:%02X:%02X:%02X to %02X:%02X:%02X:%02X:%02X:%02X",
-			Context->HostAddress.Address[0],
-			Context->HostAddress.Address[1],
-			Context->HostAddress.Address[2],
-			Context->HostAddress.Address[3],
-			Context->HostAddress.Address[4],
-			Context->HostAddress.Address[5],
+			pDevCtx->HostAddress.Address[0],
+			pDevCtx->HostAddress.Address[1],
+			pDevCtx->HostAddress.Address[2],
+			pDevCtx->HostAddress.Address[3],
+			pDevCtx->HostAddress.Address[4],
+			pDevCtx->HostAddress.Address[5],
 			info.address.rgBytes[0],
 			info.address.rgBytes[1],
 			info.address.rgBytes[2],
@@ -157,27 +158,30 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(PDEVICE_CONTEXT Context)
 		// Submit new host address
 		// 
 		status = USB_SendControlRequest(
-			Context,
+			pDevCtx,
 			BmRequestHostToDevice,
 			BmRequestClass,
 			SetReport,
 			Ds3FeatureHostAddress,
 			0,
 			controlBuffer,
-			SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH);
+			SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH
+		);
 
 		if (!NT_SUCCESS(status))
 		{
 			TraceError(
 				TRACE_DS3,
-				"Setting host address failed with %!STATUS!", status);
+				"Setting host address failed with %!STATUS!", 
+				status
+			);
 			break;
 		}
 
 		//
 		// Update in device context after success
 		// 
-		RtlCopyMemory(&Context->HostAddress, &info.address, sizeof(BD_ADDR));
+		RtlCopyMemory(&pDevCtx->HostAddress, &info.address, sizeof(BD_ADDR));
 		
 	} while (FALSE);
 
@@ -217,8 +221,8 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(PDEVICE_CONTEXT Context)
 	//
 	// Store in property
 	// 
-	(void)WdfDeviceAssignProperty(
-		(WDFDEVICE)WdfObjectContextGetObject(Context),
+	status = WdfDeviceAssignProperty(
+		Device,
 		&propertyData,
 		DEVPROP_TYPE_NTSTATUS,
 		sizeof(NTSTATUS),
@@ -233,7 +237,7 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(PDEVICE_CONTEXT Context)
 //
 // Send magic packet over BTH
 // 
-VOID DsBth_Ds3Init(PDEVICE_CONTEXT Context)
+NTSTATUS DsBth_Ds3Init(PDEVICE_CONTEXT Context)
 {
 	FuncEntry(TRACE_DS3);
 
@@ -268,7 +272,9 @@ VOID DsBth_Ds3Init(PDEVICE_CONTEXT Context)
 		);
 	}
 
-	FuncExitNoReturn(TRACE_DS3);
+	FuncExit(TRACE_DS3, "status=%!STATUS!", status);
+
+	return status;
 }
 
 VOID DS3_GET_UNIFIED_OUTPUT_REPORT_BUFFER(

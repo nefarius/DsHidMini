@@ -247,11 +247,9 @@ NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
 	WDF_USB_PIPE_INFORMATION pipeInfo;
 	UCHAR controlTransferBuffer[CONTROL_TRANSFER_BUFFER_LENGTH];
 	WDF_DEVICE_PROPERTY_DATA propertyData;
-	ULONG requiredSize = 0;
-	DEVPROPTYPE propertyType;
 	WCHAR deviceAddress[13];
 	WCHAR dcEventName[44];
-	PWSTR friendlyName;
+	WCHAR friendlyName[128];
 	size_t friendlyNameSize = 0;
 	UCHAR identification[64];
 	UINT64 hostAddress = 0;
@@ -342,11 +340,19 @@ NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
 			// Set friendly name
 			// 
 
-			friendlyName = WdfMemoryGetBuffer(
-				pDevCtx->Connection.Usb.ProductString,
-				&friendlyNameSize
+			RtlZeroMemory(
+				friendlyName, 
+				ARRAYSIZE(friendlyName) * sizeof(WCHAR)
 			);
-
+			RtlCopyMemory(
+				friendlyName,
+				WdfMemoryGetBuffer(
+					pDevCtx->Connection.Usb.ProductString,
+					&friendlyNameSize
+				),
+				friendlyNameSize
+			);
+			
 			WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_Device_FriendlyName);
 			propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
 			propertyData.Lcid = LOCALE_NEUTRAL;
@@ -659,7 +665,7 @@ NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
 			//
 			// Auto-pair to first found radio
 			// 
-			status = DsUsb_Ds3PairToFirstRadio(pDevCtx);
+			status = DsUsb_Ds3PairToFirstRadio(Device);
 
 			if (!NT_SUCCESS(status))
 			{
@@ -680,7 +686,7 @@ NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
 		//
 		// Send initial output report
 		// 
-		(void)USB_WriteInterruptPipeAsync(
+		status = USB_WriteInterruptPipeAsync(
 			WdfUsbTargetDeviceGetIoTarget(pDevCtx->Connection.Usb.UsbDevice),
 			pDevCtx->Connection.Usb.InterruptOutPipe,
 			(PVOID)G_Ds3UsbHidOutputReport,

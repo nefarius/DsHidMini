@@ -382,6 +382,9 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 	return status;
 }
 
+//
+// Gets invoked when the hot-reload event got triggered from somewhere
+// 
 VOID CALLBACK 
 DsDevice_HotRealodEventCallback(
 	_In_ PVOID   lpParameter,
@@ -507,6 +510,11 @@ VOID DsDevice_ReadConfiguration(WDFDEVICE Device)
 	TraceVerbose(TRACE_DEVICE, "[COM] WirelessIdleTimeoutPeriodMs: %d",
 		pDevCtx->Configuration.WirelessIdleTimeoutPeriodMs);
 
+	//
+	// Read hot-reloadable properties
+	//
+	DsDevice_HotReloadConfiguration(pDevCtx);
+
 	FuncExitNoReturn(TRACE_DEVICE);
 }
 
@@ -546,7 +554,7 @@ DsDevice_InitContext(
 		if (!NT_SUCCESS(status))
 		{
 			TraceError(
-				TRACE_POWER,
+				TRACE_DEVICE,
 				"WdfMemoryCreate failed with %!STATUS!",
 				status
 			);
@@ -583,7 +591,7 @@ DsDevice_InitContext(
 		if (!NT_SUCCESS(status))
 		{
 			TraceError(
-				TRACE_POWER,
+				TRACE_DEVICE,
 				"WdfMemoryCreate failed with %!STATUS!",
 				status
 			);
@@ -632,6 +640,8 @@ DsDevice_InitContext(
 			
 			break;
 		}
+
+		DsDevice_RegisterBthDisconnectListener(pDevCtx);
 
 		break;
 	}
@@ -761,6 +771,187 @@ DsDevice_IsUsbDevice(
 	return status;
 }
 
+//
+// Registers an event listener to trigger refreshing runtime properties
+// 
+void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
+{
+	WCHAR eventName[49];
+	WCHAR deviceAddress[13];
+
+	FuncEntry(TRACE_DEVICE);
+
+	switch (Context->ConnectionType)
+	{
+	case DsDeviceConnectionTypeUsb:
+
+		swprintf_s(
+			deviceAddress,
+			ARRAYSIZE(deviceAddress),
+			L"%02X%02X%02X%02X%02X%02X",
+			Context->DeviceAddress.Address[0],
+			Context->DeviceAddress.Address[1],
+			Context->DeviceAddress.Address[2],
+			Context->DeviceAddress.Address[3],
+			Context->DeviceAddress.Address[4],
+			Context->DeviceAddress.Address[5]
+		);
+
+		break;
+	case DsDeviceConnectionTypeBth:
+
+		swprintf_s(
+			deviceAddress,
+			ARRAYSIZE(deviceAddress),
+			L"%012llX",
+			*(PULONGLONG)&Context->DeviceAddress
+		);
+
+		break;
+	}
+
+	//
+	// Register global event to listen for changes on
+	//
+
+	swprintf_s(
+		eventName,
+		ARRAYSIZE(eventName),
+		L"Global\\DsHidMiniConfigHotReloadEvent%ls",
+		deviceAddress
+	);
+
+	TraceVerbose(
+		TRACE_DEVICE,
+		"Configuration reload event name: %ls",
+		eventName
+	);
+
+	TCHAR* szSD = TEXT("D:(A;OICI;GA;;;BA)(A;OICI;GA;;;SY)");
+	SECURITY_ATTRIBUTES sa;
+	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+	sa.bInheritHandle = FALSE;
+	ConvertStringSecurityDescriptorToSecurityDescriptor(
+		szSD,
+		SDDL_REVISION_1,
+		&((&sa)->lpSecurityDescriptor),
+		NULL
+	);
+
+	if (Context->ConfigurationReloadEvent)
+	{
+		CloseHandle(Context->ConfigurationReloadEvent);
+		Context->ConfigurationReloadEvent = NULL;
+	}
+
+	Context->ConfigurationReloadEvent = CreateEventW(
+		&sa,
+		FALSE,
+		FALSE,
+		eventName
+	);
+
+	if (Context->ConfigurationReloadEvent == NULL)
+	{
+		TraceError(
+			TRACE_DEVICE,
+			"Failed to create reload event"
+		);
+	}
+
+	const BOOL ret = RegisterWaitForSingleObject(
+		&Context->ConfigurationReloadWaitHandle,
+		Context->ConfigurationReloadEvent,
+		DsDevice_HotRealodEventCallback,
+		Context,
+		INFINITE,
+		WT_EXECUTELONGFUNCTION
+	);
+
+	if (!ret)
+	{
+		TraceError(
+			TRACE_DEVICE,
+			"Failed to register wait for reload event"
+		);
+	}
+
+	FuncExitNoReturn(TRACE_DEVICE);
+}
+
+//
+// Register event to disconnect from Bluetooth, bypassing mshudumdf.sys
+// 
+void DsDevice_RegisterBthDisconnectListener(PDEVICE_CONTEXT Context)
+{
+	WCHAR dcEventName[44];
+	WCHAR deviceAddress[13];
+
+	FuncEntry(TRACE_DEVICE);
+	
+	swprintf_s(
+		dcEventName,
+		ARRAYSIZE(dcEventName),
+		L"Global\\DsHidMiniDisconnectEvent%ls",
+		deviceAddress
+	);
+
+	TraceVerbose(
+		TRACE_DEVICE,
+		"Disconnect event name: %ls",
+		dcEventName
+	);
+
+	TCHAR* szSD = TEXT("D:(A;;0x001F0003;;;BA)(A;;0x00100002;;;AU)");
+	SECURITY_ATTRIBUTES sa;
+	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+	sa.bInheritHandle = FALSE;
+	ConvertStringSecurityDescriptorToSecurityDescriptor(
+		szSD,
+		SDDL_REVISION_1,
+		&((&sa)->lpSecurityDescriptor),
+		NULL
+	);
+
+	if (Context->Connection.Bth.DisconnectEvent) {
+		CloseHandle(Context->Connection.Bth.DisconnectEvent);
+		Context->Connection.Bth.DisconnectEvent = NULL;
+	}
+
+	Context->Connection.Bth.DisconnectEvent = CreateEventW(
+		&sa,
+		FALSE,
+		FALSE,
+		dcEventName
+	);
+
+	if (Context->Connection.Bth.DisconnectEvent == NULL)
+	{
+		TraceError(
+			TRACE_DEVICE,
+			"Failed to create disconnect event"
+		);
+	}
+
+	const BOOL ret = RegisterWaitForSingleObject(
+		&Context->Connection.Bth.DisconnectWaitHandle,
+		Context->Connection.Bth.DisconnectEvent,
+		DsBth_DisconnectEventCallback,
+		Context,
+		INFINITE,
+		WT_EXECUTELONGFUNCTION | WT_EXECUTEONLYONCE
+	);
+
+	if (!ret)
+	{
+		TraceError(
+			TRACE_DEVICE,
+			"Failed to register wait for disconnect event"
+		);
+	}
+
+	FuncExitNoReturn(TRACE_DEVICE);
+}
 
 //
 // Bootstrap our own module

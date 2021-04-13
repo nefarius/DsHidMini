@@ -54,11 +54,17 @@ EVT_DMF_ContinuousRequestTarget_BufferOutput DsBth_HidInterruptReadContinuousReq
 EVT_DMF_ContinuousRequestTarget_BufferInput DsBth_HidControlWriteContinuousRequestCompleted;
 
 NTSTATUS
-DsBthSelfManagedIoInit(
+DsBth_SelfManagedIoInit(
 	WDFDEVICE Device
 );
 
 NTSTATUS
 DsBth_SelfManagedIoSuspend(
 	WDFDEVICE Device
+);
+
+NTSTATUS
+DsBth_D0Entry(
+	WDFDEVICE Device,
+	WDF_POWER_DEVICE_STATE PreviousState
 );

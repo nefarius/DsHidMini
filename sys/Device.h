@@ -393,4 +393,14 @@ DsDevice_IsUsbDevice(
 	PBOOLEAN Result
 );
 
+void
+DsDevice_RegisterHotReloadListener(
+	PDEVICE_CONTEXT Context
+);
+
+void
+DsDevice_RegisterBthDisconnectListener(
+	PDEVICE_CONTEXT Context
+);
+
 EXTERN_C_END

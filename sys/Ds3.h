@@ -154,6 +154,6 @@ typedef enum _DS3_FEATURE_VALUE
 
 NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context);
 
-NTSTATUS DsUsb_Ds3PairToFirstRadio(PDEVICE_CONTEXT Context);
+NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device);
 
-VOID DsBth_Ds3Init(PDEVICE_CONTEXT Context);
+NTSTATUS DsBth_Ds3Init(PDEVICE_CONTEXT Context);
