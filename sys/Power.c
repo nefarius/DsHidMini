@@ -361,6 +361,58 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 }
 
 //
+// Stop Bluetooth communication here
+// 
+NTSTATUS
+DsHidMini_EvtWdfDeviceSelfManagedIoSuspend(
+	WDFDEVICE Device
+)
+{
+	NTSTATUS status = STATUS_SUCCESS;
+	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+
+	FuncEntry(TRACE_POWER);
+
+	//
+	// Stop processing received output report packets
+	//
+	DMF_ThreadedBufferQueue_Stop(pDevCtx->OutputReport.Worker);
+
+	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
+	{
+		if (pDevCtx->Connection.Bth.DisconnectWaitHandle)
+		{
+			UnregisterWait(pDevCtx->Connection.Bth.DisconnectWaitHandle);
+			pDevCtx->Connection.Bth.DisconnectWaitHandle = NULL;
+		}
+
+		if (pDevCtx->Connection.Bth.DisconnectEvent)
+		{
+			CloseHandle(pDevCtx->Connection.Bth.DisconnectEvent);
+			pDevCtx->Connection.Bth.DisconnectEvent = NULL;
+		}
+
+		WdfTimerStop(pDevCtx->Connection.Bth.Timers.HidOutputReport, FALSE);
+		WdfTimerStop(pDevCtx->Connection.Bth.Timers.HidControlConsume, FALSE);
+
+		status = DsBth_SendDisconnectRequest(pDevCtx);
+
+		if (!NT_SUCCESS(status))
+		{
+			TraceVerbose(
+				TRACE_POWER,
+				"DsBth_SendDisconnectRequest failed with status %!STATUS!",
+				status
+			);
+		}
+	}
+
+	FuncExit(TRACE_POWER, "status=%!STATUS!", status);
+
+	return status;
+}
+
+//
 // Initialize USB communication here
 // 
 _Use_decl_annotations_
@@ -807,6 +859,7 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 	_In_ WDF_POWER_DEVICE_STATE TargetState
 )
 {
+	NTSTATUS status = STATUS_SUCCESS;
 	PDEVICE_CONTEXT pDevCtx;
 
 	UNREFERENCED_PARAMETER(TargetState);
@@ -814,11 +867,6 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 	FuncEntry(TRACE_POWER);
 
 	pDevCtx = DeviceGetContext(Device);
-
-	//
-	// Stop processing received output report packets
-	//
-	DMF_ThreadedBufferQueue_Stop(pDevCtx->OutputReport.Worker);
 
 	if (pDevCtx->ConfigurationReloadWaitHandle) {
 		UnregisterWait(pDevCtx->ConfigurationReloadWaitHandle);
@@ -840,15 +888,13 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
 	{		
-		if (pDevCtx->Connection.Bth.DisconnectWaitHandle) {
-			UnregisterWait(pDevCtx->Connection.Bth.DisconnectWaitHandle);
-			pDevCtx->Connection.Bth.DisconnectWaitHandle = NULL;
+		WdfIoTargetPurge(
+			pDevCtx->Connection.Bth.BthIoTarget,
+			WdfIoTargetPurgeIoAndWait
+		);
 		}
 
-		if (pDevCtx->Connection.Bth.DisconnectEvent) {
-			CloseHandle(pDevCtx->Connection.Bth.DisconnectEvent);
-			pDevCtx->Connection.Bth.DisconnectEvent = NULL;
-		}
+	FuncExit(TRACE_POWER, "status=%!STATUS!", status);
 
 		WdfTimerStop(pDevCtx->Connection.Bth.Timers.HidOutputReport, FALSE);
 		
@@ -864,8 +910,3 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 		DMF_DefaultTarget_StreamStop(pDevCtx->Connection.Bth.HidInterrupt.InputStreamerModule);
 		DMF_DefaultTarget_StreamStop(pDevCtx->Connection.Bth.HidControl.OutputWriterModule);
 	}
-
-	FuncExitNoReturn(TRACE_POWER);
-
-	return STATUS_SUCCESS;
-}

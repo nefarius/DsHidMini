@@ -1795,7 +1795,7 @@ DMF_EvtExecuteOutputPacketReceived(
 			
 			TraceVerbose(
 				TRACE_DSHIDMINIDRV,
-				"Rate control triggered, delaying buffer 0x%p for %Iu ms",
+				"Rate control triggered, delaying buffer 0x%p for %I64u ms",
 				ClientWorkBuffer,
 				timeout
 			);
