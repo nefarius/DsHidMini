@@ -254,6 +254,7 @@ NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
 	PWSTR friendlyName;
 	size_t friendlyNameSize = 0;
 	UCHAR identification[64];
+	UINT64 hostAddress = 0;
 
 	FuncEntry(TRACE_DSUSB);
 
@@ -361,7 +362,7 @@ NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
 			if (!NT_SUCCESS(status))
 			{
 				TraceError(
-					TRACE_POWER,
+					TRACE_DSUSB,
 					"Setting DEVPKEY_Device_FriendlyName failed with status %!STATUS!",
 					status
 				);
@@ -473,6 +474,9 @@ NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
 		            pDevCtx->DeviceAddress.Address[5]
 		);
 
+		//
+		// Convert to expected hex string
+		// 
 		swprintf_s(
 			deviceAddress,
 			ARRAYSIZE(deviceAddress),
@@ -485,6 +489,31 @@ NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
 			pDevCtx->DeviceAddress.Address[5]
 		);
 
+		//
+		// Set device address property
+		// 
+
+		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_Bluetooth_DeviceAddress);
+		propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+		propertyData.Lcid = LOCALE_NEUTRAL;
+
+		status = WdfDeviceAssignProperty(
+			Device,
+			&propertyData,
+			DEVPROP_TYPE_STRING,
+			ARRAYSIZE(deviceAddress) * sizeof(WCHAR),
+			deviceAddress
+		);
+
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DSUSB,
+				"Setting DEVPKEY_Bluetooth_DeviceAddress failed with status %!STATUS!",
+				status
+			);
+		}
+		
 #pragma endregion
 
 		//
@@ -555,6 +584,40 @@ NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
 			&controlTransferBuffer[2],
 			sizeof(BD_ADDR));
 
+		//
+		// Set host radio address property
+		// 
+
+		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_BluetoothRadio_Address);
+		propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+		propertyData.Lcid = LOCALE_NEUTRAL;
+
+		hostAddress = (UINT64)(pDevCtx->HostAddress.Address[5]) |
+			(UINT64)(pDevCtx->HostAddress.Address[4]) << 8 |
+			(UINT64)(pDevCtx->HostAddress.Address[3]) << 16 |
+			(UINT64)(pDevCtx->HostAddress.Address[2]) << 24 |
+			(UINT64)(pDevCtx->HostAddress.Address[1]) << 32 |
+			(UINT64)(pDevCtx->HostAddress.Address[0]) << 40;
+
+		status = WdfDeviceAssignProperty(
+			Device,
+			&propertyData,
+			DEVPROP_TYPE_UINT64,
+			sizeof(UINT64),
+			&hostAddress
+		);
+
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DSUSB,
+				"Setting DEVPKEY_BluetoothRadio_Address failed with status %!STATUS!",
+				status
+			);
+		}
+
+		status = STATUS_SUCCESS;
+		
 #pragma endregion
 
 #pragma region Request Model Identification
@@ -587,6 +650,32 @@ NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
 		}
 
 #pragma endregion
+
+		//
+		// Attempt automatic pairing
+		// 
+		if (!pDevCtx->Configuration.DisableAutoPairing)
+		{
+			//
+			// Auto-pair to first found radio
+			// 
+			status = DsUsb_Ds3PairToFirstRadio(pDevCtx);
+
+			if (!NT_SUCCESS(status))
+			{
+				TraceError(
+					TRACE_DSUSB,
+					"DsUsb_Ds3PairToFirstRadio failed with status %!STATUS!",
+					status
+				);
+			}
+		}
+		else
+		{
+			TraceInformation(
+				TRACE_DSUSB,
+				"Auto-pairing disabled in device configuration");
+		}
 		
 		//
 		// Send initial output report
@@ -637,7 +726,7 @@ NTSTATUS DsUsb_D0Entry(WDFDEVICE Device)
 		if (!NT_SUCCESS(status))
 		{
 			TraceError(
-				TRACE_POWER,
+				TRACE_DSUSB,
 				"DsUsb_Ds3Init failed with status %!STATUS!",
 				status);
 			break;
