@@ -36,3 +36,18 @@ USB_WriteInterruptOutSync(
 );
 
 EVT_WDF_REQUEST_COMPLETION_ROUTINE EvtUsbRequestCompletionRoutine;
+
+NTSTATUS
+DsUdb_PrepareHardware(
+    WDFDEVICE Device
+);
+
+NTSTATUS
+DsUsb_D0Entry(
+    WDFDEVICE Device
+);
+
+NTSTATUS
+DsUdb_D0Exit(
+    WDFDEVICE Device
+);

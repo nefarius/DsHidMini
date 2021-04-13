@@ -37,7 +37,7 @@ dshidminiEvtDeviceAdd(
 	dmfDeviceInit = DMF_DmfDeviceInitAllocate(DeviceInit);
 
 	WDF_PNPPOWER_EVENT_CALLBACKS_INIT(&pnpPowerCallbacks);
-	pnpPowerCallbacks.EvtDeviceSelfManagedIoInit = DsHidMini_EvtWdfDeviceSelfManagedIoInit;
+	//pnpPowerCallbacks.EvtDeviceSelfManagedIoInit = DsHidMini_EvtWdfDeviceSelfManagedIoInit;
 	pnpPowerCallbacks.EvtDeviceSelfManagedIoSuspend = DsHidMini_EvtWdfDeviceSelfManagedIoSuspend;
 	pnpPowerCallbacks.EvtDevicePrepareHardware = DsHidMini_EvtDevicePrepareHardware;
 	pnpPowerCallbacks.EvtDeviceD0Entry = DsHidMini_EvtDeviceD0Entry;
@@ -194,6 +194,7 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 	WDF_DEVICE_PROPERTY_DATA devProp;
 	DEVPROPTYPE propType;
 	WDF_OBJECT_ATTRIBUTES attributes;
+	ULONG requiredSize = 0;
 	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 
 	FuncEntry(TRACE_DEVICE);
@@ -265,7 +266,7 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 		);
 		
 		//
-		// Fetch and convert device address from device property
+		// Fetch Bluetooth-specific properties
 		// 
 		if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
 		{
@@ -320,6 +321,50 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 				"Device address: %012llX",
 				*(PULONGLONG)&pDevCtx->DeviceAddress
 			);
+
+			WDF_DEVICE_PROPERTY_DATA_INIT(&devProp, &DEVPKEY_Bluetooth_DeviceVID);
+
+			status = WdfDeviceQueryPropertyEx(
+				Device,
+				&devProp,
+				sizeof(USHORT),
+				&pDevCtx->VendorId,
+				&requiredSize,
+				&propType
+			);
+			if (!NT_SUCCESS(status))
+			{
+				TraceError(
+					TRACE_DEVICE,
+					"Requesting DEVPKEY_Bluetooth_DeviceVID failed with %!STATUS!",
+					status
+				);
+				break;
+			}
+
+			TraceVerbose(TRACE_DEVICE, "[BTH] VID: 0x%04X", pDevCtx->VendorId);
+
+			WDF_DEVICE_PROPERTY_DATA_INIT(&devProp, &DEVPKEY_Bluetooth_DevicePID);
+
+			status = WdfDeviceQueryPropertyEx(
+				Device,
+				&devProp,
+				sizeof(USHORT),
+				&pDevCtx->ProductId,
+				&requiredSize,
+				&propType
+			);
+			if (!NT_SUCCESS(status))
+			{
+				TraceError(
+					TRACE_DEVICE,
+					"Requesting DEVPKEY_Bluetooth_DevicePID failed with %!STATUS!",
+					status
+				);
+				break;
+			}
+
+			TraceVerbose(TRACE_DEVICE, "[BTH] PID: 0x%04X", pDevCtx->ProductId);
 		}
 	} while (FALSE);
 

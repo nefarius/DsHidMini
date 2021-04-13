@@ -113,3 +113,11 @@ DsBth_DisconnectEventCallback(
 
 	(void)DsBth_SendDisconnectRequest(pDevCtx);
 }
+
+NTSTATUS DsBthSelfManagedIoInit(WDFDEVICE Device)
+{
+}
+
+NTSTATUS DsBth_SelfManagedIoSuspend(WDFDEVICE Device)
+{
+}

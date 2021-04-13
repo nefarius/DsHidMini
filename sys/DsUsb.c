@@ -237,6 +237,326 @@ USB_WriteInterruptOutSync(
 	return status;
 }
 
+NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
+{
+	NTSTATUS status = STATUS_SUCCESS;
+	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	WDF_USB_DEVICE_SELECT_CONFIG_PARAMS configParams;
+	UCHAR index;
+	WDFUSBPIPE pipe;
+	WDF_USB_PIPE_INFORMATION pipeInfo;
+	UCHAR controlTransferBuffer[CONTROL_TRANSFER_BUFFER_LENGTH];
+	WDF_DEVICE_PROPERTY_DATA propertyData;
+	ULONG requiredSize = 0;
+	DEVPROPTYPE propertyType;
+	WCHAR deviceAddress[13];
+	WCHAR dcEventName[44];
+
+	FuncEntry(TRACE_DSUSB);
+
+	do
+	{
+		//
+		// Initialize USB framework object
+		// 
+		if (pDevCtx->Connection.Usb.UsbDevice == NULL)
+		{
+			status = WdfUsbTargetDeviceCreate(
+				Device,
+				WDF_NO_OBJECT_ATTRIBUTES,
+				&pDevCtx->Connection.Usb.UsbDevice
+			);
+
+			if (!NT_SUCCESS(status))
+			{
+				TraceError(
+					TRACE_DSUSB,
+					"WdfUsbTargetDeviceCreate failed with status %!STATUS!",
+					status
+				);
+				break;
+			}
+		}
+
+		WdfUsbTargetDeviceGetDeviceDescriptor(
+			pDevCtx->Connection.Usb.UsbDevice,
+			&pDevCtx->Connection.Usb.UsbDeviceDescriptor
+		);
+
+		pDevCtx->VendorId = pDevCtx->Connection.Usb.UsbDeviceDescriptor.idVendor;
+		TraceVerbose(TRACE_DSUSB, "[USB] VID: 0x%04X", pDevCtx->VendorId);
+		pDevCtx->ProductId = pDevCtx->Connection.Usb.UsbDeviceDescriptor.idProduct;
+		TraceVerbose(TRACE_DSUSB, "[USB] PID: 0x%04X", pDevCtx->ProductId);
+
+#pragma region USB Interface & Pipe settings
+
+		WDF_USB_DEVICE_SELECT_CONFIG_PARAMS_INIT_SINGLE_INTERFACE(&configParams);
+
+		status = WdfUsbTargetDeviceSelectConfig(pDevCtx->Connection.Usb.UsbDevice,
+		                                        WDF_NO_OBJECT_ATTRIBUTES,
+		                                        &configParams
+		);
+
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(TRACE_DSUSB,
+			           "WdfUsbTargetDeviceSelectConfig failed %!STATUS!",
+			           status
+			);
+			break;
+		}
+
+		pDevCtx->Connection.Usb.UsbInterface = configParams.Types.SingleInterface.ConfiguredUsbInterface;
+
+		//
+		// Grab product name to use as FriendlyName
+		// 
+		status = WdfUsbTargetDeviceAllocAndQueryString(
+			pDevCtx->Connection.Usb.UsbDevice,
+			WDF_NO_OBJECT_ATTRIBUTES,
+			&pDevCtx->Connection.Usb.ProductString,
+			NULL,
+			pDevCtx->Connection.Usb.UsbDeviceDescriptor.iProduct,
+			0x0409
+		);
+		if (!NT_SUCCESS(status))
+		{
+			TraceEvents(
+				TRACE_LEVEL_WARNING,
+				TRACE_DEVICE,
+				"Requesting iProduct failed (status: 0x%x), device might not support this string",
+				status
+			);
+		}
+
+		//
+		// Get pipe handles
+		//
+		for (index = 0; index < WdfUsbInterfaceGetNumConfiguredPipes(pDevCtx->Connection.Usb.UsbInterface); index++)
+		{
+			WDF_USB_PIPE_INFORMATION_INIT(&pipeInfo);
+
+			pipe = WdfUsbInterfaceGetConfiguredPipe(
+				pDevCtx->Connection.Usb.UsbInterface,
+				index, //PipeIndex,
+				&pipeInfo
+			);
+			//
+			// Tell the framework that it's okay to read less than
+			// MaximumPacketSize
+			//
+			WdfUsbTargetPipeSetNoMaximumPacketSizeCheck(pipe);
+
+			if (WdfUsbPipeTypeInterrupt == pipeInfo.PipeType &&
+				WdfUsbTargetPipeIsInEndpoint(pipe))
+			{
+				TraceInformation(TRACE_DSUSB,
+				                 "InterruptReadPipe is 0x%p", pipe);
+				pDevCtx->Connection.Usb.InterruptInPipe = pipe;
+			}
+
+			if (WdfUsbPipeTypeInterrupt == pipeInfo.PipeType &&
+				WdfUsbTargetPipeIsOutEndpoint(pipe))
+			{
+				TraceInformation(TRACE_DSUSB,
+				                 "InterruptWritePipe is 0x%p", pipe);
+				pDevCtx->Connection.Usb.InterruptOutPipe = pipe;
+			}
+		}
+
+		//
+		// Validate that we got both required pipes
+		// 
+		if (!pDevCtx->Connection.Usb.InterruptInPipe
+			|| !pDevCtx->Connection.Usb.InterruptOutPipe)
+		{
+			status = STATUS_INVALID_DEVICE_STATE;
+			TraceError(
+				TRACE_DSUSB,
+				"Device is not configured properly %!STATUS!\n",
+				status
+			);
+			break;
+		}
+
+#pragma endregion
+
+		status = DsUsbConfigContReaderForInterruptEndPoint(Device);
+
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DSUSB,
+				"DsUsbConfigContReaderForInterruptEndPoint failed with %!STATUS!",
+				status
+			);
+			break;
+		}
+
+#pragma region Request device MAC address
+		
+		//
+		// Request device MAC address
+		// 
+		status = USB_SendControlRequest(
+			pDevCtx,
+			BmRequestDeviceToHost,
+			BmRequestClass,
+			GetReport,
+			Ds3FeatureDeviceAddress,
+			0,
+			controlTransferBuffer,
+			CONTROL_TRANSFER_BUFFER_LENGTH);
+
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DSUSB,
+				"Requesting device address failed with %!STATUS!",
+				status
+			);
+			break;
+		}
+
+		RtlCopyMemory(
+			&pDevCtx->DeviceAddress,
+			&controlTransferBuffer[4],
+			sizeof(BD_ADDR));
+
+		TraceEvents(TRACE_LEVEL_INFORMATION,
+		            TRACE_DSUSB,
+		            "Device address: %02X:%02X:%02X:%02X:%02X:%02X",
+		            pDevCtx->DeviceAddress.Address[0],
+		            pDevCtx->DeviceAddress.Address[1],
+		            pDevCtx->DeviceAddress.Address[2],
+		            pDevCtx->DeviceAddress.Address[3],
+		            pDevCtx->DeviceAddress.Address[4],
+		            pDevCtx->DeviceAddress.Address[5]
+		);
+
+		swprintf_s(
+			deviceAddress,
+			ARRAYSIZE(deviceAddress),
+			L"%02X%02X%02X%02X%02X%02X",
+			pDevCtx->DeviceAddress.Address[0],
+			pDevCtx->DeviceAddress.Address[1],
+			pDevCtx->DeviceAddress.Address[2],
+			pDevCtx->DeviceAddress.Address[3],
+			pDevCtx->DeviceAddress.Address[4],
+			pDevCtx->DeviceAddress.Address[5]
+		);
+
+#pragma endregion
+
+		//
+		// Disconnect Bluetooth connection, if detected
+		//
+
+		swprintf_s(
+			dcEventName,
+			ARRAYSIZE(dcEventName),
+			L"Global\\DsHidMiniDisconnectEvent%ls",
+			deviceAddress
+		);
+
+		HANDLE dcEvent = OpenEvent(
+			SYNCHRONIZE | EVENT_MODIFY_STATE,
+			FALSE,
+			dcEventName
+		);
+
+		if (dcEvent != NULL)
+		{
+			TraceVerbose(
+				TRACE_DSUSB,
+				"Found existing event %ls, signalling disconnect",
+				dcEventName
+			);
+
+			SetEvent(dcEvent);
+			CloseHandle(dcEvent);
+		}
+		else
+		{
+			TraceError(
+				TRACE_DSUSB,
+				"GetLastError: %d",
+				GetLastError()
+			);
+		}
+
+#pragma region Request host BTH address
+		
+		//
+		// Request host BTH address
+		// 
+		status = USB_SendControlRequest(
+			pDevCtx,
+			BmRequestDeviceToHost,
+			BmRequestClass,
+			GetReport,
+			Ds3FeatureHostAddress,
+			0,
+			controlTransferBuffer,
+			CONTROL_TRANSFER_BUFFER_LENGTH
+		);
+
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DSUSB,
+				"Requesting host address failed with %!STATUS!",
+				status
+			);
+			return status;
+		}
+
+		RtlCopyMemory(
+			&pDevCtx->HostAddress,
+			&controlTransferBuffer[2],
+			sizeof(BD_ADDR));
+
+#pragma endregion
+		
+		//
+		// Send initial output report
+		// 
+		(void)USB_WriteInterruptPipeAsync(
+			WdfUsbTargetDeviceGetIoTarget(pDevCtx->Connection.Usb.UsbDevice),
+			pDevCtx->Connection.Usb.InterruptOutPipe,
+			(PVOID)G_Ds3UsbHidOutputReport,
+			DS3_USB_HID_OUTPUT_REPORT_SIZE
+		);
+	}
+	while (FALSE);
+	
+	FuncExit(TRACE_DSUSB, "status=%!STATUS!", status);
+
+	return status;
+}
+
+NTSTATUS DsUsb_D0Entry(WDFDEVICE Device)
+{
+	NTSTATUS status = STATUS_SUCCESS;
+
+	FuncEntry(TRACE_DSUSB);
+
+	FuncExit(TRACE_DSUSB, "status=%!STATUS!", status);
+
+	return status;
+}
+
+NTSTATUS DsUdb_D0Exit(WDFDEVICE Device)
+{
+	NTSTATUS status = STATUS_SUCCESS;
+
+	FuncEntry(TRACE_DSUSB);
+
+	FuncExit(TRACE_DSUSB, "status=%!STATUS!", status);
+
+	return status;
+}
+
 //
 // Reader failed for some reason
 // 

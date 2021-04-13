@@ -52,3 +52,13 @@ DsBth_DisconnectEventCallback(
 EVT_DMF_ContinuousRequestTarget_BufferOutput DsBth_HidInterruptReadContinuousRequestCompleted;
 
 EVT_DMF_ContinuousRequestTarget_BufferInput DsBth_HidControlWriteContinuousRequestCompleted;
+
+NTSTATUS
+DsBthSelfManagedIoInit(
+	WDFDEVICE Device
+);
+
+NTSTATUS
+DsBth_SelfManagedIoSuspend(
+	WDFDEVICE Device
+);
