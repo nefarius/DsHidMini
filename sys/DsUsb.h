@@ -1,6 +1,5 @@
 #pragma once
 
-const __declspec(selectany) LONGLONG DEFAULT_CONTROL_TRANSFER_TIMEOUT = 5 * -1 * WDF_TIMEOUT_TO_SEC;
 #define INTERRUPT_IN_BUFFER_LENGTH          128
 #define CONTROL_TRANSFER_BUFFER_LENGTH      64
 

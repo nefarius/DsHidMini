@@ -31,7 +31,7 @@ USB_SendControlRequest(
 
 	WDF_REQUEST_SEND_OPTIONS_SET_TIMEOUT(
 		&sendOptions,
-		DEFAULT_CONTROL_TRANSFER_TIMEOUT
+		WDF_REL_TIMEOUT_IN_SEC(3)
 	);
 
 	switch (Type)

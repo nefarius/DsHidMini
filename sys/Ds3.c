@@ -132,6 +132,23 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 		// 
 		REVERSE_BYTE_ARRAY(&info.address.rgBytes[0], sizeof(BD_ADDR));
 
+		//
+		// Don't issue request when addresses already match
+		// 
+		if (RtlCompareMemory(
+				&info.address.rgBytes[0],
+				&pDevCtx->HostAddress.Address[0],
+				sizeof(BD_ADDR)
+			) == sizeof(BD_ADDR)
+		)
+		{
+			TraceVerbose(
+				TRACE_DS3,
+				"Host address equals local radio address, skipping"
+			);
+			break;
+		}
+		
 		TraceInformation(
 			TRACE_DS3,
 			"Updating host address from %02X:%02X:%02X:%02X:%02X:%02X to %02X:%02X:%02X:%02X:%02X:%02X",
@@ -148,11 +165,19 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 			info.address.rgBytes[4],
 			info.address.rgBytes[5]
 		);
-
+		
 		UCHAR controlBuffer[SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH];
-		RtlZeroMemory(controlBuffer, SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH);
+		
+		RtlZeroMemory(
+			controlBuffer, 
+			SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH
+		);
 
-		RtlCopyMemory(&controlBuffer[2], &info.address, sizeof(BD_ADDR));
+		RtlCopyMemory(
+			&controlBuffer[2], 
+			&info.address, 
+			sizeof(BD_ADDR)
+		);
 
 		//
 		// Submit new host address

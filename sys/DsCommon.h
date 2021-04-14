@@ -1,5 +1,7 @@
 #pragma once
 
+#include <pshpack1.h>
+
 /**
 * \typedef struct _BD_ADDR
 *
@@ -10,6 +12,8 @@ typedef struct _BD_ADDR
     UCHAR Address[6];
 
 } BD_ADDR, * PBD_ADDR;
+
+#include <poppack.h>
 
 /**
  * \enum    _DS_DEVICE_TYPE
