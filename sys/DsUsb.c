@@ -248,11 +248,10 @@ NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
 	UCHAR controlTransferBuffer[CONTROL_TRANSFER_BUFFER_LENGTH];
 	WDF_DEVICE_PROPERTY_DATA propertyData;
 	WCHAR deviceAddress[13];
-	WCHAR dcEventName[44];
 	WCHAR friendlyName[128];
 	size_t friendlyNameSize = 0;
 	UCHAR identification[64];
-	UINT64 hostAddress = 0;
+	UINT64 hostAddress;
 
 	FuncEntry(TRACE_DSUSB);
 
@@ -526,38 +525,7 @@ NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
 		// Disconnect Bluetooth connection, if detected
 		//
 
-		swprintf_s(
-			dcEventName,
-			ARRAYSIZE(dcEventName),
-			L"Global\\DsHidMiniDisconnectEvent%ls",
-			deviceAddress
-		);
-
-		HANDLE dcEvent = OpenEvent(
-			SYNCHRONIZE | EVENT_MODIFY_STATE,
-			FALSE,
-			dcEventName
-		);
-
-		if (dcEvent != NULL)
-		{
-			TraceVerbose(
-				TRACE_DSUSB,
-				"Found existing event %ls, signalling disconnect",
-				dcEventName
-			);
-
-			SetEvent(dcEvent);
-			CloseHandle(dcEvent);
-		}
-		else
-		{
-			TraceError(
-				TRACE_DSUSB,
-				"GetLastError: %d",
-				GetLastError()
-			);
-		}
+		DsDevice_InvokeLocalBthDisconnect(pDevCtx);
 
 #pragma region Request host BTH address
 		

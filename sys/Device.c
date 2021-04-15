@@ -374,6 +374,10 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 			}
 
 			TraceVerbose(TRACE_DEVICE, "[BTH] PID: 0x%04X", pDevCtx->ProductId);
+
+			DsDevice_RegisterBthDisconnectListener(pDevCtx);
+			
+			DsDevice_RegisterHotReloadListener(pDevCtx);
 		}
 	} while (FALSE);
 
@@ -641,8 +645,6 @@ DsDevice_InitContext(
 			break;
 		}
 
-		DsDevice_RegisterBthDisconnectListener(pDevCtx);
-
 		break;
 	}
 
@@ -888,6 +890,13 @@ void DsDevice_RegisterBthDisconnectListener(PDEVICE_CONTEXT Context)
 	WCHAR deviceAddress[13];
 
 	FuncEntry(TRACE_DEVICE);
+
+	swprintf_s(
+		deviceAddress,
+		ARRAYSIZE(deviceAddress),
+		L"%012llX",
+		*(PULONGLONG)&Context->DeviceAddress
+	);
 	
 	swprintf_s(
 		dcEventName,
@@ -951,6 +960,64 @@ void DsDevice_RegisterBthDisconnectListener(PDEVICE_CONTEXT Context)
 	}
 
 	FuncExitNoReturn(TRACE_DEVICE);
+}
+
+void DsDevice_InvokeLocalBthDisconnect(PDEVICE_CONTEXT Context)
+{
+	WCHAR deviceAddress[13];
+	WCHAR dcEventName[44];
+
+	//
+	// Convert to expected hex string
+	// 
+	swprintf_s(
+		deviceAddress,
+		ARRAYSIZE(deviceAddress),
+		L"%02X%02X%02X%02X%02X%02X",
+		Context->DeviceAddress.Address[0],
+		Context->DeviceAddress.Address[1],
+		Context->DeviceAddress.Address[2],
+		Context->DeviceAddress.Address[3],
+		Context->DeviceAddress.Address[4],
+		Context->DeviceAddress.Address[5]
+	);
+
+	//
+	// Disconnect Bluetooth connection, if detected
+	//
+
+	swprintf_s(
+		dcEventName,
+		ARRAYSIZE(dcEventName),
+		L"Global\\DsHidMiniDisconnectEvent%ls",
+		deviceAddress
+	);
+
+	HANDLE dcEvent = OpenEventW(
+		SYNCHRONIZE | EVENT_MODIFY_STATE,
+		FALSE,
+		dcEventName
+	);
+
+	if (dcEvent != NULL)
+	{
+		TraceVerbose(
+			TRACE_DSUSB,
+			"Found existing event %ls, signalling disconnect",
+			dcEventName
+		);
+
+		SetEvent(dcEvent);
+		CloseHandle(dcEvent);
+	}
+	else
+	{
+		TraceError(
+			TRACE_DSUSB,
+			"GetLastError: %d",
+			GetLastError()
+		);
+	}
 }
 
 //

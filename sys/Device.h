@@ -403,4 +403,9 @@ DsDevice_RegisterBthDisconnectListener(
 	PDEVICE_CONTEXT Context
 );
 
+void
+DsDevice_InvokeLocalBthDisconnect(
+	PDEVICE_CONTEXT Context
+);
+
 EXTERN_C_END

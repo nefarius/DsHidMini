@@ -54,6 +54,7 @@ DsBth_EvtControlWriteTimerFunc(
 	WDFTIMER  Timer
 )
 {
+	NTSTATUS status;
 	PDEVICE_CONTEXT pDevCtx;
 
 	FuncEntry(TRACE_DSBTH);
@@ -62,7 +63,7 @@ DsBth_EvtControlWriteTimerFunc(
 	
 	if (pDevCtx->BatteryStatus == DsBatteryStatusNone)
 	{
-		DS3_SET_LED(pDevCtx, DS3_LED_1);
+		DS3_SET_LED(pDevCtx, DS3_LED_OFF);
 	}
 	else
 	{
@@ -92,26 +93,64 @@ DsBth_EvtControlWriteTimerFunc(
 	DS3_SET_LARGE_RUMBLE_DURATION(pDevCtx, 0xFE);
 	DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, 0x00);
 
-	(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverHighPriority);
+	status = Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverHighPriority);
 
-	DMF_DefaultTarget_StreamStart(pDevCtx->Connection.Bth.HidInterrupt.InputStreamerModule);
+	if (!NT_SUCCESS(status))
+	{
+		TraceError(
+			TRACE_DSBTH,
+			"Ds_SendOutputReport failed with status %!STATUS!",
+			status
+		);
+	}
+	
+	//
+	// Start consuming input packets
+	// 
+	status = DMF_DefaultTarget_StreamStart(pDevCtx->Connection.Bth.HidInterrupt.InputStreamerModule);
+
+	if (!NT_SUCCESS(status))
+	{
+		TraceError(
+			TRACE_DSBTH,
+			"DMF_DefaultTarget_StreamStart failed with status %!STATUS!",
+			status
+		);
+	}
 	
 	FuncExitNoReturn(TRACE_DSBTH);
 }
 
+//
+// Invoked once the Bluetooth disconnect event got fired
+// 
 VOID CALLBACK
 DsBth_DisconnectEventCallback(
 	_In_ PVOID   lpParameter,
 	_In_ BOOLEAN TimerOrWaitFired
 )
 {
+	NTSTATUS status;
 	PDEVICE_CONTEXT pDevCtx = (PDEVICE_CONTEXT)lpParameter;
 	UNREFERENCED_PARAMETER(TimerOrWaitFired);
 
+	FuncEntry(TRACE_DSBTH);
+	
 	UnregisterWait(pDevCtx->ConfigurationReloadWaitHandle);
 	CloseHandle(pDevCtx->ConfigurationReloadEvent);
 
-	(void)DsBth_SendDisconnectRequest(pDevCtx);
+	status = DsBth_SendDisconnectRequest(pDevCtx);
+
+	if (!NT_SUCCESS(status))
+	{
+		TraceError(
+			TRACE_DSBTH,
+			"DsBth_SendDisconnectRequest failed with status %!STATUS!",
+			status
+		);
+	}
+
+	FuncExitNoReturn(TRACE_DSBTH);
 }
 
 NTSTATUS DsBth_SelfManagedIoInit(WDFDEVICE Device)
@@ -121,7 +160,6 @@ NTSTATUS DsBth_SelfManagedIoInit(WDFDEVICE Device)
 
 	FuncEntry(TRACE_DSBTH);
 	
-
 	//
 	// Send magic packet, starts input report sending
 	// 
@@ -129,7 +167,7 @@ NTSTATUS DsBth_SelfManagedIoInit(WDFDEVICE Device)
 
 	if (!NT_SUCCESS(status))
 	{
-		TraceVerbose(
+		TraceError(
 			TRACE_DSBTH,
 			"DsBth_Ds3Init failed with status %!STATUS!",
 			status
