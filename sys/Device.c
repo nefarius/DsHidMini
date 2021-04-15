@@ -962,6 +962,16 @@ void DsDevice_RegisterBthDisconnectListener(PDEVICE_CONTEXT Context)
 	FuncExitNoReturn(TRACE_DEVICE);
 }
 
+/**
+ * Signals existing wireless connection with same device address to terminate. The controller
+ * does not disconnect from Bluetooth on its own once connected to USB, so we signal the
+ * wireless device object to disconnect itself before continuing with USB initialization.
+ *
+ * @author	Benjamin "Nefarius" Höglinger-Stelzer
+ * @date	15.04.2021
+ *
+ * @param 	Context	The context.
+ */
 void DsDevice_InvokeLocalBthDisconnect(PDEVICE_CONTEXT Context)
 {
 	WCHAR deviceAddress[13];
