@@ -980,43 +980,45 @@ DsHidMini_WriteReport(
 			DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[5]);
 		}
 
-		//
-		// Single color RED intensity indicates battery level (Light only a single LED from 1 to 4)
-		// 
-		if (g == 0x00 && b == 0x00)
-		{
-			if (r >= 192)
-				DS3_SET_LED(pDevCtx, DS3_LED_4);
-			else if (r > 128)
-				DS3_SET_LED(pDevCtx, DS3_LED_3);
-			else if (r > 64)
-				DS3_SET_LED(pDevCtx, DS3_LED_2);
-			else
-				DS3_SET_LED(pDevCtx, DS3_LED_1);
-		}
-		//
-		// Single color RED intensity indicates battery level ("Fill" LEDs from 1 to 4)
-		// 
-		else if (g == 0x00 && b == 0xFF)
-		{
-			if (r >= 196)
-				DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
-			else if (r > 128)
-				DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3);
-			else if (r > 64)
-				DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2);
-			else
-				DS3_SET_LED(pDevCtx, DS3_LED_1);
-		}
-		//
-		// Decode custom LED status from color RED intensity
-		// 
-		else if (g == 0xFF && b == 0xFF)
-		{
-			if (r == 0x00)
-				DS3_SET_LED(pDevCtx, DS3_LED_OFF);
-			else if (r >= 0x01 && r <= 0x0F)
-				DS3_SET_LED(pDevCtx, r << 1);
+		if (Flag_Color) {
+			//
+			// Single color RED intensity indicates battery level (Light only a single LED from 1 to 4)
+			// 
+			if (g == 0x00 && b == 0x00)
+			{
+				if (r >= 192)
+					DS3_SET_LED(pDevCtx, DS3_LED_4);
+				else if (r > 128)
+					DS3_SET_LED(pDevCtx, DS3_LED_3);
+				else if (r > 64)
+					DS3_SET_LED(pDevCtx, DS3_LED_2);
+				else
+					DS3_SET_LED(pDevCtx, DS3_LED_1);
+			}
+			//
+			// Single color RED intensity indicates battery level ("Fill" LEDs from 1 to 4)
+			// 
+			else if (g == 0x00 && b == 0xFF)
+			{
+				if (r >= 196)
+					DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
+				else if (r > 128)
+					DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3);
+				else if (r > 64)
+					DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2);
+				else
+					DS3_SET_LED(pDevCtx, DS3_LED_1);
+			}
+			//
+			// Decode custom LED status from color RED intensity
+			// 
+			else if (g == 0xFF && b == 0xFF)
+			{
+				if (r == 0x00)
+					DS3_SET_LED(pDevCtx, DS3_LED_OFF);
+				else if (r >= 0x01 && r <= 0x0F)
+					DS3_SET_LED(pDevCtx, r << 1);
+			}
 		}
 		
 		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDualShock4);
