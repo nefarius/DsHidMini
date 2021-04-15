@@ -1036,6 +1036,10 @@ DsHidMini_WriteReport(
 			}
 		}
 		
+		if (HighLatency) {
+			DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
+		}
+
 		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDualShock4);
 
 		status = STATUS_SUCCESS;
