@@ -981,6 +981,14 @@ DsHidMini_WriteReport(
 		UCHAR fd_dur = Packet->reportBuffer[10];
 
 		BOOL FlashOrPulse = Flag_Flash && (fb_dur != 0 || fd_dur != 0);
+		BOOL HighLatency = FALSE;
+
+		if (FlashOrPulse) // High Latency DS4Windows function
+		{
+			if (r == 0x32 && g == 0x00 && b == 0x00) { // Hard-coded colors used in Hight Latency warning
+				HighLatency = TRUE;
+			}
+		}
 
 		if (Flag_Rumble) {
 			DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[4]);
