@@ -901,7 +901,7 @@ void DsDevice_RegisterBthDisconnectListener(PDEVICE_CONTEXT Context)
 	swprintf_s(
 		dcEventName,
 		ARRAYSIZE(dcEventName),
-		L"Global\\DsHidMiniDisconnectEvent%ls",
+		DSHM_NAMED_EVENT_DISCONNECT,
 		deviceAddress
 	);
 
@@ -989,7 +989,7 @@ void DsDevice_InvokeLocalBthDisconnect(PDEVICE_CONTEXT Context)
 	swprintf_s(
 		dcEventName,
 		ARRAYSIZE(dcEventName),
-		L"Global\\DsHidMiniDisconnectEvent%ls",
+		DSHM_NAMED_EVENT_DISCONNECT,
 		deviceAddress
 	);
 
@@ -1021,7 +1021,7 @@ void DsDevice_InvokeLocalBthDisconnect(PDEVICE_CONTEXT Context)
 }
 
 //
-// Bootstrap our own module
+// Bootstrap required DMF modules
 // 
 #pragma code_seg("PAGED")
 _IRQL_requires_max_(PASSIVE_LEVEL)
@@ -1055,6 +1055,7 @@ DmfDeviceModulesAdd(
 	moduleAttributes.PassiveLevel = TRUE;
 
 	dmfBufferCfg.EvtThreadedBufferQueueWork = DMF_EvtExecuteOutputPacketReceived;
+	// Fixed amount of buffers, no auto-grow
 	dmfBufferCfg.BufferQueueConfig.SourceSettings.EnableLookAside = FALSE;
 	/*
 	 * TODO: tune to find good value
@@ -1064,7 +1065,7 @@ DmfDeviceModulesAdd(
 	dmfBufferCfg.BufferQueueConfig.SourceSettings.BufferCount = 10;
 	dmfBufferCfg.BufferQueueConfig.SourceSettings.BufferSize = DS3_BTH_HID_OUTPUT_REPORT_SIZE;
 	dmfBufferCfg.BufferQueueConfig.SourceSettings.BufferContextSize = sizeof(DS_OUTPUT_REPORT_CONTEXT);
-	dmfBufferCfg.BufferQueueConfig.SourceSettings.PoolType = PagedPool;
+	dmfBufferCfg.BufferQueueConfig.SourceSettings.PoolType = NonPagedPoolNx;
 
 	DMF_DmfModuleAdd(
 		DmfModuleInit,
@@ -1073,6 +1074,9 @@ DmfDeviceModulesAdd(
 		&pDevCtx->OutputReport.Worker
 	);
 
+	//
+	// Avoid allocating modules not used on USB
+	// 
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
 	{
 		//

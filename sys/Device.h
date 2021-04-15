@@ -5,6 +5,8 @@
 
 EXTERN_C_START
 
+#define DSHM_NAMED_EVENT_DISCONNECT		L"Global\\DsHidMiniDisconnectEvent%ls"
+
 struct USB_DEVICE_CONTEXT
 {
 	//
