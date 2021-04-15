@@ -969,6 +969,7 @@ DsHidMini_WriteReport(
 		BOOL Flag_Color = ( Packet->reportBuffer[1] >> 1) & 1U;
 		BOOL Flag_Flash = (Packet->reportBuffer[1] >> 2) & 1U;
 
+		//
 		// Color values (RGB)
 		// 
 		UCHAR r = Packet->reportBuffer[6];
