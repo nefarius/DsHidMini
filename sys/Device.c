@@ -773,9 +773,14 @@ DsDevice_IsUsbDevice(
 	return status;
 }
 
-//
-// Registers an event listener to trigger refreshing runtime properties
-// 
+/**
+ * Registers an event listener to trigger refreshing runtime properties
+ *
+ * @author	Benjamin "Nefarius" Höglinger-Stelzer
+ * @date	15.04.2021
+ *
+ * @param 	Context	The context.
+ */
 void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
 {
 	WCHAR eventName[49];
@@ -881,9 +886,14 @@ void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
 	FuncExitNoReturn(TRACE_DEVICE);
 }
 
-//
-// Register event to disconnect from Bluetooth, bypassing mshudumdf.sys
-// 
+/**
+ * Register event to disconnect from Bluetooth, bypassing mshudumdf.sys
+ *
+ * @author	Benjamin "Nefarius" Höglinger-Stelzer
+ * @date	15.04.2021
+ *
+ * @param 	Context	The context.
+ */
 void DsDevice_RegisterBthDisconnectListener(PDEVICE_CONTEXT Context)
 {
 	WCHAR dcEventName[44];
