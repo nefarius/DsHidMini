@@ -980,22 +980,22 @@ DsHidMini_WriteReport(
 		UCHAR fb_dur = Packet->reportBuffer[9];
 		UCHAR fd_dur = Packet->reportBuffer[10];
 
-		BOOL FlashOrPulse = Flag_Flash && (fb_dur != 0 || fd_dur != 0);
+		BOOL FlashOrPulse = Flag_Flash && ( fb_dur != 0 || fd_dur != 0 );
 		BOOL HighLatency = FALSE;
 
 		if (FlashOrPulse) // High Latency DS4Windows function
-		{
+			 {
 			if (r == 0x32 && g == 0x00 && b == 0x00) { // Hard-coded colors used in Hight Latency warning
 				HighLatency = TRUE;
 			}
 		}
 
-		if (Flag_Rumble) {
+		if ( Flag_Rumble ) {
 			DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[4]);
 			DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[5]);
 		}
 
-		if (Flag_Color) {
+		if ( Flag_Color ) {
 			//
 			// Single color RED intensity indicates battery level (Light only a single LED from 1 to 4)
 			// 
@@ -1035,8 +1035,8 @@ DsHidMini_WriteReport(
 					DS3_SET_LED(pDevCtx, r << 1);
 			}
 		}
-		
-		if (HighLatency) {
+
+		if ( HighLatency ) {
 			DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
 		}
 
