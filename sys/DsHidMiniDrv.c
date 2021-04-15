@@ -974,6 +974,13 @@ DsHidMini_WriteReport(
 		UCHAR g = Packet->reportBuffer[7];
 		UCHAR b = Packet->reportBuffer[8];
 
+		//
+		// Flash Bright and Dark duration
+		// 
+		UCHAR fb_dur = Packet->reportBuffer[9];
+		UCHAR fd_dur = Packet->reportBuffer[10];
+
+		BOOL FlashOrPulse = Flag_Flash && (fb_dur != 0 || fd_dur != 0);
 
 		if (Flag_Rumble) {
 			DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[4]);
