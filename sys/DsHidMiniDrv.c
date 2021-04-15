@@ -965,6 +965,9 @@ DsHidMini_WriteReport(
 
 		DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[4]);
 		DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[5]);
+		BOOL Flag_Rumble = ( Packet->reportBuffer[1] >> 0) & 1U;
+		BOOL Flag_Color = ( Packet->reportBuffer[1] >> 1) & 1U;
+		BOOL Flag_Flash = (Packet->reportBuffer[1] >> 2) & 1U;
 
 		// Color values (RGB)
 		// 
