@@ -963,8 +963,6 @@ DsHidMini_WriteReport(
 		// 
 		pDevCtx->OutputReport.Mode = Ds3OutputReportModeWriteReportPassThrough;
 
-		DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[4]);
-		DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[5]);
 		BOOL Flag_Rumble = ( Packet->reportBuffer[1] >> 0) & 1U;
 		BOOL Flag_Color = ( Packet->reportBuffer[1] >> 1) & 1U;
 		BOOL Flag_Flash = (Packet->reportBuffer[1] >> 2) & 1U;
@@ -975,6 +973,12 @@ DsHidMini_WriteReport(
 		UCHAR r = Packet->reportBuffer[6];
 		UCHAR g = Packet->reportBuffer[7];
 		UCHAR b = Packet->reportBuffer[8];
+
+
+		if (Flag_Rumble) {
+			DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[4]);
+			DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[5]);
+		}
 
 		//
 		// Single color RED intensity indicates battery level (Light only a single LED from 1 to 4)
