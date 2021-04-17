@@ -360,7 +360,7 @@ sizeof(G_SixaxisHidReportDescriptor) }  // total length of report descriptor
 
 #pragma endregion
 
-#pragma region DS3 HID Report Descriptor (DualShock 4 Rev1 emulation)
+#pragma region DS3 HID Report Descriptor (Vendor Defined DS4 Rev1 USB emulation)
 
 CONST HID_REPORT_DESCRIPTOR G_VendorDefinedUSBDS4HidReportDescriptor[] =
 {
