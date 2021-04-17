@@ -365,7 +365,7 @@ sizeof(G_SixaxisHidReportDescriptor) }  // total length of report descriptor
 CONST HID_REPORT_DESCRIPTOR G_VendorDefinedUSBDS4HidReportDescriptor[] =
 {
 	/************************************************************************/
-	/* DualShock 4 Rev1 compatible report descriptor                        */
+	/* Vendor Defined DualShock 4 Rev1 USB compatible report descriptor     */
 	/************************************************************************/
 	0x06, 0x01, 0xFF,  //     Usage Page (Vendor Defined 0xFF01)
 	0x09, 0x01,        //     Usage (0x01)
