@@ -963,8 +963,8 @@ DsHidMini_WriteReport(
 		// 
 		pDevCtx->OutputReport.Mode = Ds3OutputReportModeWriteReportPassThrough;
 
-		BOOL Flag_Rumble = ( Packet->reportBuffer[1] >> 0) & 1U;
-		BOOL Flag_Color = ( Packet->reportBuffer[1] >> 1) & 1U;
+		BOOL isSetRumble = (Packet->reportBuffer[1] >> 0) & 1U;
+		BOOL isSetColor = (Packet->reportBuffer[1] >> 1) & 1U;
 		BOOL Flag_Flash = (Packet->reportBuffer[1] >> 2) & 1U;
 
 		//
@@ -980,22 +980,26 @@ DsHidMini_WriteReport(
 		UCHAR fb_dur = Packet->reportBuffer[9];
 		UCHAR fd_dur = Packet->reportBuffer[10];
 
-		BOOL FlashOrPulse = Flag_Flash && ( fb_dur != 0 || fd_dur != 0 );
-		BOOL HighLatency = FALSE;
+		BOOL isFlashOrPulse = Flag_Flash && (fb_dur != 0 || fd_dur != 0);
+		BOOL isSetFlashing = FALSE;
 
-		if (FlashOrPulse) // High Latency DS4Windows function
-			 {
-			if (r == 0x32 && g == 0x00 && b == 0x00) { // Hard-coded colors used in Hight Latency warning
-				HighLatency = TRUE;
+		if (isFlashOrPulse) // High Latency DS4Windows function
+		{
+			if (r == 0x32 && g == 0x00 && b == 0x00)
+			{
+				// Hard-coded colors used in High Latency warning
+				isSetFlashing = TRUE;
 			}
 		}
 
-		if ( Flag_Rumble ) {
+		if (isSetRumble)
+		{
 			DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[4]);
 			DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[5]);
 		}
 
-		if ( Flag_Color ) {
+		if (isSetColor)
+		{
 			//
 			// Single color RED intensity indicates battery level (Light only a single LED from 1 to 4)
 			// 
@@ -1036,7 +1040,8 @@ DsHidMini_WriteReport(
 			}
 		}
 
-		if ( HighLatency ) {
+		if (isSetFlashing)
+		{
 			DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
 		}
 
