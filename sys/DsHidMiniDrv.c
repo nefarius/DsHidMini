@@ -484,16 +484,24 @@ DsHidMini_GetFeature(
 		status = STATUS_SUCCESS;
 	}
 	else if (
-		Packet->reportId == 0x12
+		Packet->reportId == 0x12 // Requests device MAC address
 		&& Packet->reportBufferLen == 64
 		&& pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeDS4WindowsCompatible
-		)
+	)
 	{
 		RtlCopyMemory(
 			&Packet->reportBuffer[1],
 			&pDevCtx->DeviceAddress,
 			sizeof(BD_ADDR)
 		);
+
+		//
+		// Fix Endianness
+		// 
+		if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
+		{
+			REVERSE_BYTE_ARRAY(&Packet->reportBuffer[1], sizeof(BD_ADDR));
+		}
 
 		*ReportSize = Packet->reportBufferLen - 1;
 
