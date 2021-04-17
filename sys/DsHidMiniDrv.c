@@ -963,9 +963,11 @@ DsHidMini_WriteReport(
 		// 
 		pDevCtx->OutputReport.Mode = Ds3OutputReportModeWriteReportPassThrough;
 
-		DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[4]);
-		DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[5]);
+		BOOL Flag_Rumble = ( Packet->reportBuffer[1] >> 0) & 1U;
+		BOOL Flag_Color = ( Packet->reportBuffer[1] >> 1) & 1U;
+		BOOL Flag_Flash = (Packet->reportBuffer[1] >> 2) & 1U;
 
+		//
 		// Color values (RGB)
 		// 
 		UCHAR r = Packet->reportBuffer[6];
@@ -973,44 +975,71 @@ DsHidMini_WriteReport(
 		UCHAR b = Packet->reportBuffer[8];
 
 		//
-		// Single color RED intensity indicates battery level (Light only a single LED from 1 to 4)
+		// Flash Bright and Dark duration
 		// 
-		if (g == 0x00 && b == 0x00)
-		{
-			if (r >= 192)
-				DS3_SET_LED(pDevCtx, DS3_LED_4);
-			else if (r > 128)
-				DS3_SET_LED(pDevCtx, DS3_LED_3);
-			else if (r > 64)
-				DS3_SET_LED(pDevCtx, DS3_LED_2);
-			else
-				DS3_SET_LED(pDevCtx, DS3_LED_1);
+		UCHAR fb_dur = Packet->reportBuffer[9];
+		UCHAR fd_dur = Packet->reportBuffer[10];
+
+		BOOL FlashOrPulse = Flag_Flash && ( fb_dur != 0 || fd_dur != 0 );
+		BOOL HighLatency = FALSE;
+
+		if (FlashOrPulse) // High Latency DS4Windows function
+			 {
+			if (r == 0x32 && g == 0x00 && b == 0x00) { // Hard-coded colors used in Hight Latency warning
+				HighLatency = TRUE;
+			}
 		}
-		//
-		// Single color RED intensity indicates battery level ("Fill" LEDs from 1 to 4)
-		// 
-		else if (g == 0x00 && b == 0xFF)
-		{
-			if (r >= 196)
-				DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
-			else if (r > 128)
-				DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3);
-			else if (r > 64)
-				DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2);
-			else
-				DS3_SET_LED(pDevCtx, DS3_LED_1);
+
+		if ( Flag_Rumble ) {
+			DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[4]);
+			DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[5]);
 		}
-		//
-		// Decode custom LED status from color RED intensity
-		// 
-		else if (g == 0xFF && b == 0xFF)
-		{
-			if (r == 0x00)
-				DS3_SET_LED(pDevCtx, DS3_LED_OFF);
-			else if (r >= 0x01 && r <= 0x0F)
-				DS3_SET_LED(pDevCtx, r << 1);
+
+		if ( Flag_Color ) {
+			//
+			// Single color RED intensity indicates battery level (Light only a single LED from 1 to 4)
+			// 
+			if (g == 0x00 && b == 0x00)
+			{
+				if (r >= 192)
+					DS3_SET_LED(pDevCtx, DS3_LED_4);
+				else if (r > 128)
+					DS3_SET_LED(pDevCtx, DS3_LED_3);
+				else if (r > 64)
+					DS3_SET_LED(pDevCtx, DS3_LED_2);
+				else
+					DS3_SET_LED(pDevCtx, DS3_LED_1);
+			}
+			//
+			// Single color RED intensity indicates battery level ("Fill" LEDs from 1 to 4)
+			// 
+			else if (g == 0x00 && b == 0xFF)
+			{
+				if (r >= 196)
+					DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
+				else if (r > 128)
+					DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3);
+				else if (r > 64)
+					DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2);
+				else
+					DS3_SET_LED(pDevCtx, DS3_LED_1);
+			}
+			//
+			// Decode custom LED status from color RED intensity
+			// 
+			else if (g == 0xFF && b == 0xFF)
+			{
+				if (r == 0x00)
+					DS3_SET_LED(pDevCtx, DS3_LED_OFF);
+				else if (r >= 0x01 && r <= 0x0F)
+					DS3_SET_LED(pDevCtx, r << 1);
+			}
 		}
-		
+
+		if ( HighLatency ) {
+			DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
+		}
+
 		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDualShock4);
 
 		status = STATUS_SUCCESS;
