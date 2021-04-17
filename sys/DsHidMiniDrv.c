@@ -965,7 +965,7 @@ DsHidMini_WriteReport(
 
 		BOOL isSetRumble = (Packet->reportBuffer[1] >> 0) & 1U;
 		BOOL isSetColor = (Packet->reportBuffer[1] >> 1) & 1U;
-		BOOL Flag_Flash = (Packet->reportBuffer[1] >> 2) & 1U;
+		BOOL isFlagFlash = (Packet->reportBuffer[1] >> 2) & 1U;
 
 		//
 		// Color values (RGB)
@@ -980,7 +980,7 @@ DsHidMini_WriteReport(
 		UCHAR fb_dur = Packet->reportBuffer[9];
 		UCHAR fd_dur = Packet->reportBuffer[10];
 
-		BOOL isFlashOrPulse = Flag_Flash && (fb_dur != 0 || fd_dur != 0);
+		BOOL isFlashOrPulse = isFlagFlash && (fb_dur != 0 || fd_dur != 0);
 		BOOL isSetFlashing = FALSE;
 
 		if (isFlashOrPulse) // High Latency DS4Windows function
@@ -1042,6 +1042,9 @@ DsHidMini_WriteReport(
 
 		if (isSetFlashing)
 		{
+			//
+			// TODO: replace with flash animation
+			// 
 			DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
 		}
 
@@ -1050,6 +1053,9 @@ DsHidMini_WriteReport(
 		status = STATUS_SUCCESS;
 	}
 
+	//
+	// Unknown request, trace details for diagnostics
+	// 
 	if (!NT_SUCCESS(status))
 	{
 		TraceEvents(
