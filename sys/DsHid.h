@@ -14,7 +14,7 @@ extern CONST HID_REPORT_DESCRIPTOR G_SixaxisHidReportDescriptor[];
 
 extern CONST HID_DESCRIPTOR G_SixaxisHidDescriptor;
 
-extern CONST HID_REPORT_DESCRIPTOR G_DualShock4Rev1HidReportDescriptor[];
+extern CONST HID_REPORT_DESCRIPTOR G_VendorDefinedUSBDS4HidReportDescriptor[];
 
 extern CONST HID_DESCRIPTOR G_DualShock4Rev1HidDescriptor;
 

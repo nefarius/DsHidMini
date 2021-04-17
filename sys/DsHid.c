@@ -362,7 +362,7 @@ sizeof(G_SixaxisHidReportDescriptor) }  // total length of report descriptor
 
 #pragma region DS3 HID Report Descriptor (DualShock 4 Rev1 emulation)
 
-CONST HID_REPORT_DESCRIPTOR G_DualShock4Rev1HidReportDescriptor[] =
+CONST HID_REPORT_DESCRIPTOR G_VendorDefinedUSBDS4HidReportDescriptor[] =
 {
 	/************************************************************************/
 	/* DualShock 4 Rev1 compatible report descriptor                        */
@@ -616,7 +616,7 @@ CONST HID_DESCRIPTOR G_DualShock4Rev1HidDescriptor = {
 	0x00,   // country code == Not Specified
 	0x01,   // number of HID class descriptors
 { 0x22,   // descriptor type 
-sizeof(G_DualShock4Rev1HidReportDescriptor) }  // total length of report descriptor
+sizeof(G_VendorDefinedUSBDS4HidReportDescriptor) }  // total length of report descriptor
 };
 
 #pragma endregion
