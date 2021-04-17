@@ -111,6 +111,6 @@ namespace Nefarius.DsHidMini.Drivers
         [Description("GPJ (Generic DirectInput)")]
         Multi = 0x02,
         [Description("SXS (Steam, RPCS3)")] SixaxisCompatible = 0x03,
-        [Description("DS4 (DS4Windows)")] DualShock4Rev1Compatible = 0x04
+        [Description("DS4Windows")] DualShock4Rev1Compatible = 0x04
     }
 }
