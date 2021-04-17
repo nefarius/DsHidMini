@@ -1,0 +1,2 @@
+#define XINPUTBRIDGE_API __declspec(dllexport)
+#define XINPUTBRIDGE_API __declspec(dllimport)
