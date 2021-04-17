@@ -609,7 +609,7 @@ CONST HID_REPORT_DESCRIPTOR G_VendorDefinedUSBDS4HidReportDescriptor[] =
 	// 483 bytes
 };
 
-CONST HID_DESCRIPTOR G_DualShock4Rev1HidDescriptor = {
+CONST HID_DESCRIPTOR G_VendorDefinedUSBDS4HidDescriptor = {
 	0x09,   // length of HID descriptor
 	0x21,   // descriptor type == HID  0x21
 	0x0100, // hid spec release

@@ -221,10 +221,10 @@ DMF_DsHidMini_Open(
 		break;
 	case DsHidMiniDeviceModeDualShock4Rev1Compatible:
 
-		pHidCfg->HidDescriptor = &G_DualShock4Rev1HidDescriptor;
-		pHidCfg->HidDescriptorLength = sizeof(G_DualShock4Rev1HidDescriptor);
+		pHidCfg->HidDescriptor = &G_VendorDefinedUSBDS4HidDescriptor;
+		pHidCfg->HidDescriptorLength = sizeof(G_VendorDefinedUSBDS4HidDescriptor);
 		pHidCfg->HidReportDescriptor = G_VendorDefinedUSBDS4HidReportDescriptor;
-		pHidCfg->HidReportDescriptorLength = G_DualShock4Rev1HidDescriptor.DescriptorList[0].wReportLength;
+		pHidCfg->HidReportDescriptorLength = G_VendorDefinedUSBDS4HidDescriptor.DescriptorList[0].wReportLength;
 
 		pHidCfg->VendorId = pDevCtx->VendorId = DS3_DS4REV1_HID_VID;
 		pHidCfg->ProductId = pDevCtx->ProductId = DS3_DS4REV1_HID_PID;
