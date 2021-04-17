@@ -350,7 +350,7 @@ DsHidMini_RetrieveNextInputReport(
 		*BufferSize = SIXAXIS_HID_INPUT_REPORT_SIZE;
 		break;
 	case DsHidMiniDeviceModeDualShock4Rev1Compatible:
-		*BufferSize = DS3_DS4REV1_HID_INPUT_REPORT_SIZE;
+		*BufferSize = DS3_DS4REV1_USB_HID_INPUT_REPORT_SIZE;
 		break;
 	default:
 		TraceError(
