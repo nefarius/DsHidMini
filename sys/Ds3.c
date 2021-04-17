@@ -302,26 +302,6 @@ NTSTATUS DsBth_Ds3Init(PDEVICE_CONTEXT Context)
 	return status;
 }
 
-VOID DS3_SET_LED_DURATION_TOTAL(
-	PDEVICE_CONTEXT Context,
-	UCHAR LedIndex,
-	UCHAR TotalDuration
-)
-{
-	if (LedIndex > 3)
-		return;
-
-	PUCHAR buffer;
-
-	DS3_GET_UNIFIED_OUTPUT_REPORT_BUFFER(
-		Context,
-		&buffer,
-		NULL
-	);
-
-	buffer[10 + (LedIndex * 5)] = TotalDuration;
-}
-
 VOID DS3_SET_LED_DURATION(
 	PDEVICE_CONTEXT Context, 
 	UCHAR LedIndex, 
