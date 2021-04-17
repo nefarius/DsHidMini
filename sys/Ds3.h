@@ -33,6 +33,16 @@ extern const UCHAR G_Ds3BthHidOutputReport[];
 #define DS3_BTH_SET_SMALL_RUMBLE_STRENGTH(_buf_, _str_)  ((_buf_)[4] = (_str_) > 0 ? 0x01 : 0x00)
 #define DS3_BTH_SET_LARGE_RUMBLE_STRENGTH(_buf_, _str_)  ((_buf_)[6] = (_str_))
 
+
+VOID DS3_SET_LED_DURATION(
+	PDEVICE_CONTEXT Context,
+	UCHAR LedIndex,
+	UCHAR TotalDuration,
+	UCHAR Interval,
+	UCHAR OffInterval,
+	UCHAR OnInterval
+);
+
 VOID DS3_GET_UNIFIED_OUTPUT_REPORT_BUFFER(
 	PDEVICE_CONTEXT Context,
 	UCHAR** Buffer,

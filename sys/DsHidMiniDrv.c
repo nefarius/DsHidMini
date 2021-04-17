@@ -1042,10 +1042,11 @@ DsHidMini_WriteReport(
 
 		if (isSetFlashing)
 		{
-			//
-			// TODO: replace with flash animation
-			// 
 			DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
+			DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 5, 127, 127);
+			DS3_SET_LED_DURATION(pDevCtx, 1, 0xFF, 5, 127, 127);
+			DS3_SET_LED_DURATION(pDevCtx, 2, 0xFF, 5, 127, 127);
+			DS3_SET_LED_DURATION(pDevCtx, 3, 0xFF, 5, 127, 127);
 		}
 
 		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDualShock4);
