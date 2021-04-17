@@ -1,6 +1,5 @@
 #pragma once
 
-const __declspec(selectany) LONGLONG DEFAULT_CONTROL_TRANSFER_TIMEOUT = 5 * -1 * WDF_TIMEOUT_TO_SEC;
 #define INTERRUPT_IN_BUFFER_LENGTH          128
 #define CONTROL_TRANSFER_BUFFER_LENGTH      64
 
@@ -36,3 +35,18 @@ USB_WriteInterruptOutSync(
 );
 
 EVT_WDF_REQUEST_COMPLETION_ROUTINE EvtUsbRequestCompletionRoutine;
+
+NTSTATUS
+DsUdb_PrepareHardware(
+    WDFDEVICE Device
+);
+
+NTSTATUS
+DsUsb_D0Entry(
+    WDFDEVICE Device
+);
+
+NTSTATUS
+DsUdb_D0Exit(
+    WDFDEVICE Device
+);
