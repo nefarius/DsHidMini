@@ -226,8 +226,8 @@ DMF_DsHidMini_Open(
 		pHidCfg->HidReportDescriptor = G_VendorDefinedUSBDS4HidReportDescriptor;
 		pHidCfg->HidReportDescriptorLength = G_VendorDefinedUSBDS4HidDescriptor.DescriptorList[0].wReportLength;
 
-		pHidCfg->VendorId = pDevCtx->VendorId = DS3_DS4REV1_HID_VID;
-		pHidCfg->ProductId = pDevCtx->ProductId = DS3_DS4REV1_HID_PID;
+		pHidCfg->VendorId = pDevCtx->VendorId = DS3_DS4WINDOWS_HID_VID;
+		pHidCfg->ProductId = pDevCtx->ProductId = DS3_DS4WINDOWS_HID_PID;
 		pHidCfg->VersionNumber = pDevCtx->VersionNumber;
 		pHidCfg->HidDeviceAttributes.VendorID = pDevCtx->VendorId;
 		pHidCfg->HidDeviceAttributes.ProductID = pDevCtx->ProductId;

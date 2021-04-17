@@ -30,8 +30,8 @@ extern CONST HID_DESCRIPTOR G_VendorDefinedUSBDS4HidDescriptor;
 
 // Artificial identifiers to ease detection
 // 
-#define DS3_DS4REV1_HID_VID						0x7331
-#define DS3_DS4REV1_HID_PID						0x0001
+#define DS3_DS4WINDOWS_HID_VID					0x7331
+#define DS3_DS4WINDOWS_HID_PID					0x0001
 
 /**
  * Checks if the controller state is "idle" (no button pressed, no axis engaged). Jitter
