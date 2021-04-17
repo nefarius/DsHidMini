@@ -14,12 +14,12 @@ extern CONST HID_REPORT_DESCRIPTOR G_SixaxisHidReportDescriptor[];
 
 extern CONST HID_DESCRIPTOR G_SixaxisHidDescriptor;
 
-extern CONST HID_REPORT_DESCRIPTOR G_DualShock4Rev1HidReportDescriptor[];
+extern CONST HID_REPORT_DESCRIPTOR G_VendorDefinedUSBDS4HidReportDescriptor[];
 
-extern CONST HID_DESCRIPTOR G_DualShock4Rev1HidDescriptor;
+extern CONST HID_DESCRIPTOR G_VendorDefinedUSBDS4HidDescriptor;
 
 #define DS3_COMMON_MAX_HID_INPUT_REPORT_SIZE	0x40
-#define DS3_DS4REV1_HID_INPUT_REPORT_SIZE		DS3_COMMON_MAX_HID_INPUT_REPORT_SIZE
+#define DS3_DS4REV1_USB_HID_INPUT_REPORT_SIZE	DS3_COMMON_MAX_HID_INPUT_REPORT_SIZE
 #define DS3_SPLIT_SINGLE_HID_INPUT_REPORT_SIZE	0x27
 #define SIXAXIS_HID_INPUT_REPORT_SIZE			0x0C
 #define SIXAXIS_HID_GET_FEATURE_REPORT_SIZE		0x31
@@ -30,8 +30,8 @@ extern CONST HID_DESCRIPTOR G_DualShock4Rev1HidDescriptor;
 
 // Artificial identifiers to ease detection
 // 
-#define DS3_DS4REV1_HID_VID						0x7331
-#define DS3_DS4REV1_HID_PID						0x0001
+#define DS3_DS4WINDOWS_HID_VID					0x7331
+#define DS3_DS4WINDOWS_HID_PID					0x0001
 
 /**
  * Checks if the controller state is "idle" (no button pressed, no axis engaged). Jitter

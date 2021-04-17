@@ -219,15 +219,15 @@ DMF_DsHidMini_Open(
 		pHidCfg->HidReportDescriptorLength = G_SixaxisHidDescriptor.DescriptorList[0].wReportLength;
 
 		break;
-	case DsHidMiniDeviceModeDualShock4Rev1Compatible:
+	case DsHidMiniDeviceModeDS4WindowsCompatible:
 
-		pHidCfg->HidDescriptor = &G_DualShock4Rev1HidDescriptor;
-		pHidCfg->HidDescriptorLength = sizeof(G_DualShock4Rev1HidDescriptor);
-		pHidCfg->HidReportDescriptor = G_DualShock4Rev1HidReportDescriptor;
-		pHidCfg->HidReportDescriptorLength = G_DualShock4Rev1HidDescriptor.DescriptorList[0].wReportLength;
+		pHidCfg->HidDescriptor = &G_VendorDefinedUSBDS4HidDescriptor;
+		pHidCfg->HidDescriptorLength = sizeof(G_VendorDefinedUSBDS4HidDescriptor);
+		pHidCfg->HidReportDescriptor = G_VendorDefinedUSBDS4HidReportDescriptor;
+		pHidCfg->HidReportDescriptorLength = G_VendorDefinedUSBDS4HidDescriptor.DescriptorList[0].wReportLength;
 
-		pHidCfg->VendorId = pDevCtx->VendorId = DS3_DS4REV1_HID_VID;
-		pHidCfg->ProductId = pDevCtx->ProductId = DS3_DS4REV1_HID_PID;
+		pHidCfg->VendorId = pDevCtx->VendorId = DS3_DS4WINDOWS_HID_VID;
+		pHidCfg->ProductId = pDevCtx->ProductId = DS3_DS4WINDOWS_HID_PID;
 		pHidCfg->VersionNumber = pDevCtx->VersionNumber;
 		pHidCfg->HidDeviceAttributes.VendorID = pDevCtx->VendorId;
 		pHidCfg->HidDeviceAttributes.ProductID = pDevCtx->ProductId;
@@ -349,8 +349,8 @@ DsHidMini_RetrieveNextInputReport(
 	case DsHidMiniDeviceModeSixaxisCompatible:
 		*BufferSize = SIXAXIS_HID_INPUT_REPORT_SIZE;
 		break;
-	case DsHidMiniDeviceModeDualShock4Rev1Compatible:
-		*BufferSize = DS3_DS4REV1_HID_INPUT_REPORT_SIZE;
+	case DsHidMiniDeviceModeDS4WindowsCompatible:
+		*BufferSize = DS3_DS4REV1_USB_HID_INPUT_REPORT_SIZE;
 		break;
 	default:
 		TraceError(
@@ -486,7 +486,7 @@ DsHidMini_GetFeature(
 	else if (
 		Packet->reportId == 0x12
 		&& Packet->reportBufferLen == 64
-		&& pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeDualShock4Rev1Compatible
+		&& pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeDS4WindowsCompatible
 		)
 	{
 		RtlCopyMemory(
@@ -956,7 +956,7 @@ DsHidMini_WriteReport(
 	//
 	// DS4 Rev1 emulation
 	// 
-	if (Packet->reportId == 0x05 && pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeDualShock4Rev1Compatible)
+	if (Packet->reportId == 0x05 && pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeDS4WindowsCompatible)
 	{
 		//
 		// External output report overrides internal behaviour, keep note
@@ -1208,7 +1208,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t Buf
 
 #pragma region HID Input Report (DualShock 4 Rev1 compatible) processing
 
-	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeDualShock4Rev1Compatible)
+	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeDS4WindowsCompatible)
 	{
 		DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
 			Buffer,

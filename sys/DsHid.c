@@ -360,15 +360,15 @@ sizeof(G_SixaxisHidReportDescriptor) }  // total length of report descriptor
 
 #pragma endregion
 
-#pragma region DS3 HID Report Descriptor (DualShock 4 Rev1 emulation)
+#pragma region DS3 HID Report Descriptor (Vendor Defined DS4 Rev1 USB emulation)
 
-CONST HID_REPORT_DESCRIPTOR G_DualShock4Rev1HidReportDescriptor[] =
+CONST HID_REPORT_DESCRIPTOR G_VendorDefinedUSBDS4HidReportDescriptor[] =
 {
 	/************************************************************************/
-	/* DualShock 4 Rev1 compatible report descriptor                        */
+	/* Vendor Defined DualShock 4 Rev1 USB compatible report descriptor     */
 	/************************************************************************/
-	0x05, 0x01,        // Usage Page (Generic Desktop Ctrls)
-	0x09, 0x05,        // Usage (Game Pad)
+	0x06, 0x01, 0xFF,  //     Usage Page (Vendor Defined 0xFF01)
+	0x09, 0x01,        //     Usage (0x01)
 	0xA1, 0x01,        // Collection (Application)
 	0x85, 0x01,        //   Report ID (1)
 	0x09, 0x30,        //   Usage (X)
@@ -609,14 +609,14 @@ CONST HID_REPORT_DESCRIPTOR G_DualShock4Rev1HidReportDescriptor[] =
 	// 483 bytes
 };
 
-CONST HID_DESCRIPTOR G_DualShock4Rev1HidDescriptor = {
+CONST HID_DESCRIPTOR G_VendorDefinedUSBDS4HidDescriptor = {
 	0x09,   // length of HID descriptor
 	0x21,   // descriptor type == HID  0x21
 	0x0100, // hid spec release
 	0x00,   // country code == Not Specified
 	0x01,   // number of HID class descriptors
 { 0x22,   // descriptor type 
-sizeof(G_DualShock4Rev1HidReportDescriptor) }  // total length of report descriptor
+sizeof(G_VendorDefinedUSBDS4HidReportDescriptor) }  // total length of report descriptor
 };
 
 #pragma endregion
