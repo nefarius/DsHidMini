@@ -1044,7 +1044,8 @@ VOID DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
 	// PS button
 	Output[7] |= Input[4] & 0x01;
 
-	// Battery translation, from 8 to 0: 100%, 87%, 75%, 62%, 50%, 37%, 25%, 12%, 0%
+	// Battery translation when IsWired = 0: ( Value * 100 ) / 8
+	// Battery translation when IsWired = 1: ( Value * 100 ) / 11
 	if (IsWired)
 	{
 		// Wired sets a flag
@@ -1053,11 +1054,11 @@ VOID DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
 		switch ((DS_BATTERY_STATUS)Input[30])
 		{
 		case DsBatteryStatusCharging:
-			Output[30] |= 7; // 87%
+			Output[30] |= 4; // 36%
 			break;
 		case DsBatteryStatusCharged:
 		case DsBatteryStatusFull:
-			Output[30] |= 8; // 100%
+			Output[30] |= 11; // 100%
 			break;
 		}
 	}
