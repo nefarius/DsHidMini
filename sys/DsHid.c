@@ -36,15 +36,15 @@ CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_Split_Mode[] =
 	0x65, 0x00,        //   Unit (None)
 	0x05, 0x09,        //   Usage Page (Button)
 	0x19, 0x01,        //   Usage Minimum (0x01)
-	0x29, 0x0D,        //   Usage Maximum (0x0D)
+	0x29, 0x11,        //   Usage Maximum (0x11)
 	0x15, 0x00,        //   Logical Minimum (0)
 	0x25, 0x01,        //   Logical Maximum (1)
 	0x75, 0x01,        //   Report Size (1)
-	0x95, 0x0D,        //   Report Count (13)
+	0x95, 0x11,        //   Report Count (17)
 	0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
 	0x06, 0x00, 0xFF,  //   Usage Page (Vendor Defined 0xFF00)
 	0x09, 0x20,        //   Usage (0x20)
-	0x75, 0x07,        //   Report Size (7)
+	0x75, 0x03,        //   Report Size (3)
 	0x95, 0x01,        //   Report Count (1)
 	0x15, 0x00,        //   Logical Minimum (0)
 	0x25, 0x7F,        //   Logical Maximum (127)
@@ -168,15 +168,15 @@ CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_Single_Mode[] =
 	0x65, 0x00,        //   Unit (None)
 	0x05, 0x09,        //   Usage Page (Button)
 	0x19, 0x01,        //   Usage Minimum (0x01)
-	0x29, 0x0D,        //   Usage Maximum (0x0D)
+	0x29, 0x11,        //   Usage Maximum (0x11)
 	0x15, 0x00,        //   Logical Minimum (0)
 	0x25, 0x01,        //   Logical Maximum (1)
 	0x75, 0x01,        //   Report Size (1)
-	0x95, 0x0D,        //   Report Count (13)
+	0x95, 0x11,        //   Report Count (17)
 	0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
 	0x06, 0x00, 0xFF,  //   Usage Page (Vendor Defined 0xFF00)
 	0x09, 0x20,        //   Usage (0x20)
-	0x75, 0x07,        //   Report Size (7)
+	0x75, 0x03,        //   Report Size (3)
 	0x95, 0x01,        //   Report Count (1)
 	0x15, 0x00,        //   Logical Minimum (0)
 	0x25, 0x7F,        //   Logical Maximum (127)
@@ -682,41 +682,51 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 	// Prepare face buttons
 	Output[5] &= ~0xF0; // Clear upper 4 bits
 
-	// Remaining buttons
+	// Prepare buttons: L2, R2, L1, R1, L3, R3, Select and Start
 	Output[6] &= ~0xFF; // Clear all 8 bits
+
+	// Prepare PS and D-Pad buttons
+	Output[7] &= ~0xFF; // Clear all 8 bits
 
 	if (!MuteDigitalPressureButtons)
 	{
 		// Translate D-Pad to HAT format
-		switch (Input[2] & ~0xF)
+		if (TRUE == TRUE) // Placeholder for DHMC option
 		{
-		case 0x10: // N
-			Output[5] |= 0 & 0xF;
-			break;
-		case 0x30: // NE
-			Output[5] |= 1 & 0xF;
-			break;
-		case 0x20: // E
-			Output[5] |= 2 & 0xF;
-			break;
-		case 0x60: // SE
-			Output[5] |= 3 & 0xF;
-			break;
-		case 0x40: // S
-			Output[5] |= 4 & 0xF;
-			break;
-		case 0xC0: // SW
-			Output[5] |= 5 & 0xF;
-			break;
-		case 0x80: // W
-			Output[5] |= 6 & 0xF;
-			break;
-		case 0x90: // NW
-			Output[5] |= 7 & 0xF;
-			break;
-		default: // Released
+			switch (Input[2] & ~0xF)
+			{
+			case 0x10: // N
+				Output[5] |= 0 & 0xF;
+				break;
+			case 0x30: // NE
+				Output[5] |= 1 & 0xF;
+				break;
+			case 0x20: // E
+				Output[5] |= 2 & 0xF;
+				break;
+			case 0x60: // SE
+				Output[5] |= 3 & 0xF;
+				break;
+			case 0x40: // S
+				Output[5] |= 4 & 0xF;
+				break;
+			case 0xC0: // SW
+				Output[5] |= 5 & 0xF;
+				break;
+			case 0x80: // W
+				Output[5] |= 6 & 0xF;
+				break;
+			case 0x90: // NW
+				Output[5] |= 7 & 0xF;
+				break;
+			default: // Released
+				Output[5] |= 8 & 0xF;
+				break;
+			}
+		}
+		else {
+			// Clear HAT position
 			Output[5] |= 8 & 0xF;
-			break;
 		}
 
 		// Set face buttons
@@ -725,6 +735,12 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 		// Remaining buttons
 		Output[6] |= (Input[2] & 0xF); // OUTPUT: START [3], RSB [2], LSB [1], SELECT [0]
 		Output[6] |= (Input[3] & 0xF) << 4; // OUTPUT: R1 [7], L1 [6], R2 [5], L2 [4]
+
+		// D-Pad (Buttons)
+		if (FALSE == TRUE) // "FALSE" is a placeholder for the DHMC option that will allow muting the D-Pad Buttons
+		{
+			Output[7] |= (Input[2] & ~0xF) >> 3; // OUTPUT: LEFT [4], DOWN [3], RIGHT [2], UP [1]
+		}
 	}
 	else {
 		// Clear HAT position
@@ -732,7 +748,7 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 	}
 
 	// PS button
-	Output[7] = Input[4]; // OUTPUT: PADDING [7-1], PS BUTTON [0]
+	Output[7] |= Input[4] & 0x1; // OUTPUT: PS BUTTON [0]
 
 	// Thumb axes
 	Output[1] = Input[6]; // LTX
@@ -786,41 +802,51 @@ VOID DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
 	// Prepare face buttons
 	Output[5] &= ~0xF0; // Clear upper 4 bits
 
-	// Remaining buttons
+	// Prepare buttons: L2, R2, L1, R1, L3, R3, Select and Start
 	Output[6] &= ~0xFF; // Clear all 8 bits
+
+	// Prepare PS and D-Pad buttons
+	Output[7] &= ~0xFF; // Clear all 8 bits
 
 	if (!MuteDigitalPressureButtons)
 	{
 		// Translate D-Pad to HAT format
-		switch (Input[2] & ~0xF)
+		if (TRUE == TRUE) // Placeholder for DHMC option
 		{
-		case 0x10: // N
-			Output[5] |= 0 & 0xF;
-			break;
-		case 0x30: // NE
-			Output[5] |= 1 & 0xF;
-			break;
-		case 0x20: // E
-			Output[5] |= 2 & 0xF;
-			break;
-		case 0x60: // SE
-			Output[5] |= 3 & 0xF;
-			break;
-		case 0x40: // S
-			Output[5] |= 4 & 0xF;
-			break;
-		case 0xC0: // SW
-			Output[5] |= 5 & 0xF;
-			break;
-		case 0x80: // W
-			Output[5] |= 6 & 0xF;
-			break;
-		case 0x90: // NW
-			Output[5] |= 7 & 0xF;
-			break;
-		default: // Released
+			switch (Input[2] & ~0xF)
+			{
+			case 0x10: // N
+				Output[5] |= 0 & 0xF;
+				break;
+			case 0x30: // NE
+				Output[5] |= 1 & 0xF;
+				break;
+			case 0x20: // E
+				Output[5] |= 2 & 0xF;
+				break;
+			case 0x60: // SE
+				Output[5] |= 3 & 0xF;
+				break;
+			case 0x40: // S
+				Output[5] |= 4 & 0xF;
+				break;
+			case 0xC0: // SW
+				Output[5] |= 5 & 0xF;
+				break;
+			case 0x80: // W
+				Output[5] |= 6 & 0xF;
+				break;
+			case 0x90: // NW
+				Output[5] |= 7 & 0xF;
+				break;
+			default: // Released
+				Output[5] |= 8 & 0xF;
+				break;
+			}
+		}
+		else {
+			// Clear HAT position
 			Output[5] |= 8 & 0xF;
-			break;
 		}
 
 		// Set face buttons
@@ -829,6 +855,12 @@ VOID DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
 		// Remaining buttons
 		Output[6] |= (Input[2] & 0xF);  // OUTPUT: START [3], RSB [2], LSB [1], SELECT [0]
 		Output[6] |= (Input[3] & 0xF) << 4; // OUTPUT: R1 [7], L1 [6], R2 [5], L2 [4]
+
+		// D-Pad (Buttons)
+		if (FALSE == TRUE) // "FALSE" is a placeholder for the DHMC option that will allow muting the D-Pad Buttons
+		{
+			Output[7] |= (Input[2] & ~0xF) >> 3; // OUTPUT: LEFT [4], DOWN [3], RIGHT [2], UP [1]
+		}
 	}
 	else {
 		// Clear HAT position
@@ -846,7 +878,7 @@ VOID DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
 	Output[9] = Input[19]; // R2
 
 	// PS button
-	Output[7] = Input[4]; // OUTPUT: PADDING [7-1], PS BUTTON [0]
+	Output[7] |= Input[4] & 0x1; // OUTPUT: PS BUTTON [0]
 
 	// D-Pad (pressure)
 	Output[10] = Input[14]; // UP
