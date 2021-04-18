@@ -18,6 +18,8 @@ extern unsigned int numInstances;
 #include <wdfusb.h>
 
 #include <DmfModules.Library.h>
+#include <DsHidMini/Ds3Types.h>
+#include <DsHidMini/ScpTypes.h>
 #include "DsCommon.h"
 #include "DsHid.h"
 #ifdef DSHM_FEATURE_FFB
