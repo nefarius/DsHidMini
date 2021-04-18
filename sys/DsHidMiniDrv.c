@@ -245,40 +245,6 @@ DMF_DsHidMini_Open(
 	// 
 	numInstances++;
 
-	// 
-	// Admins & System: all access
-	// Everyone: read access
-	// 
-	PWSTR szSD = L"D:(A;OICI;GA;;;BA)(A;OICI;GA;;;SY)(A;OICI;GR;;;WD)";
-	SECURITY_ATTRIBUTES sa;
-	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-	sa.bInheritHandle = FALSE;
-	ConvertStringSecurityDescriptorToSecurityDescriptorW(
-		szSD,
-		SDDL_REVISION_1,
-		&((&sa)->lpSecurityDescriptor),
-		NULL
-	);
-
-	PCWSTR objName = L"Global\\MyFileMappingObject";
-
-	pDevCtx->XInputBridgeInputReportHandle = CreateFileMappingW(
-		INVALID_HANDLE_VALUE,
-		&sa,
-		PAGE_READWRITE,
-		0,
-		sizeof(DS3_RAW_INPUT_REPORT),
-		objName
-	);
-
-	if (pDevCtx->XInputBridgeInputReportHandle == NULL)
-	{
-		TraceError(
-			TRACE_DSHIDMINIDRV,
-			"Failed to create file mapping"
-		);
-	}
-	
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 
 	return status;
@@ -313,11 +279,6 @@ DMF_DsHidMini_Close(
 	// 
 	numInstances--;
 
-	if (pDevCtx->XInputBridgeInputReportHandle)
-	{
-		CloseHandle(pDevCtx->XInputBridgeInputReportHandle);
-	}
-	
 	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
 }
 

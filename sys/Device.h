@@ -287,11 +287,6 @@ typedef struct _DEVICE_CONTEXT
 	//
 	HANDLE ConfigurationReloadWaitHandle;
 
-	//
-	// Handle to shared memory for XInput Bridge DLL IPC
-	// 
-	HANDLE XInputBridgeInputReportHandle;
-
 } DEVICE_CONTEXT, * PDEVICE_CONTEXT;
 
 //
