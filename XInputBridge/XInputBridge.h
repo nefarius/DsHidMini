@@ -112,6 +112,7 @@ typedef struct _XINPUT_KEYSTROKE
 #pragma endregion
 
 
+#include <pshpack1.h>
 /**
  * SCP custom report format for DualShock 3 Controllers.
  *
@@ -148,6 +149,7 @@ typedef struct _SCP_EXTN {
 
 	FLOAT SCP_PS;
 } SCP_EXTN, * PSCP_EXTN;
+#include <poppack.h>
 
 XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 	_In_ DWORD dwUserIndex,

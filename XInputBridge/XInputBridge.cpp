@@ -11,7 +11,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 	_In_ DWORD dwUserIndex, 
 	_Out_ SCP_EXTN* pState
 )
-{
+{	
     return ERROR_DEVICE_NOT_CONNECTED;
 }
 
