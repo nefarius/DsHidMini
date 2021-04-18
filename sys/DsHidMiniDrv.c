@@ -1264,7 +1264,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 
 	UNREFERENCED_PARAMETER(Pipe);
 	UNREFERENCED_PARAMETER(NumBytesTransferred);
-
+	
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
 	pDevCtx = DeviceGetContext(Context);
@@ -1273,7 +1273,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 
 	QueryPerformanceFrequency(&freq);
 	t1 = &pDevCtx->Connection.Usb.ChargingCycleTimestamp;
-
+	
 #ifdef DBG
 	DumpAsHex(">> USB", rdrBuffer, (ULONG)rdrBufferLength);
 #endif

@@ -16,8 +16,13 @@ typedef struct _DS3_RAW_INPUT_REPORT
 	UCHAR ReportId;
 
 	UCHAR Reserved0;
+	
+	union
+	{
+		ULONG lButtons;
 
-	ULONG Buttons;
+		UCHAR bButtons[4];
+	} Buttons;
 
 	UCHAR LeftThumbX;
 	UCHAR LeftThumbY;
@@ -26,10 +31,37 @@ typedef struct _DS3_RAW_INPUT_REPORT
 	UCHAR RightThumbY;
 
 	UCHAR Reserved1[3];
+	
+	union
+	{
+		UCHAR bValues[12];
 
-	UCHAR PressureValues[12];
+		struct
+		{
+			UCHAR Up;
+			UCHAR Right;
+			UCHAR Down;
+			UCHAR Left;
 
-	UCHAR Reserved2[16];
+			UCHAR L2;
+			UCHAR R2;
+			
+			UCHAR L1;
+			UCHAR R1;
+
+			UCHAR Triangle;
+			UCHAR Circle;
+			UCHAR Cross;
+			UCHAR Square;
+			
+		} Values;
+	} Pressure;
+
+	UCHAR Reserved2[4];
+
+	UCHAR BatteryStatus;
+
+	UCHAR Reserved3[11];
 
 	USHORT AccelerometerX;
 	USHORT AccelerometerY;
