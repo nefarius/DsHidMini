@@ -328,6 +328,18 @@ VOID DS3_SET_LED_DURATION(
 	buffer[14 + (LedIndex * 5)] = OnInterval;
 }
 
+VOID DS3_SET_LED_DURATION_DEFAULT(PDEVICE_CONTEXT Context, UCHAR LedIndex)
+{
+	DS3_SET_LED_DURATION(
+		Context, 
+		LedIndex, 
+		0xFF, // Interval repeat never ends
+		0x27, // Interval duration
+		0x00, // No OFF-portion
+		0x32 // Default ON-portion
+	);
+}
+
 VOID DS3_GET_UNIFIED_OUTPUT_REPORT_BUFFER(
 	PDEVICE_CONTEXT Context,
 	UCHAR** Buffer,
