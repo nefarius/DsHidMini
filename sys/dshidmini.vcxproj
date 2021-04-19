@@ -49,6 +49,8 @@
     <ClCompile Include="Power.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\DsHidMini\Ds3Types.h" />
+    <ClInclude Include="..\include\DsHidMini\ScpTypes.h" />
     <ClInclude Include="Device.h" />
     <ClInclude Include="Driver.h" />
     <ClInclude Include="Ds3.h" />
@@ -224,7 +226,7 @@
       <WppEnabled>true</WppEnabled>
       <WppRecorderEnabled>true</WppRecorderEnabled>
       <WppScanConfigurationData Condition="'%(ClCompile.ScanConfigurationData)' == ''">trace.h</WppScanConfigurationData>
-      <AdditionalIncludeDirectories>..\..\DMF\DMF\Modules.Library;..\..\DMF\DMF\Framework;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include;..\..\DMF\DMF\Modules.Library;..\..\DMF\DMF\Framework;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_X86_=1;i386=1;STD_CALL;%(PreprocessorDefinitions);DMF_USER_MODE</PreprocessorDefinitions>
       <WarningLevel>Level3</WarningLevel>
     </ClCompile>
@@ -238,7 +240,7 @@
       <WppEnabled>true</WppEnabled>
       <WppRecorderEnabled>true</WppRecorderEnabled>
       <WppScanConfigurationData Condition="'%(ClCompile.ScanConfigurationData)' == ''">trace.h</WppScanConfigurationData>
-      <AdditionalIncludeDirectories>..\..\DMF\DMF\Modules.Library;..\..\DMF\DMF\Framework;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include;..\..\DMF\DMF\Modules.Library;..\..\DMF\DMF\Framework;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_X86_=1;i386=1;STD_CALL;%(PreprocessorDefinitions);DMF_USER_MODE</PreprocessorDefinitions>
       <WarningLevel>Level3</WarningLevel>
     </ClCompile>
@@ -256,7 +258,7 @@
       <WppEnabled>true</WppEnabled>
       <WppRecorderEnabled>true</WppRecorderEnabled>
       <WppScanConfigurationData Condition="'%(ClCompile.ScanConfigurationData)' == ''">trace.h</WppScanConfigurationData>
-      <AdditionalIncludeDirectories>..\..\DMF\DMF\Modules.Library;..\..\DMF\DMF\Framework;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include;..\..\DMF\DMF\Modules.Library;..\..\DMF\DMF\Framework;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WIN64;_AMD64_;AMD64;%(PreprocessorDefinitions);DMF_USER_MODE</PreprocessorDefinitions>
       <WarningLevel>Level3</WarningLevel>
     </ClCompile>
@@ -270,7 +272,7 @@
       <WppEnabled>true</WppEnabled>
       <WppRecorderEnabled>true</WppRecorderEnabled>
       <WppScanConfigurationData Condition="'%(ClCompile.ScanConfigurationData)' == ''">trace.h</WppScanConfigurationData>
-      <AdditionalIncludeDirectories>..\..\DMF\DMF\Modules.Library;..\..\DMF\DMF\Framework;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include;..\..\DMF\DMF\Modules.Library;..\..\DMF\DMF\Framework;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WIN64;_AMD64_;AMD64;%(PreprocessorDefinitions);DMF_USER_MODE</PreprocessorDefinitions>
       <WarningLevel>Level3</WarningLevel>
     </ClCompile>

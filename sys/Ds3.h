@@ -84,36 +84,7 @@ VOID DS3_SET_LARGE_RUMBLE_STRENGTH(
 	UCHAR Value
 );
 
-#include <pshpack1.h>
 
-typedef struct _DS3_RAW_INPUT_REPORT
-{
-	UCHAR ReportId;
-
-	UCHAR Reserved0;
-
-	ULONG Buttons;
-
-	UCHAR LeftThumbX;
-	UCHAR LeftThumbY;
-
-	UCHAR RightThumbX;
-	UCHAR RightThumbY;
-
-	UCHAR Reserved1[3];
-
-	UCHAR PressureValues[12];
-
-	UCHAR Reserved2[16];
-
-	USHORT AccelerometerX;
-	USHORT AccelerometerY;
-	USHORT AccelerometerZ;
-	USHORT Gyroscope;
-	
-} DS3_RAW_INPUT_REPORT, *PDS3_RAW_INPUT_REPORT;
-
-#include <poppack.h>
 
 typedef enum _USB_HID_REQUEST
 {

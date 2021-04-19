@@ -20,6 +20,9 @@
     <Filter Include="Header Files\PID">
       <UniqueIdentifier>{758e0301-057e-4139-adda-e5a61e5e8392}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Public">
+      <UniqueIdentifier>{f5f9d131-393e-438f-92b4-612584ade4a8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Inf Include="dshidmini.inf">
@@ -122,6 +125,12 @@
     </ClInclude>
     <ClInclude Include="DsInternal.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\DsHidMini\Ds3Types.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\DsHidMini\ScpTypes.h">
+      <Filter>Header Files\Public</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
