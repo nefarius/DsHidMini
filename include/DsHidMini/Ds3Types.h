@@ -61,7 +61,7 @@ typedef struct _DS3_RAW_INPUT_REPORT
 	UCHAR RightThumbX;
 	UCHAR RightThumbY;
 
-	UCHAR Reserved1[3];
+	UCHAR Reserved1[4];
 
 	//
 	// Pressure value breakouts in various formats
@@ -94,7 +94,7 @@ typedef struct _DS3_RAW_INPUT_REPORT
 		} Values;
 	} Pressure;
 
-	UCHAR Reserved2[4];
+	UCHAR Reserved2[3];
 
 	//
 	// Battery charge status

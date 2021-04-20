@@ -1203,7 +1203,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer)
 	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
 	{
 		DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
-			Buffer,
+			(PDS3_RAW_INPUT_REPORT)Buffer,
 			pModCtx->InputReport
 		);
 

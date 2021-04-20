@@ -903,7 +903,7 @@ VOID DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
 }
 
 VOID DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
-	_In_ PUCHAR Input,
+	_In_ PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output
 )
 {
@@ -911,7 +911,7 @@ VOID DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
 	Output[3] &= ~0xF; // Clear lower 4 bits
 
 	// Translate D-Pad to HAT format
-	switch (Input[2] & ~0xF)
+	switch (Input->Buttons.bButtons[0] & ~0xF)
 	{
 	case 0x10: // N
 		Output[3] |= 0 & 0xF;
@@ -943,38 +943,38 @@ VOID DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
 	}
 
 	// Thumb axes
-	Output[4] = Input[6]; // LTX
-	Output[5] = Input[7]; // LTY
-	Output[6] = Input[8]; // RTX
-	Output[7] = Input[9]; // RTY
+	Output[4] = Input->LeftThumbX;
+	Output[5] = Input->LeftThumbY;
+	Output[6] = Input->RightThumbX;
+	Output[7] = Input->RightThumbY;
 
 	// Buttons
 	Output[0] &= ~0xFF; // Clear all 8 bits
 	Output[1] &= ~0xFF; // Clear all 8 bits
 
 	// Face buttons
-	Output[0] |= ((Input[3] & 0xF0) >> 4);
+	Output[0] |= ((Input->Buttons.bButtons[1] & 0xF0) >> 4);
 	// L2, R2, L1, R1
-	Output[0] |= ((Input[3] & 0x0F) << 4);
+	Output[0] |= ((Input->Buttons.bButtons[1] & 0x0F) << 4);
 
 	// Select
-	Output[1] |= ((Input[2] & 0x01) << 1);
+	Output[1] |= ((Input->Buttons.bButtons[0] & 0x01) << 1);
 	// Start
-	Output[1] |= ((Input[2] & 0x08) >> 3);
+	Output[1] |= ((Input->Buttons.bButtons[0] & 0x08) >> 3);
 	// L3
-	Output[1] |= ((Input[2] & 0x02) << 1);
+	Output[1] |= ((Input->Buttons.bButtons[0] & 0x02) << 1);
 	// R3
-	Output[1] |= ((Input[2] & 0x04) << 1);
+	Output[1] |= ((Input->Buttons.bButtons[0] & 0x04) << 1);
 	// PS
-	Output[1] |= ((Input[4] & 0x01) << 4);
+	Output[1] |= ((Input->Buttons.bButtons[2] & 0x01) << 4);
 
-	// Trigger axes
-	Output[10] = (0xFF - Input[18]);
-	Output[11] = (0xFF - Input[19]);
+	// Trigger axes (inverted)
+	Output[10] = (0xFF - Input->Pressure.Values.L2);
+	Output[11] = (0xFF - Input->Pressure.Values.R2);
 
-	// Face buttons (pressure)
-	Output[8] = (0xFF - Input[23]);
-	Output[9] = (0xFF - Input[24]);
+	// Face buttons (pressure, inverted)
+	Output[8] = (0xFF - Input->Pressure.Values.Circle);
+	Output[9] = (0xFF - Input->Pressure.Values.Cross);
 }
 
 UCHAR REVERSE_BITS(UCHAR x)
