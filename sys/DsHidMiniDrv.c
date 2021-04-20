@@ -1129,7 +1129,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer)
 	case DsHidMiniDeviceModeMulti:
 
 		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
-			Buffer,
+			(PDS3_RAW_INPUT_REPORT)Buffer,
 			pModCtx->InputReport,
 			Context->Configuration.MuteDigitalPressureButtons
 		);
@@ -1142,7 +1142,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer)
 	case DsHidMiniDeviceModeSingle:
 
 		DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
-			Buffer,
+			(PDS3_RAW_INPUT_REPORT)Buffer,
 			pModCtx->InputReport,
 			Context->Configuration.MuteDigitalPressureButtons
 		);

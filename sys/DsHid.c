@@ -673,7 +673,7 @@ BOOLEAN DS3_RAW_IS_IDLE(
 }
 
 VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
-	_In_ PUCHAR Input,
+	_In_ PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output,
 	_In_ BOOLEAN MuteDigitalPressureButtons
 )
@@ -698,7 +698,7 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 		// Translate D-Pad to HAT format
 		if (TRUE == TRUE) // Placeholder for DHMC option
 		{
-			switch (Input[2] & ~0xF)
+			switch (Input->Buttons.bButtons[0] & ~0xF)
 			{
 			case 0x10: // N
 				Output[5] |= 0 & 0xF;
@@ -735,16 +735,16 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 		}
 
 		// Set face buttons
-		Output[5] |= Input[3] & 0xF0; // OUTPUT: SQUARE [7], CROSS [6], CIRCLE [5], TRIANGLE [4]
+		Output[5] |= Input->Buttons.bButtons[1] & 0xF0; // OUTPUT: SQUARE [7], CROSS [6], CIRCLE [5], TRIANGLE [4]
 
 		// Remaining buttons
-		Output[6] |= (Input[2] & 0xF); // OUTPUT: START [3], RSB [2], LSB [1], SELECT [0]
-		Output[6] |= (Input[3] & 0xF) << 4; // OUTPUT: R1 [7], L1 [6], R2 [5], L2 [4]
+		Output[6] |= (Input->Buttons.bButtons[0] & 0xF); // OUTPUT: START [3], RSB [2], LSB [1], SELECT [0]
+		Output[6] |= (Input->Buttons.bButtons[1] & 0xF) << 4; // OUTPUT: R1 [7], L1 [6], R2 [5], L2 [4]
 
 		// D-Pad (Buttons)
 		if (FALSE == TRUE) // "FALSE" is a placeholder for the DHMC option that will allow muting the D-Pad Buttons
 		{
-			Output[7] |= (Input[2] & ~0xF) >> 3; // OUTPUT: LEFT [4], DOWN [3], RIGHT [2], UP [1]
+			Output[7] |= (Input->Buttons.bButtons[0] & ~0xF) >> 3; // OUTPUT: LEFT [4], DOWN [3], RIGHT [2], UP [1]
 		}
 	}
 	else {
@@ -753,21 +753,21 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 	}
 
 	// PS button
-	Output[7] |= Input[4] & 0x1; // OUTPUT: PS BUTTON [0]
+	Output[7] |= Input->Buttons.Individual.PS; // OUTPUT: PS BUTTON [0]
 
 	// Thumb axes
-	Output[1] = Input[6]; // LTX
-	Output[2] = Input[7]; // LTY
-	Output[3] = Input[8]; // RTX
-	Output[4] = Input[9]; // RTY
+	Output[1] = Input->LeftThumbX;
+	Output[2] = Input->LeftThumbY;
+	Output[3] = Input->RightThumbX;
+	Output[4] = Input->RightThumbY;
 
 	// Trigger axes
-	Output[8] = Input[18]; // L2
-	Output[9] = Input[19]; // R2
+	Output[8] = Input->Pressure.Values.L2;
+	Output[9] = Input->Pressure.Values.R2;
 
 	// Shoulders (pressure)
-	Output[10] = Input[20]; // L1
-	Output[11] = Input[21]; // R1
+	Output[10] = Input->Pressure.Values.L1;
+	Output[11] = Input->Pressure.Values.R1;
 
 }
 
@@ -793,13 +793,13 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
 }
 
 VOID DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
-	_In_ PUCHAR Input,
+	_In_ PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output,
 	_In_ BOOLEAN MuteDigitalPressureButtons
 )
 {
 	// Report ID
-	Output[0] = Input[0];
+	Output[0] = Input->ReportId;
 
 	// Prepare D-Pad
 	Output[5] &= ~0xF; // Clear lower 4 bits
@@ -818,7 +818,7 @@ VOID DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
 		// Translate D-Pad to HAT format
 		if (TRUE == TRUE) // Placeholder for DHMC option
 		{
-			switch (Input[2] & ~0xF)
+			switch (Input->Buttons.bButtons[0] & ~0xF)
 			{
 			case 0x10: // N
 				Output[5] |= 0 & 0xF;
@@ -855,16 +855,16 @@ VOID DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
 		}
 
 		// Set face buttons
-		Output[5] |= Input[3] & 0xF0; // OUTPUT: SQUARE[7], CROSS[6], CIRCLE[5], TRIANGLE[4]
+		Output[5] |= Input->Buttons.bButtons[1] & 0xF0; // OUTPUT: SQUARE[7], CROSS[6], CIRCLE[5], TRIANGLE[4]
 
 		// Remaining buttons
-		Output[6] |= (Input[2] & 0xF);  // OUTPUT: START [3], RSB [2], LSB [1], SELECT [0]
-		Output[6] |= (Input[3] & 0xF) << 4; // OUTPUT: R1 [7], L1 [6], R2 [5], L2 [4]
+		Output[6] |= (Input->Buttons.bButtons[0] & 0xF);  // OUTPUT: START [3], RSB [2], LSB [1], SELECT [0]
+		Output[6] |= (Input->Buttons.bButtons[1] & 0xF) << 4; // OUTPUT: R1 [7], L1 [6], R2 [5], L2 [4]
 
 		// D-Pad (Buttons)
 		if (FALSE == TRUE) // "FALSE" is a placeholder for the DHMC option that will allow muting the D-Pad Buttons
 		{
-			Output[7] |= (Input[2] & ~0xF) >> 3; // OUTPUT: LEFT [4], DOWN [3], RIGHT [2], UP [1]
+			Output[7] |= (Input->Buttons.bButtons[0] & ~0xF) >> 3; // OUTPUT: LEFT [4], DOWN [3], RIGHT [2], UP [1]
 		}
 	}
 	else {
@@ -873,33 +873,33 @@ VOID DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
 	}
 
 	// Thumb axes
-	Output[1] = Input[6]; // LTX
-	Output[2] = Input[7]; // LTY
-	Output[3] = Input[8]; // RTX
-	Output[4] = Input[9]; // RTY
+	Output[1] = Input->LeftThumbX;
+	Output[2] = Input->LeftThumbY;
+	Output[3] = Input->RightThumbX;
+	Output[4] = Input->RightThumbY;
 
 	// Trigger axes
-	Output[8] = Input[18]; // L2
-	Output[9] = Input[19]; // R2
+	Output[8] = Input->Pressure.Values.L2;
+	Output[9] = Input->Pressure.Values.R2;
 
 	// PS button
-	Output[7] |= Input[4] & 0x1; // OUTPUT: PS BUTTON [0]
+	Output[7] |= Input->Buttons.Individual.PS;
 
 	// D-Pad (pressure)
-	Output[10] = Input[14]; // UP
-	Output[11] = Input[15]; // RIGHT
-	Output[12] = Input[16]; // DOWN
-	Output[13] = Input[17]; // LEFT
+	Output[10] = Input->Pressure.Values.Up;
+	Output[11] = Input->Pressure.Values.Right;
+	Output[12] = Input->Pressure.Values.Down;
+	Output[13] = Input->Pressure.Values.Left;
 
 	// Shoulders (pressure)
-	Output[14] = Input[20]; // L1
-	Output[15] = Input[21]; // R1
+	Output[14] = Input->Pressure.Values.L1;
+	Output[15] = Input->Pressure.Values.R1;
 
 	// Face buttons (pressure)
-	Output[16] = Input[22]; // TRIANGLE
-	Output[17] = Input[23]; // CIRCLE
-	Output[18] = Input[24]; // CROSS
-	Output[19] = Input[25]; // SQUARE
+	Output[16] = Input->Pressure.Values.Triangle;
+	Output[17] = Input->Pressure.Values.Circle;
+	Output[18] = Input->Pressure.Values.Cross;
+	Output[19] = Input->Pressure.Values.Square;
 }
 
 VOID DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(

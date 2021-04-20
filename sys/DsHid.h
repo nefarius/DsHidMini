@@ -49,7 +49,7 @@ BOOLEAN DS3_RAW_IS_IDLE(
 );
 
 VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
-	_In_ PUCHAR Input,
+	_In_ PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output,
 	_In_ BOOLEAN MuteDigitalPressureButtons
 );
@@ -60,7 +60,7 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
 );
 
 VOID DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
-	_In_ PUCHAR Input,
+	_In_ PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output,
 	_In_ BOOLEAN MuteDigitalPressureButtons
 );
