@@ -1047,6 +1047,9 @@ DsHidMini_WriteReport(
 					DS3_SET_LED(pDevCtx, r << 1);
 			}
 
+			//
+			// Restore defaults to undo any (past) flashing animations
+			// 
 			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 0);
 			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 1);
 			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 2);
@@ -1055,11 +1058,14 @@ DsHidMini_WriteReport(
 
 		if (isSetFlashing)
 		{
+			//
+			// Set to rapidly flash all 4 LEDs
+			// 
 			DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
-			DS3_SET_LED_DURATION(pDevCtx, 0, 0x64, 2, 127, 127);
-			DS3_SET_LED_DURATION(pDevCtx, 1, 0x64, 2, 127, 127);
-			DS3_SET_LED_DURATION(pDevCtx, 2, 0x64, 2, 127, 127);
-			DS3_SET_LED_DURATION(pDevCtx, 3, 0x64, 2, 127, 127);
+			DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 2, 127, 127);
+			DS3_SET_LED_DURATION(pDevCtx, 1, 0xFF, 2, 127, 127);
+			DS3_SET_LED_DURATION(pDevCtx, 2, 0xFF, 2, 127, 127);
+			DS3_SET_LED_DURATION(pDevCtx, 3, 0xFF, 2, 127, 127);
 		}
 
 		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDualShock4);
