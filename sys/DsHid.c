@@ -772,7 +772,7 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 }
 
 VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
-	_In_ PUCHAR Input,
+	_In_ PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output
 )
 {
@@ -780,16 +780,16 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
 	Output[0] = 0x02;
 
 	// D-Pad (pressure)
-	Output[1] = Input[14]; // UP
-	Output[2] = Input[15]; // RIGHT
-	Output[3] = Input[16]; // DOWN
-	Output[4] = Input[17]; // LEFT
+	Output[1] = Input->Pressure.Values.Up;
+	Output[2] = Input->Pressure.Values.Right;
+	Output[3] = Input->Pressure.Values.Down;
+	Output[4] = Input->Pressure.Values.Left;
 
 	// Face buttons (pressure)
-	Output[5] = Input[22]; // TRIANGLE
-	Output[6] = Input[23]; // CIRCLE
-	Output[7] = Input[24]; // CROSS
-	Output[8] = Input[25]; // SQUARE
+	Output[5] = Input->Pressure.Values.Triangle;
+	Output[6] = Input->Pressure.Values.Circle;
+	Output[7] = Input->Pressure.Values.Cross;
+	Output[8] = Input->Pressure.Values.Square;
 }
 
 VOID DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(

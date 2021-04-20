@@ -1178,7 +1178,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer)
 	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeMulti)
 	{
 		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
-			Buffer,
+			(PDS3_RAW_INPUT_REPORT)Buffer,
 			pModCtx->InputReport
 		);
 
