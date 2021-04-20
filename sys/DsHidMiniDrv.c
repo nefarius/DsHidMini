@@ -1423,6 +1423,8 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	PDS3_RAW_INPUT_REPORT pInReport;
 	WDFDEVICE device;
 
+	UNREFERENCED_PARAMETER(ClientBufferContextOutput);
+	
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
 #ifdef DBG
