@@ -1108,17 +1108,14 @@ DsHidMini_WriteReport(
  * @author	Benjamin "Nefarius" Höglinger-Stelzer
  * @date	25.02.2021
  *
- * @param 	Context			The context.
- * @param 	Buffer			The buffer.
- * @param 	BufferLength	Length of the buffer.
+ * @param 	Context	The context.
+ * @param 	Buffer 	The buffer.
  */
-void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t BufferLength)
+void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer)
 {
 	NTSTATUS status;
 	DMFMODULE dmfModule;
 	DMF_CONTEXT_DsHidMini* pModCtx;
-
-	UNREFERENCED_PARAMETER(BufferLength);
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
@@ -1394,7 +1391,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 		pDevCtx->BatteryStatus = battery;
 	}
 	
-	Ds_ProcessHidInputReport(pDevCtx, rdrBuffer, rdrBufferLength);
+	Ds_ProcessHidInputReport(pDevCtx, rdrBuffer);
 
 	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
 }
@@ -1700,7 +1697,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 		pDevCtx->Connection.Bth.IdleDisconnectTimestamp.QuadPart = 0;
 	}
 
-	Ds_ProcessHidInputReport(pDevCtx, inputBuffer, bufferLength - 1);
+	Ds_ProcessHidInputReport(pDevCtx, inputBuffer);
 
 	return ContinuousRequestTarget_BufferDisposition_ContinuousRequestTargetAndContinueStreaming;
 }

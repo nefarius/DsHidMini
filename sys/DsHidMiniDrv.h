@@ -60,7 +60,7 @@ DsHidMini_WriteReport(
     _Out_ ULONG* ReportSize
 );
 
-VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t BufferLength);
+VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer);
 
 NTSTATUS Ds_SendOutputReport(PDEVICE_CONTEXT Context, DS_OUTPUT_REPORT_SOURCE Source);
 
