@@ -65,6 +65,7 @@ typedef struct _DS3_RAW_INPUT_REPORT
 
 	//
 	// Pressure value breakouts in various formats
+	// 
 	union
 	{
 		UCHAR bValues[12];
