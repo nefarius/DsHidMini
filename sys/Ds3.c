@@ -302,6 +302,44 @@ NTSTATUS DsBth_Ds3Init(PDEVICE_CONTEXT Context)
 	return status;
 }
 
+VOID DS3_SET_LED_DURATION(
+	PDEVICE_CONTEXT Context, 
+	UCHAR LedIndex, 
+	UCHAR TotalDuration, 
+	UCHAR Interval, 
+	UCHAR OffInterval,
+	UCHAR OnInterval
+)
+{
+	if (LedIndex > 3)
+		return;
+
+	PUCHAR buffer;
+
+	DS3_GET_UNIFIED_OUTPUT_REPORT_BUFFER(
+		Context,
+		&buffer,
+		NULL
+	);
+
+	buffer[10 + (LedIndex * 5)] = TotalDuration;
+	buffer[11 + (LedIndex * 5)] = Interval;
+	buffer[13 + (LedIndex * 5)] = OffInterval;
+	buffer[14 + (LedIndex * 5)] = OnInterval;
+}
+
+VOID DS3_SET_LED_DURATION_DEFAULT(PDEVICE_CONTEXT Context, UCHAR LedIndex)
+{
+	DS3_SET_LED_DURATION(
+		Context, 
+		LedIndex, 
+		0xFF, // Interval repeat never ends
+		0x27, // Interval duration
+		0x00, // No OFF-portion
+		0x32 // Default ON-portion
+	);
+}
+
 VOID DS3_GET_UNIFIED_OUTPUT_REPORT_BUFFER(
 	PDEVICE_CONTEXT Context,
 	UCHAR** Buffer,
@@ -321,7 +359,8 @@ VOID DS3_GET_UNIFIED_OUTPUT_REPORT_BUFFER(
 			BufferLength
 		))[1];
 
-		*BufferLength -= 1;
+		if (BufferLength)
+			*BufferLength -= 1;
 		
 		break;
 
@@ -336,7 +375,8 @@ VOID DS3_GET_UNIFIED_OUTPUT_REPORT_BUFFER(
 			BufferLength
 		))[2];
 
-		*BufferLength -= 2;
+		if (BufferLength)
+			*BufferLength -= 2;
 
 		break;
 	}
