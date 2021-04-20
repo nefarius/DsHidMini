@@ -94,14 +94,14 @@ typedef struct _DS3_RAW_INPUT_REPORT
 		} Values;
 	} Pressure;
 
-	UCHAR Reserved2[3];
+	UCHAR Reserved2[4];
 
 	//
 	// Battery charge status
 	// 
 	UCHAR BatteryStatus;
 
-	UCHAR Reserved3[11];
+	UCHAR Reserved3[10];
 
 	//
 	// Motion information

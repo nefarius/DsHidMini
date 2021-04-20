@@ -1109,9 +1109,9 @@ DsHidMini_WriteReport(
  * @date	25.02.2021
  *
  * @param 	Context	The context.
- * @param 	Buffer 	The buffer.
+ * @param 	Report 	The report.
  */
-void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer)
+void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Report)
 {
 	NTSTATUS status;
 	DMFMODULE dmfModule;
@@ -1129,7 +1129,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer)
 	case DsHidMiniDeviceModeMulti:
 
 		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
-			(PDS3_RAW_INPUT_REPORT)Buffer,
+			Report,
 			pModCtx->InputReport,
 			Context->Configuration.MuteDigitalPressureButtons
 		);
@@ -1142,7 +1142,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer)
 	case DsHidMiniDeviceModeSingle:
 
 		DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
-			(PDS3_RAW_INPUT_REPORT)Buffer,
+			Report,
 			pModCtx->InputReport,
 			Context->Configuration.MuteDigitalPressureButtons
 		);
@@ -1178,7 +1178,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer)
 	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeMulti)
 	{
 		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
-			(PDS3_RAW_INPUT_REPORT)Buffer,
+			Report,
 			pModCtx->InputReport
 		);
 
@@ -1203,7 +1203,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer)
 	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
 	{
 		DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
-			(PDS3_RAW_INPUT_REPORT)Buffer,
+			Report,
 			pModCtx->InputReport
 		);
 
@@ -1228,7 +1228,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer)
 	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeDS4WindowsCompatible)
 	{
 		DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
-			Buffer,
+			Report,
 			pModCtx->InputReport,
 			(Context->ConnectionType == DsDeviceConnectionTypeUsb) ? TRUE : FALSE
 		);
@@ -1697,7 +1697,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 		pDevCtx->Connection.Bth.IdleDisconnectTimestamp.QuadPart = 0;
 	}
 
-	Ds_ProcessHidInputReport(pDevCtx, inputBuffer);
+	Ds_ProcessHidInputReport(pDevCtx, (PDS3_RAW_INPUT_REPORT)inputBuffer);
 
 	return ContinuousRequestTarget_BufferDisposition_ContinuousRequestTargetAndContinueStreaming;
 }

@@ -986,13 +986,13 @@ UCHAR REVERSE_BITS(UCHAR x)
 }
 
 VOID DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
-	_In_ PUCHAR Input,
+	_In_ PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output,
 	_In_ BOOLEAN IsWired
 )
 {
 	// Report ID
-	Output[0] = Input[0];
+	Output[0] = Input->ReportId;
 
 	// Prepare D-Pad
 	Output[5] &= ~0xF; // Clear lower 4 bits
@@ -1018,7 +1018,7 @@ VOID DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
 	Output[48] |= 0x80; // Set top bit to disable finger contact
 
 	// Translate D-Pad to HAT format
-	switch (Input[2] & ~0xF)
+	switch (Input->Buttons.bButtons[0] & ~0xF)
 	{
 	case 0x10: // N
 		Output[5] |= 0 & 0xF;
@@ -1050,36 +1050,36 @@ VOID DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
 	}
 	
 	// Face buttons
-	Output[5] |= ((REVERSE_BITS(Input[3]) << 4) & 0xF0);
+	Output[5] |= ((REVERSE_BITS(Input->Buttons.bButtons[1]) << 4) & 0xF0);
 		
 	// Select to Share
-	Output[6] |= ((Input[2] & 0x01) << 4);
+	Output[6] |= ((Input->Buttons.bButtons[0] & 0x01) << 4);
 
 	// Start to Options
-	Output[6] |= (((Input[2] >> 3) & 0x01) << 5);
+	Output[6] |= (((Input->Buttons.bButtons[0] >> 3) & 0x01) << 5);
 
 	// L1, L2, R1, R2
-	Output[6] |= (((Input[3] >> 2) & 0x01) << 0);
-	Output[6] |= (((Input[3] >> 0) & 0x01) << 2);
-	Output[6] |= (((Input[3] >> 3) & 0x01) << 1);
-	Output[6] |= (((Input[3] >> 1) & 0x01) << 3);
+	Output[6] |= (((Input->Buttons.bButtons[1] >> 2) & 0x01) << 0);
+	Output[6] |= (((Input->Buttons.bButtons[1] >> 0) & 0x01) << 2);
+	Output[6] |= (((Input->Buttons.bButtons[1] >> 3) & 0x01) << 1);
+	Output[6] |= (((Input->Buttons.bButtons[1] >> 1) & 0x01) << 3);
 
 	// L3, R3
-	Output[6] |= (((Input[2] >> 1) & 0x01) << 6);
-	Output[6] |= (((Input[2] >> 2) & 0x01) << 7);
+	Output[6] |= (((Input->Buttons.bButtons[0] >> 1) & 0x01) << 6);
+	Output[6] |= (((Input->Buttons.bButtons[0] >> 2) & 0x01) << 7);
 	
 	// Thumb axes
-	Output[1] = Input[6]; // LTX
-	Output[2] = Input[7]; // LTY
-	Output[3] = Input[8]; // RTX
-	Output[4] = Input[9]; // RTY
+	Output[1] = Input->LeftThumbX;
+	Output[2] = Input->LeftThumbY;
+	Output[3] = Input->RightThumbX;
+	Output[4] = Input->RightThumbY;
 
 	// Trigger axes
-	Output[8] = Input[18];
-	Output[9] = Input[19];
+	Output[8] = Input->Pressure.Values.L2;
+	Output[9] = Input->Pressure.Values.R2;
 
 	// PS button
-	Output[7] |= Input[4] & 0x01;
+	Output[7] |= Input->Buttons.Individual.PS;
 
 	// Battery translation when IsWired = 0: ( Value * 100 ) / 8
 	// Battery translation when IsWired = 1: ( Value * 100 ) / 11
@@ -1088,7 +1088,7 @@ VOID DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
 		// Wired sets a flag
 		Output[30] |= 0x10;
 
-		switch ((DS_BATTERY_STATUS)Input[30])
+		switch ((DS_BATTERY_STATUS)Input->BatteryStatus)
 		{
 		case DsBatteryStatusCharging:
 			Output[30] |= 4; // 36%
@@ -1104,7 +1104,7 @@ VOID DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
 		// Clear flag
 		Output[30] &= ~0x10;
 
-		switch ((DS_BATTERY_STATUS)Input[30])
+		switch ((DS_BATTERY_STATUS)Input->BatteryStatus)
 		{
 		case DsBatteryStatusCharged:
 		case DsBatteryStatusFull:
