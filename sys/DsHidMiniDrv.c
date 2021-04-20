@@ -1649,7 +1649,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	//
 	// Idle disconnect detection
 	// 
-	if (DS3_RAW_IS_IDLE(inputBuffer))
+	if (DS3_RAW_IS_IDLE((PDS3_RAW_INPUT_REPORT)inputBuffer))
 	{
 		t1 = &pDevCtx->Connection.Bth.IdleDisconnectTimestamp;
 

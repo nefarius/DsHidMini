@@ -623,14 +623,14 @@ sizeof(G_VendorDefinedUSBDS4HidReportDescriptor) }  // total length of report de
 
 
 BOOLEAN DS3_RAW_IS_IDLE(
-	_In_ PUCHAR Input
+	_In_ PDS3_RAW_INPUT_REPORT Input
 )
 {
 	//
 	// Button states
 	// 
 
-	if (Input[2] || Input[3] || Input[4])
+	if (Input->Buttons.lButtons)
 	{
 		return FALSE;
 	}
@@ -639,27 +639,32 @@ BOOLEAN DS3_RAW_IS_IDLE(
 	// Axes
 	// 
 
-	for (UCHAR i = 6; i < 9; i++)
+	if (
+		Input->LeftThumbX < DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER
+		|| Input->LeftThumbX > DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER
+		|| Input->LeftThumbY < DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER
+		|| Input->LeftThumbY > DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER
+		|| Input->RightThumbX < DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER
+		|| Input->RightThumbX > DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER
+		|| Input->RightThumbY < DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER
+		|| Input->RightThumbY > DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER
+	)
 	{
-		if (Input[i] < DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER
-			|| Input[i] > DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER)
-		{
-			return FALSE;
-		}
+		return FALSE;
 	}
-
+	
 	//
 	// Sliders
 	// 
 
-	for (UCHAR i = 18; i < 19; i++)
+	if (
+		Input->Pressure.Values.L2 > DS3_RAW_SLIDER_IDLE_THRESHOLD
+		|| Input->Pressure.Values.R2 > DS3_RAW_SLIDER_IDLE_THRESHOLD
+	)
 	{
-		if (Input[i] > DS3_RAW_SLIDER_IDLE_THRESHOLD)
-		{
-			return FALSE;
-		}
+		return FALSE;
 	}
-
+	
 	//
 	// If we end up here, no movement is going on
 	// 

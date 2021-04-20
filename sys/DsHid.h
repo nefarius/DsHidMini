@@ -45,7 +45,7 @@ extern CONST HID_DESCRIPTOR G_VendorDefinedUSBDS4HidDescriptor;
  * @returns	TRUE if idle, FALSE otherwise.
  */
 BOOLEAN DS3_RAW_IS_IDLE(
-	_In_ PUCHAR Input
+	_In_ PDS3_RAW_INPUT_REPORT Input
 );
 
 VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
