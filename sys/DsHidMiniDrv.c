@@ -1272,9 +1272,25 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	PDS3_RAW_INPUT_REPORT pInReport;
 
 	UNREFERENCED_PARAMETER(Pipe);
-	UNREFERENCED_PARAMETER(NumBytesTransferred);
 	
 	FuncEntry(TRACE_DSHIDMINIDRV);
+
+	//
+	// Validate expected packet size
+	// 
+	if (NumBytesTransferred < sizeof(DS3_RAW_INPUT_REPORT))
+	{
+		TraceEvents(
+			TRACE_LEVEL_WARNING,
+			TRACE_DSHIDMINIDRV,
+			"Received %I64d but expected %I64d",
+			NumBytesTransferred,
+			sizeof(DS3_RAW_INPUT_REPORT)
+		);
+
+		FuncExitNoReturn(TRACE_DSHIDMINIDRV);
+		return;
+	}
 
 	pDevCtx = DeviceGetContext(Context);
 	pModCtx = DMF_CONTEXT_GET((DMFMODULE)pDevCtx->DsHidMiniModule);
