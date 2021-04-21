@@ -468,7 +468,7 @@ DsHidMini_GetFeature(
 		// 
 		RtlCopyMemory(
 			Packet->reportBuffer,
-			pModCtx->GetFeatureReport,
+			&pModCtx->GetFeatureReport,
 			Packet->reportBufferLen < SIXAXIS_HID_GET_FEATURE_REPORT_SIZE ? Packet->reportBufferLen :
 			SIXAXIS_HID_GET_FEATURE_REPORT_SIZE
 		);
@@ -1263,8 +1263,6 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 )
 {
 	PDEVICE_CONTEXT pDevCtx;
-	size_t rdrBufferLength;
-	LPVOID rdrBuffer;
 	LARGE_INTEGER freq, *t1, t2;
 	LONGLONG ms;
 	DS_BATTERY_STATUS battery;
@@ -1294,13 +1292,13 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 
 	pDevCtx = DeviceGetContext(Context);
 	pModCtx = DMF_CONTEXT_GET((DMFMODULE)pDevCtx->DsHidMiniModule);
-	rdrBuffer = WdfMemoryGetBuffer(Buffer, &rdrBufferLength);
+	pInReport = (PDS3_RAW_INPUT_REPORT)WdfMemoryGetBuffer(Buffer, NULL);
 
 	QueryPerformanceFrequency(&freq);
 	t1 = &pDevCtx->Connection.Usb.ChargingCycleTimestamp;
 	
 #ifdef DBG
-	DumpAsHex(">> USB", rdrBuffer, (ULONG)rdrBufferLength);
+	DumpAsHex(">> USB", pInReport, (ULONG)sizeof(DS3_RAW_INPUT_REPORT));
 #endif
 
 	//
@@ -1309,21 +1307,18 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	if (pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
 	{
 		RtlCopyMemory(
-			pModCtx->GetFeatureReport,
-			rdrBuffer,
-			(rdrBufferLength < SIXAXIS_HID_GET_FEATURE_REPORT_SIZE) ? rdrBufferLength :
-			SIXAXIS_HID_GET_FEATURE_REPORT_SIZE
+			&pModCtx->GetFeatureReport,
+			pInReport,
+			sizeof(DS3_RAW_INPUT_REPORT)
 		);
 
-		pInReport = (PDS3_RAW_INPUT_REPORT)pModCtx->GetFeatureReport;
-
-		pInReport->AccelerometerX = 0x03FF - _byteswap_ushort(pInReport->AccelerometerX);
-		pInReport->AccelerometerY = _byteswap_ushort(pInReport->AccelerometerY);
-		pInReport->AccelerometerZ = _byteswap_ushort(pInReport->AccelerometerZ);
-		pInReport->Gyroscope = _byteswap_ushort(pInReport->Gyroscope);
+		pModCtx->GetFeatureReport.AccelerometerX = 0x03FF - _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerX);
+		pModCtx->GetFeatureReport.AccelerometerY = _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerY);
+		pModCtx->GetFeatureReport.AccelerometerZ = _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerZ);
+		pModCtx->GetFeatureReport.Gyroscope = _byteswap_ushort(pModCtx->GetFeatureReport.Gyroscope);
 	}
 	
-	battery = (DS_BATTERY_STATUS)((PUCHAR)rdrBuffer)[30];
+	battery = (DS_BATTERY_STATUS)pInReport->BatteryStatus;
 
 	//
 	// Update battery status property
@@ -1407,7 +1402,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 		pDevCtx->BatteryStatus = battery;
 	}
 	
-	Ds_ProcessHidInputReport(pDevCtx, rdrBuffer);
+	Ds_ProcessHidInputReport(pDevCtx, pInReport);
 
 	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
 }
@@ -1426,8 +1421,6 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	NTSTATUS status;
 	PUCHAR buffer;
 	size_t bufferLength;
-	PUCHAR inputBuffer;
-	WDF_REQUEST_REUSE_PARAMS params;
 	PDEVICE_CONTEXT pDevCtx;
 	LARGE_INTEGER freq, * t1, t2;
 	LONGLONG ms;
@@ -1452,7 +1445,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	{
 		return ContinuousRequestTarget_BufferDisposition_ContinuousRequestTargetAndStopStreaming;
 	}
-
+	
 	device = DMF_ParentDeviceGet(DmfModule);
 	pDevCtx = DeviceGetContext(device);
 	pModCtx = DMF_CONTEXT_GET((DMFMODULE)pDevCtx->DsHidMiniModule);
@@ -1484,7 +1477,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	//
 	// Skip to report ID
 	// 
-	inputBuffer = &buffer[1];
+	pInReport = (PDS3_RAW_INPUT_REPORT)&buffer[1];
 
 	//
 	// Handle special case of SIXAXIS.SYS emulation
@@ -1492,24 +1485,21 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	if (pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
 	{
 		RtlCopyMemory(
-			pModCtx->GetFeatureReport,
-			inputBuffer,
-			((bufferLength - 1) < SIXAXIS_HID_GET_FEATURE_REPORT_SIZE) ? (bufferLength - 1) :
-			SIXAXIS_HID_GET_FEATURE_REPORT_SIZE
+			&pModCtx->GetFeatureReport,
+			pInReport,
+			sizeof(DS3_RAW_INPUT_REPORT)
 		);
-
-		pInReport = (PDS3_RAW_INPUT_REPORT)pModCtx->GetFeatureReport;
-
-		pInReport->AccelerometerX = 0x03FF - _byteswap_ushort(pInReport->AccelerometerX);
-		pInReport->AccelerometerY = _byteswap_ushort(pInReport->AccelerometerY);
-		pInReport->AccelerometerZ = _byteswap_ushort(pInReport->AccelerometerZ);
-		pInReport->Gyroscope = _byteswap_ushort(pInReport->Gyroscope);
+		
+		pModCtx->GetFeatureReport.AccelerometerX = 0x03FF - _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerX);
+		pModCtx->GetFeatureReport.AccelerometerY = _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerY);
+		pModCtx->GetFeatureReport.AccelerometerZ = _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerZ);
+		pModCtx->GetFeatureReport.Gyroscope = _byteswap_ushort(pModCtx->GetFeatureReport.Gyroscope);
 	}
 
 	//
 	// Grab battery info
 	// 
-	battery = (DS_BATTERY_STATUS)((PUCHAR)inputBuffer)[30];
+	battery = (DS_BATTERY_STATUS)pInReport->BatteryStatus;
 
 	//
 	// React if last known state differs from current state
@@ -1609,7 +1599,11 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	//
 	// Quick disconnect combo (L1 + R1 + PS) detected
 	// 
-	if (((inputBuffer[3] >> 3) & 1U) && ((inputBuffer[3] >> 2) & 1U) && (inputBuffer[4] & 1U))
+	if (
+		pInReport->Buttons.Individual.L1
+		&& pInReport->Buttons.Individual.R1
+		&& pInReport->Buttons.Individual.PS
+	)
 	{
 		TraceEvents(TRACE_LEVEL_INFORMATION,
 			TRACE_DSHIDMINIDRV,
@@ -1665,7 +1659,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	//
 	// Idle disconnect detection
 	// 
-	if (DS3_RAW_IS_IDLE((PDS3_RAW_INPUT_REPORT)inputBuffer))
+	if (DS3_RAW_IS_IDLE(pInReport))
 	{
 		t1 = &pDevCtx->Connection.Bth.IdleDisconnectTimestamp;
 
@@ -1713,7 +1707,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 		pDevCtx->Connection.Bth.IdleDisconnectTimestamp.QuadPart = 0;
 	}
 
-	Ds_ProcessHidInputReport(pDevCtx, (PDS3_RAW_INPUT_REPORT)inputBuffer);
+	Ds_ProcessHidInputReport(pDevCtx, pInReport);
 
 	return ContinuousRequestTarget_BufferDisposition_ContinuousRequestTargetAndContinueStreaming;
 }

@@ -319,7 +319,7 @@ typedef struct
 	//
 	// Raw input report for SIXAXIS.SYS GET_FEATURE report
 	// 
-	UCHAR GetFeatureReport[SIXAXIS_HID_GET_FEATURE_REPORT_SIZE];
+	DS3_RAW_INPUT_REPORT GetFeatureReport;
 
 #ifdef DSHM_FEATURE_FFB
 	//
