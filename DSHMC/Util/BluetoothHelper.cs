@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net.NetworkInformation;
 using System.Runtime.ConstrainedExecution;
 using System.Runtime.InteropServices;
@@ -29,6 +30,10 @@ namespace Nefarius.DsHidMini.Util
             }
         }
 
+        /// <summary>
+        ///     Instruct host radio to disconnect a given remote device.
+        /// </summary>
+        /// <param name="device">The MAC address of the remote device.</param>
         public static void DisconnectRemoteDevice(PhysicalAddress device)
         {
             var radioParams = new BLUETOOTH_FIND_RADIO_PARAMS();
@@ -41,11 +46,10 @@ namespace Nefarius.DsHidMini.Util
 
             var payloadSize = Marshal.SizeOf<ulong>();
             var payload = Marshal.AllocHGlobal(payloadSize);
+            var raw = new byte[] {0x00, 0x00}.Concat(device.GetAddressBytes()).Reverse().ToArray();
+            var value = (long) BitConverter.ToUInt64(raw, 0);
 
-            Marshal.WriteInt64(
-                payload,
-                (long) BitConverter.ToUInt64(device.GetAddressBytes(), 0)
-            );
+            Marshal.WriteInt64(payload, value);
 
             try
             {
@@ -69,7 +73,6 @@ namespace Nefarius.DsHidMini.Util
             }
 
             BluetoothFindRadioClose(findHandle);
-            CloseHandle(radioHandle);
         }
 
         [DllImport("BluetoothApis.dll", SetLastError = true)]

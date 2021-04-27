@@ -1,7 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿using System.Net.NetworkInformation;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using Nefarius.DsHidMini.MVVM;
+using Nefarius.DsHidMini.Util;
 
 namespace Nefarius.DsHidMini.UI.Devices
 {
@@ -31,6 +33,16 @@ namespace Nefarius.DsHidMini.UI.Devices
                     // TODO: handle better
                 }
             });
+        }
+
+        private void DeviceDisconnectBase_OnClick(object sender, RoutedEventArgs e)
+        {
+            var tb = (Button) e.OriginalSource;
+            var vm = (MainViewModel) tb.DataContext;
+
+            var mac = PhysicalAddress.Parse(vm.SelectedDevice.DeviceAddress);
+
+            BluetoothHelper.DisconnectRemoteDevice(mac);
         }
     }
 }
