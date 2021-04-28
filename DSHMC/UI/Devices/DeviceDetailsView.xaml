@@ -163,8 +163,6 @@
                                                            TextOptions.TextRenderingMode="ClearType" />
                                             </DockPanel>
                                         </StackPanel>
-
-
                                     </Grid>
                                 </ControlTemplate>
                             </ToolTip.Template>
@@ -236,8 +234,6 @@
                                                            TextOptions.TextRenderingMode="ClearType" />
                                             </DockPanel>
                                         </StackPanel>
-
-
                                     </Grid>
                                 </ControlTemplate>
                             </ToolTip.Template>
@@ -284,14 +280,15 @@
                     </DockPanel.ToolTip>
                 </DockPanel>
 
-                <!-- Last seen -->
+                <!-- Last seen and Disconnect -->
                 <TextBlock Grid.Row="4" Grid.Column="0">Last connected (wireless):</TextBlock>
                 <DockPanel Grid.Row="4" Grid.Column="2" LastChildFill="False">
                     <TextBox Width="165"
                              Margin="{adonisUi:Space 1}"
                              extensions:WatermarkExtension.Watermark="Unavailable"
                              Text="{Binding Path=SelectedDevice.LastConnected, Mode=OneWay}" />
-                    <Button Click="DeviceDisconnectBase_OnClick" Visibility="{Binding Path=SelectedDevice.IsWireless, Converter={StaticResource VisibleIfTrueConverter}}">
+                    <Button Click="DeviceDisconnectBase_OnClick"
+                            Visibility="{Binding Path=SelectedDevice.IsWireless, Converter={StaticResource VisibleIfTrueConverter}}">
                         <Button.Template>
                             <ControlTemplate>
                                 <Border>
@@ -322,6 +319,19 @@
                                                        Text="Last time this device has been connected via Bluetooth"
                                                        TextOptions.TextFormattingMode="Display"
                                                        TextOptions.TextRenderingMode="ClearType" />
+                                            <DockPanel LastChildFill="False">
+                                                <fa5:ImageAwesome
+                                                    Icon="Regular_SadTear"
+                                                    VerticalAlignment="Center"
+                                                    Margin="{adonisUi:Space 1}"
+                                                    Width="16" />
+                                                <TextBlock Margin="{adonisUi:Space 1}"
+                                                           Foreground="WhiteSmoke"
+                                                           FontSize="16"
+                                                           Text="= Click to disconnect this device now."
+                                                           TextOptions.TextFormattingMode="Display"
+                                                           TextOptions.TextRenderingMode="ClearType" />
+                                            </DockPanel>
                                         </StackPanel>
                                     </Grid>
                                 </ControlTemplate>
