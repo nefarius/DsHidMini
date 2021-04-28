@@ -163,8 +163,6 @@
                                                            TextOptions.TextRenderingMode="ClearType" />
                                             </DockPanel>
                                         </StackPanel>
-
-
                                     </Grid>
                                 </ControlTemplate>
                             </ToolTip.Template>
@@ -236,8 +234,6 @@
                                                            TextOptions.TextRenderingMode="ClearType" />
                                             </DockPanel>
                                         </StackPanel>
-
-
                                     </Grid>
                                 </ControlTemplate>
                             </ToolTip.Template>
@@ -284,14 +280,28 @@
                     </DockPanel.ToolTip>
                 </DockPanel>
 
-                <!-- Last seen -->
+                <!-- Last seen and Disconnect -->
                 <TextBlock Grid.Row="4" Grid.Column="0">Last connected (wireless):</TextBlock>
-                <TextBox Grid.Row="4" Grid.Column="2"
-                         Width="165"
-                         Margin="{adonisUi:Space 1}"
-                         extensions:WatermarkExtension.Watermark="Unavailable"
-                         Text="{Binding Path=SelectedDevice.LastConnected, Mode=OneWay}">
-                    <TextBox.ToolTip>
+                <DockPanel Grid.Row="4" Grid.Column="2" LastChildFill="False">
+                    <TextBox Width="165"
+                             Margin="{adonisUi:Space 1}"
+                             extensions:WatermarkExtension.Watermark="Unavailable"
+                             Text="{Binding Path=SelectedDevice.LastConnected, Mode=OneWay}" />
+                    <Button Click="DeviceDisconnect_OnClick"
+                            Visibility="{Binding Path=SelectedDevice.IsWireless, Converter={StaticResource VisibleIfTrueConverter}}">
+                        <Button.Template>
+                            <ControlTemplate>
+                                <Border>
+                                    <fa5:ImageAwesome
+                                        Icon="Regular_SadTear"
+                                        VerticalAlignment="Center"
+                                        Width="16" />
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+
+                    <DockPanel.ToolTip>
                         <ToolTip controlzex:ToolTipAssist.AutoMove="True">
                             <ToolTip.Template>
                                 <ControlTemplate>
@@ -309,13 +319,26 @@
                                                        Text="Last time this device has been connected via Bluetooth"
                                                        TextOptions.TextFormattingMode="Display"
                                                        TextOptions.TextRenderingMode="ClearType" />
+                                            <DockPanel LastChildFill="False">
+                                                <fa5:ImageAwesome
+                                                    Icon="Regular_SadTear"
+                                                    VerticalAlignment="Center"
+                                                    Margin="{adonisUi:Space 1}"
+                                                    Width="16" />
+                                                <TextBlock Margin="{adonisUi:Space 1}"
+                                                           Foreground="WhiteSmoke"
+                                                           FontSize="16"
+                                                           Text="= Click to disconnect this device now."
+                                                           TextOptions.TextFormattingMode="Display"
+                                                           TextOptions.TextRenderingMode="ClearType" />
+                                            </DockPanel>
                                         </StackPanel>
                                     </Grid>
                                 </ControlTemplate>
                             </ToolTip.Template>
                         </ToolTip>
-                    </TextBox.ToolTip>
-                </TextBox>
+                    </DockPanel.ToolTip>
+                </DockPanel>
 
                 <!-- HID Device Mode -->
                 <TextBlock Grid.Row="5" Grid.Column="0">HID device mode:</TextBlock>
