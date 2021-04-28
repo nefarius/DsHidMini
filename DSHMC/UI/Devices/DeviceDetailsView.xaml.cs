@@ -35,7 +35,7 @@ namespace Nefarius.DsHidMini.UI.Devices
             });
         }
 
-        private void DeviceDisconnectBase_OnClick(object sender, RoutedEventArgs e)
+        private void DeviceDisconnect_OnClick(object sender, RoutedEventArgs e)
         {
             var tb = (Button) e.OriginalSource;
             var vm = (MainViewModel) tb.DataContext;
