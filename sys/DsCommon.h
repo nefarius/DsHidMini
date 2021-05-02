@@ -81,7 +81,8 @@ typedef enum _DS_HID_DEVICE_MODE
     DsHidMiniDeviceModeSingle,
     DsHidMiniDeviceModeMulti,
     DsHidMiniDeviceModeSixaxisCompatible,
-    DsHidMiniDeviceModeDS4WindowsCompatible
+    DsHidMiniDeviceModeDS4WindowsCompatible,
+    DsHidMiniDeviceModeXInputHIDCompatible
 
 } DS_HID_DEVICE_MODE, * PDS_HID_DEVICE_MODE;
 

@@ -234,6 +234,14 @@ DMF_DsHidMini_Open(
 		pHidCfg->HidDeviceAttributes.VersionNumber = pDevCtx->VersionNumber;
 		
 		break;
+	case DsHidMiniDeviceModeXInputHIDCompatible:
+
+		pHidCfg->HidDescriptor = &G_XInputHIDCompatible_HidDescriptor;
+		pHidCfg->HidDescriptorLength = sizeof(G_XInputHIDCompatible_HidDescriptor);
+		pHidCfg->HidReportDescriptor = G_XInputHIDCompatible_HidReportDescriptor;
+		pHidCfg->HidReportDescriptorLength = G_XInputHIDCompatible_HidDescriptor.DescriptorList[0].wReportLength;
+
+		break;
 	default:
 		TraceError(
 			TRACE_DSHIDMINIDRV,
@@ -351,6 +359,9 @@ DsHidMini_RetrieveNextInputReport(
 		break;
 	case DsHidMiniDeviceModeDS4WindowsCompatible:
 		*BufferSize = DS3_DS4REV1_USB_HID_INPUT_REPORT_SIZE;
+		break;
+	case DsHidMiniDeviceModeXInputHIDCompatible:
+		*BufferSize = XINPUTHID_HID_INPUT_REPORT_SIZE;
 		break;
 	default:
 		TraceError(
@@ -1231,6 +1242,31 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 			Report,
 			pModCtx->InputReport,
 			(Context->ConnectionType == DsDeviceConnectionTypeUsb) ? TRUE : FALSE
+		);
+
+		//
+		// Notify new Input Report is available
+		// 
+		status = DMF_VirtualHidMini_InputReportGenerate(
+			pModCtx->DmfModuleVirtualHidMini,
+			DsHidMini_RetrieveNextInputReport
+		);
+		if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
+		{
+			TraceError(TRACE_DSHIDMINIDRV,
+				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
+		}
+	}
+
+#pragma endregion
+
+#pragma region HID Input Report (DualShock 4 Rev1 compatible) processing
+
+	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeXInputHIDCompatible)
+	{
+		DS3_RAW_TO_XINPUTHID_HID_INPUT_REPORT(
+			Report,
+			(PXINPUT_HID_INPUT_REPORT)pModCtx->InputReport
 		);
 
 		//
