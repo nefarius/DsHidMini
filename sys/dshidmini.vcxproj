@@ -86,6 +86,7 @@
   </ItemGroup>
   <ItemGroup>
     <Inf Include="dshidmini.inf" />
+    <Inf Include="dsxinputhid.inf" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{BEAF5753-7811-465B-8FED-CFB114DA66A5}</ProjectGuid>
