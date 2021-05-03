@@ -130,9 +130,7 @@ typedef struct _DS3_RAW_INPUT_REPORT
 	 USHORT GD_GamePadRy;                             // Usage 0x00010034: Ry, Value = 0 to 65535
 														// Collection: CA:GamePad
 	 USHORT GD_GamePadZ : 10;                         // Usage 0x00010032: Z, Value = 0 to 1023
-	 //UCHAR : 6;                                      // Pad
 	 USHORT GD_GamePadRz : 10;                        // Usage 0x00010035: Rz, Value = 0 to 1023
-	 //UCHAR : 6;                                      // Pad
 	 UCHAR  BTN_GamePadButton1 : 1;                   // Usage 0x00090001: Button 1 Primary/trigger, Value = 0 to 0
 	 UCHAR  BTN_GamePadButton2 : 1;                   // Usage 0x00090002: Button 2 Secondary, Value = 0 to 0
 	 UCHAR  BTN_GamePadButton3 : 1;                   // Usage 0x00090003: Button 3 Tertiary, Value = 0 to 0
@@ -143,7 +141,7 @@ typedef struct _DS3_RAW_INPUT_REPORT
 	 UCHAR  BTN_GamePadButton8 : 1;                   // Usage 0x00090008: Button 8, Value = 0 to 0
 	 UCHAR  BTN_GamePadButton9 : 1;                   // Usage 0x00090009: Button 9, Value = 0 to 0
 	 UCHAR  BTN_GamePadButton10 : 1;                  // Usage 0x0009000A: Button 10, Value = 0 to 0
-	 //UCHAR : 6;                                      // Pad
+	 UCHAR : 6;                                      // Pad
 	 UCHAR  GD_GamePadHatSwitch : 4;                  // Usage 0x00010039: Hat switch, Value = 1 to 8, Physical = (Value - 1) x 45 in degrees
 	 UCHAR : 4;                                      // Pad
 														// Collection: CA:GamePad CP:SystemControl
