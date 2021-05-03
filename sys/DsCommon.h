@@ -125,7 +125,12 @@ typedef enum _DS_OUTPUT_REPORT_SOURCE
 	//
 	// Request came in from DS4 emulation
 	// 
-    Ds3OutputReportSourceDualShock4
+    Ds3OutputReportSourceDualShock4,
+
+	//
+	// Request came from XINPUTHID.SYS
+	// 
+    Ds3OutputReportSourceXInputHID
 
 } DS_OUTPUT_REPORT_SOURCE, * PDS_OUTPUT_REPORT_SOURCE;
 

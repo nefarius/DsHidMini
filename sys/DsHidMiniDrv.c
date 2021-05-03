@@ -1085,6 +1085,19 @@ DsHidMini_WriteReport(
 	}
 
 	//
+	// Rumble request from XINPUTHID.SYS
+	// 
+	if (Packet->reportId == 0x00 && pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeXInputHIDCompatible)
+	{
+		DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[3]);
+		DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[4]);
+
+		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDualShock4);
+
+		status = STATUS_SUCCESS;
+	}
+
+	//
 	// Unknown request, trace details for diagnostics
 	// 
 	if (!NT_SUCCESS(status))
