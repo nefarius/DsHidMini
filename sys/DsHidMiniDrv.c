@@ -1260,7 +1260,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 
 #pragma endregion
 
-#pragma region HID Input Report (DualShock 4 Rev1 compatible) processing
+#pragma region HID Input Report (XINPUT compatible HID device) processing
 
 	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeXInputHIDCompatible)
 	{
