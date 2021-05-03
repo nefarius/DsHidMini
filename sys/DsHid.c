@@ -1288,4 +1288,53 @@ VOID DS3_RAW_TO_XINPUTHID_HID_INPUT_REPORT(
 
 	//
 	// TODO: finish populating
+	// 
+
+	Output->BTN_GamePadButton1 = Input->Buttons.Individual.Cross;
+	Output->BTN_GamePadButton2 = Input->Buttons.Individual.Circle;
+	Output->BTN_GamePadButton3 = Input->Buttons.Individual.Square;
+	Output->BTN_GamePadButton4 = Input->Buttons.Individual.Triangle;
+
+	Output->BTN_GamePadButton5 = Input->Buttons.Individual.L1;
+	Output->BTN_GamePadButton6 = Input->Buttons.Individual.R1;
+
+	Output->BTN_GamePadButton7 = Input->Buttons.Individual.Select;
+	Output->BTN_GamePadButton8 = Input->Buttons.Individual.Start;
+
+	Output->BTN_GamePadButton9 = Input->Buttons.Individual.L3;
+	Output->BTN_GamePadButton10 = Input->Buttons.Individual.R3;
+		
+	// Translate D-Pad to HAT format
+	// TODO: broken
+	switch (Input->Buttons.bButtons[0] & ~0xF)
+	{
+	case 0x10: // N
+		Output->GD_GamePadHatSwitch = 1;
+		break;
+	case 0x30: // NE
+		Output->GD_GamePadHatSwitch = 2;
+		break;
+	case 0x20: // E
+		Output->GD_GamePadHatSwitch = 3;
+		break;
+	case 0x60: // SE
+		Output->GD_GamePadHatSwitch = 4;
+		break;
+	case 0x40: // S
+		Output->GD_GamePadHatSwitch = 5;
+		break;
+	case 0xC0: // SW
+		Output->GD_GamePadHatSwitch = 6;
+		break;
+	case 0x80: // W
+		Output->GD_GamePadHatSwitch = 7;
+		break;
+	case 0x90: // NW
+		Output->GD_GamePadHatSwitch = 8;
+		break;
+	default: // Released
+		Output->GD_GamePadHatSwitch = 0;
+		break;
+	}
+	
 }
