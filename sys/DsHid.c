@@ -1278,34 +1278,49 @@ VOID DS3_RAW_TO_XINPUTHID_HID_INPUT_REPORT(
 	_Out_ PXINPUT_HID_INPUT_REPORT Output
 )
 {
+	//
+	// Thumb axes
+	// 
 	Output->GD_GamePadX = Input->LeftThumbX * 257;
 	Output->GD_GamePadY = Input->LeftThumbY * 257;
 	Output->GD_GamePadRx = Input->RightThumbX * 257;
 	Output->GD_GamePadRy = Input->RightThumbY * 257;
 
+	//
+	// Triggers
+	// 
 	Output->GD_GamePadZ = Input->Pressure.Values.L2 * 4;
 	Output->GD_GamePadRz = Input->Pressure.Values.R2 * 4;
 
 	//
-	// TODO: finish populating
+	// Face
 	// 
-
 	Output->BTN_GamePadButton1 = Input->Buttons.Individual.Cross;
 	Output->BTN_GamePadButton2 = Input->Buttons.Individual.Circle;
 	Output->BTN_GamePadButton3 = Input->Buttons.Individual.Square;
 	Output->BTN_GamePadButton4 = Input->Buttons.Individual.Triangle;
 
+	//
+	// Shoulder
+	// 
 	Output->BTN_GamePadButton5 = Input->Buttons.Individual.L1;
 	Output->BTN_GamePadButton6 = Input->Buttons.Individual.R1;
 
+	//
+	// Select & Start
+	// 
 	Output->BTN_GamePadButton7 = Input->Buttons.Individual.Select;
 	Output->BTN_GamePadButton8 = Input->Buttons.Individual.Start;
 
+	//
+	// Thumbs
+	// 
 	Output->BTN_GamePadButton9 = Input->Buttons.Individual.L3;
 	Output->BTN_GamePadButton10 = Input->Buttons.Individual.R3;
 		
-	// Translate D-Pad to HAT format
-	// TODO: broken
+	// 
+	// D-Pad (POV/HAT format)
+	// 
 	switch (Input->Buttons.bButtons[0] & ~0xF)
 	{
 	case 0x10: // N
@@ -1336,5 +1351,6 @@ VOID DS3_RAW_TO_XINPUTHID_HID_INPUT_REPORT(
 		Output->GD_GamePadHatSwitch = 0;
 		break;
 	}
-	
+
+	Output->GD_GamePadSystemControlSystemMainMenu = Input->Buttons.Individual.PS;
 }

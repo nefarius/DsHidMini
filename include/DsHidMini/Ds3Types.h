@@ -115,12 +115,11 @@ typedef struct _DS3_RAW_INPUT_REPORT
 
 #include <poppack.h>
 
-#include <pshpack1.h>
-
 /*
  * Source: https://gist.github.com/DJm00n/07e1b7bb21643725e53b16f45e0e7022#file-giphidgamepaddescriptor-txt
  */
- typedef struct _XINPUT_HID_INPUT_REPORT
+#include <pshpack1.h>
+typedef struct _XINPUT_HID_INPUT_REPORT
  {
 	 // No REPORT ID byte
 	 // Collection: CA:GamePad CP:
@@ -150,5 +149,4 @@ typedef struct _DS3_RAW_INPUT_REPORT
 														// Collection: CA:GamePad
 	 UCHAR  GEN_GamePadBatteryStrength;               // Usage 0x00060020: Battery Strength, Value = 0 to 255
  } XINPUT_HID_INPUT_REPORT, * PXINPUT_HID_INPUT_REPORT;
-
 #include <poppack.h>
