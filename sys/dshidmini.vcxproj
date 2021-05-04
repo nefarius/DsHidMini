@@ -61,6 +61,11 @@
     <ClInclude Include="dshmguid.h" />
     <ClInclude Include="DsInternal.h" />
     <ClInclude Include="DsUsb.h" />
+    <ClInclude Include="HID\01_SDF_Col1_GamePad.h" />
+    <ClInclude Include="HID\02_GPJ_Col1_GamePad.h" />
+    <ClInclude Include="HID\02_GPJ_Col2_Joystick.h" />
+    <ClInclude Include="HID\03_SXS_Col1_Joystick.h" />
+    <ClInclude Include="HID\04_DS4_Col1_VendorDefined.h" />
     <ClInclude Include="PID\01_PIDStateReport.h" />
     <ClInclude Include="PID\02_SetEffectReport.h" />
     <ClInclude Include="PID\03_SetEnvelopeReport.h" />
