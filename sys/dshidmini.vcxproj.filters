@@ -153,6 +153,9 @@
     <ClInclude Include="HID\04_DS4_Col1_VendorDefined.h">
       <Filter>Header Files\HID</Filter>
     </ClInclude>
+    <ClInclude Include="HID\05_XIH_Col1_XInputHID.h">
+      <Filter>Header Files\HID</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Device.c">
