@@ -279,3 +279,7 @@
 
 // 252 bytes
 ```
+
+```text
+The parser discovered a top level collection in a complex device (more than one top level collection) that had no declared report ID or a report ID spanned multiple collections.
+```
