@@ -1573,6 +1573,14 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 			{
 				if (pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled)
 				{
+					//
+					// Restore defaults to undo any (past) flashing animations
+					// 
+					DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 0);
+					DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 1);
+					DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 2);
+					DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 3);
+
 					switch (battery)
 					{
 					case DsBatteryStatusCharged:
