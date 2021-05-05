@@ -1021,14 +1021,18 @@ DsHidMini_WriteReport(
 			// 
 			if (g == 0x00 && b == 0x00)
 			{
-				if (r >= 192)
+				if (r >= 202)
 					DS3_SET_LED(pDevCtx, DS3_LED_4);
-				else if (r > 128)
+				else if (r > 148)
 					DS3_SET_LED(pDevCtx, DS3_LED_3);
-				else if (r > 64)
+				else if (r > 94)
 					DS3_SET_LED(pDevCtx, DS3_LED_2);
-				else
+				else if (r > 40)
 					DS3_SET_LED(pDevCtx, DS3_LED_1);
+				else {
+					DS3_SET_LED(pDevCtx, DS3_LED_1);
+					DS3_SET_LED_DURATION(pDevCtx, 3, 0xFF, 15, 127, 127);
+				}
 			}
 			//
 			// Single color RED intensity indicates battery level ("Fill" LEDs from 1 to 4)
