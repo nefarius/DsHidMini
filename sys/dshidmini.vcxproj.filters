@@ -28,10 +28,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Inf Include="dshidmini.inf">
+    <Inf Include="ds3directinput.inf">
       <Filter>Driver Files</Filter>
     </Inf>
-    <Inf Include="dsxinputhid.inf">
+    <Inf Include="ds3xinput.inf">
       <Filter>Driver Files</Filter>
     </Inf>
   </ItemGroup>

@@ -91,8 +91,8 @@
     <ClInclude Include="uthash.h" />
   </ItemGroup>
   <ItemGroup>
-    <Inf Include="dshidmini.inf" />
-    <Inf Include="dsxinputhid.inf" />
+    <Inf Include="ds3directinput.inf" />
+    <Inf Include="ds3xinput.inf" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{BEAF5753-7811-465B-8FED-CFB114DA66A5}</ProjectGuid>
