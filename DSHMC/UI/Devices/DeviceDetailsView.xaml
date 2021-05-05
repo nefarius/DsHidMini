@@ -345,7 +345,7 @@
                 <DockPanel Grid.Row="5" Grid.Column="2" LastChildFill="False">
                     <ComboBox Width="160" HorizontalAlignment="Left"
                               Margin="{adonisUi:Space 1}"
-                              IsEnabled="{Binding Path=IsEditable}"
+                              IsEnabled="{Binding Path=SelectedDevice.IsHidModeChangeable}"
                               ItemsSource="{Binding Source={wpf:EnumBindingSource {x:Type drivers:DsHidDeviceMode}}}"
                               SelectedItem="{Binding Path=SelectedDevice.HidEmulationMode}" />
 
