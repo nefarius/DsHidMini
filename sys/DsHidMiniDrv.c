@@ -1585,17 +1585,20 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 					{
 					case DsBatteryStatusCharged:
 					case DsBatteryStatusFull:
-					case DsBatteryStatusHigh:
 						DS3_SET_LED(pDevCtx, DS3_LED_4);
 						break;
-					case DsBatteryStatusMedium:
+					case DsBatteryStatusHigh:
 						DS3_SET_LED(pDevCtx, DS3_LED_3);
 						break;
-					case DsBatteryStatusLow:
+					case DsBatteryStatusMedium:
 						DS3_SET_LED(pDevCtx, DS3_LED_2);
+						break;
+					case DsBatteryStatusLow:
+						DS3_SET_LED(pDevCtx, DS3_LED_1);
 						break;
 					case DsBatteryStatusDying:
 						DS3_SET_LED(pDevCtx, DS3_LED_1);
+						DS3_SET_LED_DURATION(pDevCtx, 3, 0xFF, 15, 127, 127);
 						break;
 					default:
 						break;
