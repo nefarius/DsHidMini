@@ -1039,14 +1039,18 @@ DsHidMini_WriteReport(
 			// 
 			else if (g == 0x00 && b == 0xFF)
 			{
-				if (r >= 196)
+				if (r >= 202)
 					DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
-				else if (r > 128)
+				else if (r > 148)
 					DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3);
-				else if (r > 64)
+				else if (r > 94)
 					DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2);
-				else
+				else if (r > 40)
 					DS3_SET_LED(pDevCtx, DS3_LED_1);
+				else {
+					DS3_SET_LED(pDevCtx, DS3_LED_1);
+					DS3_SET_LED_DURATION(pDevCtx, 3, 0xFF, 15, 127, 127);
+				}
 			}
 			//
 			// Decode custom LED status from color RED intensity
