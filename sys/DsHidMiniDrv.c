@@ -1009,6 +1009,14 @@ DsHidMini_WriteReport(
 		if (isSetColor)
 		{
 			//
+			// Restore defaults to undo any (past) flashing animations
+			// 
+			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 0);
+			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 1);
+			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 2);
+			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 3);
+
+			//
 			// Single color RED intensity indicates battery level (Light only a single LED from 1 to 4)
 			// 
 			if (g == 0x00 && b == 0x00)
@@ -1046,14 +1054,6 @@ DsHidMini_WriteReport(
 				else if (r >= 0x01 && r <= 0x0F)
 					DS3_SET_LED(pDevCtx, r << 1);
 			}
-
-			//
-			// Restore defaults to undo any (past) flashing animations
-			// 
-			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 0);
-			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 1);
-			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 2);
-			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 3);
 		}
 
 		if (isSetFlashing)
