@@ -1020,32 +1020,48 @@ DsHidMini_WriteReport(
 		if (isSetColor)
 		{
 			//
+			// Restore defaults to undo any (past) flashing animations
+			// 
+			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 0);
+			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 1);
+			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 2);
+			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 3);
+
+			//
 			// Single color RED intensity indicates battery level (Light only a single LED from 1 to 4)
 			// 
 			if (g == 0x00 && b == 0x00)
 			{
-				if (r >= 192)
+				if (r >= 202)
 					DS3_SET_LED(pDevCtx, DS3_LED_4);
-				else if (r > 128)
+				else if (r > 148)
 					DS3_SET_LED(pDevCtx, DS3_LED_3);
-				else if (r > 64)
+				else if (r > 94)
 					DS3_SET_LED(pDevCtx, DS3_LED_2);
-				else
+				else if (r > 40)
 					DS3_SET_LED(pDevCtx, DS3_LED_1);
+				else {
+					DS3_SET_LED(pDevCtx, DS3_LED_1);
+					DS3_SET_LED_DURATION(pDevCtx, 3, 0xFF, 15, 127, 127);
+				}
 			}
 			//
 			// Single color RED intensity indicates battery level ("Fill" LEDs from 1 to 4)
 			// 
 			else if (g == 0x00 && b == 0xFF)
 			{
-				if (r >= 196)
+				if (r >= 202)
 					DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
-				else if (r > 128)
+				else if (r > 148)
 					DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3);
-				else if (r > 64)
+				else if (r > 94)
 					DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2);
-				else
+				else if (r > 40)
 					DS3_SET_LED(pDevCtx, DS3_LED_1);
+				else {
+					DS3_SET_LED(pDevCtx, DS3_LED_1);
+					DS3_SET_LED_DURATION(pDevCtx, 3, 0xFF, 15, 127, 127);
+				}
 			}
 			//
 			// Decode custom LED status from color RED intensity
@@ -1057,14 +1073,6 @@ DsHidMini_WriteReport(
 				else if (r >= 0x01 && r <= 0x0F)
 					DS3_SET_LED(pDevCtx, r << 1);
 			}
-
-			//
-			// Restore defaults to undo any (past) flashing animations
-			// 
-			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 0);
-			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 1);
-			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 2);
-			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 3);
 		}
 
 		if (isSetFlashing)
@@ -1073,10 +1081,10 @@ DsHidMini_WriteReport(
 			// Set to rapidly flash all 4 LEDs
 			// 
 			DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
-			DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 2, 127, 127);
-			DS3_SET_LED_DURATION(pDevCtx, 1, 0xFF, 2, 127, 127);
-			DS3_SET_LED_DURATION(pDevCtx, 2, 0xFF, 2, 127, 127);
-			DS3_SET_LED_DURATION(pDevCtx, 3, 0xFF, 2, 127, 127);
+			DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 3, 127, 127);
+			DS3_SET_LED_DURATION(pDevCtx, 1, 0xFF, 3, 127, 127);
+			DS3_SET_LED_DURATION(pDevCtx, 2, 0xFF, 3, 127, 127);
+			DS3_SET_LED_DURATION(pDevCtx, 3, 0xFF, 3, 127, 127);
 		}
 
 		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDualShock4);
@@ -1614,21 +1622,32 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 			{
 				if (pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled)
 				{
+					//
+					// Restore defaults to undo any (past) flashing animations
+					// 
+					DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 0);
+					DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 1);
+					DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 2);
+					DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 3);
+
 					switch (battery)
 					{
 					case DsBatteryStatusCharged:
 					case DsBatteryStatusFull:
-					case DsBatteryStatusHigh:
 						DS3_SET_LED(pDevCtx, DS3_LED_4);
 						break;
-					case DsBatteryStatusMedium:
+					case DsBatteryStatusHigh:
 						DS3_SET_LED(pDevCtx, DS3_LED_3);
 						break;
-					case DsBatteryStatusLow:
+					case DsBatteryStatusMedium:
 						DS3_SET_LED(pDevCtx, DS3_LED_2);
+						break;
+					case DsBatteryStatusLow:
+						DS3_SET_LED(pDevCtx, DS3_LED_1);
 						break;
 					case DsBatteryStatusDying:
 						DS3_SET_LED(pDevCtx, DS3_LED_1);
+						DS3_SET_LED_DURATION(pDevCtx, 3, 0xFF, 15, 127, 127);
 						break;
 					default:
 						break;
