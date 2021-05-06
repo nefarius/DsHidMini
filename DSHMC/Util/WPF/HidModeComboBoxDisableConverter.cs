@@ -12,7 +12,10 @@ namespace Nefarius.DsHidMini.Util.WPF
             if (value == null)
                 return null;
 
-            // You can add your custom logic here to disable combobox item
+            //
+            // Switching to this mode while under the "wrong" INF will produce 
+            // very confusing results, so it is disabled for user selection
+            // 
             return (DsHidDeviceMode) value == DsHidDeviceMode.XInputHIDCompatible;
         }
 
