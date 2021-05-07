@@ -314,6 +314,9 @@ VOID DS3_SET_LED_DURATION(
 	if (LedIndex > 3)
 		return;
 
+	// Inverse
+	LedIndex = 3 - LedIndex;
+	
 	PUCHAR buffer;
 
 	DS3_GET_UNIFIED_OUTPUT_REPORT_BUFFER(
