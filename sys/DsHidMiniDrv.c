@@ -1594,8 +1594,6 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 						DS3_SET_LED(pDevCtx, DS3_LED_2);
 						break;
 					case DsBatteryStatusLow:
-						DS3_SET_LED(pDevCtx, DS3_LED_1);
-						break;
 					case DsBatteryStatusDying:
 						DS3_SET_LED(pDevCtx, DS3_LED_1);
 						DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
