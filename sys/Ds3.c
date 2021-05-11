@@ -146,6 +146,8 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 				TRACE_DS3,
 				"Host address equals local radio address, skipping"
 			);
+
+			status = STATUS_SUCCESS;
 			break;
 		}
 		
