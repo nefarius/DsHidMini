@@ -1027,7 +1027,7 @@ DsHidMini_WriteReport(
 					DS3_SET_LED(pDevCtx, DS3_LED_3);
 				else if (r > 94)
 					DS3_SET_LED(pDevCtx, DS3_LED_2);
-				else if (r > 40)
+				else if (r > 64)
 					DS3_SET_LED(pDevCtx, DS3_LED_1);
 				else {
 					DS3_SET_LED(pDevCtx, DS3_LED_1);
@@ -1045,7 +1045,7 @@ DsHidMini_WriteReport(
 					DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3);
 				else if (r > 94)
 					DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2);
-				else if (r > 40)
+				else if (r > 64)
 					DS3_SET_LED(pDevCtx, DS3_LED_1);
 				else {
 					DS3_SET_LED(pDevCtx, DS3_LED_1);
@@ -1594,8 +1594,6 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 						DS3_SET_LED(pDevCtx, DS3_LED_2);
 						break;
 					case DsBatteryStatusLow:
-						DS3_SET_LED(pDevCtx, DS3_LED_1);
-						break;
 					case DsBatteryStatusDying:
 						DS3_SET_LED(pDevCtx, DS3_LED_1);
 						DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
