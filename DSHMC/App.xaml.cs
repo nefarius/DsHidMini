@@ -19,5 +19,12 @@ namespace Nefarius.DsHidMini
                     .WriteTo.File("logs/DSHMC.txt", rollingInterval: RollingInterval.Day)
                     .CreateLogger();
         }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            ApplicationConfiguration.Instance.Save();
+
+            base.OnExit(e);
+        }
     }
 }
