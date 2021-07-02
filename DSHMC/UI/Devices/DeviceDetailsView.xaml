@@ -13,6 +13,7 @@
              d:DesignHeight="550" d:DesignWidth="450">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="VisibleIfTrueConverter" />
+        <wpf:BoolMultiValueConverter x:Key="BoolMultiValueConverter" />
     </UserControl.Resources>
     <GroupBox
         Header="Device Details"
@@ -397,8 +398,14 @@
                             Maximum="60"
                             IsSnapToTickEnabled="True"
                             Margin="{adonisUi:Space 1}"
-                            IsEnabled="{Binding Path=IsEditable}"
-                            Value="{Binding Path=SelectedDevice.WirelessIdleTimeoutPeriodMs}" />
+                            Value="{Binding Path=SelectedDevice.WirelessIdleTimeoutPeriodMs}">
+                        <Slider.IsEnabled>
+                            <MultiBinding Converter="{StaticResource BoolMultiValueConverter}">
+                                <Binding Path="IsEditable"/>
+                                <Binding Path="SelectedDevice.IsWireless"/>
+                            </MultiBinding>
+                        </Slider.IsEnabled>
+                    </Slider>
                     <TextBlock Text="{Binding Path=SelectedDevice.WirelessIdleTimeoutPeriodMs}" />
                     <TextBlock Margin="5,0,0,0">Minutes</TextBlock>
 
