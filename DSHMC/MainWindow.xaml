@@ -9,7 +9,6 @@
                        xmlns:settings="clr-namespace:Nefarius.DsHidMini.UI.Settings"
                        xmlns:devices="clr-namespace:Nefarius.DsHidMini.UI.Devices"
                        xmlns:ui="clr-namespace:Nefarius.DsHidMini.UI"
-                       xmlns:troubleshooting="clr-namespace:Nefarius.DsHidMini.UI.Troubleshooting"
                        mc:Ignorable="d"
                        Title="DsHidMini Control"
                        Height="620" Width="800"
@@ -70,22 +69,6 @@
                 </Grid>
             </TabItem>
 
-            <!-- Troubleshooting (unfinished) -->
-            <TabItem Header="Troubleshooting (UNFINISHED)" Visibility="Collapsed" Background="{DynamicResource {x:Static adonisUi:Brushes.ErrorBrush}}">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition />
-                        <RowDefinition />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition />
-                        <ColumnDefinition />
-                    </Grid.ColumnDefinitions>
-
-                    <!-- Trace session -->
-                    <troubleshooting:TraceSessionView Grid.Row="0" Grid.Column="0"/>
-                </Grid>
-            </TabItem>
         </TabControl>
 
         <StatusBar Grid.Row="1">

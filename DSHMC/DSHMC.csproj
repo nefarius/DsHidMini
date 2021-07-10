@@ -200,9 +200,6 @@
     <Compile Include="UI\TitleBarView.xaml.cs">
       <DependentUpon>TitleBarView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="UI\Troubleshooting\TraceSessionView.xaml.cs">
-      <DependentUpon>TraceSessionView.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Util\App\ApplicationConfiguration.cs" />
     <Compile Include="Util\App\JsonApplicationConfiguration.cs" />
     <Compile Include="Util\BluetoothHelper.cs" />
@@ -217,6 +214,7 @@
     <Compile Include="Util\Web\GitHubApi.cs" />
     <Compile Include="Util\Web\Updater.cs" />
     <Compile Include="Util\Web\Validator.cs" />
+    <Compile Include="Util\WPF\BoolMultiValueConverter.cs" />
     <Compile Include="Util\WPF\EnumBindingSourceExtension.cs" />
     <Compile Include="Util\WPF\EnumDescriptionTypeConverter.cs" />
     <Compile Include="Util\WPF\HidModeComboBoxDisableConverter.cs" />
@@ -253,10 +251,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UI\TitleBarView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="UI\Troubleshooting\TraceSessionView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
