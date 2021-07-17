@@ -34,6 +34,9 @@
     <Inf Include="ds3xinput.inf">
       <Filter>Driver Files</Filter>
     </Inf>
+    <Inf Include="dshidmini.inf">
+      <Filter>Driver Files</Filter>
+    </Inf>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Device.h">

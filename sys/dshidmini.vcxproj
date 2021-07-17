@@ -93,6 +93,7 @@
   <ItemGroup>
     <Inf Include="ds3directinput.inf" />
     <Inf Include="ds3xinput.inf" />
+    <Inf Include="dshidmini.inf" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{BEAF5753-7811-465B-8FED-CFB114DA66A5}</ProjectGuid>

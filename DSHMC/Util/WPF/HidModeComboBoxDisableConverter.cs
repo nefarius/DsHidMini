@@ -16,7 +16,8 @@ namespace Nefarius.DsHidMini.Util.WPF
             // Switching to this mode while under the "wrong" INF will produce 
             // very confusing results, so it is disabled for user selection
             // 
-            return (DsHidDeviceMode) value == DsHidDeviceMode.XInputHIDCompatible;
+            /* return (DsHidDeviceMode) value == DsHidDeviceMode.XInputHIDCompatible; */
+            return false;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
