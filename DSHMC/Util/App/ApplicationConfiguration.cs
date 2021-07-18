@@ -38,6 +38,11 @@ namespace Nefarius.DsHidMini.Util.App
         public bool IsGenuineCheckEnabled { get; set; } = true;
 
         /// <summary>
+        ///     Whether user has acknowledged the donation dialog.
+        /// </summary>
+        public bool HasAcknowledgedDonationDialog { get; set; } = false;
+
+        /// <summary>
         ///     Singleton instance of app configuration.
         /// </summary>
         public static ApplicationConfiguration Instance => AppConfigLazy.Value;
