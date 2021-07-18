@@ -1,11 +1,17 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using AdonisUI.Controls;
 using Nefarius.DsHidMini.Drivers;
 using Nefarius.DsHidMini.MVVM;
 using Nefarius.DsHidMini.Util;
+using Nefarius.DsHidMini.Util.App;
+using MessageBox = AdonisUI.Controls.MessageBox;
+using MessageBoxImage = AdonisUI.Controls.MessageBoxImage;
+using MessageBoxResult = AdonisUI.Controls.MessageBoxResult;
 
 namespace Nefarius.DsHidMini
 {
@@ -28,6 +34,44 @@ namespace Nefarius.DsHidMini
             InitializeComponent();
 
             DataContext = _vm;
+
+            if (ApplicationConfiguration.Instance.HasAcknowledgedDonationDialog) return;
+
+            var messageBox = new MessageBoxModel
+            {
+                Text =
+                    "Hello, Gamer! \r\n\r\nDid you know this project was only possible with years of dedication and enthusiasm? " +
+                    "You're receiving this work for absolutely free. If it brings you joy please consider giving back to the "
+                    + "author's efforts and show your appreciation through a donation. \r\n\r\nThanks for your attention ❤️",
+                Caption = "May I have your attention",
+                Icon = MessageBoxImage.Question,
+                Buttons = new[]
+                {
+                   MessageBoxButtons.Cancel("Acknowledged"),
+                   MessageBoxButtons.Yes("Sure, show me how!")
+                },
+                CheckBoxes = new[]
+                {
+                    new MessageBoxCheckBoxModel("I've already donated or will consider it")
+                    {
+                        IsChecked = false,
+                        Placement = MessageBoxCheckBoxPlacement.BelowText
+                    }
+                },
+                IsSoundEnabled = false
+            };
+
+            MessageBox.Show(messageBox);
+
+            switch (messageBox.Result)
+            {
+                case MessageBoxResult.Yes:
+                    Process.Start("https://vigem.org/Donations/");
+                    break;
+            }
+
+            ApplicationConfiguration.Instance.HasAcknowledgedDonationDialog =
+                messageBox.CheckBoxes.First().IsChecked;
         }
 
         protected override void OnSourceInitialized(EventArgs e)
