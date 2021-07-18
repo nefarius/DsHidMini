@@ -973,7 +973,7 @@ DsHidMini_WriteReport(
 	}
 
 	//
-	// DS4 Rev1 emulation
+	// DS4Windows emulation
 	// 
 	if (Packet->reportId == 0x05 && pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeDS4WindowsCompatible)
 	{
