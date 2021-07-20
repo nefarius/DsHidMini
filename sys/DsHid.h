@@ -37,6 +37,8 @@ extern CONST HID_DESCRIPTOR G_XInputHIDCompatible_HidDescriptor;
 // 
 #define DS3_DS4WINDOWS_HID_VID					0x7331
 #define DS3_DS4WINDOWS_HID_PID					0x0001
+#define DS3_XINPUT_HID_VID						0x7331
+#define DS3_XINPUT_HID_PID						0x0002
 
 /**
  * Checks if the controller state is "idle" (no button pressed, no axis engaged). Jitter

@@ -226,6 +226,11 @@ DMF_DsHidMini_Open(
 		pHidCfg->HidReportDescriptor = G_VendorDefinedUSBDS4HidReportDescriptor;
 		pHidCfg->HidReportDescriptorLength = G_VendorDefinedUSBDS4HidDescriptor.DescriptorList[0].wReportLength;
 
+		//
+		// Required to get properly detected by DS4Windows
+		// Keep in sync with here: 
+		// https://github.com/Ryochan7/DS4Windows/blob/74cdcb06e95af7681ab734bf94994488818067f2/DS4Windows/DS4Library/DS4Devices.cs#L161
+		// 
 		pHidCfg->VendorId = pDevCtx->VendorId = DS3_DS4WINDOWS_HID_VID;
 		pHidCfg->ProductId = pDevCtx->ProductId = DS3_DS4WINDOWS_HID_PID;
 		pHidCfg->VersionNumber = pDevCtx->VersionNumber;
@@ -241,6 +246,16 @@ DMF_DsHidMini_Open(
 		pHidCfg->HidReportDescriptor = G_XInputHIDCompatible_HidReportDescriptor;
 		pHidCfg->HidReportDescriptorLength = G_XInputHIDCompatible_HidDescriptor.DescriptorList[0].wReportLength;
 
+		//
+		// Required to work around HID-API/SDL/etc. detecting it based on DS3 VID/PID pair
+		// 
+		pHidCfg->VendorId = pDevCtx->VendorId = DS3_XINPUT_HID_VID;
+		pHidCfg->ProductId = pDevCtx->ProductId = DS3_XINPUT_HID_PID;
+		pHidCfg->VersionNumber = pDevCtx->VersionNumber;
+		pHidCfg->HidDeviceAttributes.VendorID = pDevCtx->VendorId;
+		pHidCfg->HidDeviceAttributes.ProductID = pDevCtx->ProductId;
+		pHidCfg->HidDeviceAttributes.VersionNumber = pDevCtx->VersionNumber;
+		
 		break;
 	default:
 		TraceError(
