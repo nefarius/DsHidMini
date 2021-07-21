@@ -12,7 +12,7 @@ DsHidMini is a self-contained, low footprint and feature-rich [user-mode driver]
 
 ## Features
 
-- **Bluetooth support** if used in conjunction with [BthPS3](https://github.com/ViGEm/BthPS3) (requires *at least* `v1.3.108` or newer)
+- **Bluetooth support** if used in conjunction with [BthPS3](https://github.com/ViGEm/BthPS3) (requires *at least* `v2.0.144` or newer)
 - Automatically pairs the controller to Windows Bluetooth (if Bluetooth host radio is present)
 - Multiple configurable HID Report Descriptors for wide range of compatibility
   - Single Gamepad device exposing all controls including **pressure sensitive buttons**
