@@ -1112,10 +1112,10 @@ DsHidMini_WriteReport(
 	// 
 	if (Packet->reportId == 0x00 && pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeXInputHIDCompatible)
 	{
-		DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[3]);
-		DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[4]);
+		DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[3] / 100 * UCHAR_MAX);
+		DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[4] / 100 * UCHAR_MAX);
 
-		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDualShock4);
+		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceXInputHID);
 
 		status = STATUS_SUCCESS;
 	}
