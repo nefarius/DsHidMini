@@ -346,9 +346,30 @@
                 <DockPanel Grid.Row="5" Grid.Column="2" LastChildFill="False">
                     <ComboBox Width="160" HorizontalAlignment="Left"
                               Margin="{adonisUi:Space 1}"
-                              IsEnabled="{Binding Path=IsEditable}"
+                              IsEnabled="{Binding Path=SelectedDevice.IsHidModeChangeable}"
                               ItemsSource="{Binding Source={wpf:EnumBindingSource {x:Type drivers:DsHidDeviceMode}}}"
-                              SelectedItem="{Binding Path=SelectedDevice.HidEmulationMode}" />
+                              SelectedItem="{Binding Path=SelectedDevice.HidEmulationMode}">
+
+                        <ComboBox.Resources>
+                            <wpf:HidModeComboBoxDisableConverter x:Key="HidModeComboBoxDisableConverter" />
+                        </ComboBox.Resources>
+
+                        <ComboBox.ItemContainerStyle>
+                            <Style TargetType="ComboBoxItem">
+                                <Style.Triggers>
+                                    <DataTrigger
+                                        Binding="{Binding Path=Content,
+                                        RelativeSource={RelativeSource Self}, 
+                                        Converter={StaticResource HidModeComboBoxDisableConverter}}"
+                                        Value="True">
+                                        <Setter
+                                            Property="IsEnabled"
+                                            Value="False" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ComboBox.ItemContainerStyle>
+                    </ComboBox>
 
                     <DockPanel.ToolTip>
                         <ToolTip controlzex:ToolTipAssist.AutoMove="True">

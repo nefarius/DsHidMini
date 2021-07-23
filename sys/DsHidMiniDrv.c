@@ -226,8 +226,31 @@ DMF_DsHidMini_Open(
 		pHidCfg->HidReportDescriptor = G_VendorDefinedUSBDS4HidReportDescriptor;
 		pHidCfg->HidReportDescriptorLength = G_VendorDefinedUSBDS4HidDescriptor.DescriptorList[0].wReportLength;
 
+		//
+		// Required to get properly detected by DS4Windows
+		// Keep in sync with here: 
+		// https://github.com/Ryochan7/DS4Windows/blob/74cdcb06e95af7681ab734bf94994488818067f2/DS4Windows/DS4Library/DS4Devices.cs#L161
+		// 
 		pHidCfg->VendorId = pDevCtx->VendorId = DS3_DS4WINDOWS_HID_VID;
 		pHidCfg->ProductId = pDevCtx->ProductId = DS3_DS4WINDOWS_HID_PID;
+		pHidCfg->VersionNumber = pDevCtx->VersionNumber;
+		pHidCfg->HidDeviceAttributes.VendorID = pDevCtx->VendorId;
+		pHidCfg->HidDeviceAttributes.ProductID = pDevCtx->ProductId;
+		pHidCfg->HidDeviceAttributes.VersionNumber = pDevCtx->VersionNumber;
+		
+		break;
+	case DsHidMiniDeviceModeXInputHIDCompatible:
+
+		pHidCfg->HidDescriptor = &G_XInputHIDCompatible_HidDescriptor;
+		pHidCfg->HidDescriptorLength = sizeof(G_XInputHIDCompatible_HidDescriptor);
+		pHidCfg->HidReportDescriptor = G_XInputHIDCompatible_HidReportDescriptor;
+		pHidCfg->HidReportDescriptorLength = G_XInputHIDCompatible_HidDescriptor.DescriptorList[0].wReportLength;
+
+		//
+		// Required to work around HID-API/SDL/etc. detecting it based on DS3 VID/PID pair
+		// 
+		pHidCfg->VendorId = pDevCtx->VendorId = DS3_XINPUT_HID_VID;
+		pHidCfg->ProductId = pDevCtx->ProductId = DS3_XINPUT_HID_PID;
 		pHidCfg->VersionNumber = pDevCtx->VersionNumber;
 		pHidCfg->HidDeviceAttributes.VendorID = pDevCtx->VendorId;
 		pHidCfg->HidDeviceAttributes.ProductID = pDevCtx->ProductId;
@@ -351,6 +374,9 @@ DsHidMini_RetrieveNextInputReport(
 		break;
 	case DsHidMiniDeviceModeDS4WindowsCompatible:
 		*BufferSize = DS3_DS4REV1_USB_HID_INPUT_REPORT_SIZE;
+		break;
+	case DsHidMiniDeviceModeXInputHIDCompatible:
+		*BufferSize = XINPUTHID_HID_INPUT_REPORT_SIZE;
 		break;
 	default:
 		TraceError(
@@ -962,7 +988,7 @@ DsHidMini_WriteReport(
 	}
 
 	//
-	// DS4 Rev1 emulation
+	// DS4Windows emulation
 	// 
 	if (Packet->reportId == 0x05 && pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeDS4WindowsCompatible)
 	{
@@ -1075,6 +1101,19 @@ DsHidMini_WriteReport(
 			DS3_SET_LED_DURATION(pDevCtx, 2, 0xFF, 3, 127, 127);
 			DS3_SET_LED_DURATION(pDevCtx, 3, 0xFF, 3, 127, 127);
 		}
+
+		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDualShock4);
+
+		status = STATUS_SUCCESS;
+	}
+
+	//
+	// Rumble request from XINPUTHID.SYS
+	// 
+	if (Packet->reportId == 0x00 && pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeXInputHIDCompatible)
+	{
+		DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[3]);
+		DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[4]);
 
 		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDualShock4);
 
@@ -1239,6 +1278,31 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 			Report,
 			pModCtx->InputReport,
 			(Context->ConnectionType == DsDeviceConnectionTypeUsb) ? TRUE : FALSE
+		);
+
+		//
+		// Notify new Input Report is available
+		// 
+		status = DMF_VirtualHidMini_InputReportGenerate(
+			pModCtx->DmfModuleVirtualHidMini,
+			DsHidMini_RetrieveNextInputReport
+		);
+		if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
+		{
+			TraceError(TRACE_DSHIDMINIDRV,
+				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
+		}
+	}
+
+#pragma endregion
+
+#pragma region HID Input Report (XINPUT compatible HID device) processing
+
+	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeXInputHIDCompatible)
+	{
+		DS3_RAW_TO_XINPUTHID_HID_INPUT_REPORT(
+			Report,
+			(PXINPUT_HID_INPUT_REPORT)pModCtx->InputReport
 		);
 
 		//

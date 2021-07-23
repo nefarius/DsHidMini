@@ -211,6 +211,7 @@
     <Compile Include="Util\WPF\BoolMultiValueConverter.cs" />
     <Compile Include="Util\WPF\EnumBindingSourceExtension.cs" />
     <Compile Include="Util\WPF\EnumDescriptionTypeConverter.cs" />
+    <Compile Include="Util\WPF\HidModeComboBoxDisableConverter.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

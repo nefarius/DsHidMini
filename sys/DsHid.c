@@ -136,6 +136,25 @@ sizeof(G_VendorDefinedUSBDS4HidReportDescriptor) }  // total length of report de
 
 #pragma endregion
 
+#pragma region DS3 HID Report Descriptor (XINPUT compatible HID device)
+
+CONST HID_REPORT_DESCRIPTOR G_XInputHIDCompatible_HidReportDescriptor[] =
+{
+#include "HID/05_XIH_Col1_XInputHID.h"
+};
+
+CONST HID_DESCRIPTOR G_XInputHIDCompatible_HidDescriptor = {
+	0x09,   // length of HID descriptor
+	0x21,   // descriptor type == HID  0x21
+	0x0100, // hid spec release
+	0x00,   // country code == Not Specified
+	0x01,   // number of HID class descriptors
+{ 0x22,   // descriptor type 
+sizeof(G_XInputHIDCompatible_HidReportDescriptor) }  // total length of report descriptor
+};
+
+#pragma endregion
+
 
 BOOLEAN DS3_RAW_IS_IDLE(
 	_In_ PDS3_RAW_INPUT_REPORT Input
@@ -639,4 +658,86 @@ VOID DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
 			break;
 		}
 	}
+}
+
+VOID DS3_RAW_TO_XINPUTHID_HID_INPUT_REPORT(
+	_In_ PDS3_RAW_INPUT_REPORT Input, 
+	_Out_ PXINPUT_HID_INPUT_REPORT Output
+)
+{
+	//
+	// Thumb axes
+	// 
+	Output->GD_GamePadX = Input->LeftThumbX * 257;
+	Output->GD_GamePadY = Input->LeftThumbY * 257;
+	Output->GD_GamePadRx = Input->RightThumbX * 257;
+	Output->GD_GamePadRy = Input->RightThumbY * 257;
+
+	//
+	// Triggers
+	// 
+	Output->GD_GamePadZ = Input->Pressure.Values.L2 * 4;
+	Output->GD_GamePadRz = Input->Pressure.Values.R2 * 4;
+
+	//
+	// Face
+	// 
+	Output->BTN_GamePadButton1 = Input->Buttons.Individual.Cross;
+	Output->BTN_GamePadButton2 = Input->Buttons.Individual.Circle;
+	Output->BTN_GamePadButton3 = Input->Buttons.Individual.Square;
+	Output->BTN_GamePadButton4 = Input->Buttons.Individual.Triangle;
+
+	//
+	// Shoulder
+	// 
+	Output->BTN_GamePadButton5 = Input->Buttons.Individual.L1;
+	Output->BTN_GamePadButton6 = Input->Buttons.Individual.R1;
+
+	//
+	// Select & Start
+	// 
+	Output->BTN_GamePadButton7 = Input->Buttons.Individual.Select;
+	Output->BTN_GamePadButton8 = Input->Buttons.Individual.Start;
+
+	//
+	// Thumbs
+	// 
+	Output->BTN_GamePadButton9 = Input->Buttons.Individual.L3;
+	Output->BTN_GamePadButton10 = Input->Buttons.Individual.R3;
+		
+	// 
+	// D-Pad (POV/HAT format)
+	// 
+	switch (Input->Buttons.bButtons[0] & ~0xF)
+	{
+	case 0x10: // N
+		Output->GD_GamePadHatSwitch = 1;
+		break;
+	case 0x30: // NE
+		Output->GD_GamePadHatSwitch = 2;
+		break;
+	case 0x20: // E
+		Output->GD_GamePadHatSwitch = 3;
+		break;
+	case 0x60: // SE
+		Output->GD_GamePadHatSwitch = 4;
+		break;
+	case 0x40: // S
+		Output->GD_GamePadHatSwitch = 5;
+		break;
+	case 0xC0: // SW
+		Output->GD_GamePadHatSwitch = 6;
+		break;
+	case 0x80: // W
+		Output->GD_GamePadHatSwitch = 7;
+		break;
+	case 0x90: // NW
+		Output->GD_GamePadHatSwitch = 8;
+		break;
+	default: // Released
+		Output->GD_GamePadHatSwitch = 0;
+		break;
+	}
+
+	Output->GD_GamePadSystemControlSystemMainMenu = Input->Buttons.Individual.PS;
 }

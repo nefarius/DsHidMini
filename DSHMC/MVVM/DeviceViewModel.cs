@@ -51,6 +51,9 @@ namespace Nefarius.DsHidMini.MVVM
             }
         }
 
+        public bool IsHidModeChangeable =>
+            SecurityUtil.IsElevated /*&& HidEmulationMode != DsHidDeviceMode.XInputHIDCompatible*/;
+
         /// <summary>
         ///     Current HID device emulation mode.
         /// </summary>
