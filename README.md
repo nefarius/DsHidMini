@@ -82,7 +82,7 @@ The following awesome resources have made this project possible.
 
 ### Related projects
 
-- [ScpToolkit](https://github.com/nefarius/ScpToolkit)
+- [nefarius/ScpToolkit](https://github.com/nefarius/ScpToolkit)
 - [ViGEm/FireShock](https://github.com/ViGEm/FireShock)
 - [ViGEm/AirBender](https://github.com/ViGEm/AirBender)
 - [ViGEm/WireShock](https://github.com/ViGEm/WireShock)
