@@ -1112,8 +1112,18 @@ DsHidMini_WriteReport(
 	// 
 	if (Packet->reportId == 0x00 && pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeXInputHIDCompatible)
 	{
-		DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[3] / 100 * UCHAR_MAX);
-		DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[4] / 100 * UCHAR_MAX);
+		UCHAR lm = (UCHAR)(Packet->reportBuffer[3] / 100.0f * 255.0f);
+		UCHAR rm = (UCHAR)(Packet->reportBuffer[4] / 100.0f * 255.0f);
+		
+		TraceVerbose(
+			TRACE_DSHIDMINIDRV,
+			"-- XI FFB LM: %d, RM: %d",
+			lm,
+			rm
+		);
+		
+		DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, lm);
+		DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, rm);
 
 		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceXInputHID);
 
