@@ -9,3 +9,4 @@
 #include <Windows.h>
 
 #include <DsHidMini/ScpTypes.h>
+#include <hidapi/hidapi.h>
