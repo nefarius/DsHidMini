@@ -5,6 +5,16 @@
 #include "XInputBridge.h"
 
 
+SHORT ScaleDsToXi(UCHAR value, BOOLEAN invert)
+{
+	auto intValue = value - 0x80;
+	if (intValue == -128) intValue = -127;
+
+	auto wtfValue = intValue * 258.00787401574803149606299212599f; // what the fuck?
+
+	return static_cast<short>(invert ? -wtfValue : wtfValue);
+}
+
 XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 	_In_ DWORD dwUserIndex,
 	_Out_ SCP_EXTN* pState
@@ -116,7 +126,21 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_A;
 		if (pReport->Buttons.Individual.Square)
 			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_X;
-		
+
+		//
+		// Triggers
+		// 
+		pState->Gamepad.bLeftTrigger = pReport->Pressure.Values.L2;
+		pState->Gamepad.bRightTrigger = pReport->Pressure.Values.R2;
+
+		//
+		// Thumb axes
+		// 
+		pState->Gamepad.sThumbLX = ScaleDsToXi(pReport->LeftThumbX,	FALSE);
+		pState->Gamepad.sThumbLY = ScaleDsToXi(pReport->LeftThumbY,	TRUE);
+		pState->Gamepad.sThumbRX = ScaleDsToXi(pReport->RightThumbX, FALSE);
+		pState->Gamepad.sThumbRY = ScaleDsToXi(pReport->RightThumbY, TRUE);
+
 		status = ERROR_SUCCESS;
 
 	} while (FALSE);
