@@ -4,6 +4,8 @@
 #include "framework.h"
 #include "XInputBridge.h"
 
+#include <climits>
+
 
 SHORT ScaleDsToXi(UCHAR value, BOOLEAN invert)
 {
@@ -20,7 +22,107 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 	_Out_ SCP_EXTN* pState
 )
 {
-	return ERROR_DEVICE_NOT_CONNECTED;
+	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
+	hid_device* device = nullptr;
+	struct hid_device_info* devs = nullptr, * cur_dev;
+	DWORD index = 0;
+
+	do {
+		//
+		// User might troll us
+		// 
+		if (pState == nullptr)
+			break;
+
+		//
+		// Look for device of interest
+		// 
+		devs = hid_enumerate(0x054C, 0x0268);
+		cur_dev = devs;
+		while (cur_dev)
+		{
+			if (index++ == dwUserIndex)
+				break;
+
+			cur_dev = cur_dev->next;
+		}
+
+		if (cur_dev == nullptr)
+			break;
+
+		device = hid_open_path(cur_dev->path);
+
+		if (device == nullptr)
+			break;
+
+		UCHAR buf[64];
+		buf[0] = 0xF2;
+
+		const int res = hid_get_feature_report(device, buf, ARRAYSIZE(buf));
+
+		if (res == 0)
+			break;
+
+		const auto pReport = reinterpret_cast<PDS3_RAW_INPUT_REPORT>(&buf[1]);
+				
+		RtlZeroMemory(pState, sizeof(SCP_EXTN));
+
+		//
+		// D-Pad
+		// 
+		pState->SCP_UP = static_cast<float>(pReport->Pressure.Values.Up) / static_cast<float>(UCHAR_MAX);
+		pState->SCP_RIGHT = static_cast<float>(pReport->Pressure.Values.Right) / static_cast<float>(UCHAR_MAX);
+		pState->SCP_DOWN = static_cast<float>(pReport->Pressure.Values.Down) / static_cast<float>(UCHAR_MAX);
+		pState->SCP_LEFT = static_cast<float>(pReport->Pressure.Values.Left) / static_cast<float>(UCHAR_MAX);
+		
+		//
+		// Start/Select
+		// 
+		pState->SCP_START = pReport->Buttons.Individual.Start ? 1.0f : 0.0f;
+		pState->SCP_SELECT = pReport->Buttons.Individual.Select ? 1.0f : 0.0f;
+		
+		//
+		// Thumbs
+		// 
+		pState->SCP_L3 = pReport->Buttons.Individual.L3 ? 1.0f : 0.0f;
+		pState->SCP_R3 = pReport->Buttons.Individual.R3 ? 1.0f : 0.0f;
+		
+		//
+		// Shoulders
+		// 
+		pState->SCP_L1 = static_cast<float>(pReport->Pressure.Values.L1) / static_cast<float>(UCHAR_MAX);
+		pState->SCP_R1 = static_cast<float>(pReport->Pressure.Values.R1) / static_cast<float>(UCHAR_MAX);
+		
+		//
+		// Face buttons
+		// 
+		pState->SCP_T = static_cast<float>(pReport->Pressure.Values.Triangle) / static_cast<float>(UCHAR_MAX);
+		pState->SCP_C = static_cast<float>(pReport->Pressure.Values.Circle) / static_cast<float>(UCHAR_MAX);
+		pState->SCP_X = static_cast<float>(pReport->Pressure.Values.Cross) / static_cast<float>(UCHAR_MAX);
+		pState->SCP_S = static_cast<float>(pReport->Pressure.Values.Square) / static_cast<float>(UCHAR_MAX);
+		
+		//
+		// Triggers
+		// 
+		pState->SCP_L2 = static_cast<float>(pReport->Pressure.Values.L2) / static_cast<float>(UCHAR_MAX);
+		pState->SCP_R2 = static_cast<float>(pReport->Pressure.Values.R2) / static_cast<float>(UCHAR_MAX);
+		
+		//
+		// Thumb axes
+		// 
+		// TODO: implement thumb axes
+
+		status = ERROR_SUCCESS;
+
+	} while (FALSE);
+
+	if (devs)
+		hid_free_enumeration(devs);
+
+	if (device)
+		hid_close(device);
+
+	return status;
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
