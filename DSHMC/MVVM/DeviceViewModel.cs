@@ -51,6 +51,9 @@ namespace Nefarius.DsHidMini.MVVM
             }
         }
 
+        public bool IsHidModeChangeable =>
+            SecurityUtil.IsElevated /*&& HidEmulationMode != DsHidDeviceMode.XInputHIDCompatible*/;
+
         /// <summary>
         ///     Current HID device emulation mode.
         /// </summary>
@@ -210,20 +213,23 @@ namespace Nefarius.DsHidMini.MVVM
             }
         }
 
-        /// <summary>
-        ///     The connection protocol used by this device.
-        /// </summary>
-        public EFontAwesomeIcon ConnectionType
+        public bool IsWireless
         {
             get
             {
                 var enumerator = _device.GetProperty<string>(DevicePropertyDevice.EnumeratorName);
 
-                return enumerator.Equals("USB", StringComparison.InvariantCultureIgnoreCase)
-                    ? EFontAwesomeIcon.Brands_Usb
-                    : EFontAwesomeIcon.Brands_Bluetooth;
+                return !enumerator.Equals("USB", StringComparison.InvariantCultureIgnoreCase);
             }
         }
+
+        /// <summary>
+        ///     The connection protocol used by this device.
+        /// </summary>
+        public EFontAwesomeIcon ConnectionType =>
+            !IsWireless
+                ? EFontAwesomeIcon.Brands_Usb
+                : EFontAwesomeIcon.Brands_Bluetooth;
 
         /// <summary>
         ///     Last time this device has been seen connected (applies to Bluetooth connected devices only).

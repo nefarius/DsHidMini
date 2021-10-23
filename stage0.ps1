@@ -113,10 +113,10 @@ Get-AppVeyorArtifacts -Account "nefarius" -Project "DsHidMini" -Path $Path -Toke
 
 # List of files to sign
 $files =    "`".\artifacts\bin\*.exe`" " + 
-            "`".\artifacts\bin\x64\dshidmini\*.cat`" " + 
-            "`".\artifacts\bin\x64\dshidmini\*.dll`" " + 
-            "`".\artifacts\bin\x86\dshidmini\*.cat`" " +
-            "`".\artifacts\bin\x86\dshidmini\*.dll`" "
+            "`".\artifacts\bin\x64\dshidmini\dshidmini.cat`" " + 
+            "`".\artifacts\bin\x64\dshidmini\dshidmini.dll`" " + 
+            "`".\artifacts\bin\x86\dshidmini\dshidmini.cat`" " +
+            "`".\artifacts\bin\x86\dshidmini\dshidmini.dll`" "
 
 if ($NoSigning -eq $false) {
     # remove existing certificate(s)

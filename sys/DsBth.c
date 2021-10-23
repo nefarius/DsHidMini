@@ -71,17 +71,18 @@ DsBth_EvtControlWriteTimerFunc(
 		{
 		case DsBatteryStatusCharged:
 		case DsBatteryStatusFull:
-		case DsBatteryStatusHigh:
 			DS3_SET_LED(pDevCtx, DS3_LED_4);
 			break;
-		case DsBatteryStatusMedium:
+		case DsBatteryStatusHigh:
 			DS3_SET_LED(pDevCtx, DS3_LED_3);
 			break;
-		case DsBatteryStatusLow:
+		case DsBatteryStatusMedium:
 			DS3_SET_LED(pDevCtx, DS3_LED_2);
 			break;
+		case DsBatteryStatusLow:
 		case DsBatteryStatusDying:
 			DS3_SET_LED(pDevCtx, DS3_LED_1);
+			DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
 			break;
 		default:
 			break;

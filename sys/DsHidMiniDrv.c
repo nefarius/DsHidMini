@@ -226,8 +226,31 @@ DMF_DsHidMini_Open(
 		pHidCfg->HidReportDescriptor = G_VendorDefinedUSBDS4HidReportDescriptor;
 		pHidCfg->HidReportDescriptorLength = G_VendorDefinedUSBDS4HidDescriptor.DescriptorList[0].wReportLength;
 
+		//
+		// Required to get properly detected by DS4Windows
+		// Keep in sync with here: 
+		// https://github.com/Ryochan7/DS4Windows/blob/74cdcb06e95af7681ab734bf94994488818067f2/DS4Windows/DS4Library/DS4Devices.cs#L161
+		// 
 		pHidCfg->VendorId = pDevCtx->VendorId = DS3_DS4WINDOWS_HID_VID;
 		pHidCfg->ProductId = pDevCtx->ProductId = DS3_DS4WINDOWS_HID_PID;
+		pHidCfg->VersionNumber = pDevCtx->VersionNumber;
+		pHidCfg->HidDeviceAttributes.VendorID = pDevCtx->VendorId;
+		pHidCfg->HidDeviceAttributes.ProductID = pDevCtx->ProductId;
+		pHidCfg->HidDeviceAttributes.VersionNumber = pDevCtx->VersionNumber;
+		
+		break;
+	case DsHidMiniDeviceModeXInputHIDCompatible:
+
+		pHidCfg->HidDescriptor = &G_XInputHIDCompatible_HidDescriptor;
+		pHidCfg->HidDescriptorLength = sizeof(G_XInputHIDCompatible_HidDescriptor);
+		pHidCfg->HidReportDescriptor = G_XInputHIDCompatible_HidReportDescriptor;
+		pHidCfg->HidReportDescriptorLength = G_XInputHIDCompatible_HidDescriptor.DescriptorList[0].wReportLength;
+
+		//
+		// Required to work around HID-API/SDL/etc. detecting it based on DS3 VID/PID pair
+		// 
+		pHidCfg->VendorId = pDevCtx->VendorId = DS3_XINPUT_HID_VID;
+		pHidCfg->ProductId = pDevCtx->ProductId = DS3_XINPUT_HID_PID;
 		pHidCfg->VersionNumber = pDevCtx->VersionNumber;
 		pHidCfg->HidDeviceAttributes.VendorID = pDevCtx->VendorId;
 		pHidCfg->HidDeviceAttributes.ProductID = pDevCtx->ProductId;
@@ -352,6 +375,9 @@ DsHidMini_RetrieveNextInputReport(
 	case DsHidMiniDeviceModeDS4WindowsCompatible:
 		*BufferSize = DS3_DS4REV1_USB_HID_INPUT_REPORT_SIZE;
 		break;
+	case DsHidMiniDeviceModeXInputHIDCompatible:
+		*BufferSize = XINPUTHID_HID_INPUT_REPORT_SIZE;
+		break;
 	default:
 		TraceError(
 			TRACE_DSHIDMINIDRV,
@@ -468,7 +494,7 @@ DsHidMini_GetFeature(
 		// 
 		RtlCopyMemory(
 			Packet->reportBuffer,
-			pModCtx->GetFeatureReport,
+			&pModCtx->GetFeatureReport,
 			Packet->reportBufferLen < SIXAXIS_HID_GET_FEATURE_REPORT_SIZE ? Packet->reportBufferLen :
 			SIXAXIS_HID_GET_FEATURE_REPORT_SIZE
 		);
@@ -962,7 +988,7 @@ DsHidMini_WriteReport(
 	}
 
 	//
-	// DS4 Rev1 emulation
+	// DS4Windows emulation
 	// 
 	if (Packet->reportId == 0x05 && pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeDS4WindowsCompatible)
 	{
@@ -1009,32 +1035,48 @@ DsHidMini_WriteReport(
 		if (isSetColor)
 		{
 			//
+			// Restore defaults to undo any (past) flashing animations
+			// 
+			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 0);
+			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 1);
+			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 2);
+			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 3);
+
+			//
 			// Single color RED intensity indicates battery level (Light only a single LED from 1 to 4)
 			// 
 			if (g == 0x00 && b == 0x00)
 			{
-				if (r >= 192)
+				if (r >= 202)
 					DS3_SET_LED(pDevCtx, DS3_LED_4);
-				else if (r > 128)
+				else if (r > 148)
 					DS3_SET_LED(pDevCtx, DS3_LED_3);
-				else if (r > 64)
+				else if (r > 94)
 					DS3_SET_LED(pDevCtx, DS3_LED_2);
-				else
+				else if (r > 64)
 					DS3_SET_LED(pDevCtx, DS3_LED_1);
+				else {
+					DS3_SET_LED(pDevCtx, DS3_LED_1);
+					DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
+				}
 			}
 			//
 			// Single color RED intensity indicates battery level ("Fill" LEDs from 1 to 4)
 			// 
 			else if (g == 0x00 && b == 0xFF)
 			{
-				if (r >= 196)
+				if (r >= 202)
 					DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
-				else if (r > 128)
+				else if (r > 148)
 					DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3);
-				else if (r > 64)
+				else if (r > 94)
 					DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2);
-				else
+				else if (r > 64)
 					DS3_SET_LED(pDevCtx, DS3_LED_1);
+				else {
+					DS3_SET_LED(pDevCtx, DS3_LED_1);
+					DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
+				}
 			}
 			//
 			// Decode custom LED status from color RED intensity
@@ -1051,12 +1093,39 @@ DsHidMini_WriteReport(
 		if (isSetFlashing)
 		{
 			//
-			// TODO: replace with flash animation
+			// Set to rapidly flash all 4 LEDs
 			// 
 			DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
+			DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 3, 127, 127);
+			DS3_SET_LED_DURATION(pDevCtx, 1, 0xFF, 3, 127, 127);
+			DS3_SET_LED_DURATION(pDevCtx, 2, 0xFF, 3, 127, 127);
+			DS3_SET_LED_DURATION(pDevCtx, 3, 0xFF, 3, 127, 127);
 		}
 
 		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDualShock4);
+
+		status = STATUS_SUCCESS;
+	}
+
+	//
+	// Rumble request from XINPUTHID.SYS
+	// 
+	if (Packet->reportId == 0x00 && pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeXInputHIDCompatible)
+	{
+		UCHAR lm = (UCHAR)(Packet->reportBuffer[3] / 100.0f * 255.0f);
+		UCHAR rm = (UCHAR)(Packet->reportBuffer[4] / 100.0f * 255.0f);
+		
+		TraceVerbose(
+			TRACE_DSHIDMINIDRV,
+			"-- XI FFB LM: %d, RM: %d",
+			lm,
+			rm
+		);
+		
+		DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, lm);
+		DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, rm);
+
+		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceXInputHID);
 
 		status = STATUS_SUCCESS;
 	}
@@ -1096,17 +1165,14 @@ DsHidMini_WriteReport(
  * @author	Benjamin "Nefarius" Höglinger-Stelzer
  * @date	25.02.2021
  *
- * @param 	Context			The context.
- * @param 	Buffer			The buffer.
- * @param 	BufferLength	Length of the buffer.
+ * @param 	Context	The context.
+ * @param 	Report 	The report.
  */
-void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t BufferLength)
+void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Report)
 {
 	NTSTATUS status;
 	DMFMODULE dmfModule;
 	DMF_CONTEXT_DsHidMini* pModCtx;
-
-	UNREFERENCED_PARAMETER(BufferLength);
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
@@ -1120,7 +1186,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t Buf
 	case DsHidMiniDeviceModeMulti:
 
 		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
-			Buffer,
+			Report,
 			pModCtx->InputReport,
 			Context->Configuration.MuteDigitalPressureButtons
 		);
@@ -1133,7 +1199,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t Buf
 	case DsHidMiniDeviceModeSingle:
 
 		DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
-			Buffer,
+			Report,
 			pModCtx->InputReport,
 			Context->Configuration.MuteDigitalPressureButtons
 		);
@@ -1169,7 +1235,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t Buf
 	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeMulti)
 	{
 		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
-			Buffer,
+			Report,
 			pModCtx->InputReport
 		);
 
@@ -1194,7 +1260,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t Buf
 	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
 	{
 		DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
-			Buffer,
+			Report,
 			pModCtx->InputReport
 		);
 
@@ -1219,9 +1285,34 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PUCHAR Buffer, size_t Buf
 	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeDS4WindowsCompatible)
 	{
 		DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
-			Buffer,
+			Report,
 			pModCtx->InputReport,
 			(Context->ConnectionType == DsDeviceConnectionTypeUsb) ? TRUE : FALSE
+		);
+
+		//
+		// Notify new Input Report is available
+		// 
+		status = DMF_VirtualHidMini_InputReportGenerate(
+			pModCtx->DmfModuleVirtualHidMini,
+			DsHidMini_RetrieveNextInputReport
+		);
+		if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
+		{
+			TraceError(TRACE_DSHIDMINIDRV,
+				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
+		}
+	}
+
+#pragma endregion
+
+#pragma region HID Input Report (XINPUT compatible HID device) processing
+
+	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeXInputHIDCompatible)
+	{
+		DS3_RAW_TO_XINPUTHID_HID_INPUT_REPORT(
+			Report,
+			(PXINPUT_HID_INPUT_REPORT)pModCtx->InputReport
 		);
 
 		//
@@ -1254,8 +1345,6 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 )
 {
 	PDEVICE_CONTEXT pDevCtx;
-	size_t rdrBufferLength;
-	LPVOID rdrBuffer;
 	LARGE_INTEGER freq, *t1, t2;
 	LONGLONG ms;
 	DS_BATTERY_STATUS battery;
@@ -1263,19 +1352,35 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	PDS3_RAW_INPUT_REPORT pInReport;
 
 	UNREFERENCED_PARAMETER(Pipe);
-	UNREFERENCED_PARAMETER(NumBytesTransferred);
-
+	
 	FuncEntry(TRACE_DSHIDMINIDRV);
+
+	//
+	// Validate expected packet size
+	// 
+	if (NumBytesTransferred < sizeof(DS3_RAW_INPUT_REPORT))
+	{
+		TraceEvents(
+			TRACE_LEVEL_WARNING,
+			TRACE_DSHIDMINIDRV,
+			"Received %I64d but expected %I64d",
+			NumBytesTransferred,
+			sizeof(DS3_RAW_INPUT_REPORT)
+		);
+
+		FuncExitNoReturn(TRACE_DSHIDMINIDRV);
+		return;
+	}
 
 	pDevCtx = DeviceGetContext(Context);
 	pModCtx = DMF_CONTEXT_GET((DMFMODULE)pDevCtx->DsHidMiniModule);
-	rdrBuffer = WdfMemoryGetBuffer(Buffer, &rdrBufferLength);
+	pInReport = (PDS3_RAW_INPUT_REPORT)WdfMemoryGetBuffer(Buffer, NULL);
 
 	QueryPerformanceFrequency(&freq);
 	t1 = &pDevCtx->Connection.Usb.ChargingCycleTimestamp;
-
+	
 #ifdef DBG
-	DumpAsHex(">> USB", rdrBuffer, (ULONG)rdrBufferLength);
+	DumpAsHex(">> USB", pInReport, (ULONG)sizeof(DS3_RAW_INPUT_REPORT));
 #endif
 
 	//
@@ -1284,21 +1389,18 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	if (pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
 	{
 		RtlCopyMemory(
-			pModCtx->GetFeatureReport,
-			rdrBuffer,
-			(rdrBufferLength < SIXAXIS_HID_GET_FEATURE_REPORT_SIZE) ? rdrBufferLength :
-			SIXAXIS_HID_GET_FEATURE_REPORT_SIZE
+			&pModCtx->GetFeatureReport,
+			pInReport,
+			sizeof(DS3_RAW_INPUT_REPORT)
 		);
 
-		pInReport = (PDS3_RAW_INPUT_REPORT)pModCtx->GetFeatureReport;
-
-		pInReport->AccelerometerX = 0x03FF - _byteswap_ushort(pInReport->AccelerometerX);
-		pInReport->AccelerometerY = _byteswap_ushort(pInReport->AccelerometerY);
-		pInReport->AccelerometerZ = _byteswap_ushort(pInReport->AccelerometerZ);
-		pInReport->Gyroscope = _byteswap_ushort(pInReport->Gyroscope);
+		pModCtx->GetFeatureReport.AccelerometerX = 0x03FF - _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerX);
+		pModCtx->GetFeatureReport.AccelerometerY = _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerY);
+		pModCtx->GetFeatureReport.AccelerometerZ = _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerZ);
+		pModCtx->GetFeatureReport.Gyroscope = _byteswap_ushort(pModCtx->GetFeatureReport.Gyroscope);
 	}
 	
-	battery = (DS_BATTERY_STATUS)((PUCHAR)rdrBuffer)[30];
+	battery = (DS_BATTERY_STATUS)pInReport->BatteryStatus;
 
 	//
 	// Update battery status property
@@ -1382,7 +1484,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 		pDevCtx->BatteryStatus = battery;
 	}
 	
-	Ds_ProcessHidInputReport(pDevCtx, rdrBuffer, rdrBufferLength);
+	Ds_ProcessHidInputReport(pDevCtx, pInReport);
 
 	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
 }
@@ -1401,8 +1503,6 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	NTSTATUS status;
 	PUCHAR buffer;
 	size_t bufferLength;
-	PUCHAR inputBuffer;
-	WDF_REQUEST_REUSE_PARAMS params;
 	PDEVICE_CONTEXT pDevCtx;
 	LARGE_INTEGER freq, * t1, t2;
 	LONGLONG ms;
@@ -1411,6 +1511,8 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	PDS3_RAW_INPUT_REPORT pInReport;
 	WDFDEVICE device;
 
+	UNREFERENCED_PARAMETER(ClientBufferContextOutput);
+	
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
 #ifdef DBG
@@ -1425,7 +1527,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	{
 		return ContinuousRequestTarget_BufferDisposition_ContinuousRequestTargetAndStopStreaming;
 	}
-
+	
 	device = DMF_ParentDeviceGet(DmfModule);
 	pDevCtx = DeviceGetContext(device);
 	pModCtx = DMF_CONTEXT_GET((DMFMODULE)pDevCtx->DsHidMiniModule);
@@ -1457,7 +1559,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	//
 	// Skip to report ID
 	// 
-	inputBuffer = &buffer[1];
+	pInReport = (PDS3_RAW_INPUT_REPORT)&buffer[1];
 
 	//
 	// Handle special case of SIXAXIS.SYS emulation
@@ -1465,24 +1567,21 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	if (pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
 	{
 		RtlCopyMemory(
-			pModCtx->GetFeatureReport,
-			inputBuffer,
-			((bufferLength - 1) < SIXAXIS_HID_GET_FEATURE_REPORT_SIZE) ? (bufferLength - 1) :
-			SIXAXIS_HID_GET_FEATURE_REPORT_SIZE
+			&pModCtx->GetFeatureReport,
+			pInReport,
+			sizeof(DS3_RAW_INPUT_REPORT)
 		);
-
-		pInReport = (PDS3_RAW_INPUT_REPORT)pModCtx->GetFeatureReport;
-
-		pInReport->AccelerometerX = 0x03FF - _byteswap_ushort(pInReport->AccelerometerX);
-		pInReport->AccelerometerY = _byteswap_ushort(pInReport->AccelerometerY);
-		pInReport->AccelerometerZ = _byteswap_ushort(pInReport->AccelerometerZ);
-		pInReport->Gyroscope = _byteswap_ushort(pInReport->Gyroscope);
+		
+		pModCtx->GetFeatureReport.AccelerometerX = 0x03FF - _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerX);
+		pModCtx->GetFeatureReport.AccelerometerY = _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerY);
+		pModCtx->GetFeatureReport.AccelerometerZ = _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerZ);
+		pModCtx->GetFeatureReport.Gyroscope = _byteswap_ushort(pModCtx->GetFeatureReport.Gyroscope);
 	}
 
 	//
 	// Grab battery info
 	// 
-	battery = (DS_BATTERY_STATUS)((PUCHAR)inputBuffer)[30];
+	battery = (DS_BATTERY_STATUS)pInReport->BatteryStatus;
 
 	//
 	// React if last known state differs from current state
@@ -1548,21 +1647,30 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 			{
 				if (pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled)
 				{
+					//
+					// Restore defaults to undo any (past) flashing animations
+					// 
+					DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 0);
+					DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 1);
+					DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 2);
+					DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 3);
+
 					switch (battery)
 					{
 					case DsBatteryStatusCharged:
 					case DsBatteryStatusFull:
-					case DsBatteryStatusHigh:
 						DS3_SET_LED(pDevCtx, DS3_LED_4);
 						break;
-					case DsBatteryStatusMedium:
+					case DsBatteryStatusHigh:
 						DS3_SET_LED(pDevCtx, DS3_LED_3);
 						break;
-					case DsBatteryStatusLow:
+					case DsBatteryStatusMedium:
 						DS3_SET_LED(pDevCtx, DS3_LED_2);
 						break;
+					case DsBatteryStatusLow:
 					case DsBatteryStatusDying:
 						DS3_SET_LED(pDevCtx, DS3_LED_1);
+						DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
 						break;
 					default:
 						break;
@@ -1582,7 +1690,11 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	//
 	// Quick disconnect combo (L1 + R1 + PS) detected
 	// 
-	if (((inputBuffer[3] >> 3) & 1U) && ((inputBuffer[3] >> 2) & 1U) && (inputBuffer[4] & 1U))
+	if (
+		pInReport->Buttons.Individual.L1
+		&& pInReport->Buttons.Individual.R1
+		&& pInReport->Buttons.Individual.PS
+	)
 	{
 		TraceEvents(TRACE_LEVEL_INFORMATION,
 			TRACE_DSHIDMINIDRV,
@@ -1638,7 +1750,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	//
 	// Idle disconnect detection
 	// 
-	if (DS3_RAW_IS_IDLE(inputBuffer))
+	if (DS3_RAW_IS_IDLE(pInReport))
 	{
 		t1 = &pDevCtx->Connection.Bth.IdleDisconnectTimestamp;
 
@@ -1686,7 +1798,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 		pDevCtx->Connection.Bth.IdleDisconnectTimestamp.QuadPart = 0;
 	}
 
-	Ds_ProcessHidInputReport(pDevCtx, inputBuffer, bufferLength - 1);
+	Ds_ProcessHidInputReport(pDevCtx, pInReport);
 
 	return ContinuousRequestTarget_BufferDisposition_ContinuousRequestTargetAndContinueStreaming;
 }

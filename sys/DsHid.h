@@ -18,11 +18,16 @@ extern CONST HID_REPORT_DESCRIPTOR G_VendorDefinedUSBDS4HidReportDescriptor[];
 
 extern CONST HID_DESCRIPTOR G_VendorDefinedUSBDS4HidDescriptor;
 
+extern CONST HID_REPORT_DESCRIPTOR G_XInputHIDCompatible_HidReportDescriptor[];
+
+extern CONST HID_DESCRIPTOR G_XInputHIDCompatible_HidDescriptor;
+
 #define DS3_COMMON_MAX_HID_INPUT_REPORT_SIZE	0x40
 #define DS3_DS4REV1_USB_HID_INPUT_REPORT_SIZE	DS3_COMMON_MAX_HID_INPUT_REPORT_SIZE
 #define DS3_SPLIT_SINGLE_HID_INPUT_REPORT_SIZE	0x27
 #define SIXAXIS_HID_INPUT_REPORT_SIZE			0x0C
 #define SIXAXIS_HID_GET_FEATURE_REPORT_SIZE		0x31
+#define XINPUTHID_HID_INPUT_REPORT_SIZE			0x11
 
 #define DS3_RAW_SLIDER_IDLE_THRESHOLD			0x7F // 127 ( (256 * 0,5 ) -1 )
 #define DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER		0x3F // 63 ( ( 128 * 0,5 ) - 1 )
@@ -32,6 +37,8 @@ extern CONST HID_DESCRIPTOR G_VendorDefinedUSBDS4HidDescriptor;
 // 
 #define DS3_DS4WINDOWS_HID_VID					0x7331
 #define DS3_DS4WINDOWS_HID_PID					0x0001
+#define DS3_XINPUT_HID_VID						0x7331
+#define DS3_XINPUT_HID_PID						0x0002
 
 /**
  * Checks if the controller state is "idle" (no button pressed, no axis engaged). Jitter
@@ -45,35 +52,40 @@ extern CONST HID_DESCRIPTOR G_VendorDefinedUSBDS4HidDescriptor;
  * @returns	TRUE if idle, FALSE otherwise.
  */
 BOOLEAN DS3_RAW_IS_IDLE(
-	_In_ PUCHAR Input
+	_In_ PDS3_RAW_INPUT_REPORT Input
 );
 
 VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
-	_In_ PUCHAR Input,
+	_In_ PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output,
 	_In_ BOOLEAN MuteDigitalPressureButtons
 );
 
 VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
-	_In_ PUCHAR Input,
+	_In_ PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output
 );
 
 VOID DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
-	_In_ PUCHAR Input,
+	_In_ PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output,
 	_In_ BOOLEAN MuteDigitalPressureButtons
 );
 
 VOID DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
-	_In_ PUCHAR Input,
+	_In_ PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output
 );
 
 UCHAR REVERSE_BITS(UCHAR x);
 
 VOID DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
-	_In_ PUCHAR Input,
+	_In_ PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output,
 	_In_ BOOLEAN IsWired
+);
+
+VOID DS3_RAW_TO_XINPUTHID_HID_INPUT_REPORT(
+	_In_ PDS3_RAW_INPUT_REPORT Input,
+	_Out_ PXINPUT_HID_INPUT_REPORT Output
 );

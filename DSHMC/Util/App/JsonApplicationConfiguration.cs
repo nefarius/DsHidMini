@@ -11,7 +11,6 @@ using System.IO;
 using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using JsonSchema = NJsonSchema.JsonSchema;
 
 namespace Nefarius.DsHidMini.Util.App
 {
@@ -19,7 +18,6 @@ namespace Nefarius.DsHidMini.Util.App
     public static class JsonApplicationConfiguration
     {
         private const string ConfigExtension = ".json";
-        private const string SchemaExtension = ".schema.json";
 
         /// <summary>Loads the application configuration. </summary>
         /// <typeparam name="T">The type of the application configuration. </typeparam>
@@ -31,10 +29,6 @@ namespace Nefarius.DsHidMini.Util.App
         public static T Load<T>(string fileNameWithoutExtension, bool alwaysCreateNewSchemaFile, bool storeInAppData) where T : new()
         {
             var configPath = CreateFilePath(fileNameWithoutExtension, ConfigExtension, storeInAppData);
-            var schemaPath = CreateFilePath(fileNameWithoutExtension, SchemaExtension, storeInAppData);
-
-            if (alwaysCreateNewSchemaFile || !File.Exists(schemaPath))
-                CreateSchemaFile<T>(fileNameWithoutExtension, storeInAppData);
 
             if (!File.Exists(configPath))
                 return CreateDefaultConfigurationFile<T>(fileNameWithoutExtension, storeInAppData);
@@ -49,8 +43,6 @@ namespace Nefarius.DsHidMini.Util.App
         /// <exception cref="IOException">An I/O error occurred while opening the file. </exception>
         public static void Save<T>(string fileNameWithoutExtension, T configuration, bool storeInAppData) where T : new()
         {
-            CreateSchemaFile<T>(fileNameWithoutExtension, storeInAppData);
-
             var settings = new JsonSerializerSettings();
             settings.Converters.Add(new StringEnumConverter());
 
@@ -82,14 +74,6 @@ namespace Nefarius.DsHidMini.Util.App
 
             File.WriteAllText(configPath, configData, Encoding.UTF8);
             return config;
-        }
-
-        private static void CreateSchemaFile<T>(string fileNameWithoutExtension, bool storeInAppData) where T : new()
-        {
-            var schemaPath = CreateFilePath(fileNameWithoutExtension, SchemaExtension, storeInAppData);
-            var schema = JsonSchema.FromType<T>();
-
-            File.WriteAllText(schemaPath, schema.ToJson(), Encoding.UTF8);
         }
     }
 }
