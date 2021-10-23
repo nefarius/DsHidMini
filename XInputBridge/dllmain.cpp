@@ -6,12 +6,15 @@ BOOL APIENTRY DllMain( HMODULE hModule,
                        LPVOID lpReserved
                      )
 {
+    DisableThreadLibraryCalls(hModule);
+
     switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH:
-    case DLL_THREAD_ATTACH:
-    case DLL_THREAD_DETACH:
+        hid_init();
+        break;
     case DLL_PROCESS_DETACH:
+        hid_exit();
         break;
     }
     return TRUE;

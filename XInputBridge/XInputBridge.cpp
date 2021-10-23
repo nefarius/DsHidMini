@@ -5,22 +5,126 @@
 #include "XInputBridge.h"
 
 
-
-
 XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
-	_In_ DWORD dwUserIndex, 
+	_In_ DWORD dwUserIndex,
 	_Out_ SCP_EXTN* pState
-)
-{	
-    return ERROR_DEVICE_NOT_CONNECTED;
-}
-
-XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
-	_In_ DWORD dwUserIndex, 
-	_Out_ XINPUT_STATE* pState
 )
 {
 	return ERROR_DEVICE_NOT_CONNECTED;
+}
+
+XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
+	_In_ DWORD dwUserIndex,
+	_Out_ XINPUT_STATE* pState
+)
+{
+	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
+	hid_device* device = nullptr;
+
+	do {
+		if (pState == nullptr)
+			break;
+
+		device = hid_open(0x054C, 0x0268, nullptr);
+
+		if (device == nullptr)
+			break;
+
+		UCHAR buf[64];
+		buf[0] = 0xF2;
+
+		const int res = hid_get_feature_report(device, buf, ARRAYSIZE(buf));
+
+		if (res == 0)
+			break;
+
+		const auto pReport = reinterpret_cast<PDS3_RAW_INPUT_REPORT>(&buf[1]);
+
+		pState->dwPacketNumber++;
+		RtlZeroMemory(&pState->Gamepad, sizeof(pState->Gamepad));
+		//pState->Gamepad.wButtons &= ~0xF; // Clear lower 4 bits
+
+		//
+		// D-Pad translation
+		// 
+		switch (pReport->Buttons.bButtons[0] & ~0xF)
+		{
+		case 0x10: // N
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_UP;
+			break;
+		case 0x30: // NE
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_UP;
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_RIGHT;
+			break;
+		case 0x20: // E
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_RIGHT;
+			break;
+		case 0x60: // SE
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_RIGHT;
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_DOWN;
+			break;
+		case 0x40: // S
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_DOWN;
+			break;
+		case 0xC0: // SW
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_DOWN;
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_LEFT;
+			break;
+		case 0x80: // W
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_LEFT;
+			break;
+		case 0x90: // NW
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_UP;
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_LEFT;
+			break;
+		default: // Released
+			break;
+		}
+
+		//
+		// Start/Select
+		// 
+		if (pReport->Buttons.Individual.Start)
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_START;
+		if (pReport->Buttons.Individual.Select)
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_BACK;
+
+		//
+		// Thumbs
+		// 
+		if (pReport->Buttons.Individual.L3)
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_LEFT_THUMB;
+		if (pReport->Buttons.Individual.R3)
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_RIGHT_THUMB;
+
+		//
+		// Shoulders
+		// 
+		if (pReport->Buttons.Individual.L1)
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_LEFT_SHOULDER;
+		if (pReport->Buttons.Individual.R1)
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_RIGHT_SHOULDER;
+
+		//
+		// Face buttons
+		// 
+		if (pReport->Buttons.Individual.Triangle)
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_Y;
+		if (pReport->Buttons.Individual.Circle)
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_B;
+		if (pReport->Buttons.Individual.Cross)
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_A;
+		if (pReport->Buttons.Individual.Square)
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_X;
+		
+		status = ERROR_SUCCESS;
+
+	} while (FALSE);
+
+	if (device)
+		hid_close(device);
+
+	return status;
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
