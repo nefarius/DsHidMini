@@ -30,12 +30,33 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 {
 	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
 	hid_device* device = nullptr;
+	struct hid_device_info* devs = nullptr, * cur_dev;
+	DWORD index = 0;
 
 	do {
+		//
+		// User might troll us
+		// 
 		if (pState == nullptr)
 			break;
 
-		device = hid_open(0x054C, 0x0268, nullptr);
+		//
+		// Look for device of interest
+		// 
+		devs = hid_enumerate(0x054C, 0x0268);
+		cur_dev = devs;
+		while (cur_dev)
+		{
+			if (index++ == dwUserIndex)
+				break;
+
+			cur_dev = cur_dev->next;
+		}
+
+		if (cur_dev == nullptr)
+			break;
+
+		device = hid_open_path(cur_dev->path);
 
 		if (device == nullptr)
 			break;
@@ -136,14 +157,17 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 		//
 		// Thumb axes
 		// 
-		pState->Gamepad.sThumbLX = ScaleDsToXi(pReport->LeftThumbX,	FALSE);
-		pState->Gamepad.sThumbLY = ScaleDsToXi(pReport->LeftThumbY,	TRUE);
+		pState->Gamepad.sThumbLX = ScaleDsToXi(pReport->LeftThumbX, FALSE);
+		pState->Gamepad.sThumbLY = ScaleDsToXi(pReport->LeftThumbY, TRUE);
 		pState->Gamepad.sThumbRX = ScaleDsToXi(pReport->RightThumbX, FALSE);
 		pState->Gamepad.sThumbRY = ScaleDsToXi(pReport->RightThumbY, TRUE);
 
 		status = ERROR_SUCCESS;
 
 	} while (FALSE);
+
+	if (devs)
+		hid_free_enumeration(devs);
 
 	if (device)
 		hid_close(device);
