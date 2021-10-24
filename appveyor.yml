@@ -36,8 +36,8 @@ artifacts:
 - path: 'bin**\$(APPVEYOR_PROJECT_NAME)\*.cat'
 - path: 'bin**\$(APPVEYOR_PROJECT_NAME)\*.dll'
 - path: 'bin**\*.pdb'
+- path: 'bin**\*.dll'
 - path: 'bin\*.exe'
-- path: 'bin\*.dll'
 deploy:
 - provider: Environment
   name: BUILDBOT
