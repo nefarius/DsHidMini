@@ -11,6 +11,9 @@
 // 
 #define DS3_AXIS_ANTI_JITTER_OFFSET		10
 
+#define DS3_VID		0x054C
+#define DS3_PID		0x0268
+
 
 #pragma region Utility functions
 
@@ -59,7 +62,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 		//
 		// Look for device of interest
 		// 
-		devs = hid_enumerate(0x054C, 0x0268);
+		devs = hid_enumerate(DS3_VID, DS3_PID);
 		cur_dev = devs;
 		while (cur_dev)
 		{
@@ -183,7 +186,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 		//
 		// Look for device of interest
 		// 
-		devs = hid_enumerate(0x054C, 0x0268);
+		devs = hid_enumerate(DS3_VID, DS3_PID);
 		cur_dev = devs;
 		while (cur_dev)
 		{
@@ -213,7 +216,6 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 
 		pState->dwPacketNumber++;
 		RtlZeroMemory(&pState->Gamepad, sizeof(pState->Gamepad));
-		//pState->Gamepad.wButtons &= ~0xF; // Clear lower 4 bits
 
 		//
 		// D-Pad translation
