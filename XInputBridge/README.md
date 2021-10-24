@@ -18,7 +18,7 @@ Reports back [`XINPUT_GAMEPAD` structure](https://docs.microsoft.com/en-us/windo
 
 ### `XInputSetState`
 
-Converts a vibratrion request into a DS3 output report. Translates and scales the rumble motor values accordingly (left gets mapped to string, right gets mapped to weak motor). The player LED gets set to the (zero-based) `dwUserIndex` the function got invoked with.
+Converts a vibratrion request into a DS3 output report. Translates and scales the rumble motor values accordingly (left gets mapped to strong, right gets mapped to weak motor). The player LED gets set to the (zero-based) `dwUserIndex` the function got invoked with (0 sets player 1, 1 sets player 2 and so forth).
 
 ### `XInputGetCapabilities`
 
