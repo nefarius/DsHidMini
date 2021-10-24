@@ -149,13 +149,13 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 			pState->SCP_LX = ToAxis(pReport->LeftThumbX);
 		if (pReport->LeftThumbY < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
 			|| pReport->LeftThumbY >(UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
-			pState->SCP_LY = ToAxis(pReport->LeftThumbY);
+			pState->SCP_LY = ToAxis(pReport->LeftThumbY) * -1.0f;
 		if (pReport->RightThumbX < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
 			|| pReport->RightThumbX >(UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
 			pState->SCP_RX = ToAxis(pReport->RightThumbX);
 		if (pReport->RightThumbY < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
 			|| pReport->RightThumbY >(UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
-			pState->SCP_RY = ToAxis(pReport->RightThumbY);
+			pState->SCP_RY = ToAxis(pReport->RightThumbY) * -1.0f;
 
 		status = ERROR_SUCCESS;
 
