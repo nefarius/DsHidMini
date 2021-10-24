@@ -63,6 +63,10 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 		// Look for device of interest
 		// 
 		devs = hid_enumerate(DS3_VID, DS3_PID);
+
+		if (devs == nullptr)
+			break;
+
 		cur_dev = devs;
 		while (cur_dev)
 		{
@@ -187,6 +191,10 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 		// Look for device of interest
 		// 
 		devs = hid_enumerate(DS3_VID, DS3_PID);
+
+		if (devs == nullptr)
+			break;
+
 		cur_dev = devs;
 		while (cur_dev)
 		{
