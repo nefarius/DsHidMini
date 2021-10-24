@@ -10,7 +10,7 @@ A brief summary of the exported library functions.
 
 ### `XInputGetExtended`
 
-Reports back `struct _SCP_EXTN` with pressure values. For implementation details see `ScpTypes.h`.
+Reports back `struct _SCP_EXTN` with pressure values. For implementation details see `ScpTypes.h`. A value of `1.0f` represents fully pressed/engaged and `0.0f` represents default/disengaged. For axes, a value of `-1.0f` is equal to most west/south position, `0.0f` represents the centered/resting position and `1.0.f` is equal to most east/north position.
 
 ### `XInputGetState`
 
