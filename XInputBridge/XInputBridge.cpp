@@ -6,6 +6,13 @@
 
 #include <climits>
 
+//
+// Dead-Zone value to stop jittering
+// 
+#define DS3_AXIS_ANTI_JITTER_OFFSET		10
+
+
+#pragma region Utility functions
 
 SHORT ScaleDsToXi(UCHAR value, BOOLEAN invert)
 {
@@ -16,6 +23,21 @@ SHORT ScaleDsToXi(UCHAR value, BOOLEAN invert)
 
 	return static_cast<short>(invert ? -wtfValue : wtfValue);
 }
+
+float ClampAxis(float value)
+{
+	if (value > 1.0f) return 1.0f;
+	if (value < -1.0f) return -1.0f;
+	return value;
+}
+
+float ToAxis(UCHAR value)
+{
+	return ClampAxis((((value & 0xFF) - 0x7F) * 2) / 254.0f);
+}
+
+#pragma endregion
+
 
 XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 	_In_ DWORD dwUserIndex,
@@ -64,7 +86,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 			break;
 
 		const auto pReport = reinterpret_cast<PDS3_RAW_INPUT_REPORT>(&buf[1]);
-				
+
 		RtlZeroMemory(pState, sizeof(SCP_EXTN));
 
 		//
@@ -74,25 +96,25 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 		pState->SCP_RIGHT = static_cast<float>(pReport->Pressure.Values.Right) / static_cast<float>(UCHAR_MAX);
 		pState->SCP_DOWN = static_cast<float>(pReport->Pressure.Values.Down) / static_cast<float>(UCHAR_MAX);
 		pState->SCP_LEFT = static_cast<float>(pReport->Pressure.Values.Left) / static_cast<float>(UCHAR_MAX);
-		
+
 		//
 		// Start/Select
 		// 
 		pState->SCP_START = pReport->Buttons.Individual.Start ? 1.0f : 0.0f;
 		pState->SCP_SELECT = pReport->Buttons.Individual.Select ? 1.0f : 0.0f;
-		
+
 		//
 		// Thumbs
 		// 
 		pState->SCP_L3 = pReport->Buttons.Individual.L3 ? 1.0f : 0.0f;
 		pState->SCP_R3 = pReport->Buttons.Individual.R3 ? 1.0f : 0.0f;
-		
+
 		//
 		// Shoulders
 		// 
 		pState->SCP_L1 = static_cast<float>(pReport->Pressure.Values.L1) / static_cast<float>(UCHAR_MAX);
 		pState->SCP_R1 = static_cast<float>(pReport->Pressure.Values.R1) / static_cast<float>(UCHAR_MAX);
-		
+
 		//
 		// Face buttons
 		// 
@@ -100,17 +122,33 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 		pState->SCP_C = static_cast<float>(pReport->Pressure.Values.Circle) / static_cast<float>(UCHAR_MAX);
 		pState->SCP_X = static_cast<float>(pReport->Pressure.Values.Cross) / static_cast<float>(UCHAR_MAX);
 		pState->SCP_S = static_cast<float>(pReport->Pressure.Values.Square) / static_cast<float>(UCHAR_MAX);
-		
+
 		//
 		// Triggers
 		// 
 		pState->SCP_L2 = static_cast<float>(pReport->Pressure.Values.L2) / static_cast<float>(UCHAR_MAX);
 		pState->SCP_R2 = static_cast<float>(pReport->Pressure.Values.R2) / static_cast<float>(UCHAR_MAX);
-		
+
+		//
+		// PS
+		// 
+		pState->SCP_PS = pReport->Buttons.Individual.PS ? 1.0f : 0.0f;
+
 		//
 		// Thumb axes
-		// 
-		// TODO: implement thumb axes
+		//
+		if (pReport->LeftThumbX < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
+			|| pReport->LeftThumbX >(UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
+			pState->SCP_LX = ToAxis(pReport->LeftThumbX);
+		if (pReport->LeftThumbY < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
+			|| pReport->LeftThumbY >(UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
+			pState->SCP_LY = ToAxis(pReport->LeftThumbY);
+		if (pReport->RightThumbX < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
+			|| pReport->RightThumbX >(UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
+			pState->SCP_RX = ToAxis(pReport->RightThumbX);
+		if (pReport->RightThumbY < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
+			|| pReport->RightThumbY >(UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
+			pState->SCP_RY = ToAxis(pReport->RightThumbY);
 
 		status = ERROR_SUCCESS;
 
