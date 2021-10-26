@@ -479,6 +479,8 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 		if (cur_dev == nullptr)
 			break;
 
+		RtlZeroMemory(pCapabilities, sizeof(XINPUT_CAPABILITIES));
+
 		pCapabilities->Type = XINPUT_DEVTYPE_GAMEPAD;
 		pCapabilities->SubType = XINPUT_DEVSUBTYPE_GAMEPAD;
 		pCapabilities->Flags += XINPUT_CAPS_FFB_SUPPORTED;
