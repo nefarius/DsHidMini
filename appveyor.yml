@@ -29,6 +29,7 @@ before_build:
 - cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\sys\dshidmini.vcxproj" --vcxproj.inf-time-stamp
 - cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\sys\dshidmini.rc" --resource.file-version --resource.product-version
 - cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\DSHMC\Properties\AssemblyInfo.cs" --assembly.version --assembly.file-version
+- cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\XInputBridge\XInputBridge.rc" --resource.file-version --resource.product-version
 build_script:
 - cmd: .\build.cmd
 artifacts:
