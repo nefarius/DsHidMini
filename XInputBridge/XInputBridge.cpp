@@ -11,8 +11,10 @@
 // 
 #define DS3_AXIS_ANTI_JITTER_OFFSET		10
 
-#define DS3_VID		0x054C
-#define DS3_PID		0x0268
+#define DS3_VID							0x054C
+#define DS3_PID							0x0268
+#define SXS_MODE_GET_FEATURE_REPORT_ID	0xF2
+#define SXS_MODE_GET_FEATURE_BUFFER_LEN	0x40
 
 
 #pragma region Rumble helper types
@@ -121,8 +123,8 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 		if (device == nullptr)
 			break;
 
-		UCHAR buf[64];
-		buf[0] = 0xF2;
+		UCHAR buf[SXS_MODE_GET_FEATURE_BUFFER_LEN];
+		buf[0] = SXS_MODE_GET_FEATURE_REPORT_ID;
 
 		const int res = hid_get_feature_report(device, buf, ARRAYSIZE(buf));
 
@@ -249,8 +251,8 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 		if (device == nullptr)
 			break;
 
-		UCHAR buf[64];
-		buf[0] = 0xF2;
+		UCHAR buf[SXS_MODE_GET_FEATURE_BUFFER_LEN];
+		buf[0] = SXS_MODE_GET_FEATURE_REPORT_ID;
 
 		const int res = hid_get_feature_report(device, buf, ARRAYSIZE(buf));
 
