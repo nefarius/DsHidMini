@@ -55,3 +55,12 @@ Not implemented. Always returns `ERROR_DEVICE_NOT_CONNECTED`.
 ### `XInputPowerOffController`
 
 Not implemented. Always returns `ERROR_DEVICE_NOT_CONNECTED`.
+
+## 3rd party credits
+
+- [araghon007/X1nput](https://github.com/araghon007/X1nput)
+  - Xinput hook for Impulse Trigger emulation
+- [rpcs3/rpcs3/Input/ds3_pad_handler.cpp](https://github.com/RPCS3/rpcs3/blob/5e436984a2b5753ad340d2c97462bf3be6e86237/rpcs3/Input/ds3_pad_handler.cpp)
+- [pcsx2/pcsx2/PAD/Windows/XInputEnum.cpp](https://github.com/PCSX2/pcsx2/blob/6f7890b709d5e3f7f5b824781e493455efc92339/pcsx2/PAD/Windows/XInputEnum.cpp)
+- [HIDAPI library for Windows, Linux, FreeBSD and macOS](https://github.com/libusb/hidapi)
+  - A Simple library for communicating with USB and Bluetooth HID devices on Linux, Mac and Windows.
