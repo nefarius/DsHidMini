@@ -448,7 +448,49 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 	_Out_ XINPUT_CAPABILITIES* pCapabilities
 )
 {
-	return ERROR_DEVICE_NOT_CONNECTED;
+	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
+	struct hid_device_info* devs = nullptr, * cur_dev;
+	DWORD index = 0;
+
+	do {
+		//
+		// User might troll us
+		// 
+		if (pCapabilities == nullptr)
+			break;
+
+		//
+		// Look for device of interest
+		// 
+		devs = hid_enumerate(DS3_VID, DS3_PID);
+
+		if (devs == nullptr)
+			break;
+
+		cur_dev = devs;
+		while (cur_dev)
+		{
+			if (index++ == dwUserIndex)
+				break;
+
+			cur_dev = cur_dev->next;
+		}
+
+		if (cur_dev == nullptr)
+			break;
+
+		pCapabilities->Type = XINPUT_DEVTYPE_GAMEPAD;
+		pCapabilities->SubType = XINPUT_DEVSUBTYPE_GAMEPAD;
+		pCapabilities->Flags += XINPUT_CAPS_FFB_SUPPORTED;
+
+		status = ERROR_SUCCESS;
+
+	} while (FALSE);
+
+	if (devs)
+		hid_free_enumeration(devs);
+
+	return status;
 }
 
 XINPUTBRIDGE_API void WINAPI XInputEnable(
