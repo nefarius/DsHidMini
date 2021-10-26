@@ -22,7 +22,7 @@ Converts a vibratrion request into a DS3 output report. Translates and scales th
 
 ### `XInputGetCapabilities`
 
-Not implemented. Always returns `ERROR_DEVICE_NOT_CONNECTED`.
+Returns the typical Xbox 360 Controller compatible capabilities for every connected player index. Otherwise returns `ERROR_DEVICE_NOT_CONNECTED`.
 
 ### `XInputEnable`
 
