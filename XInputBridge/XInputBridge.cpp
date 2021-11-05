@@ -16,6 +16,26 @@
 #define SXS_MODE_GET_FEATURE_REPORT_ID	0xF2
 #define SXS_MODE_GET_FEATURE_BUFFER_LEN	0x40
 
+//
+// This is really an artificial limit so set high
+// 
+#define DS3_DEVICES_MAX					0xFF
+
+
+//
+// Device state information to improve performance
+// 
+struct device_state
+{
+	bool isConnected = false;
+
+	hid_device* deviceHandle = nullptr;
+};
+
+//
+// Keep track on device states for better lookup performance
+// 
+device_state g_deviceStates[DS3_DEVICES_MAX];
 
 #pragma region Rumble helper types
 
@@ -44,12 +64,12 @@ struct ds3_led
 struct ds3_output_report
 {
 	UCHAR report_id = 0x00;
-	UCHAR idk_what_this_is[3] = { 0x02, 0x00, 0x00 };
+	UCHAR idk_what_this_is[3] = {0x02, 0x00, 0x00};
 	ds3_rumble rumble;
-	UCHAR padding[4] = { 0x00, 0x00, 0x00, 0x00 };
+	UCHAR padding[4] = {0x00, 0x00, 0x00, 0x00};
 	UCHAR led_enabled = 0x00; // LED 1 = 0x02, LED 2 = 0x04, etc.
 	ds3_led led[4];
-	ds3_led led_5;         // reserved for another LED
+	ds3_led led_5; // reserved for another LED
 };
 
 #pragma endregion
@@ -80,6 +100,86 @@ float ToAxis(UCHAR value)
 
 #pragma endregion
 
+void SetDeviceDisconnected(DWORD UserIndex)
+{
+	if (UserIndex <= DS3_DEVICES_MAX)
+		return;
+
+	const auto state = &g_deviceStates[UserIndex];
+
+	state->isConnected = false;
+
+	if (state->deviceHandle)
+		hid_close(state->deviceHandle);	
+}
+
+bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
+{
+	if (Handle == nullptr)
+		return false;
+
+	if (UserIndex <= DS3_DEVICES_MAX)
+		return false;
+
+	bool result = false;
+	const auto state = &g_deviceStates[UserIndex];
+	hid_device* device = nullptr;
+	struct hid_device_info *devs = nullptr, *cur_dev;
+	DWORD index = 0;
+
+	do
+	{
+		if (state->isConnected)
+		{
+			*Handle = state->deviceHandle;
+			result = true;
+			break;
+		}
+
+		//
+		// Look for device of interest
+		// 
+		devs = hid_enumerate(DS3_VID, DS3_PID);
+
+		if (devs == nullptr)
+			return false;
+
+		cur_dev = devs;
+		while (cur_dev)
+		{
+			if (index++ == UserIndex)
+				break;
+
+			cur_dev = cur_dev->next;
+		}
+
+		if (cur_dev == nullptr)
+		{
+			state->deviceHandle = nullptr;
+			state->isConnected = false;
+			break;
+		}
+
+		device = hid_open_path(cur_dev->path);
+
+		if (device == nullptr)
+		{
+			state->deviceHandle = nullptr;
+			state->isConnected = false;
+			break;
+		}
+
+		*Handle = device;
+		result = true;
+	}
+	while (FALSE);
+
+	if (devs)
+		hid_free_enumeration(devs);
+
+	return result;
+}
+
 
 XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 	_In_ DWORD dwUserIndex,
@@ -88,10 +188,11 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 {
 	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
 	hid_device* device = nullptr;
-	struct hid_device_info* devs = nullptr, * cur_dev;
+	struct hid_device_info *devs = nullptr, *cur_dev;
 	DWORD index = 0;
 
-	do {
+	do
+	{
 		//
 		// User might troll us
 		// 
@@ -184,21 +285,21 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 		// Thumb axes
 		//
 		if (pReport->LeftThumbX < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
-			|| pReport->LeftThumbX >(UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
+			|| pReport->LeftThumbX > (UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
 			pState->SCP_LX = ToAxis(pReport->LeftThumbX);
 		if (pReport->LeftThumbY < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
-			|| pReport->LeftThumbY >(UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
+			|| pReport->LeftThumbY > (UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
 			pState->SCP_LY = ToAxis(pReport->LeftThumbY) * -1.0f;
 		if (pReport->RightThumbX < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
-			|| pReport->RightThumbX >(UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
+			|| pReport->RightThumbX > (UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
 			pState->SCP_RX = ToAxis(pReport->RightThumbX);
 		if (pReport->RightThumbY < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
-			|| pReport->RightThumbY >(UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
+			|| pReport->RightThumbY > (UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
 			pState->SCP_RY = ToAxis(pReport->RightThumbY) * -1.0f;
 
 		status = ERROR_SUCCESS;
-
-	} while (FALSE);
+	}
+	while (FALSE);
 
 	if (devs)
 		hid_free_enumeration(devs);
@@ -216,10 +317,11 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 {
 	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
 	hid_device* device = nullptr;
-	struct hid_device_info* devs = nullptr, * cur_dev;
+	struct hid_device_info *devs = nullptr, *cur_dev;
 	DWORD index = 0;
 
-	do {
+	do
+	{
 		//
 		// User might troll us
 		// 
@@ -352,8 +454,8 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 		pState->Gamepad.sThumbRY = ScaleDsToXi(pReport->RightThumbY, TRUE);
 
 		status = ERROR_SUCCESS;
-
-	} while (FALSE);
+	}
+	while (FALSE);
 
 	if (devs)
 		hid_free_enumeration(devs);
@@ -371,10 +473,11 @@ XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
 {
 	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
 	hid_device* device = nullptr;
-	struct hid_device_info* devs = nullptr, * cur_dev;
+	struct hid_device_info *devs = nullptr, *cur_dev;
 	DWORD index = 0;
 
-	do {
+	do
+	{
 		//
 		// User might troll us
 		// 
@@ -409,17 +512,25 @@ XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
 		ds3_output_report output_report;
 
 		output_report.rumble.small_motor_on = pVibration->wRightMotorSpeed > 0 ? 1 : 0;
-		output_report.rumble.large_motor_force = (float)pVibration->wLeftMotorSpeed / (float)USHRT_MAX * (float)UCHAR_MAX;
+		output_report.rumble.large_motor_force = static_cast<float>(pVibration->wLeftMotorSpeed) / static_cast<float>(
+			USHRT_MAX) * static_cast<float>(UCHAR_MAX);
 
 		switch (dwUserIndex)
 		{
-		case 0: output_report.led_enabled = 0b00000010; break;
-		case 1: output_report.led_enabled = 0b00000100; break;
-		case 2: output_report.led_enabled = 0b00001000; break;
-		case 3: output_report.led_enabled = 0b00010000; break;
-		case 4: output_report.led_enabled = 0b00010010; break;
-		case 5: output_report.led_enabled = 0b00010100; break;
-		case 6: output_report.led_enabled = 0b00011000; break;
+		case 0: output_report.led_enabled = 0b00000010;
+			break;
+		case 1: output_report.led_enabled = 0b00000100;
+			break;
+		case 2: output_report.led_enabled = 0b00001000;
+			break;
+		case 3: output_report.led_enabled = 0b00010000;
+			break;
+		case 4: output_report.led_enabled = 0b00010010;
+			break;
+		case 5: output_report.led_enabled = 0b00010100;
+			break;
+		case 6: output_report.led_enabled = 0b00011000;
+			break;
 		default:
 			break;
 		}
@@ -430,8 +541,8 @@ XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
 			break;
 
 		status = ERROR_SUCCESS;
-
-	} while (FALSE);
+	}
+	while (FALSE);
 
 	if (devs)
 		hid_free_enumeration(devs);
@@ -449,10 +560,11 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 )
 {
 	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
-	struct hid_device_info* devs = nullptr, * cur_dev;
+	struct hid_device_info *devs = nullptr, *cur_dev;
 	DWORD index = 0;
 
-	do {
+	do
+	{
 		//
 		// User might troll us
 		// 
@@ -486,8 +598,8 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 		pCapabilities->Flags += XINPUT_CAPS_FFB_SUPPORTED;
 
 		status = ERROR_SUCCESS;
-
-	} while (FALSE);
+	}
+	while (FALSE);
 
 	if (devs)
 		hid_free_enumeration(devs);
@@ -499,7 +611,6 @@ XINPUTBRIDGE_API void WINAPI XInputEnable(
 	_In_ BOOL enable
 )
 {
-	return;
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputGetDSoundAudioDeviceGuids(
@@ -536,10 +647,11 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
 {
 	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
 	hid_device* device = nullptr;
-	struct hid_device_info* devs = nullptr, * cur_dev;
+	struct hid_device_info *devs = nullptr, *cur_dev;
 	DWORD index = 0;
 
-	do {
+	do
+	{
 		//
 		// User might troll us
 		// 
@@ -677,8 +789,8 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
 		pState->Gamepad.wButtons |= XINPUT_GAMEPAD_GUIDE;
 
 		status = ERROR_SUCCESS;
-
-	} while (FALSE);
+	}
+	while (FALSE);
 
 	if (devs)
 		hid_free_enumeration(devs);
