@@ -110,15 +110,12 @@ void SetDeviceDisconnected(DWORD UserIndex)
 	state->isConnected = false;
 
 	if (state->deviceHandle)
-		hid_close(state->deviceHandle);	
+		hid_close(state->deviceHandle);
 }
 
 bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 {
-	if (Handle == nullptr)
-		return false;
-
-	if (UserIndex <= DS3_DEVICES_MAX)
+	if (UserIndex >= DS3_DEVICES_MAX)
 		return false;
 
 	bool result = false;
@@ -131,7 +128,8 @@ bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 	{
 		if (state->isConnected)
 		{
-			*Handle = state->deviceHandle;
+			if (Handle)
+				*Handle = state->deviceHandle;
 			result = true;
 			break;
 		}
@@ -169,7 +167,8 @@ bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 			break;
 		}
 
-		*Handle = device;
+		if (Handle)
+			*Handle = device;
 		result = true;
 	}
 	while (FALSE);
@@ -188,8 +187,6 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 {
 	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
 	hid_device* device = nullptr;
-	struct hid_device_info *devs = nullptr, *cur_dev;
-	DWORD index = 0;
 
 	do
 	{
@@ -202,26 +199,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 		//
 		// Look for device of interest
 		// 
-		devs = hid_enumerate(DS3_VID, DS3_PID);
-
-		if (devs == nullptr)
-			break;
-
-		cur_dev = devs;
-		while (cur_dev)
-		{
-			if (index++ == dwUserIndex)
-				break;
-
-			cur_dev = cur_dev->next;
-		}
-
-		if (cur_dev == nullptr)
-			break;
-
-		device = hid_open_path(cur_dev->path);
-
-		if (device == nullptr)
+		if (!GetDeviceHandle(dwUserIndex, &device))
 			break;
 
 		UCHAR buf[SXS_MODE_GET_FEATURE_BUFFER_LEN];
@@ -230,7 +208,10 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 		const int res = hid_get_feature_report(device, buf, ARRAYSIZE(buf));
 
 		if (res == 0)
+		{
+			SetDeviceDisconnected(dwUserIndex);
 			break;
+		}
 
 		const auto pReport = reinterpret_cast<PDS3_RAW_INPUT_REPORT>(&buf[1]);
 
@@ -301,12 +282,6 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 	}
 	while (FALSE);
 
-	if (devs)
-		hid_free_enumeration(devs);
-
-	if (device)
-		hid_close(device);
-
 	return status;
 }
 
@@ -317,8 +292,6 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 {
 	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
 	hid_device* device = nullptr;
-	struct hid_device_info *devs = nullptr, *cur_dev;
-	DWORD index = 0;
 
 	do
 	{
@@ -331,26 +304,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 		//
 		// Look for device of interest
 		// 
-		devs = hid_enumerate(DS3_VID, DS3_PID);
-
-		if (devs == nullptr)
-			break;
-
-		cur_dev = devs;
-		while (cur_dev)
-		{
-			if (index++ == dwUserIndex)
-				break;
-
-			cur_dev = cur_dev->next;
-		}
-
-		if (cur_dev == nullptr)
-			break;
-
-		device = hid_open_path(cur_dev->path);
-
-		if (device == nullptr)
+		if (!GetDeviceHandle(dwUserIndex, &device))
 			break;
 
 		UCHAR buf[SXS_MODE_GET_FEATURE_BUFFER_LEN];
@@ -359,7 +313,10 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 		const int res = hid_get_feature_report(device, buf, ARRAYSIZE(buf));
 
 		if (res == 0)
+		{
+			SetDeviceDisconnected(dwUserIndex);
 			break;
+		}
 
 		const auto pReport = reinterpret_cast<PDS3_RAW_INPUT_REPORT>(&buf[1]);
 
@@ -457,12 +414,6 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 	}
 	while (FALSE);
 
-	if (devs)
-		hid_free_enumeration(devs);
-
-	if (device)
-		hid_close(device);
-
 	return status;
 }
 
@@ -473,8 +424,6 @@ XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
 {
 	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
 	hid_device* device = nullptr;
-	struct hid_device_info *devs = nullptr, *cur_dev;
-	DWORD index = 0;
 
 	do
 	{
@@ -487,26 +436,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
 		//
 		// Look for device of interest
 		// 
-		devs = hid_enumerate(DS3_VID, DS3_PID);
-
-		if (devs == nullptr)
-			break;
-
-		cur_dev = devs;
-		while (cur_dev)
-		{
-			if (index++ == dwUserIndex)
-				break;
-
-			cur_dev = cur_dev->next;
-		}
-
-		if (cur_dev == nullptr)
-			break;
-
-		device = hid_open_path(cur_dev->path);
-
-		if (device == nullptr)
+		if (!GetDeviceHandle(dwUserIndex, &device))
 			break;
 
 		ds3_output_report output_report;
@@ -538,17 +468,14 @@ XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
 		const int res = hid_write(device, &output_report.report_id, sizeof(output_report));
 
 		if (res == 0)
+		{
+			SetDeviceDisconnected(dwUserIndex);
 			break;
+		}
 
 		status = ERROR_SUCCESS;
 	}
 	while (FALSE);
-
-	if (devs)
-		hid_free_enumeration(devs);
-
-	if (device)
-		hid_close(device);
 
 	return status;
 }
@@ -560,8 +487,6 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 )
 {
 	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
-	struct hid_device_info *devs = nullptr, *cur_dev;
-	DWORD index = 0;
 
 	do
 	{
@@ -574,21 +499,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 		//
 		// Look for device of interest
 		// 
-		devs = hid_enumerate(DS3_VID, DS3_PID);
-
-		if (devs == nullptr)
-			break;
-
-		cur_dev = devs;
-		while (cur_dev)
-		{
-			if (index++ == dwUserIndex)
-				break;
-
-			cur_dev = cur_dev->next;
-		}
-
-		if (cur_dev == nullptr)
+		if (!GetDeviceHandle(dwUserIndex, nullptr))
 			break;
 
 		RtlZeroMemory(pCapabilities, sizeof(XINPUT_CAPABILITIES));
@@ -600,9 +511,6 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 		status = ERROR_SUCCESS;
 	}
 	while (FALSE);
-
-	if (devs)
-		hid_free_enumeration(devs);
 
 	return status;
 }
@@ -647,8 +555,6 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
 {
 	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
 	hid_device* device = nullptr;
-	struct hid_device_info *devs = nullptr, *cur_dev;
-	DWORD index = 0;
 
 	do
 	{
@@ -661,26 +567,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
 		//
 		// Look for device of interest
 		// 
-		devs = hid_enumerate(DS3_VID, DS3_PID);
-
-		if (devs == nullptr)
-			break;
-
-		cur_dev = devs;
-		while (cur_dev)
-		{
-			if (index++ == dwUserIndex)
-				break;
-
-			cur_dev = cur_dev->next;
-		}
-
-		if (cur_dev == nullptr)
-			break;
-
-		device = hid_open_path(cur_dev->path);
-
-		if (device == nullptr)
+		if (!GetDeviceHandle(dwUserIndex, &device))
 			break;
 
 		UCHAR buf[64];
@@ -689,7 +576,10 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
 		const int res = hid_get_feature_report(device, buf, ARRAYSIZE(buf));
 
 		if (res == 0)
+		{
+			SetDeviceDisconnected(dwUserIndex);
 			break;
+		}
 
 		const auto pReport = reinterpret_cast<PDS3_RAW_INPUT_REPORT>(&buf[1]);
 
@@ -791,12 +681,6 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
 		status = ERROR_SUCCESS;
 	}
 	while (FALSE);
-
-	if (devs)
-		hid_free_enumeration(devs);
-
-	if (device)
-		hid_close(device);
 
 	return status;
 }
