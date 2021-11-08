@@ -115,8 +115,10 @@ Get-AppVeyorArtifacts -Account "nefarius" -Project "DsHidMini" -Path $Path -Toke
 $files =    "`".\artifacts\bin\*.exe`" " + 
             "`".\artifacts\bin\x64\dshidmini\dshidmini.cat`" " + 
             "`".\artifacts\bin\x64\dshidmini\dshidmini.dll`" " + 
+			"`".\artifacts\bin\x64\XInput1_3.dll`" " + 
             "`".\artifacts\bin\x86\dshidmini\dshidmini.cat`" " +
             "`".\artifacts\bin\x86\dshidmini\dshidmini.dll`" "
+			"`".\artifacts\bin\x86\XInput1_3.dll`" "
 
 if ($NoSigning -eq $false) {
     # remove existing certificate(s)
