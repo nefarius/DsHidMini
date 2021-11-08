@@ -12,7 +12,9 @@
                        mc:Ignorable="d"
                        Title="DsHidMini Control"
                        Height="620" Width="800"
-                       ResizeMode="CanMinimize"
+                       MinHeight="620" MinWidth="800"
+                       MaxHeight="768" MaxWidth="1024"
+                       ResizeMode="CanResize"
                        WindowStartupLocation="CenterScreen">
     <controls:AdonisWindow.TitleBarContent>
         <!-- Window title bar content -->

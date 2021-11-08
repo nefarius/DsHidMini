@@ -66,7 +66,12 @@ namespace Nefarius.DsHidMini.MVVM
         /// <summary>
         ///     Is it possible to edit the selected device.
         /// </summary>
-        public bool IsEditable => IsElevated && HasDeviceSelected;
+        public bool IsEditable => IsElevated && HasDeviceSelected && !IsRestarting;
+
+        /// <summary>
+        ///     Is the selected device in the process of getting restarted.
+        /// </summary>
+        public bool IsRestarting { get; set; } = false;
 
         /// <summary>
         ///     Version to display in window title.
