@@ -61,7 +61,7 @@ This is a community project and not affiliated with Sony Interactive Entertainme
 
 ## Environment
 
-DsHidMini components (drivers, utilities) are designed for **Windows 10**, version 1507 (Threshold 1) or newer (x86, x64).
+DsHidMini components (drivers, utilities) are designed for **Windows 10**, version 1809 or newer (x86, x64).
 
 The dependencies used in DsHidMini don't exist in Windows 7/8/8.1 so they can't be supported.
 
