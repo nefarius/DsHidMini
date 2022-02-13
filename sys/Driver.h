@@ -27,6 +27,7 @@ extern unsigned int numInstances;
 #ifdef DSHM_FEATURE_FFB
 #include "PID/PIDTypes.h"
 #endif
+#include "Configuration.h"
 #include "Device.h"
 
 #include "dshmguid.h"
