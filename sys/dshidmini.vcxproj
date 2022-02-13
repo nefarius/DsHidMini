@@ -35,6 +35,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Configuration.c" />
     <ClCompile Include="Device.c" />
     <ClCompile Include="Driver.c" />
     <ClCompile Include="Ds3.c" />
@@ -49,6 +50,7 @@
   <ItemGroup>
     <ClInclude Include="..\include\DsHidMini\Ds3Types.h" />
     <ClInclude Include="..\include\DsHidMini\ScpTypes.h" />
+    <ClInclude Include="Configuration.h" />
     <ClInclude Include="Device.h" />
     <ClInclude Include="Driver.h" />
     <ClInclude Include="Ds3.h" />

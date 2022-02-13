@@ -165,6 +165,9 @@
     <ClInclude Include="JSON\cJSON.h">
       <Filter>Header Files\JSON</Filter>
     </ClInclude>
+    <ClInclude Include="Configuration.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Device.c">
@@ -196,6 +199,9 @@
     </ClCompile>
     <ClCompile Include="JSON\cJSON.c">
       <Filter>Source Files\JSON</Filter>
+    </ClCompile>
+    <ClCompile Include="Configuration.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
