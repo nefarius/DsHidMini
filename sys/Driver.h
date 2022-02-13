@@ -17,6 +17,8 @@ extern unsigned int numInstances;
 #include <usb.h>
 #include <wdfusb.h>
 
+#include "JSON/cJSON.h"
+
 #include <DmfModules.Library.h>
 #include <DsHidMini/Ds3Types.h>
 #include <DsHidMini/ScpTypes.h>
@@ -36,8 +38,6 @@ extern unsigned int numInstances;
 #include "DsBth.h"
 
 #include "Trace.h"
-
-#include "JSON/cJSON.h"
 
 
 EXTERN_C_START
