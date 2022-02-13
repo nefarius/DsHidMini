@@ -37,6 +37,8 @@ extern unsigned int numInstances;
 
 #include "Trace.h"
 
+#include "JSON/cJSON.h"
+
 
 EXTERN_C_START
 

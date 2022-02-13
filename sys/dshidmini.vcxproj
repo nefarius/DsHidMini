@@ -42,6 +42,8 @@
     <ClCompile Include="DsHid.c" />
     <ClCompile Include="DsHidMiniDrv.c" />
     <ClCompile Include="DsUsb.c" />
+    <ClCompile Include="JSON\cJSON.c" />
+    <ClCompile Include="JSON\cJSON_Utils.c" />
     <ClCompile Include="Power.c" />
   </ItemGroup>
   <ItemGroup>
@@ -63,6 +65,8 @@
     <ClInclude Include="HID\03_SXS_Col1_Joystick.h" />
     <ClInclude Include="HID\04_DS4_Col1_VendorDefined.h" />
     <ClInclude Include="HID\05_XIH_Col1_XInputHID.h" />
+    <ClInclude Include="JSON\cJSON.h" />
+    <ClInclude Include="JSON\cJSON_Utils.h" />
     <ClInclude Include="PID\01_PIDStateReport.h" />
     <ClInclude Include="PID\02_SetEffectReport.h" />
     <ClInclude Include="PID\03_SetEnvelopeReport.h" />
