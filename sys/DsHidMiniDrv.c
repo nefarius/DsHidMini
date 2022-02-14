@@ -1185,7 +1185,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 	dmfModule = (DMFMODULE)Context->DsHidMiniModule;
 	pModCtx = DMF_CONTEXT_GET(dmfModule);
 
-#pragma region HID Input Report (ID 01) processing
+#pragma region HID Input Report (SDF, GPJ ID 01) processing
 
 	switch (Context->Configuration.HidDeviceMode)
 	{
@@ -1236,9 +1236,10 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 
 #pragma endregion
 
-#pragma region HID Input Report (ID 02) processing
+#pragma region HID Input Report (GPJ ID 02) processing
 
-	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeGPJ)
+	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeGPJ
+		&& (Context->Configuration.GPJ.PressureExposureMode & DsPressureExposureModeAnalogue) != 0)
 	{
 		DS3_RAW_TO_GPJ_HID_INPUT_REPORT_02(
 			Report,
