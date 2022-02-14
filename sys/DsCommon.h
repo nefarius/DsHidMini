@@ -162,7 +162,6 @@ typedef enum
 //
 // Per device dynamic configuration properties
 // 
-#include <pshpack1.h>
 typedef struct _DS_DRIVER_CONFIGURATION
 {
 	/** The HID device mode */
@@ -195,5 +194,13 @@ typedef struct _DS_DRIVER_CONFIGURATION
 
 	} SDF;
 
+	//
+	// GPJ-mode specific
+	// 
+	struct
+	{
+		DS_PRESSURE_EXPOSURE_MODE PressureExposureMode;
+
+	} GPJ;
+
 } DS_DRIVER_CONFIGURATION, * PDS_DRIVER_CONFIGURATION;
-#include <poppack.h>
