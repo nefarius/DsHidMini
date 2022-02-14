@@ -60,7 +60,7 @@ void ConfigDeviceSpecificParse(
 
 	if ((pNode = cJSON_GetObjectItem(pSDF, "DPadExposureMode")))
 	{
-		pCfg->SDF.DPadExposureMode = (DS_PRESSURE_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
+		pCfg->SDF.DPadExposureMode = (DS_DPAD_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
 	}
 
 	//
@@ -76,7 +76,7 @@ void ConfigDeviceSpecificParse(
 
 	if ((pNode = cJSON_GetObjectItem(pGPJ, "DPadExposureMode")))
 	{
-		pCfg->GPJ.DPadExposureMode = (DS_PRESSURE_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
+		pCfg->GPJ.DPadExposureMode = (DS_DPAD_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
 	}
 }
 
