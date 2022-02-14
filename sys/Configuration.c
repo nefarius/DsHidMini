@@ -13,6 +13,10 @@ void ConfigDeviceSpecificParse(
 	PDS_DRIVER_CONFIGURATION pCfg = &Context->Configuration;
 	cJSON* pNode = NULL;
 
+	//
+	// Common
+	// 
+
 	if ((pNode = cJSON_GetObjectItem(DeviceNode, "HidDeviceMode")))
 	{
 		pCfg->HidDeviceMode = (DS_HID_DEVICE_MODE)cJSON_GetNumberValue(pNode);
@@ -41,6 +45,38 @@ void ConfigDeviceSpecificParse(
 	if ((pNode = cJSON_GetObjectItem(DeviceNode, "WirelessIdleTimeoutPeriodMs")))
 	{
 		pCfg->WirelessIdleTimeoutPeriodMs = (ULONG)cJSON_GetNumberValue(pNode);
+	}
+
+	//
+	// SDF
+	// 
+
+	const cJSON* pSDF = cJSON_GetObjectItem(DeviceNode, "SDF");
+
+	if ((pNode = cJSON_GetObjectItem(pSDF, "PressureExposureMode")))
+	{
+		pCfg->SDF.PressureExposureMode = (DS_PRESSURE_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
+	}
+
+	if ((pNode = cJSON_GetObjectItem(pSDF, "DPadExposureMode")))
+	{
+		pCfg->SDF.DPadExposureMode = (DS_PRESSURE_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
+	}
+
+	//
+	// GPJ
+	// 
+
+	const cJSON* pGPJ = cJSON_GetObjectItem(DeviceNode, "GPJ");
+
+	if ((pNode = cJSON_GetObjectItem(pGPJ, "PressureExposureMode")))
+	{
+		pCfg->GPJ.PressureExposureMode = (DS_PRESSURE_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
+	}
+
+	if ((pNode = cJSON_GetObjectItem(pGPJ, "DPadExposureMode")))
+	{
+		pCfg->GPJ.DPadExposureMode = (DS_PRESSURE_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
 	}
 }
 
