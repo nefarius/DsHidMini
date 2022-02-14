@@ -117,6 +117,8 @@ ConfigLoadForDevice(
 			break;
 		}
 
+		status = STATUS_SUCCESS;
+
 		TraceVerbose(
 			TRACE_CONFIG,
 			"Found device config"
@@ -162,6 +164,10 @@ ConfigLoadForDevice(
 		{
 			Context->Configuration.OutputRateControlPeriodMs = (UCHAR)cJSON_GetNumberValue(currentNode);
 		}
+		else
+		{
+			Context->Configuration.OutputRateControlPeriodMs = 150;
+		}
 
 		currentNode = cJSON_GetObjectItem(deviceNode, "IsOutputDeduplicatorEnabled");
 
@@ -176,8 +182,23 @@ ConfigLoadForDevice(
 		{
 			Context->Configuration.WirelessIdleTimeoutPeriodMs = (ULONG)cJSON_GetNumberValue(currentNode);
 		}
+		else
+		{
+			Context->Configuration.WirelessIdleTimeoutPeriodMs = 300000;
+		}
 
 	} while (FALSE);
+
+	//
+	// Set defaults here
+	// 
+	if (!NT_SUCCESS(status))
+	{
+		Context->Configuration.HidDeviceMode = DsHidMiniDeviceModeXInputHIDCompatible;
+		Context->Configuration.IsOutputDeduplicatorEnabled = TRUE;
+		Context->Configuration.OutputRateControlPeriodMs = 150;
+		Context->Configuration.WirelessIdleTimeoutPeriodMs = 300000;
+	}
 
 	if (config_json)
 	{
