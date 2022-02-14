@@ -183,9 +183,8 @@ DMF_DsHidMini_Open(
 	pHidCfg = DMF_ModuleConfigGet(moduleContext->DmfModuleVirtualHidMini);
 
 	//
-	// Update settings queried in PrepareHardware
+	// Load settings
 	// 
-
 	ConfigLoadForDevice(pDevCtx);
 
 	pHidCfg->VendorId = pDevCtx->VendorId;
