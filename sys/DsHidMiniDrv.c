@@ -259,9 +259,14 @@ DMF_DsHidMini_Open(
 		
 		break;
 	default:
+
+		status = STATUS_INVALID_PARAMETER;
+
 		TraceError(
 			TRACE_DSHIDMINIDRV,
 			"Unknown HID Device Mode: 0x%02X", pDevCtx->Configuration.HidDeviceMode);
+
+		break;
 	}
 	
 	//
