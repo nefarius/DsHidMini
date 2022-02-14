@@ -147,7 +147,7 @@ typedef struct _DS_DRIVER_CONFIGURATION
     /** True to mute digital pressure buttons */
     BOOLEAN MuteDigitalPressureButtons;
 
-	/** UNUSED */
+	/** When set, pairing will not be attempted on device boot */
 	BOOLEAN DisableAutoPairing;
 
     /** True if output rate control is enabled, false if not */

@@ -7,8 +7,7 @@
 _Must_inspect_result_
 NTSTATUS
 ConfigLoadForDeviceAddress(
-	_In_ PBD_ADDR Address,
-	_Outptr_ PDEVICE_CONTEXT Context
+	_Inout_ PDEVICE_CONTEXT Context
 )
 {
 	NTSTATUS status = STATUS_UNSUCCESSFUL;
@@ -113,22 +112,69 @@ ConfigLoadForDeviceAddress(
 
 		cJSON* deviceNode = cJSON_GetObjectItem(config_json, deviceAddress);
 
-		if (deviceNode != NULL)
+		if (deviceNode == NULL)
 		{
-			TraceVerbose(
-				TRACE_CONFIG,
-				"Found device config"
-			);
+			break;
+		}
 
-			cJSON_bool ret = cJSON_HasObjectItem(deviceNode, "HidDeviceMode");
+		TraceVerbose(
+			TRACE_CONFIG,
+			"Found device config"
+		);
 
-			if (ret)
-			{
-				TraceVerbose(
-					TRACE_CONFIG,
-					"Has HID Device Mode"
-				);
-			}
+		cJSON* currentNode = NULL;
+
+		currentNode = cJSON_GetObjectItem(deviceNode, "HidDeviceMode");
+
+		if (currentNode)
+		{
+			Context->Configuration.HidDeviceMode = (DS_HID_DEVICE_MODE)cJSON_GetNumberValue(currentNode);
+		}
+		else
+		{
+			Context->Configuration.HidDeviceMode = DsHidMiniDeviceModeXInputHIDCompatible;
+		}
+
+		currentNode = cJSON_GetObjectItem(deviceNode, "MuteDigitalPressureButtons");
+
+		if (currentNode)
+		{
+			Context->Configuration.MuteDigitalPressureButtons = cJSON_GetNumberValue(currentNode) > 0.0f;
+		}
+
+		currentNode = cJSON_GetObjectItem(deviceNode, "DisableAutoPairing");
+
+		if (currentNode)
+		{
+			Context->Configuration.DisableAutoPairing = cJSON_GetNumberValue(currentNode) > 0.0f;
+		}
+
+		currentNode = cJSON_GetObjectItem(deviceNode, "IsOutputRateControlEnabled");
+
+		if (currentNode)
+		{
+			Context->Configuration.IsOutputRateControlEnabled = cJSON_GetNumberValue(currentNode) > 0.0f;
+		}
+
+		currentNode = cJSON_GetObjectItem(deviceNode, "OutputRateControlPeriodMs");
+
+		if (currentNode)
+		{
+			Context->Configuration.OutputRateControlPeriodMs = (UCHAR)cJSON_GetNumberValue(currentNode);
+		}
+
+		currentNode = cJSON_GetObjectItem(deviceNode, "IsOutputDeduplicatorEnabled");
+
+		if (currentNode)
+		{
+			Context->Configuration.IsOutputDeduplicatorEnabled = cJSON_GetNumberValue(currentNode) > 0.0f;
+		}
+
+		currentNode = cJSON_GetObjectItem(deviceNode, "WirelessIdleTimeoutPeriodMs");
+
+		if (currentNode)
+		{
+			Context->Configuration.WirelessIdleTimeoutPeriodMs = (ULONG)cJSON_GetNumberValue(currentNode);
 		}
 
 	} while (FALSE);

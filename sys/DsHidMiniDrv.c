@@ -186,7 +186,7 @@ DMF_DsHidMini_Open(
 	// Update settings queried in PrepareHardware
 	// 
 
-	ConfigLoadForDeviceAddress(&pDevCtx->DeviceAddress, pDevCtx);
+	ConfigLoadForDeviceAddress(pDevCtx);
 
 	pHidCfg->VendorId = pDevCtx->VendorId;
 	pHidCfg->ProductId = pDevCtx->ProductId;
