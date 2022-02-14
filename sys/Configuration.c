@@ -4,6 +4,75 @@
 #define CONFIG_ENV_VAR_NAME		"ProgramData"
 #define CONFIG_FILE_NAME		"DsHidMini.json"
 
+void ConfigDeviceSpecificParse(
+	_In_ const cJSON* DeviceNode,
+	_Inout_ PDEVICE_CONTEXT Context
+)
+{
+	cJSON* currentNode = NULL;
+
+	currentNode = cJSON_GetObjectItem(DeviceNode, "HidDeviceMode");
+
+	if (currentNode)
+	{
+		Context->Configuration.HidDeviceMode = (DS_HID_DEVICE_MODE)cJSON_GetNumberValue(currentNode);
+	}
+	else
+	{
+		Context->Configuration.HidDeviceMode = DsHidMiniDeviceModeXInputHIDCompatible;
+	}
+
+	currentNode = cJSON_GetObjectItem(DeviceNode, "MuteDigitalPressureButtons");
+
+	if (currentNode)
+	{
+		Context->Configuration.MuteDigitalPressureButtons = cJSON_GetNumberValue(currentNode) > 0.0f;
+	}
+
+	currentNode = cJSON_GetObjectItem(DeviceNode, "DisableAutoPairing");
+
+	if (currentNode)
+	{
+		Context->Configuration.DisableAutoPairing = cJSON_GetNumberValue(currentNode) > 0.0f;
+	}
+
+	currentNode = cJSON_GetObjectItem(DeviceNode, "IsOutputRateControlEnabled");
+
+	if (currentNode)
+	{
+		Context->Configuration.IsOutputRateControlEnabled = cJSON_GetNumberValue(currentNode) > 0.0f;
+	}
+
+	currentNode = cJSON_GetObjectItem(DeviceNode, "OutputRateControlPeriodMs");
+
+	if (currentNode)
+	{
+		Context->Configuration.OutputRateControlPeriodMs = (UCHAR)cJSON_GetNumberValue(currentNode);
+	}
+	else
+	{
+		Context->Configuration.OutputRateControlPeriodMs = 150;
+	}
+
+	currentNode = cJSON_GetObjectItem(DeviceNode, "IsOutputDeduplicatorEnabled");
+
+	if (currentNode)
+	{
+		Context->Configuration.IsOutputDeduplicatorEnabled = cJSON_GetNumberValue(currentNode) > 0.0f;
+	}
+
+	currentNode = cJSON_GetObjectItem(DeviceNode, "WirelessIdleTimeoutPeriodMs");
+
+	if (currentNode)
+	{
+		Context->Configuration.WirelessIdleTimeoutPeriodMs = (ULONG)cJSON_GetNumberValue(currentNode);
+	}
+	else
+	{
+		Context->Configuration.WirelessIdleTimeoutPeriodMs = 300000;
+	}
+}
+
 _Must_inspect_result_
 NTSTATUS
 ConfigLoadForDevice(
@@ -108,9 +177,14 @@ ConfigLoadForDevice(
 			);
 
 			break;
+		default:
+			status = STATUS_INVALID_PARAMETER;
+			break;
 		}
 
-		cJSON* deviceNode = cJSON_GetObjectItem(config_json, deviceAddress);
+		const cJSON* devicesNode = cJSON_GetObjectItem(config_json, "Devices");
+
+		cJSON* deviceNode = cJSON_GetObjectItem(devicesNode, deviceAddress);
 
 		if (deviceNode == NULL)
 		{
@@ -121,71 +195,11 @@ ConfigLoadForDevice(
 
 		TraceVerbose(
 			TRACE_CONFIG,
-			"Found device config"
+			"Found device config for %s",
+			deviceAddress
 		);
 
-		cJSON* currentNode = NULL;
-
-		currentNode = cJSON_GetObjectItem(deviceNode, "HidDeviceMode");
-
-		if (currentNode)
-		{
-			Context->Configuration.HidDeviceMode = (DS_HID_DEVICE_MODE)cJSON_GetNumberValue(currentNode);
-		}
-		else
-		{
-			Context->Configuration.HidDeviceMode = DsHidMiniDeviceModeXInputHIDCompatible;
-		}
-
-		currentNode = cJSON_GetObjectItem(deviceNode, "MuteDigitalPressureButtons");
-
-		if (currentNode)
-		{
-			Context->Configuration.MuteDigitalPressureButtons = cJSON_GetNumberValue(currentNode) > 0.0f;
-		}
-
-		currentNode = cJSON_GetObjectItem(deviceNode, "DisableAutoPairing");
-
-		if (currentNode)
-		{
-			Context->Configuration.DisableAutoPairing = cJSON_GetNumberValue(currentNode) > 0.0f;
-		}
-
-		currentNode = cJSON_GetObjectItem(deviceNode, "IsOutputRateControlEnabled");
-
-		if (currentNode)
-		{
-			Context->Configuration.IsOutputRateControlEnabled = cJSON_GetNumberValue(currentNode) > 0.0f;
-		}
-
-		currentNode = cJSON_GetObjectItem(deviceNode, "OutputRateControlPeriodMs");
-
-		if (currentNode)
-		{
-			Context->Configuration.OutputRateControlPeriodMs = (UCHAR)cJSON_GetNumberValue(currentNode);
-		}
-		else
-		{
-			Context->Configuration.OutputRateControlPeriodMs = 150;
-		}
-
-		currentNode = cJSON_GetObjectItem(deviceNode, "IsOutputDeduplicatorEnabled");
-
-		if (currentNode)
-		{
-			Context->Configuration.IsOutputDeduplicatorEnabled = cJSON_GetNumberValue(currentNode) > 0.0f;
-		}
-
-		currentNode = cJSON_GetObjectItem(deviceNode, "WirelessIdleTimeoutPeriodMs");
-
-		if (currentNode)
-		{
-			Context->Configuration.WirelessIdleTimeoutPeriodMs = (ULONG)cJSON_GetNumberValue(currentNode);
-		}
-		else
-		{
-			Context->Configuration.WirelessIdleTimeoutPeriodMs = 300000;
-		}
+		ConfigDeviceSpecificParse(deviceNode, Context);
 
 	} while (FALSE);
 
