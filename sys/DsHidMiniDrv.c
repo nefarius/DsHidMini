@@ -373,7 +373,7 @@ DsHidMini_RetrieveNextInputReport(
 	{
 	case DsHidMiniDeviceModeSDF:
 	case DsHidMiniDeviceModeGPJ:
-		*BufferSize = DS3_SPLIT_SINGLE_HID_INPUT_REPORT_SIZE;
+		*BufferSize = DS3_SDF_GPJ_HID_INPUT_REPORT_SIZE;
 		break;
 	case DsHidMiniDeviceModeSixaxisCompatible:
 		*BufferSize = SIXAXIS_HID_INPUT_REPORT_SIZE;
@@ -1198,7 +1198,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 		);
 
 #ifdef DBG
-		DumpAsHex(">> MULTI", pModCtx->InputReport, DS3_SPLIT_SINGLE_HID_INPUT_REPORT_SIZE);
+		DumpAsHex(">> MULTI", pModCtx->InputReport, DS3_SDF_GPJ_HID_INPUT_REPORT_SIZE);
 #endif
 
 		break;
