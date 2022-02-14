@@ -196,7 +196,7 @@ DMF_DsHidMini_Open(
 
 	switch (pDevCtx->Configuration.HidDeviceMode)
 	{
-	case DsHidMiniDeviceModeSingle:
+	case DsHidMiniDeviceModeSDF:
 
 		pHidCfg->HidDescriptor = &G_Ds3HidDescriptor_Single_Mode;
 		pHidCfg->HidDescriptorLength = sizeof(G_Ds3HidDescriptor_Single_Mode);
@@ -204,7 +204,7 @@ DMF_DsHidMini_Open(
 		pHidCfg->HidReportDescriptorLength = G_Ds3HidDescriptor_Single_Mode.DescriptorList[0].wReportLength;
 
 		break;
-	case DsHidMiniDeviceModeMulti:
+	case DsHidMiniDeviceModeGPJ:
 
 		pHidCfg->HidDescriptor = &G_Ds3HidDescriptor_Split_Mode;
 		pHidCfg->HidDescriptorLength = sizeof(G_Ds3HidDescriptor_Split_Mode);
@@ -371,8 +371,8 @@ DsHidMini_RetrieveNextInputReport(
 
 	switch (pDevCtx->Configuration.HidDeviceMode)
 	{
-	case DsHidMiniDeviceModeSingle:
-	case DsHidMiniDeviceModeMulti:
+	case DsHidMiniDeviceModeSDF:
+	case DsHidMiniDeviceModeGPJ:
 		*BufferSize = DS3_SPLIT_SINGLE_HID_INPUT_REPORT_SIZE;
 		break;
 	case DsHidMiniDeviceModeSixaxisCompatible:
@@ -1189,7 +1189,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 
 	switch (Context->Configuration.HidDeviceMode)
 	{
-	case DsHidMiniDeviceModeMulti:
+	case DsHidMiniDeviceModeGPJ:
 
 		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 			Report,
@@ -1202,7 +1202,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 #endif
 
 		break;
-	case DsHidMiniDeviceModeSingle:
+	case DsHidMiniDeviceModeSDF:
 
 		DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
 			Report,
@@ -1238,7 +1238,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 
 #pragma region HID Input Report (ID 02) processing
 
-	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeMulti)
+	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeGPJ)
 	{
 		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
 			Report,

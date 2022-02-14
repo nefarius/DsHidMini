@@ -2,6 +2,9 @@
 #include "Configuration.tmh"
 
 
+//
+// Reads/refreshes configuration from disk (JSON) to provided context
+// 
 void ConfigDeviceSpecificParse(
 	_In_ const cJSON* DeviceNode,
 	_Inout_ PDEVICE_CONTEXT Context

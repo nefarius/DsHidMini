@@ -1,26 +1,21 @@
 #pragma once
 
-#include <pshpack1.h>
 
-/**
-* \typedef struct _BD_ADDR
-*
-* \brief   Defines a Bluetooth client MAC address.
-*/
+//
+// Defines a Bluetooth client MAC address
+// 
+#include <pshpack1.h>
 typedef struct _BD_ADDR
 {
     UCHAR Address[6];
 
 } BD_ADDR, * PBD_ADDR;
-
 #include <poppack.h>
 
-/**
- * \enum    _DS_DEVICE_TYPE
- *
- * \brief   Device type.
- */
-typedef enum _DS_DEVICE_TYPE
+//
+// Device type
+// 
+typedef enum
 {
     //
     // Unknown device type
@@ -49,12 +44,10 @@ typedef enum _DS_DEVICE_TYPE
 
 } DS_DEVICE_TYPE, * PDS_DEVICE_TYPE;
 
-/**
- * \enum    _DS_CONNECTION_TYPE
- *
- * \brief   Device connection type.
- */
-typedef enum _DS_CONNECTION_TYPE
+//
+// Device connection type
+// 
+typedef enum
 {
     DsDeviceConnectionTypeUnknown = 0x00,
     DsDeviceConnectionTypeUsb,
@@ -62,7 +55,10 @@ typedef enum _DS_CONNECTION_TYPE
 
 } DS_CONNECTION_TYPE, * PDS_CONNECTION_TYPE;
 
-typedef enum _DS_BATTERY_STATUS
+//
+// Battery status values reported by the hardware
+// 
+typedef enum
 {
     DsBatteryStatusNone = 0x00,
     DsBatteryStatusDying = 0x01,
@@ -75,18 +71,24 @@ typedef enum _DS_BATTERY_STATUS
 	
 } DS_BATTERY_STATUS, *PDS_BATTERY_STATUS;
 
-typedef enum _DS_HID_DEVICE_MODE
+//
+// See https://vigem.org/projects/DsHidMini/HID-Device-Modes-Explained
+// 
+typedef enum
 {
     DsHidMiniDeviceModeUnknown = 0x00,
-    DsHidMiniDeviceModeSingle,
-    DsHidMiniDeviceModeMulti,
+    DsHidMiniDeviceModeSDF,
+    DsHidMiniDeviceModeGPJ,
     DsHidMiniDeviceModeSixaxisCompatible,
     DsHidMiniDeviceModeDS4WindowsCompatible,
     DsHidMiniDeviceModeXInputHIDCompatible
 
 } DS_HID_DEVICE_MODE, * PDS_HID_DEVICE_MODE;
 
-typedef enum _DS_OUTPUT_REPORT_MODE
+//
+// Output report processing mode
+// 
+typedef enum
 {
 	//
 	// DSHM controls output report generation
@@ -100,7 +102,10 @@ typedef enum _DS_OUTPUT_REPORT_MODE
 
 } DS_OUTPUT_REPORT_MODE, * PDS_OUTPUT_REPORT_MODE;
 
-typedef enum _DS_OUTPUT_REPORT_SOURCE
+//
+// The originator of output reports
+// 
+typedef enum
 {
 	//
 	// Request originated from ourself (must not be discarded)
@@ -134,11 +139,10 @@ typedef enum _DS_OUTPUT_REPORT_SOURCE
 
 } DS_OUTPUT_REPORT_SOURCE, * PDS_OUTPUT_REPORT_SOURCE;
 
-#include <pshpack1.h>
-
 //
 // Per device dynamic configuration properties
 // 
+#include <pshpack1.h>
 typedef struct _DS_DRIVER_CONFIGURATION
 {
     /** The HID device mode */
@@ -156,12 +160,17 @@ typedef struct _DS_DRIVER_CONFIGURATION
     /** The output rate control period in milliseconds */
     UCHAR OutputRateControlPeriodMs;
 
-    /** The is output deduplicator enabled */
+    /** True if output deduplicator is enabled, false if not */
     UCHAR IsOutputDeduplicatorEnabled;
 
     /** Idle disconnect period in milliseconds */
     ULONG WirelessIdleTimeoutPeriodMs;
+
+    struct
+    {
+        BOOL test;
+
+    } SDF;
 	
 } DS_DRIVER_CONFIGURATION, * PDS_DRIVER_CONFIGURATION;
-
 #include <poppack.h>
