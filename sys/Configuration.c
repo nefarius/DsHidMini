@@ -10,67 +10,68 @@ void ConfigDeviceSpecificParse(
 	_Inout_ PDEVICE_CONTEXT Context
 )
 {
-	cJSON* currentNode = NULL;
+	PDS_DRIVER_CONFIGURATION pCfg = &Context->Configuration;
+	cJSON* pNode = NULL;
 
-	currentNode = cJSON_GetObjectItem(DeviceNode, "HidDeviceMode");
+	pNode = cJSON_GetObjectItem(DeviceNode, "HidDeviceMode");
 
-	if (currentNode)
+	if (pNode)
 	{
-		Context->Configuration.HidDeviceMode = (DS_HID_DEVICE_MODE)cJSON_GetNumberValue(currentNode);
+		pCfg->HidDeviceMode = (DS_HID_DEVICE_MODE)cJSON_GetNumberValue(pNode);
 	}
 	else
 	{
-		Context->Configuration.HidDeviceMode = DsHidMiniDeviceModeXInputHIDCompatible;
+		pCfg->HidDeviceMode = DsHidMiniDeviceModeXInputHIDCompatible;
 	}
 
-	currentNode = cJSON_GetObjectItem(DeviceNode, "MuteDigitalPressureButtons");
+	pNode = cJSON_GetObjectItem(DeviceNode, "MuteDigitalPressureButtons");
 
-	if (currentNode)
+	if (pNode)
 	{
-		Context->Configuration.MuteDigitalPressureButtons = cJSON_GetNumberValue(currentNode) > 0.0f;
+		pCfg->MuteDigitalPressureButtons = cJSON_GetNumberValue(pNode) > 0.0f;
 	}
 
-	currentNode = cJSON_GetObjectItem(DeviceNode, "DisableAutoPairing");
+	pNode = cJSON_GetObjectItem(DeviceNode, "DisableAutoPairing");
 
-	if (currentNode)
+	if (pNode)
 	{
-		Context->Configuration.DisableAutoPairing = cJSON_GetNumberValue(currentNode) > 0.0f;
+		pCfg->DisableAutoPairing = cJSON_GetNumberValue(pNode) > 0.0f;
 	}
 
-	currentNode = cJSON_GetObjectItem(DeviceNode, "IsOutputRateControlEnabled");
+	pNode = cJSON_GetObjectItem(DeviceNode, "IsOutputRateControlEnabled");
 
-	if (currentNode)
+	if (pNode)
 	{
-		Context->Configuration.IsOutputRateControlEnabled = cJSON_GetNumberValue(currentNode) > 0.0f;
+		pCfg->IsOutputRateControlEnabled = cJSON_GetNumberValue(pNode) > 0.0f;
 	}
 
-	currentNode = cJSON_GetObjectItem(DeviceNode, "OutputRateControlPeriodMs");
+	pNode = cJSON_GetObjectItem(DeviceNode, "OutputRateControlPeriodMs");
 
-	if (currentNode)
+	if (pNode)
 	{
-		Context->Configuration.OutputRateControlPeriodMs = (UCHAR)cJSON_GetNumberValue(currentNode);
-	}
-	else
-	{
-		Context->Configuration.OutputRateControlPeriodMs = 150;
-	}
-
-	currentNode = cJSON_GetObjectItem(DeviceNode, "IsOutputDeduplicatorEnabled");
-
-	if (currentNode)
-	{
-		Context->Configuration.IsOutputDeduplicatorEnabled = cJSON_GetNumberValue(currentNode) > 0.0f;
-	}
-
-	currentNode = cJSON_GetObjectItem(DeviceNode, "WirelessIdleTimeoutPeriodMs");
-
-	if (currentNode)
-	{
-		Context->Configuration.WirelessIdleTimeoutPeriodMs = (ULONG)cJSON_GetNumberValue(currentNode);
+		pCfg->OutputRateControlPeriodMs = (UCHAR)cJSON_GetNumberValue(pNode);
 	}
 	else
 	{
-		Context->Configuration.WirelessIdleTimeoutPeriodMs = 300000;
+		pCfg->OutputRateControlPeriodMs = 150;
+	}
+
+	pNode = cJSON_GetObjectItem(DeviceNode, "IsOutputDeduplicatorEnabled");
+
+	if (pNode)
+	{
+		pCfg->IsOutputDeduplicatorEnabled = cJSON_GetNumberValue(pNode) > 0.0f;
+	}
+
+	pNode = cJSON_GetObjectItem(DeviceNode, "WirelessIdleTimeoutPeriodMs");
+
+	if (pNode)
+	{
+		pCfg->WirelessIdleTimeoutPeriodMs = (ULONG)cJSON_GetNumberValue(pNode);
+	}
+	else
+	{
+		pCfg->WirelessIdleTimeoutPeriodMs = 300000;
 	}
 }
 

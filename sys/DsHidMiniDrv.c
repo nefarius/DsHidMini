@@ -1191,7 +1191,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 	{
 	case DsHidMiniDeviceModeGPJ:
 
-		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
+		DS3_RAW_TO_GPJ_HID_INPUT_REPORT_01(
 			Report,
 			pModCtx->InputReport,
 			Context->Configuration.MuteDigitalPressureButtons
@@ -1204,7 +1204,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 		break;
 	case DsHidMiniDeviceModeSDF:
 
-		DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
+		DS3_RAW_TO_SDF_HID_INPUT_REPORT(
 			Report,
 			pModCtx->InputReport,
 			Context->Configuration.MuteDigitalPressureButtons
@@ -1240,7 +1240,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 
 	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeGPJ)
 	{
-		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
+		DS3_RAW_TO_GPJ_HID_INPUT_REPORT_02(
 			Report,
 			pModCtx->InputReport
 		);
@@ -1290,7 +1290,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 
 	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeDS4WindowsCompatible)
 	{
-		DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
+		DS3_RAW_TO_DS4WINDOWS_HID_INPUT_REPORT(
 			Report,
 			pModCtx->InputReport,
 			(Context->ConnectionType == DsDeviceConnectionTypeUsb) ? TRUE : FALSE
