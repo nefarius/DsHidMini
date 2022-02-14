@@ -13,58 +13,34 @@ void ConfigDeviceSpecificParse(
 	PDS_DRIVER_CONFIGURATION pCfg = &Context->Configuration;
 	cJSON* pNode = NULL;
 
-	pNode = cJSON_GetObjectItem(DeviceNode, "HidDeviceMode");
-
-	if (pNode)
+	if ((pNode = cJSON_GetObjectItem(DeviceNode, "HidDeviceMode")))
 	{
 		pCfg->HidDeviceMode = (DS_HID_DEVICE_MODE)cJSON_GetNumberValue(pNode);
 	}
-	else
-	{
-		pCfg->HidDeviceMode = DsHidMiniDeviceModeXInputHIDCompatible;
-	}
 
-	pNode = cJSON_GetObjectItem(DeviceNode, "DisableAutoPairing");
-
-	if (pNode)
+	if ((pNode = cJSON_GetObjectItem(DeviceNode, "DisableAutoPairing")))
 	{
 		pCfg->DisableAutoPairing = cJSON_GetNumberValue(pNode) > 0.0f;
 	}
 
-	pNode = cJSON_GetObjectItem(DeviceNode, "IsOutputRateControlEnabled");
-
-	if (pNode)
+	if ((pNode = cJSON_GetObjectItem(DeviceNode, "IsOutputRateControlEnabled")))
 	{
 		pCfg->IsOutputRateControlEnabled = cJSON_GetNumberValue(pNode) > 0.0f;
 	}
 
-	pNode = cJSON_GetObjectItem(DeviceNode, "OutputRateControlPeriodMs");
-
-	if (pNode)
+	if ((pNode = cJSON_GetObjectItem(DeviceNode, "OutputRateControlPeriodMs")))
 	{
 		pCfg->OutputRateControlPeriodMs = (UCHAR)cJSON_GetNumberValue(pNode);
 	}
-	else
-	{
-		pCfg->OutputRateControlPeriodMs = 150;
-	}
 
-	pNode = cJSON_GetObjectItem(DeviceNode, "IsOutputDeduplicatorEnabled");
-
-	if (pNode)
+	if ((pNode = cJSON_GetObjectItem(DeviceNode, "IsOutputDeduplicatorEnabled")))
 	{
 		pCfg->IsOutputDeduplicatorEnabled = cJSON_GetNumberValue(pNode) > 0.0f;
 	}
 
-	pNode = cJSON_GetObjectItem(DeviceNode, "WirelessIdleTimeoutPeriodMs");
-
-	if (pNode)
+	if ((pNode = cJSON_GetObjectItem(DeviceNode, "WirelessIdleTimeoutPeriodMs")))
 	{
 		pCfg->WirelessIdleTimeoutPeriodMs = (ULONG)cJSON_GetNumberValue(pNode);
-	}
-	else
-	{
-		pCfg->WirelessIdleTimeoutPeriodMs = 300000;
 	}
 }
 
