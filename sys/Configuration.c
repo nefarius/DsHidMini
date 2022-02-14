@@ -24,13 +24,6 @@ void ConfigDeviceSpecificParse(
 		pCfg->HidDeviceMode = DsHidMiniDeviceModeXInputHIDCompatible;
 	}
 
-	pNode = cJSON_GetObjectItem(DeviceNode, "MuteDigitalPressureButtons");
-
-	if (pNode)
-	{
-		pCfg->MuteDigitalPressureButtons = cJSON_GetNumberValue(pNode) > 0.0f;
-	}
-
 	pNode = cJSON_GetObjectItem(DeviceNode, "DisableAutoPairing");
 
 	if (pNode)

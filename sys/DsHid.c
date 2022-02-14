@@ -6,7 +6,7 @@
 
 #pragma region DS3 HID Report Descriptor (Split Device Mode)
 
-CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_Split_Mode[] = 
+CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_Split_Mode[] =
 {
 	/************************************************************************/
 	/* Gamepad definition (for regular DS3 buttons, axes & features)        */
@@ -52,7 +52,7 @@ sizeof(G_Ds3HidReportDescriptor_Split_Mode) }  // total length of report descrip
 
 #pragma region DS3 HID Report Descriptor (Single Device Mode)
 
-CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_Single_Mode[] = 
+CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_Single_Mode[] =
 {
 	/************************************************************************/
 	/* Gamepad definition with pressure axes in one report                  */
@@ -182,11 +182,11 @@ BOOLEAN DS3_RAW_IS_IDLE(
 		|| Input->RightThumbX > DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER
 		|| Input->RightThumbY < DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER
 		|| Input->RightThumbY > DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER
-	)
+		)
 	{
 		return FALSE;
 	}
-	
+
 	//
 	// Sliders
 	// 
@@ -194,11 +194,11 @@ BOOLEAN DS3_RAW_IS_IDLE(
 	if (
 		Input->Pressure.Values.L2 > DS3_RAW_SLIDER_IDLE_THRESHOLD
 		|| Input->Pressure.Values.R2 > DS3_RAW_SLIDER_IDLE_THRESHOLD
-	)
+		)
 	{
 		return FALSE;
 	}
-	
+
 	//
 	// If we end up here, no movement is going on
 	// 
@@ -209,7 +209,7 @@ BOOLEAN DS3_RAW_IS_IDLE(
 VOID DS3_RAW_TO_GPJ_HID_INPUT_REPORT_01(
 	_In_ PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output,
-	_In_ BOOLEAN MuteDigitalPressureButtons
+	_In_ DS_PRESSURE_EXPOSURE_MODE PressureMode
 )
 {
 	// Report ID
@@ -227,7 +227,7 @@ VOID DS3_RAW_TO_GPJ_HID_INPUT_REPORT_01(
 	// Prepare PS and D-Pad buttons
 	Output[7] &= ~0xFF; // Clear all 8 bits
 
-	if (!MuteDigitalPressureButtons)
+	if ((PressureMode & DsPressureExposureModeDigital) != 0)
 	{
 		// Translate D-Pad to HAT format
 		if (TRUE == TRUE) // Placeholder for DHMC option
@@ -281,7 +281,8 @@ VOID DS3_RAW_TO_GPJ_HID_INPUT_REPORT_01(
 			Output[7] |= (Input->Buttons.bButtons[0] & ~0xF) >> 3; // OUTPUT: LEFT [4], DOWN [3], RIGHT [2], UP [1]
 		}
 	}
-	else {
+	else
+	{
 		// Clear HAT position
 		Output[5] |= 8 & 0xF;
 	}
@@ -329,7 +330,7 @@ VOID DS3_RAW_TO_GPJ_HID_INPUT_REPORT_02(
 VOID DS3_RAW_TO_SDF_HID_INPUT_REPORT(
 	_In_ PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output,
-	_In_ BOOLEAN MuteDigitalPressureButtons
+	_In_ DS_PRESSURE_EXPOSURE_MODE PressureMode
 )
 {
 	// Report ID
@@ -347,7 +348,7 @@ VOID DS3_RAW_TO_SDF_HID_INPUT_REPORT(
 	// Prepare PS and D-Pad buttons
 	Output[7] &= ~0xFF; // Clear all 8 bits
 
-	if (!MuteDigitalPressureButtons)
+	if ((PressureMode & DsPressureExposureModeDigital) != 0)
 	{
 		// Translate D-Pad to HAT format
 		if (TRUE == TRUE) // Placeholder for DHMC option
@@ -419,21 +420,24 @@ VOID DS3_RAW_TO_SDF_HID_INPUT_REPORT(
 	// PS button
 	Output[7] |= Input->Buttons.Individual.PS;
 
-	// D-Pad (pressure)
-	Output[10] = Input->Pressure.Values.Up;
-	Output[11] = Input->Pressure.Values.Right;
-	Output[12] = Input->Pressure.Values.Down;
-	Output[13] = Input->Pressure.Values.Left;
+	if ((PressureMode & DsPressureExposureModeAnalogue) != 0)
+	{
+		// D-Pad (pressure)
+		Output[10] = Input->Pressure.Values.Up;
+		Output[11] = Input->Pressure.Values.Right;
+		Output[12] = Input->Pressure.Values.Down;
+		Output[13] = Input->Pressure.Values.Left;
 
-	// Shoulders (pressure)
-	Output[14] = Input->Pressure.Values.L1;
-	Output[15] = Input->Pressure.Values.R1;
+		// Shoulders (pressure)
+		Output[14] = Input->Pressure.Values.L1;
+		Output[15] = Input->Pressure.Values.R1;
 
-	// Face buttons (pressure)
-	Output[16] = Input->Pressure.Values.Triangle;
-	Output[17] = Input->Pressure.Values.Circle;
-	Output[18] = Input->Pressure.Values.Cross;
-	Output[19] = Input->Pressure.Values.Square;
+		// Face buttons (pressure)
+		Output[16] = Input->Pressure.Values.Triangle;
+		Output[17] = Input->Pressure.Values.Circle;
+		Output[18] = Input->Pressure.Values.Cross;
+		Output[19] = Input->Pressure.Values.Square;
+	}
 }
 
 VOID DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
@@ -582,10 +586,10 @@ VOID DS3_RAW_TO_DS4WINDOWS_HID_INPUT_REPORT(
 		Output[5] |= 8 & 0xF;
 		break;
 	}
-	
+
 	// Face buttons
 	Output[5] |= ((REVERSE_BITS(Input->Buttons.bButtons[1]) << 4) & 0xF0);
-		
+
 	// Select to Share
 	Output[6] |= ((Input->Buttons.bButtons[0] & 0x01) << 4);
 
@@ -601,7 +605,7 @@ VOID DS3_RAW_TO_DS4WINDOWS_HID_INPUT_REPORT(
 	// L3, R3
 	Output[6] |= (((Input->Buttons.bButtons[0] >> 1) & 0x01) << 6);
 	Output[6] |= (((Input->Buttons.bButtons[0] >> 2) & 0x01) << 7);
-	
+
 	// Thumb axes
 	Output[1] = Input->LeftThumbX;
 	Output[2] = Input->LeftThumbY;
@@ -661,7 +665,7 @@ VOID DS3_RAW_TO_DS4WINDOWS_HID_INPUT_REPORT(
 }
 
 VOID DS3_RAW_TO_XINPUTHID_HID_INPUT_REPORT(
-	_In_ PDS3_RAW_INPUT_REPORT Input, 
+	_In_ PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PXINPUT_HID_INPUT_REPORT Output
 )
 {
@@ -704,7 +708,7 @@ VOID DS3_RAW_TO_XINPUTHID_HID_INPUT_REPORT(
 	// 
 	Output->BTN_GamePadButton9 = Input->Buttons.Individual.L3;
 	Output->BTN_GamePadButton10 = Input->Buttons.Individual.R3;
-		
+
 	// 
 	// D-Pad (POV/HAT format)
 	// 

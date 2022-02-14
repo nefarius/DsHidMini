@@ -145,17 +145,17 @@ typedef enum
 typedef enum
 {
 	//
-	// Default behaviour (depends on device mode)
-	// 
-	DsPressureExposureModeDefault = 0,
-	//
 	// Only report digital (two-state) pressure sensitive button state changes
 	// 
-	DsPressureExposureModeDigitalOnly = 1 << 0,
+	DsPressureExposureModeDigital = 1 << 0,
 	//
 	// Only report analogue (range) pressure sensitive button state changes
 	// 
-	DsPressureExposureModeAnalogueOnly = 1 << 1
+	DsPressureExposureModeAnalogue = 1 << 1,
+	//
+	// Default behaviour exposes both unaltered
+	// 
+	DsPressureExposureModeDefault = DsPressureExposureModeDigital | DsPressureExposureModeAnalogue
 
 } DS_PRESSURE_EXPOSURE_MODE, * PDS_PRESSURE_EXPOSURE_MODE;
 
@@ -166,9 +166,6 @@ typedef struct _DS_DRIVER_CONFIGURATION
 {
 	/** The HID device mode */
 	DS_HID_DEVICE_MODE HidDeviceMode;
-
-	/** True to mute digital pressure buttons */
-	BOOLEAN MuteDigitalPressureButtons;
 
 	/** When set, pairing will not be attempted on device boot */
 	BOOLEAN DisableAutoPairing;
