@@ -155,7 +155,7 @@ ConfigLoadForDevice(
 				);
 			}
 
-			status = STATUS_NOT_FOUND;
+			status = STATUS_ACCESS_VIOLATION;
 			break;
 		}
 
