@@ -1194,7 +1194,8 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 		DS3_RAW_TO_GPJ_HID_INPUT_REPORT_01(
 			Report,
 			pModCtx->InputReport,
-			Context->Configuration.GPJ.PressureExposureMode
+			Context->Configuration.GPJ.PressureExposureMode,
+			Context->Configuration.GPJ.DPadExposureMode
 		);
 
 #ifdef DBG
@@ -1207,7 +1208,8 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 		DS3_RAW_TO_SDF_HID_INPUT_REPORT(
 			Report,
 			pModCtx->InputReport,
-			Context->Configuration.SDF.PressureExposureMode
+			Context->Configuration.SDF.PressureExposureMode,
+			Context->Configuration.SDF.DPadExposureMode
 		);
 
 		/*

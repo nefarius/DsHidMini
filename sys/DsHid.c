@@ -209,7 +209,8 @@ BOOLEAN DS3_RAW_IS_IDLE(
 VOID DS3_RAW_TO_GPJ_HID_INPUT_REPORT_01(
 	_In_ PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output,
-	_In_ DS_PRESSURE_EXPOSURE_MODE PressureMode
+	_In_ DS_PRESSURE_EXPOSURE_MODE PressureMode,
+	_In_ DS_DPAD_EXPOSURE_MODE DPadExposureMode
 )
 {
 	// Report ID
@@ -230,7 +231,7 @@ VOID DS3_RAW_TO_GPJ_HID_INPUT_REPORT_01(
 	if ((PressureMode & DsPressureExposureModeDigital) != 0)
 	{
 		// Translate D-Pad to HAT format
-		if (TRUE == TRUE) // Placeholder for DHMC option
+		if ((DPadExposureMode & DsDPadExposureModeHAT) != 0)
 		{
 			switch (Input->Buttons.bButtons[0] & ~0xF)
 			{
@@ -276,7 +277,7 @@ VOID DS3_RAW_TO_GPJ_HID_INPUT_REPORT_01(
 		Output[6] |= (Input->Buttons.bButtons[1] & 0xF) << 4; // OUTPUT: R1 [7], L1 [6], R2 [5], L2 [4]
 
 		// D-Pad (Buttons)
-		if (FALSE == TRUE) // "FALSE" is a placeholder for the DHMC option that will allow muting the D-Pad Buttons
+		if ((DPadExposureMode & DsDPadExposureModeIndividualButtons) != 0)
 		{
 			Output[7] |= (Input->Buttons.bButtons[0] & ~0xF) >> 3; // OUTPUT: LEFT [4], DOWN [3], RIGHT [2], UP [1]
 		}
@@ -330,7 +331,8 @@ VOID DS3_RAW_TO_GPJ_HID_INPUT_REPORT_02(
 VOID DS3_RAW_TO_SDF_HID_INPUT_REPORT(
 	_In_ PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output,
-	_In_ DS_PRESSURE_EXPOSURE_MODE PressureMode
+	_In_ DS_PRESSURE_EXPOSURE_MODE PressureMode,
+	_In_ DS_DPAD_EXPOSURE_MODE DPadExposureMode
 )
 {
 	// Report ID
@@ -351,7 +353,7 @@ VOID DS3_RAW_TO_SDF_HID_INPUT_REPORT(
 	if ((PressureMode & DsPressureExposureModeDigital) != 0)
 	{
 		// Translate D-Pad to HAT format
-		if (TRUE == TRUE) // Placeholder for DHMC option
+		if ((DPadExposureMode & DsDPadExposureModeHAT) != 0)
 		{
 			switch (Input->Buttons.bButtons[0] & ~0xF)
 			{
@@ -397,7 +399,7 @@ VOID DS3_RAW_TO_SDF_HID_INPUT_REPORT(
 		Output[6] |= (Input->Buttons.bButtons[1] & 0xF) << 4; // OUTPUT: R1 [7], L1 [6], R2 [5], L2 [4]
 
 		// D-Pad (Buttons)
-		if (FALSE == TRUE) // "FALSE" is a placeholder for the DHMC option that will allow muting the D-Pad Buttons
+		if ((DPadExposureMode & DsDPadExposureModeIndividualButtons) != 0)
 		{
 			Output[7] |= (Input->Buttons.bButtons[0] & ~0xF) >> 3; // OUTPUT: LEFT [4], DOWN [3], RIGHT [2], UP [1]
 		}

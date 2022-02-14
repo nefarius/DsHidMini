@@ -160,6 +160,21 @@ typedef enum
 } DS_PRESSURE_EXPOSURE_MODE, * PDS_PRESSURE_EXPOSURE_MODE;
 
 //
+// Flags of whether the D-Pad should be reported as HAT switch or individual buttons
+typedef enum
+{
+	//
+	// Expose as default HAT/POV format
+	// 
+	DsDPadExposureModeHAT = 1 << 0,
+	//
+	// Expose as individual buttons
+	// 
+	DsDPadExposureModeIndividualButtons = 1 << 1
+
+} DS_DPAD_EXPOSURE_MODE, * PDS_DPAD_EXPOSURE_MODE;
+
+//
 // Per device dynamic configuration properties
 // 
 typedef struct _DS_DRIVER_CONFIGURATION
@@ -189,6 +204,8 @@ typedef struct _DS_DRIVER_CONFIGURATION
 	{
 		DS_PRESSURE_EXPOSURE_MODE PressureExposureMode;
 
+		DS_DPAD_EXPOSURE_MODE DPadExposureMode;
+
 	} SDF;
 
 	//
@@ -197,6 +214,8 @@ typedef struct _DS_DRIVER_CONFIGURATION
 	struct
 	{
 		DS_PRESSURE_EXPOSURE_MODE PressureExposureMode;
+
+		DS_DPAD_EXPOSURE_MODE DPadExposureMode;
 
 	} GPJ;
 
