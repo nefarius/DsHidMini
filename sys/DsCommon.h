@@ -76,7 +76,7 @@ typedef enum
 // 
 typedef enum
 {
-	DsHidMiniDeviceModeUnknown = 0x00,
+	DsHidMiniDeviceModeUnknown = 0,
 	DsHidMiniDeviceModeSDF,
 	DsHidMiniDeviceModeGPJ,
 	DsHidMiniDeviceModeSixaxisCompatible,

@@ -847,10 +847,17 @@ void DsDevice_InvokeLocalBthDisconnect(PDEVICE_CONTEXT Context)
 	}
 	else
 	{
+		DWORD error = GetLastError();
+
+		if (error == ERROR_NOT_FOUND)
+		{
+			return;
+		}
+
 		TraceError(
 			TRACE_DSUSB,
 			"GetLastError: %d",
-			GetLastError()
+			error
 		);
 	}
 }
