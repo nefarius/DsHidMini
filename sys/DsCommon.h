@@ -170,7 +170,11 @@ typedef enum
 	//
 	// Expose as individual buttons
 	// 
-	DsDPadExposureModeIndividualButtons = 1 << 1
+	DsDPadExposureModeIndividualButtons = 1 << 1,
+	//
+	// Default behaviour exposes HAT/POV format
+	// 
+	DsDPadExposureModeDefault = DsDPadExposureModeHAT
 
 } DS_DPAD_EXPOSURE_MODE, * PDS_DPAD_EXPOSURE_MODE;
 
