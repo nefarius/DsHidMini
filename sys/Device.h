@@ -180,11 +180,6 @@ typedef struct _DS_OUTPUT_REPORT_CACHE
 typedef struct _DEVICE_CONTEXT
 {
 	//
-	// Device instance ID
-	// 
-	WDFMEMORY InstanceId;
-
-	//
 	// VirtualHidMini DMF module
 	// 
 	DMFMODULE DsHidMiniModule;
@@ -377,11 +372,6 @@ DsDevice_HotRealodEventCallback(
 VOID
 DsDevice_HotReloadConfiguration(
 	PDEVICE_CONTEXT Context
-);
-
-VOID
-DsDevice_ReadConfiguration(
-	WDFDEVICE Device
 );
 
 NTSTATUS

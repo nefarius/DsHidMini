@@ -242,38 +242,6 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 			pDevCtx->ConnectionType = DsDeviceConnectionTypeBth;
 		}
 
-		WDF_DEVICE_PROPERTY_DATA_INIT(&devProp, &DEVPKEY_Device_InstanceId);
-		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
-		attributes.ParentObject = Device;
-
-		//
-		// Query device instance string for configuration
-		// TODO: deprecated
-		// 
-		status = WdfDeviceAllocAndQueryPropertyEx(
-			Device,
-			&devProp,
-			NonPagedPoolNx,
-			&attributes,
-			&pDevCtx->InstanceId,
-			&propType
-		);
-		if (!NT_SUCCESS(status))
-		{
-			TraceError(
-				TRACE_DEVICE,
-				"WdfDeviceAllocAndQueryPropertyEx failed with status %!STATUS!",
-				status
-			);
-			break;
-		}
-
-		TraceVerbose(
-			TRACE_DEVICE,
-			"DEVPKEY_Device_InstanceId: %ws",
-			WdfMemoryGetBuffer(pDevCtx->InstanceId, NULL)
-		);
-		
 		//
 		// Fetch Bluetooth-specific properties
 		// 
@@ -426,100 +394,6 @@ VOID DsDevice_HotReloadConfiguration(PDEVICE_CONTEXT Context)
 		&requiredSize,
 		&propType
 	);
-}
-
-//
-// Reads variable settings properties. Keep in sync with <dshmguid.h> and <dshidmini.inf>
-// 
-VOID DsDevice_ReadConfiguration(WDFDEVICE Device)
-{
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
-	WDF_DEVICE_PROPERTY_DATA propertyData;
-	ULONG requiredSize = 0;
-	DEVPROPTYPE propertyType;
-
-	FuncEntry(TRACE_DEVICE);
-	
-	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_HidDeviceMode);
-
-	(void)WdfDeviceQueryPropertyEx(
-		Device,
-		&propertyData,
-		sizeof(UCHAR),
-		&pDevCtx->Configuration.HidDeviceMode,
-		&requiredSize,
-		&propertyType
-	);
-
-	TraceVerbose(TRACE_DEVICE, "[COM] HidDeviceMode: 0x%02X",
-		pDevCtx->Configuration.HidDeviceMode);
-
-	
-	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_IsOutputRateControlEnabled);
-
-	(void)WdfDeviceQueryPropertyEx(
-		Device,
-		&propertyData,
-		sizeof(UCHAR),
-		&pDevCtx->Configuration.IsOutputRateControlEnabled,
-		&requiredSize,
-		&propertyType
-	);
-
-	TraceVerbose(TRACE_DEVICE, "[COM] IsOutputRateControlEnabled: %d",
-		pDevCtx->Configuration.IsOutputRateControlEnabled);
-
-	
-	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_OutputRateControlPeriodMs);
-
-	(void)WdfDeviceQueryPropertyEx(
-		Device,
-		&propertyData,
-		sizeof(UCHAR),
-		&pDevCtx->Configuration.OutputRateControlPeriodMs,
-		&requiredSize,
-		&propertyType
-	);
-
-	TraceVerbose(TRACE_DEVICE, "[COM] OutputRateControlPeriodMs: %d",
-		pDevCtx->Configuration.OutputRateControlPeriodMs);
-
-	
-	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_IsOutputDeduplicatorEnabled);
-
-	(void)WdfDeviceQueryPropertyEx(
-		Device,
-		&propertyData,
-		sizeof(UCHAR),
-		&pDevCtx->Configuration.IsOutputDeduplicatorEnabled,
-		&requiredSize,
-		&propertyType
-	);
-
-	TraceVerbose(TRACE_DEVICE, "[COM] IsOutputDeduplicatorEnabled: %d",
-		pDevCtx->Configuration.IsOutputDeduplicatorEnabled);
-
-
-	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_WirelessIdleTimeoutPeriodMs);
-
-	(void)WdfDeviceQueryPropertyEx(
-		Device,
-		&propertyData,
-		sizeof(ULONG),
-		&pDevCtx->Configuration.WirelessIdleTimeoutPeriodMs,
-		&requiredSize,
-		&propertyType
-	);
-
-	TraceVerbose(TRACE_DEVICE, "[COM] WirelessIdleTimeoutPeriodMs: %d",
-		pDevCtx->Configuration.WirelessIdleTimeoutPeriodMs);
-
-	//
-	// Read hot-reloadable properties
-	//
-	DsDevice_HotReloadConfiguration(pDevCtx);
-
-	FuncExitNoReturn(TRACE_DEVICE);
 }
 
 //

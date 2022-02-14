@@ -77,11 +77,6 @@ DsHidMini_EvtDevicePrepareHardware(
 	pDevCtx = DeviceGetContext(Device);
 
 	//
-	// Read common properties (can be refreshed by power-cycling)
-	// 
-	DsDevice_ReadConfiguration(Device);
-
-	//
 	// Initialize USB
 	// 
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
