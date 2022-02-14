@@ -29,7 +29,7 @@ dshidminiEvtDeviceAdd(
 	WDFQUEUE						queue;
 	WDF_IO_QUEUE_CONFIG				queueConfig;
 	BOOLEAN ret;
-	
+
 
 	UNREFERENCED_PARAMETER(Driver);
 
@@ -46,8 +46,8 @@ dshidminiEvtDeviceAdd(
 	{
 		pnpPowerCallbacks.EvtDeviceSelfManagedIoInit = DsHidMini_EvtWdfDeviceSelfManagedIoInit;
 		pnpPowerCallbacks.EvtDeviceSelfManagedIoSuspend = DsHidMini_EvtWdfDeviceSelfManagedIoSuspend;
-	}	
-	
+	}
+
 	pnpPowerCallbacks.EvtDevicePrepareHardware = DsHidMini_EvtDevicePrepareHardware;
 	pnpPowerCallbacks.EvtDeviceD0Entry = DsHidMini_EvtDeviceD0Entry;
 	pnpPowerCallbacks.EvtDeviceD0Exit = DsHidMini_EvtDeviceD0Exit;
@@ -143,7 +143,7 @@ dshidminiEvtDeviceAdd(
 				break;
 			}
 		}
-		
+
 		//
 		// Expose interface for applications to find us
 		// 
@@ -207,7 +207,7 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 
 	FuncEntry(TRACE_DEVICE);
-	
+
 	do
 	{
 		//
@@ -229,7 +229,7 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 			);
 			break;
 		}
-		
+
 		//
 		// Early device type detection, using enumerator name
 		// 
@@ -344,29 +344,14 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 			TraceVerbose(TRACE_DEVICE, "[BTH] PID: 0x%04X", pDevCtx->ProductId);
 
 			DsDevice_RegisterBthDisconnectListener(pDevCtx);
-			
+
 			DsDevice_RegisterHotReloadListener(pDevCtx);
 		}
 	} while (FALSE);
 
 	FuncExit(TRACE_DEVICE, "status=%!STATUS!", status);
-	
+
 	return status;
-}
-
-//
-// Gets invoked when the hot-reload event got triggered from somewhere
-// 
-VOID CALLBACK 
-DsDevice_HotRealodEventCallback(
-	_In_ PVOID   lpParameter,
-	_In_ BOOLEAN TimerOrWaitFired
-) 
-{
-	PDEVICE_CONTEXT pDevCtx = (PDEVICE_CONTEXT)lpParameter;
-	UNREFERENCED_PARAMETER(TimerOrWaitFired);
-
-	ConfigLoadForDevice(pDevCtx);
 }
 
 //
@@ -382,9 +367,9 @@ DsDevice_InitContext(
 	WDF_OBJECT_ATTRIBUTES attributes;
 	PUCHAR outReportBuffer = NULL;
 	WDF_TIMER_CONFIG timerCfg;
-	
+
 	FuncEntry(TRACE_DEVICE);
-		
+
 	switch (pDevCtx->ConnectionType)
 	{
 	case DsDeviceConnectionTypeUsb:
@@ -409,7 +394,7 @@ DsDevice_InitContext(
 				"WdfMemoryCreate failed with %!STATUS!",
 				status
 			);
-			
+
 			break;
 		}
 
@@ -446,7 +431,7 @@ DsDevice_InitContext(
 				"WdfMemoryCreate failed with %!STATUS!",
 				status
 			);
-			
+
 			break;
 		}
 
@@ -488,7 +473,7 @@ DsDevice_InitContext(
 				"WdfTimerCreate (HidOutputReport) failed with status %!STATUS!",
 				status
 			);
-			
+
 			break;
 		}
 
@@ -501,7 +486,7 @@ DsDevice_InitContext(
 		{
 			break;
 		}
-		
+
 		//
 		// Create lock
 		// 
@@ -570,11 +555,10 @@ DsDevice_InitContext(
 			);
 			break;
 		}
-	}
-	while (FALSE);
-	
+	} while (FALSE);
+
 	FuncExit(TRACE_DEVICE, "status=%!STATUS!", status);
-	
+
 	return status;
 }
 
@@ -583,7 +567,7 @@ DsDevice_InitContext(
 // 
 NTSTATUS
 DsDevice_IsUsbDevice(
-	PWDFDEVICE_INIT DeviceInit, 
+	PWDFDEVICE_INIT DeviceInit,
 	PBOOLEAN Result
 )
 {
@@ -620,6 +604,27 @@ DsDevice_IsUsbDevice(
 	return status;
 }
 
+//
+// Gets invoked when the hot-reload event got triggered from somewhere
+// 
+VOID CALLBACK
+DsDevice_HotReloadEventCallback(
+	_In_ PVOID   lpParameter,
+	_In_ BOOLEAN TimerOrWaitFired
+)
+{
+	FuncEntry(TRACE_DEVICE);
+
+	PDEVICE_CONTEXT pDevCtx = (PDEVICE_CONTEXT)lpParameter;
+	UNREFERENCED_PARAMETER(TimerOrWaitFired);
+
+	ConfigLoadForDevice(pDevCtx);
+
+	FindNextChangeNotification(pDevCtx->ConfigurationReloadEvent);
+
+	FuncExitNoReturn(TRACE_DEVICE);
+}
+
 /**
  * Registers an event listener to trigger refreshing runtime properties
  *
@@ -630,79 +635,41 @@ DsDevice_IsUsbDevice(
  */
 void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
 {
-	WCHAR eventName[49];
-	WCHAR deviceAddress[13];
+	CHAR programDataPath[MAX_PATH];
+	CHAR configPath[MAX_PATH];
 
 	FuncEntry(TRACE_DEVICE);
 
-	switch (Context->ConnectionType)
-	{
-	case DsDeviceConnectionTypeUsb:
-
-		swprintf_s(
-			deviceAddress,
-			ARRAYSIZE(deviceAddress),
-			L"%02X%02X%02X%02X%02X%02X",
-			Context->DeviceAddress.Address[0],
-			Context->DeviceAddress.Address[1],
-			Context->DeviceAddress.Address[2],
-			Context->DeviceAddress.Address[3],
-			Context->DeviceAddress.Address[4],
-			Context->DeviceAddress.Address[5]
-		);
-
-		break;
-	case DsDeviceConnectionTypeBth:
-
-		swprintf_s(
-			deviceAddress,
-			ARRAYSIZE(deviceAddress),
-			L"%012llX",
-			*(PULONGLONG)&Context->DeviceAddress
-		);
-
-		break;
-	}
-
-	//
-	// Register global event to listen for changes on
-	//
-
-	swprintf_s(
-		eventName,
-		ARRAYSIZE(eventName),
-		L"Global\\DsHidMiniConfigHotReloadEvent%ls",
-		deviceAddress
-	);
-
-	TraceVerbose(
-		TRACE_DEVICE,
-		"Configuration reload event name: %ls",
-		eventName
-	);
-
-	TCHAR* szSD = TEXT("D:(A;OICI;GA;;;BA)(A;OICI;GA;;;SY)");
-	SECURITY_ATTRIBUTES sa;
-	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-	sa.bInheritHandle = FALSE;
-	ConvertStringSecurityDescriptorToSecurityDescriptor(
-		szSD,
-		SDDL_REVISION_1,
-		&((&sa)->lpSecurityDescriptor),
-		NULL
-	);
-
 	if (Context->ConfigurationReloadEvent)
 	{
-		CloseHandle(Context->ConfigurationReloadEvent);
+		FindCloseChangeNotification(Context->ConfigurationReloadEvent);
 		Context->ConfigurationReloadEvent = NULL;
 	}
 
-	Context->ConfigurationReloadEvent = CreateEventW(
-		&sa,
+	if (GetEnvironmentVariableA(
+		CONFIG_ENV_VAR_NAME,
+		programDataPath,
+		MAX_PATH
+	) == 0)
+	{
+		goto errorExit;
+	}
+
+	if (sprintf_s(
+		configPath,
+		MAX_PATH / sizeof(WCHAR),
+		"%s\\%s",
+		programDataPath,
+		CONFIG_SUB_DIR_NAME
+	) == -1)
+	{
+		goto errorExit;
+	}
+
+	Context->ConfigurationReloadEvent = FindFirstChangeNotificationA(
+		configPath,
 		FALSE,
-		FALSE,
-		eventName
+		FILE_NOTIFY_CHANGE_LAST_WRITE
 	);
 
 	if (Context->ConfigurationReloadEvent == NULL)
@@ -716,7 +683,7 @@ void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
 	const BOOL ret = RegisterWaitForSingleObject(
 		&Context->ConfigurationReloadWaitHandle,
 		Context->ConfigurationReloadEvent,
-		DsDevice_HotRealodEventCallback,
+		DsDevice_HotReloadEventCallback,
 		Context,
 		INFINITE,
 		WT_EXECUTELONGFUNCTION
@@ -730,6 +697,7 @@ void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
 		);
 	}
 
+errorExit:
 	FuncExitNoReturn(TRACE_DEVICE);
 }
 
@@ -754,7 +722,7 @@ void DsDevice_RegisterBthDisconnectListener(PDEVICE_CONTEXT Context)
 		L"%012llX",
 		*(PULONGLONG)&Context->DeviceAddress
 	);
-	
+
 	swprintf_s(
 		dcEventName,
 		ARRAYSIZE(dcEventName),
@@ -904,7 +872,7 @@ DmfDeviceModulesAdd(
 	DMF_CONFIG_ThreadedBufferQueue dmfBufferCfg;
 	DMF_CONFIG_DefaultTarget bthReaderCfg;
 	DMF_CONFIG_DefaultTarget bthWriterCfg;
-	
+
 	PAGED_CODE();
 
 	FuncEntry(TRACE_DEVICE);
@@ -955,7 +923,7 @@ DmfDeviceModulesAdd(
 			&moduleAttributes
 		);
 		moduleAttributes.PassiveLevel = TRUE;
-		
+
 		bthReaderCfg.ContinuousRequestTargetModuleConfig.BufferCountOutput = 1;
 		bthReaderCfg.ContinuousRequestTargetModuleConfig.BufferOutputSize = BTHPS3_SIXAXIS_HID_INPUT_REPORT_SIZE;
 		bthReaderCfg.ContinuousRequestTargetModuleConfig.ContinuousRequestCount = 1;
@@ -965,7 +933,7 @@ DmfDeviceModulesAdd(
 		bthReaderCfg.ContinuousRequestTargetModuleConfig.EvtContinuousRequestTargetBufferOutput = DsBth_HidInterruptReadContinuousRequestCompleted;
 		bthReaderCfg.ContinuousRequestTargetModuleConfig.RequestType = ContinuousRequestTarget_RequestType_Ioctl;
 		bthReaderCfg.ContinuousRequestTargetModuleConfig.ContinuousRequestTargetMode = ContinuousRequestTarget_Mode_Manual;
-		
+
 		DMF_DmfModuleAdd(
 			DmfModuleInit,
 			&moduleAttributes,
@@ -973,7 +941,7 @@ DmfDeviceModulesAdd(
 			&pDevCtx->Connection.Bth.HidInterrupt.InputStreamerModule
 		);
 
-		
+
 		DMF_CONFIG_DefaultTarget_AND_ATTRIBUTES_INIT(
 			&bthWriterCfg,
 			&moduleAttributes
@@ -997,11 +965,11 @@ DmfDeviceModulesAdd(
 			&pDevCtx->Connection.Bth.HidControl.OutputWriterModule
 		);
 	}
-	
+
 	//
 	// Virtual HID Mini Module
 	// 
-	
+
 	DMF_CONFIG_DsHidMini_AND_ATTRIBUTES_INIT(
 		&dsHidMiniCfg,
 		&moduleAttributes

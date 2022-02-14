@@ -1,8 +1,6 @@
 #include "Driver.h"
 #include "Configuration.tmh"
 
-#define CONFIG_ENV_VAR_NAME		"ProgramData"
-#define CONFIG_FILE_NAME		"DsHidMini.json"
 
 void ConfigDeviceSpecificParse(
 	_In_ const cJSON* DeviceNode,
@@ -104,17 +102,28 @@ ConfigLoadForDevice(
 		if (sprintf_s(
 			configFilePath,
 			MAX_PATH / sizeof(WCHAR),
-			"%s\\" CONFIG_FILE_NAME,
-			programDataPath
+			"%s\\%s\\%s",
+			programDataPath,
+			CONFIG_SUB_DIR_NAME,
+			CONFIG_FILE_NAME
 		) == -1)
 		{
-			status = STATUS_NOT_FOUND;
+			status = STATUS_BUFFER_OVERFLOW;
 			break;
 		}
 
-		if (fopen_s(&fp, configFilePath, "r") != 0)
+		errno_t error;
+
+		if ((error = fopen_s(&fp, configFilePath, "r")) != 0)
 		{
-			status = STATUS_NOT_FOUND;
+			TraceVerbose(
+				TRACE_CONFIG,
+				"Configuration file %s not accessible (errno: %d)",
+				configFilePath,
+				error
+			);
+
+			status = STATUS_ACCESS_DENIED;
 			break;
 		}
 

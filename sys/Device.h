@@ -364,7 +364,7 @@ DsDevice_ReadProperties(
 );
 
 VOID CALLBACK
-DsDevice_HotRealodEventCallback(
+DsDevice_HotReloadEventCallback(
 	_In_ PVOID   lpParameter,
 	_In_ BOOLEAN TimerOrWaitFired
 );
