@@ -104,6 +104,7 @@ The following awesome resources have made this project possible.
 - [Microsoft - DMF - HID minidriver module](https://github.com/microsoft/DMF/issues/69)
 - [Microsoft - DMF - VHidMini2DmfK and VHidMini2DmfU Sample Drivers](https://github.com/microsoft/DMF/tree/master/DmfSamples/VHidMini2Dmf)
 - [uthash - a hash table for C structures](https://github.com/troydhanson/uthash)
+- [Ultralightweight JSON parser in ANSI C](https://github.com/DaveGamble/cJSON)
 
 ### Tools & references
 

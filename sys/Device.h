@@ -369,11 +369,6 @@ DsDevice_HotRealodEventCallback(
 	_In_ BOOLEAN TimerOrWaitFired
 );
 
-VOID
-DsDevice_HotReloadConfiguration(
-	PDEVICE_CONTEXT Context
-);
-
 NTSTATUS
 DsDevice_InitContext(
 	WDFDEVICE Device

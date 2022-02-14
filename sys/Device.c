@@ -366,34 +366,7 @@ DsDevice_HotRealodEventCallback(
 	PDEVICE_CONTEXT pDevCtx = (PDEVICE_CONTEXT)lpParameter;
 	UNREFERENCED_PARAMETER(TimerOrWaitFired);
 
-	DsDevice_HotReloadConfiguration(pDevCtx);
-}
-
-//
-// Read device properties which can be refreshed during runtime
-//
-VOID DsDevice_HotReloadConfiguration(PDEVICE_CONTEXT Context)
-{
-	WDF_DEVICE_PROPERTY_DATA propData;
-	DEVPROPTYPE propType;
-	ULONG requiredSize = 0;
-	WDFDEVICE device = WdfObjectContextGetObject(Context);
-
-	TraceVerbose(
-		TRACE_DEVICE,
-		"Hot-reload triggered"
-	);
-
-	WDF_DEVICE_PROPERTY_DATA_INIT(&propData, &DEVPKEY_DsHidMini_HR_MuteDigitalPressureButtons);
-
-	(void)WdfDeviceQueryPropertyEx(
-		device,
-		&propData,
-		sizeof(UCHAR),
-		&Context->Configuration.MuteDigitalPressureButtons,
-		&requiredSize,
-		&propType
-	);
+	ConfigLoadForDevice(pDevCtx);
 }
 
 //

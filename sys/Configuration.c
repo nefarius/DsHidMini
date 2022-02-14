@@ -6,7 +6,7 @@
 
 _Must_inspect_result_
 NTSTATUS
-ConfigLoadForDeviceAddress(
+ConfigLoadForDevice(
 	_Inout_ PDEVICE_CONTEXT Context
 )
 {
