@@ -1,0 +1,20 @@
+{
+  "Devices": {
+    "44D832809FCD": {
+      "HidDeviceMode": 5,
+      "DisableAutoPairing": false,
+      "IsOutputRateControlEnabled": true,
+      "OutputRateControlPeriodMs": 150,
+      "IsOutputDeduplicatorEnabled": false,
+      "WirelessIdleTimeoutPeriodMs": 300000,
+      "SDF": {
+        "PressureExposureMode": 3,
+        "DPadExposureMode": 1
+      },
+      "GPJ": {
+        "PressureExposureMode": 3,
+        "DPadExposureMode": 1
+      }
+    }
+  }
+}

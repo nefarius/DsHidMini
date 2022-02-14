@@ -333,6 +333,9 @@
   <ItemGroup>
     <ResourceCompile Include="dshidmini.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="DsHidMini.json" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
