@@ -84,6 +84,8 @@ ConfigLoadForDevice(
 
 	FuncEntry(TRACE_CONFIG);
 
+	ConfigSetDefaults(&Context->Configuration);
+
 	do
 	{
 		if (GetEnvironmentVariableA(
@@ -209,17 +211,6 @@ ConfigLoadForDevice(
 
 	} while (FALSE);
 
-	//
-	// Set defaults here
-	// 
-	if (!NT_SUCCESS(status))
-	{
-		Context->Configuration.HidDeviceMode = DsHidMiniDeviceModeXInputHIDCompatible;
-		Context->Configuration.IsOutputDeduplicatorEnabled = TRUE;
-		Context->Configuration.OutputRateControlPeriodMs = 150;
-		Context->Configuration.WirelessIdleTimeoutPeriodMs = 300000;
-	}
-
 	if (config_json)
 	{
 		cJSON_Delete(config_json);
@@ -238,4 +229,38 @@ ConfigLoadForDevice(
 	FuncExit(TRACE_CONFIG, "status=%!STATUS!", status);
 
 	return status;
+}
+
+//
+// Set default values (if no customized configuration is available)
+// 
+void
+ConfigSetDefaults(
+	_Inout_ PDS_DRIVER_CONFIGURATION Config
+)
+{
+	//
+	// Common
+	// 
+
+	Config->HidDeviceMode = DsHidMiniDeviceModeXInputHIDCompatible;
+	Config->DisableAutoPairing = FALSE;
+	Config->IsOutputRateControlEnabled = TRUE;
+	Config->OutputRateControlPeriodMs = 150;
+	Config->IsOutputDeduplicatorEnabled = FALSE;
+	Config->WirelessIdleTimeoutPeriodMs = 300000;
+
+	//
+	// SDF
+	// 
+
+	Config->SDF.PressureExposureMode = DsPressureExposureModeDefault;
+	Config->SDF.DPadExposureMode = DsDPadExposureModeDefault;
+
+	//
+	// GPJ
+	// 
+
+	Config->GPJ.PressureExposureMode = DsPressureExposureModeDefault;
+	Config->GPJ.DPadExposureMode = DsDPadExposureModeDefault;
 }

@@ -11,3 +11,8 @@ NTSTATUS
 ConfigLoadForDevice(
 	_Inout_ PDEVICE_CONTEXT Context
 );
+
+void
+ConfigSetDefaults(
+	_Inout_ PDS_DRIVER_CONFIGURATION Config
+);
