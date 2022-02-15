@@ -57,6 +57,10 @@ void ConfigNodeParse(
 	}
 
 	//
+	// TODO: this is getting cluttered, split up into some sub-routines
+	// 
+
+	//
 	// Every mode can have the same properties configured independently
 	// 
 	if (pCfg->HidDeviceMode > 0 && pCfg->HidDeviceMode <= (DS_HID_DEVICE_MODE)_countof(modes))
@@ -75,28 +79,123 @@ void ConfigNodeParse(
 				pCfg->SDF.DPadExposureMode = (DS_DPAD_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
 			}
 
+			//
+			// DeadZone Left
+			// 
 			const cJSON* pDeadZoneLeft = cJSON_GetObjectItem(pModeSpecific, "DeadZoneLeft");
 
-			if ((pNode = cJSON_GetObjectItem(pDeadZoneLeft, "Apply")))
+			if (pDeadZoneLeft)
 			{
-				pCfg->ThumbSettings.DeadZoneLeft.Apply = (BOOLEAN)cJSON_IsTrue(pNode);
+				if ((pNode = cJSON_GetObjectItem(pDeadZoneLeft, "Apply")))
+				{
+					pCfg->ThumbSettings.DeadZoneLeft.Apply = (BOOLEAN)cJSON_IsTrue(pNode);
+				}
+
+				if ((pNode = cJSON_GetObjectItem(pDeadZoneLeft, "PolarValue")))
+				{
+					pCfg->ThumbSettings.DeadZoneLeft.PolarValue = cJSON_GetNumberValue(pNode);
+				}
 			}
 
-			if ((pNode = cJSON_GetObjectItem(pDeadZoneLeft, "PolarValue")))
-			{
-				pCfg->ThumbSettings.DeadZoneLeft.PolarValue = cJSON_GetNumberValue(pNode);
-			}
-
+			//
+			// DeadZone Right
+			// 
 			const cJSON* pDeadZoneRight = cJSON_GetObjectItem(pModeSpecific, "DeadZoneRight");
 
-			if ((pNode = cJSON_GetObjectItem(pDeadZoneRight, "Apply")))
+			if (pDeadZoneRight)
 			{
-				pCfg->ThumbSettings.DeadZoneRight.Apply = (BOOLEAN)cJSON_IsTrue(pNode);
+				if ((pNode = cJSON_GetObjectItem(pDeadZoneRight, "Apply")))
+				{
+					pCfg->ThumbSettings.DeadZoneRight.Apply = (BOOLEAN)cJSON_IsTrue(pNode);
+				}
+
+				if ((pNode = cJSON_GetObjectItem(pDeadZoneRight, "PolarValue")))
+				{
+					pCfg->ThumbSettings.DeadZoneRight.PolarValue = cJSON_GetNumberValue(pNode);
+				}
 			}
 
-			if ((pNode = cJSON_GetObjectItem(pDeadZoneRight, "PolarValue")))
+			//
+			// Rumble settings
+			// 
+			const cJSON* pRumbleSettings = cJSON_GetObjectItem(pModeSpecific, "RumbleSettings");
+
+			if (pRumbleSettings)
 			{
-				pCfg->ThumbSettings.DeadZoneRight.PolarValue = cJSON_GetNumberValue(pNode);
+				if ((pNode = cJSON_GetObjectItem(pRumbleSettings, "DisableBM")))
+				{
+					pCfg->RumbleSettings.DisableBM = (BOOLEAN)cJSON_IsTrue(pNode);
+				}
+
+				if ((pNode = cJSON_GetObjectItem(pRumbleSettings, "DisableSM")))
+				{
+					pCfg->RumbleSettings.DisableSM = (BOOLEAN)cJSON_IsTrue(pNode);
+				}
+
+				const cJSON* pBMStrRescale = cJSON_GetObjectItem(pRumbleSettings, "BMStrRescale");
+
+				if (pBMStrRescale)
+				{
+					if ((pNode = cJSON_GetObjectItem(pBMStrRescale, "Enabled")))
+					{
+						pCfg->RumbleSettings.BMStrRescale.Enabled = (BOOLEAN)cJSON_IsTrue(pNode);
+					}
+
+					if ((pNode = cJSON_GetObjectItem(pBMStrRescale, "MinValue")))
+					{
+						pCfg->RumbleSettings.BMStrRescale.MinValue = (UCHAR)cJSON_GetNumberValue(pNode);
+					}
+
+					if ((pNode = cJSON_GetObjectItem(pBMStrRescale, "MaxValue")))
+					{
+						pCfg->RumbleSettings.BMStrRescale.MaxValue = (UCHAR)cJSON_GetNumberValue(pNode);
+					}
+				}
+
+				const cJSON* pSMToBMConversion = cJSON_GetObjectItem(pRumbleSettings, "SMToBMConversion");
+
+				if (pSMToBMConversion)
+				{
+					if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "Enabled")))
+					{
+						pCfg->RumbleSettings.SMToBMConversion.Enabled = (BOOLEAN)cJSON_IsTrue(pNode);
+					}
+
+					if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "RescaleMinValue")))
+					{
+						pCfg->RumbleSettings.SMToBMConversion.RescaleMinValue = (UCHAR)cJSON_GetNumberValue(pNode);
+					}
+
+					if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "RescaleMaxValue")))
+					{
+						pCfg->RumbleSettings.SMToBMConversion.RescaleMaxValue = (UCHAR)cJSON_GetNumberValue(pNode);
+					}
+				}
+
+				const cJSON* pForcedSM = cJSON_GetObjectItem(pRumbleSettings, "ForcedSM");
+
+				if (pForcedSM)
+				{
+					if ((pNode = cJSON_GetObjectItem(pForcedSM, "BMThresholdEnabled")))
+					{
+						pCfg->RumbleSettings.ForcedSM.BMThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+					}
+
+					if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "BMThresholdValue")))
+					{
+						pCfg->RumbleSettings.ForcedSM.BMThresholdValue = (UCHAR)cJSON_GetNumberValue(pNode);
+					}
+
+					if ((pNode = cJSON_GetObjectItem(pForcedSM, "SMThresholdEnabled")))
+					{
+						pCfg->RumbleSettings.ForcedSM.SMThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+					}
+
+					if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "SMThresholdValue")))
+					{
+						pCfg->RumbleSettings.ForcedSM.SMThresholdValue = (UCHAR)cJSON_GetNumberValue(pNode);
+					}
+				}
 			}
 		}
 	}
