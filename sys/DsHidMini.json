@@ -50,6 +50,26 @@
       "DeadZoneRight": {
         "Apply": true,
         "PolarValue": 10.0
+      },
+      "RumbleSettings": {
+        "DisableBM": false,
+        "DisableSM": false,
+        "BMStrRescale": {
+          "Enabled": true,
+          "MinValue": 64,
+          "MaxValue": 255
+        },
+        "SMToBMConversion": {
+          "Enabled": true,
+          "RescaleMinValue": 0,
+          "RescaleMaxValue": 160
+        },
+        "ForcedSM": {
+          "BMThresholdEnabled": true,
+          "BMThresholdValue": 230,
+          "SMThresholdEnabled": false,
+          "SMThresholdValue": 230
+        }
       }
     }
   },

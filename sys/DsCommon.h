@@ -197,6 +197,46 @@ typedef struct _DS_THUMB_SETTINGS
 
 } DS_THUMB_SETTINGS, * PDS_THUMB_SETTINGS;
 
+typedef struct _DS_RUMBLE_SETTINGS
+{
+	BOOLEAN DisableBM;
+
+	BOOLEAN DisableSM;
+
+	struct
+	{
+		BOOLEAN Enabled;
+
+		UCHAR MinValue;
+
+		UCHAR MaxValue;
+		
+	} BMStrRescale;
+
+	struct
+	{
+		BOOLEAN Enabled;
+
+		UCHAR RescaleMinValue;
+
+		UCHAR RescaleMaxValue;
+				
+	} SMToBMConversion;
+
+	struct
+	{
+		BOOLEAN BMThresholdEnabled;
+
+		UCHAR BMThresholdValue;
+
+		BOOLEAN SMThresholdEnabled;
+
+		UCHAR SMThresholdValue;
+		
+	} ForcedSM;
+
+} DS_RUMBLE_SETTINGS, * PDS_RUMBLE_SETTINGS;
+
 //
 // Per device dynamic configuration properties
 // 
@@ -226,6 +266,11 @@ typedef struct _DS_DRIVER_CONFIGURATION
 	DS_THUMB_SETTINGS ThumbSettings;
 
 	//
+	// Rumble customizing
+	// 
+	DS_RUMBLE_SETTINGS RumbleSettings;
+
+	//
 	// SDF-mode specific
 	// 
 	struct
@@ -233,7 +278,7 @@ typedef struct _DS_DRIVER_CONFIGURATION
 		DS_PRESSURE_EXPOSURE_MODE PressureExposureMode;
 
 		DS_DPAD_EXPOSURE_MODE DPadExposureMode;
-		
+
 	} SDF;
 
 	//
@@ -244,7 +289,7 @@ typedef struct _DS_DRIVER_CONFIGURATION
 		DS_PRESSURE_EXPOSURE_MODE PressureExposureMode;
 
 		DS_DPAD_EXPOSURE_MODE DPadExposureMode;
-		
+
 	} GPJ;
 
 } DS_DRIVER_CONFIGURATION, * PDS_DRIVER_CONFIGURATION;
