@@ -5,7 +5,7 @@
 //
 // Reads/refreshes configuration from disk (JSON) to provided context
 // 
-void ConfigDeviceSpecificParse(
+void ConfigNodeParse(
 	_In_ const cJSON* DeviceNode,
 	_Inout_ PDEVICE_CONTEXT Context
 )
@@ -219,7 +219,7 @@ ConfigLoadForDevice(
 			deviceAddress
 		);
 
-		ConfigDeviceSpecificParse(deviceNode, Context);
+		ConfigNodeParse(deviceNode, Context);
 
 	} while (FALSE);
 
