@@ -375,15 +375,15 @@ DsDevice_InitContext(
 		// 
 		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
 		attributes.ParentObject = Device;
-		status = WdfMemoryCreate(
+
+		if (!NT_SUCCESS(status = WdfMemoryCreate(
 			&attributes,
 			NonPagedPoolNx,
 			DS3_POOL_TAG,
 			DS3_USB_HID_OUTPUT_REPORT_SIZE,
 			&pDevCtx->OutputReportMemory,
 			(PVOID*)&outReportBuffer
-		);
-		if (!NT_SUCCESS(status))
+		)))
 		{
 			TraceError(
 				TRACE_DEVICE,
@@ -412,15 +412,15 @@ DsDevice_InitContext(
 		// 
 		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
 		attributes.ParentObject = Device;
-		status = WdfMemoryCreate(
+
+		if (!NT_SUCCESS(status = WdfMemoryCreate(
 			&attributes,
 			NonPagedPoolNx,
 			DS3_POOL_TAG,
 			DS3_USB_HID_OUTPUT_REPORT_SIZE,
 			&pDevCtx->OutputReportMemory,
 			(PVOID*)&outReportBuffer
-		);
-		if (!NT_SUCCESS(status))
+		)))
 		{
 			TraceError(
 				TRACE_DEVICE,
@@ -457,12 +457,11 @@ DsDevice_InitContext(
 			DsBth_EvtControlWriteTimerFunc
 		);
 
-		status = WdfTimerCreate(
+		if (!NT_SUCCESS(status = WdfTimerCreate(
 			&timerCfg,
 			&attributes,
 			&pDevCtx->Connection.Bth.Timers.HidOutputReport
-		);
-		if (!NT_SUCCESS(status))
+		)))
 		{
 			TraceError(
 				TRACE_DSBTH,
@@ -490,11 +489,10 @@ DsDevice_InitContext(
 		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
 		attributes.ParentObject = Device;
 
-		status = WdfWaitLockCreate(
+		if (!NT_SUCCESS(status = WdfWaitLockCreate(
 			&attributes,
 			&pDevCtx->OutputReport.Lock
-		);
-		if (!NT_SUCCESS(status))
+		)))
 		{
 			TraceError(
 				TRACE_DEVICE,
@@ -511,11 +509,10 @@ DsDevice_InitContext(
 		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
 		attributes.ParentObject = Device;
 
-		status = WdfWaitLockCreate(
+		if (!NT_SUCCESS(status = WdfWaitLockCreate(
 			&attributes,
 			&pDevCtx->OutputReport.Cache.Lock
-		);
-		if (!NT_SUCCESS(status))
+		)))
 		{
 			TraceError(
 				TRACE_DEVICE,
@@ -537,12 +534,11 @@ DsDevice_InitContext(
 			DSHM_OutputReportDelayTimerElapsed
 		);
 
-		status = WdfTimerCreate(
+		if (!NT_SUCCESS(status = WdfTimerCreate(
 			&timerCfg,
 			&attributes,
 			&pDevCtx->OutputReport.Cache.SendDelayTimer
-		);
-		if (!NT_SUCCESS(status))
+		)))
 		{
 			TraceError(
 				TRACE_DEVICE,
@@ -551,6 +547,7 @@ DsDevice_InitContext(
 			);
 			break;
 		}
+
 	} while (FALSE);
 
 	FuncExit(TRACE_DEVICE, "status=%!STATUS!", status);
