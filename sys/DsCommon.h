@@ -189,6 +189,9 @@ typedef struct _DS_AXIS_DEADZONE
 
 } DS_AXIS_DEADZONE, * PDS_AXIS_DEADZONE;
 
+//
+// Thumb settings
+// 
 typedef struct _DS_THUMB_SETTINGS
 {
 	DS_AXIS_DEADZONE DeadZoneLeft;
@@ -197,6 +200,9 @@ typedef struct _DS_THUMB_SETTINGS
 
 } DS_THUMB_SETTINGS, * PDS_THUMB_SETTINGS;
 
+//
+// Rumble settings
+// 
 typedef struct _DS_RUMBLE_SETTINGS
 {
 	BOOLEAN DisableBM;
