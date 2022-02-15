@@ -1209,7 +1209,8 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 			Report,
 			pModCtx->InputReport,
 			Context->Configuration.GPJ.PressureExposureMode,
-			Context->Configuration.GPJ.DPadExposureMode
+			Context->Configuration.GPJ.DPadExposureMode,
+			&Context->Configuration.GPJ.ThumbSettings
 		);
 
 #ifdef DBG
@@ -1223,7 +1224,8 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 			Report,
 			pModCtx->InputReport,
 			Context->Configuration.SDF.PressureExposureMode,
-			Context->Configuration.SDF.DPadExposureMode
+			Context->Configuration.SDF.DPadExposureMode,
+			&Context->Configuration.SDF.ThumbSettings
 		);
 
 		/*

@@ -9,10 +9,14 @@
     "SDF": {
       "PressureExposureMode": 3,
       "DPadExposureMode": 1,
-      "DeadZone": {
+      "DeadZoneLeft": {
         "Apply": true,
-        "PolarValue": 3.0 
-      } 
+        "PolarValue": 3.0
+      },
+      "DeadZoneRight": {
+        "Apply": true,
+        "PolarValue": 3.0
+      }
     },
     "GPJ": {
       "PressureExposureMode": 3,

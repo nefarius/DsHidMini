@@ -189,6 +189,14 @@ typedef struct _DS_AXIS_DEADZONE
 
 } DS_AXIS_DEADZONE, * PDS_AXIS_DEADZONE;
 
+typedef struct _DS_THUMB_SETTINGS
+{
+	DS_AXIS_DEADZONE DeadZoneLeft;
+
+	DS_AXIS_DEADZONE DeadZoneRight;
+
+} DS_THUMB_SETTINGS, * PDS_THUMB_SETTINGS;
+
 //
 // Per device dynamic configuration properties
 // 
@@ -221,7 +229,7 @@ typedef struct _DS_DRIVER_CONFIGURATION
 
 		DS_DPAD_EXPOSURE_MODE DPadExposureMode;
 
-		DS_AXIS_DEADZONE DeadZone;
+		DS_THUMB_SETTINGS ThumbSettings;
 
 	} SDF;
 
@@ -234,7 +242,7 @@ typedef struct _DS_DRIVER_CONFIGURATION
 
 		DS_DPAD_EXPOSURE_MODE DPadExposureMode;
 
-		DS_AXIS_DEADZONE DeadZone;
+		DS_THUMB_SETTINGS ThumbSettings;
 
 	} GPJ;
 

@@ -254,7 +254,8 @@ VOID DS3_RAW_TO_GPJ_HID_INPUT_REPORT_01(
 	_In_ PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output,
 	_In_ DS_PRESSURE_EXPOSURE_MODE PressureMode,
-	_In_ DS_DPAD_EXPOSURE_MODE DPadExposureMode
+	_In_ DS_DPAD_EXPOSURE_MODE DPadExposureMode,
+	_In_ PDS_THUMB_SETTINGS ThumbSettings
 )
 {
 	// Report ID
@@ -336,10 +337,22 @@ VOID DS3_RAW_TO_GPJ_HID_INPUT_REPORT_01(
 	Output[7] |= Input->Buttons.Individual.PS; // OUTPUT: PS BUTTON [0]
 
 	// Thumb axes
-	Output[1] = Input->LeftThumbX;
-	Output[2] = Input->LeftThumbY;
-	Output[3] = Input->RightThumbX;
-	Output[4] = Input->RightThumbY;
+	DS3_RAW_AXIS_TRANSFORM(
+		Input->LeftThumbX,
+		Input->LeftThumbY,
+		&Output[1],
+		&Output[2],
+		ThumbSettings->DeadZoneLeft.Apply,
+		ThumbSettings->DeadZoneLeft.PolarValue
+	);
+	DS3_RAW_AXIS_TRANSFORM(
+		Input->RightThumbX,
+		Input->RightThumbY,
+		&Output[3],
+		&Output[4],
+		ThumbSettings->DeadZoneRight.Apply,
+		ThumbSettings->DeadZoneRight.PolarValue
+	);
 
 	// Trigger axes
 	Output[8] = Input->Pressure.Values.L2;
@@ -376,7 +389,8 @@ VOID DS3_RAW_TO_SDF_HID_INPUT_REPORT(
 	_In_ PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output,
 	_In_ DS_PRESSURE_EXPOSURE_MODE PressureMode,
-	_In_ DS_DPAD_EXPOSURE_MODE DPadExposureMode
+	_In_ DS_DPAD_EXPOSURE_MODE DPadExposureMode,
+	_In_ PDS_THUMB_SETTINGS ThumbSettings
 )
 {
 	// Report ID
