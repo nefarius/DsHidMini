@@ -4,7 +4,7 @@
 
 Virtual HID Mini-user-mode driver for Sony DualShock 3 Controllers
 
-[![Build status](https://ci.appveyor.com/api/projects/status/vmf09i95d06c8mbh/branch/master?svg=true)](https://ci.appveyor.com/project/nefarius/dshidmini/branch/master) [![GitHub All Releases](https://img.shields.io/github/downloads/ViGEm/DsHidMini/total)](https://somsubhra.github.io/github-release-stats/?username=ViGEm&repository=DsHidMini) [![Discord](https://img.shields.io/discord/346756263763378176.svg)](https://discord.vigem.org/) [![Website](https://img.shields.io/website-up-down-green-red/https/vigem.org.svg?label=ViGEm.org)](https://vigem.org/)
+[![Build status](https://ci.appveyor.com/api/projects/status/vmf09i95d06c8mbh/branch/master?svg=true)](https://ci.appveyor.com/project/nefarius/dshidmini/branch/master) [![GitHub All Releases](https://img.shields.io/github/downloads/ViGEm/DsHidMini/total)](https://somsubhra.github.io/github-release-stats/?username=ViGEm&repository=DsHidMini) ![GitHub issues](https://img.shields.io/github/issues/ViGEm/DsHidMini) [![Discord](https://img.shields.io/discord/346756263763378176.svg)](https://discord.vigem.org/) [![Website](https://img.shields.io/website-up-down-green-red/https/vigem.org.svg?label=ViGEm.org)](https://vigem.org/)
 
 ## Summary
 
@@ -47,6 +47,8 @@ DsHidMini is a self-contained, low footprint and feature-rich [user-mode driver]
 - Motion Controller
   - Not considered in design at all
 
+For in-progress features and bug-fixes please consult the issue tracker.
+
 ## How it works
 
 DsHidMini is a filter driver sitting below `mshidumdf.sys` and acts as a function driver for USB and Bluetooth through the [User-mode Driver Framework Reflector](https://docs.microsoft.com/en-us/windows-hardware/drivers/wdf/detailed-view-of-the-umdf-architecture), handling translation of incoming HID I/O traffic to underlying USB/Bluetooth I/O and vice versa. On USB it replaces the Windows stock drivers for the Sony hardware and presents the device as a variety of user-configurable HID devices (see documentation). On Bluetooth in conjunction with BthPS3 it replaces the need for [Shibari](https://github.com/ViGEm/Shibari) as the driver directly communicates over wireless channels and takes care of the necessary translation logic. As a user-mode driver it has limited access to the registry, therefore device-specific settings are stored and retrieved using the [Unified Device Property Model](https://docs.microsoft.com/en-us/windows-hardware/drivers/install/unified-device-property-model--windows-vista-and-later-) API. Most of the core HID heavy lifting is done by the amazing [DMF_VirtualHidMini](https://github.com/microsoft/DMF/blob/master/Dmf/Modules.Library/Dmf_VirtualHidMini.md) module which greatly reduced the need for boilerplate code and sped up development tremendously.
@@ -84,6 +86,10 @@ Take a look at the [project page](https://vigem.org/projects/DsHidMini/) for mor
 ## Installation
 
 Pre-built binaries and instructions are provided [on the releases page](../../releases).
+
+## Support
+
+To get support [please follow these guidlines](https://vigem.org/Community-Support/).
 
 ## Sources & 3rd party credits
 
