@@ -94,8 +94,7 @@ dshidminiEvtDeviceAdd(
 		//
 		// Read device properties
 		// 	
-		status = DsDevice_ReadProperties(device);
-		if (!NT_SUCCESS(status))
+		if (!NT_SUCCESS(status = DsDevice_ReadProperties(device)))
 		{
 			break;
 		}
@@ -105,8 +104,7 @@ dshidminiEvtDeviceAdd(
 		//
 		// Initialize context
 		// 
-		status = DsDevice_InitContext(device);
-		if (!NT_SUCCESS(status))
+		if (!NT_SUCCESS(status = DsDevice_InitContext(device)))
 		{
 			TraceError(
 				TRACE_DEVICE,
@@ -127,13 +125,12 @@ dshidminiEvtDeviceAdd(
 			queueConfig.EvtIoDeviceControl = DSHM_EvtWdfIoQueueIoDeviceControl;
 			DMF_DmfDeviceInitHookQueueConfig(dmfDeviceInit, &queueConfig);
 
-			status = WdfIoQueueCreate(
+			if (!NT_SUCCESS(status = WdfIoQueueCreate(
 				device,
 				&queueConfig,
 				WDF_NO_OBJECT_ATTRIBUTES,
 				&queue
-			);
-			if (!NT_SUCCESS(status))
+			)))
 			{
 				TraceError(
 					TRACE_DEVICE,
@@ -148,12 +145,11 @@ dshidminiEvtDeviceAdd(
 		// Expose interface for applications to find us
 		// 
 
-		status = WdfDeviceCreateDeviceInterface(
+		if (!NT_SUCCESS(status = WdfDeviceCreateDeviceInterface(
 			device,
 			&GUID_DEVINTERFACE_DSHIDMINI,
 			NULL
-		);
-		if (!NT_SUCCESS(status))
+		)))
 		{
 			TraceError(
 				TRACE_DEVICE,
@@ -171,14 +167,14 @@ dshidminiEvtDeviceAdd(
 			&dmfCallbacks
 		);
 
-		status = DMF_ModulesCreate(
+		if (!NT_SUCCESS(status = DMF_ModulesCreate(
 			device,
 			&dmfDeviceInit
-		);
-		if (!NT_SUCCESS(status))
+		)))
 		{
 			break;
 		}
+
 	} while (FALSE);
 
 	if (dmfDeviceInit != NULL)
