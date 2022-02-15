@@ -1286,7 +1286,8 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 	{
 		DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
 			Report,
-			pModCtx->InputReport
+			pModCtx->InputReport,
+			&Context->Configuration.ThumbSettings
 		);
 
 		//
@@ -1312,7 +1313,8 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 		DS3_RAW_TO_DS4WINDOWS_HID_INPUT_REPORT(
 			Report,
 			pModCtx->InputReport,
-			(Context->ConnectionType == DsDeviceConnectionTypeUsb) ? TRUE : FALSE
+			(Context->ConnectionType == DsDeviceConnectionTypeUsb) ? TRUE : FALSE,
+			&Context->Configuration.ThumbSettings
 		);
 
 		//
@@ -1337,7 +1339,8 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 	{
 		DS3_RAW_TO_XINPUTHID_HID_INPUT_REPORT(
 			Report,
-			(PXINPUT_HID_INPUT_REPORT)pModCtx->InputReport
+			(PXINPUT_HID_INPUT_REPORT)pModCtx->InputReport,
+			&Context->Configuration.ThumbSettings
 		);
 
 		//

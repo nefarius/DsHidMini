@@ -514,7 +514,8 @@ VOID DS3_RAW_TO_SDF_HID_INPUT_REPORT(
 
 VOID DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
 	_In_ PDS3_RAW_INPUT_REPORT Input,
-	_Out_ PUCHAR Output
+	_Out_ PUCHAR Output,
+	_In_ PDS_THUMB_SETTINGS ThumbSettings
 )
 {
 	// Prepare D-Pad
@@ -553,10 +554,22 @@ VOID DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
 	}
 
 	// Thumb axes
-	Output[4] = Input->LeftThumbX;
-	Output[5] = Input->LeftThumbY;
-	Output[6] = Input->RightThumbX;
-	Output[7] = Input->RightThumbY;
+	DS3_RAW_AXIS_TRANSFORM(
+		Input->LeftThumbX,
+		Input->LeftThumbY,
+		&Output[4],
+		&Output[5],
+		ThumbSettings->DeadZoneLeft.Apply,
+		ThumbSettings->DeadZoneLeft.PolarValue
+	);
+	DS3_RAW_AXIS_TRANSFORM(
+		Input->RightThumbX,
+		Input->RightThumbY,
+		&Output[6],
+		&Output[7],
+		ThumbSettings->DeadZoneRight.Apply,
+		ThumbSettings->DeadZoneRight.PolarValue
+	);
 
 	// Buttons
 	Output[0] &= ~0xFF; // Clear all 8 bits
@@ -598,7 +611,8 @@ UCHAR REVERSE_BITS(UCHAR x)
 VOID DS3_RAW_TO_DS4WINDOWS_HID_INPUT_REPORT(
 	_In_ PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output,
-	_In_ BOOLEAN IsWired
+	_In_ BOOLEAN IsWired,
+	_In_ PDS_THUMB_SETTINGS ThumbSettings
 )
 {
 	// Report ID
@@ -679,10 +693,22 @@ VOID DS3_RAW_TO_DS4WINDOWS_HID_INPUT_REPORT(
 	Output[6] |= (((Input->Buttons.bButtons[0] >> 2) & 0x01) << 7);
 
 	// Thumb axes
-	Output[1] = Input->LeftThumbX;
-	Output[2] = Input->LeftThumbY;
-	Output[3] = Input->RightThumbX;
-	Output[4] = Input->RightThumbY;
+	DS3_RAW_AXIS_TRANSFORM(
+		Input->LeftThumbX,
+		Input->LeftThumbY,
+		&Output[1],
+		&Output[2],
+		ThumbSettings->DeadZoneLeft.Apply,
+		ThumbSettings->DeadZoneLeft.PolarValue
+	);
+	DS3_RAW_AXIS_TRANSFORM(
+		Input->RightThumbX,
+		Input->RightThumbY,
+		&Output[3],
+		&Output[4],
+		ThumbSettings->DeadZoneRight.Apply,
+		ThumbSettings->DeadZoneRight.PolarValue
+	);
 
 	// Trigger axes
 	Output[8] = Input->Pressure.Values.L2;
@@ -738,16 +764,38 @@ VOID DS3_RAW_TO_DS4WINDOWS_HID_INPUT_REPORT(
 
 VOID DS3_RAW_TO_XINPUTHID_HID_INPUT_REPORT(
 	_In_ PDS3_RAW_INPUT_REPORT Input,
-	_Out_ PXINPUT_HID_INPUT_REPORT Output
+	_Out_ PXINPUT_HID_INPUT_REPORT Output,
+	_In_ PDS_THUMB_SETTINGS ThumbSettings
 )
 {
+	UCHAR leftThumbX = Input->LeftThumbX;
+	UCHAR leftThumbY = Input->LeftThumbY;
+	UCHAR rightThumbX = Input->RightThumbX;
+	UCHAR rightThumbY = Input->RightThumbY;
+
 	//
 	// Thumb axes
 	// 
-	Output->GD_GamePadX = Input->LeftThumbX * 257;
-	Output->GD_GamePadY = Input->LeftThumbY * 257;
-	Output->GD_GamePadRx = Input->RightThumbX * 257;
-	Output->GD_GamePadRy = Input->RightThumbY * 257;
+	DS3_RAW_AXIS_TRANSFORM(
+		Input->LeftThumbX,
+		Input->LeftThumbY,
+		&leftThumbX,
+		&leftThumbY,
+		ThumbSettings->DeadZoneLeft.Apply,
+		ThumbSettings->DeadZoneLeft.PolarValue
+	);
+	DS3_RAW_AXIS_TRANSFORM(
+		Input->RightThumbX,
+		Input->RightThumbY,
+		&rightThumbX,
+		&rightThumbY,
+		ThumbSettings->DeadZoneRight.Apply,
+		ThumbSettings->DeadZoneRight.PolarValue
+	);
+	Output->GD_GamePadX = leftThumbX * 257;
+	Output->GD_GamePadY = leftThumbY * 257;
+	Output->GD_GamePadRx = rightThumbX * 257;
+	Output->GD_GamePadRy = rightThumbY * 257;
 
 	//
 	// Triggers
