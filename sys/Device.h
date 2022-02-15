@@ -282,6 +282,11 @@ typedef struct _DEVICE_CONTEXT
 	//
 	HANDLE ConfigurationDirectoryWatcherWaitHandle;
 
+	//
+	// Lock protecting against parallel refreshing of configuration
+	// 
+	WDFWAITLOCK ConfigurationDirectoryWatcherLock;
+
 } DEVICE_CONTEXT, * PDEVICE_CONTEXT;
 
 //

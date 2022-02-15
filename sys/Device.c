@@ -523,6 +523,26 @@ DsDevice_InitContext(
 		}
 
 		//
+		// Create lock
+		// 
+
+		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
+		attributes.ParentObject = Device;
+
+		if (!NT_SUCCESS(status = WdfWaitLockCreate(
+			&attributes,
+			&pDevCtx->ConfigurationDirectoryWatcherLock
+		)))
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"WdfWaitLockCreate failed with status %!STATUS!",
+				status
+			);
+			break;
+		}
+
+		//
 		// Create timer
 		// 
 
@@ -608,13 +628,34 @@ DsDevice_HotReloadEventCallback(
 {
 	FuncEntry(TRACE_DEVICE);
 
+	LONGLONG timeout = 0;
 	PDEVICE_CONTEXT pDevCtx = (PDEVICE_CONTEXT)lpParameter;
 	UNREFERENCED_PARAMETER(TimerOrWaitFired);
 
-	ConfigLoadForDevice(pDevCtx);
-
 	FindNextChangeNotification(pDevCtx->ConfigurationDirectoryWatcherEvent);
 
+	do
+	{
+		//
+		// Protect against parallel reads
+		// 
+		if (!NT_SUCCESS(WdfWaitLockAcquire(pDevCtx->ConfigurationDirectoryWatcherLock, &timeout)))
+		{
+			break;
+		}
+
+		/*
+		 * When this event is fired, the file might still be locked by the application
+		 * that's written the change to it, so we simply wait a bit before attempting a read
+		 */
+		Sleep(100);
+
+		ConfigLoadForDevice(pDevCtx);
+
+		WdfWaitLockRelease(pDevCtx->ConfigurationDirectoryWatcherLock);
+
+	} while (FALSE);
+	
 	FuncExitNoReturn(TRACE_DEVICE);
 }
 
