@@ -2,6 +2,90 @@
 #include "Configuration.tmh"
 
 
+void
+ConfigParseRumbleSettings(
+	_In_ const cJSON* RumbleSettings,
+	_Inout_ PDS_DRIVER_CONFIGURATION Config
+)
+{
+	cJSON* pNode = NULL;
+
+	if ((pNode = cJSON_GetObjectItem(RumbleSettings, "DisableBM")))
+	{
+		Config->RumbleSettings.DisableBM = (BOOLEAN)cJSON_IsTrue(pNode);
+	}
+
+	if ((pNode = cJSON_GetObjectItem(RumbleSettings, "DisableSM")))
+	{
+		Config->RumbleSettings.DisableSM = (BOOLEAN)cJSON_IsTrue(pNode);
+	}
+
+	const cJSON* pBMStrRescale = cJSON_GetObjectItem(RumbleSettings, "BMStrRescale");
+
+	if (pBMStrRescale)
+	{
+		if ((pNode = cJSON_GetObjectItem(pBMStrRescale, "Enabled")))
+		{
+			Config->RumbleSettings.BMStrRescale.Enabled = (BOOLEAN)cJSON_IsTrue(pNode);
+		}
+
+		if ((pNode = cJSON_GetObjectItem(pBMStrRescale, "MinValue")))
+		{
+			Config->RumbleSettings.BMStrRescale.MinValue = (UCHAR)cJSON_GetNumberValue(pNode);
+		}
+
+		if ((pNode = cJSON_GetObjectItem(pBMStrRescale, "MaxValue")))
+		{
+			Config->RumbleSettings.BMStrRescale.MaxValue = (UCHAR)cJSON_GetNumberValue(pNode);
+		}
+	}
+
+	const cJSON* pSMToBMConversion = cJSON_GetObjectItem(RumbleSettings, "SMToBMConversion");
+
+	if (pSMToBMConversion)
+	{
+		if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "Enabled")))
+		{
+			Config->RumbleSettings.SMToBMConversion.Enabled = (BOOLEAN)cJSON_IsTrue(pNode);
+		}
+
+		if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "RescaleMinValue")))
+		{
+			Config->RumbleSettings.SMToBMConversion.RescaleMinValue = (UCHAR)cJSON_GetNumberValue(pNode);
+		}
+
+		if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "RescaleMaxValue")))
+		{
+			Config->RumbleSettings.SMToBMConversion.RescaleMaxValue = (UCHAR)cJSON_GetNumberValue(pNode);
+		}
+	}
+
+	const cJSON* pForcedSM = cJSON_GetObjectItem(RumbleSettings, "ForcedSM");
+
+	if (pForcedSM)
+	{
+		if ((pNode = cJSON_GetObjectItem(pForcedSM, "BMThresholdEnabled")))
+		{
+			Config->RumbleSettings.ForcedSM.BMThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+		}
+
+		if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "BMThresholdValue")))
+		{
+			Config->RumbleSettings.ForcedSM.BMThresholdValue = (UCHAR)cJSON_GetNumberValue(pNode);
+		}
+
+		if ((pNode = cJSON_GetObjectItem(pForcedSM, "SMThresholdEnabled")))
+		{
+			Config->RumbleSettings.ForcedSM.SMThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+		}
+
+		if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "SMThresholdValue")))
+		{
+			Config->RumbleSettings.ForcedSM.SMThresholdValue = (UCHAR)cJSON_GetNumberValue(pNode);
+		}
+	}
+}
+
 //
 // Reads/refreshes configuration from disk (JSON) to provided context
 // 
@@ -12,16 +96,7 @@ void ConfigNodeParse(
 {
 	PDS_DRIVER_CONFIGURATION pCfg = &Context->Configuration;
 	cJSON* pNode = NULL;
-	const char* modes[] =
-	{
-		"\0",
-		"SDF",
-		"GPJ",
-		"SXS",
-		"DS4Windows",
-		"XInput"
-	};
-
+	
 	//
 	// Common
 	// 
@@ -63,9 +138,9 @@ void ConfigNodeParse(
 	//
 	// Every mode can have the same properties configured independently
 	// 
-	if (pCfg->HidDeviceMode > 0 && pCfg->HidDeviceMode <= (DS_HID_DEVICE_MODE)_countof(modes))
+	if (pCfg->HidDeviceMode > 0 && pCfg->HidDeviceMode <= (DS_HID_DEVICE_MODE)_countof(G_HID_DEVICE_MODE_NAMES))
 	{
-		const cJSON* pModeSpecific = cJSON_GetObjectItem(ParentNode, modes[pCfg->HidDeviceMode]);
+		const cJSON* pModeSpecific = cJSON_GetObjectItem(ParentNode, G_HID_DEVICE_MODE_NAMES[pCfg->HidDeviceMode]);
 
 		if (pModeSpecific)
 		{
@@ -122,80 +197,7 @@ void ConfigNodeParse(
 
 			if (pRumbleSettings)
 			{
-				if ((pNode = cJSON_GetObjectItem(pRumbleSettings, "DisableBM")))
-				{
-					pCfg->RumbleSettings.DisableBM = (BOOLEAN)cJSON_IsTrue(pNode);
-				}
-
-				if ((pNode = cJSON_GetObjectItem(pRumbleSettings, "DisableSM")))
-				{
-					pCfg->RumbleSettings.DisableSM = (BOOLEAN)cJSON_IsTrue(pNode);
-				}
-
-				const cJSON* pBMStrRescale = cJSON_GetObjectItem(pRumbleSettings, "BMStrRescale");
-
-				if (pBMStrRescale)
-				{
-					if ((pNode = cJSON_GetObjectItem(pBMStrRescale, "Enabled")))
-					{
-						pCfg->RumbleSettings.BMStrRescale.Enabled = (BOOLEAN)cJSON_IsTrue(pNode);
-					}
-
-					if ((pNode = cJSON_GetObjectItem(pBMStrRescale, "MinValue")))
-					{
-						pCfg->RumbleSettings.BMStrRescale.MinValue = (UCHAR)cJSON_GetNumberValue(pNode);
-					}
-
-					if ((pNode = cJSON_GetObjectItem(pBMStrRescale, "MaxValue")))
-					{
-						pCfg->RumbleSettings.BMStrRescale.MaxValue = (UCHAR)cJSON_GetNumberValue(pNode);
-					}
-				}
-
-				const cJSON* pSMToBMConversion = cJSON_GetObjectItem(pRumbleSettings, "SMToBMConversion");
-
-				if (pSMToBMConversion)
-				{
-					if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "Enabled")))
-					{
-						pCfg->RumbleSettings.SMToBMConversion.Enabled = (BOOLEAN)cJSON_IsTrue(pNode);
-					}
-
-					if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "RescaleMinValue")))
-					{
-						pCfg->RumbleSettings.SMToBMConversion.RescaleMinValue = (UCHAR)cJSON_GetNumberValue(pNode);
-					}
-
-					if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "RescaleMaxValue")))
-					{
-						pCfg->RumbleSettings.SMToBMConversion.RescaleMaxValue = (UCHAR)cJSON_GetNumberValue(pNode);
-					}
-				}
-
-				const cJSON* pForcedSM = cJSON_GetObjectItem(pRumbleSettings, "ForcedSM");
-
-				if (pForcedSM)
-				{
-					if ((pNode = cJSON_GetObjectItem(pForcedSM, "BMThresholdEnabled")))
-					{
-						pCfg->RumbleSettings.ForcedSM.BMThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
-					}
-
-					if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "BMThresholdValue")))
-					{
-						pCfg->RumbleSettings.ForcedSM.BMThresholdValue = (UCHAR)cJSON_GetNumberValue(pNode);
-					}
-
-					if ((pNode = cJSON_GetObjectItem(pForcedSM, "SMThresholdEnabled")))
-					{
-						pCfg->RumbleSettings.ForcedSM.SMThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
-					}
-
-					if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "SMThresholdValue")))
-					{
-						pCfg->RumbleSettings.ForcedSM.SMThresholdValue = (UCHAR)cJSON_GetNumberValue(pNode);
-					}
-				}
+				ConfigParseRumbleSettings(pRumbleSettings, pCfg);
 			}
 		}
 	}

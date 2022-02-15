@@ -86,6 +86,19 @@ typedef enum
 } DS_HID_DEVICE_MODE, * PDS_HID_DEVICE_MODE;
 
 //
+// String-representation of the modes ordered by index
+// 
+static CONST PSTR G_HID_DEVICE_MODE_NAMES[] = 
+{
+	"\0", // Reserved/invalid
+	"SDF",
+	"GPJ",
+	"SXS",
+	"DS4Windows",
+	"XInput"
+};
+
+//
 // Output report processing mode
 // 
 typedef enum
