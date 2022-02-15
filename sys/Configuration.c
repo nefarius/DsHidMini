@@ -12,6 +12,15 @@ void ConfigNodeParse(
 {
 	PDS_DRIVER_CONFIGURATION pCfg = &Context->Configuration;
 	cJSON* pNode = NULL;
+	const char* modes[] =
+	{
+		"\0",
+		"SDF",
+		"GPJ",
+		"SXS",
+		"DS4Windows",
+		"XInput"
+	};
 
 	//
 	// Common
@@ -48,88 +57,47 @@ void ConfigNodeParse(
 	}
 
 	//
-	// SDF
+	// Every mode can have the same properties configured independently
 	// 
-
-	const cJSON* pSDF = cJSON_GetObjectItem(ParentNode, "SDF");
-
-	if (pSDF)
+	if (pCfg->HidDeviceMode > 0 && pCfg->HidDeviceMode <= (DS_HID_DEVICE_MODE)_countof(modes))
 	{
-		if ((pNode = cJSON_GetObjectItem(pSDF, "PressureExposureMode")))
+		const cJSON* pModeSpecific = cJSON_GetObjectItem(ParentNode, modes[pCfg->HidDeviceMode]);
+
+		if (pModeSpecific)
 		{
-			pCfg->SDF.PressureExposureMode = (DS_PRESSURE_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
-		}
+			if ((pNode = cJSON_GetObjectItem(pModeSpecific, "PressureExposureMode")))
+			{
+				pCfg->SDF.PressureExposureMode = (DS_PRESSURE_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
+			}
 
-		if ((pNode = cJSON_GetObjectItem(pSDF, "DPadExposureMode")))
-		{
-			pCfg->SDF.DPadExposureMode = (DS_DPAD_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
-		}
+			if ((pNode = cJSON_GetObjectItem(pModeSpecific, "DPadExposureMode")))
+			{
+				pCfg->SDF.DPadExposureMode = (DS_DPAD_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
+			}
 
-		const cJSON* pDeadZoneLeft = cJSON_GetObjectItem(pSDF, "DeadZoneLeft");
+			const cJSON* pDeadZoneLeft = cJSON_GetObjectItem(pModeSpecific, "DeadZoneLeft");
 
-		if ((pNode = cJSON_GetObjectItem(pDeadZoneLeft, "Apply")))
-		{
-			pCfg->ThumbSettings.DeadZoneLeft.Apply = (BOOLEAN)cJSON_IsTrue(pNode);
-		}
+			if ((pNode = cJSON_GetObjectItem(pDeadZoneLeft, "Apply")))
+			{
+				pCfg->ThumbSettings.DeadZoneLeft.Apply = (BOOLEAN)cJSON_IsTrue(pNode);
+			}
 
-		if ((pNode = cJSON_GetObjectItem(pDeadZoneLeft, "PolarValue")))
-		{
-			pCfg->ThumbSettings.DeadZoneLeft.PolarValue = cJSON_GetNumberValue(pNode);
-		}
+			if ((pNode = cJSON_GetObjectItem(pDeadZoneLeft, "PolarValue")))
+			{
+				pCfg->ThumbSettings.DeadZoneLeft.PolarValue = cJSON_GetNumberValue(pNode);
+			}
 
-		const cJSON* pDeadZoneRight = cJSON_GetObjectItem(pSDF, "DeadZoneRight");
+			const cJSON* pDeadZoneRight = cJSON_GetObjectItem(pModeSpecific, "DeadZoneRight");
 
-		if ((pNode = cJSON_GetObjectItem(pDeadZoneRight, "Apply")))
-		{
-			pCfg->ThumbSettings.DeadZoneRight.Apply = (BOOLEAN)cJSON_IsTrue(pNode);
-		}
+			if ((pNode = cJSON_GetObjectItem(pDeadZoneRight, "Apply")))
+			{
+				pCfg->ThumbSettings.DeadZoneRight.Apply = (BOOLEAN)cJSON_IsTrue(pNode);
+			}
 
-		if ((pNode = cJSON_GetObjectItem(pDeadZoneRight, "PolarValue")))
-		{
-			pCfg->ThumbSettings.DeadZoneRight.PolarValue = cJSON_GetNumberValue(pNode);
-		}
-	}
-
-	//
-	// GPJ
-	// 
-
-	const cJSON* pGPJ = cJSON_GetObjectItem(ParentNode, "GPJ");
-
-	if (pGPJ)
-	{
-		if ((pNode = cJSON_GetObjectItem(pGPJ, "PressureExposureMode")))
-		{
-			pCfg->GPJ.PressureExposureMode = (DS_PRESSURE_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
-		}
-
-		if ((pNode = cJSON_GetObjectItem(pGPJ, "DPadExposureMode")))
-		{
-			pCfg->GPJ.DPadExposureMode = (DS_DPAD_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
-		}
-
-		const cJSON* pDeadZoneLeft = cJSON_GetObjectItem(pGPJ, "DeadZoneLeft");
-
-		if ((pNode = cJSON_GetObjectItem(pDeadZoneLeft, "Apply")))
-		{
-			pCfg->ThumbSettings.DeadZoneLeft.Apply = (BOOLEAN)cJSON_IsTrue(pNode);
-		}
-
-		if ((pNode = cJSON_GetObjectItem(pDeadZoneLeft, "PolarValue")))
-		{
-			pCfg->ThumbSettings.DeadZoneLeft.PolarValue = cJSON_GetNumberValue(pNode);
-		}
-
-		const cJSON* pDeadZoneRight = cJSON_GetObjectItem(pGPJ, "DeadZoneRight");
-
-		if ((pNode = cJSON_GetObjectItem(pDeadZoneRight, "Apply")))
-		{
-			pCfg->ThumbSettings.DeadZoneRight.Apply = (BOOLEAN)cJSON_IsTrue(pNode);
-		}
-
-		if ((pNode = cJSON_GetObjectItem(pDeadZoneRight, "PolarValue")))
-		{
-			pCfg->ThumbSettings.DeadZoneRight.PolarValue = cJSON_GetNumberValue(pNode);
+			if ((pNode = cJSON_GetObjectItem(pDeadZoneRight, "PolarValue")))
+			{
+				pCfg->ThumbSettings.DeadZoneRight.PolarValue = cJSON_GetNumberValue(pNode);
+			}
 		}
 	}
 }
