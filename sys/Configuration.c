@@ -96,7 +96,7 @@ void ConfigNodeParse(
 {
 	PDS_DRIVER_CONFIGURATION pCfg = &Context->Configuration;
 	cJSON* pNode = NULL;
-	
+
 	//
 	// Common
 	// 
@@ -411,10 +411,16 @@ ConfigSetDefaults(
 
 	Config->RumbleSettings.DisableBM = FALSE;
 	Config->RumbleSettings.DisableSM = FALSE;
-
-	//
-	// TODO: finish
-	// 
+	Config->RumbleSettings.BMStrRescale.Enabled = TRUE;
+	Config->RumbleSettings.BMStrRescale.MinValue = 64;
+	Config->RumbleSettings.BMStrRescale.MaxValue = 255;
+	Config->RumbleSettings.SMToBMConversion.Enabled = FALSE;
+	Config->RumbleSettings.SMToBMConversion.RescaleMinValue = 0;
+	Config->RumbleSettings.SMToBMConversion.RescaleMaxValue = 160;
+	Config->RumbleSettings.ForcedSM.BMThresholdEnabled = TRUE;
+	Config->RumbleSettings.ForcedSM.BMThresholdValue = 230;
+	Config->RumbleSettings.ForcedSM.SMThresholdEnabled = FALSE;
+	Config->RumbleSettings.ForcedSM.SMThresholdValue = 230;
 
 	//
 	// SDF
