@@ -3,6 +3,7 @@
 #ifdef DSHM_FEATURE_FFB
 #include "PID/PIDTypes.h"
 #endif
+#include <math.h>
 
 #pragma region DS3 HID Report Descriptor (Split Device Mode)
 
@@ -204,6 +205,49 @@ BOOLEAN DS3_RAW_IS_IDLE(
 	// 
 
 	return TRUE;
+}
+
+void DS3_RAW_AXIS_TRANSFORM(
+	_In_ UCHAR InputX,
+	_In_ UCHAR InputY,
+	_Inout_ PUCHAR OutputX,
+	_Inout_ PUCHAR OutputY,
+	_In_ BOOLEAN ApplyDeadZone,
+	_In_ DOUBLE DeadZonePolarValue
+)
+{
+	if (!ApplyDeadZone)
+	{
+		*OutputX = InputX;
+		*OutputY = InputY;
+		return;
+	}
+
+	//
+	// 0x80 is centered, but working from 0 to positive
+	// values makes the following calculations easier
+	// 
+	const int x = abs((int)InputX - 0x80);
+	const int y = abs((int)InputY - 0x80);
+
+	//
+	// Calculate dead zone circle area
+	// 
+	const double r = sqrt(x * x + y * y);
+
+	//
+	// If we're outside of the dead zone, report non-default values
+	// 
+	if (r > DeadZonePolarValue)
+	{
+		*OutputX = InputX;
+		*OutputY = InputY;
+	}
+	else
+	{
+		*OutputX = 0x80;
+		*OutputY = 0x80;
+	}
 }
 
 VOID DS3_RAW_TO_GPJ_HID_INPUT_REPORT_01(

@@ -55,6 +55,15 @@ BOOLEAN DS3_RAW_IS_IDLE(
 	_In_ PDS3_RAW_INPUT_REPORT Input
 );
 
+void DS3_RAW_AXIS_TRANSFORM(
+	_In_ UCHAR InputX,
+	_In_ UCHAR InputY,
+	_Inout_ PUCHAR OutputX,
+	_Inout_ PUCHAR OutputY,
+	_In_ BOOLEAN ApplyDeadZone,
+	_In_ DOUBLE DeadZonePolarValue
+);
+
 VOID DS3_RAW_TO_GPJ_HID_INPUT_REPORT_01(
 	_In_ PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output,
