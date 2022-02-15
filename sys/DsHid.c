@@ -466,12 +466,24 @@ VOID DS3_RAW_TO_SDF_HID_INPUT_REPORT(
 		// Clear HAT position
 		Output[5] |= 8 & 0xF;
 	}
-
+	
 	// Thumb axes
-	Output[1] = Input->LeftThumbX;
-	Output[2] = Input->LeftThumbY;
-	Output[3] = Input->RightThumbX;
-	Output[4] = Input->RightThumbY;
+	DS3_RAW_AXIS_TRANSFORM(
+		Input->LeftThumbX,
+		Input->LeftThumbY,
+		&Output[1],
+		&Output[2],
+		ThumbSettings->DeadZoneLeft.Apply,
+		ThumbSettings->DeadZoneLeft.PolarValue
+	);
+	DS3_RAW_AXIS_TRANSFORM(
+		Input->RightThumbX,
+		Input->RightThumbY,
+		&Output[3],
+		&Output[4],
+		ThumbSettings->DeadZoneRight.Apply,
+		ThumbSettings->DeadZoneRight.PolarValue
+	);
 
 	// Trigger axes
 	Output[8] = Input->Pressure.Values.L2;

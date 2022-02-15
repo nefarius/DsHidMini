@@ -221,6 +221,11 @@ typedef struct _DS_DRIVER_CONFIGURATION
 	ULONG WirelessIdleTimeoutPeriodMs;
 
 	//
+	// Thumb stick specific settings, can be set per mode
+	// 
+	DS_THUMB_SETTINGS ThumbSettings;
+
+	//
 	// SDF-mode specific
 	// 
 	struct
@@ -228,9 +233,7 @@ typedef struct _DS_DRIVER_CONFIGURATION
 		DS_PRESSURE_EXPOSURE_MODE PressureExposureMode;
 
 		DS_DPAD_EXPOSURE_MODE DPadExposureMode;
-
-		DS_THUMB_SETTINGS ThumbSettings;
-
+		
 	} SDF;
 
 	//
@@ -241,9 +244,7 @@ typedef struct _DS_DRIVER_CONFIGURATION
 		DS_PRESSURE_EXPOSURE_MODE PressureExposureMode;
 
 		DS_DPAD_EXPOSURE_MODE DPadExposureMode;
-
-		DS_THUMB_SETTINGS ThumbSettings;
-
+		
 	} GPJ;
 
 } DS_DRIVER_CONFIGURATION, * PDS_DRIVER_CONFIGURATION;

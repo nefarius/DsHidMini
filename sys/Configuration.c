@@ -24,12 +24,12 @@ void ConfigNodeParse(
 
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "DisableAutoPairing")))
 	{
-		pCfg->DisableAutoPairing = cJSON_GetNumberValue(pNode) > 0.0;
+		pCfg->DisableAutoPairing = (BOOLEAN)cJSON_IsTrue(pNode);
 	}
 
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "IsOutputRateControlEnabled")))
 	{
-		pCfg->IsOutputRateControlEnabled = cJSON_GetNumberValue(pNode) > 0.0;
+		pCfg->IsOutputRateControlEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
 	}
 
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "OutputRateControlPeriodMs")))
@@ -39,7 +39,7 @@ void ConfigNodeParse(
 
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "IsOutputDeduplicatorEnabled")))
 	{
-		pCfg->IsOutputDeduplicatorEnabled = cJSON_GetNumberValue(pNode) > 0.0;
+		pCfg->IsOutputDeduplicatorEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
 	}
 
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "WirelessIdleTimeoutPeriodMs")))
@@ -69,24 +69,24 @@ void ConfigNodeParse(
 
 		if ((pNode = cJSON_GetObjectItem(pDeadZoneLeft, "Apply")))
 		{
-			pCfg->SDF.ThumbSettings.DeadZoneLeft.Apply = cJSON_GetNumberValue(pNode) > 0.0;
+			pCfg->ThumbSettings.DeadZoneLeft.Apply = (BOOLEAN)cJSON_IsTrue(pNode);
 		}
 
 		if ((pNode = cJSON_GetObjectItem(pDeadZoneLeft, "PolarValue")))
 		{
-			pCfg->SDF.ThumbSettings.DeadZoneLeft.PolarValue = cJSON_GetNumberValue(pNode);
+			pCfg->ThumbSettings.DeadZoneLeft.PolarValue = cJSON_GetNumberValue(pNode);
 		}
 
 		const cJSON* pDeadZoneRight = cJSON_GetObjectItem(pSDF, "DeadZoneRight");
 
 		if ((pNode = cJSON_GetObjectItem(pDeadZoneRight, "Apply")))
 		{
-			pCfg->SDF.ThumbSettings.DeadZoneRight.Apply = cJSON_GetNumberValue(pNode) > 0.0;
+			pCfg->ThumbSettings.DeadZoneRight.Apply = (BOOLEAN)cJSON_IsTrue(pNode);
 		}
 
 		if ((pNode = cJSON_GetObjectItem(pDeadZoneRight, "PolarValue")))
 		{
-			pCfg->SDF.ThumbSettings.DeadZoneRight.PolarValue = cJSON_GetNumberValue(pNode);
+			pCfg->ThumbSettings.DeadZoneRight.PolarValue = cJSON_GetNumberValue(pNode);
 		}
 	}
 
@@ -112,24 +112,24 @@ void ConfigNodeParse(
 
 		if ((pNode = cJSON_GetObjectItem(pDeadZoneLeft, "Apply")))
 		{
-			pCfg->SDF.ThumbSettings.DeadZoneLeft.Apply = cJSON_GetNumberValue(pNode) > 0.0;
+			pCfg->ThumbSettings.DeadZoneLeft.Apply = (BOOLEAN)cJSON_IsTrue(pNode);
 		}
 
 		if ((pNode = cJSON_GetObjectItem(pDeadZoneLeft, "PolarValue")))
 		{
-			pCfg->SDF.ThumbSettings.DeadZoneLeft.PolarValue = cJSON_GetNumberValue(pNode);
+			pCfg->ThumbSettings.DeadZoneLeft.PolarValue = cJSON_GetNumberValue(pNode);
 		}
 
 		const cJSON* pDeadZoneRight = cJSON_GetObjectItem(pGPJ, "DeadZoneRight");
 
 		if ((pNode = cJSON_GetObjectItem(pDeadZoneRight, "Apply")))
 		{
-			pCfg->SDF.ThumbSettings.DeadZoneRight.Apply = cJSON_GetNumberValue(pNode) > 0.0;
+			pCfg->ThumbSettings.DeadZoneRight.Apply = (BOOLEAN)cJSON_IsTrue(pNode);
 		}
 
 		if ((pNode = cJSON_GetObjectItem(pDeadZoneRight, "PolarValue")))
 		{
-			pCfg->SDF.ThumbSettings.DeadZoneRight.PolarValue = cJSON_GetNumberValue(pNode);
+			pCfg->ThumbSettings.DeadZoneRight.PolarValue = cJSON_GetNumberValue(pNode);
 		}
 	}
 }
@@ -334,6 +334,10 @@ ConfigSetDefaults(
 	Config->OutputRateControlPeriodMs = 150;
 	Config->IsOutputDeduplicatorEnabled = FALSE;
 	Config->WirelessIdleTimeoutPeriodMs = 300000;
+	Config->ThumbSettings.DeadZoneLeft.Apply = TRUE;
+	Config->ThumbSettings.DeadZoneLeft.PolarValue = 3.0;
+	Config->ThumbSettings.DeadZoneRight.Apply = TRUE;
+	Config->ThumbSettings.DeadZoneRight.PolarValue = 3.0;
 
 	//
 	// SDF
@@ -341,10 +345,6 @@ ConfigSetDefaults(
 
 	Config->SDF.PressureExposureMode = DsPressureExposureModeDefault;
 	Config->SDF.DPadExposureMode = DsDPadExposureModeDefault;
-	Config->SDF.ThumbSettings.DeadZoneLeft.Apply = TRUE;
-	Config->SDF.ThumbSettings.DeadZoneLeft.PolarValue = 3.0;
-	Config->SDF.ThumbSettings.DeadZoneRight.Apply = TRUE;
-	Config->SDF.ThumbSettings.DeadZoneRight.PolarValue = 3.0;
 
 	//
 	// GPJ
@@ -352,8 +352,4 @@ ConfigSetDefaults(
 
 	Config->GPJ.PressureExposureMode = DsPressureExposureModeDefault;
 	Config->GPJ.DPadExposureMode = DsDPadExposureModeDefault;
-	Config->GPJ.ThumbSettings.DeadZoneLeft.Apply = TRUE;
-	Config->GPJ.ThumbSettings.DeadZoneLeft.PolarValue = 3.0;
-	Config->GPJ.ThumbSettings.DeadZoneRight.Apply = TRUE;
-	Config->GPJ.ThumbSettings.DeadZoneRight.PolarValue = 3.0;
 }
