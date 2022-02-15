@@ -8,7 +8,11 @@
     "WirelessIdleTimeoutPeriodMs": 300000,
     "SDF": {
       "PressureExposureMode": 3,
-      "DPadExposureMode": 1
+      "DPadExposureMode": 1,
+      "DeadZone": {
+        "Apply": true,
+        "PolarValue": 3.0 
+      } 
     },
     "GPJ": {
       "PressureExposureMode": 3,

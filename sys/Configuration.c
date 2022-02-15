@@ -24,12 +24,12 @@ void ConfigNodeParse(
 
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "DisableAutoPairing")))
 	{
-		pCfg->DisableAutoPairing = cJSON_GetNumberValue(pNode) > 0.0f;
+		pCfg->DisableAutoPairing = cJSON_GetNumberValue(pNode) > 0.0;
 	}
 
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "IsOutputRateControlEnabled")))
 	{
-		pCfg->IsOutputRateControlEnabled = cJSON_GetNumberValue(pNode) > 0.0f;
+		pCfg->IsOutputRateControlEnabled = cJSON_GetNumberValue(pNode) > 0.0;
 	}
 
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "OutputRateControlPeriodMs")))
@@ -39,7 +39,7 @@ void ConfigNodeParse(
 
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "IsOutputDeduplicatorEnabled")))
 	{
-		pCfg->IsOutputDeduplicatorEnabled = cJSON_GetNumberValue(pNode) > 0.0f;
+		pCfg->IsOutputDeduplicatorEnabled = cJSON_GetNumberValue(pNode) > 0.0;
 	}
 
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "WirelessIdleTimeoutPeriodMs")))
@@ -53,14 +53,29 @@ void ConfigNodeParse(
 
 	const cJSON* pSDF = cJSON_GetObjectItem(ParentNode, "SDF");
 
-	if ((pNode = cJSON_GetObjectItem(pSDF, "PressureExposureMode")))
+	if (pSDF)
 	{
-		pCfg->SDF.PressureExposureMode = (DS_PRESSURE_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
-	}
+		if ((pNode = cJSON_GetObjectItem(pSDF, "PressureExposureMode")))
+		{
+			pCfg->SDF.PressureExposureMode = (DS_PRESSURE_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
+		}
 
-	if ((pNode = cJSON_GetObjectItem(pSDF, "DPadExposureMode")))
-	{
-		pCfg->SDF.DPadExposureMode = (DS_DPAD_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
+		if ((pNode = cJSON_GetObjectItem(pSDF, "DPadExposureMode")))
+		{
+			pCfg->SDF.DPadExposureMode = (DS_DPAD_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
+		}
+
+		const cJSON* pDeadZone = cJSON_GetObjectItem(pSDF, "DeadZone");
+
+		if ((pNode = cJSON_GetObjectItem(pDeadZone, "Apply")))
+		{
+			pCfg->SDF.DeadZone.Apply = cJSON_GetNumberValue(pNode) > 0.0;
+		}
+
+		if ((pNode = cJSON_GetObjectItem(pDeadZone, "PolarValue")))
+		{
+			pCfg->SDF.DeadZone.PolarValue = cJSON_GetNumberValue(pNode);
+		}
 	}
 
 	//
@@ -69,14 +84,29 @@ void ConfigNodeParse(
 
 	const cJSON* pGPJ = cJSON_GetObjectItem(ParentNode, "GPJ");
 
-	if ((pNode = cJSON_GetObjectItem(pGPJ, "PressureExposureMode")))
+	if (pGPJ)
 	{
-		pCfg->GPJ.PressureExposureMode = (DS_PRESSURE_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
-	}
+		if ((pNode = cJSON_GetObjectItem(pGPJ, "PressureExposureMode")))
+		{
+			pCfg->GPJ.PressureExposureMode = (DS_PRESSURE_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
+		}
 
-	if ((pNode = cJSON_GetObjectItem(pGPJ, "DPadExposureMode")))
-	{
-		pCfg->GPJ.DPadExposureMode = (DS_DPAD_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
+		if ((pNode = cJSON_GetObjectItem(pGPJ, "DPadExposureMode")))
+		{
+			pCfg->GPJ.DPadExposureMode = (DS_DPAD_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
+		}
+
+		const cJSON* pDeadZone = cJSON_GetObjectItem(pGPJ, "DeadZone");
+
+		if ((pNode = cJSON_GetObjectItem(pDeadZone, "Apply")))
+		{
+			pCfg->SDF.DeadZone.Apply = cJSON_GetNumberValue(pNode) > 0.0;
+		}
+
+		if ((pNode = cJSON_GetObjectItem(pDeadZone, "PolarValue")))
+		{
+			pCfg->SDF.DeadZone.PolarValue = cJSON_GetNumberValue(pNode);
+		}
 	}
 }
 
@@ -287,6 +317,8 @@ ConfigSetDefaults(
 
 	Config->SDF.PressureExposureMode = DsPressureExposureModeDefault;
 	Config->SDF.DPadExposureMode = DsDPadExposureModeDefault;
+	Config->SDF.DeadZone.Apply = TRUE;
+	Config->SDF.DeadZone.PolarValue = 3.0;
 
 	//
 	// GPJ
@@ -294,4 +326,6 @@ ConfigSetDefaults(
 
 	Config->GPJ.PressureExposureMode = DsPressureExposureModeDefault;
 	Config->GPJ.DPadExposureMode = DsDPadExposureModeDefault;
+	Config->GPJ.DeadZone.Apply = TRUE;
+	Config->GPJ.DeadZone.PolarValue = 3.0;
 }

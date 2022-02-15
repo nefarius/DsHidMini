@@ -179,6 +179,17 @@ typedef enum
 } DS_DPAD_EXPOSURE_MODE, * PDS_DPAD_EXPOSURE_MODE;
 
 //
+// Axis dead-zone settings
+// 
+typedef struct _DS_AXIS_DEADZONE
+{
+	BOOLEAN Apply;
+
+	DOUBLE PolarValue;
+
+} DS_AXIS_DEADZONE, * PDS_AXIS_DEADZONE;
+
+//
 // Per device dynamic configuration properties
 // 
 typedef struct _DS_DRIVER_CONFIGURATION
@@ -210,6 +221,8 @@ typedef struct _DS_DRIVER_CONFIGURATION
 
 		DS_DPAD_EXPOSURE_MODE DPadExposureMode;
 
+		DS_AXIS_DEADZONE DeadZone;
+
 	} SDF;
 
 	//
@@ -220,6 +233,8 @@ typedef struct _DS_DRIVER_CONFIGURATION
 		DS_PRESSURE_EXPOSURE_MODE PressureExposureMode;
 
 		DS_DPAD_EXPOSURE_MODE DPadExposureMode;
+
+		DS_AXIS_DEADZONE DeadZone;
 
 	} GPJ;
 
