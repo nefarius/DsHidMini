@@ -60,7 +60,7 @@
           "MaxValue": 255
         },
         "SMToBMConversion": {
-          "Enabled": true,
+          "Enabled": false,
           "RescaleMinValue": 0,
           "RescaleMaxValue": 160
         },
