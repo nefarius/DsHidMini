@@ -11,16 +11,46 @@
       "DPadExposureMode": 1,
       "DeadZoneLeft": {
         "Apply": true,
-        "PolarValue": 3.0
+        "PolarValue": 10.0
       },
       "DeadZoneRight": {
         "Apply": true,
-        "PolarValue": 3.0
+        "PolarValue": 10.0
       }
     },
     "GPJ": {
       "PressureExposureMode": 3,
       "DPadExposureMode": 1
+    },
+    "SXS": {
+      "DeadZoneLeft": {
+        "Apply": true,
+        "PolarValue": 10.0
+      },
+      "DeadZoneRight": {
+        "Apply": true,
+        "PolarValue": 10.0
+      }
+    },
+    "DS4Windows": {
+      "DeadZoneLeft": {
+        "Apply": false,
+        "PolarValue": 10.0
+      },
+      "DeadZoneRight": {
+        "Apply": false,
+        "PolarValue": 10.0
+      }
+    },
+    "XInput": {
+      "DeadZoneLeft": {
+        "Apply": true,
+        "PolarValue": 10.0
+      },
+      "DeadZoneRight": {
+        "Apply": true,
+        "PolarValue": 10.0
+      }
     }
   },
   "Devices": {
