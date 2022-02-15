@@ -401,10 +401,18 @@ ConfigSetDefaults(
 	Config->OutputRateControlPeriodMs = 150;
 	Config->IsOutputDeduplicatorEnabled = FALSE;
 	Config->WirelessIdleTimeoutPeriodMs = 300000;
+
 	Config->ThumbSettings.DeadZoneLeft.Apply = TRUE;
 	Config->ThumbSettings.DeadZoneLeft.PolarValue = 3.0;
 	Config->ThumbSettings.DeadZoneRight.Apply = TRUE;
 	Config->ThumbSettings.DeadZoneRight.PolarValue = 3.0;
+
+	Config->RumbleSettings.DisableBM = FALSE;
+	Config->RumbleSettings.DisableSM = FALSE;
+
+	//
+	// TODO: finish
+	// 
 
 	//
 	// SDF
