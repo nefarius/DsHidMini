@@ -137,8 +137,8 @@ DsBth_DisconnectEventCallback(
 
 	FuncEntry(TRACE_DSBTH);
 	
-	UnregisterWait(pDevCtx->ConfigurationReloadWaitHandle);
-	CloseHandle(pDevCtx->ConfigurationReloadEvent);
+	UnregisterWait(pDevCtx->ConfigurationDirectoryWatcherWaitHandle);
+	CloseHandle(pDevCtx->ConfigurationDirectoryWatcherEvent);
 
 	status = DsBth_SendDisconnectRequest(pDevCtx);
 

@@ -275,12 +275,12 @@ typedef struct _DEVICE_CONTEXT
 	//
 	// Event to listen for to hot-reload properties
 	//
-	HANDLE ConfigurationReloadEvent;
+	HANDLE ConfigurationDirectoryWatcherEvent;
 
 	//
 	// Wait handle for hot-reload
 	//
-	HANDLE ConfigurationReloadWaitHandle;
+	HANDLE ConfigurationDirectoryWatcherWaitHandle;
 
 } DEVICE_CONTEXT, * PDEVICE_CONTEXT;
 

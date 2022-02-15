@@ -620,7 +620,7 @@ DsDevice_HotReloadEventCallback(
 
 	ConfigLoadForDevice(pDevCtx);
 
-	FindNextChangeNotification(pDevCtx->ConfigurationReloadEvent);
+	FindNextChangeNotification(pDevCtx->ConfigurationDirectoryWatcherEvent);
 
 	FuncExitNoReturn(TRACE_DEVICE);
 }
@@ -640,10 +640,10 @@ void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
 
 	FuncEntry(TRACE_DEVICE);
 
-	if (Context->ConfigurationReloadEvent)
+	if (Context->ConfigurationDirectoryWatcherEvent)
 	{
-		FindCloseChangeNotification(Context->ConfigurationReloadEvent);
-		Context->ConfigurationReloadEvent = NULL;
+		FindCloseChangeNotification(Context->ConfigurationDirectoryWatcherEvent);
+		Context->ConfigurationDirectoryWatcherEvent = NULL;
 	}
 
 	if (GetEnvironmentVariableA(
@@ -666,13 +666,13 @@ void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
 		goto errorExit;
 	}
 
-	Context->ConfigurationReloadEvent = FindFirstChangeNotificationA(
+	Context->ConfigurationDirectoryWatcherEvent = FindFirstChangeNotificationA(
 		configPath,
 		FALSE,
 		FILE_NOTIFY_CHANGE_LAST_WRITE
 	);
 
-	if (Context->ConfigurationReloadEvent == NULL)
+	if (Context->ConfigurationDirectoryWatcherEvent == NULL)
 	{
 		TraceError(
 			TRACE_DEVICE,
@@ -681,8 +681,8 @@ void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
 	}
 
 	const BOOL ret = RegisterWaitForSingleObject(
-		&Context->ConfigurationReloadWaitHandle,
-		Context->ConfigurationReloadEvent,
+		&Context->ConfigurationDirectoryWatcherWaitHandle,
+		Context->ConfigurationDirectoryWatcherEvent,
 		DsDevice_HotReloadEventCallback,
 		Context,
 		INFINITE,
