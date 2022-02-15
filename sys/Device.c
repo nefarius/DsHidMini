@@ -640,64 +640,67 @@ void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
 
 	FuncEntry(TRACE_DEVICE);
 
-	if (Context->ConfigurationDirectoryWatcherEvent)
+	do
 	{
-		FindCloseChangeNotification(Context->ConfigurationDirectoryWatcherEvent);
-		Context->ConfigurationDirectoryWatcherEvent = NULL;
-	}
+		if (Context->ConfigurationDirectoryWatcherEvent)
+		{
+			FindCloseChangeNotification(Context->ConfigurationDirectoryWatcherEvent);
+			Context->ConfigurationDirectoryWatcherEvent = NULL;
+		}
 
-	if (GetEnvironmentVariableA(
-		CONFIG_ENV_VAR_NAME,
-		programDataPath,
-		MAX_PATH
-	) == 0)
-	{
-		goto errorExit;
-	}
+		if (GetEnvironmentVariableA(
+			CONFIG_ENV_VAR_NAME,
+			programDataPath,
+			MAX_PATH
+		) == 0)
+		{
+			break;
+		}
 
-	if (sprintf_s(
-		configPath,
-		MAX_PATH / sizeof(WCHAR),
-		"%s\\%s",
-		programDataPath,
-		CONFIG_SUB_DIR_NAME
-	) == -1)
-	{
-		goto errorExit;
-	}
+		if (sprintf_s(
+			configPath,
+			MAX_PATH / sizeof(WCHAR),
+			"%s\\%s",
+			programDataPath,
+			CONFIG_SUB_DIR_NAME
+		) == -1)
+		{
+			break;
+		}
 
-	Context->ConfigurationDirectoryWatcherEvent = FindFirstChangeNotificationA(
-		configPath,
-		FALSE,
-		FILE_NOTIFY_CHANGE_LAST_WRITE
-	);
-
-	if (Context->ConfigurationDirectoryWatcherEvent == NULL)
-	{
-		TraceError(
-			TRACE_DEVICE,
-			"Failed to create reload event"
+		Context->ConfigurationDirectoryWatcherEvent = FindFirstChangeNotificationA(
+			configPath,
+			FALSE,
+			FILE_NOTIFY_CHANGE_LAST_WRITE
 		);
-	}
 
-	const BOOL ret = RegisterWaitForSingleObject(
-		&Context->ConfigurationDirectoryWatcherWaitHandle,
-		Context->ConfigurationDirectoryWatcherEvent,
-		DsDevice_HotReloadEventCallback,
-		Context,
-		INFINITE,
-		WT_EXECUTELONGFUNCTION
-	);
+		if (Context->ConfigurationDirectoryWatcherEvent == NULL)
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"Failed to create reload event"
+			);
+			break;
+		}
 
-	if (!ret)
-	{
-		TraceError(
-			TRACE_DEVICE,
-			"Failed to register wait for reload event"
+		const BOOL ret = RegisterWaitForSingleObject(
+			&Context->ConfigurationDirectoryWatcherWaitHandle,
+			Context->ConfigurationDirectoryWatcherEvent,
+			DsDevice_HotReloadEventCallback,
+			Context,
+			INFINITE,
+			WT_EXECUTELONGFUNCTION
 		);
-	}
 
-errorExit:
+		if (!ret)
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"Failed to register wait for reload event"
+			);
+		}
+	} while (FALSE);
+
 	FuncExitNoReturn(TRACE_DEVICE);
 }
 
