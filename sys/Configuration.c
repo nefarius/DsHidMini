@@ -6,7 +6,7 @@
 // Reads/refreshes configuration from disk (JSON) to provided context
 // 
 void ConfigNodeParse(
-	_In_ const cJSON* DeviceNode,
+	_In_ const cJSON* ParentNode,
 	_Inout_ PDEVICE_CONTEXT Context
 )
 {
@@ -17,32 +17,32 @@ void ConfigNodeParse(
 	// Common
 	// 
 
-	if ((pNode = cJSON_GetObjectItem(DeviceNode, "HidDeviceMode")))
+	if ((pNode = cJSON_GetObjectItem(ParentNode, "HidDeviceMode")))
 	{
 		pCfg->HidDeviceMode = (DS_HID_DEVICE_MODE)cJSON_GetNumberValue(pNode);
 	}
 
-	if ((pNode = cJSON_GetObjectItem(DeviceNode, "DisableAutoPairing")))
+	if ((pNode = cJSON_GetObjectItem(ParentNode, "DisableAutoPairing")))
 	{
 		pCfg->DisableAutoPairing = cJSON_GetNumberValue(pNode) > 0.0f;
 	}
 
-	if ((pNode = cJSON_GetObjectItem(DeviceNode, "IsOutputRateControlEnabled")))
+	if ((pNode = cJSON_GetObjectItem(ParentNode, "IsOutputRateControlEnabled")))
 	{
 		pCfg->IsOutputRateControlEnabled = cJSON_GetNumberValue(pNode) > 0.0f;
 	}
 
-	if ((pNode = cJSON_GetObjectItem(DeviceNode, "OutputRateControlPeriodMs")))
+	if ((pNode = cJSON_GetObjectItem(ParentNode, "OutputRateControlPeriodMs")))
 	{
 		pCfg->OutputRateControlPeriodMs = (UCHAR)cJSON_GetNumberValue(pNode);
 	}
 
-	if ((pNode = cJSON_GetObjectItem(DeviceNode, "IsOutputDeduplicatorEnabled")))
+	if ((pNode = cJSON_GetObjectItem(ParentNode, "IsOutputDeduplicatorEnabled")))
 	{
 		pCfg->IsOutputDeduplicatorEnabled = cJSON_GetNumberValue(pNode) > 0.0f;
 	}
 
-	if ((pNode = cJSON_GetObjectItem(DeviceNode, "WirelessIdleTimeoutPeriodMs")))
+	if ((pNode = cJSON_GetObjectItem(ParentNode, "WirelessIdleTimeoutPeriodMs")))
 	{
 		pCfg->WirelessIdleTimeoutPeriodMs = (ULONG)cJSON_GetNumberValue(pNode);
 	}
@@ -51,7 +51,7 @@ void ConfigNodeParse(
 	// SDF
 	// 
 
-	const cJSON* pSDF = cJSON_GetObjectItem(DeviceNode, "SDF");
+	const cJSON* pSDF = cJSON_GetObjectItem(ParentNode, "SDF");
 
 	if ((pNode = cJSON_GetObjectItem(pSDF, "PressureExposureMode")))
 	{
@@ -67,7 +67,7 @@ void ConfigNodeParse(
 	// GPJ
 	// 
 
-	const cJSON* pGPJ = cJSON_GetObjectItem(DeviceNode, "GPJ");
+	const cJSON* pGPJ = cJSON_GetObjectItem(ParentNode, "GPJ");
 
 	if ((pNode = cJSON_GetObjectItem(pGPJ, "PressureExposureMode")))
 	{
@@ -86,7 +86,7 @@ ConfigLoadForDevice(
 	_Inout_ PDEVICE_CONTEXT Context
 )
 {
-	NTSTATUS status = STATUS_UNSUCCESSFUL;
+	NTSTATUS status = STATUS_SUCCESS;
 	CHAR programDataPath[MAX_PATH];
 	CHAR configFilePath[MAX_PATH];
 	CHAR deviceAddress[13];
@@ -202,24 +202,43 @@ ConfigLoadForDevice(
 			break;
 		}
 
-		const cJSON* devicesNode = cJSON_GetObjectItem(config_json, "Devices");
-
-		cJSON* deviceNode = cJSON_GetObjectItem(devicesNode, deviceAddress);
-
-		if (deviceNode == NULL)
+		if (!NT_SUCCESS(status))
 		{
 			break;
 		}
 
-		status = STATUS_SUCCESS;
+		//
+		// Read global configuration first, then overwrite device-specific ones
+		// 
+		const cJSON* globalNode = cJSON_GetObjectItem(config_json, "Global");
 
-		TraceVerbose(
-			TRACE_CONFIG,
-			"Found device config for %s",
-			deviceAddress
-		);
+		if (globalNode)
+		{
+			TraceVerbose(
+				TRACE_CONFIG,
+				"Reading global configuration"
+			);
 
-		ConfigNodeParse(deviceNode, Context);
+			ConfigNodeParse(globalNode, Context);
+		}
+
+		const cJSON* devicesNode = cJSON_GetObjectItem(config_json, "Devices");
+
+		//
+		// Try to read device-specific properties
+		// 
+		cJSON* deviceNode = cJSON_GetObjectItem(devicesNode, deviceAddress);
+
+		if (deviceNode)
+		{
+			TraceVerbose(
+				TRACE_CONFIG,
+				"Found device config for %s",
+				deviceAddress
+			);
+
+			ConfigNodeParse(deviceNode, Context);
+		}
 
 	} while (FALSE);
 
