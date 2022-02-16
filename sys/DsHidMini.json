@@ -70,7 +70,40 @@
           "SMThresholdEnabled": false,
           "SMThresholdValue": 230
         }
-      }
+      },
+      "LEDSettings": {
+        "Mode": 1,
+        "CustomPatterns": {
+          "Player1": {
+            "Duration": 255,
+            "IntervalDuration": 255,
+            "Enabled": 16,
+            "IntervalPortionOff": 0,
+            "IntervalPortionOn": 255
+          },
+          "Player2": {
+            "Duration": 255,
+            "IntervalDuration": 255,
+            "Enabled": 16,
+            "IntervalPortionOff": 0,
+            "IntervalPortionOn": 255
+          },
+          "Player3": {
+            "Duration": 255,
+            "IntervalDuration": 255,
+            "Enabled": 16,
+            "IntervalPortionOff": 0,
+            "IntervalPortionOn": 255
+          },
+          "Player4": {
+            "Duration": 255,
+            "IntervalDuration": 255,
+            "Enabled": 16,
+            "IntervalPortionOff": 0,
+            "IntervalPortionOn": 255
+          }
+        } 
+      } 
     }
   },
   "Devices": {

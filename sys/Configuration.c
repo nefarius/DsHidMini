@@ -86,6 +86,69 @@ ConfigParseRumbleSettings(
 	}
 }
 
+void
+ConfigParseLEDSettings(
+	_In_ const cJSON* LEDSettings,
+	_Inout_ PDS_DRIVER_CONFIGURATION Config
+)
+{
+	cJSON* pNode = NULL;
+
+	if ((pNode = cJSON_GetObjectItem(LEDSettings, "Mode")))
+	{
+		Config->LEDSettings.Mode = (DS_LED_MODE)cJSON_GetNumberValue(pNode);
+	}
+
+	if (Config->LEDSettings.Mode == DsLEDModeCustomPattern)
+	{
+		const cJSON* pCustomPatterns = cJSON_GetObjectItem(LEDSettings, "CustomPatterns");
+
+		const PSTR playerSlotNames[] =
+		{
+			"Player1",
+			"Player2",
+			"Player3",
+			"Player4",
+		};
+
+		const PDS_LED pPlayerSlots[] =
+		{
+			&Config->LEDSettings.CustomPatterns.Player1,
+			&Config->LEDSettings.CustomPatterns.Player2,
+			&Config->LEDSettings.CustomPatterns.Player3,
+			&Config->LEDSettings.CustomPatterns.Player4,
+		};
+
+		for (ULONGLONG playerIndex = 0; playerIndex < _countof(playerSlotNames); playerIndex++)
+		{
+			if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "Duration")))
+			{
+				pPlayerSlots[playerIndex]->Duration = (UCHAR)cJSON_GetNumberValue(pNode);
+			}
+
+			if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "IntervalDuration")))
+			{
+				pPlayerSlots[playerIndex]->IntervalDuration = (UCHAR)cJSON_GetNumberValue(pNode);
+			}
+
+			if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "Enabled")))
+			{
+				pPlayerSlots[playerIndex]->Enabled = (UCHAR)cJSON_GetNumberValue(pNode);
+			}
+
+			if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "IntervalPortionOff")))
+			{
+				pPlayerSlots[playerIndex]->IntervalPortionOff = (UCHAR)cJSON_GetNumberValue(pNode);
+			}
+
+			if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "IntervalPortionOn")))
+			{
+				pPlayerSlots[playerIndex]->IntervalPortionOn = (UCHAR)cJSON_GetNumberValue(pNode);
+			}
+		}
+	}
+}
+
 //
 // Reads/refreshes configuration from disk (JSON) to provided context
 // 
@@ -198,6 +261,16 @@ void ConfigNodeParse(
 			if (pRumbleSettings)
 			{
 				ConfigParseRumbleSettings(pRumbleSettings, pCfg);
+			}
+
+			//
+			// LED settings
+			// 
+			const cJSON* pLEDSettings = cJSON_GetObjectItem(pModeSpecific, "LEDSettings");
+
+			if (pLEDSettings)
+			{
+				ConfigParseLEDSettings(pLEDSettings, pCfg);
 			}
 		}
 	}
@@ -422,15 +495,34 @@ ConfigSetDefaults(
 	Config->RumbleSettings.ForcedSM.SMThresholdEnabled = FALSE;
 	Config->RumbleSettings.ForcedSM.SMThresholdValue = 230;
 
+	Config->LEDSettings.Mode = DsLEDModeBatteryIndicatorPlayerIndex;
+
+	const PDS_LED pPlayerSlots[] =
+	{
+		&Config->LEDSettings.CustomPatterns.Player1,
+		&Config->LEDSettings.CustomPatterns.Player2,
+		&Config->LEDSettings.CustomPatterns.Player3,
+		&Config->LEDSettings.CustomPatterns.Player4,
+	};
+
+	for (ULONGLONG playerIndex = 0; playerIndex < _countof(pPlayerSlots); playerIndex++)
+	{
+		pPlayerSlots[playerIndex]->Duration = 0xFF;
+		pPlayerSlots[playerIndex]->IntervalDuration = 0xFF;
+		pPlayerSlots[playerIndex]->Enabled = 0x10;
+		pPlayerSlots[playerIndex]->IntervalPortionOff = 0x00;
+		pPlayerSlots[playerIndex]->IntervalPortionOn = 0xFF;
+	}
+
 	//
-	// SDF
+	// SDF-specific
 	// 
 
 	Config->SDF.PressureExposureMode = DsPressureExposureModeDefault;
 	Config->SDF.DPadExposureMode = DsDPadExposureModeDefault;
 
 	//
-	// GPJ
+	// GPJ-specific
 	// 
 
 	Config->GPJ.PressureExposureMode = DsPressureExposureModeDefault;

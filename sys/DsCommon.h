@@ -88,7 +88,7 @@ typedef enum
 //
 // String-representation of the modes ordered by index
 // 
-static CONST PSTR G_HID_DEVICE_MODE_NAMES[] = 
+static CONST PSTR G_HID_DEVICE_MODE_NAMES[] =
 {
 	"\0", // Reserved/invalid
 	"SDF",
@@ -174,6 +174,7 @@ typedef enum
 
 //
 // Flags of whether the D-Pad should be reported as HAT switch or individual buttons
+// 
 typedef enum
 {
 	//
@@ -190,6 +191,49 @@ typedef enum
 	DsDPadExposureModeDefault = DsDPadExposureModeHAT
 
 } DS_DPAD_EXPOSURE_MODE, * PDS_DPAD_EXPOSURE_MODE;
+
+//
+// Possible LED modes
+// 
+typedef enum
+{
+	//
+	// Invalid
+	// 
+	DsLEDModeUnknown = 0,
+	//
+	// Use only one player index to indicate charge (1 = Lowest, 4 = Highest)
+	// 
+	DsLEDModeBatteryIndicatorPlayerIndex,
+	//
+	// Display charge as simulated bar graph (1 = Lowest, 1 to 4 = Highest)
+	DsLEDModeBatteryIndicatorBarGraph,
+	//
+	// Use whatever pattern is provided by configuration
+	// 
+	DsLEDModeCustomPattern
+
+} DS_LED_MODE;
+
+//
+// Whether the driver or the application will have authority over LEDs
+// 
+typedef enum
+{
+	//
+	// Give driver authority on boot, switch over to app if requested
+	// 
+	DsLEDAuthorityAutomatic = 0,
+	//
+	// The driver is always in charge of LED manipulation
+	// 
+	DsLEDAuthorityDriver,
+	//
+	// The application is in charge, the driver will do nothing
+	// 
+	DsLEDAuthorityApplication
+
+} DS_LED_AUTHORITY;
 
 //
 // Axis dead-zone settings
@@ -229,7 +273,7 @@ typedef struct _DS_RUMBLE_SETTINGS
 		UCHAR MinValue;
 
 		UCHAR MaxValue;
-		
+
 	} BMStrRescale;
 
 	struct
@@ -239,7 +283,7 @@ typedef struct _DS_RUMBLE_SETTINGS
 		UCHAR RescaleMinValue;
 
 		UCHAR RescaleMaxValue;
-				
+
 	} SMToBMConversion;
 
 	struct
@@ -251,10 +295,45 @@ typedef struct _DS_RUMBLE_SETTINGS
 		BOOLEAN SMThresholdEnabled;
 
 		UCHAR SMThresholdValue;
-		
+
 	} ForcedSM;
 
 } DS_RUMBLE_SETTINGS, * PDS_RUMBLE_SETTINGS;
+
+//
+// https://github.com/RPCS3/rpcs3/blob/abd8bd6f3619c805d52807f321b78d4baf89c252/rpcs3/Input/ds3_pad_handler.cpp#L18-L25
+// 
+typedef struct _DS_LED
+{
+	UCHAR Duration;
+
+	UCHAR IntervalDuration;
+
+	UCHAR Enabled;
+
+	UCHAR IntervalPortionOff;
+
+	UCHAR IntervalPortionOn;
+
+} DS_LED, * PDS_LED;
+
+typedef struct _DS_LED_SETTINGS
+{
+	DS_LED_MODE Mode;
+
+	struct
+	{
+		DS_LED Player1;
+
+		DS_LED Player2;
+
+		DS_LED Player3;
+
+		DS_LED Player4;
+
+	} CustomPatterns;
+
+} DS_LED_SETTINGS, * PDS_LED_SETTINGS;
 
 //
 // Per device dynamic configuration properties
@@ -288,6 +367,11 @@ typedef struct _DS_DRIVER_CONFIGURATION
 	// Rumble customizing
 	// 
 	DS_RUMBLE_SETTINGS RumbleSettings;
+
+	//
+	// LED customizing
+	// 
+	DS_LED_SETTINGS LEDSettings;
 
 	//
 	// SDF-mode specific
