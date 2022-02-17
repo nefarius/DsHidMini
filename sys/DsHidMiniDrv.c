@@ -1450,6 +1450,8 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 		);
 	}
 
+	const PDS_LED_SETTINGS pLED = &pDevCtx->Configuration.LEDSettings;
+
 	//
 	// Check if state has changed to Charged
 	// 
@@ -1458,9 +1460,24 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	{
 		pDevCtx->BatteryStatus = battery;
 
-		if (pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled)
+		if (
+			pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled &&
+			pLED->Mode > DsLEDModeUnknown && pLED->Mode < DsLEDModeCustomPattern
+			)
 		{
-			DS3_SET_LED(pDevCtx, DS3_LED_4);
+			switch (pLED->Mode)
+			{
+			case DsLEDModeBatteryIndicatorPlayerIndex:
+
+				DS3_SET_LED(pDevCtx, DS3_LED_4);
+
+				break;
+			case DsLEDModeBatteryIndicatorBarGraph:
+
+				DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
+
+				break;
+			}
 
 			(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverLowPriority);
 		}
@@ -1489,17 +1506,46 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 			// 
 			pDevCtx->Connection.Usb.ChargingCycleTimestamp.QuadPart = 0;
 
-			UCHAR led = DS3_GET_LED(pDevCtx) << 1;
+			UCHAR led = DS3_LED_OFF;
 
-			//
-			// Cycle through
-			// 
-			if (led > DS3_LED_4 || led < DS3_LED_1)
+			switch (pLED->Mode)
 			{
-				led = DS3_LED_1;
+			case DsLEDModeBatteryIndicatorPlayerIndex:
+
+				led = DS3_GET_LED(pDevCtx) << 1;
+
+				//
+				// Cycle through
+				// 
+				if (led > DS3_LED_4 || led < DS3_LED_1)
+				{
+					led = DS3_LED_1;
+				}
+
+				break;
+			case DsLEDModeBatteryIndicatorBarGraph:
+
+				led = DS3_GET_LED(pDevCtx);
+
+				//
+				// Cycle graph from 1 to 4 and repeat
+				// 
+				if (led == (DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4))
+				{
+					led = DS3_LED_1;
+				}
+				else
+				{
+					led |= (!led) ? DS3_LED_1 : led << 1;
+				}
+
+				break;
 			}
 
-			if (pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled)
+			if (
+				pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled &&
+				pLED->Mode > DsLEDModeUnknown && pLED->Mode < DsLEDModeCustomPattern
+				)
 			{
 				DS3_SET_LED(pDevCtx, led);
 
@@ -2278,7 +2324,7 @@ Ds_SendOutputReport(
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 
 	return status;
-}
+	}
 
 #pragma endregion
 
