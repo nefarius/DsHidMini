@@ -207,6 +207,7 @@ typedef enum
 	DsLEDModeBatteryIndicatorPlayerIndex,
 	//
 	// Display charge as simulated bar graph (1 = Lowest, 1 to 4 = Highest)
+	// 
 	DsLEDModeBatteryIndicatorBarGraph,
 	//
 	// Use whatever pattern is provided by configuration

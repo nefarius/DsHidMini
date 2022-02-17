@@ -1668,12 +1668,17 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 				&battery
 			);
 
+			const PDS_LED_SETTINGS pLED = &pDevCtx->Configuration.LEDSettings;
+
 			//
-			// Don't send update if not initialized yet
+			// Don't send update if not initialized yet or custom pattern
 			// 
 			if (DS3_GET_LED(pDevCtx) != 0x00)
 			{
-				if (pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled)
+				if (
+					pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled &&
+					pLED->Mode > DsLEDModeUnknown && pLED->Mode < DsLEDModeCustomPattern
+					)
 				{
 					//
 					// Restore defaults to undo any (past) flashing animations
@@ -1683,24 +1688,55 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 					DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 2);
 					DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 3);
 
-					switch (battery)
+					switch (pLED->Mode)
 					{
-					case DsBatteryStatusCharged:
-					case DsBatteryStatusFull:
-						DS3_SET_LED(pDevCtx, DS3_LED_4);
+					case DsLEDModeBatteryIndicatorPlayerIndex:
+
+						switch (battery)
+						{
+						case DsBatteryStatusCharged:
+						case DsBatteryStatusFull:
+							DS3_SET_LED(pDevCtx, DS3_LED_4);
+							break;
+						case DsBatteryStatusHigh:
+							DS3_SET_LED(pDevCtx, DS3_LED_3);
+							break;
+						case DsBatteryStatusMedium:
+							DS3_SET_LED(pDevCtx, DS3_LED_2);
+							break;
+						case DsBatteryStatusLow:
+						case DsBatteryStatusDying:
+							DS3_SET_LED(pDevCtx, DS3_LED_1);
+							DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
+							break;
+						default:
+							break;
+						}
+
 						break;
-					case DsBatteryStatusHigh:
-						DS3_SET_LED(pDevCtx, DS3_LED_3);
-						break;
-					case DsBatteryStatusMedium:
-						DS3_SET_LED(pDevCtx, DS3_LED_2);
-						break;
-					case DsBatteryStatusLow:
-					case DsBatteryStatusDying:
-						DS3_SET_LED(pDevCtx, DS3_LED_1);
-						DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
-						break;
-					default:
+					case DsLEDModeBatteryIndicatorBarGraph:
+
+						switch (battery)
+						{
+						case DsBatteryStatusCharged:
+						case DsBatteryStatusFull:
+							DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
+							break;
+						case DsBatteryStatusHigh:
+							DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3);
+							break;
+						case DsBatteryStatusMedium:
+							DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2);
+							break;
+						case DsBatteryStatusLow:
+						case DsBatteryStatusDying:
+							DS3_SET_LED(pDevCtx, DS3_LED_1);
+							DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
+							break;
+						default:
+							break;
+						}
+
 						break;
 					}
 
