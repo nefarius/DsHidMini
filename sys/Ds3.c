@@ -561,3 +561,42 @@ VOID DS3_SET_LARGE_RUMBLE_STRENGTH(
 		break;
 	}
 }
+
+	VOID DS3_SET_BOTH_RUMBLE_STRENGTH(
+		PDEVICE_CONTEXT Context,
+		DOUBLE LargeValue,
+		DOUBLE SmallValue
+	)
+	{
+		switch (Context->ConnectionType)
+		{
+		case DsDeviceConnectionTypeUsb:
+
+			DS3_USB_SET_LARGE_RUMBLE_STRENGTH(
+				(PUCHAR)WdfMemoryGetBuffer(
+					Context->OutputReportMemory,
+					NULL
+				), (UCHAR)LargeValue);
+			DS3_USB_SET_SMALL_RUMBLE_STRENGTH(
+				(PUCHAR)WdfMemoryGetBuffer(
+					Context->OutputReportMemory,
+					NULL
+				), (UCHAR)SmallValue);
+			break;
+
+		case DsDeviceConnectionTypeBth:
+
+			DS3_BTH_SET_LARGE_RUMBLE_STRENGTH(
+				(PUCHAR)WdfMemoryGetBuffer(
+					Context->OutputReportMemory,
+					NULL
+				), (UCHAR)LargeValue);
+			DS3_BTH_SET_SMALL_RUMBLE_STRENGTH(
+				(PUCHAR)WdfMemoryGetBuffer(
+					Context->OutputReportMemory,
+					NULL
+				), (UCHAR)SmallValue);
+			break;
+		}
+
+	}
