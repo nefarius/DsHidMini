@@ -287,6 +287,22 @@ typedef struct _DEVICE_CONTEXT
 	// 
 	WDFWAITLOCK ConfigurationDirectoryWatcherLock;
 
+	struct
+	{
+		//
+		// Cache for last received Small Motor Strength value
+		// 
+		UCHAR Small;
+
+		//
+		// Cache for last received Big Motor Strength value
+		// 
+		UCHAR Big;
+
+	} MotorStrCache;
+
+
+
 } DEVICE_CONTEXT, * PDEVICE_CONTEXT;
 
 //
