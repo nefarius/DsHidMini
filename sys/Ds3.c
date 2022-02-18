@@ -575,8 +575,7 @@ VOID DS3_SET_LARGE_RUMBLE_STRENGTH(
 				// Small Motor Strength Rescale
 				SmallValue = 
 					(DOUBLE)(Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue - Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue)
-					/ 255 * (SmallValue - 255) + Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue;
-				if (SmallValue < 1) SmallValue = 1;
+					/ 254 * (SmallValue - 255) + Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue;
 
 				if (SmallValue > LargeValue) {
 					LargeValue = SmallValue;
@@ -618,8 +617,7 @@ VOID DS3_SET_LARGE_RUMBLE_STRENGTH(
 		if (Context->Configuration.RumbleSettings.BMStrRescale.Enabled && LargeValue > 0) {
 			LargeValue = 
 				(DOUBLE)(Context->Configuration.RumbleSettings.BMStrRescale.MaxValue - Context->Configuration.RumbleSettings.BMStrRescale.MinValue)
-				/ (255) * (LargeValue - 255) + Context->Configuration.RumbleSettings.BMStrRescale.MaxValue;
-			if (LargeValue < Context->Configuration.RumbleSettings.BMStrRescale.MinValue) LargeValue = Context->Configuration.RumbleSettings.BMStrRescale.MinValue;
+				/ (254) * (LargeValue - 255) + Context->Configuration.RumbleSettings.BMStrRescale.MaxValue;
 		}
 
 
