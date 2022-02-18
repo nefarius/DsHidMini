@@ -563,18 +563,15 @@ VOID DS3_SET_LARGE_RUMBLE_STRENGTH(
 }
 
 	VOID DS3_SET_BOTH_RUMBLE_STRENGTH(
-		PDEVICE_CONTEXT Context,
-		DOUBLE LargeValue,
-		DOUBLE SmallValue
+		PDEVICE_CONTEXT Context
 	)
 	{
-		DOUBLE OriginalLargeValue = LargeValue, OriginalSmallValue = SmallValue;
-
 		// Using the simpler version of the rescale range instructions is not possible if DSHMC allows updating the used values on the fly
 		// Simpler version: calculate constants before hand
 		// newvalue = a * value + b
 		// a = (max'-min') / (max - min)
 		// b = max' - a * max
+		DOUBLE LargeValue = Context->MotorStrCache.Big, SmallValue = Context->MotorStrCache.Small;
 
 		if(SmallValue > 0) {
 
@@ -600,8 +597,9 @@ VOID DS3_SET_LARGE_RUMBLE_STRENGTH(
 					SmallValue = 1;
 					*/
 					Context->Configuration.RumbleSettings.ForcedSM.BMThresholdEnabled
-					&& OriginalLargeValue >= Context->Configuration.RumbleSettings.ForcedSM.BMThresholdValue
-					) {
+					&& Context->MotorStrCache.Big >= Context->Configuration.RumbleSettings.ForcedSM.BMThresholdValue
+					) 
+				{
 					SmallValue = 1;
 				}
 
@@ -612,7 +610,7 @@ VOID DS3_SET_LARGE_RUMBLE_STRENGTH(
 					&& Context->RawSmallMotorStrengthCache >= Context->Configuration.RumbleSettings.ForcedSM.SMThresholdValue
 					*/
 					Context->Configuration.RumbleSettings.ForcedSM.SMThresholdEnabled
-					&& OriginalSmallValue >= Context->Configuration.RumbleSettings.ForcedSM.SMThresholdValue
+					&& Context->MotorStrCache.Small >= Context->Configuration.RumbleSettings.ForcedSM.SMThresholdValue
 					)
 				{
 					SmallValue = 1;
