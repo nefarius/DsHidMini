@@ -568,6 +568,68 @@ VOID DS3_SET_LARGE_RUMBLE_STRENGTH(
 		DOUBLE SmallValue
 	)
 	{
+		DOUBLE OriginalLargeValue = LargeValue, OriginalSmallValue = SmallValue;
+
+		// Using the simpler version of the rescale range instructions is not possible if DSHMC allows updating the used values on the fly
+		// Simpler version: calculate constants before hand
+		// newvalue = a * value + b
+		// a = (max'-min') / (max - min)
+		// b = max' - a * max
+
+		if(SmallValue > 0) {
+
+			if (Context->Configuration.RumbleSettings.SMToBMConversion.Enabled) {
+
+				// Small Motor Strength Rescale
+				SmallValue = 
+					(DOUBLE)(Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue - Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue)
+					/ 255 * (SmallValue - 255) + Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue;
+				if (SmallValue < 1) SmallValue = 1;
+
+				if (SmallValue > LargeValue) {
+					LargeValue = SmallValue;
+				}
+				SmallValue = 0; // Always disable Small Motor after the comparison above
+
+				// Force Activate Small Motor if original BIG Motor Strength is above certain level and related boolean is enabled
+				if (
+					/*
+					Context->Configuration.RumbleSettings.ForcedSM.BMThresholdEnabled
+					&& Context->RawBigMotorStrengthCache >= Context->Configuration.RumbleSettings.ForcedSM.BMThresholdValue
+					) {
+					SmallValue = 1;
+					*/
+					Context->Configuration.RumbleSettings.ForcedSM.BMThresholdEnabled
+					&& OriginalLargeValue >= Context->Configuration.RumbleSettings.ForcedSM.BMThresholdValue
+					) {
+					SmallValue = 1;
+				}
+
+				// Force Activate Small Motor if original SMALL Motor Strength is above certain level and related boolean is enabled
+				if (
+					/*
+					Context->Configuration.RumbleSettings.ForcedSM.SMThresholdEnabled
+					&& Context->RawSmallMotorStrengthCache >= Context->Configuration.RumbleSettings.ForcedSM.SMThresholdValue
+					*/
+					Context->Configuration.RumbleSettings.ForcedSM.SMThresholdEnabled
+					&& OriginalSmallValue >= Context->Configuration.RumbleSettings.ForcedSM.SMThresholdValue
+					)
+				{
+					SmallValue = 1;
+				}
+
+			}
+		}
+
+		// Big Motor Strength Rescale
+		if (Context->Configuration.RumbleSettings.BMStrRescale.Enabled && LargeValue > 0) {
+			LargeValue = 
+				(DOUBLE)(Context->Configuration.RumbleSettings.BMStrRescale.MaxValue - Context->Configuration.RumbleSettings.BMStrRescale.MinValue)
+				/ (255) * (LargeValue - 255) + Context->Configuration.RumbleSettings.BMStrRescale.MaxValue;
+			if (LargeValue < Context->Configuration.RumbleSettings.BMStrRescale.MinValue) LargeValue = Context->Configuration.RumbleSettings.BMStrRescale.MinValue;
+		}
+
+
 		switch (Context->ConnectionType)
 		{
 		case DsDeviceConnectionTypeUsb:
