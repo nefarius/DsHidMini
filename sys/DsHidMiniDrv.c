@@ -1048,8 +1048,11 @@ DsHidMini_WriteReport(
 
 		if (isSetRumble)
 		{
+			DS3_SET_BOTH_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[5], Packet->reportBuffer[4]);
+			/*
 			DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[4]);
 			DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[5]);
+			*/
 		}
 
 		if (isSetColor)
