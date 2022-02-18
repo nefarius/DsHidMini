@@ -566,11 +566,6 @@ VOID DS3_SET_LARGE_RUMBLE_STRENGTH(
 		PDEVICE_CONTEXT Context
 	)
 	{
-		// Using the simpler version of the rescale range instructions is not possible if DSHMC allows updating the used values on the fly
-		// Simpler version: calculate constants before hand
-		// newvalue = a * value + b
-		// a = (max'-min') / (max - min)
-		// b = max' - a * max
 		DOUBLE LargeValue = Context->MotorStrCache.Big, SmallValue = Context->MotorStrCache.Small;
 
 		if(SmallValue > 0) {
