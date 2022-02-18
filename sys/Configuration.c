@@ -488,8 +488,8 @@ ConfigSetDefaults(
 	Config->RumbleSettings.BMStrRescale.MinValue = 64;
 	Config->RumbleSettings.BMStrRescale.MaxValue = 255;
 	Config->RumbleSettings.SMToBMConversion.Enabled = FALSE;
-	Config->RumbleSettings.SMToBMConversion.RescaleMaxValue = 160;
 	Config->RumbleSettings.SMToBMConversion.RescaleMinValue = 1;
+	Config->RumbleSettings.SMToBMConversion.RescaleMaxValue = 140;
 	Config->RumbleSettings.ForcedSM.BMThresholdEnabled = TRUE;
 	Config->RumbleSettings.ForcedSM.BMThresholdValue = 230;
 	Config->RumbleSettings.ForcedSM.SMThresholdEnabled = FALSE;
