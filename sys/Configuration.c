@@ -154,7 +154,8 @@ ConfigParseLEDSettings(
 // 
 void ConfigNodeParse(
 	_In_ const cJSON* ParentNode,
-	_Inout_ PDEVICE_CONTEXT Context
+	_Inout_ PDEVICE_CONTEXT Context,
+	_In_opt_ BOOLEAN IsHotReload
 )
 {
 	PDS_DRIVER_CONFIGURATION pCfg = &Context->Configuration;
@@ -164,14 +165,21 @@ void ConfigNodeParse(
 	// Common
 	// 
 
-	if ((pNode = cJSON_GetObjectItem(ParentNode, "HidDeviceMode")))
+	if (!IsHotReload)
 	{
-		pCfg->HidDeviceMode = (DS_HID_DEVICE_MODE)cJSON_GetNumberValue(pNode);
-	}
+		//
+		// These values must not be altered during runtime
+		// 
 
-	if ((pNode = cJSON_GetObjectItem(ParentNode, "DisableAutoPairing")))
-	{
-		pCfg->DisableAutoPairing = (BOOLEAN)cJSON_IsTrue(pNode);
+		if ((pNode = cJSON_GetObjectItem(ParentNode, "HidDeviceMode")))
+		{
+			pCfg->HidDeviceMode = (DS_HID_DEVICE_MODE)cJSON_GetNumberValue(pNode);
+		}
+
+		if ((pNode = cJSON_GetObjectItem(ParentNode, "DisableAutoPairing")))
+		{
+			pCfg->DisableAutoPairing = (BOOLEAN)cJSON_IsTrue(pNode);
+		}
 	}
 
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "IsOutputRateControlEnabled")))
@@ -279,7 +287,8 @@ void ConfigNodeParse(
 _Must_inspect_result_
 NTSTATUS
 ConfigLoadForDevice(
-	_Inout_ PDEVICE_CONTEXT Context
+	_Inout_ PDEVICE_CONTEXT Context,
+	_In_opt_ BOOLEAN IsHotReload
 )
 {
 	NTSTATUS status = STATUS_SUCCESS;
@@ -292,7 +301,10 @@ ConfigLoadForDevice(
 
 	FuncEntry(TRACE_CONFIG);
 
-	ConfigSetDefaults(&Context->Configuration);
+	if (!IsHotReload)
+	{
+		ConfigSetDefaults(&Context->Configuration);
+	}
 
 	do
 	{
@@ -415,7 +427,7 @@ ConfigLoadForDevice(
 				"Reading global configuration"
 			);
 
-			ConfigNodeParse(globalNode, Context);
+			ConfigNodeParse(globalNode, Context, IsHotReload);
 		}
 
 		const cJSON* devicesNode = cJSON_GetObjectItem(config_json, "Devices");
@@ -433,7 +445,7 @@ ConfigLoadForDevice(
 				deviceAddress
 			);
 
-			ConfigNodeParse(deviceNode, Context);
+			ConfigNodeParse(deviceNode, Context, IsHotReload);
 		}
 
 	} while (FALSE);

@@ -76,11 +76,29 @@ typedef enum
 // 
 typedef enum
 {
+	//
+	// Unknown/invalid
+	// 
 	DsHidMiniDeviceModeUnknown = 0,
+	//
+	// Single device with Force Feedback
+	// 
 	DsHidMiniDeviceModeSDF,
+	//
+	// Gamepad plus Joystick with Force Feedback
+	// 
 	DsHidMiniDeviceModeGPJ,
+	//
+	// Sony SIXAXIS.SYS compatible
+	// 
 	DsHidMiniDeviceModeSixaxisCompatible,
+	//
+	// DS4Windows compatible custom device
+	// 
 	DsHidMiniDeviceModeDS4WindowsCompatible,
+	//
+	// Microsoft XINPUTHID.SYS compatible
+	// 
 	DsHidMiniDeviceModeXInputHIDCompatible
 
 } DS_HID_DEVICE_MODE, * PDS_HID_DEVICE_MODE;

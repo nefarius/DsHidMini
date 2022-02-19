@@ -650,7 +650,7 @@ DsDevice_HotReloadEventCallback(
 		 */
 		Sleep(100);
 
-		ConfigLoadForDevice(pDevCtx);
+		ConfigLoadForDevice(pDevCtx, TRUE);
 
 		WdfWaitLockRelease(pDevCtx->ConfigurationDirectoryWatcherLock);
 
