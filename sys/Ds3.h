@@ -95,6 +95,10 @@ VOID DS3_SET_BOTH_RUMBLE_STRENGTH(
 	UCHAR SmallValue
 );
 
+VOID DS3_PROCESS_RUMBLE_STRENGTH(
+	PDEVICE_CONTEXT Context
+);
+
 typedef enum _USB_HID_REQUEST
 {
     // Class-Specific Requests
