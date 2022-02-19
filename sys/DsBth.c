@@ -90,9 +90,8 @@ DsBth_EvtControlWriteTimerFunc(
 	}
 		
 	DS3_SET_SMALL_RUMBLE_DURATION(pDevCtx, 0xFE);
-	DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, 0x00);
 	DS3_SET_LARGE_RUMBLE_DURATION(pDevCtx, 0xFE);
-	DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, 0x00);
+	DS3_SET_BOTH_RUMBLE_STRENGTH(pDevCtx, 0x00, 0x00);
 
 	status = Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverHighPriority);
 

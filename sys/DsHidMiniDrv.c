@@ -780,8 +780,7 @@ DsHidMini_WriteReport(
 			// Fall through
 		case PidDcStopAllEffects:
 			TraceVerbose(TRACE_DSHIDMINIDRV, "!! DC Stop All Effects");
-			DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, 0);
-			DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, 0);
+			DS3_SET_BOTH_RUMBLE_STRENGTH(pDevCtx, 0x00, 0x00);
 
 			(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceForceFeedback);
 
@@ -923,8 +922,7 @@ DsHidMini_WriteReport(
 
 		case PidEoStop:
 
-			DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, 0);
-			DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, 0);
+			DS3_SET_BOTH_RUMBLE_STRENGTH(pDevCtx, 0x00, 0x00);
 
 			(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceForceFeedback);
 
@@ -1048,9 +1046,7 @@ DsHidMini_WriteReport(
 
 		if (isSetRumble)
 		{
-			pDevCtx->MotorStrCache.Small = Packet->reportBuffer[4];
-			pDevCtx->MotorStrCache.Big = Packet->reportBuffer[5];
-			DS3_SET_BOTH_RUMBLE_STRENGTH(pDevCtx);
+			DS3_SET_BOTH_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[5], Packet->reportBuffer[4]);
 			/*
 			DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[4]);
 			DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[5]);
@@ -1147,8 +1143,7 @@ DsHidMini_WriteReport(
 			rm
 		);
 
-		DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, lm);
-		DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, rm);
+		DS3_SET_BOTH_RUMBLE_STRENGTH(pDevCtx, lm, rm);
 
 		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceXInputHID);
 
