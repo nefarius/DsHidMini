@@ -61,8 +61,8 @@
         },
         "SMToBMConversion": {
           "Enabled": false,
-          "RescaleMinValue": 0,
-          "RescaleMaxValue": 160
+          "RescaleMinValue": 1,
+          "RescaleMaxValue": 140
         },
         "ForcedSM": {
           "BMThresholdEnabled": true,
