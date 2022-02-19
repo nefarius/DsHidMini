@@ -69,7 +69,7 @@ ConfigParseRumbleSettings(
 			Config->RumbleSettings.ForcedSM.BMThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
 		}
 
-		if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "BMThresholdValue")))
+		if ((pNode = cJSON_GetObjectItem(pForcedSM, "BMThresholdValue")))
 		{
 			Config->RumbleSettings.ForcedSM.BMThresholdValue = (UCHAR)cJSON_GetNumberValue(pNode);
 		}
@@ -79,7 +79,7 @@ ConfigParseRumbleSettings(
 			Config->RumbleSettings.ForcedSM.SMThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
 		}
 
-		if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "SMThresholdValue")))
+		if ((pNode = cJSON_GetObjectItem(pForcedSM, "SMThresholdValue")))
 		{
 			Config->RumbleSettings.ForcedSM.SMThresholdValue = (UCHAR)cJSON_GetNumberValue(pNode);
 		}
