@@ -486,26 +486,8 @@ VOID DS3_SET_SMALL_RUMBLE_STRENGTH(
 	UCHAR Value
 )
 {
-	switch (Context->ConnectionType)
-	{
-	case DsDeviceConnectionTypeUsb:
-
-		DS3_USB_SET_SMALL_RUMBLE_STRENGTH(
-			(PUCHAR)WdfMemoryGetBuffer(
-				Context->OutputReportMemory,
-				NULL
-			), Value);
-		break;
-
-	case DsDeviceConnectionTypeBth:
-
-		DS3_BTH_SET_SMALL_RUMBLE_STRENGTH(
-			(PUCHAR)WdfMemoryGetBuffer(
-				Context->OutputReportMemory,
-				NULL
-			), Value);
-		break;
-	}
+	Context->MotorStrCache.Small = Value;
+	DS3_PROCESS_RUMBLE_STRENGTH(Context);
 }
 
 VOID DS3_SET_LARGE_RUMBLE_DURATION(
@@ -540,33 +522,19 @@ VOID DS3_SET_LARGE_RUMBLE_STRENGTH(
 	UCHAR Value
 )
 {
-	switch (Context->ConnectionType)
-	{
-	case DsDeviceConnectionTypeUsb:
-
-		DS3_USB_SET_LARGE_RUMBLE_STRENGTH(
-			(PUCHAR)WdfMemoryGetBuffer(
-				Context->OutputReportMemory,
-				NULL
-			), Value);
-		break;
-
-	case DsDeviceConnectionTypeBth:
-
-		DS3_BTH_SET_LARGE_RUMBLE_STRENGTH(
-			(PUCHAR)WdfMemoryGetBuffer(
-				Context->OutputReportMemory,
-				NULL
-			), Value);
-		break;
-	}
+	Context->MotorStrCache.Big = Value;
+	DS3_PROCESS_RUMBLE_STRENGTH(Context);
 }
 
 VOID DS3_SET_BOTH_RUMBLE_STRENGTH(
-	PDEVICE_CONTEXT Context
+	PDEVICE_CONTEXT Context,
+	UCHAR LargeValue,
+	UCHAR SmallValue
 )
 {
-
+	Context->MotorStrCache.Small = SmallValue;
+	Context->MotorStrCache.Big = LargeValue;
+	DS3_PROCESS_RUMBLE_STRENGTH(Context);
 }
 
 VOID DS3_PROCESS_RUMBLE_STRENGTH(
