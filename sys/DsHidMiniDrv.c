@@ -184,7 +184,7 @@ DMF_DsHidMini_Open(
 	//
 	// Load settings
 	// 
-	ConfigLoadForDevice(pDevCtx);
+	ConfigLoadForDevice(pDevCtx, FALSE);
 
 	pHidCfg->VendorId = pDevCtx->VendorId;
 	pHidCfg->ProductId = pDevCtx->ProductId;
