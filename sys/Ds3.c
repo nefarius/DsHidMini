@@ -566,6 +566,13 @@ VOID DS3_SET_BOTH_RUMBLE_STRENGTH(
 	PDEVICE_CONTEXT Context
 )
 {
+
+}
+
+VOID DS3_PROCESS_RUMBLE_STRENGTH(
+	PDEVICE_CONTEXT Context
+)
+{
 	DOUBLE LargeValue = Context->MotorStrCache.Big, SmallValue = Context->MotorStrCache.Small;
 
 	if(SmallValue > 0) {
