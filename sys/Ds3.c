@@ -543,9 +543,9 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 {
 	DOUBLE LargeValue = Context->MotorStrCache.Big, SmallValue = Context->MotorStrCache.Small;
 
-	if(SmallValue > 0) {
-
-		if (Context->Configuration.RumbleSettings.SMToBMConversion.Enabled) {
+	if(Context->Configuration.RumbleSettings.SMToBMConversion.Enabled) {
+		
+		if (SmallValue > 0) {
 
 			// Small Motor Strength Rescale
 			SmallValue = 
@@ -557,27 +557,8 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 			}
 			SmallValue = 0; // Always disable Small Motor after the comparison above
 
-			// Force Activate Small Motor if original BIG Motor Strength is above certain level and related boolean is enabled
-			if (
-				/*
-				Context->Configuration.RumbleSettings.ForcedSM.BMThresholdEnabled
-				&& Context->RawBigMotorStrengthCache >= Context->Configuration.RumbleSettings.ForcedSM.BMThresholdValue
-				) {
-				SmallValue = 1;
-				*/
-				Context->Configuration.RumbleSettings.ForcedSM.BMThresholdEnabled
-				&& Context->MotorStrCache.Big >= Context->Configuration.RumbleSettings.ForcedSM.BMThresholdValue
-				) 
-			{
-				SmallValue = 1;
-			}
-
 			// Force Activate Small Motor if original SMALL Motor Strength is above certain level and related boolean is enabled
 			if (
-				/*
-				Context->Configuration.RumbleSettings.ForcedSM.SMThresholdEnabled
-				&& Context->RawSmallMotorStrengthCache >= Context->Configuration.RumbleSettings.ForcedSM.SMThresholdValue
-				*/
 				Context->Configuration.RumbleSettings.ForcedSM.SMThresholdEnabled
 				&& Context->MotorStrCache.Small >= Context->Configuration.RumbleSettings.ForcedSM.SMThresholdValue
 				)
@@ -586,6 +567,16 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 			}
 
 		}
+
+		// Force Activate Small Motor if original BIG Motor Strength is above certain level and related boolean is enabled
+		if (
+			Context->Configuration.RumbleSettings.ForcedSM.BMThresholdEnabled
+			&& Context->MotorStrCache.Big >= Context->Configuration.RumbleSettings.ForcedSM.BMThresholdValue
+			)
+		{
+			SmallValue = 1;
+		}
+
 	}
 
 	// Big Motor Strength Rescale
