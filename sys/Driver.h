@@ -16,6 +16,9 @@ extern unsigned int numInstances;
 #include <initguid.h>
 #include <usb.h>
 #include <wdfusb.h>
+#if DBG
+#include <DbgHelp.h>
+#endif
 
 #include "JSON/cJSON.h"
 
@@ -50,5 +53,19 @@ EXTERN_C_START
 DRIVER_INITIALIZE DriverEntry;
 EVT_WDF_DRIVER_DEVICE_ADD dshidminiEvtDeviceAdd;
 EVT_WDF_OBJECT_CONTEXT_CLEANUP dshidminiEvtDriverContextCleanup;
+
+#if DBG
+typedef BOOL(WINAPI *MINIDUMPWRITEDUMP)(
+    HANDLE hProcess,
+    DWORD dwPid,
+    HANDLE hFile,
+    MINIDUMP_TYPE DumpType,
+    CONST PMINIDUMP_EXCEPTION_INFORMATION ExceptionParam,
+    CONST PMINIDUMP_USER_STREAM_INFORMATION UserStreamParam,
+    CONST PMINIDUMP_CALLBACK_INFORMATION CallbackParam
+    );
+
+LONG WINAPI DSHM_InternalExceptionHandler(struct _EXCEPTION_POINTERS* apExceptionInfo);
+#endif
 
 EXTERN_C_END
