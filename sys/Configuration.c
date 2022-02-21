@@ -318,6 +318,12 @@ ConfigLoadForDevice(
 			break;
 		}
 
+		TraceVerbose(
+			TRACE_CONFIG,
+			"Expanded environment variable to %s",
+			programDataPath
+		);
+
 		if (sprintf_s(
 			configFilePath,
 			MAX_PATH / sizeof(WCHAR),
@@ -330,6 +336,12 @@ ConfigLoadForDevice(
 			status = STATUS_BUFFER_OVERFLOW;
 			break;
 		}
+
+		TraceVerbose(
+			TRACE_CONFIG,
+			"Set config file path to %s",
+			configFilePath
+		);
 
 		errno_t error;
 
@@ -346,9 +358,20 @@ ConfigLoadForDevice(
 			break;
 		}
 
+		TraceVerbose(
+			TRACE_CONFIG,
+			"Opened config file for reading"
+		);
+
 		fseek(fp, 0L, SEEK_END);
 		const long numBytes = ftell(fp);
 		fseek(fp, 0L, SEEK_SET);
+
+		TraceVerbose(
+			TRACE_CONFIG,
+			"File size in bytes: %d",
+			numBytes
+		);
 
 		content = (char*)calloc(numBytes, sizeof(char));
 
@@ -357,6 +380,11 @@ ConfigLoadForDevice(
 			status = STATUS_NO_MEMORY;
 			break;
 		}
+
+		TraceVerbose(
+			TRACE_CONFIG,
+			"Reading/parsing file"
+		);
 
 		fread(content, sizeof(char), numBytes, fp);
 
@@ -377,6 +405,11 @@ ConfigLoadForDevice(
 			status = STATUS_ACCESS_VIOLATION;
 			break;
 		}
+
+		TraceVerbose(
+			TRACE_CONFIG,
+			"Building device address string"
+		);
 
 		switch (Context->ConnectionType)
 		{
