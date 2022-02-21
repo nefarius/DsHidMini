@@ -643,7 +643,7 @@ DsDevice_HotReloadEventCallback(
 		//
 		// Protect against parallel reads
 		// 
-		if (!NT_SUCCESS(WdfWaitLockAcquire(pDevCtx->ConfigurationDirectoryWatcherLock, &timeout)))
+		if (WdfWaitLockAcquire(pDevCtx->ConfigurationDirectoryWatcherLock, &timeout) != STATUS_SUCCESS)
 		{
 			TraceVerbose(
 				TRACE_DEVICE,
