@@ -664,6 +664,7 @@ NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
 	while (FALSE);
 
 	// ReSharper disable once CppIncompleteSwitchStatement
+	// ReSharper disable once CppDefaultCaseNotHandledInSwitchStatement
 	switch (pDevCtx->ConnectionType)  // NOLINT(clang-diagnostic-switch)
 	{
 	case DsDeviceConnectionTypeUsb:
