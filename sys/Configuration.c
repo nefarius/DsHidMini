@@ -432,6 +432,11 @@ ConfigLoadForDevice(
 
 		const cJSON* devicesNode = cJSON_GetObjectItem(config_json, "Devices");
 
+		if (!devicesNode)
+		{
+			break;
+		}
+
 		//
 		// Try to read device-specific properties
 		// 
