@@ -224,6 +224,11 @@ typedef struct _DEVICE_CONTEXT
 	BD_ADDR DeviceAddress;
 
 	//
+	// Local device BTH address as hex string
+	// 
+	CHAR DeviceAddressString[(sizeof(BD_ADDR) * 2) + 1];
+
+	//
 	// Current reported battery status
 	// 
 	DS_BATTERY_STATUS BatteryStatus;

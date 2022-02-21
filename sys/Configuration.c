@@ -294,7 +294,6 @@ ConfigLoadForDevice(
 	NTSTATUS status = STATUS_SUCCESS;
 	CHAR programDataPath[MAX_PATH];
 	CHAR configFilePath[MAX_PATH];
-	CHAR deviceAddress[13];
 	FILE* fp = NULL;
 	PCHAR content = NULL;
 	cJSON* config_json = NULL;
@@ -358,11 +357,6 @@ ConfigLoadForDevice(
 			break;
 		}
 
-		TraceVerbose(
-			TRACE_CONFIG,
-			"Opened config file for reading"
-		);
-
 		fseek(fp, 0L, SEEK_END);
 		const long numBytes = ftell(fp);
 		fseek(fp, 0L, SEEK_SET);
@@ -380,11 +374,6 @@ ConfigLoadForDevice(
 			status = STATUS_NO_MEMORY;
 			break;
 		}
-
-		TraceVerbose(
-			TRACE_CONFIG,
-			"Reading/parsing file"
-		);
 
 		fread(content, sizeof(char), numBytes, fp);
 
@@ -405,54 +394,6 @@ ConfigLoadForDevice(
 			status = STATUS_ACCESS_VIOLATION;
 			break;
 		}
-
-		TraceVerbose(
-			TRACE_CONFIG,
-			"Building device address string"
-		);
-
-		switch (Context->ConnectionType)
-		{
-		case DsDeviceConnectionTypeUsb:
-
-			sprintf_s(
-				deviceAddress,
-				ARRAYSIZE(deviceAddress),
-				"%02X%02X%02X%02X%02X%02X",
-				Context->DeviceAddress.Address[0],
-				Context->DeviceAddress.Address[1],
-				Context->DeviceAddress.Address[2],
-				Context->DeviceAddress.Address[3],
-				Context->DeviceAddress.Address[4],
-				Context->DeviceAddress.Address[5]
-			);
-
-			break;
-		case DsDeviceConnectionTypeBth:
-
-			sprintf_s(
-				deviceAddress,
-				ARRAYSIZE(deviceAddress),
-				"%012llX",
-				*(PULONGLONG)&Context->DeviceAddress
-			);
-
-			break;
-		default:
-			status = STATUS_INVALID_PARAMETER;
-			break;
-		}
-
-		if (!NT_SUCCESS(status))
-		{
-			break;
-		}
-
-		TraceVerbose(
-			TRACE_CONFIG,
-			"Device address: %s",
-			deviceAddress
-		);
 
 		//
 		// Read global configuration first, then overwrite device-specific ones
@@ -479,14 +420,14 @@ ConfigLoadForDevice(
 		//
 		// Try to read device-specific properties
 		// 
-		cJSON* deviceNode = cJSON_GetObjectItem(devicesNode, deviceAddress);
+		cJSON* deviceNode = cJSON_GetObjectItem(devicesNode, Context->DeviceAddressString);
 
 		if (deviceNode)
 		{
 			TraceVerbose(
 				TRACE_CONFIG,
 				"Found device-specific (%s) config, loading",
-				deviceAddress
+				Context->DeviceAddressString
 			);
 
 			ConfigNodeParse(deviceNode, Context, IsHotReload);
