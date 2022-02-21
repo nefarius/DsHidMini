@@ -645,6 +645,11 @@ DsDevice_HotReloadEventCallback(
 		// 
 		if (!NT_SUCCESS(WdfWaitLockAcquire(pDevCtx->ConfigurationDirectoryWatcherLock, &timeout)))
 		{
+			TraceVerbose(
+				TRACE_DEVICE,
+				"Couldn't acquire lock, exiting"
+			);
+
 			break;
 		}
 
@@ -654,12 +659,22 @@ DsDevice_HotReloadEventCallback(
 		 */
 		Sleep(100);
 
+		TraceVerbose(
+			TRACE_DEVICE,
+			"Reloading configuration"
+		);
+
 		ConfigLoadForDevice(pDevCtx, TRUE);
+
+		TraceVerbose(
+			TRACE_DEVICE,
+			"Reloaded configuration"
+		);
 
 		WdfWaitLockRelease(pDevCtx->ConfigurationDirectoryWatcherLock);
 
 	} while (FALSE);
-	
+
 	FuncExitNoReturn(TRACE_DEVICE);
 }
 

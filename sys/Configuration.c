@@ -415,6 +415,12 @@ ConfigLoadForDevice(
 			break;
 		}
 
+		TraceVerbose(
+			TRACE_CONFIG,
+			"Device address: %s",
+			deviceAddress
+		);
+
 		//
 		// Read global configuration first, then overwrite device-specific ones
 		// 
@@ -424,7 +430,7 @@ ConfigLoadForDevice(
 		{
 			TraceVerbose(
 				TRACE_CONFIG,
-				"Reading global configuration"
+				"Loading global configuration"
 			);
 
 			ConfigNodeParse(globalNode, Context, IsHotReload);
@@ -446,7 +452,7 @@ ConfigLoadForDevice(
 		{
 			TraceVerbose(
 				TRACE_CONFIG,
-				"Found device config for %s",
+				"Found device-specific (%s) config, loading",
 				deviceAddress
 			);
 
