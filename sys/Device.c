@@ -1,4 +1,3 @@
-
 #include "Driver.h"
 #include "Device.tmh"
 #include <DmfModule.h>
