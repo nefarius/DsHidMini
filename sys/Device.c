@@ -35,10 +35,6 @@ dshidminiEvtDeviceAdd(
 
 	FuncEntry(TRACE_DEVICE);
 
-#if DBG
-	SetUnhandledExceptionFilter(DSHM_InternalExceptionHandler);
-#endif
-
 	dmfDeviceInit = DMF_DmfDeviceInitAllocate(DeviceInit);
 
 	WDF_PNPPOWER_EVENT_CALLBACKS_INIT(&pnpPowerCallbacks);
