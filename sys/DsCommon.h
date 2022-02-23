@@ -416,6 +416,11 @@ typedef struct _DS_DRIVER_CONFIGURATION
 	ULONG WirelessIdleTimeoutPeriodMs;
 
 	//
+	// If set, controller will never auto-disconnect on wireless
+	// 
+	BOOLEAN DisableWirelessIdleTimeout;
+
+	//
 	// Thumb stick specific settings
 	// 
 	DS_THUMB_SETTINGS ThumbSettings;

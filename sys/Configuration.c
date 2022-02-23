@@ -202,6 +202,11 @@ void ConfigNodeParse(
 		pCfg->WirelessIdleTimeoutPeriodMs = (ULONG)cJSON_GetNumberValue(pNode);
 	}
 
+	if ((pNode = cJSON_GetObjectItem(ParentNode, "DisableWirelessIdleTimeout")))
+	{
+		pCfg->DisableWirelessIdleTimeout = (BOOLEAN)cJSON_IsTrue(pNode);
+	}
+
 	//
 	// TODO: this is getting cluttered, split up into some sub-routines
 	// 
@@ -473,6 +478,7 @@ ConfigSetDefaults(
 	Config->OutputRateControlPeriodMs = 150;
 	Config->IsOutputDeduplicatorEnabled = FALSE;
 	Config->WirelessIdleTimeoutPeriodMs = 300000;
+	Config->DisableWirelessIdleTimeout = FALSE;
 
 	Config->ThumbSettings.DeadZoneLeft.Apply = TRUE;
 	Config->ThumbSettings.DeadZoneLeft.PolarValue = 3.0;
