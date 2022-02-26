@@ -1,6 +1,6 @@
 {
   "Global": {
-    "HidDeviceMode": 4,
+    "HidDeviceMode": "DS4Windows",
     "DisableAutoPairing": false,
     "IsOutputRateControlEnabled": true,
     "OutputRateControlPeriodMs": 150,
@@ -322,13 +322,13 @@
             "IntervalPortionOff": 0,
             "IntervalPortionOn": 255
           }
-        } 
-      } 
+        }
+      }
     }
   },
   "Devices": {
     "44D832809FCD": {
-      "HidDeviceMode": 1,
+      "HidDeviceMode": "SDF",
       "DisableAutoPairing": false,
       "IsOutputRateControlEnabled": true,
       "OutputRateControlPeriodMs": 150,
@@ -344,7 +344,7 @@
       }
     },
     "0019C1637EA0": {
-      "HidDeviceMode": 2,
+      "HidDeviceMode": "GPJ",
       "DisableAutoPairing": false,
       "IsOutputRateControlEnabled": true,
       "OutputRateControlPeriodMs": 150,

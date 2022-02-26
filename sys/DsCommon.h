@@ -191,6 +191,16 @@ typedef enum
 } DS_PRESSURE_EXPOSURE_MODE, * PDS_PRESSURE_EXPOSURE_MODE;
 
 //
+// Friendly names for reading from JSON
+// 
+static CONST PSTR G_PRESSURE_EXPOSURE_MODE_NAMES[] =
+{
+	"Digital",
+	"Analogue",
+	"Default"
+};
+
+//
 // Flags of whether the D-Pad should be reported as HAT switch or individual buttons
 // 
 typedef enum
@@ -209,6 +219,16 @@ typedef enum
 	DsDPadExposureModeDefault = DsDPadExposureModeHAT
 
 } DS_DPAD_EXPOSURE_MODE, * PDS_DPAD_EXPOSURE_MODE;
+
+//
+// Friendly names for reading from JSON
+// 
+static CONST PSTR G_DPAD_EXPOSURE_MODE_NAMES[] =
+{
+	"HAT",
+	"IndividualButtons",
+	"Default"
+};
 
 //
 // Possible LED modes
@@ -233,6 +253,16 @@ typedef enum
 	DsLEDModeCustomPattern
 
 } DS_LED_MODE;
+
+//
+// Friendly names for reading from JSON
+// 
+static CONST PSTR G_LED_MODE_NAMES[] =
+{
+	"BatteryIndicatorPlayerIndex",
+	"BatteryIndicatorBarGraph",
+	"CustomPattern"
+};
 
 //
 // Whether the driver or the application will have authority over LEDs
