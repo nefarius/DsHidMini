@@ -69,6 +69,9 @@
     <Reference Include="Namotion.Reflection, Version=2.0.10.0, Culture=neutral, PublicKeyToken=c2f9c3bdfae56102, processorArchitecture=MSIL">
       <HintPath>..\packages\Namotion.Reflection.2.0.10\lib\net45\Namotion.Reflection.dll</HintPath>
     </Reference>
+    <Reference Include="Nefarius.Utilities.DeviceManagement, Version=1.4.42.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Nefarius.Utilities.DeviceManagement.1.4.42-beta\lib\netstandard2.0\Nefarius.Utilities.DeviceManagement.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
@@ -203,11 +206,7 @@
     <Compile Include="Util\RegistryHelpers.cs" />
     <Compile Include="Util\SecurityUtil.cs" />
     <Compile Include="Util\SetupApiWrapper.cs" />
-    <Compile Include="Util\Devcon.cs" />
-    <Compile Include="Util\Device.cs" />
-    <Compile Include="Util\Device.Properties.cs" />
     <Compile Include="Util\DeviceNotificationListener.cs" />
-    <Compile Include="Util\DevicePropertyKey.cs" />
     <Compile Include="Util\Web\GitHubApi.cs" />
     <Compile Include="Util\Web\Updater.cs" />
     <Compile Include="Util\Web\Validator.cs" />
