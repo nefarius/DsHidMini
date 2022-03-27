@@ -3,7 +3,7 @@ image: Visual Studio 2019
 platform:
 - x86
 - x64
-- ARM64
+#- ARM64
 configuration:
 - Release
 skip_commits:
@@ -40,7 +40,10 @@ before_build:
 - cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\XInputBridge\XInputBridge.rc" --resource.file-version --resource.product-version
 build_script:
 - cmd: .\build.cmd
+after_build:
+- cmd: makecab.exe /f .\DsHidMini_%PLATFORM%.ddf
 artifacts:
+- path: 'disk1\*.cab'
 - path: 'bin**\$(APPVEYOR_PROJECT_NAME)\*.inf'
 - path: 'bin**\$(APPVEYOR_PROJECT_NAME)\*.cat'
 - path: 'bin**\$(APPVEYOR_PROJECT_NAME)\*.dll'
