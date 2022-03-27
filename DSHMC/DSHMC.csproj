@@ -20,6 +20,9 @@
   <PropertyGroup>
     <ApplicationIcon>FireShock.ico</ApplicationIcon>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="AdonisUI" Version="1.17.1" />
     <PackageReference Include="AdonisUI.ClassicTheme" Version="1.17.1" />
