@@ -3,6 +3,7 @@ image: Visual Studio 2019
 platform:
 - x86
 - x64
+- arm64
 configuration:
 - Release
 skip_commits:
