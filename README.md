@@ -40,6 +40,8 @@ DsHidMini is a self-contained, low footprint and feature-rich [user-mode driver]
 
 ## What's missing
 
+The following features are **not** available (and most probably won't in the near future until more contributors join the party):
+
 - Motion controls a.k.a. SIXAXIS (Gyroscope, Accelerometer)
   - **Contributions welcome!**
 - Navigation Controller
