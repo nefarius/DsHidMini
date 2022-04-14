@@ -179,6 +179,8 @@ bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 
 		if (Handle)
 			*Handle = device;
+
+		state->isConnected = true;
 		result = true;
 
 	} while (FALSE);
