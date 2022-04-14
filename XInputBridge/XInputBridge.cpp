@@ -112,6 +112,7 @@ void SetDeviceDisconnected(DWORD UserIndex)
 	const auto state = &g_deviceStates[UserIndex];
 
 	state->isConnected = false;
+	state->packetNumber = 0;
 
 	if (state->deviceHandle)
 		hid_close(state->deviceHandle);
@@ -176,7 +177,7 @@ bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 		if (Handle)
 			*Handle = device;
 		result = true;
-		state->packetNumber = 0;
+
 	} while (FALSE);
 
 	if (devs)
@@ -359,7 +360,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 		const auto pReport = reinterpret_cast<PDS3_RAW_INPUT_REPORT>(&buf[1]);
 
 		GetPacketNumber(dwUserIndex, pReport, &pState->dwPacketNumber);
-		
+
 		RtlZeroMemory(&pState->Gamepad, sizeof(pState->Gamepad));
 
 		//
@@ -620,7 +621,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
 		const auto pReport = reinterpret_cast<PDS3_RAW_INPUT_REPORT>(&buf[1]);
 
 		GetPacketNumber(dwUserIndex, pReport, &pState->dwPacketNumber);
-		
+
 		RtlZeroMemory(&pState->Gamepad, sizeof(pState->Gamepad));
 
 		//
