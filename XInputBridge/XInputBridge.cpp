@@ -30,6 +30,10 @@ struct device_state
 	bool isConnected = false;
 
 	hid_device* deviceHandle = nullptr;
+
+	DWORD packetNumber;
+
+	DS3_RAW_INPUT_REPORT lastReport;
 };
 
 //
@@ -64,9 +68,9 @@ struct ds3_led
 struct ds3_output_report
 {
 	UCHAR report_id = 0x00;
-	UCHAR idk_what_this_is[3] = {0x02, 0x00, 0x00};
+	UCHAR idk_what_this_is[3] = { 0x02, 0x00, 0x00 };
 	ds3_rumble rumble;
-	UCHAR padding[4] = {0x00, 0x00, 0x00, 0x00};
+	UCHAR padding[4] = { 0x00, 0x00, 0x00, 0x00 };
 	UCHAR led_enabled = 0x00; // LED 1 = 0x02, LED 2 = 0x04, etc.
 	ds3_led led[4];
 	ds3_led led_5; // reserved for another LED
@@ -121,7 +125,7 @@ bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 	bool result = false;
 	const auto state = &g_deviceStates[UserIndex];
 	hid_device* device = nullptr;
-	struct hid_device_info *devs = nullptr, *cur_dev;
+	struct hid_device_info* devs = nullptr, * cur_dev;
 	DWORD index = 0;
 
 	do
@@ -155,6 +159,7 @@ bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 		{
 			state->deviceHandle = nullptr;
 			state->isConnected = false;
+			state->packetNumber = 0;
 			break;
 		}
 
@@ -164,19 +169,53 @@ bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 		{
 			state->deviceHandle = nullptr;
 			state->isConnected = false;
+			state->packetNumber = 0;
 			break;
 		}
 
 		if (Handle)
 			*Handle = device;
 		result = true;
-	}
-	while (FALSE);
+		state->packetNumber = 0;
+	} while (FALSE);
 
 	if (devs)
 		hid_free_enumeration(devs);
 
 	return result;
+}
+
+bool GetPacketNumber(DWORD UserIndex, PDS3_RAW_INPUT_REPORT Report, DWORD* PacketNumber)
+{
+	if (UserIndex >= DS3_DEVICES_MAX)
+		return false;
+
+	if (!PacketNumber || !Report)
+		return false;
+
+	const auto state = &g_deviceStates[UserIndex];
+
+	//
+	// Exclude noisy motion stuff from comparison
+	// 
+	constexpr size_t bytesToCompare = sizeof(DS3_RAW_INPUT_REPORT) + 18;
+
+	//
+	// Only increment when a change happened
+	// 
+	if (RtlCompareMemory(
+		&state->lastReport,
+		Report,
+		bytesToCompare
+	) != bytesToCompare)
+	{
+		state->packetNumber++;
+		RtlCopyMemory(&state->lastReport, Report, sizeof(DS3_RAW_INPUT_REPORT));
+	}
+
+	*PacketNumber = state->packetNumber;
+
+	return true;
 }
 
 
@@ -266,21 +305,20 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 		// Thumb axes
 		//
 		if (pReport->LeftThumbX < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
-			|| pReport->LeftThumbX > (UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
+			|| pReport->LeftThumbX >(UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
 			pState->SCP_LX = ToAxis(pReport->LeftThumbX);
 		if (pReport->LeftThumbY < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
-			|| pReport->LeftThumbY > (UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
+			|| pReport->LeftThumbY >(UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
 			pState->SCP_LY = ToAxis(pReport->LeftThumbY) * -1.0f;
 		if (pReport->RightThumbX < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
-			|| pReport->RightThumbX > (UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
+			|| pReport->RightThumbX >(UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
 			pState->SCP_RX = ToAxis(pReport->RightThumbX);
 		if (pReport->RightThumbY < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
-			|| pReport->RightThumbY > (UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
+			|| pReport->RightThumbY >(UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
 			pState->SCP_RY = ToAxis(pReport->RightThumbY) * -1.0f;
 
 		status = ERROR_SUCCESS;
-	}
-	while (FALSE);
+	} while (FALSE);
 
 	return status;
 }
@@ -320,7 +358,8 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 
 		const auto pReport = reinterpret_cast<PDS3_RAW_INPUT_REPORT>(&buf[1]);
 
-		pState->dwPacketNumber++;
+		GetPacketNumber(dwUserIndex, pReport, &pState->dwPacketNumber);
+		
 		RtlZeroMemory(&pState->Gamepad, sizeof(pState->Gamepad));
 
 		//
@@ -411,8 +450,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 		pState->Gamepad.sThumbRY = ScaleDsToXi(pReport->RightThumbY, TRUE);
 
 		status = ERROR_SUCCESS;
-	}
-	while (FALSE);
+	} while (FALSE);
 
 	return status;
 }
@@ -474,8 +512,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
 		}
 
 		status = ERROR_SUCCESS;
-	}
-	while (FALSE);
+	} while (FALSE);
 
 	return status;
 }
@@ -509,8 +546,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 		pCapabilities->Flags += XINPUT_CAPS_FFB_SUPPORTED;
 
 		status = ERROR_SUCCESS;
-	}
-	while (FALSE);
+	} while (FALSE);
 
 	return status;
 }
@@ -583,7 +619,8 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
 
 		const auto pReport = reinterpret_cast<PDS3_RAW_INPUT_REPORT>(&buf[1]);
 
-		pState->dwPacketNumber++;
+		GetPacketNumber(dwUserIndex, pReport, &pState->dwPacketNumber);
+		
 		RtlZeroMemory(&pState->Gamepad, sizeof(pState->Gamepad));
 
 		//
@@ -679,8 +716,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
 		pState->Gamepad.wButtons |= XINPUT_GAMEPAD_GUIDE;
 
 		status = ERROR_SUCCESS;
-	}
-	while (FALSE);
+	} while (FALSE);
 
 	return status;
 }
