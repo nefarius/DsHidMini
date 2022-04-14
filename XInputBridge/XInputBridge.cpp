@@ -113,6 +113,7 @@ void SetDeviceDisconnected(DWORD UserIndex)
 
 	state->isConnected = false;
 	state->packetNumber = 0;
+	memset(&state->lastReport, 0, sizeof(DS3_RAW_INPUT_REPORT));
 
 	if (state->deviceHandle)
 		hid_close(state->deviceHandle);
@@ -161,6 +162,7 @@ bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 			state->deviceHandle = nullptr;
 			state->isConnected = false;
 			state->packetNumber = 0;
+			memset(&state->lastReport, 0, sizeof(DS3_RAW_INPUT_REPORT));
 			break;
 		}
 
@@ -171,6 +173,7 @@ bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 			state->deviceHandle = nullptr;
 			state->isConnected = false;
 			state->packetNumber = 0;
+			memset(&state->lastReport, 0, sizeof(DS3_RAW_INPUT_REPORT));
 			break;
 		}
 
