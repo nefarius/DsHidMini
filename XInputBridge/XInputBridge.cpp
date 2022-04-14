@@ -140,6 +140,9 @@ bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 			break;
 		}
 
+		memset(&state->lastReport, 0, sizeof(DS3_RAW_INPUT_REPORT));
+		state->packetNumber = 0;
+
 		//
 		// Look for device of interest
 		// 
@@ -161,8 +164,6 @@ bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 		{
 			state->deviceHandle = nullptr;
 			state->isConnected = false;
-			state->packetNumber = 0;
-			memset(&state->lastReport, 0, sizeof(DS3_RAW_INPUT_REPORT));
 			break;
 		}
 
@@ -172,8 +173,6 @@ bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 		{
 			state->deviceHandle = nullptr;
 			state->isConnected = false;
-			state->packetNumber = 0;
-			memset(&state->lastReport, 0, sizeof(DS3_RAW_INPUT_REPORT));
 			break;
 		}
 
@@ -216,7 +215,7 @@ bool GetPacketNumber(DWORD UserIndex, PDS3_RAW_INPUT_REPORT Report, DWORD* Packe
 	) != 0)
 	{
 		state->packetNumber++;
-		RtlCopyMemory(&state->lastReport, Report, sizeof(DS3_RAW_INPUT_REPORT));
+		memcpy(&state->lastReport, Report, sizeof(DS3_RAW_INPUT_REPORT));
 	}
 
 	*PacketNumber = state->packetNumber;
