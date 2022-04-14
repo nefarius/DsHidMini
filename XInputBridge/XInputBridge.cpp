@@ -203,11 +203,11 @@ bool GetPacketNumber(DWORD UserIndex, PDS3_RAW_INPUT_REPORT Report, DWORD* Packe
 	//
 	// Only increment when a change happened
 	// 
-	if (RtlCompareMemory(
+	if (memcmp(
 		&state->lastReport,
 		Report,
 		bytesToCompare
-	) != bytesToCompare)
+	) != 0)
 	{
 		state->packetNumber++;
 		RtlCopyMemory(&state->lastReport, Report, sizeof(DS3_RAW_INPUT_REPORT));
