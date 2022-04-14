@@ -106,7 +106,7 @@ float ToAxis(UCHAR value)
 
 void SetDeviceDisconnected(DWORD UserIndex)
 {
-	if (UserIndex <= DS3_DEVICES_MAX)
+	if (UserIndex >= DS3_DEVICES_MAX)
 		return;
 
 	const auto state = &g_deviceStates[UserIndex];
@@ -116,7 +116,10 @@ void SetDeviceDisconnected(DWORD UserIndex)
 	memset(&state->lastReport, 0, sizeof(DS3_RAW_INPUT_REPORT));
 
 	if (state->deviceHandle)
+	{
 		hid_close(state->deviceHandle);
+		state->deviceHandle = nullptr;
+	}
 }
 
 bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
@@ -179,6 +182,7 @@ bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 		if (Handle)
 			*Handle = device;
 
+		state->deviceHandle = device;
 		state->isConnected = true;
 		result = true;
 
@@ -355,7 +359,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 
 		const int res = hid_get_feature_report(device, buf, ARRAYSIZE(buf));
 
-		if (res == 0)
+		if (res <= 0)
 		{
 			SetDeviceDisconnected(dwUserIndex);
 			break;
@@ -510,7 +514,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
 
 		const int res = hid_write(device, &output_report.report_id, sizeof(output_report));
 
-		if (res == 0)
+		if (res <= 0)
 		{
 			SetDeviceDisconnected(dwUserIndex);
 			break;
@@ -616,7 +620,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
 
 		const int res = hid_get_feature_report(device, buf, ARRAYSIZE(buf));
 
-		if (res == 0)
+		if (res <= 0)
 		{
 			SetDeviceDisconnected(dwUserIndex);
 			break;
