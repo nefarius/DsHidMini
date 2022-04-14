@@ -198,7 +198,7 @@ bool GetPacketNumber(DWORD UserIndex, PDS3_RAW_INPUT_REPORT Report, DWORD* Packe
 	//
 	// Exclude noisy motion stuff from comparison
 	// 
-	constexpr size_t bytesToCompare = sizeof(DS3_RAW_INPUT_REPORT) + 18;
+	constexpr size_t bytesToCompare = sizeof(DS3_RAW_INPUT_REPORT) - 18;
 
 	//
 	// Only increment when a change happened
