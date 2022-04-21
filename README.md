@@ -37,6 +37,7 @@ DsHidMini is a self-contained, low footprint and feature-rich [user-mode driver]
 - Supports [**RetroArch**](https://www.retroarch.com/) emulation platform
 - Supports [**x360ce**](https://www.x360ce.com/) for XInput emulation
 - Supports [**Dolphin Emulator**](https://dolphin-emu.org/)
+- Supports [**DuckStation - PlayStation 1, aka. PSX Emulator**](https://github.com/stenzek/duckstation)
 
 ## What's missing
 
