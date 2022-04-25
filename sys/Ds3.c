@@ -541,13 +541,19 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 	PDEVICE_CONTEXT Context
 )
 {
-	DOUBLE LargeValue = Context->MotorStrCache.Big, SmallValue = Context->MotorStrCache.Small;
 
-	if(Context->Configuration.RumbleSettings.SMToBMConversion.Enabled) {
+	DOUBLE LargeValue = Context->Configuration.RumbleSettings.DisableBM ? 0 : Context->MotorStrCache.Big;
+	DOUBLE SmallValue = Context->Configuration.RumbleSettings.DisableSM ? 0 : Context->MotorStrCache.Small;
+
+	if (
+		Context->Configuration.RumbleSettings.SMToBMConversion.Enabled
+		&& !Context->Configuration.RumbleSettings.DisableSM
+		&& !Context->Configuration.RumbleSettings.DisableBM
+		) {
 		
 		if (SmallValue > 0) {
 
-			// Small Motor Strength Rescale
+			// Small Motor Strength Rescale 
 			SmallValue = 
 				(DOUBLE)(Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue - Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue)
 				/ 254 * (SmallValue - 255) + Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue;
@@ -568,6 +574,7 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 
 		}
 
+
 		// Force Activate Small Motor if original BIG Motor Strength is above certain level and related boolean is enabled
 		if (
 			Context->Configuration.RumbleSettings.ForcedSM.BMThresholdEnabled
@@ -578,6 +585,7 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 		}
 
 	}
+
 
 	// Big Motor Strength Rescale
 	if (Context->Configuration.RumbleSettings.BMStrRescale.Enabled && LargeValue > 0) {
