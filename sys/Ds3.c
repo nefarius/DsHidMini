@@ -560,7 +560,7 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 			if (SmallValue > LargeValue) {
 				LargeValue = SmallValue;
 			}
-			SmallValue = 0; // Always disable Small Motor after the comparison above
+			SmallValue = 0; // Always disable Small Motor after the if statement above
 
 			// Force Activate Small Motor if original SMALL Motor Strength is above certain level and related boolean is enabled
 			if (
