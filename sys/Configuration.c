@@ -433,16 +433,46 @@ ConfigLoadForDevice(
 			ConfigNodeParse(deviceNode, Context, IsHotReload);
 		}
 
+		//
+		// Verify if SMtoBMConversion values are valid and attempt to calculate rescaling constants in case they are
+		// 
+		if(
+			Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue > Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue
+			&& Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue > 0
+		)
+		{
 			Context->Configuration.RumbleSettings.SMToBMConversion.ConstA =
 				(DOUBLE)(Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue - Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue) / (254);
 
 			Context->Configuration.RumbleSettings.SMToBMConversion.ConstB =
 			Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue - Context->Configuration.RumbleSettings.SMToBMConversion.ConstA * 255;
+			
+		}
+		else
+		{
+			Context->Configuration.RumbleSettings.SMToBMConversion.Enabled = FALSE ;
+		}
+
+		//
+		// Verify if BMStrRescale values are valid and attempt to calculate rescaling constants in case they are
+		// 
+		if(
+			Context->Configuration.RumbleSettings.BMStrRescale.MaxValue > Context->Configuration.RumbleSettings.BMStrRescale.MinValue
+			&& Context->Configuration.RumbleSettings.BMStrRescale.MinValue > 0
+		)
+		{
 			Context->Configuration.RumbleSettings.BMStrRescale.ConstA =
 				(DOUBLE)(Context->Configuration.RumbleSettings.BMStrRescale.MaxValue - Context->Configuration.RumbleSettings.BMStrRescale.MinValue) / (254);
 
 			Context->Configuration.RumbleSettings.BMStrRescale.ConstB =
 				Context->Configuration.RumbleSettings.BMStrRescale.MaxValue - Context->Configuration.RumbleSettings.BMStrRescale.ConstA * 255;		
+		
+		}
+		else
+		{
+		Context->Configuration.RumbleSettings.BMStrRescale.Enabled = FALSE;
+		}
+
 	} while (FALSE);
 
 	if (config_json)
