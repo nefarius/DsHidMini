@@ -447,9 +447,20 @@ ConfigLoadForDevice(
 			Context->Configuration.RumbleSettings.SMToBMConversion.ConstB =
 			Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue - Context->Configuration.RumbleSettings.SMToBMConversion.ConstA * 255;
 			
+			TraceVerbose(
+				TRACE_CONFIG,
+				"SMToBMConversion rescaling constants: A = %f and B = %f.",
+				Context->Configuration.RumbleSettings.SMToBMConversion.ConstA,
+				Context->Configuration.RumbleSettings.SMToBMConversion.ConstB
+			);
+
 		}
 		else
 		{
+			TraceVerbose(
+				TRACE_CONFIG,
+				"Invalid values found for SMToBMConversion. Setting disabled."
+			);
 			Context->Configuration.RumbleSettings.SMToBMConversion.Enabled = FALSE ;
 		}
 
@@ -467,9 +478,20 @@ ConfigLoadForDevice(
 			Context->Configuration.RumbleSettings.BMStrRescale.ConstB =
 				Context->Configuration.RumbleSettings.BMStrRescale.MaxValue - Context->Configuration.RumbleSettings.BMStrRescale.ConstA * 255;		
 		
+			TraceVerbose(
+				TRACE_CONFIG,
+				"BMStrRescale rescaling constants: A = %f and B = %f.",
+				Context->Configuration.RumbleSettings.BMStrRescale.ConstA,
+				Context->Configuration.RumbleSettings.BMStrRescale.ConstB
+			);
 		}
 		else
 		{
+			TraceVerbose(
+				TRACE_CONFIG,
+				"Invalid values found for BMStrRescale. Setting disabled."
+			);
+
 		Context->Configuration.RumbleSettings.BMStrRescale.Enabled = FALSE;
 		}
 
