@@ -41,7 +41,7 @@ DsHidMini is a self-contained, low footprint and feature-rich [user-mode driver]
 
 ## What's missing
 
-Check the ? [**issue tracker**](https://github.com/ViGEm/DsHidMini/issues) ? for work-in-progress or known bugs!
+Check the ⚡ [**issue tracker**](https://github.com/ViGEm/DsHidMini/issues) ⚡ for work-in-progress or known bugs!
 
 The following features are **not** available (and most probably won't in the near future until more contributors join the party):
 
