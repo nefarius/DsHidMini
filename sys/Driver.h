@@ -17,6 +17,8 @@ extern unsigned int numInstances;
 #include <usb.h>
 #include <wdfusb.h>
 
+#include "JSON/cJSON.h"
+
 #include <DmfModules.Library.h>
 #include <DsHidMini/Ds3Types.h>
 #include <DsHidMini/ScpTypes.h>
@@ -25,6 +27,7 @@ extern unsigned int numInstances;
 #ifdef DSHM_FEATURE_FFB
 #include "PID/PIDTypes.h"
 #endif
+#include "Configuration.h"
 #include "Device.h"
 
 #include "dshmguid.h"

@@ -1,0 +1,17 @@
+.OPTION EXPLICIT
+.Set CabinetFileCountThreshold=0
+.Set FolderFileCountThreshold=0
+.Set FolderSizeThreshold=0
+.Set MaxCabinetSize=0
+.Set MaxDiskFileCount=0
+.Set MaxDiskSize=0
+.Set CompressionType=MSZIP
+.Set Cabinet=on
+.Set Compress=on
+; x86
+.Set CabinetNameTemplate=dshidmini_x86.cab
+.Set DestinationDir=dshidmini_x86
+LICENSE
+bin\x86\dshidmini.pdb
+bin\x86\dshidmini\dshidmini.inf
+bin\x86\dshidmini\dshidmini.dll

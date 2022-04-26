@@ -3,10 +3,11 @@
 #ifdef DSHM_FEATURE_FFB
 #include "PID/PIDTypes.h"
 #endif
+#include <math.h>
 
 #pragma region DS3 HID Report Descriptor (Split Device Mode)
 
-CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_Split_Mode[] = 
+CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_Split_Mode[] =
 {
 	/************************************************************************/
 	/* Gamepad definition (for regular DS3 buttons, axes & features)        */
@@ -52,7 +53,7 @@ sizeof(G_Ds3HidReportDescriptor_Split_Mode) }  // total length of report descrip
 
 #pragma region DS3 HID Report Descriptor (Single Device Mode)
 
-CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_Single_Mode[] = 
+CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_Single_Mode[] =
 {
 	/************************************************************************/
 	/* Gamepad definition with pressure axes in one report                  */
@@ -182,11 +183,11 @@ BOOLEAN DS3_RAW_IS_IDLE(
 		|| Input->RightThumbX > DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER
 		|| Input->RightThumbY < DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER
 		|| Input->RightThumbY > DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER
-	)
+		)
 	{
 		return FALSE;
 	}
-	
+
 	//
 	// Sliders
 	// 
@@ -194,11 +195,11 @@ BOOLEAN DS3_RAW_IS_IDLE(
 	if (
 		Input->Pressure.Values.L2 > DS3_RAW_SLIDER_IDLE_THRESHOLD
 		|| Input->Pressure.Values.R2 > DS3_RAW_SLIDER_IDLE_THRESHOLD
-	)
+		)
 	{
 		return FALSE;
 	}
-	
+
 	//
 	// If we end up here, no movement is going on
 	// 
@@ -206,10 +207,55 @@ BOOLEAN DS3_RAW_IS_IDLE(
 	return TRUE;
 }
 
-VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
+void DS3_RAW_AXIS_TRANSFORM(
+	_In_ UCHAR InputX,
+	_In_ UCHAR InputY,
+	_Inout_ PUCHAR OutputX,
+	_Inout_ PUCHAR OutputY,
+	_In_ BOOLEAN ApplyDeadZone,
+	_In_ DOUBLE DeadZonePolarValue
+)
+{
+	if (!ApplyDeadZone)
+	{
+		*OutputX = InputX;
+		*OutputY = InputY;
+		return;
+	}
+
+	//
+	// 0x80 is centered, but working from 0 to positive
+	// values makes the following calculations easier
+	// 
+	const int x = abs((int)InputX - 0x80);
+	const int y = abs((int)InputY - 0x80);
+
+	//
+	// Calculate dead zone circle area
+	// 
+	const double r = sqrt(x * x + y * y);
+
+	//
+	// If we're outside of the dead zone, report non-default values
+	// 
+	if (r > DeadZonePolarValue)
+	{
+		*OutputX = InputX;
+		*OutputY = InputY;
+	}
+	else
+	{
+		*OutputX = 0x80;
+		*OutputY = 0x80;
+	}
+}
+
+VOID DS3_RAW_TO_GPJ_HID_INPUT_REPORT_01(
 	_In_ PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output,
-	_In_ BOOLEAN MuteDigitalPressureButtons
+	_In_ DS_PRESSURE_EXPOSURE_MODE PressureMode,
+	_In_ DS_DPAD_EXPOSURE_MODE DPadExposureMode,
+	_In_ PDS_THUMB_SETTINGS ThumbSettings
 )
 {
 	// Report ID
@@ -227,10 +273,10 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 	// Prepare PS and D-Pad buttons
 	Output[7] &= ~0xFF; // Clear all 8 bits
 
-	if (!MuteDigitalPressureButtons)
+	if ((PressureMode & DsPressureExposureModeDigital) != 0)
 	{
 		// Translate D-Pad to HAT format
-		if (TRUE == TRUE) // Placeholder for DHMC option
+		if ((DPadExposureMode & DsDPadExposureModeHAT) != 0)
 		{
 			switch (Input->Buttons.bButtons[0] & ~0xF)
 			{
@@ -276,12 +322,13 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 		Output[6] |= (Input->Buttons.bButtons[1] & 0xF) << 4; // OUTPUT: R1 [7], L1 [6], R2 [5], L2 [4]
 
 		// D-Pad (Buttons)
-		if (FALSE == TRUE) // "FALSE" is a placeholder for the DHMC option that will allow muting the D-Pad Buttons
+		if ((DPadExposureMode & DsDPadExposureModeIndividualButtons) != 0)
 		{
 			Output[7] |= (Input->Buttons.bButtons[0] & ~0xF) >> 3; // OUTPUT: LEFT [4], DOWN [3], RIGHT [2], UP [1]
 		}
 	}
-	else {
+	else
+	{
 		// Clear HAT position
 		Output[5] |= 8 & 0xF;
 	}
@@ -290,10 +337,22 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 	Output[7] |= Input->Buttons.Individual.PS; // OUTPUT: PS BUTTON [0]
 
 	// Thumb axes
-	Output[1] = Input->LeftThumbX;
-	Output[2] = Input->LeftThumbY;
-	Output[3] = Input->RightThumbX;
-	Output[4] = Input->RightThumbY;
+	DS3_RAW_AXIS_TRANSFORM(
+		Input->LeftThumbX,
+		Input->LeftThumbY,
+		&Output[1],
+		&Output[2],
+		ThumbSettings->DeadZoneLeft.Apply,
+		ThumbSettings->DeadZoneLeft.PolarValue
+	);
+	DS3_RAW_AXIS_TRANSFORM(
+		Input->RightThumbX,
+		Input->RightThumbY,
+		&Output[3],
+		&Output[4],
+		ThumbSettings->DeadZoneRight.Apply,
+		ThumbSettings->DeadZoneRight.PolarValue
+	);
 
 	// Trigger axes
 	Output[8] = Input->Pressure.Values.L2;
@@ -305,7 +364,7 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
 
 }
 
-VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
+VOID DS3_RAW_TO_GPJ_HID_INPUT_REPORT_02(
 	_In_ PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output
 )
@@ -326,10 +385,12 @@ VOID DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
 	Output[8] = Input->Pressure.Values.Square;
 }
 
-VOID DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
+VOID DS3_RAW_TO_SDF_HID_INPUT_REPORT(
 	_In_ PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output,
-	_In_ BOOLEAN MuteDigitalPressureButtons
+	_In_ DS_PRESSURE_EXPOSURE_MODE PressureMode,
+	_In_ DS_DPAD_EXPOSURE_MODE DPadExposureMode,
+	_In_ PDS_THUMB_SETTINGS ThumbSettings
 )
 {
 	// Report ID
@@ -347,10 +408,10 @@ VOID DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
 	// Prepare PS and D-Pad buttons
 	Output[7] &= ~0xFF; // Clear all 8 bits
 
-	if (!MuteDigitalPressureButtons)
+	if ((PressureMode & DsPressureExposureModeDigital) != 0)
 	{
 		// Translate D-Pad to HAT format
-		if (TRUE == TRUE) // Placeholder for DHMC option
+		if ((DPadExposureMode & DsDPadExposureModeHAT) != 0)
 		{
 			switch (Input->Buttons.bButtons[0] & ~0xF)
 			{
@@ -396,7 +457,7 @@ VOID DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
 		Output[6] |= (Input->Buttons.bButtons[1] & 0xF) << 4; // OUTPUT: R1 [7], L1 [6], R2 [5], L2 [4]
 
 		// D-Pad (Buttons)
-		if (FALSE == TRUE) // "FALSE" is a placeholder for the DHMC option that will allow muting the D-Pad Buttons
+		if ((DPadExposureMode & DsDPadExposureModeIndividualButtons) != 0)
 		{
 			Output[7] |= (Input->Buttons.bButtons[0] & ~0xF) >> 3; // OUTPUT: LEFT [4], DOWN [3], RIGHT [2], UP [1]
 		}
@@ -405,12 +466,24 @@ VOID DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
 		// Clear HAT position
 		Output[5] |= 8 & 0xF;
 	}
-
+	
 	// Thumb axes
-	Output[1] = Input->LeftThumbX;
-	Output[2] = Input->LeftThumbY;
-	Output[3] = Input->RightThumbX;
-	Output[4] = Input->RightThumbY;
+	DS3_RAW_AXIS_TRANSFORM(
+		Input->LeftThumbX,
+		Input->LeftThumbY,
+		&Output[1],
+		&Output[2],
+		ThumbSettings->DeadZoneLeft.Apply,
+		ThumbSettings->DeadZoneLeft.PolarValue
+	);
+	DS3_RAW_AXIS_TRANSFORM(
+		Input->RightThumbX,
+		Input->RightThumbY,
+		&Output[3],
+		&Output[4],
+		ThumbSettings->DeadZoneRight.Apply,
+		ThumbSettings->DeadZoneRight.PolarValue
+	);
 
 	// Trigger axes
 	Output[8] = Input->Pressure.Values.L2;
@@ -419,26 +492,30 @@ VOID DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
 	// PS button
 	Output[7] |= Input->Buttons.Individual.PS;
 
-	// D-Pad (pressure)
-	Output[10] = Input->Pressure.Values.Up;
-	Output[11] = Input->Pressure.Values.Right;
-	Output[12] = Input->Pressure.Values.Down;
-	Output[13] = Input->Pressure.Values.Left;
+	if ((PressureMode & DsPressureExposureModeAnalogue) != 0)
+	{
+		// D-Pad (pressure)
+		Output[10] = Input->Pressure.Values.Up;
+		Output[11] = Input->Pressure.Values.Right;
+		Output[12] = Input->Pressure.Values.Down;
+		Output[13] = Input->Pressure.Values.Left;
 
-	// Shoulders (pressure)
-	Output[14] = Input->Pressure.Values.L1;
-	Output[15] = Input->Pressure.Values.R1;
+		// Shoulders (pressure)
+		Output[14] = Input->Pressure.Values.L1;
+		Output[15] = Input->Pressure.Values.R1;
 
-	// Face buttons (pressure)
-	Output[16] = Input->Pressure.Values.Triangle;
-	Output[17] = Input->Pressure.Values.Circle;
-	Output[18] = Input->Pressure.Values.Cross;
-	Output[19] = Input->Pressure.Values.Square;
+		// Face buttons (pressure)
+		Output[16] = Input->Pressure.Values.Triangle;
+		Output[17] = Input->Pressure.Values.Circle;
+		Output[18] = Input->Pressure.Values.Cross;
+		Output[19] = Input->Pressure.Values.Square;
+	}
 }
 
 VOID DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
 	_In_ PDS3_RAW_INPUT_REPORT Input,
-	_Out_ PUCHAR Output
+	_Out_ PUCHAR Output,
+	_In_ PDS_THUMB_SETTINGS ThumbSettings
 )
 {
 	// Prepare D-Pad
@@ -477,10 +554,22 @@ VOID DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
 	}
 
 	// Thumb axes
-	Output[4] = Input->LeftThumbX;
-	Output[5] = Input->LeftThumbY;
-	Output[6] = Input->RightThumbX;
-	Output[7] = Input->RightThumbY;
+	DS3_RAW_AXIS_TRANSFORM(
+		Input->LeftThumbX,
+		Input->LeftThumbY,
+		&Output[4],
+		&Output[5],
+		ThumbSettings->DeadZoneLeft.Apply,
+		ThumbSettings->DeadZoneLeft.PolarValue
+	);
+	DS3_RAW_AXIS_TRANSFORM(
+		Input->RightThumbX,
+		Input->RightThumbY,
+		&Output[6],
+		&Output[7],
+		ThumbSettings->DeadZoneRight.Apply,
+		ThumbSettings->DeadZoneRight.PolarValue
+	);
 
 	// Buttons
 	Output[0] &= ~0xFF; // Clear all 8 bits
@@ -519,10 +608,11 @@ UCHAR REVERSE_BITS(UCHAR x)
 	return x;
 }
 
-VOID DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
+VOID DS3_RAW_TO_DS4WINDOWS_HID_INPUT_REPORT(
 	_In_ PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output,
-	_In_ BOOLEAN IsWired
+	_In_ BOOLEAN IsWired,
+	_In_ PDS_THUMB_SETTINGS ThumbSettings
 )
 {
 	// Report ID
@@ -582,10 +672,10 @@ VOID DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
 		Output[5] |= 8 & 0xF;
 		break;
 	}
-	
+
 	// Face buttons
 	Output[5] |= ((REVERSE_BITS(Input->Buttons.bButtons[1]) << 4) & 0xF0);
-		
+
 	// Select to Share
 	Output[6] |= ((Input->Buttons.bButtons[0] & 0x01) << 4);
 
@@ -601,12 +691,24 @@ VOID DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
 	// L3, R3
 	Output[6] |= (((Input->Buttons.bButtons[0] >> 1) & 0x01) << 6);
 	Output[6] |= (((Input->Buttons.bButtons[0] >> 2) & 0x01) << 7);
-	
+
 	// Thumb axes
-	Output[1] = Input->LeftThumbX;
-	Output[2] = Input->LeftThumbY;
-	Output[3] = Input->RightThumbX;
-	Output[4] = Input->RightThumbY;
+	DS3_RAW_AXIS_TRANSFORM(
+		Input->LeftThumbX,
+		Input->LeftThumbY,
+		&Output[1],
+		&Output[2],
+		ThumbSettings->DeadZoneLeft.Apply,
+		ThumbSettings->DeadZoneLeft.PolarValue
+	);
+	DS3_RAW_AXIS_TRANSFORM(
+		Input->RightThumbX,
+		Input->RightThumbY,
+		&Output[3],
+		&Output[4],
+		ThumbSettings->DeadZoneRight.Apply,
+		ThumbSettings->DeadZoneRight.PolarValue
+	);
 
 	// Trigger axes
 	Output[8] = Input->Pressure.Values.L2;
@@ -661,17 +763,39 @@ VOID DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
 }
 
 VOID DS3_RAW_TO_XINPUTHID_HID_INPUT_REPORT(
-	_In_ PDS3_RAW_INPUT_REPORT Input, 
-	_Out_ PXINPUT_HID_INPUT_REPORT Output
+	_In_ PDS3_RAW_INPUT_REPORT Input,
+	_Out_ PXINPUT_HID_INPUT_REPORT Output,
+	_In_ PDS_THUMB_SETTINGS ThumbSettings
 )
 {
+	UCHAR leftThumbX = Input->LeftThumbX;
+	UCHAR leftThumbY = Input->LeftThumbY;
+	UCHAR rightThumbX = Input->RightThumbX;
+	UCHAR rightThumbY = Input->RightThumbY;
+
 	//
 	// Thumb axes
 	// 
-	Output->GD_GamePadX = Input->LeftThumbX * 257;
-	Output->GD_GamePadY = Input->LeftThumbY * 257;
-	Output->GD_GamePadRx = Input->RightThumbX * 257;
-	Output->GD_GamePadRy = Input->RightThumbY * 257;
+	DS3_RAW_AXIS_TRANSFORM(
+		Input->LeftThumbX,
+		Input->LeftThumbY,
+		&leftThumbX,
+		&leftThumbY,
+		ThumbSettings->DeadZoneLeft.Apply,
+		ThumbSettings->DeadZoneLeft.PolarValue
+	);
+	DS3_RAW_AXIS_TRANSFORM(
+		Input->RightThumbX,
+		Input->RightThumbY,
+		&rightThumbX,
+		&rightThumbY,
+		ThumbSettings->DeadZoneRight.Apply,
+		ThumbSettings->DeadZoneRight.PolarValue
+	);
+	Output->GD_GamePadX = leftThumbX * 257;
+	Output->GD_GamePadY = leftThumbY * 257;
+	Output->GD_GamePadRx = rightThumbX * 257;
+	Output->GD_GamePadRy = rightThumbY * 257;
 
 	//
 	// Triggers
@@ -704,7 +828,7 @@ VOID DS3_RAW_TO_XINPUTHID_HID_INPUT_REPORT(
 	// 
 	Output->BTN_GamePadButton9 = Input->Buttons.Individual.L3;
 	Output->BTN_GamePadButton10 = Input->Buttons.Individual.R3;
-		
+
 	// 
 	// D-Pad (POV/HAT format)
 	// 

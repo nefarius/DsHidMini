@@ -77,11 +77,6 @@ DsHidMini_EvtDevicePrepareHardware(
 	pDevCtx = DeviceGetContext(Device);
 
 	//
-	// Read common properties (can be refreshed by power-cycling)
-	// 
-	DsDevice_ReadConfiguration(Device);
-
-	//
 	// Initialize USB
 	// 
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
@@ -156,16 +151,16 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 	//
 	DMF_ThreadedBufferQueue_Stop(pDevCtx->OutputReport.Worker);
 
-	if (pDevCtx->ConfigurationReloadWaitHandle)
+	if (pDevCtx->ConfigurationDirectoryWatcherWaitHandle)
 	{
-		UnregisterWait(pDevCtx->ConfigurationReloadWaitHandle);
-		pDevCtx->ConfigurationReloadWaitHandle = NULL;
+		UnregisterWait(pDevCtx->ConfigurationDirectoryWatcherWaitHandle);
+		pDevCtx->ConfigurationDirectoryWatcherWaitHandle = NULL;
 	}
 
-	if (pDevCtx->ConfigurationReloadEvent)
+	if (pDevCtx->ConfigurationDirectoryWatcherEvent)
 	{
-		CloseHandle(pDevCtx->ConfigurationReloadEvent);
-		pDevCtx->ConfigurationReloadEvent = NULL;
+		CloseHandle(pDevCtx->ConfigurationDirectoryWatcherEvent);
+		pDevCtx->ConfigurationDirectoryWatcherEvent = NULL;
 	}
 
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)

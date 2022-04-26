@@ -1,0 +1,363 @@
+{
+  "Global": {
+    "HidDeviceMode": "DS4Windows",
+    "DisableAutoPairing": false,
+    "IsOutputRateControlEnabled": true,
+    "OutputRateControlPeriodMs": 150,
+    "IsOutputDeduplicatorEnabled": false,
+    "WirelessIdleTimeoutPeriodMs": 300000,
+    "SDF": {
+      "PressureExposureMode": 3,
+      "DPadExposureMode": 1,
+      "DeadZoneLeft": {
+        "Apply": true,
+        "PolarValue": 10.0
+      },
+      "DeadZoneRight": {
+        "Apply": true,
+        "PolarValue": 10.0
+      },
+      "RumbleSettings": {
+        "DisableBM": false,
+        "DisableSM": false,
+        "BMStrRescale": {
+          "Enabled": true,
+          "MinValue": 64,
+          "MaxValue": 255
+        },
+        "SMToBMConversion": {
+          "Enabled": false,
+          "RescaleMinValue": 0,
+          "RescaleMaxValue": 160
+        },
+        "ForcedSM": {
+          "BMThresholdEnabled": true,
+          "BMThresholdValue": 230,
+          "SMThresholdEnabled": false,
+          "SMThresholdValue": 230
+        }
+      },
+      "LEDSettings": {
+        "Mode": 1,
+        "CustomPatterns": {
+          "Player1": {
+            "Duration": 255,
+            "IntervalDuration": 255,
+            "Enabled": 16,
+            "IntervalPortionOff": 0,
+            "IntervalPortionOn": 255
+          },
+          "Player2": {
+            "Duration": 255,
+            "IntervalDuration": 255,
+            "Enabled": 16,
+            "IntervalPortionOff": 0,
+            "IntervalPortionOn": 255
+          },
+          "Player3": {
+            "Duration": 255,
+            "IntervalDuration": 255,
+            "Enabled": 16,
+            "IntervalPortionOff": 0,
+            "IntervalPortionOn": 255
+          },
+          "Player4": {
+            "Duration": 255,
+            "IntervalDuration": 255,
+            "Enabled": 16,
+            "IntervalPortionOff": 0,
+            "IntervalPortionOn": 255
+          }
+        }
+      }
+    },
+    "GPJ": {
+      "PressureExposureMode": 3,
+      "DPadExposureMode": 1,
+      "DeadZoneLeft": {
+        "Apply": true,
+        "PolarValue": 10.0
+      },
+      "DeadZoneRight": {
+        "Apply": true,
+        "PolarValue": 10.0
+      },
+      "RumbleSettings": {
+        "DisableBM": false,
+        "DisableSM": false,
+        "BMStrRescale": {
+          "Enabled": true,
+          "MinValue": 64,
+          "MaxValue": 255
+        },
+        "SMToBMConversion": {
+          "Enabled": false,
+          "RescaleMinValue": 0,
+          "RescaleMaxValue": 160
+        },
+        "ForcedSM": {
+          "BMThresholdEnabled": true,
+          "BMThresholdValue": 230,
+          "SMThresholdEnabled": false,
+          "SMThresholdValue": 230
+        }
+      },
+      "LEDSettings": {
+        "Mode": 1,
+        "CustomPatterns": {
+          "Player1": {
+            "Duration": 255,
+            "IntervalDuration": 255,
+            "Enabled": 16,
+            "IntervalPortionOff": 0,
+            "IntervalPortionOn": 255
+          },
+          "Player2": {
+            "Duration": 255,
+            "IntervalDuration": 255,
+            "Enabled": 16,
+            "IntervalPortionOff": 0,
+            "IntervalPortionOn": 255
+          },
+          "Player3": {
+            "Duration": 255,
+            "IntervalDuration": 255,
+            "Enabled": 16,
+            "IntervalPortionOff": 0,
+            "IntervalPortionOn": 255
+          },
+          "Player4": {
+            "Duration": 255,
+            "IntervalDuration": 255,
+            "Enabled": 16,
+            "IntervalPortionOff": 0,
+            "IntervalPortionOn": 255
+          }
+        }
+      }
+    },
+    "SXS": {
+      "DeadZoneLeft": {
+        "Apply": true,
+        "PolarValue": 10.0
+      },
+      "DeadZoneRight": {
+        "Apply": true,
+        "PolarValue": 10.0
+      },
+      "RumbleSettings": {
+        "DisableBM": false,
+        "DisableSM": false,
+        "BMStrRescale": {
+          "Enabled": true,
+          "MinValue": 64,
+          "MaxValue": 255
+        },
+        "SMToBMConversion": {
+          "Enabled": false,
+          "RescaleMinValue": 0,
+          "RescaleMaxValue": 160
+        },
+        "ForcedSM": {
+          "BMThresholdEnabled": true,
+          "BMThresholdValue": 230,
+          "SMThresholdEnabled": false,
+          "SMThresholdValue": 230
+        }
+      },
+      "LEDSettings": {
+        "Mode": 1,
+        "CustomPatterns": {
+          "Player1": {
+            "Duration": 255,
+            "IntervalDuration": 255,
+            "Enabled": 16,
+            "IntervalPortionOff": 0,
+            "IntervalPortionOn": 255
+          },
+          "Player2": {
+            "Duration": 255,
+            "IntervalDuration": 255,
+            "Enabled": 16,
+            "IntervalPortionOff": 0,
+            "IntervalPortionOn": 255
+          },
+          "Player3": {
+            "Duration": 255,
+            "IntervalDuration": 255,
+            "Enabled": 16,
+            "IntervalPortionOff": 0,
+            "IntervalPortionOn": 255
+          },
+          "Player4": {
+            "Duration": 255,
+            "IntervalDuration": 255,
+            "Enabled": 16,
+            "IntervalPortionOff": 0,
+            "IntervalPortionOn": 255
+          }
+        }
+      }
+    },
+    "DS4Windows": {
+      "DeadZoneLeft": {
+        "Apply": false,
+        "PolarValue": 10.0
+      },
+      "DeadZoneRight": {
+        "Apply": false,
+        "PolarValue": 10.0
+      },
+      "RumbleSettings": {
+        "DisableBM": false,
+        "DisableSM": false,
+        "BMStrRescale": {
+          "Enabled": true,
+          "MinValue": 64,
+          "MaxValue": 255
+        },
+        "SMToBMConversion": {
+          "Enabled": false,
+          "RescaleMinValue": 0,
+          "RescaleMaxValue": 160
+        },
+        "ForcedSM": {
+          "BMThresholdEnabled": true,
+          "BMThresholdValue": 230,
+          "SMThresholdEnabled": false,
+          "SMThresholdValue": 230
+        }
+      },
+      "LEDSettings": {
+        "Mode": 1,
+        "CustomPatterns": {
+          "Player1": {
+            "Duration": 255,
+            "IntervalDuration": 255,
+            "Enabled": 16,
+            "IntervalPortionOff": 0,
+            "IntervalPortionOn": 255
+          },
+          "Player2": {
+            "Duration": 255,
+            "IntervalDuration": 255,
+            "Enabled": 16,
+            "IntervalPortionOff": 0,
+            "IntervalPortionOn": 255
+          },
+          "Player3": {
+            "Duration": 255,
+            "IntervalDuration": 255,
+            "Enabled": 16,
+            "IntervalPortionOff": 0,
+            "IntervalPortionOn": 255
+          },
+          "Player4": {
+            "Duration": 255,
+            "IntervalDuration": 255,
+            "Enabled": 16,
+            "IntervalPortionOff": 0,
+            "IntervalPortionOn": 255
+          }
+        }
+      }
+    },
+    "XInput": {
+      "DeadZoneLeft": {
+        "Apply": true,
+        "PolarValue": 10.0
+      },
+      "DeadZoneRight": {
+        "Apply": true,
+        "PolarValue": 10.0
+      },
+      "RumbleSettings": {
+        "DisableBM": false,
+        "DisableSM": false,
+        "BMStrRescale": {
+          "Enabled": true,
+          "MinValue": 64,
+          "MaxValue": 255
+        },
+        "SMToBMConversion": {
+          "Enabled": false,
+          "RescaleMinValue": 0,
+          "RescaleMaxValue": 160
+        },
+        "ForcedSM": {
+          "BMThresholdEnabled": true,
+          "BMThresholdValue": 230,
+          "SMThresholdEnabled": false,
+          "SMThresholdValue": 230
+        }
+      },
+      "LEDSettings": {
+        "Mode": 1,
+        "CustomPatterns": {
+          "Player1": {
+            "Duration": 255,
+            "IntervalDuration": 255,
+            "Enabled": 16,
+            "IntervalPortionOff": 0,
+            "IntervalPortionOn": 255
+          },
+          "Player2": {
+            "Duration": 255,
+            "IntervalDuration": 255,
+            "Enabled": 16,
+            "IntervalPortionOff": 0,
+            "IntervalPortionOn": 255
+          },
+          "Player3": {
+            "Duration": 255,
+            "IntervalDuration": 255,
+            "Enabled": 16,
+            "IntervalPortionOff": 0,
+            "IntervalPortionOn": 255
+          },
+          "Player4": {
+            "Duration": 255,
+            "IntervalDuration": 255,
+            "Enabled": 16,
+            "IntervalPortionOff": 0,
+            "IntervalPortionOn": 255
+          }
+        }
+      }
+    }
+  },
+  "Devices": {
+    "44D832809FCD": {
+      "HidDeviceMode": "SDF",
+      "DisableAutoPairing": false,
+      "IsOutputRateControlEnabled": true,
+      "OutputRateControlPeriodMs": 150,
+      "IsOutputDeduplicatorEnabled": false,
+      "WirelessIdleTimeoutPeriodMs": 300000,
+      "SDF": {
+        "PressureExposureMode": 3,
+        "DPadExposureMode": 2
+      },
+      "GPJ": {
+        "PressureExposureMode": 3,
+        "DPadExposureMode": 2
+      }
+    },
+    "0019C1637EA0": {
+      "HidDeviceMode": "GPJ",
+      "DisableAutoPairing": false,
+      "IsOutputRateControlEnabled": true,
+      "OutputRateControlPeriodMs": 150,
+      "IsOutputDeduplicatorEnabled": false,
+      "WirelessIdleTimeoutPeriodMs": 300000,
+      "SDF": {
+        "PressureExposureMode": 3,
+        "DPadExposureMode": 1
+      },
+      "GPJ": {
+        "PressureExposureMode": 3,
+        "DPadExposureMode": 1
+      }
+    }
+  }
+}

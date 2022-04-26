@@ -4,7 +4,7 @@
 
 Virtual HID Mini-user-mode driver for Sony DualShock 3 Controllers
 
-[![Build status](https://ci.appveyor.com/api/projects/status/vmf09i95d06c8mbh/branch/master?svg=true)](https://ci.appveyor.com/project/nefarius/dshidmini/branch/master) [![GitHub All Releases](https://img.shields.io/github/downloads/ViGEm/DsHidMini/total)](https://somsubhra.github.io/github-release-stats/?username=ViGEm&repository=DsHidMini) [![Discord](https://img.shields.io/discord/346756263763378176.svg)](https://discord.vigem.org/) [![Website](https://img.shields.io/website-up-down-green-red/https/vigem.org.svg?label=ViGEm.org)](https://vigem.org/)
+[![Build status](https://ci.appveyor.com/api/projects/status/vmf09i95d06c8mbh/branch/master?svg=true)](https://ci.appveyor.com/project/nefarius/dshidmini/branch/master) [![GitHub All Releases](https://img.shields.io/github/downloads/ViGEm/DsHidMini/total)](https://somsubhra.github.io/github-release-stats/?username=ViGEm&repository=DsHidMini) ![GitHub issues](https://img.shields.io/github/issues/ViGEm/DsHidMini) [![Discord](https://img.shields.io/discord/346756263763378176.svg)](https://discord.vigem.org/) [![Website](https://img.shields.io/website-up-down-green-red/https/vigem.org.svg?label=ViGEm.org)](https://vigem.org/)
 
 ## Summary
 
@@ -41,6 +41,8 @@ DsHidMini is a self-contained, low footprint and feature-rich [user-mode driver]
 
 ## What's missing
 
+Check the ? [**issue tracker**](https://github.com/ViGEm/DsHidMini/issues) ? for work-in-progress or known bugs!
+
 The following features are **not** available (and most probably won't in the near future until more contributors join the party):
 
 - Motion controls a.k.a. SIXAXIS (Gyroscope, Accelerometer)
@@ -49,6 +51,8 @@ The following features are **not** available (and most probably won't in the nea
   - Majority is done
 - Motion Controller
   - Not considered in design at all
+
+For in-progress features and bug-fixes please consult the issue tracker.
 
 ## How it works
 
@@ -88,6 +92,10 @@ Take a look at the [project page](https://vigem.org/projects/DsHidMini/) for mor
 
 Pre-built binaries and instructions are provided [on the releases page](../../releases).
 
+## Support
+
+To get support [please follow these guidlines](https://vigem.org/Community-Support/).
+
 ## Sources & 3rd party credits
 
 The following awesome resources have made this project possible.
@@ -107,6 +115,7 @@ The following awesome resources have made this project possible.
 - [Microsoft - DMF - HID minidriver module](https://github.com/microsoft/DMF/issues/69)
 - [Microsoft - DMF - VHidMini2DmfK and VHidMini2DmfU Sample Drivers](https://github.com/microsoft/DMF/tree/master/DmfSamples/VHidMini2Dmf)
 - [uthash - a hash table for C structures](https://github.com/troydhanson/uthash)
+- [Ultralightweight JSON parser in ANSI C](https://github.com/DaveGamble/cJSON)
 
 ### Tools & references
 
