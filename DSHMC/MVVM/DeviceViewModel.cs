@@ -6,16 +6,17 @@ using FontAwesome5;
 using Nefarius.DsHidMini.Drivers;
 using Nefarius.DsHidMini.Util;
 using Nefarius.DsHidMini.Util.Web;
+using Nefarius.Utilities.DeviceManagement.PnP;
 
 namespace Nefarius.DsHidMini.MVVM
 {
     public class DeviceViewModel : INotifyPropertyChanged
     {
-        private readonly Device _device;
+        private readonly PnPDevice _device;
 
         private readonly Timer _batteryQuery;
 
-        public DeviceViewModel(Device device)
+        public DeviceViewModel(PnPDevice device)
         {
             _device = device;
 

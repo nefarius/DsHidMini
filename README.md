@@ -37,11 +37,17 @@ DsHidMini is a self-contained, low footprint and feature-rich [user-mode driver]
 - Supports [**RetroArch**](https://www.retroarch.com/) emulation platform
 - Supports [**x360ce**](https://www.x360ce.com/) for XInput emulation
 - Supports [**Dolphin Emulator**](https://dolphin-emu.org/)
+- Supports [**DuckStation - PlayStation 1, aka. PSX Emulator**](https://github.com/stenzek/duckstation)
 
 ## What's missing
 
+Check the ⚡ [**issue tracker**](https://github.com/ViGEm/DsHidMini/issues) ⚡ for work-in-progress or known bugs!
+
+The following features are **not** available (and most probably won't in the near future until more contributors join the party):
+
 - Motion controls a.k.a. SIXAXIS (Gyroscope, Accelerometer)
   - **Contributions welcome!**
+  - See [#217](https://github.com/ViGEm/DsHidMini/issues/217)
 - Navigation Controller
   - Majority is done
 - Motion Controller

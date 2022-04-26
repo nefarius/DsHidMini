@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
-using Nefarius.DsHidMini.Util;
 using Nefarius.DsHidMini.Util.WPF;
+using Nefarius.Utilities.DeviceManagement.PnP;
 
 namespace Nefarius.DsHidMini.Drivers
 {

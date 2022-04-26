@@ -2,6 +2,19 @@
 #include "Configuration.tmh"
 
 
+DS_HID_DEVICE_MODE HID_DEVICE_MODE_FROM_NAME(PSTR ModeName)
+{
+	for (DS_HID_DEVICE_MODE value = 1; value < (DS_HID_DEVICE_MODE)_countof(G_HID_DEVICE_MODE_NAMES); value++)
+	{
+		if (strcmp(G_HID_DEVICE_MODE_NAMES[value], ModeName) == 0)
+		{
+			return value;
+		}
+	}
+
+	return 0;
+}
+
 void
 ConfigParseRumbleSettings(
 	_In_ const cJSON* RumbleSettings,
@@ -173,7 +186,7 @@ void ConfigNodeParse(
 
 		if ((pNode = cJSON_GetObjectItem(ParentNode, "HidDeviceMode")))
 		{
-			pCfg->HidDeviceMode = (DS_HID_DEVICE_MODE)cJSON_GetNumberValue(pNode);
+			pCfg->HidDeviceMode = HID_DEVICE_MODE_FROM_NAME(cJSON_GetStringValue(pNode));
 		}
 
 		if ((pNode = cJSON_GetObjectItem(ParentNode, "DisableAutoPairing")))
@@ -202,6 +215,11 @@ void ConfigNodeParse(
 		pCfg->WirelessIdleTimeoutPeriodMs = (ULONG)cJSON_GetNumberValue(pNode);
 	}
 
+	if ((pNode = cJSON_GetObjectItem(ParentNode, "DisableWirelessIdleTimeout")))
+	{
+		pCfg->DisableWirelessIdleTimeout = (BOOLEAN)cJSON_IsTrue(pNode);
+	}
+
 	//
 	// TODO: this is getting cluttered, split up into some sub-routines
 	// 
@@ -209,7 +227,7 @@ void ConfigNodeParse(
 	//
 	// Every mode can have the same properties configured independently
 	// 
-	if (pCfg->HidDeviceMode > 0 && pCfg->HidDeviceMode <= (DS_HID_DEVICE_MODE)_countof(G_HID_DEVICE_MODE_NAMES))
+	if (pCfg->HidDeviceMode > 0 && pCfg->HidDeviceMode < (DS_HID_DEVICE_MODE)_countof(G_HID_DEVICE_MODE_NAMES))
 	{
 		const cJSON* pModeSpecific = cJSON_GetObjectItem(ParentNode, G_HID_DEVICE_MODE_NAMES[pCfg->HidDeviceMode]);
 
@@ -535,6 +553,7 @@ ConfigSetDefaults(
 	Config->OutputRateControlPeriodMs = 150;
 	Config->IsOutputDeduplicatorEnabled = FALSE;
 	Config->WirelessIdleTimeoutPeriodMs = 300000;
+	Config->DisableWirelessIdleTimeout = FALSE;
 
 	Config->ThumbSettings.DeadZoneLeft.Apply = TRUE;
 	Config->ThumbSettings.DeadZoneLeft.PolarValue = 3.0;

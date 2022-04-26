@@ -4,7 +4,12 @@
 #define CONFIG_SUB_DIR_NAME		"DsHidMini"
 #define CONFIG_FILE_NAME		"DsHidMini.json"
 
-typedef struct _DEVICE_CONTEXT *PDEVICE_CONTEXT;
+typedef struct _DEVICE_CONTEXT* PDEVICE_CONTEXT;
+
+DS_HID_DEVICE_MODE
+HID_DEVICE_MODE_FROM_NAME(
+	PSTR ModeName
+);
 
 _Must_inspect_result_
 NTSTATUS

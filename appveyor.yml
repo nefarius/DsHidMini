@@ -3,6 +3,7 @@ image: Visual Studio 2019
 platform:
 - x86
 - x64
+#- ARM64
 configuration:
 - Release
 skip_commits:
@@ -20,6 +21,14 @@ install:
     cd "C:\projects\DMF"
     git pull > NUL
     cd %appveyor_build_folder%
+dotnet_csproj:
+  patch: true
+  file: '**\*.csproj'
+  version: '{version}'
+  package_version: '{version}'
+  assembly_version: '{version}'
+  file_version: '{version}'
+  informational_version: '{version}'
 before_build:
 - cmd: vcpkg integrate install
 - cmd: vcpkg update
@@ -28,11 +37,13 @@ before_build:
 - ps: Invoke-WebRequest "https://github.com/nefarius/vpatch/releases/latest/download/vpatch.exe" -OutFile vpatch.exe
 - cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\sys\dshidmini.vcxproj" --vcxproj.inf-time-stamp
 - cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\sys\dshidmini.rc" --resource.file-version --resource.product-version
-- cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\DSHMC\Properties\AssemblyInfo.cs" --assembly.version --assembly.file-version
 - cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\XInputBridge\XInputBridge.rc" --resource.file-version --resource.product-version
 build_script:
 - cmd: .\build.cmd
+after_build:
+- cmd: makecab.exe /f .\DsHidMini_%PLATFORM%.ddf
 artifacts:
+- path: 'disk1\*.cab'
 - path: 'bin**\$(APPVEYOR_PROJECT_NAME)\*.inf'
 - path: 'bin**\$(APPVEYOR_PROJECT_NAME)\*.cat'
 - path: 'bin**\$(APPVEYOR_PROJECT_NAME)\*.dll'

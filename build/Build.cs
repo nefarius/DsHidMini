@@ -56,10 +56,12 @@ class Build : NukeBuild
 
         Console.WriteLine($"DMF solution path: {DmfSolution}");
 
-        var platform = MSBuildTargetPlatform.x64;
-
-        if (AppVeyor.Instance.Platform != null && AppVeyor.Instance.Platform.Equals("x86"))
-            platform = MSBuildTargetPlatform.Win32;
+        var platform = AppVeyor.Instance.Platform switch
+        {
+            "x86" => MSBuildTargetPlatform.Win32,
+            "ARM64" => MSBuildTargetPlatform.arm,
+            _ => MSBuildTargetPlatform.x64
+        };
 
         MSBuild(s => s
             .SetTargetPath(DmfSolution)

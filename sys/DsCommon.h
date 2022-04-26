@@ -191,6 +191,16 @@ typedef enum
 } DS_PRESSURE_EXPOSURE_MODE, * PDS_PRESSURE_EXPOSURE_MODE;
 
 //
+// Friendly names for reading from JSON
+// 
+static CONST PSTR G_PRESSURE_EXPOSURE_MODE_NAMES[] =
+{
+	"Digital",
+	"Analogue",
+	"Default"
+};
+
+//
 // Flags of whether the D-Pad should be reported as HAT switch or individual buttons
 // 
 typedef enum
@@ -209,6 +219,16 @@ typedef enum
 	DsDPadExposureModeDefault = DsDPadExposureModeHAT
 
 } DS_DPAD_EXPOSURE_MODE, * PDS_DPAD_EXPOSURE_MODE;
+
+//
+// Friendly names for reading from JSON
+// 
+static CONST PSTR G_DPAD_EXPOSURE_MODE_NAMES[] =
+{
+	"HAT",
+	"IndividualButtons",
+	"Default"
+};
 
 //
 // Possible LED modes
@@ -235,6 +255,16 @@ typedef enum
 } DS_LED_MODE;
 
 //
+// Friendly names for reading from JSON
+// 
+static CONST PSTR G_LED_MODE_NAMES[] =
+{
+	"BatteryIndicatorPlayerIndex",
+	"BatteryIndicatorBarGraph",
+	"CustomPattern"
+};
+
+//
 // Whether the driver or the application will have authority over LEDs
 // 
 typedef enum
@@ -259,8 +289,14 @@ typedef enum
 // 
 typedef struct _DS_AXIS_DEADZONE
 {
+	//
+	// Should dead-zone be applied
+	// 
 	BOOLEAN Apply;
 
+	//
+	// Dead-zone radius (0-360)
+	// 
 	DOUBLE PolarValue;
 
 } DS_AXIS_DEADZONE, * PDS_AXIS_DEADZONE;
@@ -270,8 +306,14 @@ typedef struct _DS_AXIS_DEADZONE
 // 
 typedef struct _DS_THUMB_SETTINGS
 {
+	//
+	// Dead-zone of left thumb stick
+	// 
 	DS_AXIS_DEADZONE DeadZoneLeft;
 
+	//
+	// Dead-zone of right thumb stick
+	// 
 	DS_AXIS_DEADZONE DeadZoneRight;
 
 } DS_THUMB_SETTINGS, * PDS_THUMB_SETTINGS;
@@ -281,8 +323,14 @@ typedef struct _DS_THUMB_SETTINGS
 // 
 typedef struct _DS_RUMBLE_SETTINGS
 {
+	//
+	// Disable Big Motor (left) entirely
+	// 
 	BOOLEAN DisableBM;
 
+	//
+	// Disable Small Motor (right) entirely
+	// 
 	BOOLEAN DisableSM;
 
 	struct
@@ -346,8 +394,14 @@ typedef struct _DS_LED
 
 typedef struct _DS_LED_SETTINGS
 {
+	//
+	// LED behaviour when driver is in charge
+	// 
 	DS_LED_MODE Mode;
 
+	//
+	// Custom LED parameters
+	// 
 	struct
 	{
 		DS_LED Player1;
@@ -367,26 +421,45 @@ typedef struct _DS_LED_SETTINGS
 // 
 typedef struct _DS_DRIVER_CONFIGURATION
 {
-	/** The HID device mode */
+	//
+	// The HID device mode
+	// Can't be altered at runtime
+	// 
 	DS_HID_DEVICE_MODE HidDeviceMode;
 
-	/** When set, pairing will not be attempted on device boot */
+	//
+	// When set, pairing will not be attempted on device boot
+	// Can't be altered at runtime
+	// 
 	BOOLEAN DisableAutoPairing;
 
-	/** True if output rate control is enabled, false if not */
+	//
+	// True if output rate control is enabled, false if not
+	// 
 	BOOLEAN IsOutputRateControlEnabled;
 
-	/** The output rate control period in milliseconds */
+	//
+	// The output rate control period in milliseconds
+	// 
 	UCHAR OutputRateControlPeriodMs;
 
-	/** True if output deduplicator is enabled, false if not */
+	//
+	// True if output deduplicator is enabled, false if not
+	// 
 	UCHAR IsOutputDeduplicatorEnabled;
 
-	/** Idle disconnect period in milliseconds */
+	//
+	// Idle disconnect period in milliseconds
+	// 
 	ULONG WirelessIdleTimeoutPeriodMs;
 
 	//
-	// Thumb stick specific settings, can be set per mode
+	// If set, controller will never auto-disconnect on wireless
+	// 
+	BOOLEAN DisableWirelessIdleTimeout;
+
+	//
+	// Thumb stick specific settings
 	// 
 	DS_THUMB_SETTINGS ThumbSettings;
 

@@ -1860,7 +1860,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	//
 	// Idle disconnect detection
 	// 
-	if (DS3_RAW_IS_IDLE(pInReport))
+	if (!pDevCtx->Configuration.DisableWirelessIdleTimeout && DS3_RAW_IS_IDLE(pInReport))
 	{
 		t1 = &pDevCtx->Connection.Bth.IdleDisconnectTimestamp;
 

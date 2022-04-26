@@ -1,4 +1,3 @@
-
 #include "Driver.h"
 #include "Device.tmh"
 #include <DmfModule.h>
@@ -34,10 +33,6 @@ dshidminiEvtDeviceAdd(
 	UNREFERENCED_PARAMETER(Driver);
 
 	FuncEntry(TRACE_DEVICE);
-
-#if DBG
-	SetUnhandledExceptionFilter(DSHM_InternalExceptionHandler);
-#endif
 
 	dmfDeviceInit = DMF_DmfDeviceInitAllocate(DeviceInit);
 
