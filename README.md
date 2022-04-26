@@ -47,6 +47,7 @@ The following features are **not** available (and most probably won't in the nea
 
 - Motion controls a.k.a. SIXAXIS (Gyroscope, Accelerometer)
   - **Contributions welcome!**
+  - See #217
 - Navigation Controller
   - Majority is done
 - Motion Controller
