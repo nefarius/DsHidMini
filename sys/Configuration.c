@@ -82,7 +82,7 @@ ConfigParseRumbleSettings(
 			Config->RumbleSettings.ForcedSM.BMThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
 		}
 
-		if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "BMThresholdValue")))
+		if ((pNode = cJSON_GetObjectItem(pForcedSM, "BMThresholdValue")))
 		{
 			Config->RumbleSettings.ForcedSM.BMThresholdValue = (UCHAR)cJSON_GetNumberValue(pNode);
 		}
@@ -92,7 +92,7 @@ ConfigParseRumbleSettings(
 			Config->RumbleSettings.ForcedSM.SMThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
 		}
 
-		if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "SMThresholdValue")))
+		if ((pNode = cJSON_GetObjectItem(pForcedSM, "SMThresholdValue")))
 		{
 			Config->RumbleSettings.ForcedSM.SMThresholdValue = (UCHAR)cJSON_GetNumberValue(pNode);
 		}
@@ -451,6 +451,68 @@ ConfigLoadForDevice(
 			ConfigNodeParse(deviceNode, Context, IsHotReload);
 		}
 
+		//
+		// Verify if SMtoBMConversion values are valid and attempt to calculate rescaling constants in case they are
+		// 
+		if(
+			Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue > Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue
+			&& Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue > 0
+		)
+		{
+			Context->Configuration.RumbleSettings.SMToBMConversion.ConstA =
+				(DOUBLE)(Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue - Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue) / (254);
+
+			Context->Configuration.RumbleSettings.SMToBMConversion.ConstB =
+			Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue - Context->Configuration.RumbleSettings.SMToBMConversion.ConstA * 255;
+			
+			TraceVerbose(
+				TRACE_CONFIG,
+				"SMToBMConversion rescaling constants: A = %f and B = %f.",
+				Context->Configuration.RumbleSettings.SMToBMConversion.ConstA,
+				Context->Configuration.RumbleSettings.SMToBMConversion.ConstB
+			);
+
+		}
+		else
+		{
+			TraceVerbose(
+				TRACE_CONFIG,
+				"Invalid values found for SMToBMConversion. Setting disabled."
+			);
+			Context->Configuration.RumbleSettings.SMToBMConversion.Enabled = FALSE ;
+		}
+
+		//
+		// Verify if BMStrRescale values are valid and attempt to calculate rescaling constants in case they are
+		// 
+		if(
+			Context->Configuration.RumbleSettings.BMStrRescale.MaxValue > Context->Configuration.RumbleSettings.BMStrRescale.MinValue
+			&& Context->Configuration.RumbleSettings.BMStrRescale.MinValue > 0
+		)
+		{
+			Context->Configuration.RumbleSettings.BMStrRescale.ConstA =
+				(DOUBLE)(Context->Configuration.RumbleSettings.BMStrRescale.MaxValue - Context->Configuration.RumbleSettings.BMStrRescale.MinValue) / (254);
+
+			Context->Configuration.RumbleSettings.BMStrRescale.ConstB =
+				Context->Configuration.RumbleSettings.BMStrRescale.MaxValue - Context->Configuration.RumbleSettings.BMStrRescale.ConstA * 255;		
+		
+			TraceVerbose(
+				TRACE_CONFIG,
+				"BMStrRescale rescaling constants: A = %f and B = %f.",
+				Context->Configuration.RumbleSettings.BMStrRescale.ConstA,
+				Context->Configuration.RumbleSettings.BMStrRescale.ConstB
+			);
+		}
+		else
+		{
+			TraceVerbose(
+				TRACE_CONFIG,
+				"Invalid values found for BMStrRescale. Setting disabled."
+			);
+
+		Context->Configuration.RumbleSettings.BMStrRescale.Enabled = FALSE;
+		}
+
 	} while (FALSE);
 
 	if (config_json)
@@ -504,8 +566,8 @@ ConfigSetDefaults(
 	Config->RumbleSettings.BMStrRescale.MinValue = 64;
 	Config->RumbleSettings.BMStrRescale.MaxValue = 255;
 	Config->RumbleSettings.SMToBMConversion.Enabled = FALSE;
-	Config->RumbleSettings.SMToBMConversion.RescaleMinValue = 0;
-	Config->RumbleSettings.SMToBMConversion.RescaleMaxValue = 160;
+	Config->RumbleSettings.SMToBMConversion.RescaleMinValue = 1;
+	Config->RumbleSettings.SMToBMConversion.RescaleMaxValue = 140;
 	Config->RumbleSettings.ForcedSM.BMThresholdEnabled = TRUE;
 	Config->RumbleSettings.ForcedSM.BMThresholdValue = 230;
 	Config->RumbleSettings.ForcedSM.SMThresholdEnabled = FALSE;

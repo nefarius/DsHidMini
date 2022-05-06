@@ -486,26 +486,8 @@ VOID DS3_SET_SMALL_RUMBLE_STRENGTH(
 	UCHAR Value
 )
 {
-	switch (Context->ConnectionType)
-	{
-	case DsDeviceConnectionTypeUsb:
-
-		DS3_USB_SET_SMALL_RUMBLE_STRENGTH(
-			(PUCHAR)WdfMemoryGetBuffer(
-				Context->OutputReportMemory,
-				NULL
-			), Value);
-		break;
-
-	case DsDeviceConnectionTypeBth:
-
-		DS3_BTH_SET_SMALL_RUMBLE_STRENGTH(
-			(PUCHAR)WdfMemoryGetBuffer(
-				Context->OutputReportMemory,
-				NULL
-			), Value);
-		break;
-	}
+	Context->MotorStrCache.Small = Value;
+	DS3_PROCESS_RUMBLE_STRENGTH(Context);
 }
 
 VOID DS3_SET_LARGE_RUMBLE_DURATION(
@@ -540,6 +522,78 @@ VOID DS3_SET_LARGE_RUMBLE_STRENGTH(
 	UCHAR Value
 )
 {
+	Context->MotorStrCache.Big = Value;
+	DS3_PROCESS_RUMBLE_STRENGTH(Context);
+}
+
+VOID DS3_SET_BOTH_RUMBLE_STRENGTH(
+	PDEVICE_CONTEXT Context,
+	UCHAR LargeValue,
+	UCHAR SmallValue
+)
+{
+	Context->MotorStrCache.Small = SmallValue;
+	Context->MotorStrCache.Big = LargeValue;
+	DS3_PROCESS_RUMBLE_STRENGTH(Context);
+}
+
+VOID DS3_PROCESS_RUMBLE_STRENGTH(
+	PDEVICE_CONTEXT Context
+)
+{
+
+	DOUBLE LargeValue = Context->Configuration.RumbleSettings.DisableBM ? 0 : Context->MotorStrCache.Big;
+	DOUBLE SmallValue = Context->Configuration.RumbleSettings.DisableSM ? 0 : Context->MotorStrCache.Small;
+
+	if (
+		Context->Configuration.RumbleSettings.SMToBMConversion.Enabled
+		&& !Context->Configuration.RumbleSettings.DisableSM
+		&& !Context->Configuration.RumbleSettings.DisableBM
+		) {
+		
+		if (SmallValue > 0) {
+
+			// Small Motor Strength Rescale 
+			SmallValue = Context->Configuration.RumbleSettings.SMToBMConversion.ConstA * SmallValue
+				+ Context->Configuration.RumbleSettings.SMToBMConversion.ConstB ;
+
+			if (SmallValue > LargeValue) {
+				LargeValue = SmallValue;
+			}
+			SmallValue = 0; // Always disable Small Motor after the if statement above
+
+			// Force Activate Small Motor if original SMALL Motor Strength is above certain level and related boolean is enabled
+			if (
+				Context->Configuration.RumbleSettings.ForcedSM.SMThresholdEnabled
+				&& Context->MotorStrCache.Small >= Context->Configuration.RumbleSettings.ForcedSM.SMThresholdValue
+				)
+			{
+				SmallValue = 1;
+			}
+
+		}
+
+
+		// Force Activate Small Motor if original BIG Motor Strength is above certain level and related boolean is enabled
+		if (
+			Context->Configuration.RumbleSettings.ForcedSM.BMThresholdEnabled
+			&& Context->MotorStrCache.Big >= Context->Configuration.RumbleSettings.ForcedSM.BMThresholdValue
+			)
+		{
+			SmallValue = 1;
+		}
+
+	}
+
+
+	// Big Motor Strength Rescale
+	if (Context->Configuration.RumbleSettings.BMStrRescale.Enabled && LargeValue > 0) {
+		LargeValue = 
+			Context->Configuration.RumbleSettings.BMStrRescale.ConstA * LargeValue
+			+ Context->Configuration.RumbleSettings.BMStrRescale.ConstB;
+	}
+
+
 	switch (Context->ConnectionType)
 	{
 	case DsDeviceConnectionTypeUsb:
@@ -548,7 +602,12 @@ VOID DS3_SET_LARGE_RUMBLE_STRENGTH(
 			(PUCHAR)WdfMemoryGetBuffer(
 				Context->OutputReportMemory,
 				NULL
-			), Value);
+			), (UCHAR)LargeValue);
+		DS3_USB_SET_SMALL_RUMBLE_STRENGTH(
+			(PUCHAR)WdfMemoryGetBuffer(
+				Context->OutputReportMemory,
+				NULL
+			), (UCHAR)SmallValue);
 		break;
 
 	case DsDeviceConnectionTypeBth:
@@ -557,7 +616,13 @@ VOID DS3_SET_LARGE_RUMBLE_STRENGTH(
 			(PUCHAR)WdfMemoryGetBuffer(
 				Context->OutputReportMemory,
 				NULL
-			), Value);
+			), (UCHAR)LargeValue);
+		DS3_BTH_SET_SMALL_RUMBLE_STRENGTH(
+			(PUCHAR)WdfMemoryGetBuffer(
+				Context->OutputReportMemory,
+				NULL
+			), (UCHAR)SmallValue);
 		break;
 	}
+
 }

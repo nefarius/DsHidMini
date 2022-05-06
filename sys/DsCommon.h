@@ -341,6 +341,10 @@ typedef struct _DS_RUMBLE_SETTINGS
 
 		UCHAR MaxValue;
 
+		DOUBLE ConstA;
+
+		DOUBLE ConstB;
+
 	} BMStrRescale;
 
 	struct
@@ -350,6 +354,10 @@ typedef struct _DS_RUMBLE_SETTINGS
 		UCHAR RescaleMinValue;
 
 		UCHAR RescaleMaxValue;
+
+		DOUBLE ConstA;
+
+		DOUBLE ConstB;
 
 	} SMToBMConversion;
 
