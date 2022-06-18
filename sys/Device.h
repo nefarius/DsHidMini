@@ -180,11 +180,6 @@ typedef struct _DS_OUTPUT_REPORT_CACHE
 typedef struct _DEVICE_CONTEXT
 {
 	//
-	// Device instance ID
-	// 
-	WDFMEMORY InstanceId;
-
-	//
 	// VirtualHidMini DMF module
 	// 
 	DMFMODULE DsHidMiniModule;
@@ -227,6 +222,11 @@ typedef struct _DEVICE_CONTEXT
 	// Local device BTH address
 	// 
 	BD_ADDR DeviceAddress;
+
+	//
+	// Local device BTH address as hex string
+	// 
+	CHAR DeviceAddressString[(sizeof(BD_ADDR) * 2) + 1];
 
 	//
 	// Current reported battery status
@@ -280,12 +280,33 @@ typedef struct _DEVICE_CONTEXT
 	//
 	// Event to listen for to hot-reload properties
 	//
-	HANDLE ConfigurationReloadEvent;
+	HANDLE ConfigurationDirectoryWatcherEvent;
 
 	//
 	// Wait handle for hot-reload
 	//
-	HANDLE ConfigurationReloadWaitHandle;
+	HANDLE ConfigurationDirectoryWatcherWaitHandle;
+
+	//
+	// Lock protecting against parallel refreshing of configuration
+	// 
+	WDFWAITLOCK ConfigurationDirectoryWatcherLock;
+
+	struct
+	{
+		//
+		// Cache for last received Small Motor Strength value
+		// 
+		UCHAR Small;
+
+		//
+		// Cache for last received Big Motor Strength value
+		// 
+		UCHAR Big;
+
+	} MotorStrCache;
+
+
 
 } DEVICE_CONTEXT, * PDEVICE_CONTEXT;
 
@@ -369,19 +390,9 @@ DsDevice_ReadProperties(
 );
 
 VOID CALLBACK
-DsDevice_HotRealodEventCallback(
+DsDevice_HotReloadEventCallback(
 	_In_ PVOID   lpParameter,
 	_In_ BOOLEAN TimerOrWaitFired
-);
-
-VOID
-DsDevice_HotReloadConfiguration(
-	PDEVICE_CONTEXT Context
-);
-
-VOID
-DsDevice_ReadConfiguration(
-	WDFDEVICE Device
 );
 
 NTSTATUS

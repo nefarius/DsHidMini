@@ -43,34 +43,4 @@ DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RO_IdentificationData,
 DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RW_HidDeviceMode,
 	0x6d293077, 0xc3d6, 0x4062, 0x95, 0x97, 0xbe, 0x43, 0x89, 0x40, 0x4c, 0x2, 2); // DEVPROP_TYPE_BYTE
 
-// {6D293077-C3D6-4062-9597-BE4389404C02}
-DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RW_IsOutputRateControlEnabled,
-	0x6d293077, 0xc3d6, 0x4062, 0x95, 0x97, 0xbe, 0x43, 0x89, 0x40, 0x4c, 0x2, 3); // DEVPROP_TYPE_BYTE
-
-// {6D293077-C3D6-4062-9597-BE4389404C02}
-DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RW_OutputRateControlPeriodMs,
-	0x6d293077, 0xc3d6, 0x4062, 0x95, 0x97, 0xbe, 0x43, 0x89, 0x40, 0x4c, 0x2, 4); // DEVPROP_TYPE_BYTE
-
-// {6D293077-C3D6-4062-9597-BE4389404C02}
-DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RW_IsOutputDeduplicatorEnabled,
-	0x6d293077, 0xc3d6, 0x4062, 0x95, 0x97, 0xbe, 0x43, 0x89, 0x40, 0x4c, 0x2, 5); // DEVPROP_TYPE_BYTE
-
-// {6D293077-C3D6-4062-9597-BE4389404C02}
-DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RW_WirelessIdleTimeoutPeriodMs,
-	0x6d293077, 0xc3d6, 0x4062, 0x95, 0x97, 0xbe, 0x43, 0x89, 0x40, 0x4c, 0x2, 6); // DEVPROP_TYPE_UINT32
-
-#pragma endregion
-
-#pragma region Hot-reload changeable properties
-
-//
-// Use this category for variable settings which may change during operation
-// Can be changed by applications at any time
-// Driver refreshes value when reload event is triggered
-// 
-
-// {99ACCB6C-D709-49BB-90EE-278B1B564A4B}
-DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_HR_MuteDigitalPressureButtons,
-	0x99accb6c, 0xd709, 0x49bb, 0x90, 0xee, 0x27, 0x8b, 0x1b, 0x56, 0x4a, 0x4b, 2); // DEVPROP_TYPE_BYTE
-
 #pragma endregion

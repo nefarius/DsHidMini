@@ -2,15 +2,15 @@
 
 Module Name:
 
-    driver.c
+	driver.c
 
 Abstract:
 
-    This file contains the driver entry points and callbacks.
+	This file contains the driver entry points and callbacks.
 
 Environment:
 
-    User-mode Driver Framework 2
+	User-mode Driver Framework 2
 
 --*/
 
@@ -23,7 +23,7 @@ unsigned int numInstances = 0;
 /*WPP_INIT_TRACING(); (This comment is necessary for WPP Scanner.)*/
 #pragma code_seg("INIT")
 DMF_DEFAULT_DRIVERENTRY(DriverEntry,
-    dshidminiEvtDriverContextCleanup,
-    dshidminiEvtDeviceAdd,
-    L"DsHidMini")
+	dshidminiEvtDriverContextCleanup,
+	dshidminiEvtDeviceAdd,
+	L"DsHidMini")
 #pragma code_seg()

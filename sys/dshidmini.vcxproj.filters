@@ -26,6 +26,12 @@
     <Filter Include="Header Files\HID">
       <UniqueIdentifier>{bb6a9012-2b03-4289-9c5d-34c81490bfa7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\JSON">
+      <UniqueIdentifier>{6e3fa634-feec-43a8-80b8-95111515cd2a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\JSON">
+      <UniqueIdentifier>{11ab6d80-327b-4b46-9d42-067e3b238a48}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Inf Include="dshidmini.inf">
@@ -153,6 +159,15 @@
     <ClInclude Include="HID\05_XIH_Col1_XInputHID.h">
       <Filter>Header Files\HID</Filter>
     </ClInclude>
+    <ClInclude Include="JSON\cJSON_Utils.h">
+      <Filter>Header Files\JSON</Filter>
+    </ClInclude>
+    <ClInclude Include="JSON\cJSON.h">
+      <Filter>Header Files\JSON</Filter>
+    </ClInclude>
+    <ClInclude Include="Configuration.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Device.c">
@@ -179,10 +194,22 @@
     <ClCompile Include="DsBth.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="JSON\cJSON_Utils.c">
+      <Filter>Source Files\JSON</Filter>
+    </ClCompile>
+    <ClCompile Include="JSON\cJSON.c">
+      <Filter>Source Files\JSON</Filter>
+    </ClCompile>
+    <ClCompile Include="Configuration.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="dshidmini.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="DsHidMini.json" />
   </ItemGroup>
 </Project>

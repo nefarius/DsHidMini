@@ -9,6 +9,7 @@ using Nefarius.DsHidMini.Drivers;
 using Nefarius.DsHidMini.MVVM;
 using Nefarius.DsHidMini.Util;
 using Nefarius.DsHidMini.Util.App;
+using Nefarius.Utilities.DeviceManagement.PnP;
 using MessageBox = AdonisUI.Controls.MessageBox;
 using MessageBoxImage = AdonisUI.Controls.MessageBoxImage;
 using MessageBoxResult = AdonisUI.Controls.MessageBoxResult;
@@ -80,7 +81,7 @@ namespace Nefarius.DsHidMini
 
             var instance = 0;
             while (Devcon.Find(DsHidMiniDriver.DeviceInterfaceGuid, out var path, out var instanceId, instance++))
-                _vm.Devices.Add(new DeviceViewModel(Device.GetDeviceByInstanceId(instanceId)));
+                _vm.Devices.Add(new DeviceViewModel(PnPDevice.GetDeviceByInstanceId(instanceId)));
 
             _listener.DeviceArrived += ListenerOnDeviceArrived;
             _listener.DeviceRemoved += ListenerOnDeviceRemoved;
@@ -98,7 +99,7 @@ namespace Nefarius.DsHidMini
 
             var instance = 0;
             while (Devcon.Find(DsHidMiniDriver.DeviceInterfaceGuid, out var path, out var instanceId, instance++))
-                _vm.Devices.Add(new DeviceViewModel(Device.GetDeviceByInstanceId(instanceId)));
+                _vm.Devices.Add(new DeviceViewModel(PnPDevice.GetDeviceByInstanceId(instanceId)));
         }
 
         /// <summary>
@@ -111,7 +112,7 @@ namespace Nefarius.DsHidMini
 
             var instance = 0;
             while (Devcon.Find(DsHidMiniDriver.DeviceInterfaceGuid, out var path, out var instanceId, instance++))
-                _vm.Devices.Add(new DeviceViewModel(Device.GetDeviceByInstanceId(instanceId)));
+                _vm.Devices.Add(new DeviceViewModel(PnPDevice.GetDeviceByInstanceId(instanceId)));
         }
 
         protected override void OnClosing(CancelEventArgs e)

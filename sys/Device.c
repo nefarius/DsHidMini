@@ -1,4 +1,3 @@
-
 #include "Driver.h"
 #include "Device.tmh"
 #include <DmfModule.h>
@@ -29,7 +28,7 @@ dshidminiEvtDeviceAdd(
 	WDFQUEUE						queue;
 	WDF_IO_QUEUE_CONFIG				queueConfig;
 	BOOLEAN ret;
-	
+
 
 	UNREFERENCED_PARAMETER(Driver);
 
@@ -46,8 +45,8 @@ dshidminiEvtDeviceAdd(
 	{
 		pnpPowerCallbacks.EvtDeviceSelfManagedIoInit = DsHidMini_EvtWdfDeviceSelfManagedIoInit;
 		pnpPowerCallbacks.EvtDeviceSelfManagedIoSuspend = DsHidMini_EvtWdfDeviceSelfManagedIoSuspend;
-	}	
-	
+	}
+
 	pnpPowerCallbacks.EvtDevicePrepareHardware = DsHidMini_EvtDevicePrepareHardware;
 	pnpPowerCallbacks.EvtDeviceD0Entry = DsHidMini_EvtDeviceD0Entry;
 	pnpPowerCallbacks.EvtDeviceD0Exit = DsHidMini_EvtDeviceD0Exit;
@@ -94,8 +93,7 @@ dshidminiEvtDeviceAdd(
 		//
 		// Read device properties
 		// 	
-		status = DsDevice_ReadProperties(device);
-		if (!NT_SUCCESS(status))
+		if (!NT_SUCCESS(status = DsDevice_ReadProperties(device)))
 		{
 			break;
 		}
@@ -105,8 +103,7 @@ dshidminiEvtDeviceAdd(
 		//
 		// Initialize context
 		// 
-		status = DsDevice_InitContext(device);
-		if (!NT_SUCCESS(status))
+		if (!NT_SUCCESS(status = DsDevice_InitContext(device)))
 		{
 			TraceError(
 				TRACE_DEVICE,
@@ -127,13 +124,12 @@ dshidminiEvtDeviceAdd(
 			queueConfig.EvtIoDeviceControl = DSHM_EvtWdfIoQueueIoDeviceControl;
 			DMF_DmfDeviceInitHookQueueConfig(dmfDeviceInit, &queueConfig);
 
-			status = WdfIoQueueCreate(
+			if (!NT_SUCCESS(status = WdfIoQueueCreate(
 				device,
 				&queueConfig,
 				WDF_NO_OBJECT_ATTRIBUTES,
 				&queue
-			);
-			if (!NT_SUCCESS(status))
+			)))
 			{
 				TraceError(
 					TRACE_DEVICE,
@@ -143,17 +139,16 @@ dshidminiEvtDeviceAdd(
 				break;
 			}
 		}
-		
+
 		//
 		// Expose interface for applications to find us
 		// 
 
-		status = WdfDeviceCreateDeviceInterface(
+		if (!NT_SUCCESS(status = WdfDeviceCreateDeviceInterface(
 			device,
 			&GUID_DEVINTERFACE_DSHIDMINI,
 			NULL
-		);
-		if (!NT_SUCCESS(status))
+		)))
 		{
 			TraceError(
 				TRACE_DEVICE,
@@ -171,14 +166,14 @@ dshidminiEvtDeviceAdd(
 			&dmfCallbacks
 		);
 
-		status = DMF_ModulesCreate(
+		if (!NT_SUCCESS(status = DMF_ModulesCreate(
 			device,
 			&dmfDeviceInit
-		);
-		if (!NT_SUCCESS(status))
+		)))
 		{
 			break;
 		}
+
 	} while (FALSE);
 
 	if (dmfDeviceInit != NULL)
@@ -207,7 +202,7 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 
 	FuncEntry(TRACE_DEVICE);
-	
+
 	do
 	{
 		//
@@ -229,7 +224,7 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 			);
 			break;
 		}
-		
+
 		//
 		// Early device type detection, using enumerator name
 		// 
@@ -242,38 +237,6 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 			pDevCtx->ConnectionType = DsDeviceConnectionTypeBth;
 		}
 
-		WDF_DEVICE_PROPERTY_DATA_INIT(&devProp, &DEVPKEY_Device_InstanceId);
-		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
-		attributes.ParentObject = Device;
-
-		//
-		// Query device instance string for configuration
-		// TODO: deprecated
-		// 
-		status = WdfDeviceAllocAndQueryPropertyEx(
-			Device,
-			&devProp,
-			NonPagedPoolNx,
-			&attributes,
-			&pDevCtx->InstanceId,
-			&propType
-		);
-		if (!NT_SUCCESS(status))
-		{
-			TraceError(
-				TRACE_DEVICE,
-				"WdfDeviceAllocAndQueryPropertyEx failed with status %!STATUS!",
-				status
-			);
-			break;
-		}
-
-		TraceVerbose(
-			TRACE_DEVICE,
-			"DEVPKEY_Device_InstanceId: %ws",
-			WdfMemoryGetBuffer(pDevCtx->InstanceId, NULL)
-		);
-		
 		//
 		// Fetch Bluetooth-specific properties
 		// 
@@ -376,150 +339,14 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 			TraceVerbose(TRACE_DEVICE, "[BTH] PID: 0x%04X", pDevCtx->ProductId);
 
 			DsDevice_RegisterBthDisconnectListener(pDevCtx);
-			
+
 			DsDevice_RegisterHotReloadListener(pDevCtx);
 		}
 	} while (FALSE);
 
 	FuncExit(TRACE_DEVICE, "status=%!STATUS!", status);
-	
+
 	return status;
-}
-
-//
-// Gets invoked when the hot-reload event got triggered from somewhere
-// 
-VOID CALLBACK 
-DsDevice_HotRealodEventCallback(
-	_In_ PVOID   lpParameter,
-	_In_ BOOLEAN TimerOrWaitFired
-) 
-{
-	PDEVICE_CONTEXT pDevCtx = (PDEVICE_CONTEXT)lpParameter;
-	UNREFERENCED_PARAMETER(TimerOrWaitFired);
-
-	DsDevice_HotReloadConfiguration(pDevCtx);
-}
-
-//
-// Read device properties which can be refreshed during runtime
-//
-VOID DsDevice_HotReloadConfiguration(PDEVICE_CONTEXT Context)
-{
-	WDF_DEVICE_PROPERTY_DATA propData;
-	DEVPROPTYPE propType;
-	ULONG requiredSize = 0;
-	WDFDEVICE device = WdfObjectContextGetObject(Context);
-
-	TraceVerbose(
-		TRACE_DEVICE,
-		"Hot-reload triggered"
-	);
-
-	WDF_DEVICE_PROPERTY_DATA_INIT(&propData, &DEVPKEY_DsHidMini_HR_MuteDigitalPressureButtons);
-
-	(void)WdfDeviceQueryPropertyEx(
-		device,
-		&propData,
-		sizeof(UCHAR),
-		&Context->Configuration.MuteDigitalPressureButtons,
-		&requiredSize,
-		&propType
-	);
-}
-
-//
-// Reads variable settings properties. Keep in sync with <dshmguid.h> and <dshidmini.inf>
-// 
-VOID DsDevice_ReadConfiguration(WDFDEVICE Device)
-{
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
-	WDF_DEVICE_PROPERTY_DATA propertyData;
-	ULONG requiredSize = 0;
-	DEVPROPTYPE propertyType;
-
-	FuncEntry(TRACE_DEVICE);
-	
-	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_HidDeviceMode);
-
-	(void)WdfDeviceQueryPropertyEx(
-		Device,
-		&propertyData,
-		sizeof(UCHAR),
-		&pDevCtx->Configuration.HidDeviceMode,
-		&requiredSize,
-		&propertyType
-	);
-
-	TraceVerbose(TRACE_DEVICE, "[COM] HidDeviceMode: 0x%02X",
-		pDevCtx->Configuration.HidDeviceMode);
-
-	
-	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_IsOutputRateControlEnabled);
-
-	(void)WdfDeviceQueryPropertyEx(
-		Device,
-		&propertyData,
-		sizeof(UCHAR),
-		&pDevCtx->Configuration.IsOutputRateControlEnabled,
-		&requiredSize,
-		&propertyType
-	);
-
-	TraceVerbose(TRACE_DEVICE, "[COM] IsOutputRateControlEnabled: %d",
-		pDevCtx->Configuration.IsOutputRateControlEnabled);
-
-	
-	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_OutputRateControlPeriodMs);
-
-	(void)WdfDeviceQueryPropertyEx(
-		Device,
-		&propertyData,
-		sizeof(UCHAR),
-		&pDevCtx->Configuration.OutputRateControlPeriodMs,
-		&requiredSize,
-		&propertyType
-	);
-
-	TraceVerbose(TRACE_DEVICE, "[COM] OutputRateControlPeriodMs: %d",
-		pDevCtx->Configuration.OutputRateControlPeriodMs);
-
-	
-	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_IsOutputDeduplicatorEnabled);
-
-	(void)WdfDeviceQueryPropertyEx(
-		Device,
-		&propertyData,
-		sizeof(UCHAR),
-		&pDevCtx->Configuration.IsOutputDeduplicatorEnabled,
-		&requiredSize,
-		&propertyType
-	);
-
-	TraceVerbose(TRACE_DEVICE, "[COM] IsOutputDeduplicatorEnabled: %d",
-		pDevCtx->Configuration.IsOutputDeduplicatorEnabled);
-
-
-	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_WirelessIdleTimeoutPeriodMs);
-
-	(void)WdfDeviceQueryPropertyEx(
-		Device,
-		&propertyData,
-		sizeof(ULONG),
-		&pDevCtx->Configuration.WirelessIdleTimeoutPeriodMs,
-		&requiredSize,
-		&propertyType
-	);
-
-	TraceVerbose(TRACE_DEVICE, "[COM] WirelessIdleTimeoutPeriodMs: %d",
-		pDevCtx->Configuration.WirelessIdleTimeoutPeriodMs);
-
-	//
-	// Read hot-reloadable properties
-	//
-	DsDevice_HotReloadConfiguration(pDevCtx);
-
-	FuncExitNoReturn(TRACE_DEVICE);
 }
 
 //
@@ -535,9 +362,9 @@ DsDevice_InitContext(
 	WDF_OBJECT_ATTRIBUTES attributes;
 	PUCHAR outReportBuffer = NULL;
 	WDF_TIMER_CONFIG timerCfg;
-	
+
 	FuncEntry(TRACE_DEVICE);
-		
+
 	switch (pDevCtx->ConnectionType)
 	{
 	case DsDeviceConnectionTypeUsb:
@@ -547,22 +374,22 @@ DsDevice_InitContext(
 		// 
 		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
 		attributes.ParentObject = Device;
-		status = WdfMemoryCreate(
+
+		if (!NT_SUCCESS(status = WdfMemoryCreate(
 			&attributes,
 			NonPagedPoolNx,
 			DS3_POOL_TAG,
 			DS3_USB_HID_OUTPUT_REPORT_SIZE,
 			&pDevCtx->OutputReportMemory,
 			(PVOID*)&outReportBuffer
-		);
-		if (!NT_SUCCESS(status))
+		)))
 		{
 			TraceError(
 				TRACE_DEVICE,
 				"WdfMemoryCreate failed with %!STATUS!",
 				status
 			);
-			
+
 			break;
 		}
 
@@ -584,22 +411,22 @@ DsDevice_InitContext(
 		// 
 		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
 		attributes.ParentObject = Device;
-		status = WdfMemoryCreate(
+
+		if (!NT_SUCCESS(status = WdfMemoryCreate(
 			&attributes,
 			NonPagedPoolNx,
 			DS3_POOL_TAG,
 			DS3_USB_HID_OUTPUT_REPORT_SIZE,
 			&pDevCtx->OutputReportMemory,
 			(PVOID*)&outReportBuffer
-		);
-		if (!NT_SUCCESS(status))
+		)))
 		{
 			TraceError(
 				TRACE_DEVICE,
 				"WdfMemoryCreate failed with %!STATUS!",
 				status
 			);
-			
+
 			break;
 		}
 
@@ -629,19 +456,18 @@ DsDevice_InitContext(
 			DsBth_EvtControlWriteTimerFunc
 		);
 
-		status = WdfTimerCreate(
+		if (!NT_SUCCESS(status = WdfTimerCreate(
 			&timerCfg,
 			&attributes,
 			&pDevCtx->Connection.Bth.Timers.HidOutputReport
-		);
-		if (!NT_SUCCESS(status))
+		)))
 		{
 			TraceError(
 				TRACE_DSBTH,
 				"WdfTimerCreate (HidOutputReport) failed with status %!STATUS!",
 				status
 			);
-			
+
 			break;
 		}
 
@@ -654,7 +480,7 @@ DsDevice_InitContext(
 		{
 			break;
 		}
-		
+
 		//
 		// Create lock
 		// 
@@ -662,11 +488,10 @@ DsDevice_InitContext(
 		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
 		attributes.ParentObject = Device;
 
-		status = WdfWaitLockCreate(
+		if (!NT_SUCCESS(status = WdfWaitLockCreate(
 			&attributes,
 			&pDevCtx->OutputReport.Lock
-		);
-		if (!NT_SUCCESS(status))
+		)))
 		{
 			TraceError(
 				TRACE_DEVICE,
@@ -683,11 +508,30 @@ DsDevice_InitContext(
 		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
 		attributes.ParentObject = Device;
 
-		status = WdfWaitLockCreate(
+		if (!NT_SUCCESS(status = WdfWaitLockCreate(
 			&attributes,
 			&pDevCtx->OutputReport.Cache.Lock
-		);
-		if (!NT_SUCCESS(status))
+		)))
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"WdfWaitLockCreate failed with status %!STATUS!",
+				status
+			);
+			break;
+		}
+
+		//
+		// Create lock
+		// 
+
+		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
+		attributes.ParentObject = Device;
+
+		if (!NT_SUCCESS(status = WdfWaitLockCreate(
+			&attributes,
+			&pDevCtx->ConfigurationDirectoryWatcherLock
+		)))
 		{
 			TraceError(
 				TRACE_DEVICE,
@@ -709,12 +553,11 @@ DsDevice_InitContext(
 			DSHM_OutputReportDelayTimerElapsed
 		);
 
-		status = WdfTimerCreate(
+		if (!NT_SUCCESS(status = WdfTimerCreate(
 			&timerCfg,
 			&attributes,
 			&pDevCtx->OutputReport.Cache.SendDelayTimer
-		);
-		if (!NT_SUCCESS(status))
+		)))
 		{
 			TraceError(
 				TRACE_DEVICE,
@@ -723,11 +566,11 @@ DsDevice_InitContext(
 			);
 			break;
 		}
-	}
-	while (FALSE);
-	
+
+	} while (FALSE);
+
 	FuncExit(TRACE_DEVICE, "status=%!STATUS!", status);
-	
+
 	return status;
 }
 
@@ -736,7 +579,7 @@ DsDevice_InitContext(
 // 
 NTSTATUS
 DsDevice_IsUsbDevice(
-	PWDFDEVICE_INIT DeviceInit, 
+	PWDFDEVICE_INIT DeviceInit,
 	PBOOLEAN Result
 )
 {
@@ -773,6 +616,63 @@ DsDevice_IsUsbDevice(
 	return status;
 }
 
+//
+// Gets invoked when the hot-reload event got triggered from somewhere
+// 
+VOID CALLBACK
+DsDevice_HotReloadEventCallback(
+	_In_ PVOID   lpParameter,
+	_In_ BOOLEAN TimerOrWaitFired
+)
+{
+	FuncEntry(TRACE_DEVICE);
+
+	LONGLONG timeout = 0;
+	PDEVICE_CONTEXT pDevCtx = (PDEVICE_CONTEXT)lpParameter;
+	UNREFERENCED_PARAMETER(TimerOrWaitFired);
+
+	FindNextChangeNotification(pDevCtx->ConfigurationDirectoryWatcherEvent);
+
+	do
+	{
+		//
+		// Protect against parallel reads
+		// 
+		if (WdfWaitLockAcquire(pDevCtx->ConfigurationDirectoryWatcherLock, &timeout) != STATUS_SUCCESS)
+		{
+			TraceVerbose(
+				TRACE_DEVICE,
+				"Couldn't acquire lock, exiting"
+			);
+
+			break;
+		}
+
+		/*
+		 * When this event is fired, the file might still be locked by the application
+		 * that's written the change to it, so we simply wait a bit before attempting a read
+		 */
+		Sleep(100);
+
+		TraceVerbose(
+			TRACE_DEVICE,
+			"Reloading configuration"
+		);
+
+		ConfigLoadForDevice(pDevCtx, TRUE);
+
+		TraceVerbose(
+			TRACE_DEVICE,
+			"Reloaded configuration"
+		);
+
+		WdfWaitLockRelease(pDevCtx->ConfigurationDirectoryWatcherLock);
+
+	} while (FALSE);
+
+	FuncExitNoReturn(TRACE_DEVICE);
+}
+
 /**
  * Registers an event listener to trigger refreshing runtime properties
  *
@@ -783,105 +683,71 @@ DsDevice_IsUsbDevice(
  */
 void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
 {
-	WCHAR eventName[49];
-	WCHAR deviceAddress[13];
+	CHAR programDataPath[MAX_PATH];
+	CHAR configPath[MAX_PATH];
 
 	FuncEntry(TRACE_DEVICE);
 
-	switch (Context->ConnectionType)
+	do
 	{
-	case DsDeviceConnectionTypeUsb:
+		if (Context->ConfigurationDirectoryWatcherEvent)
+		{
+			FindCloseChangeNotification(Context->ConfigurationDirectoryWatcherEvent);
+			Context->ConfigurationDirectoryWatcherEvent = NULL;
+		}
 
-		swprintf_s(
-			deviceAddress,
-			ARRAYSIZE(deviceAddress),
-			L"%02X%02X%02X%02X%02X%02X",
-			Context->DeviceAddress.Address[0],
-			Context->DeviceAddress.Address[1],
-			Context->DeviceAddress.Address[2],
-			Context->DeviceAddress.Address[3],
-			Context->DeviceAddress.Address[4],
-			Context->DeviceAddress.Address[5]
+		if (GetEnvironmentVariableA(
+			CONFIG_ENV_VAR_NAME,
+			programDataPath,
+			MAX_PATH
+		) == 0)
+		{
+			break;
+		}
+
+		if (sprintf_s(
+			configPath,
+			MAX_PATH / sizeof(WCHAR),
+			"%s\\%s",
+			programDataPath,
+			CONFIG_SUB_DIR_NAME
+		) == -1)
+		{
+			break;
+		}
+
+		Context->ConfigurationDirectoryWatcherEvent = FindFirstChangeNotificationA(
+			configPath,
+			FALSE,
+			FILE_NOTIFY_CHANGE_LAST_WRITE
 		);
 
-		break;
-	case DsDeviceConnectionTypeBth:
+		if (Context->ConfigurationDirectoryWatcherEvent == NULL)
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"Failed to create reload event"
+			);
+			break;
+		}
 
-		swprintf_s(
-			deviceAddress,
-			ARRAYSIZE(deviceAddress),
-			L"%012llX",
-			*(PULONGLONG)&Context->DeviceAddress
+		const BOOL ret = RegisterWaitForSingleObject(
+			&Context->ConfigurationDirectoryWatcherWaitHandle,
+			Context->ConfigurationDirectoryWatcherEvent,
+			DsDevice_HotReloadEventCallback,
+			Context,
+			INFINITE,
+			WT_EXECUTELONGFUNCTION
 		);
 
-		break;
-	}
-
-	//
-	// Register global event to listen for changes on
-	//
-
-	swprintf_s(
-		eventName,
-		ARRAYSIZE(eventName),
-		L"Global\\DsHidMiniConfigHotReloadEvent%ls",
-		deviceAddress
-	);
-
-	TraceVerbose(
-		TRACE_DEVICE,
-		"Configuration reload event name: %ls",
-		eventName
-	);
-
-	TCHAR* szSD = TEXT("D:(A;OICI;GA;;;BA)(A;OICI;GA;;;SY)");
-	SECURITY_ATTRIBUTES sa;
-	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-	sa.bInheritHandle = FALSE;
-	ConvertStringSecurityDescriptorToSecurityDescriptor(
-		szSD,
-		SDDL_REVISION_1,
-		&((&sa)->lpSecurityDescriptor),
-		NULL
-	);
-
-	if (Context->ConfigurationReloadEvent)
-	{
-		CloseHandle(Context->ConfigurationReloadEvent);
-		Context->ConfigurationReloadEvent = NULL;
-	}
-
-	Context->ConfigurationReloadEvent = CreateEventW(
-		&sa,
-		FALSE,
-		FALSE,
-		eventName
-	);
-
-	if (Context->ConfigurationReloadEvent == NULL)
-	{
-		TraceError(
-			TRACE_DEVICE,
-			"Failed to create reload event"
-		);
-	}
-
-	const BOOL ret = RegisterWaitForSingleObject(
-		&Context->ConfigurationReloadWaitHandle,
-		Context->ConfigurationReloadEvent,
-		DsDevice_HotRealodEventCallback,
-		Context,
-		INFINITE,
-		WT_EXECUTELONGFUNCTION
-	);
-
-	if (!ret)
-	{
-		TraceError(
-			TRACE_DEVICE,
-			"Failed to register wait for reload event"
-		);
-	}
+		if (!ret)
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"Failed to register wait for reload event"
+			);
+		}
+	} while (FALSE);
 
 	FuncExitNoReturn(TRACE_DEVICE);
 }
@@ -907,7 +773,7 @@ void DsDevice_RegisterBthDisconnectListener(PDEVICE_CONTEXT Context)
 		L"%012llX",
 		*(PULONGLONG)&Context->DeviceAddress
 	);
-	
+
 	swprintf_s(
 		dcEventName,
 		ARRAYSIZE(dcEventName),
@@ -1032,10 +898,17 @@ void DsDevice_InvokeLocalBthDisconnect(PDEVICE_CONTEXT Context)
 	}
 	else
 	{
+		DWORD error = GetLastError();
+
+		if (error == ERROR_NOT_FOUND)
+		{
+			return;
+		}
+
 		TraceError(
 			TRACE_DSUSB,
 			"GetLastError: %d",
-			GetLastError()
+			error
 		);
 	}
 }
@@ -1057,7 +930,7 @@ DmfDeviceModulesAdd(
 	DMF_CONFIG_ThreadedBufferQueue dmfBufferCfg;
 	DMF_CONFIG_DefaultTarget bthReaderCfg;
 	DMF_CONFIG_DefaultTarget bthWriterCfg;
-	
+
 	PAGED_CODE();
 
 	FuncEntry(TRACE_DEVICE);
@@ -1108,7 +981,7 @@ DmfDeviceModulesAdd(
 			&moduleAttributes
 		);
 		moduleAttributes.PassiveLevel = TRUE;
-		
+
 		bthReaderCfg.ContinuousRequestTargetModuleConfig.BufferCountOutput = 1;
 		bthReaderCfg.ContinuousRequestTargetModuleConfig.BufferOutputSize = BTHPS3_SIXAXIS_HID_INPUT_REPORT_SIZE;
 		bthReaderCfg.ContinuousRequestTargetModuleConfig.ContinuousRequestCount = 1;
@@ -1118,7 +991,7 @@ DmfDeviceModulesAdd(
 		bthReaderCfg.ContinuousRequestTargetModuleConfig.EvtContinuousRequestTargetBufferOutput = DsBth_HidInterruptReadContinuousRequestCompleted;
 		bthReaderCfg.ContinuousRequestTargetModuleConfig.RequestType = ContinuousRequestTarget_RequestType_Ioctl;
 		bthReaderCfg.ContinuousRequestTargetModuleConfig.ContinuousRequestTargetMode = ContinuousRequestTarget_Mode_Manual;
-		
+
 		DMF_DmfModuleAdd(
 			DmfModuleInit,
 			&moduleAttributes,
@@ -1126,7 +999,7 @@ DmfDeviceModulesAdd(
 			&pDevCtx->Connection.Bth.HidInterrupt.InputStreamerModule
 		);
 
-		
+
 		DMF_CONFIG_DefaultTarget_AND_ATTRIBUTES_INIT(
 			&bthWriterCfg,
 			&moduleAttributes
@@ -1150,11 +1023,11 @@ DmfDeviceModulesAdd(
 			&pDevCtx->Connection.Bth.HidControl.OutputWriterModule
 		);
 	}
-	
+
 	//
 	// Virtual HID Mini Module
 	// 
-	
+
 	DMF_CONFIG_DsHidMini_AND_ATTRIBUTES_INIT(
 		&dsHidMiniCfg,
 		&moduleAttributes

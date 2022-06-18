@@ -42,7 +42,7 @@ DMF_DsHidMini_Create(
 	DMF_MODULE_DESCRIPTOR dsHidMiniDesc;
 	DMF_CALLBACKS_DMF dsHidMiniCallbacks;
 	PDEVICE_CONTEXT pDevCtx;
-		
+
 
 	PAGED_CODE();
 
@@ -85,8 +85,7 @@ DMF_DsHidMini_Create(
 			);
 			break;
 		}
-	}
-	while (FALSE);
+	} while (FALSE);
 
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 
@@ -114,7 +113,7 @@ DMF_DsHidMini_ChildModulesAdd(
 	DMF_CONFIG_VirtualHidMini vHidCfg;
 	PDEVICE_CONTEXT pDevCtx;
 
-	
+
 	PAGED_CODE();
 
 	UNREFERENCED_PARAMETER(DmfParentModuleAttributes);
@@ -171,7 +170,7 @@ DMF_DsHidMini_Open(
 	DMF_CONTEXT_DsHidMini* moduleContext;
 	DMF_CONFIG_VirtualHidMini* pHidCfg;
 	PDEVICE_CONTEXT pDevCtx;
-	
+
 	UNREFERENCED_PARAMETER(DmfModule);
 
 	PAGED_CODE();
@@ -183,9 +182,10 @@ DMF_DsHidMini_Open(
 	pHidCfg = DMF_ModuleConfigGet(moduleContext->DmfModuleVirtualHidMini);
 
 	//
-	// Update settings queried in PrepareHardware
+	// Load settings
 	// 
-	
+	ConfigLoadForDevice(pDevCtx, FALSE);
+
 	pHidCfg->VendorId = pDevCtx->VendorId;
 	pHidCfg->ProductId = pDevCtx->ProductId;
 	pHidCfg->VersionNumber = pDevCtx->VersionNumber;
@@ -195,7 +195,7 @@ DMF_DsHidMini_Open(
 
 	switch (pDevCtx->Configuration.HidDeviceMode)
 	{
-	case DsHidMiniDeviceModeSingle:
+	case DsHidMiniDeviceModeSDF:
 
 		pHidCfg->HidDescriptor = &G_Ds3HidDescriptor_Single_Mode;
 		pHidCfg->HidDescriptorLength = sizeof(G_Ds3HidDescriptor_Single_Mode);
@@ -203,7 +203,7 @@ DMF_DsHidMini_Open(
 		pHidCfg->HidReportDescriptorLength = G_Ds3HidDescriptor_Single_Mode.DescriptorList[0].wReportLength;
 
 		break;
-	case DsHidMiniDeviceModeMulti:
+	case DsHidMiniDeviceModeGPJ:
 
 		pHidCfg->HidDescriptor = &G_Ds3HidDescriptor_Split_Mode;
 		pHidCfg->HidDescriptorLength = sizeof(G_Ds3HidDescriptor_Split_Mode);
@@ -237,7 +237,7 @@ DMF_DsHidMini_Open(
 		pHidCfg->HidDeviceAttributes.VendorID = pDevCtx->VendorId;
 		pHidCfg->HidDeviceAttributes.ProductID = pDevCtx->ProductId;
 		pHidCfg->HidDeviceAttributes.VersionNumber = pDevCtx->VersionNumber;
-		
+
 		break;
 	case DsHidMiniDeviceModeXInputHIDCompatible:
 
@@ -255,14 +255,19 @@ DMF_DsHidMini_Open(
 		pHidCfg->HidDeviceAttributes.VendorID = pDevCtx->VendorId;
 		pHidCfg->HidDeviceAttributes.ProductID = pDevCtx->ProductId;
 		pHidCfg->HidDeviceAttributes.VersionNumber = pDevCtx->VersionNumber;
-		
+
 		break;
 	default:
+
+		status = STATUS_INVALID_PARAMETER;
+
 		TraceError(
 			TRACE_DSHIDMINIDRV,
 			"Unknown HID Device Mode: 0x%02X", pDevCtx->Configuration.HidDeviceMode);
+
+		break;
 	}
-	
+
 	//
 	// Increase pad instance count (TODO: unused)
 	// 
@@ -283,19 +288,34 @@ DMF_DsHidMini_Close(
 	_In_ DMFMODULE DmfModule
 )
 {
+	WDFDEVICE device;
 	PDEVICE_CONTEXT pDevCtx;
+
 
 	PAGED_CODE();
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
-	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
+	device = DMF_ParentDeviceGet(DmfModule);
+	pDevCtx = DeviceGetContext(device);
 
 	//
-	// TODO: free resources if necessary, save configuration
+	// Write back currently used mode as other components rely on it
 	// 
-	
-	UNREFERENCED_PARAMETER(pDevCtx);
+
+	WDF_DEVICE_PROPERTY_DATA propertyData;
+
+	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_HidDeviceMode);
+	propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+	propertyData.Lcid = LOCALE_NEUTRAL;
+
+	(void)WdfDeviceAssignProperty(
+		device,
+		&propertyData,
+		DEVPROP_TYPE_BYTE,
+		sizeof(BYTE),
+		&pDevCtx->Configuration.HidDeviceMode
+	);
 
 	//
 	// Decrease pad instance count
@@ -320,7 +340,7 @@ DsHidMini_GetInputReport(
 )
 {
 	NTSTATUS status = STATUS_NOT_IMPLEMENTED;
-	
+
 	UNREFERENCED_PARAMETER(DmfModule);
 	UNREFERENCED_PARAMETER(Request);
 	UNREFERENCED_PARAMETER(Packet);
@@ -331,7 +351,7 @@ DsHidMini_GetInputReport(
 	//
 	// NOTE: not really used by any modern game
 	// 
-	
+
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 
 	return status;
@@ -365,9 +385,9 @@ DsHidMini_RetrieveNextInputReport(
 
 	switch (pDevCtx->Configuration.HidDeviceMode)
 	{
-	case DsHidMiniDeviceModeSingle:
-	case DsHidMiniDeviceModeMulti:
-		*BufferSize = DS3_SPLIT_SINGLE_HID_INPUT_REPORT_SIZE;
+	case DsHidMiniDeviceModeSDF:
+	case DsHidMiniDeviceModeGPJ:
+		*BufferSize = DS3_SDF_GPJ_HID_INPUT_REPORT_SIZE;
 		break;
 	case DsHidMiniDeviceModeSixaxisCompatible:
 		*BufferSize = SIXAXIS_HID_INPUT_REPORT_SIZE;
@@ -416,40 +436,40 @@ DsHidMini_GetFeature(
 
 	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
-	
+
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
 #ifdef DSHM_FEATURE_FFB
 
 	PFFB_ATTRIBUTES pEntry = NULL;
-	
+
 	PPID_POOL_REPORT pPool;
 	PPID_BLOCK_LOAD_REPORT pBlockLoad;
-	
+
 	switch (Packet->reportId)
 	{
 	case PID_POOL_REPORT_ID:
 
 		TraceVerbose(TRACE_DSHIDMINIDRV, "!! PID_POOL_REPORT_ID");
-		
+
 		pPool = (PPID_POOL_REPORT)Packet->reportBuffer;
 
 		/*
 		 * Static information about the fictitious device memory pool.
-		 * Since we manage everything in software, size constraints 
+		 * Since we manage everything in software, size constraints
 		 * are not an issue and we can report the maximum values.
 		 */
-		
+
 		pPool->ReportId = PID_POOL_REPORT_ID;
 		pPool->RamPoolSize = 65535;
 		pPool->SimultaneousEffectsMax = MAX_EFFECT_BLOCKS;
 		pPool->DeviceManagedPool = 1;
 		pPool->SharedParameterBlocks = 0;
-				
+
 		*ReportSize = sizeof(PID_POOL_REPORT) - 1;
 
 		status = STATUS_SUCCESS;
-		
+
 		break;
 
 	case PID_BLOCK_LOAD_REPORT_ID:
@@ -477,14 +497,14 @@ DsHidMini_GetFeature(
 
 		TraceVerbose(TRACE_DSHIDMINIDRV, "!! PID_BLOCK_LOAD_REPORT_ID (EffectBlockIndex: %d)",
 			pBlockLoad->EffectBlockIndex);
-		
+
 		*ReportSize = sizeof(PID_BLOCK_LOAD_REPORT) - 1;
 
 		status = STATUS_SUCCESS;
-		
+
 		break;
 	}
-	
+
 #endif
 
 	if (Packet->reportId == 0x00 && pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
@@ -513,7 +533,7 @@ DsHidMini_GetFeature(
 		Packet->reportId == 0x12 // Requests device MAC address
 		&& Packet->reportBufferLen == 64
 		&& pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeDS4WindowsCompatible
-	)
+		)
 	{
 		RtlCopyMemory(
 			&Packet->reportBuffer[1],
@@ -533,12 +553,12 @@ DsHidMini_GetFeature(
 
 		status = STATUS_SUCCESS;
 	}
-	
+
 	if (!NT_SUCCESS(status))
 	{
 		TraceEvents(
 			TRACE_LEVEL_WARNING,
-			TRACE_DSHIDMINIDRV, 
+			TRACE_DSHIDMINIDRV,
 			"%!FUNC! Not implemented"
 		);
 
@@ -549,7 +569,7 @@ DsHidMini_GetFeature(
 			Packet->reportBufferLen
 		);
 	}
-	
+
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 
 	return status;
@@ -581,9 +601,9 @@ DsHidMini_SetFeature(
 #ifdef DSHM_FEATURE_FFB
 
 	PFFB_ATTRIBUTES pEntry = NULL;
-	
+
 	PPID_NEW_EFFECT_REPORT pNewEffect;
-	
+
 	switch (Packet->reportId)
 	{
 	case PID_NEW_EFFECT_REPORT_ID:
@@ -657,15 +677,15 @@ DsHidMini_SetFeature(
 		}
 
 		*ReportSize = Packet->reportBufferLen;
-		
+
 		break;
 	default:
 		TraceEvents(TRACE_LEVEL_WARNING,
-		            TRACE_DSHIDMINIDRV, "%!FUNC! Not implemented");
+			TRACE_DSHIDMINIDRV, "%!FUNC! Not implemented");
 
 		TraceVerbose(TRACE_DSHIDMINIDRV, "-- Packet->reportId: %d, Packet->reportBufferLen: %d",
-		         Packet->reportId,
-		         Packet->reportBufferLen);
+			Packet->reportId,
+			Packet->reportBufferLen);
 
 		DumpAsHex("-- SET_FEATURE.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
 		break;
@@ -687,7 +707,7 @@ DsHidMini_SetOutputReport(
 )
 {
 	NTSTATUS status = STATUS_NOT_IMPLEMENTED;
-	
+
 	UNREFERENCED_PARAMETER(DmfModule);
 	UNREFERENCED_PARAMETER(Request);
 	UNREFERENCED_PARAMETER(Packet);
@@ -713,7 +733,7 @@ DsHidMini_WriteReport(
 )
 {
 	NTSTATUS status = STATUS_NOT_IMPLEMENTED;
-	
+
 	UNREFERENCED_PARAMETER(Request);
 	UNREFERENCED_PARAMETER(ReportSize);
 
@@ -723,11 +743,11 @@ DsHidMini_WriteReport(
 	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
 	PUCHAR buffer = NULL;
 	size_t bufferSize = 0;
-	
+
 #ifdef DSHM_FEATURE_FFB
-	
+
 	PFFB_ATTRIBUTES pEntry = NULL;
-	
+
 	PPID_DEVICE_CONTROL_REPORT pDeviceControl;
 	PPID_DEVICE_GAIN_REPORT pGain;
 	PPID_SET_CONDITION_REPORT pSetCondition;
@@ -738,7 +758,7 @@ DsHidMini_WriteReport(
 	PPID_BLOCK_FREE_REPORT pBlockFree;
 
 	UCHAR rumbleValue = 0;
-	
+
 	switch (Packet->reportId)
 	{
 	case PID_DEVICE_CONTROL_REPORT_ID:
@@ -760,11 +780,10 @@ DsHidMini_WriteReport(
 			// Fall through
 		case PidDcStopAllEffects:
 			TraceVerbose(TRACE_DSHIDMINIDRV, "!! DC Stop All Effects");
-			DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, 0);
-			DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, 0);
+			DS3_SET_BOTH_RUMBLE_STRENGTH(pDevCtx, 0x00, 0x00);
 
 			(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceForceFeedback);
-			
+
 			break;
 		case PidDcPause:
 			TraceVerbose(TRACE_DSHIDMINIDRV, "!! DC Pause");
@@ -779,7 +798,7 @@ DsHidMini_WriteReport(
 		*ReportSize = Packet->reportBufferLen;
 
 		status = STATUS_SUCCESS;
-		
+
 		break;
 
 	case PID_DEVICE_GAIN_REPORT_ID:
@@ -787,7 +806,7 @@ DsHidMini_WriteReport(
 		pGain = (PPID_DEVICE_GAIN_REPORT)Packet->reportBuffer;
 
 		TraceVerbose(TRACE_DSHIDMINIDRV, "!! PID_DEVICE_GAIN_REPORT, DeviceGain: %d",
-		         pGain->DeviceGain);
+			pGain->DeviceGain);
 
 		*ReportSize = Packet->reportBufferLen;
 
@@ -800,12 +819,12 @@ DsHidMini_WriteReport(
 		pSetCondition = (PPID_SET_CONDITION_REPORT)Packet->reportBuffer;
 
 		TraceVerbose(TRACE_DSHIDMINIDRV, "!! PID_SET_CONDITION_REPORT, EffectBlockIndex: %d",
-		         pSetCondition->EffectBlockIndex);
+			pSetCondition->EffectBlockIndex);
 
 		*ReportSize = Packet->reportBufferLen;
 
 		status = STATUS_SUCCESS;
-		
+
 		break;
 
 	case PID_SET_EFFECT_REPORT_ID:
@@ -813,27 +832,27 @@ DsHidMini_WriteReport(
 		pSetEffect = (PPID_SET_EFFECT_REPORT)Packet->reportBuffer;
 
 		TraceVerbose(TRACE_DSHIDMINIDRV, "!! SET_EFFECT_REPORT, EffectBlockIndex: %d, "
-		         "EffectType: %d, Duration: %d, TriggerRepeatInterval: %d, "
-		         "SamplePeriod: %d, Gain: %d, TriggerButton: %d, AxesEnableX: %d, AxesEnableY: %d, "
-		         "DirectionEnable: %d, DirectionInstance1: %d, DirectionInstance2: %d, StartDelay: %d",
-		         pSetEffect->EffectBlockIndex,
-		         pSetEffect->EffectType,
-		         pSetEffect->Duration,
-		         pSetEffect->TriggerRepeatInterval,
-		         pSetEffect->SamplePeriod,
-		         pSetEffect->Gain,
-		         pSetEffect->TriggerButton,
-		         pSetEffect->AxesEnableX,
-		         pSetEffect->AxesEnableY,
-		         pSetEffect->DirectionEnable,
-		         pSetEffect->DirectionInstance1,
-		         pSetEffect->DirectionInstance2,
-		         pSetEffect->StartDelay);
+			"EffectType: %d, Duration: %d, TriggerRepeatInterval: %d, "
+			"SamplePeriod: %d, Gain: %d, TriggerButton: %d, AxesEnableX: %d, AxesEnableY: %d, "
+			"DirectionEnable: %d, DirectionInstance1: %d, DirectionInstance2: %d, StartDelay: %d",
+			pSetEffect->EffectBlockIndex,
+			pSetEffect->EffectType,
+			pSetEffect->Duration,
+			pSetEffect->TriggerRepeatInterval,
+			pSetEffect->SamplePeriod,
+			pSetEffect->Gain,
+			pSetEffect->TriggerButton,
+			pSetEffect->AxesEnableX,
+			pSetEffect->AxesEnableY,
+			pSetEffect->DirectionEnable,
+			pSetEffect->DirectionInstance1,
+			pSetEffect->DirectionInstance2,
+			pSetEffect->StartDelay);
 
 		*ReportSize = Packet->reportBufferLen;
 
 		status = STATUS_SUCCESS;
-		
+
 		break;
 
 	case PID_SET_PERIODIC_REPORT_ID:
@@ -841,18 +860,18 @@ DsHidMini_WriteReport(
 		pSetPeriodic = (PPID_SET_PERIODIC_REPORT)Packet->reportBuffer;
 
 		TraceVerbose(TRACE_DSHIDMINIDRV, "!! PID_SET_PERIODIC_REPORT, "
-		         "EffectBlockIndex: %d, Magnitude: %d, Offset: %d, Phase: %d, Period: %d",
-		         pSetPeriodic->EffectBlockIndex,
-		         pSetPeriodic->Magnitude,
-		         pSetPeriodic->Offset,
-		         pSetPeriodic->Phase,
-		         pSetPeriodic->Period
+			"EffectBlockIndex: %d, Magnitude: %d, Offset: %d, Phase: %d, Period: %d",
+			pSetPeriodic->EffectBlockIndex,
+			pSetPeriodic->Magnitude,
+			pSetPeriodic->Offset,
+			pSetPeriodic->Phase,
+			pSetPeriodic->Period
 		);
 
 		*ReportSize = Packet->reportBufferLen;
 
 		status = STATUS_SUCCESS;
-		
+
 		break;
 
 	case PID_SET_CONSTANT_FORCE_REPORT_ID:
@@ -860,13 +879,13 @@ DsHidMini_WriteReport(
 		pSetConstant = (PPID_SET_CONSTANT_FORCE_REPORT)Packet->reportBuffer;
 
 		TraceVerbose(TRACE_DSHIDMINIDRV, "!! PID_SET_CONSTANT_FORCE_REPORT, EffectBlockIndex: %d, Magnitude: %d",
-		         pSetConstant->EffectBlockIndex,
-		         pSetConstant->Magnitude);
+			pSetConstant->EffectBlockIndex,
+			pSetConstant->Magnitude);
 
 		rumbleValue = (UCHAR)(pSetConstant->Magnitude / 10000.0f * 255.0f);
 
 		TraceVerbose(TRACE_DSHIDMINIDRV, "!! DS3 Rumble Value: %d",
-		         rumbleValue);
+			rumbleValue);
 
 		if (pSetConstant->EffectBlockIndex % 2 == 0)
 		{
@@ -876,11 +895,11 @@ DsHidMini_WriteReport(
 		{
 			DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, rumbleValue);
 		}
-		
+
 		*ReportSize = Packet->reportBufferLen;
 
 		status = STATUS_SUCCESS;
-		
+
 		break;
 
 	case PID_EFFECT_OPERATION_REPORT_ID:
@@ -888,35 +907,34 @@ DsHidMini_WriteReport(
 		pEffectOperation = (PPID_EFFECT_OPERATION_REPORT)Packet->reportBuffer;
 
 		TraceVerbose(TRACE_DSHIDMINIDRV, "!! PID_EFFECT_OPERATION_REPORT, EffectBlockIndex: %d, "
-		         "EffectOperation: %d, LoopCount: %d",
-		         pEffectOperation->EffectBlockIndex,
-		         pEffectOperation->EffectOperation,
-		         pEffectOperation->LoopCount);
+			"EffectOperation: %d, LoopCount: %d",
+			pEffectOperation->EffectBlockIndex,
+			pEffectOperation->EffectOperation,
+			pEffectOperation->LoopCount);
 
 		switch (pEffectOperation->EffectOperation)
 		{
 		case PidEoStart:
 
 			(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceForceFeedback);
-			
+
 			break;
 
 		case PidEoStop:
 
-			DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, 0);
-			DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, 0);
-			
+			DS3_SET_BOTH_RUMBLE_STRENGTH(pDevCtx, 0x00, 0x00);
+
 			(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceForceFeedback);
-			
+
 			break;
 		default:
 			break;
 		}
-		
+
 		*ReportSize = Packet->reportBufferLen;
 
 		status = STATUS_SUCCESS;
-		
+
 		break;
 
 	case PID_BLOCK_FREE_REPORT_ID:
@@ -924,7 +942,7 @@ DsHidMini_WriteReport(
 		pBlockFree = (PPID_BLOCK_FREE_REPORT)Packet->reportBuffer;
 
 		TraceVerbose(TRACE_DSHIDMINIDRV, "!! PID_BLOCK_FREE_REPORT, EffectBlockIndex: %d",
-		         pBlockFree->EffectBlockIndex);
+			pBlockFree->EffectBlockIndex);
 
 		//
 		// Lookup our entry in the list
@@ -940,14 +958,14 @@ DsHidMini_WriteReport(
 		// Free memory
 		// 
 		free(pEntry);
-		
+
 		*ReportSize = Packet->reportBufferLen;
 
 		status = STATUS_SUCCESS;
-		
+
 		break;
 	}
-	
+
 #endif
 
 	//
@@ -1028,8 +1046,11 @@ DsHidMini_WriteReport(
 
 		if (isSetRumble)
 		{
+			DS3_SET_BOTH_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[5], Packet->reportBuffer[4]);
+			/*
 			DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[4]);
 			DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[5]);
+			*/
 		}
 
 		if (isSetColor)
@@ -1114,16 +1135,15 @@ DsHidMini_WriteReport(
 	{
 		UCHAR lm = (UCHAR)(Packet->reportBuffer[3] / 100.0f * 255.0f);
 		UCHAR rm = (UCHAR)(Packet->reportBuffer[4] / 100.0f * 255.0f);
-		
+
 		TraceVerbose(
 			TRACE_DSHIDMINIDRV,
 			"-- XI FFB LM: %d, RM: %d",
 			lm,
 			rm
 		);
-		
-		DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, lm);
-		DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, rm);
+
+		DS3_SET_BOTH_RUMBLE_STRENGTH(pDevCtx, lm, rm);
 
 		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceXInputHID);
 
@@ -1149,7 +1169,7 @@ DsHidMini_WriteReport(
 
 		DumpAsHex("-- WRITE_REPORT.reportBuffer", Packet->reportBuffer, Packet->reportBufferLen);
 	}
-	
+
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 
 	return status;
@@ -1179,29 +1199,33 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 	dmfModule = (DMFMODULE)Context->DsHidMiniModule;
 	pModCtx = DMF_CONTEXT_GET(dmfModule);
 
-#pragma region HID Input Report (ID 01) processing
+#pragma region HID Input Report (SDF, GPJ ID 01) processing
 
 	switch (Context->Configuration.HidDeviceMode)
 	{
-	case DsHidMiniDeviceModeMulti:
+	case DsHidMiniDeviceModeGPJ:
 
-		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_01(
+		DS3_RAW_TO_GPJ_HID_INPUT_REPORT_01(
 			Report,
 			pModCtx->InputReport,
-			Context->Configuration.MuteDigitalPressureButtons
+			Context->Configuration.GPJ.PressureExposureMode,
+			Context->Configuration.GPJ.DPadExposureMode,
+			&Context->Configuration.ThumbSettings
 		);
 
 #ifdef DBG
-		DumpAsHex(">> MULTI", pModCtx->InputReport, DS3_SPLIT_SINGLE_HID_INPUT_REPORT_SIZE);
+		DumpAsHex(">> MULTI", pModCtx->InputReport, DS3_SDF_GPJ_HID_INPUT_REPORT_SIZE);
 #endif
 
 		break;
-	case DsHidMiniDeviceModeSingle:
+	case DsHidMiniDeviceModeSDF:
 
-		DS3_RAW_TO_SINGLE_HID_INPUT_REPORT(
+		DS3_RAW_TO_SDF_HID_INPUT_REPORT(
 			Report,
 			pModCtx->InputReport,
-			Context->Configuration.MuteDigitalPressureButtons
+			Context->Configuration.SDF.PressureExposureMode,
+			Context->Configuration.SDF.DPadExposureMode,
+			&Context->Configuration.ThumbSettings
 		);
 
 		/*
@@ -1224,17 +1248,18 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 	);
 	if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
 	{
-		TraceError( TRACE_DSHIDMINIDRV,
+		TraceError(TRACE_DSHIDMINIDRV,
 			"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
 	}
 
 #pragma endregion
 
-#pragma region HID Input Report (ID 02) processing
+#pragma region HID Input Report (GPJ ID 02) processing
 
-	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeMulti)
+	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeGPJ
+		&& (Context->Configuration.GPJ.PressureExposureMode & DsPressureExposureModeAnalogue) != 0)
 	{
-		DS3_RAW_TO_SPLIT_HID_INPUT_REPORT_02(
+		DS3_RAW_TO_GPJ_HID_INPUT_REPORT_02(
 			Report,
 			pModCtx->InputReport
 		);
@@ -1248,7 +1273,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 		);
 		if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
 		{
-			TraceError( TRACE_DSHIDMINIDRV,
+			TraceError(TRACE_DSHIDMINIDRV,
 				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
 		}
 	}
@@ -1261,7 +1286,8 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 	{
 		DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
 			Report,
-			pModCtx->InputReport
+			pModCtx->InputReport,
+			&Context->Configuration.ThumbSettings
 		);
 
 		//
@@ -1273,7 +1299,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 		);
 		if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
 		{
-			TraceError( TRACE_DSHIDMINIDRV,
+			TraceError(TRACE_DSHIDMINIDRV,
 				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
 		}
 	}
@@ -1284,10 +1310,11 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 
 	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeDS4WindowsCompatible)
 	{
-		DS3_RAW_TO_DS4REV1_HID_INPUT_REPORT(
+		DS3_RAW_TO_DS4WINDOWS_HID_INPUT_REPORT(
 			Report,
 			pModCtx->InputReport,
-			(Context->ConnectionType == DsDeviceConnectionTypeUsb) ? TRUE : FALSE
+			(Context->ConnectionType == DsDeviceConnectionTypeUsb) ? TRUE : FALSE,
+			&Context->Configuration.ThumbSettings
 		);
 
 		//
@@ -1312,7 +1339,8 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 	{
 		DS3_RAW_TO_XINPUTHID_HID_INPUT_REPORT(
 			Report,
-			(PXINPUT_HID_INPUT_REPORT)pModCtx->InputReport
+			(PXINPUT_HID_INPUT_REPORT)pModCtx->InputReport,
+			&Context->Configuration.ThumbSettings
 		);
 
 		//
@@ -1330,7 +1358,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 	}
 
 #pragma endregion
-	
+
 	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
 }
 
@@ -1345,14 +1373,14 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 )
 {
 	PDEVICE_CONTEXT pDevCtx;
-	LARGE_INTEGER freq, *t1, t2;
+	LARGE_INTEGER freq, * t1, t2;
 	LONGLONG ms;
 	DS_BATTERY_STATUS battery;
 	DMF_CONTEXT_DsHidMini* pModCtx;
 	PDS3_RAW_INPUT_REPORT pInReport;
 
 	UNREFERENCED_PARAMETER(Pipe);
-	
+
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
 	//
@@ -1378,7 +1406,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 
 	QueryPerformanceFrequency(&freq);
 	t1 = &pDevCtx->Connection.Usb.ChargingCycleTimestamp;
-	
+
 #ifdef DBG
 	DumpAsHex(">> USB", pInReport, (ULONG)sizeof(DS3_RAW_INPUT_REPORT));
 #endif
@@ -1399,7 +1427,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 		pModCtx->GetFeatureReport.AccelerometerZ = _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerZ);
 		pModCtx->GetFeatureReport.Gyroscope = _byteswap_ushort(pModCtx->GetFeatureReport.Gyroscope);
 	}
-	
+
 	battery = (DS_BATTERY_STATUS)pInReport->BatteryStatus;
 
 	//
@@ -1422,6 +1450,8 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 		);
 	}
 
+	const PDS_LED_SETTINGS pLED = &pDevCtx->Configuration.LEDSettings;
+
 	//
 	// Check if state has changed to Charged
 	// 
@@ -1430,9 +1460,24 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	{
 		pDevCtx->BatteryStatus = battery;
 
-		if (pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled)
+		if (
+			pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled &&
+			pLED->Mode > DsLEDModeUnknown && pLED->Mode < DsLEDModeCustomPattern
+			)
 		{
-			DS3_SET_LED(pDevCtx, DS3_LED_4);
+			switch (pLED->Mode)
+			{
+			case DsLEDModeBatteryIndicatorPlayerIndex:
+
+				DS3_SET_LED(pDevCtx, DS3_LED_4);
+
+				break;
+			case DsLEDModeBatteryIndicatorBarGraph:
+
+				DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
+
+				break;
+			}
 
 			(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverLowPriority);
 		}
@@ -1460,18 +1505,47 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 			// Reset
 			// 
 			pDevCtx->Connection.Usb.ChargingCycleTimestamp.QuadPart = 0;
-			
-			UCHAR led = DS3_GET_LED(pDevCtx) << 1;
 
-			//
-			// Cycle through
-			// 
-			if (led > DS3_LED_4 || led < DS3_LED_1)
+			UCHAR led = DS3_LED_OFF;
+
+			switch (pLED->Mode)
 			{
-				led = DS3_LED_1;
+			case DsLEDModeBatteryIndicatorPlayerIndex:
+
+				led = DS3_GET_LED(pDevCtx) << 1;
+
+				//
+				// Cycle through
+				// 
+				if (led > DS3_LED_4 || led < DS3_LED_1)
+				{
+					led = DS3_LED_1;
+				}
+
+				break;
+			case DsLEDModeBatteryIndicatorBarGraph:
+
+				led = DS3_GET_LED(pDevCtx);
+
+				//
+				// Cycle graph from 1 to 4 and repeat
+				// 
+				if (led == (DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4))
+				{
+					led = DS3_LED_1;
+				}
+				else
+				{
+					led |= (!led) ? DS3_LED_1 : led << 1;
+				}
+
+				break;
 			}
 
-			if (pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled)
+			if (
+				pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled &&
+				pLED->Mode > DsLEDModeUnknown && pLED->Mode < DsLEDModeCustomPattern
+				)
 			{
 				DS3_SET_LED(pDevCtx, led);
 
@@ -1483,7 +1557,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	{
 		pDevCtx->BatteryStatus = battery;
 	}
-	
+
 	Ds_ProcessHidInputReport(pDevCtx, pInReport);
 
 	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
@@ -1512,7 +1586,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	WDFDEVICE device;
 
 	UNREFERENCED_PARAMETER(ClientBufferContextOutput);
-	
+
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
 #ifdef DBG
@@ -1527,7 +1601,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	{
 		return ContinuousRequestTarget_BufferDisposition_ContinuousRequestTargetAndStopStreaming;
 	}
-	
+
 	device = DMF_ParentDeviceGet(DmfModule);
 	pDevCtx = DeviceGetContext(device);
 	pModCtx = DMF_CONTEXT_GET((DMFMODULE)pDevCtx->DsHidMiniModule);
@@ -1571,7 +1645,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 			pInReport,
 			sizeof(DS3_RAW_INPUT_REPORT)
 		);
-		
+
 		pModCtx->GetFeatureReport.AccelerometerX = 0x03FF - _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerX);
 		pModCtx->GetFeatureReport.AccelerometerY = _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerY);
 		pModCtx->GetFeatureReport.AccelerometerZ = _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerZ);
@@ -1640,12 +1714,17 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 				&battery
 			);
 
+			const PDS_LED_SETTINGS pLED = &pDevCtx->Configuration.LEDSettings;
+
 			//
-			// Don't send update if not initialized yet
+			// Don't send update if not initialized yet or custom pattern
 			// 
 			if (DS3_GET_LED(pDevCtx) != 0x00)
 			{
-				if (pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled)
+				if (
+					pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled &&
+					pLED->Mode > DsLEDModeUnknown && pLED->Mode < DsLEDModeCustomPattern
+					)
 				{
 					//
 					// Restore defaults to undo any (past) flashing animations
@@ -1655,24 +1734,55 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 					DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 2);
 					DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 3);
 
-					switch (battery)
+					switch (pLED->Mode)
 					{
-					case DsBatteryStatusCharged:
-					case DsBatteryStatusFull:
-						DS3_SET_LED(pDevCtx, DS3_LED_4);
+					case DsLEDModeBatteryIndicatorPlayerIndex:
+
+						switch (battery)
+						{
+						case DsBatteryStatusCharged:
+						case DsBatteryStatusFull:
+							DS3_SET_LED(pDevCtx, DS3_LED_4);
+							break;
+						case DsBatteryStatusHigh:
+							DS3_SET_LED(pDevCtx, DS3_LED_3);
+							break;
+						case DsBatteryStatusMedium:
+							DS3_SET_LED(pDevCtx, DS3_LED_2);
+							break;
+						case DsBatteryStatusLow:
+						case DsBatteryStatusDying:
+							DS3_SET_LED(pDevCtx, DS3_LED_1);
+							DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
+							break;
+						default:
+							break;
+						}
+
 						break;
-					case DsBatteryStatusHigh:
-						DS3_SET_LED(pDevCtx, DS3_LED_3);
-						break;
-					case DsBatteryStatusMedium:
-						DS3_SET_LED(pDevCtx, DS3_LED_2);
-						break;
-					case DsBatteryStatusLow:
-					case DsBatteryStatusDying:
-						DS3_SET_LED(pDevCtx, DS3_LED_1);
-						DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
-						break;
-					default:
+					case DsLEDModeBatteryIndicatorBarGraph:
+
+						switch (battery)
+						{
+						case DsBatteryStatusCharged:
+						case DsBatteryStatusFull:
+							DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
+							break;
+						case DsBatteryStatusHigh:
+							DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3);
+							break;
+						case DsBatteryStatusMedium:
+							DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2);
+							break;
+						case DsBatteryStatusLow:
+						case DsBatteryStatusDying:
+							DS3_SET_LED(pDevCtx, DS3_LED_1);
+							DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
+							break;
+						default:
+							break;
+						}
+
 						break;
 					}
 
@@ -1694,7 +1804,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 		pInReport->Buttons.Individual.L1
 		&& pInReport->Buttons.Individual.R1
 		&& pInReport->Buttons.Individual.PS
-	)
+		)
 	{
 		TraceEvents(TRACE_LEVEL_INFORMATION,
 			TRACE_DSHIDMINIDRV,
@@ -1750,7 +1860,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	//
 	// Idle disconnect detection
 	// 
-	if (DS3_RAW_IS_IDLE(pInReport))
+	if (!pDevCtx->Configuration.DisableWirelessIdleTimeout && DS3_RAW_IS_IDLE(pInReport))
 	{
 		t1 = &pDevCtx->Connection.Bth.IdleDisconnectTimestamp;
 
@@ -1816,7 +1926,7 @@ DsBth_HidControlWriteContinuousRequestCompleted(
 	_Out_ size_t* InputBufferSize,
 	_In_ VOID* ClientBuferContextInput
 )
-{	
+{
 	UNREFERENCED_PARAMETER(DmfModule);
 	UNREFERENCED_PARAMETER(InputBuffer);
 	UNREFERENCED_PARAMETER(InputBufferSize);
@@ -1849,11 +1959,11 @@ DMF_EvtExecuteOutputPacketReceived(
 	size_t bufferSize = pRepCtx->BufferSize;
 
 	WDF_MEMORY_DESCRIPTOR memoryDesc;
-	LARGE_INTEGER freq, *t1, *t2;
+	LARGE_INTEGER freq, * t1, * t2;
 	LONGLONG ms;
 	ULONGLONG timeout;
 	size_t bytesWritten;
-	
+
 	UNREFERENCED_PARAMETER(ClientWorkBufferSize);
 	UNREFERENCED_PARAMETER(NtStatus);
 
@@ -1880,7 +1990,7 @@ DMF_EvtExecuteOutputPacketReceived(
 	switch (pDevCtx->ConnectionType)
 	{
 #pragma region DsDeviceConnectionTypeUsb
-		
+
 	case DsDeviceConnectionTypeUsb:
 
 		//
@@ -1916,7 +2026,7 @@ DMF_EvtExecuteOutputPacketReceived(
 #pragma endregion
 
 #pragma region DsDeviceConnectionTypeBth
-		
+
 	case DsDeviceConnectionTypeBth:
 
 		//
@@ -1952,7 +2062,7 @@ DMF_EvtExecuteOutputPacketReceived(
 			&& ms < pDevCtx->Configuration.OutputRateControlPeriodMs)
 		{
 			timeout = pDevCtx->Configuration.OutputRateControlPeriodMs - ms;
-			
+
 			TraceVerbose(
 				TRACE_DSHIDMINIDRV,
 				"Rate control triggered, delaying buffer 0x%p for %I64u ms",
@@ -1976,7 +2086,7 @@ DMF_EvtExecuteOutputPacketReceived(
 						pDevCtx->OutputReport.Cache.PendingClientBuffer,
 						ClientWorkBuffer
 					);
-					
+
 					DMF_ThreadedBufferQueue_WorkCompleted(
 						pDevCtx->OutputReport.Worker,
 						pDevCtx->OutputReport.Cache.PendingClientBuffer,
@@ -2004,12 +2114,12 @@ DMF_EvtExecuteOutputPacketReceived(
 			WdfWaitLockRelease(pDevCtx->OutputReport.Cache.Lock);
 
 			status = STATUS_PENDING; // Has no impact, just for trace
-			
+
 			//
 			// Keep buffer slot occupied
 			// 
 			retval = ThreadedBufferQueue_BufferDisposition_WorkPending;
-			
+
 			break;
 		}
 
@@ -2049,9 +2159,9 @@ DMF_EvtExecuteOutputPacketReceived(
 	}
 
 	*NtStatus = status;
-	
+
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
-	
+
 	return retval;
 }
 
@@ -2087,7 +2197,7 @@ DSHM_OutputReportDelayTimerElapsed(
 		//
 		// Re-queue last cached buffer with high priority
 		// 
-		
+
 		status = DMF_ThreadedBufferQueue_Fetch(
 			pDevCtx->OutputReport.Worker,
 			(PVOID*)&targetBuffer,
@@ -2133,9 +2243,9 @@ DSHM_OutputReportDelayTimerElapsed(
 //
 // Enqueues current output report buffer to get sent to device.
 //
-NTSTATUS 
+NTSTATUS
 Ds_SendOutputReport(
-	PDEVICE_CONTEXT Context, 
+	PDEVICE_CONTEXT Context,
 	DS_OUTPUT_REPORT_SOURCE Source
 )
 {
@@ -2145,7 +2255,7 @@ Ds_SendOutputReport(
 	PDS_OUTPUT_REPORT_CONTEXT sendContext;
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
-	
+
 	WdfWaitLockAcquire(Context->OutputReport.Lock, NULL);
 
 	do {
@@ -2198,7 +2308,7 @@ Ds_SendOutputReport(
 		// Copy current report to buffer
 		//
 		RtlCopyMemory(sendBuffer, sourceBuffer, sourceBufferLength);
-		
+
 		//
 		// Enqueue current report
 		//
@@ -2214,7 +2324,7 @@ Ds_SendOutputReport(
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 
 	return status;
-}
+	}
 
 #pragma endregion
 
