@@ -572,10 +572,10 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 			);
 		pCapabilities->Gamepad.bLeftTrigger = UCHAR_MAX;
 		pCapabilities->Gamepad.bRightTrigger = UCHAR_MAX;
-		pCapabilities->Gamepad.sThumbLX = -64; // ??? MS reports that too, so...
-		pCapabilities->Gamepad.sThumbLY = -64; // ??? MS reports that too, so...
-		pCapabilities->Gamepad.sThumbRX = -64; // ??? MS reports that too, so...
-		pCapabilities->Gamepad.sThumbRY = -64; // ??? MS reports that too, so...
+		pCapabilities->Gamepad.sThumbLX = 0xFFC0;
+		pCapabilities->Gamepad.sThumbLY = 0xFFC0;
+		pCapabilities->Gamepad.sThumbRX = 0xFFC0;
+		pCapabilities->Gamepad.sThumbRY = 0xFFC0;
 
 		pCapabilities->Vibration.wLeftMotorSpeed = UCHAR_MAX;
 		pCapabilities->Vibration.wRightMotorSpeed = UCHAR_MAX;
