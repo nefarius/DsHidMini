@@ -554,7 +554,22 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 		pCapabilities->SubType = XINPUT_DEVSUBTYPE_GAMEPAD;
 		pCapabilities->Flags += XINPUT_CAPS_FFB_SUPPORTED;
 
-		pCapabilities->Gamepad.wButtons = 62463;
+		pCapabilities->Gamepad.wButtons = (
+			XINPUT_GAMEPAD_DPAD_UP |
+			XINPUT_GAMEPAD_DPAD_DOWN |
+			XINPUT_GAMEPAD_DPAD_LEFT |
+			XINPUT_GAMEPAD_DPAD_RIGHT |
+			XINPUT_GAMEPAD_START |
+			XINPUT_GAMEPAD_BACK |
+			XINPUT_GAMEPAD_LEFT_THUMB |
+			XINPUT_GAMEPAD_RIGHT_THUMB |
+			XINPUT_GAMEPAD_LEFT_SHOULDER |
+			XINPUT_GAMEPAD_RIGHT_SHOULDER |
+			XINPUT_GAMEPAD_A |
+			XINPUT_GAMEPAD_B |
+			XINPUT_GAMEPAD_X |
+			XINPUT_GAMEPAD_Y
+			);
 		pCapabilities->Gamepad.bLeftTrigger = UCHAR_MAX;
 		pCapabilities->Gamepad.bRightTrigger = UCHAR_MAX;
 		pCapabilities->Gamepad.sThumbLX = -64; // ??? MS reports that too, so...
