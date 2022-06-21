@@ -554,6 +554,17 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 		pCapabilities->SubType = XINPUT_DEVSUBTYPE_GAMEPAD;
 		pCapabilities->Flags += XINPUT_CAPS_FFB_SUPPORTED;
 
+		pCapabilities->Gamepad.wButtons = 62463;
+		pCapabilities->Gamepad.bLeftTrigger = UCHAR_MAX;
+		pCapabilities->Gamepad.bRightTrigger = UCHAR_MAX;
+		pCapabilities->Gamepad.sThumbLX = -64; // ??? MS reports that too, so...
+		pCapabilities->Gamepad.sThumbLY = -64; // ??? MS reports that too, so...
+		pCapabilities->Gamepad.sThumbRX = -64; // ??? MS reports that too, so...
+		pCapabilities->Gamepad.sThumbRY = -64; // ??? MS reports that too, so...
+
+		pCapabilities->Vibration.wLeftMotorSpeed = UCHAR_MAX;
+		pCapabilities->Vibration.wRightMotorSpeed = UCHAR_MAX;
+
 		status = ERROR_SUCCESS;
 	} while (FALSE);
 
