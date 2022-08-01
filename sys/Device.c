@@ -260,7 +260,7 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 			{
 				TraceError(
 					TRACE_DEVICE,
-					"WdfDeviceAllocAndQueryPropertyEx failed with status %!STATUS!",
+					"Requesting DEVPKEY_Bluetooth_DeviceAddress failed with status %!STATUS!",
 					status
 				);
 				break;
