@@ -81,8 +81,8 @@ The dependencies used in DsHidMini don't exist in Windows 7/8/8.1 so they can't 
 
 ### Prerequisites
 
-- [Step 1: Install Visual Studio 2019](<https://docs.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk#download-icon-step-1-install-visual-studio-2019>)
-- [Step 2: Install WDK for Windows 10, version 2004](<https://docs.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk#download-icon-step-2-install-wdk-for-windows-10-version-2004>)
+- [Step 1: Install Visual Studio 2019](<https://docs.microsoft.com/en-us/windows-hardware/drivers/other-wdk-downloads#step-1-install-visual-studio>)
+- [Step 2: Install WDK for Windows 10, version 2004](<https://docs.microsoft.com/en-us/windows-hardware/drivers/other-wdk-downloads#step-2-install-the-wdk>)
 - [Step 3: Clone the Driver Module Framework (DMF)](https://github.com/microsoft/DMF) into the same parent directory.
   - **Important:** requires *at least* [`v1.1.83`](https://github.com/microsoft/DMF/releases/tag/v1.1.83) or newer
   - Build the `DmfU` project with Release and Debug configurations for all architectures (x64 and Win32).
