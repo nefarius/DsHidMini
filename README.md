@@ -121,6 +121,7 @@ The following awesome resources have made this project possible.
 - [Microsoft - DMF - VHidMini2DmfK and VHidMini2DmfU Sample Drivers](https://github.com/microsoft/DMF/tree/master/DmfSamples/VHidMini2Dmf)
 - [uthash - a hash table for C structures](https://github.com/troydhanson/uthash)
 - [Ultralightweight JSON parser in ANSI C](https://github.com/DaveGamble/cJSON)
+- [HIDAPI - Multi-Platform library for communication with HID devices](https://github.com/libusb/hidapi)
 
 ### Tools & references
 
