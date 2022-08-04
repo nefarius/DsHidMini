@@ -215,7 +215,7 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 	if (hRadio)
 		CloseHandle(hRadio);
 	if (hFind)
-		CloseHandle(hFind);
+		BluetoothFindRadioClose(hFind);
 
 	//
 	// Translate Win32 error codes to NTSTATUS
