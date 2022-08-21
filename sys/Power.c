@@ -14,7 +14,6 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 {
 	NTSTATUS status = STATUS_SUCCESS;
 	PDEVICE_CONTEXT pDevCtx;
-	WDF_DEVICE_PROPERTY_DATA propertyData;
 
 	PAGED_CODE();
 

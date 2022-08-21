@@ -197,7 +197,6 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 	ULONG bufSize;
 	WDF_DEVICE_PROPERTY_DATA devProp;
 	DEVPROPTYPE propType;
-	WDF_OBJECT_ATTRIBUTES attributes;
 	ULONG requiredSize = 0;
 	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 
