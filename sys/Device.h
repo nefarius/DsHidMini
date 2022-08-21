@@ -306,8 +306,6 @@ typedef struct _DEVICE_CONTEXT
 
 	} MotorStrCache;
 
-
-
 } DEVICE_CONTEXT, * PDEVICE_CONTEXT;
 
 //
@@ -319,7 +317,7 @@ WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DEVICE_CONTEXT, DeviceGetContext)
 
 typedef struct
 {
-	ULONG Dummy;
+	ULONG Unused;
 
 } DMF_CONFIG_DsHidMini;
 
@@ -347,6 +345,11 @@ typedef struct
 	// Force Feedback State Info
 	// 
 	PFFB_ATTRIBUTES FfbAttributes;
+
+	//
+	// Hash table holding FFB effect info
+	// 
+	DMFMODULE DmfModuleForceFeedback;
 #endif
 	
 } DMF_CONTEXT_DsHidMini;

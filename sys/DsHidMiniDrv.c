@@ -107,8 +107,7 @@ DMF_DsHidMini_ChildModulesAdd(
 	DMF_MODULE_ATTRIBUTES moduleAttributes;
 	DMF_CONTEXT_DsHidMini* moduleContext;
 	DMF_CONFIG_VirtualHidMini vHidCfg;
-	PDEVICE_CONTEXT pDevCtx;
-
+	DMF_CONFIG_HashTable hashCfg;
 
 	PAGED_CODE();
 
@@ -117,7 +116,6 @@ DMF_DsHidMini_ChildModulesAdd(
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
 	moduleContext = DMF_CONTEXT_GET(DmfModule);
-	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
 	DMF_CONFIG_VirtualHidMini_AND_ATTRIBUTES_INIT(&vHidCfg,
 		&moduleAttributes);
@@ -143,6 +141,20 @@ DMF_DsHidMini_ChildModulesAdd(
 		&moduleAttributes,
 		WDF_NO_OBJECT_ATTRIBUTES,
 		&moduleContext->DmfModuleVirtualHidMini
+	);
+
+
+	DMF_CONFIG_HashTable_AND_ATTRIBUTES_INIT(&hashCfg, &moduleAttributes);
+
+	hashCfg.MaximumKeyLength = sizeof(UCHAR);
+	hashCfg.MaximumValueLength = sizeof(FFB_ATTRIBUTES);
+	hashCfg.MaximumTableSize = sizeof(UCHAR);
+
+	DMF_DmfModuleAdd(
+		DmfModuleInit,
+		&moduleAttributes,
+		WDF_NO_OBJECT_ATTRIBUTES,
+		&moduleContext->DmfModuleForceFeedback
 	);
 
 	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
