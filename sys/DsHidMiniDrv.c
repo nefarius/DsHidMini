@@ -41,8 +41,6 @@ DMF_DsHidMini_Create(
 	NTSTATUS status;
 	DMF_MODULE_DESCRIPTOR dsHidMiniDesc;
 	DMF_CALLBACKS_DMF dsHidMiniCallbacks;
-	PDEVICE_CONTEXT pDevCtx;
-
 
 	PAGED_CODE();
 
@@ -50,8 +48,6 @@ DMF_DsHidMini_Create(
 
 	do
 	{
-		pDevCtx = DeviceGetContext(Device);
-
 		//
 		// Set Virtual HID Mini properties
 		// 
