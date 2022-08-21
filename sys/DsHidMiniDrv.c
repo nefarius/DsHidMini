@@ -107,7 +107,9 @@ DMF_DsHidMini_ChildModulesAdd(
 	DMF_MODULE_ATTRIBUTES moduleAttributes;
 	DMF_CONTEXT_DsHidMini* moduleContext;
 	DMF_CONFIG_VirtualHidMini vHidCfg;
+#ifdef DSHM_FEATURE_FFB
 	DMF_CONFIG_HashTable hashCfg;
+#endif
 
 	PAGED_CODE();
 
@@ -144,6 +146,7 @@ DMF_DsHidMini_ChildModulesAdd(
 	);
 
 
+#ifdef DSHM_FEATURE_FFB
 	DMF_CONFIG_HashTable_AND_ATTRIBUTES_INIT(&hashCfg, &moduleAttributes);
 
 	hashCfg.MaximumKeyLength = sizeof(UCHAR);
@@ -156,6 +159,7 @@ DMF_DsHidMini_ChildModulesAdd(
 		WDF_NO_OBJECT_ATTRIBUTES,
 		&moduleContext->DmfModuleForceFeedback
 	);
+#endif
 
 	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
 }
@@ -2332,7 +2336,7 @@ Ds_SendOutputReport(
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 
 	return status;
-	}
+}
 
 #pragma endregion
 
@@ -2371,6 +2375,6 @@ VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
 	UNREFERENCED_PARAMETER(Buffer);
 	UNREFERENCED_PARAMETER(BufferLength);
 #endif
-}
+	}
 
 #pragma endregion
