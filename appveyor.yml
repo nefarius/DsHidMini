@@ -10,6 +10,7 @@ skip_commits:
   files:
     - '**/*.md'
 install:
+-cmd: choco install dotnet-sdk --version=5.0.100
 - cmd: |
     cd "C:\Tools\vcpkg"
     git pull > NUL
