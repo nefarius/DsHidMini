@@ -1,8 +1,3 @@
-#pragma data_seg("SHARED")
-extern unsigned int numInstances;
-#pragma data_seg()
-#pragma comment(linker, "/section:SHARED,RWS")
-
 //
 // Compile with or without additional features
 // 

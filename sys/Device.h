@@ -1,6 +1,5 @@
 #pragma once
 #include <DmfModule.h>
-#include "uthash.h"
 
 
 EXTERN_C_START
@@ -100,10 +99,10 @@ typedef struct _FFB_ATTRIBUTES
 
 	PID_EFFECT_TYPE EffectType;
 
-	BOOLEAN Reported;
-	
-	UT_hash_handle hh; /* makes this structure hashable */
-	
+	BOOLEAN IsReserved;
+
+	BOOLEAN IsReported;
+
 } FFB_ATTRIBUTES, *PFFB_ATTRIBUTES;
 #endif
 
