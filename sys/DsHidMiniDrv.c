@@ -151,7 +151,7 @@ DMF_DsHidMini_ChildModulesAdd(
 
 	hashCfg.MaximumKeyLength = sizeof(UCHAR);
 	hashCfg.MaximumValueLength = sizeof(FFB_ATTRIBUTES);
-	hashCfg.MaximumTableSize = sizeof(UCHAR);
+	hashCfg.MaximumTableSize = MAX_EFFECT_BLOCKS;
 
 	DMF_DmfModuleAdd(
 		DmfModuleInit,
@@ -280,11 +280,6 @@ DMF_DsHidMini_Open(
 		break;
 	}
 
-	//
-	// Increase pad instance count (TODO: unused)
-	// 
-	numInstances++;
-
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 
 	return status;
@@ -328,11 +323,6 @@ DMF_DsHidMini_Close(
 		sizeof(BYTE),
 		&pDevCtx->Configuration.HidDeviceMode
 	);
-
-	//
-	// Decrease pad instance count
-	// 
-	numInstances--;
 
 	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
 }
@@ -453,7 +443,7 @@ DsHidMini_GetFeature(
 
 #ifdef DSHM_FEATURE_FFB
 
-	PFFB_ATTRIBUTES pEntry = NULL;
+	FFB_ATTRIBUTES ffbEntry = { 0 };
 
 	PPID_POOL_REPORT pPool;
 	PPID_BLOCK_LOAD_REPORT pBlockLoad;
@@ -495,24 +485,43 @@ DsHidMini_GetFeature(
 		//
 		// Here we should have at least one new effect block index ready
 		// 
-		for (pEntry = pModCtx->FfbAttributes; pEntry != NULL; pEntry = pEntry->hh.next)
+		for (UCHAR index = 1; index < MAX_EFFECT_BLOCKS; index++)
 		{
-			/** Skip if already in use. */
-			if (pEntry->Reported)
-				continue;
+			status = DMF_HashTable_Read(
+				pModCtx->DmfModuleForceFeedback,
+				&index,
+				sizeof(UCHAR),
+				(PUCHAR)&ffbEntry,
+				sizeof(FFB_ATTRIBUTES),
+				NULL
+			);
 
-			pEntry->Reported = TRUE; // mark as claimed/in use
-			pBlockLoad->EffectBlockIndex = pEntry->EffectBlockIndex;
-			pBlockLoad->BlockLoadStatus = PidBlsSuccess;
-			break;
+			//
+			// Find reserved but unclaimed entry
+			// 
+			if (NT_SUCCESS(status) && ffbEntry.IsReserved && !ffbEntry.IsReported)
+			{
+				ffbEntry.IsReported = TRUE;
+
+				pBlockLoad->EffectBlockIndex = ffbEntry.EffectBlockIndex;
+				pBlockLoad->BlockLoadStatus = PidBlsSuccess;
+
+				status = DMF_HashTable_Write(
+					pModCtx->DmfModuleForceFeedback,
+					&index,
+					sizeof(UCHAR),
+					(PUCHAR)&ffbEntry,
+					sizeof(FFB_ATTRIBUTES)
+				);
+
+				break;
+			}
 		}
 
 		TraceVerbose(TRACE_DSHIDMINIDRV, "!! PID_BLOCK_LOAD_REPORT_ID (EffectBlockIndex: %d)",
 			pBlockLoad->EffectBlockIndex);
 
 		*ReportSize = sizeof(PID_BLOCK_LOAD_REPORT) - 1;
-
-		status = STATUS_SUCCESS;
 
 		break;
 	}
@@ -612,7 +621,7 @@ DsHidMini_SetFeature(
 
 #ifdef DSHM_FEATURE_FFB
 
-	PFFB_ATTRIBUTES pEntry = NULL;
+	FFB_ATTRIBUTES ffbEntry = { 0 };
 
 	PPID_NEW_EFFECT_REPORT pNewEffect;
 
@@ -629,15 +638,30 @@ DsHidMini_SetFeature(
 		// 
 		for (UCHAR index = 1; index < MAX_EFFECT_BLOCKS; index++)
 		{
-			HASH_FIND(hh, pModCtx->FfbAttributes, &index, sizeof(UCHAR), pEntry);
+			status = DMF_HashTable_Read(
+				pModCtx->DmfModuleForceFeedback,
+				&index,
+				sizeof(UCHAR),
+				(PUCHAR)&ffbEntry,
+				sizeof(FFB_ATTRIBUTES),
+				NULL
+			);
 
-			if (pEntry == NULL)
+			if (status == STATUS_NOT_FOUND || !ffbEntry.IsReserved)
 			{
-				pEntry = (PFFB_ATTRIBUTES)malloc(sizeof(FFB_ATTRIBUTES));
-				pEntry->EffectBlockIndex = index; // next free index
-				pEntry->EffectType = pNewEffect->EffectType; // effect type requested
-				pEntry->Reported = FALSE; // index allocated but not claimed yet
-				HASH_ADD(hh, pModCtx->FfbAttributes, EffectBlockIndex, sizeof(UCHAR), pEntry);
+				ffbEntry.EffectBlockIndex = index; // next free index
+				ffbEntry.EffectType = pNewEffect->EffectType; // effect type requested
+				ffbEntry.IsReserved = TRUE; // mark as reserved/allocated
+				ffbEntry.IsReported = FALSE; // index allocated but not claimed yet
+
+				status = DMF_HashTable_Write(
+					pModCtx->DmfModuleForceFeedback,
+					&index,
+					sizeof(UCHAR),
+					(PUCHAR)&ffbEntry,
+					sizeof(FFB_ATTRIBUTES)
+				);
+
 				break;
 			}
 		}
@@ -645,7 +669,7 @@ DsHidMini_SetFeature(
 		//
 		// Whoops, guess we're full!
 		// 
-		if (pEntry == NULL)
+		if (!ffbEntry.IsReserved)
 		{
 			status = STATUS_INVALID_PARAMETER;
 			break;
@@ -758,7 +782,7 @@ DsHidMini_WriteReport(
 
 #ifdef DSHM_FEATURE_FFB
 
-	PFFB_ATTRIBUTES pEntry = NULL;
+	FFB_ATTRIBUTES ffbEntry = { 0 };
 
 	PPID_DEVICE_CONTROL_REPORT pDeviceControl;
 	PPID_DEVICE_GAIN_REPORT pGain;
@@ -788,7 +812,34 @@ DsHidMini_WriteReport(
 		case PidDcReset:
 			TraceVerbose(TRACE_DSHIDMINIDRV, "!! DC Reset");
 
-			HASH_CLEAR(hh, pModCtx->FfbAttributes);
+			for (UCHAR index = 1; index < MAX_EFFECT_BLOCKS; index++)
+			{
+				status = DMF_HashTable_Read(
+					pModCtx->DmfModuleForceFeedback,
+					&index,
+					sizeof(UCHAR),
+					(PUCHAR)&ffbEntry,
+					sizeof(FFB_ATTRIBUTES),
+					NULL
+				);
+
+				if (NT_SUCCESS(status))
+				{
+					ffbEntry.IsReserved = FALSE;
+					ffbEntry.IsReported = FALSE;
+
+					(void)DMF_HashTable_Write(
+						pModCtx->DmfModuleForceFeedback,
+						&index,
+						sizeof(UCHAR),
+						(PUCHAR)&ffbEntry,
+						sizeof(FFB_ATTRIBUTES)
+					);
+
+					break;
+				}
+			}
+
 			// Fall through
 		case PidDcStopAllEffects:
 			TraceVerbose(TRACE_DSHIDMINIDRV, "!! DC Stop All Effects");
@@ -957,23 +1008,20 @@ DsHidMini_WriteReport(
 			pBlockFree->EffectBlockIndex);
 
 		//
-		// Lookup our entry in the list
+		// Mark as free
 		// 
-		HASH_FIND(hh, pModCtx->FfbAttributes, &pBlockFree->EffectBlockIndex, sizeof(UCHAR), pEntry);
+		ffbEntry.IsReserved = FALSE;
+		ffbEntry.IsReported = FALSE;
 
-		//
-		// Remove from list
-		// 
-		HASH_DEL(pModCtx->FfbAttributes, pEntry);
-
-		//
-		// Free memory
-		// 
-		free(pEntry);
+		status = DMF_HashTable_Write(
+			pModCtx->DmfModuleForceFeedback,
+			&pBlockFree->EffectBlockIndex,
+			sizeof(UCHAR),
+			(PUCHAR)&ffbEntry,
+			sizeof(FFB_ATTRIBUTES)
+		);
 
 		*ReportSize = Packet->reportBufferLen;
-
-		status = STATUS_SUCCESS;
 
 		break;
 	}
@@ -2375,6 +2423,6 @@ VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
 	UNREFERENCED_PARAMETER(Buffer);
 	UNREFERENCED_PARAMETER(BufferLength);
 #endif
-	}
+}
 
 #pragma endregion

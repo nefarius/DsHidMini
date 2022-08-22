@@ -14,4 +14,4 @@
 LICENSE
 bin\ARM64\dshidmini.pdb
 bin\ARM64\dshidmini\dshidmini.inf
-bin\ARM64\dshidmini\dshidmini.sys
+bin\ARM64\dshidmini\dshidmini.dll

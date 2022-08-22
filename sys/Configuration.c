@@ -1,4 +1,5 @@
 #include "Driver.h"
+#include <stdio.h>
 #include "Configuration.tmh"
 
 
@@ -15,6 +16,8 @@ DS_HID_DEVICE_MODE HID_DEVICE_MODE_FROM_NAME(PSTR ModeName)
 	return 0;
 }
 
+#pragma warning(push)
+#pragma warning( disable : 4706 )
 void
 ConfigParseRumbleSettings(
 	_In_ const cJSON* RumbleSettings,
@@ -98,7 +101,10 @@ ConfigParseRumbleSettings(
 		}
 	}
 }
+#pragma warning(pop)
 
+#pragma warning(push)
+#pragma warning( disable : 4706 )
 void
 ConfigParseLEDSettings(
 	_In_ const cJSON* LEDSettings,
@@ -161,10 +167,13 @@ ConfigParseLEDSettings(
 		}
 	}
 }
+#pragma warning(pop)
 
 //
 // Reads/refreshes configuration from disk (JSON) to provided context
 // 
+#pragma warning(push)
+#pragma warning( disable : 4706 )
 void ConfigNodeParse(
 	_In_ const cJSON* ParentNode,
 	_Inout_ PDEVICE_CONTEXT Context,
@@ -301,6 +310,7 @@ void ConfigNodeParse(
 		}
 	}
 }
+#pragma warning(pop)
 
 _Must_inspect_result_
 NTSTATUS
@@ -375,9 +385,9 @@ ConfigLoadForDevice(
 			break;
 		}
 
-		fseek(fp, 0L, SEEK_END);
+		(void)fseek(fp, 0L, SEEK_END);
 		const long numBytes = ftell(fp);
-		fseek(fp, 0L, SEEK_SET);
+		(void)fseek(fp, 0L, SEEK_SET);
 
 		TraceVerbose(
 			TRACE_CONFIG,
@@ -393,7 +403,7 @@ ConfigLoadForDevice(
 			break;
 		}
 
-		fread(content, sizeof(char), numBytes, fp);
+		(void)fread(content, sizeof(char), numBytes, fp);
 
 		config_json = cJSON_Parse(content);
 

@@ -10,7 +10,6 @@ Param(
 ) #end param
 
 $signTool = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe"
-$crossCert = "C:\Program Files (x86)\Windows Kits\10\CrossCertificates\DigiCert_High_Assurance_EV_Root_CA.crt"
 $timestampUrl = "http://timestamp.digicert.com"
 $certName = "Nefarius Software Solutions e.U."
 
@@ -105,6 +104,9 @@ function Get-AppVeyorArtifacts
     }
 }
 
+# Download ARM64 binaries
+Get-AppVeyorArtifacts -Account "nefarius" -Project "DsHidMini" -Path $Path -Token $Token -Branch $BuildVersion -JobName "Platform: ARM64"
+
 # Download x64 binaries
 Get-AppVeyorArtifacts -Account "nefarius" -Project "DsHidMini" -Path $Path -Token $Token -Branch $BuildVersion -JobName "Platform: x64"
 
@@ -112,11 +114,11 @@ Get-AppVeyorArtifacts -Account "nefarius" -Project "DsHidMini" -Path $Path -Toke
 Get-AppVeyorArtifacts -Account "nefarius" -Project "DsHidMini" -Path $Path -Token $Token -Branch $BuildVersion -JobName "Platform: x86"
 
 # List of files to sign
-$files =    "`".\artifacts\bin\*.exe`" " + 
-            "`".\artifacts\bin\x64\dshidmini\dshidmini.cat`" " + 
+$files =    "`".\artifacts\disk1\*.cab`" " + 
+            "`".\artifacts\bin\*.exe`" " + 
+			"`".\artifacts\bin\ARM64\dshidmini\dshidmini.dll`" " + 
             "`".\artifacts\bin\x64\dshidmini\dshidmini.dll`" " + 
 			"`".\artifacts\bin\x64\XInput1_3.dll`" " + 
-            "`".\artifacts\bin\x86\dshidmini\dshidmini.cat`" " +
             "`".\artifacts\bin\x86\dshidmini\dshidmini.dll`" "
 			"`".\artifacts\bin\x86\XInput1_3.dll`" "
 
@@ -124,7 +126,12 @@ if ($NoSigning -eq $false) {
     # remove existing certificate(s)
     Invoke-Expression "& `"$signTool`" remove /s $files"
     # sign with only one certificate
-    Invoke-Expression "& `"$signTool`" sign /v /ac `"$crossCert`" /n `"$certName`" /tr $timestampUrl /fd sha256 /td sha256 $files"
+    Invoke-Expression "& `"$signTool`" sign /v /n `"$certName`" /tr $timestampUrl /fd sha256 /td sha256 $files"
 }
 
-Compress-Archive -Path ".\artifacts\bin\*" -DestinationPath ".\artifacts\dshidmini_v$BuildVersion.zip"
+#Compress-Archive -Path ".\artifacts\bin\*" -DestinationPath ".\artifacts\dshidmini_v$BuildVersion.zip"
+
+# Print helper job names for sign portal
+"DsHidMini ARM64 v$BuildVersion $(Get-Date -Format "dd.MM.yyyy")"
+"DsHidMini x64 v$BuildVersion $(Get-Date -Format "dd.MM.yyyy")"
+"DsHidMini x86 v$BuildVersion $(Get-Date -Format "dd.MM.yyyy")"
