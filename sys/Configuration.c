@@ -385,9 +385,9 @@ ConfigLoadForDevice(
 			break;
 		}
 
-		fseek(fp, 0L, SEEK_END);
+		(void)fseek(fp, 0L, SEEK_END);
 		const long numBytes = ftell(fp);
-		fseek(fp, 0L, SEEK_SET);
+		(void)fseek(fp, 0L, SEEK_SET);
 
 		TraceVerbose(
 			TRACE_CONFIG,
@@ -403,7 +403,7 @@ ConfigLoadForDevice(
 			break;
 		}
 
-		fread(content, sizeof(char), numBytes, fp);
+		(void)fread(content, sizeof(char), numBytes, fp);
 
 		config_json = cJSON_Parse(content);
 
