@@ -114,11 +114,11 @@ Get-AppVeyorArtifacts -Account "nefarius" -Project "DsHidMini" -Path $Path -Toke
 Get-AppVeyorArtifacts -Account "nefarius" -Project "DsHidMini" -Path $Path -Token $Token -Branch $BuildVersion -JobName "Platform: x86"
 
 # List of files to sign
-$files =    "`".\artifacts\bin\*.exe`" " + 
-            "`".\artifacts\bin\x64\dshidmini\dshidmini.cat`" " + 
+$files =    "`".\artifacts\disk1\*.cab`" " + 
+            "`".\artifacts\bin\*.exe`" " + 
+			"`".\artifacts\bin\ARM64\dshidmini\dshidmini.dll`" " + 
             "`".\artifacts\bin\x64\dshidmini\dshidmini.dll`" " + 
 			"`".\artifacts\bin\x64\XInput1_3.dll`" " + 
-            "`".\artifacts\bin\x86\dshidmini\dshidmini.cat`" " +
             "`".\artifacts\bin\x86\dshidmini\dshidmini.dll`" "
 			"`".\artifacts\bin\x86\XInput1_3.dll`" "
 
@@ -130,3 +130,8 @@ if ($NoSigning -eq $false) {
 }
 
 #Compress-Archive -Path ".\artifacts\bin\*" -DestinationPath ".\artifacts\dshidmini_v$BuildVersion.zip"
+
+# Print helper job names for sign portal
+"DsHidMini ARM64 v$BuildVersion $(Get-Date -Format "dd.MM.yyyy")"
+"DsHidMini x64 v$BuildVersion $(Get-Date -Format "dd.MM.yyyy")"
+"DsHidMini x86 v$BuildVersion $(Get-Date -Format "dd.MM.yyyy")"
