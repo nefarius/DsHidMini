@@ -59,7 +59,7 @@ class Build : NukeBuild
         var platform = AppVeyor.Instance.Platform switch
         {
             "x86" => MSBuildTargetPlatform.Win32,
-            "ARM64" => MSBuildTargetPlatform.arm,
+            "ARM64" => (MSBuildTargetPlatform)"ARM64",
             _ => MSBuildTargetPlatform.x64
         };
 
