@@ -156,26 +156,31 @@ ConfigParseLEDSettings(
 			if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "Duration")))
 			{
 				pPlayerSlots[playerIndex]->Duration = (UCHAR)cJSON_GetNumberValue(pNode);
+				EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "Duration", pPlayerSlots[playerIndex]->Duration);
 			}
 
 			if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "IntervalDuration")))
 			{
 				pPlayerSlots[playerIndex]->IntervalDuration = (UCHAR)cJSON_GetNumberValue(pNode);
+				EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "IntervalDuration", pPlayerSlots[playerIndex]->IntervalDuration);
 			}
 
 			if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "Enabled")))
 			{
 				pPlayerSlots[playerIndex]->Enabled = (UCHAR)cJSON_GetNumberValue(pNode);
+				EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "Enabled", pPlayerSlots[playerIndex]->Enabled);
 			}
 
 			if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "IntervalPortionOff")))
 			{
 				pPlayerSlots[playerIndex]->IntervalPortionOff = (UCHAR)cJSON_GetNumberValue(pNode);
+				EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "IntervalPortionOff", pPlayerSlots[playerIndex]->IntervalPortionOff);
 			}
 
 			if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "IntervalPortionOn")))
 			{
 				pPlayerSlots[playerIndex]->IntervalPortionOn = (UCHAR)cJSON_GetNumberValue(pNode);
+				EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "IntervalPortionOn", pPlayerSlots[playerIndex]->IntervalPortionOn);
 			}
 		}
 	}
@@ -265,11 +270,13 @@ void ConfigNodeParse(
 			if ((pNode = cJSON_GetObjectItem(pModeSpecific, "PressureExposureMode")))
 			{
 				pCfg->SDF.PressureExposureMode = (DS_PRESSURE_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
+				EventWriteOverrideSettingUInt(pModeSpecific->string, "SDF.PressureExposureMode", pCfg->SDF.PressureExposureMode);
 			}
 
 			if ((pNode = cJSON_GetObjectItem(pModeSpecific, "DPadExposureMode")))
 			{
 				pCfg->SDF.DPadExposureMode = (DS_DPAD_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
+				EventWriteOverrideSettingUInt(pModeSpecific->string, "SDF.DPadExposureMode", pCfg->SDF.DPadExposureMode);
 			}
 
 			//
@@ -282,11 +289,13 @@ void ConfigNodeParse(
 				if ((pNode = cJSON_GetObjectItem(pDeadZoneLeft, "Apply")))
 				{
 					pCfg->ThumbSettings.DeadZoneLeft.Apply = (BOOLEAN)cJSON_IsTrue(pNode);
+					EventWriteOverrideSettingUInt(pDeadZoneLeft->string, "ThumbSettings.DeadZoneLeft.Apply", pCfg->ThumbSettings.DeadZoneLeft.Apply);
 				}
 
 				if ((pNode = cJSON_GetObjectItem(pDeadZoneLeft, "PolarValue")))
 				{
 					pCfg->ThumbSettings.DeadZoneLeft.PolarValue = cJSON_GetNumberValue(pNode);
+					EventWriteOverrideSettingUInt(pDeadZoneLeft->string, "ThumbSettings.DeadZoneLeft.PolarValue", pCfg->ThumbSettings.DeadZoneLeft.PolarValue);
 				}
 			}
 
@@ -300,11 +309,13 @@ void ConfigNodeParse(
 				if ((pNode = cJSON_GetObjectItem(pDeadZoneRight, "Apply")))
 				{
 					pCfg->ThumbSettings.DeadZoneRight.Apply = (BOOLEAN)cJSON_IsTrue(pNode);
+					EventWriteOverrideSettingUInt(pDeadZoneRight->string, "ThumbSettings.DeadZoneRight.Apply", pCfg->ThumbSettings.DeadZoneRight.Apply);
 				}
 
 				if ((pNode = cJSON_GetObjectItem(pDeadZoneRight, "PolarValue")))
 				{
 					pCfg->ThumbSettings.DeadZoneRight.PolarValue = cJSON_GetNumberValue(pNode);
+					EventWriteOverrideSettingUInt(pDeadZoneRight->string, "ThumbSettings.DeadZoneRight.PolarValue", pCfg->ThumbSettings.DeadZoneRight.PolarValue);
 				}
 			}
 
