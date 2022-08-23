@@ -1,5 +1,4 @@
 #include "Driver.h"
-#include <stdio.h>
 #include "Configuration.tmh"
 
 
@@ -295,7 +294,7 @@ void ConfigNodeParse(
 				if ((pNode = cJSON_GetObjectItem(pDeadZoneLeft, "PolarValue")))
 				{
 					pCfg->ThumbSettings.DeadZoneLeft.PolarValue = cJSON_GetNumberValue(pNode);
-					EventWriteOverrideSettingUInt(pDeadZoneLeft->string, "ThumbSettings.DeadZoneLeft.PolarValue", pCfg->ThumbSettings.DeadZoneLeft.PolarValue);
+					EventWriteOverrideSettingDouble(pDeadZoneLeft->string, "ThumbSettings.DeadZoneLeft.PolarValue", pCfg->ThumbSettings.DeadZoneLeft.PolarValue);
 				}
 			}
 
@@ -315,7 +314,7 @@ void ConfigNodeParse(
 				if ((pNode = cJSON_GetObjectItem(pDeadZoneRight, "PolarValue")))
 				{
 					pCfg->ThumbSettings.DeadZoneRight.PolarValue = cJSON_GetNumberValue(pNode);
-					EventWriteOverrideSettingUInt(pDeadZoneRight->string, "ThumbSettings.DeadZoneRight.PolarValue", pCfg->ThumbSettings.DeadZoneRight.PolarValue);
+					EventWriteOverrideSettingDouble(pDeadZoneRight->string, "ThumbSettings.DeadZoneRight.PolarValue", pCfg->ThumbSettings.DeadZoneRight.PolarValue);
 				}
 			}
 
@@ -353,9 +352,10 @@ ConfigLoadForDevice(
 	NTSTATUS status = STATUS_SUCCESS;
 	CHAR programDataPath[MAX_PATH];
 	CHAR configFilePath[MAX_PATH];
-	FILE* fp = NULL;
+	HANDLE hFile = NULL;
 	PCHAR content = NULL;
 	cJSON* config_json = NULL;
+	LARGE_INTEGER size = { 0 };
 
 	FuncEntry(TRACE_CONFIG);
 
@@ -401,9 +401,18 @@ ConfigLoadForDevice(
 			configFilePath
 		);
 
-		errno_t error;
+		hFile = CreateFileA(configFilePath,
+			GENERIC_READ,
+			FILE_SHARE_READ,
+			NULL,
+			OPEN_EXISTING,
+			FILE_ATTRIBUTE_NORMAL,
+			NULL
+		);
 
-		if ((error = fopen_s(&fp, configFilePath, "r")) != 0)
+		DWORD error = GetLastError();
+
+		if (hFile == INVALID_HANDLE_VALUE)
 		{
 			TraceVerbose(
 				TRACE_CONFIG,
@@ -411,22 +420,39 @@ ConfigLoadForDevice(
 				configFilePath,
 				error
 			);
+			EventWriteFailedWithWin32Error(__FUNCTION__, L"Reading configuration file", error);
 
 			status = STATUS_ACCESS_DENIED;
 			break;
 		}
 
-		(void)fseek(fp, 0L, SEEK_END);
-		const long numBytes = ftell(fp);
-		(void)fseek(fp, 0L, SEEK_SET);
+		if (!GetFileSizeEx(hFile, &size))
+		{
+			error = GetLastError();
+
+			EventWriteFailedWithWin32Error(__FUNCTION__, L"Getting configuration file size", error);
+
+			status = STATUS_ACCESS_DENIED;
+			break;
+		}
 
 		TraceVerbose(
 			TRACE_CONFIG,
-			"File size in bytes: %d",
-			numBytes
+			"File size in bytes: %Iu64",
+			size.QuadPart
 		);
 
-		content = (char*)calloc(numBytes, sizeof(char));
+		//
+		// Protection against nonsense
+		// 
+		if (size.QuadPart > 20000000 /* 20 MB of JSON, w00t?! */)
+		{
+			EventWriteFailedWithWin32Error(__FUNCTION__, L"Reading configuration file", ERROR_BUFFER_OVERFLOW);
+			status = STATUS_BUFFER_OVERFLOW;
+			break;
+		}
+
+		content = (char*)calloc(size.QuadPart, sizeof(char));
 
 		if (content == NULL)
 		{
@@ -434,7 +460,16 @@ ConfigLoadForDevice(
 			break;
 		}
 
-		(void)fread(content, sizeof(char), numBytes, fp);
+		DWORD bytesRead = 0;
+
+		if (!ReadFile(hFile, content, (DWORD)size.QuadPart, &bytesRead, NULL))
+		{
+			error = GetLastError();
+
+			EventWriteFailedWithWin32Error(__FUNCTION__, L"Reading configuration file content", error);
+			status = STATUS_UNSUCCESSFUL;
+			break;
+		}
 
 		config_json = cJSON_Parse(content);
 
@@ -566,9 +601,9 @@ ConfigLoadForDevice(
 		free(content);
 	}
 
-	if (fp)
+	if (hFile != INVALID_HANDLE_VALUE)
 	{
-		(void)fclose(fp);
+		CloseHandle(hFile);
 	}
 
 	FuncExit(TRACE_CONFIG, "status=%!STATUS!", status);
