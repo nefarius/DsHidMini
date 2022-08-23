@@ -15,6 +15,66 @@ DS_HID_DEVICE_MODE HID_DEVICE_MODE_FROM_NAME(PSTR ModeName)
 	return 0;
 }
 
+DS_PRESSURE_EXPOSURE_MODE DS_PRESSURE_EXPOSURE_MODE_FROM_NAME(PSTR ModeName)
+{
+	if (!_strcmpi(ModeName, G_PRESSURE_EXPOSURE_MODE_NAMES[2]))
+	{
+		return DsPressureExposureModeDefault;
+	}
+
+	if (!_strcmpi(ModeName, G_PRESSURE_EXPOSURE_MODE_NAMES[1]))
+	{
+		return DsPressureExposureModeAnalogue;
+	}
+
+	if (!_strcmpi(ModeName, G_PRESSURE_EXPOSURE_MODE_NAMES[0]))
+	{
+		return DsPressureExposureModeDigital;
+	}
+
+	return DsPressureExposureModeDefault;
+}
+
+DS_DPAD_EXPOSURE_MODE DS_DPAD_EXPOSURE_MODE_FROM_NAME(PSTR ModeName)
+{
+	if (!_strcmpi(ModeName, G_DPAD_EXPOSURE_MODE_NAMES[2]))
+	{
+		return DsDPadExposureModeDefault;
+	}
+
+	if (!_strcmpi(ModeName, G_DPAD_EXPOSURE_MODE_NAMES[1]))
+	{
+		return DsDPadExposureModeIndividualButtons;
+	}
+
+	if (!_strcmpi(ModeName, G_DPAD_EXPOSURE_MODE_NAMES[0]))
+	{
+		return DsDPadExposureModeHAT;
+	}
+
+	return DsDPadExposureModeDefault;
+}
+
+DS_LED_MODE DS_LED_MODE_FROM_NAME(PSTR ModeName)
+{
+	if (!_strcmpi(ModeName, G_LED_MODE_NAMES[2]))
+	{
+		return DsLEDModeCustomPattern;
+	}
+
+	if (!_strcmpi(ModeName, G_LED_MODE_NAMES[1]))
+	{
+		return DsLEDModeBatteryIndicatorBarGraph;
+	}
+
+	if (!_strcmpi(ModeName, G_LED_MODE_NAMES[0]))
+	{
+		return DsLEDModeBatteryIndicatorPlayerIndex;
+	}
+
+	return DsLEDModeBatteryIndicatorPlayerIndex;
+}
+
 #pragma warning(push)
 #pragma warning( disable : 4706 )
 void
