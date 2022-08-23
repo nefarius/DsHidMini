@@ -11,6 +11,7 @@
 #include <initguid.h>
 #include <usb.h>
 #include <wdfusb.h>
+#include <DsHidMiniETW.h>
 
 #include "JSON/cJSON.h"
 

@@ -6,6 +6,8 @@
 
 EVT_DMF_DEVICE_MODULES_ADD DmfDeviceModulesAdd;
 
+EVT_WDF_DEVICE_CONTEXT_CLEANUP DsHidMiniDeviceCleanup;
+
 #pragma code_seg("PAGED")
 DMF_DEFAULT_DRIVERCLEANUP(dshidminiEvtDriverContextCleanup)
 
@@ -18,19 +20,21 @@ dshidminiEvtDeviceAdd(
 	_Inout_ PWDFDEVICE_INIT DeviceInit
 )
 {
-	WDF_OBJECT_ATTRIBUTES			deviceAttributes;
-	WDFDEVICE						device;
-	NTSTATUS						status;
-	PDMFDEVICE_INIT					dmfDeviceInit;
-	DMF_EVENT_CALLBACKS				dmfCallbacks;
-	WDF_PNPPOWER_EVENT_CALLBACKS	pnpPowerCallbacks;
-	PDEVICE_CONTEXT					pDevCtx;
-	WDFQUEUE						queue;
-	WDF_IO_QUEUE_CONFIG				queueConfig;
+	WDF_OBJECT_ATTRIBUTES deviceAttributes;
+	WDFDEVICE device;
+	NTSTATUS status;
+	PDMFDEVICE_INIT dmfDeviceInit;
+	DMF_EVENT_CALLBACKS dmfCallbacks;
+	WDF_PNPPOWER_EVENT_CALLBACKS pnpPowerCallbacks;
+	PDEVICE_CONTEXT pDevCtx;
+	WDFQUEUE queue;
+	WDF_IO_QUEUE_CONFIG queueConfig;
 	BOOLEAN ret;
 
 
 	UNREFERENCED_PARAMETER(Driver);
+
+	PAGED_CODE();
 
 	FuncEntry(TRACE_DEVICE);
 
@@ -75,6 +79,7 @@ dshidminiEvtDeviceAdd(
 	DMF_DmfFdoSetFilter(dmfDeviceInit);
 
 	WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_CONTEXT);
+	deviceAttributes.EvtCleanupCallback = DsHidMiniDeviceCleanup;
 
 	status = WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device);
 
@@ -181,9 +186,34 @@ dshidminiEvtDeviceAdd(
 		DMF_DmfDeviceInitFree(&dmfDeviceInit);
 	}
 
+	if (!NT_SUCCESS(status) && device != NULL)
+	{
+		WdfObjectDelete(device);
+	}
+
+	EventWriteStartEvent(device, status);
+
 	FuncExit(TRACE_DEVICE, "status=%!STATUS!", status);
 
 	return status;
+}
+#pragma code_seg()
+
+//
+// Device context clean-up
+//
+#pragma code_seg("PAGED")
+void DsHidMiniDeviceCleanup(
+	WDFOBJECT Object
+)
+{
+	FuncEntry(TRACE_DEVICE);
+
+	PAGED_CODE();
+
+	EventWriteUnloadEvent(Object);
+
+	FuncExitNoReturn(TRACE_DEVICE);
 }
 #pragma code_seg()
 
