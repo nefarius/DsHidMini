@@ -24,12 +24,18 @@
 						<data inType="win:UnicodeString" name="FunctionName" outType="xs:string"/>
 						<data inType="win:UInt32" name="Status" outType="win:NTSTATUS"/>
 					</template>
+					<template tid="tid_failed_with_win32error">
+						<data inType="win:AnsiString" name="ScopeName" outType="win:Utf8"/>
+						<data inType="win:UnicodeString" name="FunctionName" outType="xs:string"/>
+						<data inType="win:UInt32" name="Win32Error" outType="win:Win32Error"/>
+					</template>
 				</templates>
 				<events>
 					<event value="1" channel="SYSTEM" level="win:Informational" message="$(string.StartEvent.EventMessage)" opcode="win:Start" symbol="StartEvent" template="tid_load_template"/>
 					<event value="2" channel="SYSTEM" level="win:Informational" message="$(string.UnloadEvent.EventMessage)" opcode="win:Stop" symbol="UnloadEvent" template="tid_unload_template"/>
 					<event value="3" channel="SYSTEM" level="win:Error" message="$(string.FailedWithHResult.EventMessage)" opcode="win:Info" symbol="FailedWithHResult" template="tid_failed_with_hresult"/>
 					<event value="4" channel="SYSTEM" level="win:Error" message="$(string.FailedWithNTStatus.EventMessage)" opcode="win:Info" symbol="FailedWithNTStatus" template="tid_failed_with_ntstatus"/>
+					<event value="5" channel="SYSTEM" level="win:Error" message="$(string.FailedWithWin32Error.EventMessage)" opcode="win:Info" symbol="FailedWithWin32Error" template="tid_failed_with_win32error"/>
 				</events>
 			</provider>
 		</events>
@@ -41,6 +47,7 @@
 				<string id="UnloadEvent.EventMessage" value="Device detached (obj: %1)"/>
 				<string id="FailedWithHResult.EventMessage" value="[%1] %2 failed with HRESULT %3"/>
 				<string id="FailedWithNTStatus.EventMessage" value="[%1] %2 failed with NTSTATUS %3"/>
+				<string id="FailedWithWin32Error.EventMessage" value="[%1] %2 failed with Win32 Error %3"/>
 			</stringTable>
 		</resources>
 	</localization>
