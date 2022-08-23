@@ -29,11 +29,13 @@ ConfigParseRumbleSettings(
 	if ((pNode = cJSON_GetObjectItem(RumbleSettings, "DisableBM")))
 	{
 		Config->RumbleSettings.DisableBM = (BOOLEAN)cJSON_IsTrue(pNode);
+		EventWriteOverrideSettingUInt(RumbleSettings->string, "DisableBM", Config->RumbleSettings.DisableBM);
 	}
 
 	if ((pNode = cJSON_GetObjectItem(RumbleSettings, "DisableSM")))
 	{
 		Config->RumbleSettings.DisableSM = (BOOLEAN)cJSON_IsTrue(pNode);
+		EventWriteOverrideSettingUInt(RumbleSettings->string, "DisableSM", Config->RumbleSettings.DisableSM);
 	}
 
 	const cJSON* pBMStrRescale = cJSON_GetObjectItem(RumbleSettings, "BMStrRescale");
@@ -43,16 +45,19 @@ ConfigParseRumbleSettings(
 		if ((pNode = cJSON_GetObjectItem(pBMStrRescale, "Enabled")))
 		{
 			Config->RumbleSettings.BMStrRescale.Enabled = (BOOLEAN)cJSON_IsTrue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "BMStrRescale.Enabled", Config->RumbleSettings.BMStrRescale.Enabled);
 		}
 
 		if ((pNode = cJSON_GetObjectItem(pBMStrRescale, "MinValue")))
 		{
 			Config->RumbleSettings.BMStrRescale.MinValue = (UCHAR)cJSON_GetNumberValue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "BMStrRescale.MinValue", Config->RumbleSettings.BMStrRescale.MinValue);
 		}
 
 		if ((pNode = cJSON_GetObjectItem(pBMStrRescale, "MaxValue")))
 		{
 			Config->RumbleSettings.BMStrRescale.MaxValue = (UCHAR)cJSON_GetNumberValue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "BMStrRescale.MaxValue", Config->RumbleSettings.BMStrRescale.MaxValue);
 		}
 	}
 
@@ -63,16 +68,19 @@ ConfigParseRumbleSettings(
 		if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "Enabled")))
 		{
 			Config->RumbleSettings.SMToBMConversion.Enabled = (BOOLEAN)cJSON_IsTrue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "SMToBMConversion.Enabled", Config->RumbleSettings.SMToBMConversion.Enabled);
 		}
 
 		if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "RescaleMinValue")))
 		{
 			Config->RumbleSettings.SMToBMConversion.RescaleMinValue = (UCHAR)cJSON_GetNumberValue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "SMToBMConversion.RescaleMinValue", Config->RumbleSettings.SMToBMConversion.RescaleMinValue);
 		}
 
 		if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "RescaleMaxValue")))
 		{
 			Config->RumbleSettings.SMToBMConversion.RescaleMaxValue = (UCHAR)cJSON_GetNumberValue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "SMToBMConversion.RescaleMaxValue", Config->RumbleSettings.SMToBMConversion.RescaleMaxValue);
 		}
 	}
 
@@ -83,21 +91,25 @@ ConfigParseRumbleSettings(
 		if ((pNode = cJSON_GetObjectItem(pForcedSM, "BMThresholdEnabled")))
 		{
 			Config->RumbleSettings.ForcedSM.BMThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "ForcedSM.BMThresholdEnabled", Config->RumbleSettings.ForcedSM.BMThresholdEnabled);
 		}
 
 		if ((pNode = cJSON_GetObjectItem(pForcedSM, "BMThresholdValue")))
 		{
 			Config->RumbleSettings.ForcedSM.BMThresholdValue = (UCHAR)cJSON_GetNumberValue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "ForcedSM.BMThresholdValue", Config->RumbleSettings.ForcedSM.BMThresholdValue);
 		}
 
 		if ((pNode = cJSON_GetObjectItem(pForcedSM, "SMThresholdEnabled")))
 		{
 			Config->RumbleSettings.ForcedSM.SMThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "ForcedSM.SMThresholdEnabled", Config->RumbleSettings.ForcedSM.SMThresholdEnabled);
 		}
 
 		if ((pNode = cJSON_GetObjectItem(pForcedSM, "SMThresholdValue")))
 		{
 			Config->RumbleSettings.ForcedSM.SMThresholdValue = (UCHAR)cJSON_GetNumberValue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "ForcedSM.SMThresholdValue", Config->RumbleSettings.ForcedSM.SMThresholdValue);
 		}
 	}
 }
@@ -116,6 +128,7 @@ ConfigParseLEDSettings(
 	if ((pNode = cJSON_GetObjectItem(LEDSettings, "Mode")))
 	{
 		Config->LEDSettings.Mode = (DS_LED_MODE)cJSON_GetNumberValue(pNode);
+		EventWriteOverrideSettingUInt(LEDSettings->string, "Mode", Config->LEDSettings.Mode);
 	}
 
 	if (Config->LEDSettings.Mode == DsLEDModeCustomPattern)
@@ -196,37 +209,44 @@ void ConfigNodeParse(
 		if ((pNode = cJSON_GetObjectItem(ParentNode, "HidDeviceMode")))
 		{
 			pCfg->HidDeviceMode = HID_DEVICE_MODE_FROM_NAME(cJSON_GetStringValue(pNode));
+			EventWriteOverrideSettingUInt(ParentNode->string, "HidDeviceMode", pCfg->HidDeviceMode);
 		}
 
 		if ((pNode = cJSON_GetObjectItem(ParentNode, "DisableAutoPairing")))
 		{
 			pCfg->DisableAutoPairing = (BOOLEAN)cJSON_IsTrue(pNode);
+			EventWriteOverrideSettingUInt(ParentNode->string, "DisableAutoPairing", pCfg->DisableAutoPairing);
 		}
 	}
 
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "IsOutputRateControlEnabled")))
 	{
 		pCfg->IsOutputRateControlEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+		EventWriteOverrideSettingUInt(ParentNode->string, "IsOutputRateControlEnabled", pCfg->IsOutputRateControlEnabled);
 	}
 
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "OutputRateControlPeriodMs")))
 	{
 		pCfg->OutputRateControlPeriodMs = (UCHAR)cJSON_GetNumberValue(pNode);
+		EventWriteOverrideSettingUInt(ParentNode->string, "OutputRateControlPeriodMs", pCfg->OutputRateControlPeriodMs);
 	}
 
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "IsOutputDeduplicatorEnabled")))
 	{
 		pCfg->IsOutputDeduplicatorEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+		EventWriteOverrideSettingUInt(ParentNode->string, "IsOutputDeduplicatorEnabled", pCfg->IsOutputDeduplicatorEnabled);
 	}
 
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "WirelessIdleTimeoutPeriodMs")))
 	{
 		pCfg->WirelessIdleTimeoutPeriodMs = (ULONG)cJSON_GetNumberValue(pNode);
+		EventWriteOverrideSettingUInt(ParentNode->string, "WirelessIdleTimeoutPeriodMs", pCfg->WirelessIdleTimeoutPeriodMs);
 	}
 
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "DisableWirelessIdleTimeout")))
 	{
 		pCfg->DisableWirelessIdleTimeout = (BOOLEAN)cJSON_IsTrue(pNode);
+		EventWriteOverrideSettingUInt(ParentNode->string, "DisableWirelessIdleTimeout", pCfg->DisableWirelessIdleTimeout);
 	}
 
 	//
@@ -464,17 +484,17 @@ ConfigLoadForDevice(
 		//
 		// Verify if SMtoBMConversion values are valid and attempt to calculate rescaling constants in case they are
 		// 
-		if(
+		if (
 			Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue > Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue
 			&& Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue > 0
-		)
+			)
 		{
 			Context->Configuration.RumbleSettings.SMToBMConversion.ConstA =
 				(DOUBLE)(Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue - Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue) / (254);
 
 			Context->Configuration.RumbleSettings.SMToBMConversion.ConstB =
-			Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue - Context->Configuration.RumbleSettings.SMToBMConversion.ConstA * 255;
-			
+				Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue - Context->Configuration.RumbleSettings.SMToBMConversion.ConstA * 255;
+
 			TraceVerbose(
 				TRACE_CONFIG,
 				"SMToBMConversion rescaling constants: A = %f and B = %f.",
@@ -489,23 +509,23 @@ ConfigLoadForDevice(
 				TRACE_CONFIG,
 				"Invalid values found for SMToBMConversion. Setting disabled."
 			);
-			Context->Configuration.RumbleSettings.SMToBMConversion.Enabled = FALSE ;
+			Context->Configuration.RumbleSettings.SMToBMConversion.Enabled = FALSE;
 		}
 
 		//
 		// Verify if BMStrRescale values are valid and attempt to calculate rescaling constants in case they are
 		// 
-		if(
+		if (
 			Context->Configuration.RumbleSettings.BMStrRescale.MaxValue > Context->Configuration.RumbleSettings.BMStrRescale.MinValue
 			&& Context->Configuration.RumbleSettings.BMStrRescale.MinValue > 0
-		)
+			)
 		{
 			Context->Configuration.RumbleSettings.BMStrRescale.ConstA =
 				(DOUBLE)(Context->Configuration.RumbleSettings.BMStrRescale.MaxValue - Context->Configuration.RumbleSettings.BMStrRescale.MinValue) / (254);
 
 			Context->Configuration.RumbleSettings.BMStrRescale.ConstB =
-				Context->Configuration.RumbleSettings.BMStrRescale.MaxValue - Context->Configuration.RumbleSettings.BMStrRescale.ConstA * 255;		
-		
+				Context->Configuration.RumbleSettings.BMStrRescale.MaxValue - Context->Configuration.RumbleSettings.BMStrRescale.ConstA * 255;
+
 			TraceVerbose(
 				TRACE_CONFIG,
 				"BMStrRescale rescaling constants: A = %f and B = %f.",
@@ -520,7 +540,7 @@ ConfigLoadForDevice(
 				"Invalid values found for BMStrRescale. Setting disabled."
 			);
 
-		Context->Configuration.RumbleSettings.BMStrRescale.Enabled = FALSE;
+			Context->Configuration.RumbleSettings.BMStrRescale.Enabled = FALSE;
 		}
 
 	} while (FALSE);
@@ -537,7 +557,7 @@ ConfigLoadForDevice(
 
 	if (fp)
 	{
-		fclose(fp);
+		(void)fclose(fp);
 	}
 
 	FuncExit(TRACE_CONFIG, "status=%!STATUS!", status);

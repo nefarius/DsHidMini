@@ -29,6 +29,16 @@
 						<data inType="win:UnicodeString" name="FunctionName" outType="xs:string"/>
 						<data inType="win:UInt32" name="Win32Error" outType="win:Win32Error"/>
 					</template>
+					<template tid="tid_override_setting_uint">
+						<data inType="win:AnsiString" name="Node" outType="win:Utf8"/>
+						<data inType="win:AnsiString" name="Setting" outType="win:Utf8"/>
+						<data inType="win:UInt32" name="Value" outType="xs:unsignedInt"/>
+					</template>
+					<template tid="tid_override_setting_string">
+						<data inType="win:AnsiString" name="Node" outType="win:Utf8"/>
+						<data inType="win:AnsiString" name="Setting" outType="win:Utf8"/>
+						<data inType="win:AnsiString" name="Value" outType="win:Utf8"/>
+					</template>
 				</templates>
 				<events>
 					<event value="1" channel="SYSTEM" level="win:Informational" message="$(string.StartEvent.EventMessage)" opcode="win:Start" symbol="StartEvent" template="tid_load_template"/>
@@ -36,6 +46,8 @@
 					<event value="3" channel="SYSTEM" level="win:Error" message="$(string.FailedWithHResult.EventMessage)" opcode="win:Info" symbol="FailedWithHResult" template="tid_failed_with_hresult"/>
 					<event value="4" channel="SYSTEM" level="win:Error" message="$(string.FailedWithNTStatus.EventMessage)" opcode="win:Info" symbol="FailedWithNTStatus" template="tid_failed_with_ntstatus"/>
 					<event value="5" channel="SYSTEM" level="win:Error" message="$(string.FailedWithWin32Error.EventMessage)" opcode="win:Info" symbol="FailedWithWin32Error" template="tid_failed_with_win32error"/>
+					<event value="6" channel="SYSTEM" level="win:Informational" message="$(string.OverrideSettingUInt.EventMessage)" opcode="win:Info" symbol="OverrideSettingUInt" template="tid_override_setting_uint"/>
+					<event value="7" channel="SYSTEM" level="win:Informational" message="$(string.OverrideSettingString.EventMessage)" opcode="win:Info" symbol="OverrideSettingString" template="tid_override_setting_string"/>
 				</events>
 			</provider>
 		</events>
@@ -48,6 +60,8 @@
 				<string id="FailedWithHResult.EventMessage" value="[%1] %2 failed with HRESULT %3"/>
 				<string id="FailedWithNTStatus.EventMessage" value="[%1] %2 failed with NTSTATUS %3"/>
 				<string id="FailedWithWin32Error.EventMessage" value="[%1] %2 failed with Win32 Error %3"/>
+				<string id="OverrideSettingUInt.EventMessage" value="Setting %1 changed to %2"/>
+				<string id="OverrideSettingString.EventMessage" value="Setting %1 changed to %2"/>
 			</stringTable>
 		</resources>
 	</localization>
