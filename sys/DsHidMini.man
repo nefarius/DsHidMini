@@ -1,0 +1,93 @@
+<?xml version='1.0' encoding='utf-8' standalone='yes'?>
+<instrumentationManifest xmlns="http://schemas.microsoft.com/win/2004/08/events" xmlns:win="http://manifests.microsoft.com/win/2004/08/windows/events" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.microsoft.com/win/2004/08/events eventman.xsd">
+	<instrumentation>
+		<events>
+			<provider guid="{ba65b162-c05c-4bd7-b75d-db8d030daf7f}" messageFileName="%WinDir%\System32\drivers\UMDF\dshidmini.dll" name="Nefarius DsHidMini Driver" resourceFileName="%WinDir%\System32\drivers\UMDF\dshidmini.dll" symbol="DriverControlGuid">
+				<channels>
+					<importChannel chid="SYSTEM" name="System"/>
+				</channels>
+				<templates>
+					<template tid="tid_load_template">
+						<data inType="win:Pointer" name="DeviceObjPtr" outType="win:HexInt64"/>
+						<data inType="win:UInt32" name="Status" outType="win:NTSTATUS"/>
+					</template>
+					<template tid="tid_unload_template">
+						<data inType="win:Pointer" name="DeviceObjPtr" outType="win:HexInt64"/>
+					</template>
+					<template tid="tid_failed_with_hresult">
+						<data inType="win:AnsiString" name="ScopeName" outType="win:Utf8"/>
+						<data inType="win:UnicodeString" name="FunctionName" outType="xs:string"/>
+						<data inType="win:Int32" name="HResult" outType="win:HResult"/>
+					</template>
+					<template tid="tid_failed_with_ntstatus">
+						<data inType="win:AnsiString" name="ScopeName" outType="win:Utf8"/>
+						<data inType="win:UnicodeString" name="FunctionName" outType="xs:string"/>
+						<data inType="win:UInt32" name="Status" outType="win:NTSTATUS"/>
+					</template>
+					<template tid="tid_failed_with_win32error">
+						<data inType="win:AnsiString" name="ScopeName" outType="win:Utf8"/>
+						<data inType="win:UnicodeString" name="FunctionName" outType="xs:string"/>
+						<data inType="win:UInt32" name="Win32Error" outType="win:Win32Error"/>
+					</template>
+					<template tid="tid_override_setting_uint">
+						<data inType="win:AnsiString" name="Node" outType="win:Utf8"/>
+						<data inType="win:AnsiString" name="Setting" outType="win:Utf8"/>
+						<data inType="win:UInt32" name="Value" outType="xs:unsignedInt"/>
+					</template>
+					<template tid="tid_override_setting_string">
+						<data inType="win:AnsiString" name="Node" outType="win:Utf8"/>
+						<data inType="win:AnsiString" name="Setting" outType="win:Utf8"/>
+						<data inType="win:AnsiString" name="Value" outType="win:Utf8"/>
+					</template>
+					<template tid="tid_override_setting_double">
+						<data inType="win:AnsiString" name="Node" outType="win:Utf8"/>
+						<data inType="win:AnsiString" name="Setting" outType="win:Utf8"/>
+						<data inType="win:Double" name="Value" outType="xs:double"/>
+					</template>
+					<template tid="tid_json_parse_error">
+						<data inType="win:AnsiString" name="Error" outType="win:Utf8"/>
+					</template>
+					<template tid="tid_device_address">
+						<data inType="win:AnsiString" name="Address" outType="win:Utf8"/>
+					</template>
+				</templates>
+				<events>
+					<event value="1"  channel="SYSTEM" level="win:Informational" message="$(string.StartEvent.EventMessage)" opcode="win:Start" symbol="StartEvent" template="tid_load_template"/>
+					<event value="2"  channel="SYSTEM" level="win:Informational" message="$(string.UnloadEvent.EventMessage)" opcode="win:Stop" symbol="UnloadEvent" template="tid_unload_template"/>
+					<event value="3"  channel="SYSTEM" level="win:Error" message="$(string.FailedWithHResult.EventMessage)" opcode="win:Info" symbol="FailedWithHResult" template="tid_failed_with_hresult"/>
+					<event value="4"  channel="SYSTEM" level="win:Error" message="$(string.FailedWithNTStatus.EventMessage)" opcode="win:Info" symbol="FailedWithNTStatus" template="tid_failed_with_ntstatus"/>
+					<event value="5"  channel="SYSTEM" level="win:Error" message="$(string.FailedWithWin32Error.EventMessage)" opcode="win:Info" symbol="FailedWithWin32Error" template="tid_failed_with_win32error"/>
+					<event value="6"  channel="SYSTEM" level="win:Informational" message="$(string.OverrideSettingUInt.EventMessage)" opcode="win:Info" symbol="OverrideSettingUInt" template="tid_override_setting_uint"/>
+					<event value="7"  channel="SYSTEM" level="win:Informational" message="$(string.OverrideSettingString.EventMessage)" opcode="win:Info" symbol="OverrideSettingString" template="tid_override_setting_string"/>
+					<event value="8"  channel="SYSTEM" level="win:Informational" message="$(string.OverrideSettingDouble.EventMessage)" opcode="win:Info" symbol="OverrideSettingDouble" template="tid_override_setting_double"/>
+					<event value="9"  channel="SYSTEM" level="win:Error" message="$(string.JSONParseError.EventMessage)" opcode="win:Info" symbol="JSONParseError" template="tid_json_parse_error"/>
+					<event value="10" channel="SYSTEM" level="win:Informational" message="$(string.LoadingDeviceSpecificConfig.EventMessage)" opcode="win:Info" symbol="LoadingDeviceSpecificConfig" template="tid_device_address"/>
+					<event value="11" channel="SYSTEM" level="win:Warning" message="$(string.PairingNoRadioFound.EventMessage)" opcode="win:Info" symbol="PairingNoRadioFound" template="tid_device_address"/>
+					<event value="12" channel="SYSTEM" level="win:Informational" message="$(string.AlreadyPaired.EventMessage)" opcode="win:Info" symbol="AlreadyPaired" template="tid_device_address"/>
+					<event value="13" channel="SYSTEM" level="win:Informational" message="$(string.PairedSuccessfully.EventMessage)" opcode="win:Info" symbol="PairedSuccessfully" template="tid_device_address"/>
+					<event value="14" channel="SYSTEM" level="win:Informational" message="$(string.FFBNoFreeEffectBlockIndex.EventMessage)" opcode="win:Info" symbol="FFBNoFreeEffectBlockIndex" />
+				</events>
+			</provider>
+		</events>
+	</instrumentation>
+	<localization xmlns="http://schemas.microsoft.com/win/2004/08/events">
+		<resources culture="en-US">
+			<stringTable>
+				<string id="StartEvent.EventMessage" value="Device attached (obj: %1, status: %2)"/>
+				<string id="UnloadEvent.EventMessage" value="Device detached (obj: %1)"/>
+				<string id="FailedWithHResult.EventMessage" value="[%1] %2 failed with HRESULT %3"/>
+				<string id="FailedWithNTStatus.EventMessage" value="[%1] %2 failed with NTSTATUS %3"/>
+				<string id="FailedWithWin32Error.EventMessage" value="[%1] %2 failed with Win32 Error %3"/>
+				<string id="OverrideSettingUInt.EventMessage" value="Setting %1 changed to %2"/>
+				<string id="OverrideSettingString.EventMessage" value="Setting %1 changed to %2"/>
+				<string id="OverrideSettingDouble.EventMessage" value="Setting %1 changed to %2"/>
+				<string id="JSONParseError.EventMessage" value="Failed to read configuration file, JSON parsing error: %1"/>
+				<string id="LoadingDeviceSpecificConfig.EventMessage" value="Loading custom configuration overrides for device %1"/>
+				<string id="PairingNoRadioFound.EventMessage" value="Couldn't pair device %1 to this machine: no host radio found. Make sure you have a working turned-on Bluetooth Radio with stock drivers."/>
+				<string id="AlreadyPaired.EventMessage" value="Device %1 already paired to this machine's host radio, skipping"/>
+				<string id="PairedSuccessfully.EventMessage" value="Device %1 paired successfully"/>
+				<string id="FFBNoFreeEffectBlockIndex.EventMessage" value="No free effect block index, can't create Force-Feedback Effect"/>
+			</stringTable>
+		</resources>
+	</localization>
+</instrumentationManifest>

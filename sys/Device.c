@@ -6,6 +6,8 @@
 
 EVT_DMF_DEVICE_MODULES_ADD DmfDeviceModulesAdd;
 
+EVT_WDF_DEVICE_CONTEXT_CLEANUP DsHidMiniDeviceCleanup;
+
 #pragma code_seg("PAGED")
 DMF_DEFAULT_DRIVERCLEANUP(dshidminiEvtDriverContextCleanup)
 
@@ -18,19 +20,21 @@ dshidminiEvtDeviceAdd(
 	_Inout_ PWDFDEVICE_INIT DeviceInit
 )
 {
-	WDF_OBJECT_ATTRIBUTES			deviceAttributes;
-	WDFDEVICE						device;
-	NTSTATUS						status;
-	PDMFDEVICE_INIT					dmfDeviceInit;
-	DMF_EVENT_CALLBACKS				dmfCallbacks;
-	WDF_PNPPOWER_EVENT_CALLBACKS	pnpPowerCallbacks;
-	PDEVICE_CONTEXT					pDevCtx;
-	WDFQUEUE						queue;
-	WDF_IO_QUEUE_CONFIG				queueConfig;
+	WDF_OBJECT_ATTRIBUTES deviceAttributes;
+	WDFDEVICE device;
+	NTSTATUS status;
+	PDMFDEVICE_INIT dmfDeviceInit;
+	DMF_EVENT_CALLBACKS dmfCallbacks;
+	WDF_PNPPOWER_EVENT_CALLBACKS pnpPowerCallbacks;
+	PDEVICE_CONTEXT pDevCtx;
+	WDFQUEUE queue;
+	WDF_IO_QUEUE_CONFIG queueConfig;
 	BOOLEAN ret;
 
 
 	UNREFERENCED_PARAMETER(Driver);
+
+	PAGED_CODE();
 
 	FuncEntry(TRACE_DEVICE);
 
@@ -75,6 +79,7 @@ dshidminiEvtDeviceAdd(
 	DMF_DmfFdoSetFilter(dmfDeviceInit);
 
 	WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_CONTEXT);
+	deviceAttributes.EvtCleanupCallback = DsHidMiniDeviceCleanup;
 
 	status = WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device);
 
@@ -87,6 +92,7 @@ dshidminiEvtDeviceAdd(
 				"WdfDeviceCreate failed with status %!STATUS!",
 				status
 			);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfDeviceCreate", status);
 			break;
 		}
 
@@ -95,6 +101,7 @@ dshidminiEvtDeviceAdd(
 		// 	
 		if (!NT_SUCCESS(status = DsDevice_ReadProperties(device)))
 		{
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"DsDevice_ReadProperties", status);
 			break;
 		}
 
@@ -110,6 +117,7 @@ dshidminiEvtDeviceAdd(
 				"DsDevice_InitContext failed with status %!STATUS!",
 				status
 			);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"DsDevice_InitContext", status);
 			break;
 		}
 
@@ -136,6 +144,7 @@ dshidminiEvtDeviceAdd(
 					"WdfIoQueueCreate failed with status %!STATUS!",
 					status
 				);
+				EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfIoQueueCreate", status);
 				break;
 			}
 		}
@@ -155,6 +164,7 @@ dshidminiEvtDeviceAdd(
 				"WdfDeviceCreateDeviceInterface failed with status %!STATUS!",
 				status
 			);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfDeviceCreateDeviceInterface", status);
 			break;
 		}
 
@@ -171,6 +181,7 @@ dshidminiEvtDeviceAdd(
 			&dmfDeviceInit
 		)))
 		{
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_ModulesCreate", status);
 			break;
 		}
 
@@ -181,9 +192,34 @@ dshidminiEvtDeviceAdd(
 		DMF_DmfDeviceInitFree(&dmfDeviceInit);
 	}
 
+	if (!NT_SUCCESS(status) && device != NULL)
+	{
+		WdfObjectDelete(device);
+	}
+
+	EventWriteStartEvent(device, status);
+
 	FuncExit(TRACE_DEVICE, "status=%!STATUS!", status);
 
 	return status;
+}
+#pragma code_seg()
+
+//
+// Device context clean-up
+//
+#pragma code_seg("PAGED")
+void DsHidMiniDeviceCleanup(
+	WDFOBJECT Object
+)
+{
+	FuncEntry(TRACE_DEVICE);
+
+	PAGED_CODE();
+
+	EventWriteUnloadEvent(Object);
+
+	FuncExitNoReturn(TRACE_DEVICE);
 }
 #pragma code_seg()
 
@@ -221,6 +257,7 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 				"WdfDeviceQueryProperty failed with status %!STATUS!",
 				status
 			);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"DevicePropertyEnumeratorName", status);
 			break;
 		}
 
@@ -262,6 +299,7 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 					"Requesting DEVPKEY_Bluetooth_DeviceAddress failed with status %!STATUS!",
 					status
 				);
+				EventWriteFailedWithNTStatus(__FUNCTION__, L"DEVPKEY_Bluetooth_DeviceAddress", status);
 				break;
 			}
 
@@ -310,6 +348,7 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 					"Requesting DEVPKEY_Bluetooth_DeviceVID failed with %!STATUS!",
 					status
 				);
+				EventWriteFailedWithNTStatus(__FUNCTION__, L"DEVPKEY_Bluetooth_DeviceVID", status);
 				break;
 			}
 
@@ -332,6 +371,7 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 					"Requesting DEVPKEY_Bluetooth_DevicePID failed with %!STATUS!",
 					status
 				);
+				EventWriteFailedWithNTStatus(__FUNCTION__, L"DEVPKEY_Bluetooth_DevicePID", status);
 				break;
 			}
 
@@ -388,7 +428,7 @@ DsDevice_InitContext(
 				"WdfMemoryCreate failed with %!STATUS!",
 				status
 			);
-
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfMemoryCreate", status);
 			break;
 		}
 
@@ -425,7 +465,7 @@ DsDevice_InitContext(
 				"WdfMemoryCreate failed with %!STATUS!",
 				status
 			);
-
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfMemoryCreate", status);
 			break;
 		}
 
@@ -466,7 +506,7 @@ DsDevice_InitContext(
 				"WdfTimerCreate (HidOutputReport) failed with status %!STATUS!",
 				status
 			);
-
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfTimerCreate", status);
 			break;
 		}
 
@@ -497,6 +537,7 @@ DsDevice_InitContext(
 				"WdfWaitLockCreate failed with status %!STATUS!",
 				status
 			);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfWaitLockCreate", status);
 			break;
 		}
 
@@ -517,6 +558,7 @@ DsDevice_InitContext(
 				"WdfWaitLockCreate failed with status %!STATUS!",
 				status
 			);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfWaitLockCreate", status);
 			break;
 		}
 
@@ -537,6 +579,7 @@ DsDevice_InitContext(
 				"WdfWaitLockCreate failed with status %!STATUS!",
 				status
 			);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfWaitLockCreate", status);
 			break;
 		}
 
@@ -563,6 +606,7 @@ DsDevice_InitContext(
 				"WdfTimerCreate failed with status %!STATUS!",
 				status
 			);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfTimerCreate", status);
 			break;
 		}
 
@@ -727,6 +771,7 @@ void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
 				TRACE_DEVICE,
 				"Failed to create reload event"
 			);
+			EventWriteFailedWithWin32Error(__FUNCTION__, L"FindFirstChangeNotificationA", GetLastError());
 			break;
 		}
 
@@ -745,6 +790,7 @@ void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
 				TRACE_DEVICE,
 				"Failed to register wait for reload event"
 			);
+			EventWriteFailedWithWin32Error(__FUNCTION__, L"RegisterWaitForSingleObject", GetLastError());
 		}
 	} while (FALSE);
 
@@ -815,6 +861,7 @@ void DsDevice_RegisterBthDisconnectListener(PDEVICE_CONTEXT Context)
 			TRACE_DEVICE,
 			"Failed to create disconnect event"
 		);
+		EventWriteFailedWithWin32Error(__FUNCTION__, L"CreateEventW", GetLastError());
 	}
 
 	const BOOL ret = RegisterWaitForSingleObject(
@@ -832,6 +879,7 @@ void DsDevice_RegisterBthDisconnectListener(PDEVICE_CONTEXT Context)
 			TRACE_DEVICE,
 			"Failed to register wait for disconnect event"
 		);
+		EventWriteFailedWithWin32Error(__FUNCTION__, L"RegisterWaitForSingleObject", GetLastError());
 	}
 
 	FuncExitNoReturn(TRACE_DEVICE);

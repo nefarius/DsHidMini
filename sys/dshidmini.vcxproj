@@ -205,7 +205,7 @@
     <OutDir>$(SolutionDir)bin\$(DDKPlatform)\</OutDir>
     <Inf2CatUseLocalTime>true</Inf2CatUseLocalTime>
     <TimeStampServer>http://timestamp.digicert.com</TimeStampServer>
-	<SignMode>Off</SignMode>
+    <SignMode>Off</SignMode>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebuggerFlavor>DbgengRemoteDebugger</DebuggerFlavor>
@@ -218,7 +218,7 @@
     <OutDir>$(SolutionDir)bin\$(DDKPlatform)\</OutDir>
     <Inf2CatUseLocalTime>true</Inf2CatUseLocalTime>
     <TimeStampServer>http://timestamp.digicert.com</TimeStampServer>
-	<SignMode>Off</SignMode>
+    <SignMode>Off</SignMode>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <DebuggerFlavor>DbgengRemoteDebugger</DebuggerFlavor>
@@ -229,15 +229,15 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <DebuggerFlavor>DbgengRemoteDebugger</DebuggerFlavor>
     <OutDir>$(SolutionDir)bin\DEBUG\$(DDKPlatform)\</OutDir>
-	<Inf2CatUseLocalTime>true</Inf2CatUseLocalTime>
+    <Inf2CatUseLocalTime>true</Inf2CatUseLocalTime>
     <TimeStampServer>http://timestamp.digicert.com</TimeStampServer>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <DebuggerFlavor>DbgengRemoteDebugger</DebuggerFlavor>
     <OutDir>$(SolutionDir)bin\$(DDKPlatform)\</OutDir>
-	<Inf2CatUseLocalTime>true</Inf2CatUseLocalTime>
+    <Inf2CatUseLocalTime>true</Inf2CatUseLocalTime>
     <TimeStampServer>http://timestamp.digicert.com</TimeStampServer>
-	<SignMode>Off</SignMode>
+    <SignMode>Off</SignMode>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -252,6 +252,9 @@
       <AdditionalDependencies>%(AdditionalDependencies);OneCoreUAP.lib;BluetoothApis.lib</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>libcmtd;%(IgnoreSpecificDefaultLibraries);kernel32.lib;user32.lib</IgnoreSpecificDefaultLibraries>
     </Link>
+    <MessageCompile>
+      <GenerateUserModeLoggingMacros>true</GenerateUserModeLoggingMacros>
+    </MessageCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -273,6 +276,9 @@
     <DriverSign>
       <FileDigestAlgorithm>SHA256</FileDigestAlgorithm>
     </DriverSign>
+    <MessageCompile>
+      <GenerateUserModeLoggingMacros>true</GenerateUserModeLoggingMacros>
+    </MessageCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -287,6 +293,9 @@
       <AdditionalDependencies>%(AdditionalDependencies);OneCoreUAP.lib;BluetoothApis.lib</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>libcmtd;%(IgnoreSpecificDefaultLibraries);kernel32.lib;user32.lib</IgnoreSpecificDefaultLibraries>
     </Link>
+    <MessageCompile>
+      <GenerateUserModeLoggingMacros>true</GenerateUserModeLoggingMacros>
+    </MessageCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -308,6 +317,9 @@
     <DriverSign>
       <FileDigestAlgorithm>SHA256</FileDigestAlgorithm>
     </DriverSign>
+    <MessageCompile>
+      <GenerateUserModeLoggingMacros>true</GenerateUserModeLoggingMacros>
+    </MessageCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
@@ -336,6 +348,9 @@
       <AdditionalDependencies>%(AdditionalDependencies);OneCoreUAP.lib;BluetoothApis.lib</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries);kernel32.lib;user32.lib</IgnoreSpecificDefaultLibraries>
     </Link>
+    <MessageCompile>
+      <GenerateUserModeLoggingMacros>true</GenerateUserModeLoggingMacros>
+    </MessageCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <ClCompile>
@@ -348,15 +363,39 @@
       <AdditionalDependencies>%(AdditionalDependencies);OneCoreUAP.lib;BluetoothApis.lib</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries);kernel32.lib;user32.lib</IgnoreSpecificDefaultLibraries>
     </Link>
+    <MessageCompile>
+      <GenerateUserModeLoggingMacros>true</GenerateUserModeLoggingMacros>
+    </MessageCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <FilesToPackage Include="$(TargetPath)" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="dshidmini.rc" />
+    <ResourceCompile Include="$(IntDir)DsHidMiniETW.rc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="DsHidMini.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <MessageCompile Include="DsHidMini.man">
+      <UseBaseNameOfInput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</UseBaseNameOfInput>
+      <UseBaseNameOfInput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</UseBaseNameOfInput>
+      <UseBaseNameOfInput Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">true</UseBaseNameOfInput>
+      <UseBaseNameOfInput Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">true</UseBaseNameOfInput>
+      <UseBaseNameOfInput Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">true</UseBaseNameOfInput>
+      <UseBaseNameOfInput Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">true</UseBaseNameOfInput>
+      <UseBaseNameOfInput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</UseBaseNameOfInput>
+      <UseBaseNameOfInput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</UseBaseNameOfInput>
+      <GeneratedFilesBaseName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(Filename)ETW</GeneratedFilesBaseName>
+      <GeneratedFilesBaseName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(Filename)ETW</GeneratedFilesBaseName>
+      <GeneratedFilesBaseName Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">%(Filename)ETW</GeneratedFilesBaseName>
+      <GeneratedFilesBaseName Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">%(Filename)ETW</GeneratedFilesBaseName>
+      <GeneratedFilesBaseName Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">%(Filename)ETW</GeneratedFilesBaseName>
+      <GeneratedFilesBaseName Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">%(Filename)ETW</GeneratedFilesBaseName>
+      <GeneratedFilesBaseName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(Filename)ETW</GeneratedFilesBaseName>
+      <GeneratedFilesBaseName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(Filename)ETW</GeneratedFilesBaseName>
+    </MessageCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

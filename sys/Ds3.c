@@ -44,7 +44,7 @@ NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context)
 	NTSTATUS status;
 
 	FuncEntry(TRACE_DS3);
-	
+
 	// 
 	// "Magic packet"
 	// 
@@ -64,7 +64,7 @@ NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context)
 	);
 
 	FuncExit(TRACE_DS3, "status=%!STATUS!", status);
-	
+
 	return status;
 }
 
@@ -84,7 +84,7 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 
 	FuncEntry(TRACE_DS3);
-	
+
 	params.dwSize = sizeof(BLUETOOTH_FIND_RADIO_PARAMS);
 	info.dwSize = sizeof(BLUETOOTH_RADIO_INFO);
 
@@ -105,6 +105,7 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 				"BluetoothFindFirstRadio failed: 0x%X",
 				error
 			);
+			EventWritePairingNoRadioFound(pDevCtx->DeviceAddressString);
 			break;
 		}
 
@@ -121,9 +122,10 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 			error = ret;
 			TraceError(
 				TRACE_DS3,
-				"BluetoothGetRadioInfo failed: 0x%X", 
+				"BluetoothGetRadioInfo failed: 0x%X",
 				error
 			);
+			EventWriteFailedWithWin32Error(__FUNCTION__, L"BluetoothGetRadioInfo", error);
 			break;
 		}
 
@@ -136,21 +138,23 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 		// Don't issue request when addresses already match
 		// 
 		if (RtlCompareMemory(
-				&info.address.rgBytes[0],
-				&pDevCtx->HostAddress.Address[0],
-				sizeof(BD_ADDR)
-			) == sizeof(BD_ADDR)
-		)
+			&info.address.rgBytes[0],
+			&pDevCtx->HostAddress.Address[0],
+			sizeof(BD_ADDR)
+		) == sizeof(BD_ADDR)
+			)
 		{
 			TraceVerbose(
 				TRACE_DS3,
 				"Host address equals local radio address, skipping"
 			);
 
+			EventWriteAlreadyPaired(pDevCtx->DeviceAddressString);
+
 			status = STATUS_SUCCESS;
 			break;
 		}
-		
+
 		TraceInformation(
 			TRACE_DS3,
 			"Updating host address from %02X:%02X:%02X:%02X:%02X:%02X to %02X:%02X:%02X:%02X:%02X:%02X",
@@ -167,24 +171,24 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 			info.address.rgBytes[4],
 			info.address.rgBytes[5]
 		);
-		
+
 		UCHAR controlBuffer[SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH];
-		
+
 		RtlZeroMemory(
-			controlBuffer, 
+			controlBuffer,
 			SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH
 		);
 
 		RtlCopyMemory(
-			&controlBuffer[2], 
-			&info.address, 
+			&controlBuffer[2],
+			&info.address,
 			sizeof(BD_ADDR)
 		);
 
 		//
 		// Submit new host address
 		// 
-		status = USB_SendControlRequest(
+		if (!NT_SUCCESS(status = USB_SendControlRequest(
 			pDevCtx,
 			BmRequestHostToDevice,
 			BmRequestClass,
@@ -193,15 +197,14 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 			0,
 			controlBuffer,
 			SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH
-		);
-
-		if (!NT_SUCCESS(status))
+		)))
 		{
 			TraceError(
 				TRACE_DS3,
-				"Setting host address failed with %!STATUS!", 
+				"Setting host address failed with %!STATUS!",
 				status
 			);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"Pairing", status);
 			break;
 		}
 
@@ -209,7 +212,9 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 		// Update in device context after success
 		// 
 		RtlCopyMemory(&pDevCtx->HostAddress, &info.address, sizeof(BD_ADDR));
-		
+
+		EventWritePairedSuccessfully(pDevCtx->DeviceAddressString);
+
 	} while (FALSE);
 
 	if (hRadio)
@@ -255,9 +260,9 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 		sizeof(NTSTATUS),
 		&status
 	);
-	
+
 	FuncExit(TRACE_DS3, "status=%!STATUS!", status);
-	
+
 	return status;
 }
 
@@ -278,7 +283,7 @@ NTSTATUS DsBth_Ds3Init(PDEVICE_CONTEXT Context)
 	NTSTATUS status;
 	size_t bytesWritten = 0;
 
-	status = DMF_DefaultTarget_SendSynchronously(
+	if (!NT_SUCCESS(status = DMF_DefaultTarget_SendSynchronously(
 		Context->Connection.Bth.HidControl.OutputWriterModule,
 		hidCommandEnable,
 		ARRAYSIZE(hidCommandEnable),
@@ -288,15 +293,14 @@ NTSTATUS DsBth_Ds3Init(PDEVICE_CONTEXT Context)
 		IOCTL_BTHPS3_HID_CONTROL_WRITE,
 		0,
 		&bytesWritten
-	);
-
-	if (!NT_SUCCESS(status))
+	)))
 	{
 		TraceError(
 			TRACE_DS3,
 			"DMF_DefaultTarget_SendSynchronously failed with status %!STATUS!",
 			status
 		);
+		EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_DefaultTarget_SendSynchronously", status);
 	}
 
 	FuncExit(TRACE_DS3, "status=%!STATUS!", status);
@@ -305,10 +309,10 @@ NTSTATUS DsBth_Ds3Init(PDEVICE_CONTEXT Context)
 }
 
 VOID DS3_SET_LED_DURATION(
-	PDEVICE_CONTEXT Context, 
-	UCHAR LedIndex, 
-	UCHAR TotalDuration, 
-	UCHAR Interval, 
+	PDEVICE_CONTEXT Context,
+	UCHAR LedIndex,
+	UCHAR TotalDuration,
+	UCHAR Interval,
 	UCHAR OffInterval,
 	UCHAR OnInterval
 )
@@ -318,7 +322,7 @@ VOID DS3_SET_LED_DURATION(
 
 	// Inverse
 	LedIndex = 3 - LedIndex;
-	
+
 	PUCHAR buffer;
 
 	DS3_GET_UNIFIED_OUTPUT_REPORT_BUFFER(
@@ -336,8 +340,8 @@ VOID DS3_SET_LED_DURATION(
 VOID DS3_SET_LED_DURATION_DEFAULT(PDEVICE_CONTEXT Context, UCHAR LedIndex)
 {
 	DS3_SET_LED_DURATION(
-		Context, 
-		LedIndex, 
+		Context,
+		LedIndex,
 		0xFF, // Interval repeat never ends
 		0x27, // Interval duration
 		0x00, // No OFF-portion
@@ -366,7 +370,7 @@ VOID DS3_GET_UNIFIED_OUTPUT_REPORT_BUFFER(
 
 		if (BufferLength)
 			*BufferLength -= 1;
-		
+
 		break;
 
 	case DsDeviceConnectionTypeBth:
@@ -407,13 +411,13 @@ VOID DS3_SET_LED(
 	switch (Context->ConnectionType)
 	{
 	case DsDeviceConnectionTypeUsb:
-		
+
 		DS3_USB_SET_LED(
 			(PUCHAR)WdfMemoryGetBuffer(
 				Context->OutputReportMemory,
 				NULL
 			), Value);
-		
+
 		break;
 
 	case DsDeviceConnectionTypeBth:
@@ -423,7 +427,7 @@ VOID DS3_SET_LED(
 				Context->OutputReportMemory,
 				NULL
 			), Value);
-		
+
 		break;
 	}
 }
@@ -550,12 +554,12 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 		&& !Context->Configuration.RumbleSettings.DisableSM
 		&& !Context->Configuration.RumbleSettings.DisableBM
 		) {
-		
+
 		if (SmallValue > 0) {
 
 			// Small Motor Strength Rescale 
 			SmallValue = Context->Configuration.RumbleSettings.SMToBMConversion.ConstA * SmallValue
-				+ Context->Configuration.RumbleSettings.SMToBMConversion.ConstB ;
+				+ Context->Configuration.RumbleSettings.SMToBMConversion.ConstB;
 
 			if (SmallValue > LargeValue) {
 				LargeValue = SmallValue;
@@ -588,7 +592,7 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 
 	// Big Motor Strength Rescale
 	if (Context->Configuration.RumbleSettings.BMStrRescale.Enabled && LargeValue > 0) {
-		LargeValue = 
+		LargeValue =
 			Context->Configuration.RumbleSettings.BMStrRescale.ConstA * LargeValue
 			+ Context->Configuration.RumbleSettings.BMStrRescale.ConstB;
 	}

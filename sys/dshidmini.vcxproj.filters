@@ -208,8 +208,16 @@
     <ResourceCompile Include="dshidmini.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+    <ResourceCompile Include="$(IntDir)DsHidMiniETW.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="DsHidMini.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <MessageCompile Include="DsHidMini.man">
+      <Filter>Resource Files</Filter>
+    </MessageCompile>
   </ItemGroup>
 </Project>

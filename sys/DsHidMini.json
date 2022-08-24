@@ -7,8 +7,8 @@
     "IsOutputDeduplicatorEnabled": false,
     "WirelessIdleTimeoutPeriodMs": 300000,
     "SDF": {
-      "PressureExposureMode": 3,
-      "DPadExposureMode": 1,
+      "PressureExposureMode": "Default",
+      "DPadExposureMode": "Default",
       "DeadZoneLeft": {
         "Apply": true,
         "PolarValue": 10.0
@@ -38,7 +38,7 @@
         }
       },
       "LEDSettings": {
-        "Mode": 1,
+        "Mode": "BatteryIndicatorPlayerIndex",
         "CustomPatterns": {
           "Player1": {
             "Duration": 255,
@@ -72,8 +72,8 @@
       }
     },
     "GPJ": {
-      "PressureExposureMode": 3,
-      "DPadExposureMode": 1,
+      "PressureExposureMode": "Default",
+      "DPadExposureMode": "Default",
       "DeadZoneLeft": {
         "Apply": true,
         "PolarValue": 10.0
@@ -103,7 +103,7 @@
         }
       },
       "LEDSettings": {
-        "Mode": 1,
+        "Mode": "BatteryIndicatorPlayerIndex",
         "CustomPatterns": {
           "Player1": {
             "Duration": 255,
@@ -166,7 +166,7 @@
         }
       },
       "LEDSettings": {
-        "Mode": 1,
+        "Mode": "BatteryIndicatorPlayerIndex",
         "CustomPatterns": {
           "Player1": {
             "Duration": 255,
@@ -229,7 +229,7 @@
         }
       },
       "LEDSettings": {
-        "Mode": 1,
+        "Mode": "BatteryIndicatorPlayerIndex",
         "CustomPatterns": {
           "Player1": {
             "Duration": 255,
@@ -292,7 +292,7 @@
         }
       },
       "LEDSettings": {
-        "Mode": 1,
+        "Mode": "BatteryIndicatorPlayerIndex",
         "CustomPatterns": {
           "Player1": {
             "Duration": 255,
@@ -335,12 +335,12 @@
       "IsOutputDeduplicatorEnabled": false,
       "WirelessIdleTimeoutPeriodMs": 300000,
       "SDF": {
-        "PressureExposureMode": 3,
-        "DPadExposureMode": 2
+        "PressureExposureMode": "Default",
+        "DPadExposureMode": "IndividualButtons"
       },
       "GPJ": {
-        "PressureExposureMode": 3,
-        "DPadExposureMode": 2
+        "PressureExposureMode": "Default",
+        "DPadExposureMode": "IndividualButtons"
       }
     },
     "0019C1637EA0": {
@@ -351,12 +351,12 @@
       "IsOutputDeduplicatorEnabled": false,
       "WirelessIdleTimeoutPeriodMs": 300000,
       "SDF": {
-        "PressureExposureMode": 3,
-        "DPadExposureMode": 1
+        "PressureExposureMode": "Default",
+        "DPadExposureMode": "HAT"
       },
       "GPJ": {
-        "PressureExposureMode": 3,
-        "DPadExposureMode": 1
+        "PressureExposureMode": "Default",
+        "DPadExposureMode": "HAT"
       }
     }
   }
