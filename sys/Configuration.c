@@ -550,7 +550,7 @@ ConfigLoadForDevice(
 		TraceVerbose(
 			TRACE_CONFIG,
 			"File size in bytes: %Iu64",
-			size.QuadPart
+			(size_t)size.QuadPart
 		);
 
 		//
@@ -563,7 +563,7 @@ ConfigLoadForDevice(
 			break;
 		}
 
-		content = (char*)calloc(size.QuadPart, sizeof(char));
+		content = (char*)calloc((size_t)size.QuadPart, sizeof(char));
 
 		if (content == NULL)
 		{
