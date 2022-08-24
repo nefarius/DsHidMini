@@ -62,6 +62,9 @@
 					<event value="8"  channel="SYSTEM" level="win:Informational" message="$(string.OverrideSettingDouble.EventMessage)" opcode="win:Info" symbol="OverrideSettingDouble" template="tid_override_setting_double"/>
 					<event value="9"  channel="SYSTEM" level="win:Error" message="$(string.JSONParseError.EventMessage)" opcode="win:Info" symbol="JSONParseError" template="tid_json_parse_error"/>
 					<event value="10" channel="SYSTEM" level="win:Informational" message="$(string.LoadingDeviceSpecificConfig.EventMessage)" opcode="win:Info" symbol="LoadingDeviceSpecificConfig" template="tid_device_address"/>
+					<event value="11" channel="SYSTEM" level="win:Warning" message="$(string.PairingNoRadioFound.EventMessage)" opcode="win:Info" symbol="PairingNoRadioFound" template="tid_device_address"/>
+					<event value="12" channel="SYSTEM" level="win:Informational" message="$(string.AlreadyPaired.EventMessage)" opcode="win:Info" symbol="AlreadyPaired" template="tid_device_address"/>
+					<event value="13" channel="SYSTEM" level="win:Informational" message="$(string.PairedSuccessfully.EventMessage)" opcode="win:Info" symbol="PairedSuccessfully" template="tid_device_address"/>
 				</events>
 			</provider>
 		</events>
@@ -79,6 +82,9 @@
 				<string id="OverrideSettingDouble.EventMessage" value="Setting %1 changed to %2"/>
 				<string id="JSONParseError.EventMessage" value="Failed to read configuration file, JSON parsing error: %1"/>
 				<string id="LoadingDeviceSpecificConfig.EventMessage" value="Loading custom configuration overrides for device %1"/>
+				<string id="PairingNoRadioFound.EventMessage" value="Couldn't pair device %1 to this machine: no host radio found. Make sure you have a working turned-on Bluetooth Radio with stock drivers."/>
+				<string id="AlreadyPaired.EventMessage" value="Device %1 already paired to this machine's host radio, skipping"/>
+				<string id="PairedSuccessfully.EventMessage" value="Device %1 paired successfully"/>
 			</stringTable>
 		</resources>
 	</localization>
