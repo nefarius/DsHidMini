@@ -66,19 +66,19 @@ DMF_DsHidMini_Create(
 
 		dsHidMiniDesc.CallbacksDmf = &dsHidMiniCallbacks;
 
-		status = DMF_ModuleCreate(
+		if (!NT_SUCCESS(status = DMF_ModuleCreate(
 			Device,
 			DmfModuleAttributes,
 			ObjectAttributes,
 			&dsHidMiniDesc,
-			DmfModule);
-		if (!NT_SUCCESS(status))
+			DmfModule)))
 		{
 			TraceError(
 				TRACE_DSHIDMINIDRV,
 				"DMF_ModuleCreate failed with status %!STATUS!",
 				status
 			);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_ModuleCreate", status);
 			break;
 		}
 	} while (FALSE);
@@ -671,6 +671,7 @@ DsHidMini_SetFeature(
 		// 
 		if (!ffbEntry.IsReserved)
 		{
+			EventWriteFFBNoFreeEffectBlockIndex();
 			status = STATUS_INVALID_PARAMETER;
 			break;
 		}
@@ -1308,8 +1309,12 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 	);
 	if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
 	{
-		TraceError(TRACE_DSHIDMINIDRV,
-			"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
+		TraceError(
+			TRACE_DSHIDMINIDRV,
+			"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!",
+			status
+		);
+		EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_VirtualHidMini_InputReportGenerate", status);
 	}
 
 #pragma endregion
@@ -1333,8 +1338,12 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 		);
 		if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
 		{
-			TraceError(TRACE_DSHIDMINIDRV,
-				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
+			TraceError(
+				TRACE_DSHIDMINIDRV,
+				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", 
+				status
+			);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_VirtualHidMini_InputReportGenerate", status);
 		}
 	}
 
@@ -1359,8 +1368,12 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 		);
 		if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
 		{
-			TraceError(TRACE_DSHIDMINIDRV,
-				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
+			TraceError(
+				TRACE_DSHIDMINIDRV,
+				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", 
+				status
+			);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_VirtualHidMini_InputReportGenerate", status);
 		}
 	}
 
@@ -1386,8 +1399,12 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 		);
 		if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
 		{
-			TraceError(TRACE_DSHIDMINIDRV,
-				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
+			TraceError(
+				TRACE_DSHIDMINIDRV,
+				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", 
+				status
+			);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_VirtualHidMini_InputReportGenerate", status);
 		}
 	}
 
@@ -1412,8 +1429,12 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 		);
 		if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
 		{
-			TraceError(TRACE_DSHIDMINIDRV,
-				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", status);
+			TraceError(
+				TRACE_DSHIDMINIDRV,
+				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", 
+				status
+			);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_VirtualHidMini_InputReportGenerate", status);
 		}
 	}
 
@@ -1904,6 +1925,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 					"Sending disconnect request failed with status %!STATUS!",
 					status
 				);
+				EventWriteFailedWithNTStatus(__FUNCTION__, L"DsBth_SendDisconnectRequest", status);
 			}
 
 			//
@@ -1955,6 +1977,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 					"Sending disconnect request failed with status %!STATUS!",
 					status
 				);
+				EventWriteFailedWithNTStatus(__FUNCTION__, L"DsBth_SendDisconnectRequest", status);
 			}
 
 			//
@@ -2423,6 +2446,6 @@ VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
 	UNREFERENCED_PARAMETER(Buffer);
 	UNREFERENCED_PARAMETER(BufferLength);
 #endif
-}
+	}
 
 #pragma endregion
