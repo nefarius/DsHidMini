@@ -43,14 +43,19 @@
     <ROW Directory="AI_Bin32_Dir" Directory_Parent="APPDIR" DefaultDir="32-bit"/>
     <ROW Directory="APPDIR" Directory_Parent="TARGETDIR" DefaultDir="APPDIR:." IsPseudoRoot="1"/>
     <ROW Directory="ARM64_Dir" Directory_Parent="APPDIR" DefaultDir="ARM64"/>
+    <ROW Directory="Bit_1_Dir" Directory_Parent="XInput_Dir" DefaultDir="32-Bit"/>
+    <ROW Directory="Bit_Dir" Directory_Parent="XInput_Dir" DefaultDir="64-Bit"/>
     <ROW Directory="SHORTCUTDIR" Directory_Parent="TARGETDIR" DefaultDir="SHORTC~1|SHORTCUTDIR" IsPseudoRoot="1"/>
     <ROW Directory="TARGETDIR" DefaultDir="SourceDir"/>
+    <ROW Directory="XInput_Dir" Directory_Parent="APPDIR" DefaultDir="XInput"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiCompsComponent">
     <ROW Component="AI_ExePath" ComponentId="{F73A949B-4E80-4B86-9EC4-7E9F54ECF500}" Directory_="APPDIR" Attributes="4" KeyPath="AI_ExePath"/>
     <ROW Component="APPDIR" ComponentId="{BD00275C-5B37-4A25-AC48-28C1265638B5}" Directory_="APPDIR" Attributes="0"/>
     <ROW Component="LICENSE" ComponentId="{E5919BA3-8EC6-447F-BA46-DE382077B797}" Directory_="APPDIR" Attributes="0" KeyPath="LICENSE_1" Type="0"/>
     <ROW Component="ProductInformation" ComponentId="{A984A0F4-8A23-40D1-8FFA-E456DF7291A3}" Directory_="APPDIR" Attributes="4" KeyPath="Version"/>
+    <ROW Component="XInput1_3.dll" ComponentId="{4DCF86A1-ACEF-49D6-B1B5-4DF373E39B0B}" Directory_="Bit_1_Dir" Attributes="0" KeyPath="XInput1_3.dll"/>
+    <ROW Component="XInput1_3.dll_1" ComponentId="{26B3A1AB-9A1A-4ABD-AB04-29FE3AF9270F}" Directory_="Bit_Dir" Attributes="256" KeyPath="XInput1_3.dll_1"/>
     <ROW Component="dshidmini.cat" ComponentId="{8492D1BE-861D-4679-BC9C-7603F03A3590}" Directory_="APPDIR" Attributes="0" KeyPath="dshidmini.inf" Type="0"/>
     <ROW Component="dshidmini.cat_1" ComponentId="{2DC41053-FCDF-496A-BDAC-2B601B3BBEDF}" Directory_="ARM64_Dir" Attributes="0" KeyPath="LICENSE" Type="0"/>
     <ROW Component="dshidmini.cat_2" ComponentId="{F73A54BB-3A03-4810-A372-05F231AA92AA}" Directory_="ARM64_Dir" Attributes="0" KeyPath="dshidmini.cat_1"/>
@@ -91,6 +96,8 @@
     <ROW File="dshidmini.inf_2" Component_="dshidmini.inf_1" FileName="DSHIDM~1.INF|dshidmini.inf" Attributes="0" SourcePath="..\artifacts\drivers\dshidmini_x86\dshidmini.inf" SelfReg="false"/>
     <ROW File="LICENSE_2" Component_="dshidmini.cat_4" FileName="LICENSE" Attributes="0" SourcePath="..\artifacts\drivers\dshidmini_x86\LICENSE" SelfReg="false"/>
     <ROW File="nefconw.exe_2" Component_="nefconw.exe_2" FileName="nefconw.exe" Attributes="0" SourcePath="..\artifacts\drivers\ARM64\nefconw.exe" SelfReg="false"/>
+    <ROW File="XInput1_3.dll" Component_="XInput1_3.dll" FileName="XINPUT~1.DLL|XInput1_3.dll" Attributes="0" SourcePath="..\artifacts\bin\x86\XInput1_3.dll" SelfReg="false"/>
+    <ROW File="XInput1_3.dll_1" Component_="XInput1_3.dll_1" FileName="XINPUT~1.DLL|XInput1_3.dll" Attributes="0" SourcePath="..\artifacts\bin\x64\XInput1_3.dll" SelfReg="false"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.BootstrOptComponent">
     <ROW BootstrOptKey="GlobalOptions" DownloadFolder="[AppDataFolder][|Manufacturer]\[|ProductName]\prerequisites" Options="2"/>
@@ -250,6 +257,8 @@
     <ROW Feature_="AI32BitFiles" Component_="dshidmini.cat_5"/>
     <ROW Feature_="AI32BitFiles" Component_="dshidmini.inf_1"/>
     <ROW Feature_="ARM64" Component_="nefconw.exe_2"/>
+    <ROW Feature_="MainFeature" Component_="XInput1_3.dll"/>
+    <ROW Feature_="MainFeature" Component_="XInput1_3.dll_1"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiIconsComponent">
     <ROW Name="FireShock.exe" SourcePath="..\assets\FireShock.ico" Index="0"/>
