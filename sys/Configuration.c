@@ -2,6 +2,9 @@
 #include "Configuration.tmh"
 
 
+//
+// Translates a friendly name string into the corresponding DS_HID_DEVICE_MODE value
+// 
 DS_HID_DEVICE_MODE HID_DEVICE_MODE_FROM_NAME(PSTR ModeName)
 {
 	for (DS_HID_DEVICE_MODE value = 1; value < (DS_HID_DEVICE_MODE)_countof(G_HID_DEVICE_MODE_NAMES); value++)
@@ -15,6 +18,9 @@ DS_HID_DEVICE_MODE HID_DEVICE_MODE_FROM_NAME(PSTR ModeName)
 	return DsHidMiniDeviceModeUnknown;
 }
 
+//
+// Translates a friendly name string into the corresponding DS_PRESSURE_EXPOSURE_MODE value
+// 
 DS_PRESSURE_EXPOSURE_MODE DS_PRESSURE_EXPOSURE_MODE_FROM_NAME(PSTR ModeName)
 {
 	if (!_strcmpi(ModeName, G_PRESSURE_EXPOSURE_MODE_NAMES[2]))
@@ -35,6 +41,9 @@ DS_PRESSURE_EXPOSURE_MODE DS_PRESSURE_EXPOSURE_MODE_FROM_NAME(PSTR ModeName)
 	return DsPressureExposureModeDefault;
 }
 
+//
+// Translates a friendly name string into the corresponding DS_DPAD_EXPOSURE_MODE value
+// 
 DS_DPAD_EXPOSURE_MODE DS_DPAD_EXPOSURE_MODE_FROM_NAME(PSTR ModeName)
 {
 	if (!_strcmpi(ModeName, G_DPAD_EXPOSURE_MODE_NAMES[2]))
@@ -55,6 +64,9 @@ DS_DPAD_EXPOSURE_MODE DS_DPAD_EXPOSURE_MODE_FROM_NAME(PSTR ModeName)
 	return DsDPadExposureModeDefault;
 }
 
+//
+// Translates a friendly name string into the corresponding DS_LED_MODE value
+// 
 DS_LED_MODE DS_LED_MODE_FROM_NAME(PSTR ModeName)
 {
 	if (!_strcmpi(ModeName, G_LED_MODE_NAMES[2]))
