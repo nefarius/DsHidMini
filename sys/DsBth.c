@@ -211,6 +211,7 @@ NTSTATUS DsBth_SelfManagedIoSuspend(WDFDEVICE Device)
 			"DsBth_SendDisconnectRequest failed with status %!STATUS!",
 			status
 		);
+		EventWriteFailedWithNTStatus(__FUNCTION__, L"DsBth_SendDisconnectRequest", status);
 	}
 
 	FuncExit(TRACE_DSBTH, "status=%!STATUS!", status);
