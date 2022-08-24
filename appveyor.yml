@@ -9,6 +9,8 @@ configuration:
 skip_commits:
   files:
     - '**/*.md'
+    - '**/*.aip'
+    - '**/*.json'
 install:
 - cmd: |
     cd "C:\Tools\vcpkg"
