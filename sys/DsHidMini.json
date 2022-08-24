@@ -7,8 +7,8 @@
     "IsOutputDeduplicatorEnabled": false,
     "WirelessIdleTimeoutPeriodMs": 300000,
     "SDF": {
-      "PressureExposureMode": 3,
-      "DPadExposureMode": 1,
+      "PressureExposureMode": "Default",
+      "DPadExposureMode": "Default",
       "DeadZoneLeft": {
         "Apply": true,
         "PolarValue": 10.0
@@ -72,8 +72,8 @@
       }
     },
     "GPJ": {
-      "PressureExposureMode": 3,
-      "DPadExposureMode": 1,
+      "PressureExposureMode": "Default",
+      "DPadExposureMode": "Default",
       "DeadZoneLeft": {
         "Apply": true,
         "PolarValue": 10.0
@@ -335,12 +335,12 @@
       "IsOutputDeduplicatorEnabled": false,
       "WirelessIdleTimeoutPeriodMs": 300000,
       "SDF": {
-        "PressureExposureMode": 3,
-        "DPadExposureMode": 2
+        "PressureExposureMode": "Default",
+        "DPadExposureMode": "IndividualButtons"
       },
       "GPJ": {
-        "PressureExposureMode": 3,
-        "DPadExposureMode": 2
+        "PressureExposureMode": "Default",
+        "DPadExposureMode": "IndividualButtons"
       }
     },
     "0019C1637EA0": {
@@ -351,12 +351,12 @@
       "IsOutputDeduplicatorEnabled": false,
       "WirelessIdleTimeoutPeriodMs": 300000,
       "SDF": {
-        "PressureExposureMode": 3,
-        "DPadExposureMode": 1
+        "PressureExposureMode": "Default",
+        "DPadExposureMode": "HAT"
       },
       "GPJ": {
-        "PressureExposureMode": 3,
-        "DPadExposureMode": 1
+        "PressureExposureMode": "Default",
+        "DPadExposureMode": "HAT"
       }
     }
   }

@@ -6,34 +6,9 @@
 
 typedef struct _DEVICE_CONTEXT* PDEVICE_CONTEXT;
 
-DS_HID_DEVICE_MODE
-HID_DEVICE_MODE_FROM_NAME(
-	PSTR ModeName
-);
-
-DS_PRESSURE_EXPOSURE_MODE
-DS_PRESSURE_EXPOSURE_MODE_FROM_NAME(
-	PSTR ModeName
-);
-
-DS_DPAD_EXPOSURE_MODE
-DS_DPAD_EXPOSURE_MODE_FROM_NAME(
-	PSTR ModeName
-);
-
-DS_LED_MODE
-DS_LED_MODE_FROM_NAME(
-	PSTR ModeName
-);
-
 _Must_inspect_result_
 NTSTATUS
 ConfigLoadForDevice(
 	_Inout_ PDEVICE_CONTEXT Context,
 	_In_opt_ BOOLEAN IsHotReload
-);
-
-void
-ConfigSetDefaults(
-	_Inout_ PDS_DRIVER_CONFIGURATION Config
 );

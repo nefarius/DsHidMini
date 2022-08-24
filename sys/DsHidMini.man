@@ -44,16 +44,24 @@
 						<data inType="win:AnsiString" name="Setting" outType="win:Utf8"/>
 						<data inType="win:Double" name="Value" outType="xs:double"/>
 					</template>
+					<template tid="tid_json_parse_error">
+						<data inType="win:AnsiString" name="Error" outType="win:Utf8"/>
+					</template>
+					<template tid="tid_device_address">
+						<data inType="win:AnsiString" name="Address" outType="win:Utf8"/>
+					</template>
 				</templates>
 				<events>
-					<event value="1" channel="SYSTEM" level="win:Informational" message="$(string.StartEvent.EventMessage)" opcode="win:Start" symbol="StartEvent" template="tid_load_template"/>
-					<event value="2" channel="SYSTEM" level="win:Informational" message="$(string.UnloadEvent.EventMessage)" opcode="win:Stop" symbol="UnloadEvent" template="tid_unload_template"/>
-					<event value="3" channel="SYSTEM" level="win:Error" message="$(string.FailedWithHResult.EventMessage)" opcode="win:Info" symbol="FailedWithHResult" template="tid_failed_with_hresult"/>
-					<event value="4" channel="SYSTEM" level="win:Error" message="$(string.FailedWithNTStatus.EventMessage)" opcode="win:Info" symbol="FailedWithNTStatus" template="tid_failed_with_ntstatus"/>
-					<event value="5" channel="SYSTEM" level="win:Error" message="$(string.FailedWithWin32Error.EventMessage)" opcode="win:Info" symbol="FailedWithWin32Error" template="tid_failed_with_win32error"/>
-					<event value="6" channel="SYSTEM" level="win:Informational" message="$(string.OverrideSettingUInt.EventMessage)" opcode="win:Info" symbol="OverrideSettingUInt" template="tid_override_setting_uint"/>
-					<event value="7" channel="SYSTEM" level="win:Informational" message="$(string.OverrideSettingString.EventMessage)" opcode="win:Info" symbol="OverrideSettingString" template="tid_override_setting_string"/>
-					<event value="8" channel="SYSTEM" level="win:Informational" message="$(string.OverrideSettingDouble.EventMessage)" opcode="win:Info" symbol="OverrideSettingDouble" template="tid_override_setting_double"/>
+					<event value="1"  channel="SYSTEM" level="win:Informational" message="$(string.StartEvent.EventMessage)" opcode="win:Start" symbol="StartEvent" template="tid_load_template"/>
+					<event value="2"  channel="SYSTEM" level="win:Informational" message="$(string.UnloadEvent.EventMessage)" opcode="win:Stop" symbol="UnloadEvent" template="tid_unload_template"/>
+					<event value="3"  channel="SYSTEM" level="win:Error" message="$(string.FailedWithHResult.EventMessage)" opcode="win:Info" symbol="FailedWithHResult" template="tid_failed_with_hresult"/>
+					<event value="4"  channel="SYSTEM" level="win:Error" message="$(string.FailedWithNTStatus.EventMessage)" opcode="win:Info" symbol="FailedWithNTStatus" template="tid_failed_with_ntstatus"/>
+					<event value="5"  channel="SYSTEM" level="win:Error" message="$(string.FailedWithWin32Error.EventMessage)" opcode="win:Info" symbol="FailedWithWin32Error" template="tid_failed_with_win32error"/>
+					<event value="6"  channel="SYSTEM" level="win:Informational" message="$(string.OverrideSettingUInt.EventMessage)" opcode="win:Info" symbol="OverrideSettingUInt" template="tid_override_setting_uint"/>
+					<event value="7"  channel="SYSTEM" level="win:Informational" message="$(string.OverrideSettingString.EventMessage)" opcode="win:Info" symbol="OverrideSettingString" template="tid_override_setting_string"/>
+					<event value="8"  channel="SYSTEM" level="win:Informational" message="$(string.OverrideSettingDouble.EventMessage)" opcode="win:Info" symbol="OverrideSettingDouble" template="tid_override_setting_double"/>
+					<event value="9"  channel="SYSTEM" level="win:Error" message="$(string.JSONParseError.EventMessage)" opcode="win:Info" symbol="JSONParseError" template="tid_json_parse_error"/>
+					<event value="10" channel="SYSTEM" level="win:Informational" message="$(string.LoadingDeviceSpecificConfig.EventMessage)" opcode="win:Info" symbol="LoadingDeviceSpecificConfig" template="tid_device_address"/>
 				</events>
 			</provider>
 		</events>
@@ -69,6 +77,8 @@
 				<string id="OverrideSettingUInt.EventMessage" value="Setting %1 changed to %2"/>
 				<string id="OverrideSettingString.EventMessage" value="Setting %1 changed to %2"/>
 				<string id="OverrideSettingDouble.EventMessage" value="Setting %1 changed to %2"/>
+				<string id="JSONParseError.EventMessage" value="Failed to read configuration file, JSON parsing error: %1"/>
+				<string id="LoadingDeviceSpecificConfig.EventMessage" value="Loading custom configuration overrides for device %1"/>
 			</stringTable>
 		</resources>
 	</localization>

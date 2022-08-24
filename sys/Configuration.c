@@ -2,10 +2,15 @@
 #include "Configuration.tmh"
 
 
+void
+ConfigSetDefaults(
+	_Inout_ PDS_DRIVER_CONFIGURATION Config
+);
+
 //
 // Translates a friendly name string into the corresponding DS_HID_DEVICE_MODE value
 // 
-DS_HID_DEVICE_MODE HID_DEVICE_MODE_FROM_NAME(PSTR ModeName)
+static DS_HID_DEVICE_MODE HID_DEVICE_MODE_FROM_NAME(PSTR ModeName)
 {
 	for (DS_HID_DEVICE_MODE value = 1; value < (DS_HID_DEVICE_MODE)_countof(G_HID_DEVICE_MODE_NAMES); value++)
 	{
@@ -21,7 +26,7 @@ DS_HID_DEVICE_MODE HID_DEVICE_MODE_FROM_NAME(PSTR ModeName)
 //
 // Translates a friendly name string into the corresponding DS_PRESSURE_EXPOSURE_MODE value
 // 
-DS_PRESSURE_EXPOSURE_MODE DS_PRESSURE_EXPOSURE_MODE_FROM_NAME(PSTR ModeName)
+static DS_PRESSURE_EXPOSURE_MODE DS_PRESSURE_EXPOSURE_MODE_FROM_NAME(PSTR ModeName)
 {
 	if (!_strcmpi(ModeName, G_PRESSURE_EXPOSURE_MODE_NAMES[2]))
 	{
@@ -44,7 +49,7 @@ DS_PRESSURE_EXPOSURE_MODE DS_PRESSURE_EXPOSURE_MODE_FROM_NAME(PSTR ModeName)
 //
 // Translates a friendly name string into the corresponding DS_DPAD_EXPOSURE_MODE value
 // 
-DS_DPAD_EXPOSURE_MODE DS_DPAD_EXPOSURE_MODE_FROM_NAME(PSTR ModeName)
+static DS_DPAD_EXPOSURE_MODE DS_DPAD_EXPOSURE_MODE_FROM_NAME(PSTR ModeName)
 {
 	if (!_strcmpi(ModeName, G_DPAD_EXPOSURE_MODE_NAMES[2]))
 	{
@@ -67,7 +72,7 @@ DS_DPAD_EXPOSURE_MODE DS_DPAD_EXPOSURE_MODE_FROM_NAME(PSTR ModeName)
 //
 // Translates a friendly name string into the corresponding DS_LED_MODE value
 // 
-DS_LED_MODE DS_LED_MODE_FROM_NAME(PSTR ModeName)
+static DS_LED_MODE DS_LED_MODE_FROM_NAME(PSTR ModeName)
 {
 	if (!_strcmpi(ModeName, G_LED_MODE_NAMES[2]))
 	{
@@ -89,7 +94,7 @@ DS_LED_MODE DS_LED_MODE_FROM_NAME(PSTR ModeName)
 
 #pragma warning(push)
 #pragma warning( disable : 4706 )
-void
+static void
 ConfigParseRumbleSettings(
 	_In_ const cJSON* RumbleSettings,
 	_Inout_ PDS_DRIVER_CONFIGURATION Config
@@ -188,7 +193,7 @@ ConfigParseRumbleSettings(
 
 #pragma warning(push)
 #pragma warning( disable : 4706 )
-void
+static void
 ConfigParseLEDSettings(
 	_In_ const cJSON* LEDSettings,
 	_Inout_ PDS_DRIVER_CONFIGURATION Config
@@ -258,12 +263,57 @@ ConfigParseLEDSettings(
 }
 #pragma warning(pop)
 
+#pragma warning(push)
+#pragma warning( disable : 4706 )
+static void
+ConfigParseHidDeviceModeSpecificSettings(
+	_In_ const cJSON* NodeSettings,
+	_Inout_ PDS_DRIVER_CONFIGURATION Config
+)
+{
+	cJSON* pNode = NULL;
+
+	//
+	// SDF/GPJ-specific settings
+	// 
+	switch (Config->HidDeviceMode)
+	{
+	case DsHidMiniDeviceModeSDF:
+		if ((pNode = cJSON_GetObjectItem(NodeSettings, "PressureExposureMode")))
+		{
+			Config->SDF.PressureExposureMode = DS_PRESSURE_EXPOSURE_MODE_FROM_NAME(cJSON_GetStringValue(pNode));
+			EventWriteOverrideSettingUInt(NodeSettings->string, "SDF.PressureExposureMode", Config->SDF.PressureExposureMode);
+		}
+
+		if ((pNode = cJSON_GetObjectItem(NodeSettings, "DPadExposureMode")))
+		{
+			Config->SDF.DPadExposureMode = DS_DPAD_EXPOSURE_MODE_FROM_NAME(cJSON_GetStringValue(pNode));
+			EventWriteOverrideSettingUInt(NodeSettings->string, "SDF.DPadExposureMode", Config->SDF.DPadExposureMode);
+		}
+		break;
+	case DsHidMiniDeviceModeGPJ:
+		if ((pNode = cJSON_GetObjectItem(NodeSettings, "PressureExposureMode")))
+		{
+			Config->GPJ.PressureExposureMode = DS_PRESSURE_EXPOSURE_MODE_FROM_NAME(cJSON_GetStringValue(pNode));
+			EventWriteOverrideSettingUInt(NodeSettings->string, "GPJ.PressureExposureMode", Config->GPJ.PressureExposureMode);
+		}
+
+		if ((pNode = cJSON_GetObjectItem(NodeSettings, "DPadExposureMode")))
+		{
+			Config->GPJ.DPadExposureMode = DS_DPAD_EXPOSURE_MODE_FROM_NAME(cJSON_GetStringValue(pNode));
+			EventWriteOverrideSettingUInt(NodeSettings->string, "GPJ.DPadExposureMode", Config->GPJ.DPadExposureMode);
+		}
+		break;
+	}
+}
+#pragma warning(pop)
+
 //
 // Reads/refreshes configuration from disk (JSON) to provided context
 // 
 #pragma warning(push)
 #pragma warning( disable : 4706 )
-void ConfigNodeParse(
+static void ConfigNodeParse(
 	_In_ const cJSON* ParentNode,
 	_Inout_ PDEVICE_CONTEXT Context,
 	_In_opt_ BOOLEAN IsHotReload
@@ -326,10 +376,6 @@ void ConfigNodeParse(
 	}
 
 	//
-	// TODO: this is getting cluttered, split up into some sub-routines
-	// 
-
-	//
 	// Every mode can have the same properties configured independently
 	// 
 	if (pCfg->HidDeviceMode > 0 && pCfg->HidDeviceMode < (DS_HID_DEVICE_MODE)_countof(G_HID_DEVICE_MODE_NAMES))
@@ -338,17 +384,10 @@ void ConfigNodeParse(
 
 		if (pModeSpecific)
 		{
-			if ((pNode = cJSON_GetObjectItem(pModeSpecific, "PressureExposureMode")))
-			{
-				pCfg->SDF.PressureExposureMode = (DS_PRESSURE_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
-				EventWriteOverrideSettingUInt(pModeSpecific->string, "SDF.PressureExposureMode", pCfg->SDF.PressureExposureMode);
-			}
-
-			if ((pNode = cJSON_GetObjectItem(pModeSpecific, "DPadExposureMode")))
-			{
-				pCfg->SDF.DPadExposureMode = (DS_DPAD_EXPOSURE_MODE)cJSON_GetNumberValue(pNode);
-				EventWriteOverrideSettingUInt(pModeSpecific->string, "SDF.DPadExposureMode", pCfg->SDF.DPadExposureMode);
-			}
+			//
+			// SDF/GPJ-specific settings
+			// 
+			ConfigParseHidDeviceModeSpecificSettings(pModeSpecific, pCfg);
 
 			//
 			// DeadZone Left
@@ -557,6 +596,7 @@ ConfigLoadForDevice(
 				);
 			}
 
+			EventWriteJSONParseError(error_ptr);
 			status = STATUS_ACCESS_VIOLATION;
 			break;
 		}
@@ -595,6 +635,8 @@ ConfigLoadForDevice(
 				"Found device-specific (%s) config, loading",
 				Context->DeviceAddressString
 			);
+
+			EventWriteLoadingDeviceSpecificConfig(Context->DeviceAddressString);
 
 			ConfigNodeParse(deviceNode, Context, IsHotReload);
 		}
