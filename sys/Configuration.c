@@ -198,7 +198,7 @@ ConfigParseLEDSettings(
 
 	if ((pNode = cJSON_GetObjectItem(LEDSettings, "Mode")))
 	{
-		Config->LEDSettings.Mode = (DS_LED_MODE)cJSON_GetNumberValue(pNode);
+		Config->LEDSettings.Mode = DS_LED_MODE_FROM_NAME(cJSON_GetStringValue(pNode));
 		EventWriteOverrideSettingUInt(LEDSettings->string, "Mode", Config->LEDSettings.Mode);
 	}
 

@@ -38,7 +38,7 @@
         }
       },
       "LEDSettings": {
-        "Mode": 1,
+        "Mode": "BatteryIndicatorPlayerIndex",
         "CustomPatterns": {
           "Player1": {
             "Duration": 255,
@@ -103,7 +103,7 @@
         }
       },
       "LEDSettings": {
-        "Mode": 1,
+        "Mode": "BatteryIndicatorPlayerIndex",
         "CustomPatterns": {
           "Player1": {
             "Duration": 255,
@@ -166,7 +166,7 @@
         }
       },
       "LEDSettings": {
-        "Mode": 1,
+        "Mode": "BatteryIndicatorPlayerIndex",
         "CustomPatterns": {
           "Player1": {
             "Duration": 255,
@@ -229,7 +229,7 @@
         }
       },
       "LEDSettings": {
-        "Mode": 1,
+        "Mode": "BatteryIndicatorPlayerIndex",
         "CustomPatterns": {
           "Player1": {
             "Duration": 255,
@@ -292,7 +292,7 @@
         }
       },
       "LEDSettings": {
-        "Mode": 1,
+        "Mode": "BatteryIndicatorPlayerIndex",
         "CustomPatterns": {
           "Player1": {
             "Duration": 255,
