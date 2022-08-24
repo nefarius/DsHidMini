@@ -5,8 +5,8 @@
 //
 // Start Bluetooth communication here
 // 
+#pragma code_seg("PAGED")
 _Use_decl_annotations_
-
 NTSTATUS
 DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 	WDFDEVICE Device
@@ -30,6 +30,7 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 
 	return status;
 }
+#pragma code_seg()
 
 //
 // Stop Bluetooth communication here
