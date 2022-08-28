@@ -19,11 +19,13 @@
     <ROW Property="ARPURLUPDATEINFO" Value="https://github.com/ViGEm/DsHidMini/releases"/>
     <ROW Property="AiLicenseAgreementLink" Value="https://github.com/ViGEm/DsHidMini/blob/master/LICENSE" Type="4"/>
     <ROW Property="IAgree" Value="No" Type="4"/>
+    <ROW Property="INSTALL_BTHPS3" Value="CheckBox" Type="4"/>
     <ROW Property="Manufacturer" Value="Nefarius Software Solutions e.U."/>
     <ROW Property="ProductCode" Value="2057:{A8682232-4F33-469C-9D88-10551EF385EC} " Type="16"/>
     <ROW Property="ProductLanguage" Value="1033"/>
-    <ROW Property="ProductName" Value="DsHidMini Driver"/>
+    <ROW Property="ProductName" Value="Nefarius DsHidMini Driver"/>
     <ROW Property="ProductVersion" Value="3.0.392"/>
+    <ROW Property="REBOOT" MultiBuildValue="DefaultBuild:Force"/>
     <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND;AI_SETUPEXEPATH;SETUPEXEDIR"/>
     <ROW Property="UpgradeCode" Value="{E2303A1D-A724-4CCB-8B07-78CAE2A0DC45}"/>
     <ROW Property="WindowsType9X" MultiBuildValue="DefaultBuild:Windows 9x/ME" ValueLocId="-"/>
@@ -81,9 +83,9 @@
     <ROW Feature="AI64BitFiles" Title="64-bit" Description="64-bit Executables and Libraries" Display="0" Level="1" Directory_="APPDIR" Attributes="0"/>
     <ROW Feature="ARM64" Title="ARM64" Description="Description" Display="0" Level="1" Directory_="APPDIR" Attributes="0"/>
     <ROW Feature="DsHidMini" Title="MainFeature" Description="DsHidMini Driver" Display="3" Level="1" Directory_="APPDIR" Attributes="0"/>
-    <ROW Feature="RequiredApplication" Title="BthPS3 x64" Description="BthPS3" Display="7" Level="1" Attributes="36"/>
-    <ROW Feature="RequiredApplication_1" Title="BthPS3 x86" Description="BthPS3" Display="9" Level="1" Attributes="36"/>
-    <ROW Feature="RequiredApplication_2" Title="BthPS3 ARM64" Description="BthPS3" Display="5" Level="1" Attributes="36"/>
+    <ROW Feature="RequiredApplication" Title="BthPS3 x64" Description="BthPS3" Display="7" Level="4" Attributes="36"/>
+    <ROW Feature="RequiredApplication_1" Title="BthPS3 x86" Description="BthPS3" Display="9" Level="4" Attributes="36"/>
+    <ROW Feature="RequiredApplication_2" Title="BthPS3 ARM64" Description="BthPS3" Display="5" Level="4" Attributes="36"/>
     <ATTRIBUTE name="CurrentFeature" value="DsHidMini"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFilesComponent">
@@ -174,12 +176,19 @@
     <ROW Name="file_deleter.ps1" SourcePath="&lt;AI_SCRIPTS&gt;file_deleter.ps1"/>
     <ROW Name="lzmaextractor.dll" SourcePath="&lt;AI_CUSTACTS&gt;lzmaextractor.dll"/>
   </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiCheckBoxComponent">
+    <ROW Property="INSTALL_BTHPS3" Value="CheckBox"/>
+  </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiConditionComponent">
     <ROW Feature_="AI64BitFiles" Level="0" Condition="NOT VersionNT64 OR AiArm64"/>
     <ROW Feature_="AI32BitFiles" Level="0" Condition="VersionNT64 OR AiArm64"/>
     <ROW Feature_="ARM64" Level="0" Condition="NOT AiArm64"/>
+    <ROW Feature_="RequiredApplication_2" Level="1" Condition="INSTALL_BTHPS3 AND AiArm64"/>
+    <ROW Feature_="RequiredApplication" Level="1" Condition="INSTALL_BTHPS3 AND (VersionNT64 AND NOT AiArm64)"/>
+    <ROW Feature_="RequiredApplication_1" Level="1" Condition="INSTALL_BTHPS3 AND (NOT VersionNT64 AND NOT AiArm64)"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiControlComponent">
+    <ROW Dialog_="InstallDlg" Control="InstallBthPS3" Type="CheckBox" X="18" Y="203" Width="286" Height="13" Attributes="3" Property="INSTALL_BTHPS3" Text="Download and install BthPS3 (required for wireless support)" Order="1400"/>
     <ROW Dialog_="LicenseAgreementDlg" Control="AgreementText" Type="ScrollableText" X="20" Y="60" Width="330" Height="120" Attributes="7" Order="400" TextLocId="Control.Text.LicenseAgreementDlg#AgreementText" MsiKey="LicenseAgreementDlg#AgreementText"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiControlEventComponent">
@@ -409,9 +418,9 @@
   <COMPONENT cid="caphyon.advinst.msicomp.PreReqComponent">
     <ROW PrereqKey="A9DBE469DEED46998DA553406739ED74" DisplayName=".NET Desktop Runtime 5.0.17 x64" VersionMin="5.0" SetupFileUrl="https://download.visualstudio.microsoft.com/download/pr/3aa4e942-42cd-4bf5-afe7-fc23bd9c69c5/64da54c8864e473c19a7d3de15790418/windowsdesktop-runtime-5.0.17-win-x64.exe" Location="1" ExactSize="0" WinNTVersions="Windows 9x/ME/NT/2000/XP/Vista/Windows 7/Windows 8 x86/Windows 8.1 x86/Windows 10 x86" WinNT64Versions="Windows Vista x64, Windows Server 2008 x64, Windows 7 RTM x64, Windows Server 2008 R2 x64, Windows 8 x64, Windows Server 2012 x64, Windows 10 version 1507 x64, Windows 10 version 1511 x64" Operator="1" ComLine="/q /norestart" BasicUiComLine="/q /norestart" NoUiComLine="/q /norestart" Options="xy" TargetName=".NET 5.0"/>
     <ROW PrereqKey="AEEB73CE673349D2BADF9D8EB73C7437" DisplayName=".NET Desktop Runtime 5.0.17 x86" VersionMin="5.0" SetupFileUrl="https://download.visualstudio.microsoft.com/download/pr/b6fe5f2a-95f4-46f1-9824-f5994f10bc69/db5ec9b47ec877b5276f83a185fdb6a0/windowsdesktop-runtime-5.0.17-win-x86.exe" Location="1" ExactSize="0" WinNTVersions="Windows Vista x86, Windows Server 2008 x86, Windows 7 RTM x86, Windows 8 x86, Windows 10 version 1507 x86, Windows 10 version 1511 x86" WinNT64Versions="Windows Vista x64, Windows Server 2008 x64, Windows 7 RTM x64, Windows Server 2008 R2 x64, Windows 8 x64, Windows Server 2012 x64, Windows 10 version 1507 x64, Windows 10 version 1511 x64" Operator="1" ComLine="/q /norestart" BasicUiComLine="/q /norestart" NoUiComLine="/q /norestart" Options="y" TargetName=".NET 5.0"/>
-    <ROW PrereqKey="RequiredApplication" DisplayName="BthPS3 x64" SetupFileUrl="https://updates.vigem.org/api/github/ViGEm/BthPS3/assets/latest/x64" Location="1" ExactSize="0" WinNTVersions="Windows 9x/ME/NT/2000/XP/Vista/Windows 7/Windows 8 x86/Windows 8.1 x86/Windows 10 x86" WinNT64Versions="Windows Vista x64, Windows Server 2008 x64, Windows 7 x64, Windows Server 2008 R2 x64, Windows 8 x64, Windows Server 2012 x64, Windows 8.1 x64, Windows Server 2012 R2 x64, Windows Server x64" Operator="1" Options="fi" TargetName="BthPS3Setup_x64" Feature="RequiredApplication"/>
-    <ROW PrereqKey="RequiredApplication_1" DisplayName="BthPS3 x86" SetupFileUrl="https://updates.vigem.org/api/github/ViGEm/BthPS3/assets/latest/x86" Location="1" ExactSize="0" WinNTVersions="Windows Vista x86, Windows Server 2008 x86, Windows 7 x86, Windows 8 x86, Windows 8.1 x86" WinNT64Versions="Windows XP/Vista/Windows 7/Windows 8 x64/Windows 8.1 x64/Windows 10 x64/Windows 11 x64" Operator="1" Options="fi" TargetName="BthPS3Setup_x86" Feature="RequiredApplication_1"/>
-    <ROW PrereqKey="RequiredApplication_2" DisplayName="BthPS3 ARM64" SetupFileUrl="https://updates.vigem.org/api/github/ViGEm/BthPS3/assets/latest/ARM64" Location="1" ExactSize="0" WinNTVersions="Windows 9x/ME/NT/2000/XP/Vista/Windows 7/Windows 8 x86/Windows 8.1 x86/Windows 10 x86" WinNT64Versions="Windows Vista x64, Windows Server 2008 x64, Windows 7 x64, Windows Server 2008 R2 x64, Windows 8 x64, Windows Server 2012 x64, Windows 8.1 x64, Windows Server 2012 R2 x64, Windows Server x64" Operator="1" Options="fi" TargetName="BthPS3Setup_ARM64" Feature="RequiredApplication_2"/>
+    <ROW PrereqKey="RequiredApplication" DisplayName="BthPS3 x64" SetupFileUrl="https://updates.vigem.org/api/github/ViGEm/BthPS3/assets/latest/x64/BthPS3Setup.msi" Location="1" ExactSize="0" WinNTVersions="Windows 9x/ME/NT/2000/XP/Vista/Windows 7/Windows 8 x86/Windows 8.1 x86/Windows 10 x86" WinNT64Versions="Windows Vista x64, Windows Server 2008 x64, Windows 7 x64, Windows Server 2008 R2 x64, Windows 8 x64, Windows Server 2012 x64, Windows 8.1 x64, Windows Server 2012 R2 x64, Windows Server x64" Operator="1" ComLine="/norestart" BasicUiComLine="/norestart" NoUiComLine="/norestart" Options="fi" TargetName="BthPS3Setup_x64" Feature="RequiredApplication"/>
+    <ROW PrereqKey="RequiredApplication_1" DisplayName="BthPS3 x86" SetupFileUrl="https://updates.vigem.org/api/github/ViGEm/BthPS3/assets/latest/x86/BthPS3Setup.msi" Location="1" ExactSize="0" WinNTVersions="Windows Vista x86, Windows Server 2008 x86, Windows 7 x86, Windows 8 x86, Windows 8.1 x86" WinNT64Versions="Windows XP/Vista/Windows 7/Windows 8 x64/Windows 8.1 x64/Windows 10 x64/Windows 11 x64" Operator="1" ComLine="/norestart" BasicUiComLine="/norestart" NoUiComLine="/norestart" Options="fi" TargetName="BthPS3Setup_x86" Feature="RequiredApplication_1"/>
+    <ROW PrereqKey="RequiredApplication_2" DisplayName="BthPS3 ARM64" SetupFileUrl="https://updates.vigem.org/api/github/ViGEm/BthPS3/assets/latest/ARM64/BthPS3Setup.msi" Location="1" ExactSize="0" WinNTVersions="Windows 9x/ME/NT/2000/XP/Vista/Windows 7/Windows 8 x86/Windows 8.1 x86/Windows 10 x86" WinNT64Versions="Windows Vista x64, Windows Server 2008 x64, Windows 7 x64, Windows Server 2008 R2 x64, Windows 8 x64, Windows Server 2012 x64, Windows 8.1 x64, Windows Server 2012 R2 x64, Windows Server x64" Operator="1" ComLine="/norestart" BasicUiComLine="/norestart" NoUiComLine="/norestart" Options="fi" TargetName="BthPS3Setup_ARM64" Feature="RequiredApplication_2"/>
     <ATTRIBUTE name="PrereqsOrder" value="A9DBE469DEED46998DA553406739ED74 AEEB73CE673349D2BADF9D8EB73C7437 RequiredApplication RequiredApplication_1 RequiredApplication_2"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.PreReqSearchComponent">
