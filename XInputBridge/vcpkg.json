@@ -1,0 +1,14 @@
+{
+  "name": "xinputbridge",
+  "version": "3.0.0",
+  "description": "SCP XInput Bridge (Proxy DLL)",
+  "license": "MIT",
+  "supports": "!(arm | uwp)",
+  "dependencies": [
+    { "name": "hidapi" },
+    {
+      "name": "opentelemetry-cpp",
+      "features": [ "jaeger" ]
+    }
+  ]
+}
