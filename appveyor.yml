@@ -58,3 +58,4 @@ deploy:
 cache:
 - C:\projects\DMF
 - C:\Tools\vcpkg
+- C:\Users\appveyor\AppData\Local\vcpkg
