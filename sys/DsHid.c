@@ -157,6 +157,9 @@ sizeof(G_XInputHIDCompatible_HidReportDescriptor) }  // total length of report d
 #pragma endregion
 
 
+//
+// Checks whether the pad inputs are in default (idle) state
+// 
 BOOLEAN DS3_RAW_IS_IDLE(
 	_In_ PDS3_RAW_INPUT_REPORT Input
 )
@@ -207,6 +210,9 @@ BOOLEAN DS3_RAW_IS_IDLE(
 	return TRUE;
 }
 
+//
+// Applies transformations on a thumb axis pair
+// 
 void DS3_RAW_AXIS_TRANSFORM(
 	_In_ UCHAR InputX,
 	_In_ UCHAR InputY,
