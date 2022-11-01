@@ -418,6 +418,18 @@ typedef struct _DS_LED_SETTINGS
 
 } DS_LED_SETTINGS, * PDS_LED_SETTINGS;
 
+typedef struct _DS_FLIP_AXIS_SETTINGS
+{
+	UCHAR LeftX;
+
+	UCHAR LeftY;
+
+	UCHAR RightX;
+
+	UCHAR RightY;
+	
+} DS_FLIP_AXIS_SETTINGS, *PDS_FLIP_AXIS_SETTINGS;
+
 //
 // Per device dynamic configuration properties
 // 
@@ -474,6 +486,11 @@ typedef struct _DS_DRIVER_CONFIGURATION
 	// LED customizing
 	// 
 	DS_LED_SETTINGS LEDSettings;
+
+	//
+	// Flip axis settings
+	// 
+	DS_FLIP_AXIS_SETTINGS FlipAxis;
 
 	//
 	// SDF-mode specific

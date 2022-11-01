@@ -453,6 +453,34 @@ static void ConfigNodeParse(
 			{
 				ConfigParseLEDSettings(pLEDSettings, pCfg);
 			}
+
+			//
+			// Flip Axis settings
+			// 
+			const cJSON* pFlipAxis = cJSON_GetObjectItem(pModeSpecific, "FlipAxis");
+
+			if (pFlipAxis)
+			{
+				if ((pNode = cJSON_GetObjectItem(pFlipAxis, "LeftX")))
+				{
+					pCfg->FlipAxis.LeftX = (BOOLEAN)cJSON_IsTrue(pNode);
+				}
+
+				if ((pNode = cJSON_GetObjectItem(pFlipAxis, "LeftY")))
+				{
+					pCfg->FlipAxis.LeftY = (BOOLEAN)cJSON_IsTrue(pNode);
+				}
+
+				if ((pNode = cJSON_GetObjectItem(pFlipAxis, "RightX")))
+				{
+					pCfg->FlipAxis.RightX = (BOOLEAN)cJSON_IsTrue(pNode);
+				}
+
+				if ((pNode = cJSON_GetObjectItem(pFlipAxis, "RightY")))
+				{
+					pCfg->FlipAxis.RightY = (BOOLEAN)cJSON_IsTrue(pNode);
+				}
+			}
 		}
 	}
 }

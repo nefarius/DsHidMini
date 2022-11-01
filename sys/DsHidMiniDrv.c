@@ -1271,7 +1271,8 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 			pModCtx->InputReport,
 			Context->Configuration.GPJ.PressureExposureMode,
 			Context->Configuration.GPJ.DPadExposureMode,
-			&Context->Configuration.ThumbSettings
+			&Context->Configuration.ThumbSettings,
+			&Context->Configuration.FlipAxis
 		);
 
 #ifdef DBG
@@ -1286,7 +1287,8 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 			pModCtx->InputReport,
 			Context->Configuration.SDF.PressureExposureMode,
 			Context->Configuration.SDF.DPadExposureMode,
-			&Context->Configuration.ThumbSettings
+			&Context->Configuration.ThumbSettings,
+			&Context->Configuration.FlipAxis
 		);
 
 		/*
@@ -1356,7 +1358,8 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 		DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
 			Report,
 			pModCtx->InputReport,
-			&Context->Configuration.ThumbSettings
+			&Context->Configuration.ThumbSettings,
+			&Context->Configuration.FlipAxis
 		);
 
 		//
@@ -1387,7 +1390,8 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 			Report,
 			pModCtx->InputReport,
 			(Context->ConnectionType == DsDeviceConnectionTypeUsb) ? TRUE : FALSE,
-			&Context->Configuration.ThumbSettings
+			&Context->Configuration.ThumbSettings,
+			&Context->Configuration.FlipAxis
 		);
 
 		//
@@ -1417,7 +1421,8 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 		DS3_RAW_TO_XINPUTHID_HID_INPUT_REPORT(
 			Report,
 			(PXINPUT_HID_INPUT_REPORT)pModCtx->InputReport,
-			&Context->Configuration.ThumbSettings
+			&Context->Configuration.ThumbSettings,
+			&Context->Configuration.FlipAxis
 		);
 
 		//

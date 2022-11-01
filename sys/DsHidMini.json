@@ -70,6 +70,12 @@
             "IntervalPortionOn": 255
           }
         }
+      },
+      "FlipAxis": {
+        "LeftX": false,
+        "LeftY": false,
+        "RightX": false,
+        "RightY": false
       }
     },
     "GPJ": {
