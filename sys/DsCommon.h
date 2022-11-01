@@ -384,7 +384,7 @@ typedef struct _DS_LED
 
 	UCHAR IntervalDuration;
 
-	UCHAR Enabled;
+	UCHAR EnabledFlags;
 
 	UCHAR IntervalPortionOff;
 
@@ -404,6 +404,8 @@ typedef struct _DS_LED_SETTINGS
 	// 
 	struct
 	{
+		UCHAR LEDFlags;
+
 		DS_LED Player1;
 
 		DS_LED Player2;

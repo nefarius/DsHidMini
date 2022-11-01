@@ -211,6 +211,11 @@ ConfigParseLEDSettings(
 	{
 		const cJSON* pCustomPatterns = cJSON_GetObjectItem(LEDSettings, "CustomPatterns");
 
+		if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "LEDFlags")))
+		{
+			Config->LEDSettings.CustomPatterns.LEDFlags = (UCHAR)cJSON_GetNumberValue(pNode);
+		}
+
 		const PSTR playerSlotNames[] =
 		{
 			"Player1",
@@ -243,8 +248,8 @@ ConfigParseLEDSettings(
 
 			if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "Enabled")))
 			{
-				pPlayerSlots[playerIndex]->Enabled = (UCHAR)cJSON_GetNumberValue(pNode);
-				EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "Enabled", pPlayerSlots[playerIndex]->Enabled);
+				pPlayerSlots[playerIndex]->EnabledFlags = (UCHAR)cJSON_GetNumberValue(pNode);
+				EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "Enabled", pPlayerSlots[playerIndex]->EnabledFlags);
 			}
 
 			if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "IntervalPortionOff")))
@@ -777,7 +782,7 @@ ConfigSetDefaults(
 	{
 		pPlayerSlots[playerIndex]->Duration = 0xFF;
 		pPlayerSlots[playerIndex]->IntervalDuration = 0xFF;
-		pPlayerSlots[playerIndex]->Enabled = 0x10;
+		pPlayerSlots[playerIndex]->EnabledFlags = 0x10;
 		pPlayerSlots[playerIndex]->IntervalPortionOff = 0x00;
 		pPlayerSlots[playerIndex]->IntervalPortionOn = 0xFF;
 	}
