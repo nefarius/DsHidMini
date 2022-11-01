@@ -214,9 +214,19 @@ void DS3_RAW_AXIS_TRANSFORM(
 	_Inout_ PUCHAR OutputY,
 	_In_ BOOLEAN ApplyDeadZone,
 	_In_ DOUBLE DeadZonePolarValue,
-	_In_ PDS_FLIP_AXIS_SETTINGS FlipAxis
+	_In_ BOOLEAN FlipX,
+	_In_ BOOLEAN FlipY
 )
 {
+	if (FlipX)
+	{
+		InputX = (UCHAR)abs(InputX - 0xFF);
+	}
+	if (FlipY)
+	{
+		InputY = (UCHAR)abs(InputY - 0xFF);
+	}
+
 	if (!ApplyDeadZone)
 	{
 		*OutputX = InputX;
@@ -346,7 +356,8 @@ VOID DS3_RAW_TO_GPJ_HID_INPUT_REPORT_01(
 		&Output[2],
 		ThumbSettings->DeadZoneLeft.Apply,
 		ThumbSettings->DeadZoneLeft.PolarValue,
-		FlipAxis
+		FlipAxis->LeftX,
+		FlipAxis->LeftY
 	);
 	DS3_RAW_AXIS_TRANSFORM(
 		Input->RightThumbX,
@@ -355,7 +366,8 @@ VOID DS3_RAW_TO_GPJ_HID_INPUT_REPORT_01(
 		&Output[4],
 		ThumbSettings->DeadZoneRight.Apply,
 		ThumbSettings->DeadZoneRight.PolarValue,
-		FlipAxis
+		FlipAxis->RightX,
+		FlipAxis->RightY
 	);
 
 	// Trigger axes
@@ -480,7 +492,8 @@ VOID DS3_RAW_TO_SDF_HID_INPUT_REPORT(
 		&Output[2],
 		ThumbSettings->DeadZoneLeft.Apply,
 		ThumbSettings->DeadZoneLeft.PolarValue,
-		FlipAxis
+		FlipAxis->LeftX,
+		FlipAxis->LeftY
 	);
 	DS3_RAW_AXIS_TRANSFORM(
 		Input->RightThumbX,
@@ -489,7 +502,8 @@ VOID DS3_RAW_TO_SDF_HID_INPUT_REPORT(
 		&Output[4],
 		ThumbSettings->DeadZoneRight.Apply,
 		ThumbSettings->DeadZoneRight.PolarValue,
-		FlipAxis
+		FlipAxis->RightX,
+		FlipAxis->RightY
 	);
 
 	// Trigger axes
@@ -569,7 +583,8 @@ VOID DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
 		&Output[5],
 		ThumbSettings->DeadZoneLeft.Apply,
 		ThumbSettings->DeadZoneLeft.PolarValue,
-		FlipAxis
+		FlipAxis->LeftX,
+		FlipAxis->LeftY
 	);
 	DS3_RAW_AXIS_TRANSFORM(
 		Input->RightThumbX,
@@ -578,7 +593,8 @@ VOID DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
 		&Output[7],
 		ThumbSettings->DeadZoneRight.Apply,
 		ThumbSettings->DeadZoneRight.PolarValue,
-		FlipAxis
+		FlipAxis->RightX,
+		FlipAxis->RightY
 	);
 
 	// Buttons
@@ -711,7 +727,8 @@ VOID DS3_RAW_TO_DS4WINDOWS_HID_INPUT_REPORT(
 		&Output[2],
 		ThumbSettings->DeadZoneLeft.Apply,
 		ThumbSettings->DeadZoneLeft.PolarValue,
-		FlipAxis
+		FlipAxis->LeftX,
+		FlipAxis->LeftY
 	);
 	DS3_RAW_AXIS_TRANSFORM(
 		Input->RightThumbX,
@@ -720,7 +737,8 @@ VOID DS3_RAW_TO_DS4WINDOWS_HID_INPUT_REPORT(
 		&Output[4],
 		ThumbSettings->DeadZoneRight.Apply,
 		ThumbSettings->DeadZoneRight.PolarValue,
-		FlipAxis
+		FlipAxis->RightX,
+		FlipAxis->RightY
 	);
 
 	// Trigger axes
@@ -797,7 +815,8 @@ VOID DS3_RAW_TO_XINPUTHID_HID_INPUT_REPORT(
 		&leftThumbY,
 		ThumbSettings->DeadZoneLeft.Apply,
 		ThumbSettings->DeadZoneLeft.PolarValue,
-		FlipAxis
+		FlipAxis->LeftX,
+		FlipAxis->LeftY
 	);
 	DS3_RAW_AXIS_TRANSFORM(
 		Input->RightThumbX,
@@ -806,7 +825,8 @@ VOID DS3_RAW_TO_XINPUTHID_HID_INPUT_REPORT(
 		&rightThumbY,
 		ThumbSettings->DeadZoneRight.Apply,
 		ThumbSettings->DeadZoneRight.PolarValue,
-		FlipAxis
+		FlipAxis->RightX,
+		FlipAxis->RightY
 	);
 	Output->GD_GamePadX = leftThumbX * 257;
 	Output->GD_GamePadY = leftThumbY * 257;

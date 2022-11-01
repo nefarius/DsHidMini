@@ -62,7 +62,8 @@ void DS3_RAW_AXIS_TRANSFORM(
 	_Inout_ PUCHAR OutputY,
 	_In_ BOOLEAN ApplyDeadZone,
 	_In_ DOUBLE DeadZonePolarValue,
-	_In_ PDS_FLIP_AXIS_SETTINGS FlipAxis
+	_In_ BOOLEAN FlipX,
+	_In_ BOOLEAN FlipY
 );
 
 VOID DS3_RAW_TO_GPJ_HID_INPUT_REPORT_01(
