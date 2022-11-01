@@ -769,6 +769,7 @@ ConfigSetDefaults(
 	Config->RumbleSettings.ForcedSM.SMThresholdValue = 230;
 
 	Config->LEDSettings.Mode = DsLEDModeBatteryIndicatorPlayerIndex;
+	Config->LEDSettings.CustomPatterns.LEDFlags = 0x02;
 
 	const PDS_LED pPlayerSlots[] =
 	{
