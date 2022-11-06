@@ -7,6 +7,8 @@ ConfigSetDefaults(
 	_Inout_ PDS_DRIVER_CONFIGURATION Config
 );
 
+#pragma region Helpers
+
 //
 // Translates a friendly name string into the corresponding DS_HID_DEVICE_MODE value
 // 
@@ -115,6 +117,13 @@ static DS_LED_AUTHORITY DS_LED_AUTHORITY_FROM_NAME(PSTR AuthorityName)
 	return DsLEDAuthorityAutomatic;
 }
 
+#pragma endregion
+
+#pragma region Parsers
+
+//
+// Parses rumble settings
+// 
 #pragma warning(push)
 #pragma warning( disable : 4706 )
 static void
@@ -214,6 +223,9 @@ ConfigParseRumbleSettings(
 }
 #pragma warning(pop)
 
+//
+// Parses LED settings
+// 
 #pragma warning(push)
 #pragma warning( disable : 4706 )
 static void
@@ -297,6 +309,9 @@ ConfigParseLEDSettings(
 }
 #pragma warning(pop)
 
+//
+// Parses mode-specific properties
+// 
 #pragma warning(push)
 #pragma warning( disable : 4706 )
 static void
@@ -312,6 +327,9 @@ ConfigParseHidDeviceModeSpecificSettings(
 	// 
 	switch (Config->HidDeviceMode)
 	{
+		//
+		// Properties only present in SDF mode
+		// 
 	case DsHidMiniDeviceModeSDF:
 		if ((pNode = cJSON_GetObjectItem(NodeSettings, "PressureExposureMode")))
 		{
@@ -325,6 +343,9 @@ ConfigParseHidDeviceModeSpecificSettings(
 			EventWriteOverrideSettingUInt(NodeSettings->string, "SDF.DPadExposureMode", Config->SDF.DPadExposureMode);
 		}
 		break;
+		//
+		// Properties only present in GPJ mode
+		// 
 	case DsHidMiniDeviceModeGPJ:
 		if ((pNode = cJSON_GetObjectItem(NodeSettings, "PressureExposureMode")))
 		{
@@ -515,6 +536,11 @@ static void ConfigNodeParse(
 }
 #pragma warning(pop)
 
+#pragma endregion
+
+//
+// Load/refresh device-specific overrides
+// 
 _Must_inspect_result_
 NTSTATUS
 ConfigLoadForDevice(

@@ -402,6 +402,9 @@ typedef struct _DS_LED
 
 } DS_LED, * PDS_LED;
 
+//
+// LED Customization
+// 
 typedef struct _DS_LED_SETTINGS
 {
 	//
@@ -410,7 +413,7 @@ typedef struct _DS_LED_SETTINGS
 	DS_LED_MODE Mode;
 
 	//
-	// LED update authority
+	// LED update authority (who is allowed to modify LED states)
 	// 
 	DS_LED_AUTHORITY Authority;
 
@@ -433,6 +436,9 @@ typedef struct _DS_LED_SETTINGS
 
 } DS_LED_SETTINGS, * PDS_LED_SETTINGS;
 
+//
+// Flags whether to flip (invert) axes
+// 
 typedef struct _DS_FLIP_AXIS_SETTINGS
 {
 	UCHAR LeftX;
