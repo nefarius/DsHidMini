@@ -1076,31 +1076,31 @@ DsHidMini_WriteReport(
 		// 
 		pDevCtx->OutputReport.Mode = Ds3OutputReportModeWriteReportPassThrough;
 
-		BOOL isSetRumble = (Packet->reportBuffer[1] >> 0) & 1U;
-		BOOL isSetColor = (Packet->reportBuffer[1] >> 1) & 1U;
-		BOOL isFlagFlash = (Packet->reportBuffer[1] >> 2) & 1U;
+		const BOOL isSetRumble = (Packet->reportBuffer[1] >> 0) & 1U;
+		const BOOL isSetColor = (Packet->reportBuffer[1] >> 1) & 1U;
+		const BOOL isFlagFlash = (Packet->reportBuffer[1] >> 2) & 1U;
 
 		//
 		// Color values (RGB)
 		// 
-		UCHAR r = Packet->reportBuffer[6];
-		UCHAR g = Packet->reportBuffer[7];
-		UCHAR b = Packet->reportBuffer[8];
+		const UCHAR r = Packet->reportBuffer[6];
+		const UCHAR g = Packet->reportBuffer[7];
+		const UCHAR b = Packet->reportBuffer[8];
 
 		//
 		// Flash Bright and Dark duration
 		// 
-		UCHAR fb_dur = Packet->reportBuffer[9];
-		UCHAR fd_dur = Packet->reportBuffer[10];
+		const UCHAR fb_dur = Packet->reportBuffer[9];
+		const UCHAR fd_dur = Packet->reportBuffer[10];
 
-		BOOL isFlashOrPulse = isFlagFlash && (fb_dur != 0 || fd_dur != 0);
+		const BOOL isFlashOrPulse = isFlagFlash && (fb_dur != 0 || fd_dur != 0);
 		BOOL isSetFlashing = FALSE;
 
 		if (isFlashOrPulse) // High Latency DS4Windows function
 		{
+			// Hard-coded colors used in High Latency warning
 			if (r == 0x32 && g == 0x00 && b == 0x00)
-			{
-				// Hard-coded colors used in High Latency warning
+			{				
 				isSetFlashing = TRUE;
 			}
 		}
@@ -1108,10 +1108,6 @@ DsHidMini_WriteReport(
 		if (isSetRumble)
 		{
 			DS3_SET_BOTH_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[5], Packet->reportBuffer[4]);
-			/*
-			DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[4]);
-			DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[5]);
-			*/
 		}
 
 		if (isSetColor)

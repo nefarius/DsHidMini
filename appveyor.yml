@@ -57,5 +57,5 @@ deploy:
     appveyor_repo_tag: true
 cache:
 - C:\projects\DMF
-- C:\Tools\vcpkg
+- C:\Tools\vcpkg -> appveyor.yml
 - C:\Users\appveyor\AppData\Local\vcpkg
