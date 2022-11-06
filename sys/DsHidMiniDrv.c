@@ -1106,7 +1106,7 @@ DsHidMini_WriteReport(
 		{
 			// Hard-coded colors used in High Latency warning
 			if (r == 0x32 && g == 0x00 && b == 0x00)
-			{				
+			{
 				isSetFlashing = TRUE;
 			}
 		}
@@ -1116,74 +1116,80 @@ DsHidMini_WriteReport(
 			DS3_SET_BOTH_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[5], Packet->reportBuffer[4]);
 		}
 
-		if (isSetColor)
+		//
+		// Only allowed when when in Automatic or Application setting
+		// 
+		if (pDevCtx->Configuration.LEDSettings.Authority != DsLEDAuthorityDriver)
 		{
-			//
-			// Restore defaults to undo any (past) flashing animations
-			// 
-			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 0);
-			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 1);
-			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 2);
-			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 3);
-
-			//
-			// Single color RED intensity indicates battery level (Light only a single LED from 1 to 4)
-			// 
-			if (g == 0x00 && b == 0x00)
+			if (isSetColor)
 			{
-				if (r >= 202)
-					DS3_SET_LED(pDevCtx, DS3_LED_4);
-				else if (r > 148)
-					DS3_SET_LED(pDevCtx, DS3_LED_3);
-				else if (r > 94)
-					DS3_SET_LED(pDevCtx, DS3_LED_2);
-				else if (r > 64)
-					DS3_SET_LED(pDevCtx, DS3_LED_1);
-				else {
-					DS3_SET_LED(pDevCtx, DS3_LED_1);
-					DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
+				//
+				// Restore defaults to undo any (past) flashing animations
+				// 
+				DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 0);
+				DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 1);
+				DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 2);
+				DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 3);
+
+				//
+				// Single color RED intensity indicates battery level (Light only a single LED from 1 to 4)
+				// 
+				if (g == 0x00 && b == 0x00)
+				{
+					if (r >= 202)
+						DS3_SET_LED(pDevCtx, DS3_LED_4);
+					else if (r > 148)
+						DS3_SET_LED(pDevCtx, DS3_LED_3);
+					else if (r > 94)
+						DS3_SET_LED(pDevCtx, DS3_LED_2);
+					else if (r > 64)
+						DS3_SET_LED(pDevCtx, DS3_LED_1);
+					else {
+						DS3_SET_LED(pDevCtx, DS3_LED_1);
+						DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
+					}
+				}
+				//
+				// Single color RED intensity indicates battery level ("Fill" LEDs from 1 to 4)
+				// 
+				else if (g == 0x00 && b == 0xFF)
+				{
+					if (r >= 202)
+						DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
+					else if (r > 148)
+						DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3);
+					else if (r > 94)
+						DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2);
+					else if (r > 64)
+						DS3_SET_LED(pDevCtx, DS3_LED_1);
+					else {
+						DS3_SET_LED(pDevCtx, DS3_LED_1);
+						DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
+					}
+				}
+				//
+				// Decode custom LED status from color RED intensity
+				// 
+				else if (g == 0xFF && b == 0xFF)
+				{
+					if (r == 0x00)
+						DS3_SET_LED(pDevCtx, DS3_LED_OFF);
+					else if (r >= 0x01 && r <= 0x0F)
+						DS3_SET_LED(pDevCtx, r << 1);
 				}
 			}
-			//
-			// Single color RED intensity indicates battery level ("Fill" LEDs from 1 to 4)
-			// 
-			else if (g == 0x00 && b == 0xFF)
-			{
-				if (r >= 202)
-					DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
-				else if (r > 148)
-					DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3);
-				else if (r > 94)
-					DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2);
-				else if (r > 64)
-					DS3_SET_LED(pDevCtx, DS3_LED_1);
-				else {
-					DS3_SET_LED(pDevCtx, DS3_LED_1);
-					DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
-				}
-			}
-			//
-			// Decode custom LED status from color RED intensity
-			// 
-			else if (g == 0xFF && b == 0xFF)
-			{
-				if (r == 0x00)
-					DS3_SET_LED(pDevCtx, DS3_LED_OFF);
-				else if (r >= 0x01 && r <= 0x0F)
-					DS3_SET_LED(pDevCtx, r << 1);
-			}
-		}
 
-		if (isSetFlashing)
-		{
-			//
-			// Set to rapidly flash all 4 LEDs
-			// 
-			DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
-			DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 3, 127, 127);
-			DS3_SET_LED_DURATION(pDevCtx, 1, 0xFF, 3, 127, 127);
-			DS3_SET_LED_DURATION(pDevCtx, 2, 0xFF, 3, 127, 127);
-			DS3_SET_LED_DURATION(pDevCtx, 3, 0xFF, 3, 127, 127);
+			if (isSetFlashing)
+			{
+				//
+				// Set to rapidly flash all 4 LEDs
+				// 
+				DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
+				DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 3, 127, 127);
+				DS3_SET_LED_DURATION(pDevCtx, 1, 0xFF, 3, 127, 127);
+				DS3_SET_LED_DURATION(pDevCtx, 2, 0xFF, 3, 127, 127);
+				DS3_SET_LED_DURATION(pDevCtx, 3, 0xFF, 3, 127, 127);
+			}
 		}
 
 		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDualShock4);
@@ -1344,7 +1350,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 		{
 			TraceError(
 				TRACE_DSHIDMINIDRV,
-				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", 
+				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!",
 				status
 			);
 			EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_VirtualHidMini_InputReportGenerate", status);
@@ -1375,7 +1381,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 		{
 			TraceError(
 				TRACE_DSHIDMINIDRV,
-				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", 
+				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!",
 				status
 			);
 			EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_VirtualHidMini_InputReportGenerate", status);
@@ -1407,7 +1413,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 		{
 			TraceError(
 				TRACE_DSHIDMINIDRV,
-				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", 
+				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!",
 				status
 			);
 			EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_VirtualHidMini_InputReportGenerate", status);
@@ -1438,7 +1444,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 		{
 			TraceError(
 				TRACE_DSHIDMINIDRV,
-				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", 
+				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!",
 				status
 			);
 			EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_VirtualHidMini_InputReportGenerate", status);
