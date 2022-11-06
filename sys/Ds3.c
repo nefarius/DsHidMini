@@ -308,6 +308,9 @@ NTSTATUS DsBth_Ds3Init(PDEVICE_CONTEXT Context)
 	return status;
 }
 
+//
+// Sets all properties for a specific Player LED
+// 
 VOID DS3_SET_LED_DURATION(
 	PDEVICE_CONTEXT Context,
 	UCHAR LedIndex,
@@ -337,6 +340,9 @@ VOID DS3_SET_LED_DURATION(
 	buffer[14 + (LedIndex * 5)] = OnInterval;
 }
 
+//
+// Revert LED properties to default for a specific Player LED
+// 
 VOID DS3_SET_LED_DURATION_DEFAULT(PDEVICE_CONTEXT Context, UCHAR LedIndex)
 {
 	DS3_SET_LED_DURATION(
@@ -349,6 +355,9 @@ VOID DS3_SET_LED_DURATION_DEFAULT(PDEVICE_CONTEXT Context, UCHAR LedIndex)
 	);
 }
 
+//
+// Gets output report protocol-agnostic
+// 
 VOID DS3_GET_UNIFIED_OUTPUT_REPORT_BUFFER(
 	PDEVICE_CONTEXT Context,
 	UCHAR** Buffer,
@@ -403,6 +412,9 @@ VOID DS3_GET_RAW_OUTPUT_REPORT_BUFFER(
 	);
 }
 
+//
+// Sets the LED flags byte
+// 
 VOID DS3_SET_LED_FLAGS(
 	PDEVICE_CONTEXT Context,
 	UCHAR Value
@@ -432,7 +444,10 @@ VOID DS3_SET_LED_FLAGS(
 	}
 }
 
-UCHAR DS3_GET_LED(
+//
+// Gets the LED flags byte
+// 
+UCHAR DS3_GET_LED_FLAGS(
 	PDEVICE_CONTEXT Context
 )
 {

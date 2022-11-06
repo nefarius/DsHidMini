@@ -1606,7 +1606,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 			{
 			case DsLEDModeBatteryIndicatorPlayerIndex:
 
-				led = DS3_GET_LED(pDevCtx) << 1;
+				led = DS3_GET_LED_FLAGS(pDevCtx) << 1;
 
 				//
 				// Cycle through
@@ -1619,7 +1619,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 				break;
 			case DsLEDModeBatteryIndicatorBarGraph:
 
-				led = DS3_GET_LED(pDevCtx);
+				led = DS3_GET_LED_FLAGS(pDevCtx);
 
 				//
 				// Cycle graph from 1 to 4 and repeat
@@ -1813,7 +1813,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 			//
 			// Don't send update if not initialized yet or custom pattern
 			// 
-			if (DS3_GET_LED(pDevCtx) != 0x00)
+			if (DS3_GET_LED_FLAGS(pDevCtx) != 0x00)
 			{
 				if (
 					pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled &&
