@@ -400,6 +400,9 @@ VOID DS3_GET_UNIFIED_OUTPUT_REPORT_BUFFER(
 	}
 }
 
+//
+// Gets output report without offset
+// 
 VOID DS3_GET_RAW_OUTPUT_REPORT_BUFFER(
 	PDEVICE_CONTEXT Context,
 	UCHAR** Buffer,
