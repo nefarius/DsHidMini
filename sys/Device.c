@@ -803,7 +803,7 @@ void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
 }
 
 /**
- * Register event to disconnect from Bluetooth, bypassing mshudumdf.sys
+ * Register event to disconnect from Bluetooth, bypassing mshidumdf.sys
  *
  * @author	Benjamin "Nefarius" Höglinger-Stelzer
  * @date	15.04.2021
