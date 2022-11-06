@@ -12,7 +12,8 @@ Next major version is in progress! Here's an overview of what you'll get:
 
 - New driver installer
 - New configuration app
-- Full Windows 11 compatibility
+- **ARM64 support**
+- Full **Windows 11** compatibility
 - Complete LED customization
 - Customize dead-zone thresholds
 - Customize HAT/POV behaviour
