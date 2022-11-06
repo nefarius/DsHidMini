@@ -285,6 +285,16 @@ typedef enum
 } DS_LED_AUTHORITY;
 
 //
+// Friendly names for reading from JSON
+// 
+static CONST PSTR G_DS_LED_AUTHORITY_NAMES[] =
+{
+	"Automatic",
+	"Driver",
+	"Application"
+};
+
+//
 // Axis dead-zone settings
 // 
 typedef struct _DS_AXIS_DEADZONE

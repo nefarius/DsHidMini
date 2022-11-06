@@ -92,6 +92,29 @@ static DS_LED_MODE DS_LED_MODE_FROM_NAME(PSTR ModeName)
 	return DsLEDModeBatteryIndicatorPlayerIndex;
 }
 
+//
+// Translates a friendly name string into the corresponding DS_LED_AUTHORITY value
+// 
+static DS_LED_AUTHORITY DS_LED_AUTHORITY_FROM_NAME(PSTR AuthorityName)
+{
+	if (!_strcmpi(AuthorityName, G_DS_LED_AUTHORITY_NAMES[2]))
+	{
+		return DsLEDAuthorityApplication;
+	}
+
+	if (!_strcmpi(AuthorityName, G_DS_LED_AUTHORITY_NAMES[1]))
+	{
+		return DsLEDAuthorityDriver;
+	}
+
+	if (!_strcmpi(AuthorityName, G_DS_LED_AUTHORITY_NAMES[0]))
+	{
+		return DsLEDAuthorityAutomatic;
+	}
+
+	return DsLEDAuthorityAutomatic;
+}
+
 #pragma warning(push)
 #pragma warning( disable : 4706 )
 static void
