@@ -63,7 +63,7 @@ DsBth_EvtControlWriteTimerFunc(
 	
 	if (pDevCtx->BatteryStatus == DsBatteryStatusNone)
 	{
-		DS3_SET_LED(pDevCtx, DS3_LED_OFF);
+		DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_OFF);
 	}
 	else
 	{
@@ -71,17 +71,17 @@ DsBth_EvtControlWriteTimerFunc(
 		{
 		case DsBatteryStatusCharged:
 		case DsBatteryStatusFull:
-			DS3_SET_LED(pDevCtx, DS3_LED_4);
+			DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_4);
 			break;
 		case DsBatteryStatusHigh:
-			DS3_SET_LED(pDevCtx, DS3_LED_3);
+			DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_3);
 			break;
 		case DsBatteryStatusMedium:
-			DS3_SET_LED(pDevCtx, DS3_LED_2);
+			DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_2);
 			break;
 		case DsBatteryStatusLow:
 		case DsBatteryStatusDying:
-			DS3_SET_LED(pDevCtx, DS3_LED_1);
+			DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
 			DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
 			break;
 		default:

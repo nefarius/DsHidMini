@@ -1137,15 +1137,15 @@ DsHidMini_WriteReport(
 				if (g == 0x00 && b == 0x00)
 				{
 					if (r >= 202)
-						DS3_SET_LED(pDevCtx, DS3_LED_4);
+						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_4);
 					else if (r > 148)
-						DS3_SET_LED(pDevCtx, DS3_LED_3);
+						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_3);
 					else if (r > 94)
-						DS3_SET_LED(pDevCtx, DS3_LED_2);
+						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_2);
 					else if (r > 64)
-						DS3_SET_LED(pDevCtx, DS3_LED_1);
+						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
 					else {
-						DS3_SET_LED(pDevCtx, DS3_LED_1);
+						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
 						DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
 					}
 				}
@@ -1155,15 +1155,15 @@ DsHidMini_WriteReport(
 				else if (g == 0x00 && b == 0xFF)
 				{
 					if (r >= 202)
-						DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
+						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
 					else if (r > 148)
-						DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3);
+						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3);
 					else if (r > 94)
-						DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2);
+						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1 | DS3_LED_2);
 					else if (r > 64)
-						DS3_SET_LED(pDevCtx, DS3_LED_1);
+						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
 					else {
-						DS3_SET_LED(pDevCtx, DS3_LED_1);
+						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
 						DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
 					}
 				}
@@ -1173,9 +1173,9 @@ DsHidMini_WriteReport(
 				else if (g == 0xFF && b == 0xFF)
 				{
 					if (r == 0x00)
-						DS3_SET_LED(pDevCtx, DS3_LED_OFF);
+						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_OFF);
 					else if (r >= 0x01 && r <= 0x0F)
-						DS3_SET_LED(pDevCtx, r << 1);
+						DS3_SET_LED_FLAGS(pDevCtx, r << 1);
 				}
 			}
 
@@ -1184,7 +1184,7 @@ DsHidMini_WriteReport(
 				//
 				// Set to rapidly flash all 4 LEDs
 				// 
-				DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
+				DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
 				DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 3, 127, 127);
 				DS3_SET_LED_DURATION(pDevCtx, 1, 0xFF, 3, 127, 127);
 				DS3_SET_LED_DURATION(pDevCtx, 2, 0xFF, 3, 127, 127);
@@ -1563,12 +1563,12 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 			{
 			case DsLEDModeBatteryIndicatorPlayerIndex:
 
-				DS3_SET_LED(pDevCtx, DS3_LED_4);
+				DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_4);
 
 				break;
 			case DsLEDModeBatteryIndicatorBarGraph:
 
-				DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
+				DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
 
 				break;
 			}
@@ -1641,7 +1641,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 				pLED->Mode > DsLEDModeUnknown && pLED->Mode < DsLEDModeCustomPattern
 				)
 			{
-				DS3_SET_LED(pDevCtx, led);
+				DS3_SET_LED_FLAGS(pDevCtx, led);
 
 				(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverLowPriority);
 			}
@@ -1836,17 +1836,17 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 						{
 						case DsBatteryStatusCharged:
 						case DsBatteryStatusFull:
-							DS3_SET_LED(pDevCtx, DS3_LED_4);
+							DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_4);
 							break;
 						case DsBatteryStatusHigh:
-							DS3_SET_LED(pDevCtx, DS3_LED_3);
+							DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_3);
 							break;
 						case DsBatteryStatusMedium:
-							DS3_SET_LED(pDevCtx, DS3_LED_2);
+							DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_2);
 							break;
 						case DsBatteryStatusLow:
 						case DsBatteryStatusDying:
-							DS3_SET_LED(pDevCtx, DS3_LED_1);
+							DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
 							DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
 							break;
 						default:
@@ -1860,17 +1860,17 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 						{
 						case DsBatteryStatusCharged:
 						case DsBatteryStatusFull:
-							DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
+							DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
 							break;
 						case DsBatteryStatusHigh:
-							DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3);
+							DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3);
 							break;
 						case DsBatteryStatusMedium:
-							DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2);
+							DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1 | DS3_LED_2);
 							break;
 						case DsBatteryStatusLow:
 						case DsBatteryStatusDying:
-							DS3_SET_LED(pDevCtx, DS3_LED_1);
+							DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
 							DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
 							break;
 						default:
@@ -2349,6 +2349,7 @@ Ds_SendOutputReport(
 	PUCHAR sourceBuffer, sendBuffer;
 	size_t sourceBufferLength;
 	PDS_OUTPUT_REPORT_CONTEXT sendContext;
+	PDS_DRIVER_CONFIGURATION pConfig = &Context->Configuration;
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
@@ -2376,6 +2377,47 @@ Ds_SendOutputReport(
 			//
 
 			break;
+		}
+
+		//
+		// Override LED pattern
+		// 
+		if (pConfig->LEDSettings.Mode == DsLEDModeCustomPattern)
+		{
+			DS3_SET_LED_FLAGS(Context, pConfig->LEDSettings.CustomPatterns.LEDFlags);
+
+			DS3_SET_LED_DURATION(
+				Context,
+				0,
+				pConfig->LEDSettings.CustomPatterns.Player1.Duration,
+				pConfig->LEDSettings.CustomPatterns.Player1.IntervalDuration,
+				pConfig->LEDSettings.CustomPatterns.Player1.IntervalPortionOff,
+				pConfig->LEDSettings.CustomPatterns.Player1.IntervalPortionOn
+			);
+			DS3_SET_LED_DURATION(
+				Context,
+				1,
+				pConfig->LEDSettings.CustomPatterns.Player2.Duration,
+				pConfig->LEDSettings.CustomPatterns.Player2.IntervalDuration,
+				pConfig->LEDSettings.CustomPatterns.Player2.IntervalPortionOff,
+				pConfig->LEDSettings.CustomPatterns.Player2.IntervalPortionOn
+			);
+			DS3_SET_LED_DURATION(
+				Context,
+				2,
+				pConfig->LEDSettings.CustomPatterns.Player3.Duration,
+				pConfig->LEDSettings.CustomPatterns.Player3.IntervalDuration,
+				pConfig->LEDSettings.CustomPatterns.Player3.IntervalPortionOff,
+				pConfig->LEDSettings.CustomPatterns.Player3.IntervalPortionOn
+			);
+			DS3_SET_LED_DURATION(
+				Context,
+				3,
+				pConfig->LEDSettings.CustomPatterns.Player4.Duration,
+				pConfig->LEDSettings.CustomPatterns.Player4.IntervalDuration,
+				pConfig->LEDSettings.CustomPatterns.Player4.IntervalPortionOff,
+				pConfig->LEDSettings.CustomPatterns.Player4.IntervalPortionOn
+			);
 		}
 
 		//
@@ -2459,6 +2501,6 @@ VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
 	UNREFERENCED_PARAMETER(Buffer);
 	UNREFERENCED_PARAMETER(BufferLength);
 #endif
-	}
+}
 
 #pragma endregion
