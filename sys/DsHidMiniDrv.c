@@ -1637,7 +1637,9 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 			}
 
 			if (
-				pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled &&
+				(pLED->Authority == DsLEDAuthorityDriver /* Driver wins over Automatic or Application */ ||
+					pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled) &&
+				/* validate mode range */
 				pLED->Mode > DsLEDModeUnknown && pLED->Mode < DsLEDModeCustomPattern
 				)
 			{
@@ -1816,7 +1818,9 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 			if (DS3_GET_LED_FLAGS(pDevCtx) != 0x00)
 			{
 				if (
-					pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled &&
+					(pLED->Authority == DsLEDAuthorityDriver /* Driver wins over Automatic or Application */ ||
+						pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled) &&
+					/* validate mode range */
 					pLED->Mode > DsLEDModeUnknown && pLED->Mode < DsLEDModeCustomPattern
 					)
 				{
@@ -2498,6 +2502,6 @@ VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
 	UNREFERENCED_PARAMETER(Buffer);
 	UNREFERENCED_PARAMETER(BufferLength);
 #endif
-}
+	}
 
 #pragma endregion
