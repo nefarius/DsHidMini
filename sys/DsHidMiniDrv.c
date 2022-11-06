@@ -528,6 +528,9 @@ DsHidMini_GetFeature(
 
 #endif
 
+	//
+	// SIXAXIS.SYS emulation
+	// 
 	if (Packet->reportId == 0x00 && pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
 	{
 		//
@@ -550,6 +553,9 @@ DsHidMini_GetFeature(
 
 		status = STATUS_SUCCESS;
 	}
+	//
+	// DS4Windows emulation
+	// 
 	else if (
 		Packet->reportId == 0x12 // Requests device MAC address
 		&& Packet->reportBufferLen == 64
@@ -776,8 +782,8 @@ DsHidMini_WriteReport(
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
-	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
+	const DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
 	PUCHAR buffer = NULL;
 	size_t bufferSize = 0;
 
