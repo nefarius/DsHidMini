@@ -1059,13 +1059,42 @@ DsHidMini_WriteReport(
 		);
 
 		//
-		// Overwrite with what we received
+		// Prevent LED states from being overwritten from outside
 		// 
-		RtlCopyMemory(
-			buffer,
-			&Packet->reportBuffer[3],
-			bufferSize
-		);
+		if (pDevCtx->Configuration.LEDSettings.Authority == DsLEDAuthorityDriver)
+		{
+			UCHAR ledBlock[21];
+
+			//
+			// Backup LED states
+			// 
+			RtlCopyMemory(ledBlock, &buffer[10], ARRAYSIZE(ledBlock));
+
+			//
+			// Overwrite with what we received
+			// 
+			RtlCopyMemory(
+				buffer,
+				&Packet->reportBuffer[3],
+				bufferSize
+			);
+
+			//
+			// Restore LED states
+			// 
+			RtlCopyMemory(&buffer[10], ledBlock, ARRAYSIZE(ledBlock));
+		}
+		else
+		{
+			//
+			// Overwrite with what we received
+			// 
+			RtlCopyMemory(
+				buffer,
+				&Packet->reportBuffer[3],
+				bufferSize
+			);
+		}
 
 		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourcePassThrough);
 
@@ -2497,6 +2526,6 @@ VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
 	UNREFERENCED_PARAMETER(Buffer);
 	UNREFERENCED_PARAMETER(BufferLength);
 #endif
-	}
+}
 
 #pragma endregion
