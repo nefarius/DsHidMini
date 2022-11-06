@@ -2359,22 +2359,19 @@ Ds_SendOutputReport(
 		//
 		// Grab new buffer to send
 		//
-		status = DMF_ThreadedBufferQueue_Fetch(
+		if (!NT_SUCCESS(status = DMF_ThreadedBufferQueue_Fetch(
 			Context->OutputReport.Worker,
 			(PVOID*)&sendBuffer,
 			(PVOID*)&sendContext
-		);
-
-		if (!NT_SUCCESS(status)) {
+		)))
+		{
 			TraceError(
 				TRACE_DSHIDMINIDRV,
 				"DMF_ThreadedBufferQueue_Fetch failed with status %!STATUS!",
 				status
 			);
 
-			//
-			// TODO: react to different status codes
-			//
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_ThreadedBufferQueue_Fetch", status);
 
 			break;
 		}
