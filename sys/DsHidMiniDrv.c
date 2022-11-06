@@ -1063,7 +1063,7 @@ DsHidMini_WriteReport(
 		// 
 		if (pDevCtx->Configuration.LEDSettings.Authority == DsLEDAuthorityDriver)
 		{
-			UCHAR ledBlock[21];
+			UCHAR ledBlock[sizeof(UCHAR) + (sizeof(DS_LED) * 4)];
 
 			//
 			// Backup LED states
