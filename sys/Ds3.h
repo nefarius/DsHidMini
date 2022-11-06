@@ -99,7 +99,7 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 	PDEVICE_CONTEXT Context
 );
 
-typedef enum _USB_HID_REQUEST
+typedef enum
 {
     // Class-Specific Requests
     GetReport = 0x01,
@@ -114,7 +114,7 @@ typedef enum _USB_HID_REQUEST
 
 } USB_HID_REQUEST;
 
-typedef enum _USB_HID_REPORT_REQUEST_TYPE
+typedef enum
 {
     HidReportRequestTypeInput = 0x01,
     HidReportRequestTypeOutput = 0x02,
@@ -122,13 +122,13 @@ typedef enum _USB_HID_REPORT_REQUEST_TYPE
 
 } USB_HID_REPORT_REQUEST_TYPE;
 
-typedef enum _USB_HID_REPORT_REQUEST_ID
+typedef enum
 {
     HidReportRequestIdOne = 0x01
 
 } USB_HID_REPORT_REQUEST_ID;
 
-typedef enum _USB_HID_CLASS_DESCRIPTOR_TYPE
+typedef enum
 {
     Hid = 0x21,
     Report = 0x22,
@@ -136,7 +136,7 @@ typedef enum _USB_HID_CLASS_DESCRIPTOR_TYPE
 
 } USB_HID_CLASS_DESCRIPTOR_TYPE;
 
-typedef enum _DS3_FEATURE_VALUE
+typedef enum
 {
     Ds3FeatureDeviceAddress = 0x03F2,
     Ds3FeatureStartDevice = 0x03F4,
