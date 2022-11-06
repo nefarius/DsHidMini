@@ -120,6 +120,10 @@ Pre-built binaries and instructions are provided [on the releases page](../../re
 
 To get support [please follow these guidlines](https://vigem.org/Community-Support/).
 
+## Sponsors
+
+[<img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/jetbrains/jetbrains-original.svg" title="JetBrains ReSharper" alt="JetBrains" width="120" height="120"/>](https://www.jetbrains.com/resharper/)
+
 ## Sources & 3rd party credits
 
 The following awesome resources have made this project possible.
