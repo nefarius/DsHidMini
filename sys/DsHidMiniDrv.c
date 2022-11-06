@@ -1248,15 +1248,9 @@ DsHidMini_WriteReport(
 
 #pragma region Input Report processing
 
-/**
- * Process a raw input report depending on HID emulation mode.
- *
- * @author	Benjamin "Nefarius" Höglinger-Stelzer
- * @date	25.02.2021
- *
- * @param 	Context	The context.
- * @param 	Report 	The report.
- */
+//
+// Process a raw input report depending on HID emulation mode
+// 
 void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Report)
 {
 	NTSTATUS status;
@@ -1555,7 +1549,8 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 		pDevCtx->BatteryStatus = battery;
 
 		if (
-			pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled &&
+			(pLED->Authority == DsLEDAuthorityDriver /* Driver wins over Automatic or Application */ ||
+				pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled) &&
 			pLED->Mode > DsLEDModeUnknown && pLED->Mode < DsLEDModeCustomPattern
 			)
 		{
