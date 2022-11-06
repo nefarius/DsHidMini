@@ -410,6 +410,11 @@ typedef struct _DS_LED_SETTINGS
 	DS_LED_MODE Mode;
 
 	//
+	// LED update authority
+	// 
+	DS_LED_AUTHORITY Authority;
+
+	//
 	// Custom LED parameters
 	// 
 	struct

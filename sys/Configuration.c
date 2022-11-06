@@ -230,6 +230,12 @@ ConfigParseLEDSettings(
 		EventWriteOverrideSettingUInt(LEDSettings->string, "Mode", Config->LEDSettings.Mode);
 	}
 
+	if ((pNode = cJSON_GetObjectItem(LEDSettings, "Authority")))
+	{
+		Config->LEDSettings.Authority = DS_LED_AUTHORITY_FROM_NAME(cJSON_GetStringValue(pNode));
+		EventWriteOverrideSettingUInt(LEDSettings->string, "Authority", Config->LEDSettings.Authority);
+	}
+
 	if (Config->LEDSettings.Mode == DsLEDModeCustomPattern)
 	{
 		const cJSON* pCustomPatterns = cJSON_GetObjectItem(LEDSettings, "CustomPatterns");

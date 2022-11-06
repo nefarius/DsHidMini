@@ -39,6 +39,7 @@
       },
       "LEDSettings": {
         "Mode": "BatteryIndicatorPlayerIndex",
+        "Authority": "Automatic",
         "CustomPatterns": {
           "LEDFlags": 2,
           "Player1": {
