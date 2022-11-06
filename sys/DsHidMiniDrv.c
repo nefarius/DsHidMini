@@ -2270,10 +2270,10 @@ DSHM_OutputReportDelayTimerElapsed(
 )
 {
 	NTSTATUS status;
-	WDFDEVICE device = WdfTimerGetParentObject(Timer);
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(device);
+	const WDFDEVICE device = WdfTimerGetParentObject(Timer);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(device);
 	PUCHAR sourceBuffer = pDevCtx->OutputReport.Cache.PendingClientBuffer;
-	PDS_OUTPUT_REPORT_CONTEXT pRepCtx = pDevCtx->OutputReport.Cache.PendingClientBufferContext;
+	const PDS_OUTPUT_REPORT_CONTEXT pRepCtx = pDevCtx->OutputReport.Cache.PendingClientBufferContext;
 	PUCHAR targetBuffer;
 	PDS_OUTPUT_REPORT_CONTEXT targetBufferContext;
 
