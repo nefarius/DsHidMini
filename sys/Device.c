@@ -711,6 +711,11 @@ DsDevice_HotReloadEventCallback(
 
 		WdfWaitLockRelease(pDevCtx->ConfigurationDirectoryWatcherLock);
 
+		//
+		// Changes to LED settings need to be pushed to the device
+		// 
+		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverHighPriority);
+
 	} while (FALSE);
 
 	FuncExitNoReturn(TRACE_DEVICE);
