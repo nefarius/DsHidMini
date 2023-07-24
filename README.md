@@ -86,14 +86,6 @@ For in-progress features and bug-fixes please consult the issue tracker.
 
 DsHidMini is a filter driver sitting below `mshidumdf.sys` and acts as a function driver for USB and Bluetooth through the [User-mode Driver Framework Reflector](https://docs.microsoft.com/en-us/windows-hardware/drivers/wdf/detailed-view-of-the-umdf-architecture), handling translation of incoming HID I/O traffic to underlying USB/Bluetooth I/O and vice versa. On USB it replaces the Windows stock drivers for the Sony hardware and presents the device as a variety of user-configurable HID devices (see documentation). On Bluetooth in conjunction with BthPS3 it replaces the need for [Shibari](https://github.com/ViGEm/Shibari) as the driver directly communicates over wireless channels and takes care of the necessary translation logic. As a user-mode driver it has limited access to the registry, therefore device-specific settings are stored and retrieved using the [Unified Device Property Model](https://docs.microsoft.com/en-us/windows-hardware/drivers/install/unified-device-property-model--windows-vista-and-later-) API. Most of the core HID heavy lifting is done by the amazing [DMF_VirtualHidMini](https://github.com/microsoft/DMF/blob/master/Dmf/Modules.Library/Dmf_VirtualHidMini.md) module which greatly reduced the need for boilerplate code and sped up development tremendously.
 
-## Licensing
-
-This solution contains **BSD-3-Clause** and other licensed components. For details, please consult the individual `LICENSE` files.
-
-This is a community project and not affiliated with Sony Interactive Entertainment Inc. in any way.
-
-"PlayStation", "PSP", "PS2", "PS one", "DUALSHOCK" and "SIXAXIS" are registered trademarks of Sony Interactive Entertainment Inc.
-
 ## Environment
 
 DsHidMini components (drivers, utilities) are designed for **Windows 10**, version 1809 or newer (x86, x64).
@@ -113,6 +105,14 @@ The dependencies used in DsHidMini don't exist in Windows 7/8/8.1 so they can't 
 You can build individual projects of the solution within Visual Studio.
 
 </details>
+
+## Licensing
+
+This solution contains **BSD-3-Clause** and other licensed components. For details, please consult the individual `LICENSE` files.
+
+This is a community project and not affiliated with Sony Interactive Entertainment Inc. in any way.
+
+"PlayStation", "PSP", "PS2", "PS one", "DUALSHOCK" and "SIXAXIS" are registered trademarks of Sony Interactive Entertainment Inc.
 
 ## Documentation
 
