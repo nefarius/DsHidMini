@@ -78,6 +78,10 @@ The following features are **not** available (and most probably won't in the nea
 
 For in-progress features and bug-fixes please consult the issue tracker.
 
+<details>
+
+<summary>Technical details</summary>
+
 ## How it works
 
 DsHidMini is a filter driver sitting below `mshidumdf.sys` and acts as a function driver for USB and Bluetooth through the [User-mode Driver Framework Reflector](https://docs.microsoft.com/en-us/windows-hardware/drivers/wdf/detailed-view-of-the-umdf-architecture), handling translation of incoming HID I/O traffic to underlying USB/Bluetooth I/O and vice versa. On USB it replaces the Windows stock drivers for the Sony hardware and presents the device as a variety of user-configurable HID devices (see documentation). On Bluetooth in conjunction with BthPS3 it replaces the need for [Shibari](https://github.com/ViGEm/Shibari) as the driver directly communicates over wireless channels and takes care of the necessary translation logic. As a user-mode driver it has limited access to the registry, therefore device-specific settings are stored and retrieved using the [Unified Device Property Model](https://docs.microsoft.com/en-us/windows-hardware/drivers/install/unified-device-property-model--windows-vista-and-later-) API. Most of the core HID heavy lifting is done by the amazing [DMF_VirtualHidMini](https://github.com/microsoft/DMF/blob/master/Dmf/Modules.Library/Dmf_VirtualHidMini.md) module which greatly reduced the need for boilerplate code and sped up development tremendously.
@@ -107,6 +111,8 @@ The dependencies used in DsHidMini don't exist in Windows 7/8/8.1 so they can't 
   - Build the `DmfU` project with Release and Debug configurations for all architectures (x64 and Win32).
 
 You can build individual projects of the solution within Visual Studio.
+
+</details>
 
 ## Documentation
 
