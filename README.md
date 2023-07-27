@@ -4,7 +4,7 @@
 
 Virtual HID Mini-user-mode driver for Sony DualShock 3 Controllers
 
-[![Build status](https://ci.appveyor.com/api/projects/status/vmf09i95d06c8mbh/branch/master?svg=true)](https://ci.appveyor.com/project/nefarius/dshidmini/branch/master) [![GitHub All Releases](https://img.shields.io/github/downloads/ViGEm/DsHidMini/total)](https://somsubhra.github.io/github-release-stats/?username=ViGEm&repository=DsHidMini) ![GitHub issues](https://img.shields.io/github/issues/ViGEm/DsHidMini) [![Discord](https://img.shields.io/discord/346756263763378176.svg)](https://discord.vigem.org/) [![Website](https://img.shields.io/website-up-down-green-red/https/vigem.org.svg?label=ViGEm.org)](https://vigem.org/)
+[![Build status](https://ci.appveyor.com/api/projects/status/vmf09i95d06c8mbh/branch/master?svg=true)](https://ci.appveyor.com/project/nefarius/dshidmini/branch/master) [![GitHub All Releases](https://img.shields.io/github/downloads/ViGEm/DsHidMini/total)](https://somsubhra.github.io/github-release-stats/?username=ViGEm&repository=DsHidMini) ![GitHub issues](https://img.shields.io/github/issues/ViGEm/DsHidMini) [![Discord](https://img.shields.io/discord/346756263763378176.svg)](https://discord.nefarius.at/) [![Website](https://img.shields.io/website-up-down-green-red/https/docs.nefarius.at.svg?label=docs.nefarius.at)](https://docs.nefarius.at/)
 
 ## 🚨 What to expect with Version 3 🚨
 
@@ -116,7 +116,7 @@ This is a community project and not affiliated with Sony Interactive Entertainme
 
 ## Documentation
 
-Take a look at the [project page](https://vigem.org/projects/DsHidMini/) for more information.
+Take a look at the [project page](https://docs.nefarius.at/projects/DsHidMini/) for more information.
 
 ## Installation
 
@@ -124,7 +124,7 @@ Pre-built binaries and instructions are provided [on the releases page](../../re
 
 ## Support
 
-To get support [please follow these guidlines](https://vigem.org/Community-Support/).
+To get support [please follow these guidlines](https://docs.nefarius.at/Community-Support/).
 
 ## Sponsors
 

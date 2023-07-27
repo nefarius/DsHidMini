@@ -46,7 +46,7 @@ namespace Nefarius.DsHidMini.Util.Web
 
     public class Validator
     {
-        public static Uri ApiUrl => new Uri("https://vigem.org/projects/DsHidMini/genuine_oui_db.json");
+        public static Uri ApiUrl => new Uri("https://docs.nefarius.at/projects/DsHidMini/genuine_oui_db.json");
 
         public static bool IsGenuineAddress(PhysicalAddress address)
         {

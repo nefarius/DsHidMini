@@ -22,7 +22,7 @@ namespace Nefarius.DsHidMini.UI
 
         private void Help_OnClick(object sender, RoutedEventArgs e)
         {
-            Process.Start("https://vigem.org/projects/DsHidMini/");
+            Process.Start("https://docs.nefarius.at/projects/DsHidMini/");
         }
     }
 }

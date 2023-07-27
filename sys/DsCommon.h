@@ -72,7 +72,7 @@ typedef enum
 } DS_BATTERY_STATUS, * PDS_BATTERY_STATUS;
 
 //
-// See https://vigem.org/projects/DsHidMini/HID-Device-Modes-Explained
+// See https://docs.nefarius.at/projects/DsHidMini/HID-Device-Modes-Explained
 // 
 typedef enum
 {
