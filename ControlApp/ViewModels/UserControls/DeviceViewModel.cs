@@ -284,7 +284,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
             // Settings and selected profile
             CurrentDeviceSettingsMode = deviceUserData.SettingsMode;
             DeviceCustomsVM.LoadDatasToAllGroups(deviceUserData.Settings);
-            ListOfProfiles = _dshmConfigManager.Profiles;
+            ListOfProfiles = _dshmConfigManager.GetListOfProfilesWithDefault();
             SelectedProfile = _dshmConfigManager.GetProfile(deviceUserData.GuidOfProfileToUse);
             GlobalCustomsVM.LoadDatasToAllGroups(_dshmConfigManager.GlobalProfile.Settings);
             

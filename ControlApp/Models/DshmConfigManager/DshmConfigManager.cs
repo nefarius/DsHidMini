@@ -52,29 +52,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             
         }
 
-        public List<ProfileData> Profiles
-        {
-            get
-            {
-                var userProfilesPlusDefault = new List<ProfileData>(dshmManagerUserData.Profiles);
-                if(!userProfilesPlusDefault.Contains(ProfileData.DefaultProfile))
-                    userProfilesPlusDefault.Insert(0,ProfileData.DefaultProfile);
-                return userProfilesPlusDefault;
-            }
-            set
-            {
-                var userProfilesMinusDefault = new List<ProfileData>(value);
-                if (userProfilesMinusDefault.Contains(ProfileData.DefaultProfile))
-                    userProfilesMinusDefault.Remove(ProfileData.DefaultProfile);
-                dshmManagerUserData.Profiles = userProfilesMinusDefault;                
-            }
-        }
-
-        public List<DeviceData> Devices
-        {
-            get => dshmManagerUserData.Devices;
-            set => dshmManagerUserData.Devices = value;
-        }
 
         // ----------------------------------------------------------- CONSTRUCTOR
 
@@ -151,7 +128,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         /// </summary>
         private void FixDevicesWithBlankProfiles()
         {
-            foreach(DeviceData device in Devices)
+            foreach(DeviceData device in dshmManagerUserData.Devices)
             {
                 if(GetProfile(device.GuidOfProfileToUse) == null)
                 {
@@ -171,7 +148,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         {
             ProfileData profile = null;
 
-            foreach(ProfileData p in Profiles)
+            foreach(ProfileData p in GetListOfProfilesWithDefault())
             {
                 if(p.ProfileGuid == profileGuid)
                 {
@@ -199,7 +176,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             var dshmConfiguration = new DshmConfiguration();
             GlobalProfile.Settings.ConvertAllToDSHM(dshmConfiguration.Global);
            
-            foreach(DeviceData dev in Devices)
+            foreach(DeviceData dev in dshmManagerUserData.Devices)
             {
                 var dshmDeviceData = new DshmDeviceData();
                 dshmDeviceData.DeviceAddress = dev.DeviceMac;
@@ -241,6 +218,13 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             DshmConfigurationUpdated?.Invoke(this, new DshmUpdatedEventArgs() { UpdatedSuccessfully = updateStatus});
         }
 
+        public List<ProfileData> GetListOfProfilesWithDefault()
+        {
+            var userProfilesPlusDefault = new List<ProfileData>(dshmManagerUserData.Profiles);
+            userProfilesPlusDefault.Insert(0, ProfileData.DefaultProfile);
+            return userProfilesPlusDefault;
+        }
+
         /// <summary>
         /// Adds to the Profile List a new profile with the given name and settings based on the default profile
         /// </summary>
@@ -250,7 +234,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             ProfileData newProfile = new();
             newProfile.ProfileName = profileName;
             //newProfile.DiskFileName = profileName + ".json";
-            Profiles.Add(newProfile);
+            dshmManagerUserData.Profiles.Add(newProfile);
         }
 
         /// <summary>
@@ -264,7 +248,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             {
                 return;
             }
-            Profiles.Remove(profile);
+            dshmManagerUserData.Profiles.Remove(profile);
             FixDevicesWithBlankProfiles();
         }
 
@@ -275,7 +259,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         /// <returns>The device data of the DsHidMini device</returns>
         public DeviceData GetDeviceData(string deviceMac)
         {
-            foreach (DeviceData dev in Devices)
+            foreach (DeviceData dev in dshmManagerUserData.Devices)
             {
                 if (dev.DeviceMac == deviceMac)
                 {
@@ -284,7 +268,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             }
             var newDevice = new DeviceData(deviceMac);
             newDevice.DeviceMac = deviceMac;
-            Devices.Add(newDevice);
+            dshmManagerUserData.Devices.Add(newDevice);
             return newDevice;
         }
 

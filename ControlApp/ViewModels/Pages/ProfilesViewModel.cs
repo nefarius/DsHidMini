@@ -18,7 +18,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
 
         // ----------------------------------------------------------- PROPERTIES
 
-        public List<ProfileData> ProfilesDatas => _dshmConfigManager.Profiles;
+        public List<ProfileData> ProfilesDatas => _dshmConfigManager.GetListOfProfilesWithDefault();
 
         private readonly AppSnackbarMessagesService _appSnackbarMessagesService;
 
