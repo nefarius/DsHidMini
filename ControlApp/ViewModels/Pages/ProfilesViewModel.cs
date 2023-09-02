@@ -81,7 +81,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         [RelayCommand]
         private void CreateProfile()
         {
-            _dshmConfigManager.CreateNewProfile("New profile");
+            _dshmConfigManager.CreateProfile("New profile");
             _dshmConfigManager.SaveChanges();
             UpdateProfileList();
         }

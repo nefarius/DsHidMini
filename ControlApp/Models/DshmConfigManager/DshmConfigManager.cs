@@ -230,7 +230,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         /// </summary>
         /// <param name="profileName">Name of the new profile</param>
         /// <returns>The created profile</returns>
-        public ProfileData CreateNewProfile(string profileName)
+        public ProfileData CreateProfile(string profileName)
         {
             ProfileData newProfile = new();
             newProfile.ProfileName = profileName;
