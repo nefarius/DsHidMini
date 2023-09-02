@@ -36,7 +36,7 @@
                 HorizontalAlignment="Center"
                 DockPanel.Dock="Top"
                 FontTypography="Title"
-                Text="DsHidMini Devices"
+                Text="Devices"
                 TextWrapping="Wrap" />
             <ListView
                 HorizontalAlignment="Stretch"
