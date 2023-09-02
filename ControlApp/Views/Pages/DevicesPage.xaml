@@ -31,7 +31,8 @@
         <DockPanel
             Grid.Column="0"
             Width="250"
-            MaxWidth="250">
+            MaxWidth="250"
+            VerticalAlignment="Stretch">
             <ui:TextBlock
                 HorizontalAlignment="Center"
                 DockPanel.Dock="Top"
@@ -123,6 +124,19 @@
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
+            <ui:Hyperlink
+                Margin="10"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Bottom"
+                HorizontalContentAlignment="Left"
+                DockPanel.Dock="Bottom"
+                Icon="{ui:SymbolIcon Link24}"
+                NavigateUri="https://docs.nefarius.at/projects/DsHidMini/How-to-Install/#troubleshooting">
+                <ui:Hyperlink.Content>
+                    <ui:TextBlock Text="Troubleshooting page" TextWrapping="Wrap" />
+                </ui:Hyperlink.Content>
+            </ui:Hyperlink>
+
         </DockPanel>
 
         <ui:Card
@@ -130,8 +144,13 @@
             Padding="10"
             VerticalAlignment="Stretch"
             VerticalContentAlignment="Stretch">
-            <Grid Visibility="{Binding ViewModel.AnyDeviceSelected, Converter={StaticResource BoolToVis}}">
-                <viewuserctrls:DeviceUserControl DataContext="{Binding ViewModel.SelectedDevice}" />
+            <Grid>
+                <ContentControl Visibility="{Binding ViewModel.AnyDeviceSelected, Converter={StaticResource BoolToVis}}">
+                    <viewuserctrls:DeviceUserControl DataContext="{Binding ViewModel.SelectedDevice}" />
+                </ContentControl>
+
+
+
             </Grid>
 
         </ui:Card>
