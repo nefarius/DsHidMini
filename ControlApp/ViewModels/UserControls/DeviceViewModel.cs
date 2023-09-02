@@ -48,6 +48,11 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         public string InstanceId => _device.InstanceId;
 
         /// <summary>
+        ///     The driver version of the device
+        /// </summary>
+        public string DriverVersion => _device.GetProperty<string>(DevicePropertyKey.Device_DriverVersion).ToUpper();
+
+        /// <summary>
         ///     The Bluetooth MAC address of this device.
         /// </summary>
         public string DeviceAddress => _device.GetProperty<string>(DsHidMiniDriver.DeviceAddressProperty).ToUpper();

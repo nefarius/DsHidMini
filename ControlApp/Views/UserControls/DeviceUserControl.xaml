@@ -156,6 +156,17 @@
                                 Text="{Binding LastConnected, Mode=OneWay}" />
                         </DockPanel>
 
+                        <!--  Instance ID  -->
+                        <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                            <ui:TextBlock
+                                DockPanel.Dock="Left"
+                                Style="{StaticResource MyKey_InfoDescriptionTextbox}"
+                                Text="Driver version:" />
+                            <ui:TextBox
+                                DockPanel.Dock="Right"
+                                IsReadOnly="True"
+                                Text="{Binding DriverVersion, Mode=OneWay}" />
+                        </DockPanel>
 
                         <!--  Instance ID  -->
                         <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
