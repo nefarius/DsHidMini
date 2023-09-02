@@ -1,0 +1,239 @@
+﻿<UserControl
+    x:Class="Nefarius.DsHidMini.ControlApp.Views.UserControls.DeviceUserControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:deviceSettings="clr-namespace:Nefarius.DsHidMini.ControlApp.ViewModels.UserControls.DeviceSettings"
+    xmlns:enums="clr-namespace:Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums"
+    xmlns:helpers="clr-namespace:Nefarius.DsHidMini.ControlApp.Helpers"
+    xmlns:local="clr-namespace:Nefarius.DsHidMini.ControlApp.Views.UserControls"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:system="clr-namespace:System;assembly=System.Runtime"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:viewModels="clr-namespace:Nefarius.DsHidMini.ControlApp.ViewModels"
+    d:DataContext="{d:DesignInstance viewModels:DeviceViewModel,
+                                     IsDesignTimeCreatable=False}"
+    d:DesignHeight="600"
+    d:DesignWidth="800"
+    mc:Ignorable="d">
+    <UserControl.Resources>
+        <Thickness x:Key="MyKey_NextLineSpacement" Bottom="10" />
+        <system:Double x:Key="InfoDescriptionLength">200</system:Double>
+        <Style x:Key="MyKey_InfoDescriptionTextbox" TargetType="ui:TextBlock">
+            <Setter Property="Width" Value="200" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+    </UserControl.Resources>
+    <DockPanel>
+        <DockPanel DockPanel.Dock="Bottom">
+            <UniformGrid Columns="2">
+                <ui:Button
+                    HorizontalAlignment="Stretch"
+                    Command="{Binding ApplyChangesCommand}"
+                    Content="Apply changes" />
+                <ui:Button
+                    HorizontalAlignment="Stretch"
+                    Command="{Binding RefreshDeviceSettingsCommand}"
+                    Content="Cancel" />
+            </UniformGrid>
+
+        </DockPanel>
+
+        <TabControl Margin="{StaticResource MyKey_NextLineSpacement}" VerticalAlignment="Stretch">
+            <TabItem Header="Info">
+                <!--  Device info  -->
+                <DockPanel
+                    Margin="10"
+                    HorizontalAlignment="Stretch"
+                    LastChildFill="False">
+                    <DockPanel DockPanel.Dock="Top">
+                        <!--  Device Name  -->
+                        <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                            <ui:TextBlock
+                                HorizontalAlignment="Left"
+                                DockPanel.Dock="Left"
+                                Style="{StaticResource MyKey_InfoDescriptionTextbox}"
+                                Text="Device name:" />
+                            <ui:TextBox
+                                HorizontalAlignment="Stretch"
+                                DockPanel.Dock="Right"
+                                IsReadOnly="True"
+                                Text="{Binding DisplayName, Mode=OneWay}" />
+                        </DockPanel>
+                        <!--  Device MAC address  -->
+                        <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                            <ui:TextBlock
+                                DockPanel.Dock="Left"
+                                Style="{StaticResource MyKey_InfoDescriptionTextbox}"
+                                Text="Device address:" />
+                            <ui:TextBox
+                                DockPanel.Dock="Right"
+                                IsReadOnly="True"
+                                Text="{Binding DeviceAddressFriendly, Mode=OneWay}" />
+                        </DockPanel>
+                        <!--  Battery status  -->
+                        <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                            <ui:TextBlock
+                                DockPanel.Dock="Left"
+                                Style="{StaticResource MyKey_InfoDescriptionTextbox}"
+                                Text="Battery status:" />
+                            <ui:TextBlock
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                DockPanel.Dock="Right"
+                                Text="{Binding BatteryStatusInText}" />
+                        </DockPanel>
+                        <!--  Current HID mode  -->
+                        <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                            <ui:TextBlock
+                                DockPanel.Dock="Left"
+                                Style="{StaticResource MyKey_InfoDescriptionTextbox}"
+                                Text="Current HID mode:" />
+                            <TextBlock
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                DockPanel.Dock="Right"
+                                Text="{Binding HidEmulationMode, Mode=OneWay}" />
+                        </DockPanel>
+                        <!--  Current host address  -->
+                        <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                            <ui:TextBlock
+                                VerticalAlignment="Center"
+                                DockPanel.Dock="Left"
+                                Style="{StaticResource MyKey_InfoDescriptionTextbox}"
+                                Text="Paired to (host address):" />
+                            <ui:TextBox
+                                DockPanel.Dock="Right"
+                                IsReadOnly="True"
+                                Text="{Binding HostAddress, Mode=OneWay}" />
+                        </DockPanel>
+                        <!--  Pairing mode  -->
+                        <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                            <ui:TextBlock
+                                VerticalAlignment="Center"
+                                DockPanel.Dock="Left"
+                                Style="{StaticResource MyKey_InfoDescriptionTextbox}"
+                                Text="Bluetooth pairing mode:" />
+                            <ComboBox x:Name="PairingModeComboBox" SelectedIndex="{Binding PairingMode}">
+                                <ComboBoxItem Content="To this PC" />
+                                <ComboBoxItem Content="Custom MAC address" />
+                                <ComboBoxItem Content="Disabled" />
+                            </ComboBox>
+
+                        </DockPanel>
+                        <!--  Custom pairing address  -->
+                        <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                            <ui:TextBlock
+                                DockPanel.Dock="Left"
+                                Style="{StaticResource MyKey_InfoDescriptionTextbox}"
+                                Text="Custom pairing address:" />
+                            <ui:TextBox DockPanel.Dock="Right" Text="{Binding CustomPairingAddress}">
+                                <ui:TextBox.Style>
+                                    <Style BasedOn="{StaticResource {x:Type ui:TextBox}}" TargetType="ui:TextBox">
+                                        <Setter Property="Visibility" Value="Hidden" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedIndex, ElementName=PairingModeComboBox}" Value="1">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ui:TextBox.Style>
+                            </ui:TextBox>
+                        </DockPanel>
+                    </DockPanel>
+
+
+                    <DockPanel DockPanel.Dock="Bottom">
+                        <!--  Last connected wirelessly  -->
+                        <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                            <ui:TextBlock
+                                DockPanel.Dock="Left"
+                                Style="{StaticResource MyKey_InfoDescriptionTextbox}"
+                                Text="Wireless connection time:" />
+                            <ui:TextBlock
+                                VerticalAlignment="Center"
+                                DockPanel.Dock="Right"
+                                Text="{Binding LastConnected, Mode=OneWay}" />
+                        </DockPanel>
+
+
+                        <!--  Instance ID  -->
+                        <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                            <ui:TextBlock
+                                DockPanel.Dock="Left"
+                                Style="{StaticResource MyKey_InfoDescriptionTextbox}"
+                                Text="Instance ID:" />
+                            <ui:TextBox
+                                DockPanel.Dock="Right"
+                                IsReadOnly="True"
+                                Text="{Binding InstanceId, Mode=OneWay}" />
+                        </DockPanel>
+
+
+
+
+                    </DockPanel>
+
+                </DockPanel>
+
+
+            </TabItem>
+            <TabItem Header="Configure">
+                <!--  Device settings  -->
+
+
+                <DockPanel Margin="10" LastChildFill="True">
+
+
+                    <ui:Card
+                        Margin="{StaticResource MyKey_NextLineSpacement}"
+                        VerticalAlignment="Stretch"
+                        DockPanel.Dock="Top">
+                        <!--  Top settings mode choose  -->
+                        <DockPanel
+                            VerticalAlignment="Stretch"
+                            DockPanel.Dock="Top"
+                            LastChildFill="True">
+                            <ui:TextBlock
+                                VerticalAlignment="Center"
+                                DockPanel.Dock="Left"
+                                Text="Settings mode: " />
+                            <ComboBox
+                                x:Name="SettingsModeSelection_ComboBox"
+                                VerticalAlignment="Center"
+                                DockPanel.Dock="Left"
+                                ItemsSource="{Binding Source={helpers:EnumBindingSource {x:Type enums:SettingsModes}}}"
+                                SelectedItem="{Binding CurrentDeviceSettingsMode}" />
+                            <Label
+                                VerticalContentAlignment="Center"
+                                Content="-&gt;"
+                                DockPanel.Dock="Left"
+                                Visibility="{Binding IsProfileSelectorVisible, Converter={StaticResource BoolToVis}}" />
+                            <ComboBox
+                                x:Name="ProfileSelection_ComboBox"
+                                VerticalAlignment="Center"
+                                DockPanel.Dock="Left"
+                                ItemsSource="{Binding ListOfProfiles}"
+                                SelectedItem="{Binding SelectedProfile}"
+                                Visibility="{Binding IsProfileSelectorVisible, Converter={StaticResource BoolToVis}}" />
+                        </DockPanel>
+                    </ui:Card>
+
+
+                    <local:DeviceSettingsEditor
+                        Height="auto"
+                        VerticalAlignment="Stretch"
+                        DataContext="{Binding SelectedGroupsVM}"
+                        DockPanel.Dock="Top" />
+                </DockPanel>
+
+
+
+
+            </TabItem>
+        </TabControl>
+
+    </DockPanel>
+
+
+</UserControl>

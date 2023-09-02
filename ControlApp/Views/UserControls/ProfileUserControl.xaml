@@ -1,0 +1,59 @@
+﻿<UserControl
+    x:Class="Nefarius.DsHidMini.ControlApp.Views.UserControls.ProfileUserControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:deviceSettings="clr-namespace:Nefarius.DsHidMini.ControlApp.ViewModels.UserControls.DeviceSettings"
+    xmlns:enums="clr-namespace:Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums"
+    xmlns:helpers="clr-namespace:Nefarius.DsHidMini.ControlApp.Helpers"
+    xmlns:local="clr-namespace:Nefarius.DsHidMini.ControlApp.Views.UserControls"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:system="clr-namespace:System;assembly=System.Runtime"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:viewModels="clr-namespace:Nefarius.DsHidMini.ControlApp.ViewModels"
+    d:DataContext="{d:DesignInstance viewModels:ProfileViewModel,
+                                     IsDesignTimeCreatable=False}"
+    d:DesignHeight="600"
+    d:DesignWidth="800"
+    mc:Ignorable="d">
+    <UserControl.Resources>
+        <Thickness x:Key="MyKey_NextLineSpacement" Bottom="10" />
+        <system:Double x:Key="InfoDescriptionLength">200</system:Double>
+        <Style x:Key="MyKey_InfoDescriptionTextbox" TargetType="ui:TextBlock">
+            <Setter Property="Width" Value="200" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+    </UserControl.Resources>
+    <DockPanel>
+        <ui:Card DockPanel.Dock="Top">
+            <DockPanel>
+                <ui:TextBlock
+                    Margin="0,0,10,0"
+                    VerticalAlignment="Center"
+                    Text="Profile name:" />
+                <ui:TextBox IsEnabled="{Binding IsEditEnabled}" Text="{Binding Name}" />
+            </DockPanel>
+        </ui:Card>
+        <DockPanel DockPanel.Dock="Bottom" IsEnabled="{Binding IsEditEnabled}">
+            <UniformGrid Columns="2">
+                <ui:Button
+                    HorizontalAlignment="Stretch"
+                    Command="{Binding SaveChangesCommand}"
+                    Content="Save changes" />
+                <ui:Button
+                    HorizontalAlignment="Stretch"
+                    Command="{Binding CancelChangesCommand}"
+                    Content="Cancel" />
+            </UniformGrid>
+        </DockPanel>
+        <local:DeviceSettingsEditor
+            Height="auto"
+            Margin="0,10,0,10"
+            VerticalAlignment="Stretch"
+            DataContext="{Binding VmGroupsCont}"
+            DockPanel.Dock="Top" />
+
+    </DockPanel>
+
+
+</UserControl>

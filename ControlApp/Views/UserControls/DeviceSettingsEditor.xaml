@@ -1,0 +1,792 @@
+﻿<UserControl
+    x:Class="Nefarius.DsHidMini.ControlApp.Views.UserControls.DeviceSettingsEditor"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:deviceSettings="clr-namespace:Nefarius.DsHidMini.ControlApp.ViewModels.UserControls.DeviceSettings"
+    xmlns:enums="clr-namespace:Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums"
+    xmlns:helpers="clr-namespace:Nefarius.DsHidMini.ControlApp.Helpers"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:userControls="clr-namespace:Nefarius.DsHidMini.ControlApp.ViewModels.UserControls"
+    d:DataContext="{d:DesignInstance userControls:SettingsEditorViewModel,
+                                     IsDesignTimeCreatable=True}"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    mc:Ignorable="d">
+    <UserControl.Resources>
+        <DataTemplate x:Key="ModeSetting" DataType="{x:Type deviceSettings:DeviceSettingsViewModel}">
+            <ui:Card Margin="10,0,10,5" DockPanel.Dock="Top">
+                <DockPanel>
+                    <!--  Outer settings container with override button  -->
+                    <Grid Margin="0,0,0,20" DockPanel.Dock="Top">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="6*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <ui:TextBlock
+                            Grid.Column="1"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontTypography="Subtitle"
+                            Text="{Binding Header}" />
+                        <ui:Button
+                            Grid.Column="2"
+                            HorizontalAlignment="Right"
+                            Command="{Binding ResetGroupToOriginalDefaultsCommand}"
+                            Content="Reset"
+                            Visibility="{Binding IsGroupLocked, Converter={StaticResource BoolToVis_TC_FV}}" />
+                    </Grid>
+                    <!--  Internal settings group specific containter  -->
+                    <ContentControl
+                        HorizontalAlignment="Stretch"
+                        Content="{Binding}"
+                        DockPanel.Dock="Top"
+                        Visibility="{Binding IsGroupLocked, Converter={StaticResource BoolToVis_TC_FV}}" />
+                    <!--  Warning when settings are locked for specific mode  -->
+                    <ui:InfoBar
+                        Title="Settings locked"
+                        DockPanel.Dock="Top"
+                        IsClosable="False"
+                        IsOpen="{Binding IsGroupLocked}"
+                        Message="Settings locked by another option to prevent conflitcs"
+                        Severity="Informational" />
+                </DockPanel>
+            </ui:Card>
+        </DataTemplate>
+        <Style x:Key="SetGroupItem" TargetType="ContentControl">
+            <Setter Property="DockPanel.Dock" Value="Top" />
+            <Setter Property="Margin" Value="0,2,0,0" />
+            <Setter Property="ContentTemplate" Value="{StaticResource ModeSetting}" />
+        </Style>
+        <Thickness x:Key="MyKey_NextLineSpacement" Bottom="10" />
+
+        <!--#region ===================================================================SubSettingsTemplates=======================================-->
+
+        <!--  Template: Mode_Unique_All  -->
+        <DataTemplate DataType="{x:Type deviceSettings:HidModeSettingsViewModel}">
+            <StackPanel>
+                <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}">
+                    <Label
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Content="HID Device Mode:"
+                        DockPanel.Dock="Left" />
+                    <ComboBox
+                        VerticalAlignment="Center"
+                        DockPanel.Dock="Right"
+                        ItemsSource="{Binding HIDDeviceModesList}"
+                        SelectedItem="{Binding Context, FallbackValue=4}" />
+                </DockPanel>
+                <ui:ToggleSwitch
+                    Margin="{StaticResource MyKey_NextLineSpacement}"
+                    VerticalContentAlignment="Center"
+                    Content="Prevent remapping issues in DS4W mode"
+                    DockPanel.Dock="Top"
+                    IsChecked="{Binding PreventRemappingConflictsInDS4WMode}"
+                    Visibility="{Binding Path=Context, Converter={StaticResource VisibilityPerHIDModeConverterKey}, ConverterParameter=1000}" />
+                <!--  Pressure buttons mode  -->
+                <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" Visibility="{Binding Path=Context, Converter={StaticResource VisibilityPerHIDModeConverterKey}, ConverterParameter=11}">
+                    <Label
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Content="Pressure buttons mode:"
+                        DockPanel.Dock="Left" />
+                    <ComboBox
+                        VerticalAlignment="Center"
+                        DockPanel.Dock="Right"
+                        ItemsSource="{Binding ListOfPressureModes}"
+                        SelectedItem="{Binding PressureExposureMode, FallbackValue=2}" />
+                </DockPanel>
+                <!--  DPAD modes  -->
+                <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" Visibility="{Binding Path=Context, Converter={StaticResource VisibilityPerHIDModeConverterKey}, ConverterParameter=11}">
+                    <Label
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Content="Expose D-Pad as:"
+                        DockPanel.Dock="Left" />
+                    <ComboBox
+                        VerticalAlignment="Center"
+                        DockPanel.Dock="Right"
+                        ItemsSource="{Binding ListOfDPadModes}"
+                        SelectedItem="{Binding DPadExposureMode, FallbackValue=0}" />
+                </DockPanel>
+            </StackPanel>
+        </DataTemplate>
+
+        <!--  Template: Leds settings  -->
+        <DataTemplate DataType="{x:Type deviceSettings:LedsSettingsViewModel}">
+            <ContentControl>
+                <StackPanel>
+                    <!--  LEDs mode selection  -->
+                    <ui:ToggleSwitch
+                        Margin="{StaticResource MyKey_NextLineSpacement}"
+                        Content="Allow apps and games to take over LEDs control"
+                        IsChecked="{Binding AllowLedsOverride}" />
+                    <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}">
+                        <Label
+                            VerticalAlignment="Center"
+                            Content="LEDs control mode:"
+                            DockPanel.Dock="Left" />
+                        <ComboBox
+                            x:Name="LEDModeComboBox"
+                            VerticalAlignment="Center"
+                            DockPanel.Dock="Right"
+                            SelectedIndex="{Binding LEDMode}">
+                            <ComboBoxItem Content="Battery level (single led)" />
+                            <ComboBoxItem Content="Battery level (filling bar)" />
+                            <ComboBoxItem Content="Custom (simple)" />
+                            <ComboBoxItem Content="Custom (advanced)" />
+                        </ComboBox>
+
+                    </DockPanel>
+                    <TabControl HorizontalAlignment="Stretch" SelectedIndex="{Binding SelectedIndex, ElementName=LEDModeComboBox}">
+                        <!--  Index 0: LEDs as battery - single led  -->
+                        <TabItem Visibility="Collapsed" />
+                        <!--  Index 1: LEDs as battery - filling bar  -->
+                        <TabItem Visibility="Collapsed" />
+                        <!--  Index 2: LEDs custom simple  -->
+                        <TabItem
+                            Width="50"
+                            VerticalContentAlignment="Center"
+                            Visibility="Collapsed">
+                            <ContentControl MaxWidth="120">
+                                <UniformGrid Columns="4">
+                                    <CheckBox IsChecked="{Binding Leds_VM[0].IsEnabled}" />
+                                    <CheckBox IsChecked="{Binding Leds_VM[1].IsEnabled}" />
+                                    <CheckBox IsChecked="{Binding Leds_VM[2].IsEnabled}" />
+                                    <CheckBox IsChecked="{Binding Leds_VM[3].IsEnabled}" />
+                                </UniformGrid>
+                            </ContentControl>
+                            <!--  Index 3: LEDs custom advanced  -->
+                        </TabItem>
+                        <TabItem Visibility="Collapsed">
+                            <StackPanel>
+                                <!--  Select LED to customize  -->
+                                <TabControl
+                                    Margin="{StaticResource MyKey_NextLineSpacement}"
+                                    HorizontalAlignment="Center"
+                                    SelectedIndex="{Binding CurrentLEDCustomsIndex}">
+                                    <TabItem Width="50" Header="1" />
+                                    <TabItem Width="50" Header="2" />
+                                    <TabItem Width="50" Header="3" />
+                                    <TabItem Width="50" Header="4" />
+                                </TabControl>
+                                <!--  LED fine tuning  -->
+                                <StackPanel Margin="{StaticResource MyKey_NextLineSpacement}" DataContext="{Binding SelectedLED_VM}">
+                                    <ui:ToggleSwitch
+                                        Margin="{StaticResource MyKey_NextLineSpacement}"
+                                        Content="Enable LED"
+                                        IsChecked="{Binding IsEnabled}" />
+                                    <ui:ToggleSwitch
+                                        x:Name="UseLEDEffects_Checkbox"
+                                        Margin="{StaticResource MyKey_NextLineSpacement}"
+                                        Content="Use advanced effects"
+                                        IsChecked="{Binding UseEffects}" />
+                                    <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}">
+                                        <Label
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Center"
+                                            Content="Duration:"
+                                            DockPanel.Dock="Left" />
+                                        <Label Content="{Binding Duration}" DockPanel.Dock="Left" />
+                                        <Slider
+                                            VerticalAlignment="Center"
+                                            DockPanel.Dock="Right"
+                                            Maximum="255"
+                                            Minimum="0"
+                                            Value="{Binding Duration}" />
+                                    </DockPanel>
+                                    <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}">
+                                        <Label
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Center"
+                                            Content="Interval duration:"
+                                            DockPanel.Dock="Left" />
+                                        <Label Content="{Binding IntervalDuration}" DockPanel.Dock="Left" />
+                                        <Slider
+                                            VerticalAlignment="Center"
+                                            ClipToBounds="True"
+                                            DockPanel.Dock="Right"
+                                            Maximum="65535"
+                                            Minimum="0"
+                                            Value="{Binding IntervalDuration}" />
+                                    </DockPanel>
+                                    <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}">
+                                        <Label
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Center"
+                                            Content="Interval ON portion:"
+                                            DockPanel.Dock="Left" />
+                                        <Label Content="{Binding IntervalPortionON}" DockPanel.Dock="Left" />
+                                        <ui:NumberBox
+                                            VerticalAlignment="Center"
+                                            ClipToBounds="True"
+                                            DockPanel.Dock="Right"
+                                            Maximum="254"
+                                            Minimum="0"
+                                            Text="{Binding IntervalPortionON}"
+                                            ToolTip="{Binding Value, RelativeSource={RelativeSource Self}}" />
+
+                                    </DockPanel>
+                                    <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}">
+                                        <Label
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Center"
+                                            Content="Interval OFF portion:"
+                                            DockPanel.Dock="Left" />
+                                        <Label Content="{Binding IntervalPortionOFF}" DockPanel.Dock="Left" />
+                                        <Slider
+                                            VerticalAlignment="Center"
+                                            ClipToBounds="True"
+                                            DockPanel.Dock="Right"
+                                            Maximum="254"
+                                            Minimum="0"
+                                            Value="{Binding IntervalPortionOFF}" />
+                                    </DockPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </TabItem>
+                    </TabControl>
+                </StackPanel>
+            </ContentControl>
+
+
+        </DataTemplate>
+
+        <!--  Basic wireless settings  -->
+        <DataTemplate DataType="{x:Type deviceSettings:WirelessSettingsViewModel}">
+            <DockPanel>
+                <!--  Idle disconnect  -->
+                <ui:ToggleSwitch
+                    x:Name="IdleDisconnectEnableCheckbox"
+                    Margin="{StaticResource MyKey_NextLineSpacement}"
+                    Content="Disconnect the controller after idle period"
+                    DockPanel.Dock="Top"
+                    IsChecked="{Binding IsWirelessIdleDisconnectEnabled}" />
+                <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                    <Label
+                        VerticalAlignment="Center"
+                        Content="Idle disconnect period (in minutes):"
+                        DockPanel.Dock="Left" />
+                    <Label
+                        VerticalAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Content="{Binding WirelessIdleDisconnectTime}"
+                        DockPanel.Dock="Left" />
+                    <Slider
+                        AutoToolTipPlacement="TopLeft"
+                        DockPanel.Dock="Left"
+                        IsEnabled="{Binding IsChecked, ElementName=IdleDisconnectEnableCheckbox}"
+                        IsSnapToTickEnabled="True"
+                        Maximum="60"
+                        Minimum="1"
+                        TickFrequency="1"
+                        Value="{Binding WirelessIdleDisconnectTime}" />
+                </DockPanel>
+                <ui:ToggleSwitch
+                    x:Name="EnableQuickDisconnectComboCheckbox"
+                    Margin="{StaticResource MyKey_NextLineSpacement}"
+                    Content="Enable quick disconnect combo"
+                    DockPanel.Dock="Top"
+                    IsChecked="{Binding IsQuickDisconnectComboEnabled}" />
+                <!--  Quick disconnect combo selection  -->
+                <DockPanel
+                    Margin="{StaticResource MyKey_NextLineSpacement}"
+                    DockPanel.Dock="Top"
+                    LastChildFill="False">
+                    <!--  DataContext="{Binding QuickDisconnectCombo}"  -->
+                    <Label
+                        VerticalAlignment="Center"
+                        Content="Quick disconnect combo:"
+                        DockPanel.Dock="Left" />
+                    <!--  Change ComboBox later so it's binding to a enum  -->
+                    <ComboBox
+                        Width="80"
+                        DockPanel.Dock="Left"
+                        IsEnabled="{Binding IsChecked, ElementName=EnableQuickDisconnectComboCheckbox}"
+                        ItemsSource="{Binding Source={helpers:EnumBindingSource {x:Type enums:Button}}}"
+                        SelectedItem="{Binding QuickDisconnectComboButton1}"
+                        Text="{Binding QuickDisconnectComboButton1}" />
+                    <ComboBox
+                        Width="80"
+                        DockPanel.Dock="Left"
+                        IsEnabled="{Binding IsChecked, ElementName=EnableQuickDisconnectComboCheckbox}"
+                        ItemsSource="{Binding Source={helpers:EnumBindingSource {x:Type enums:Button}}}"
+                        SelectedItem="{Binding QuickDisconnectComboButton2}"
+                        Text="{Binding QuickDisconnectComboButton2}" />
+                    <ComboBox
+                        Width="80"
+                        DockPanel.Dock="Left"
+                        IsEnabled="{Binding IsChecked, ElementName=EnableQuickDisconnectComboCheckbox}"
+                        ItemsSource="{Binding Source={helpers:EnumBindingSource {x:Type enums:Button}}}"
+                        SelectedItem="{Binding QuickDisconnectComboButton3}"
+                        Text="{Binding QuickDisconnectComboButton3}" />
+                    <ui:NumberBox
+                        ClearButtonEnabled="False"
+                        Maximum="5"
+                        Minimum="0"
+                        Text="{Binding QuickDisconnectComboHoldTime}"
+                        Value="{Binding QuickDisconnectComboHoldTime}" />
+                </DockPanel>
+            </DockPanel>
+        </DataTemplate>
+
+        <!--  Template draft  -->
+        <DataTemplate x:Key="Template_ToDo">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <Label
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    VerticalAlignment="Center"
+                    Content="Fill 1" />
+                <Label
+                    Grid.Row="1"
+                    Grid.Column="0"
+                    VerticalAlignment="Center"
+                    Content="Fill 2" />
+            </Grid>
+        </DataTemplate>
+
+        <!--  Template: sticks deadzone  -->
+        <DataTemplate DataType="{x:Type deviceSettings:SticksSettingsViewModel}">
+            <DockPanel>
+                <!--  Grid test  -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="4*" />
+                        <ColumnDefinition Width="2*" />
+                        <ColumnDefinition Width="2*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <!--  Row 0: Labels  -->
+                    <Label
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Content="Left Stick" />
+                    <Label
+                        Grid.Row="0"
+                        Grid.Column="2"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Content="Right Stick" />
+                    <!--  Row 1: DeadZone  -->
+                    <Label
+                        Grid.Row="1"
+                        Grid.Column="0"
+                        HorizontalContentAlignment="Left"
+                        VerticalContentAlignment="Center"
+                        Content="DeadZone (%):" />
+                    <ui:NumberBox
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        ClearButtonEnabled="False"
+                        ClipToBounds="True"
+                        Maximum="142"
+                        Minimum="0"
+                        Value="{Binding LeftStickDeadZone}" />
+                    <ui:NumberBox
+                        Grid.Row="1"
+                        Grid.Column="2"
+                        ClearButtonEnabled="False"
+                        ClipToBounds="True"
+                        Maximum="142"
+                        Minimum="0"
+                        Value="{Binding RightStickDeadZone}" />
+                    <!--  Row 2: Invert X  -->
+                    <Label
+                        Grid.Row="2"
+                        Grid.Column="0"
+                        HorizontalContentAlignment="Left"
+                        VerticalContentAlignment="Center"
+                        Content="Invert horizontally (X-Axis):" />
+                    <ui:ToggleSwitch
+                        Grid.Row="2"
+                        Grid.Column="1"
+                        HorizontalAlignment="Center"
+                        IsChecked="{Binding InvertLSX}" />
+                    <ui:ToggleSwitch
+                        Grid.Row="2"
+                        Grid.Column="2"
+                        HorizontalAlignment="Center"
+                        IsChecked="{Binding InvertRSX}" />
+                    <!--  Row 3: Invert Y  -->
+                    <Label
+                        Grid.Row="3"
+                        Grid.Column="0"
+                        HorizontalContentAlignment="Left"
+                        VerticalContentAlignment="Center"
+                        Content="Invert vertically (Y-Axis):" />
+                    <ui:ToggleSwitch
+                        Grid.Row="3"
+                        Grid.Column="1"
+                        HorizontalAlignment="Center"
+                        IsChecked="{Binding InvertLSY}" />
+                    <ui:ToggleSwitch
+                        Grid.Row="3"
+                        Grid.Column="2"
+                        HorizontalAlignment="Center"
+                        IsChecked="{Binding InvertRSY}" />
+                </Grid>
+            </DockPanel>
+        </DataTemplate>
+
+        <!--  Template: Rumble general  -->
+        <DataTemplate DataType="{x:Type deviceSettings:GeneralRumbleSettingsViewModel}">
+            <DockPanel>
+                <Image Height="150" DockPanel.Dock="Top">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Setter Property="Source" Value="{StaticResource NormalRumbleModeImage}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsChecked, ElementName=AltModeEnabler_ToggleSwitch}" Value="True">
+                                    <Setter Property="Source" Value="\Resources\AltRumbleMode.png" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Image.Style>
+                </Image>
+                <ui:ToggleSwitch
+                    x:Name="AltModeEnabler_ToggleSwitch"
+                    Margin="{StaticResource MyKey_NextLineSpacement}"
+                    Content="Enable alternative mode"
+                    DockPanel.Dock="Top"
+                    IsChecked="{Binding IsAltModeEnabled}" />
+                <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" Visibility="{Binding IsAltModeEnabled, Converter={StaticResource BoolToVis_TC_FV}}">
+                    <!--  Rumble motors disablers  -->
+                    <ui:ToggleSwitch
+                        Margin="{StaticResource MyKey_NextLineSpacement}"
+                        Content="Disable left motor (heavy)"
+                        DockPanel.Dock="Top"
+                        IsChecked="{Binding IsLeftMotorDisabled}" />
+                    <ui:ToggleSwitch
+                        Margin="{StaticResource MyKey_NextLineSpacement}"
+                        Content="Disable right motor (small)"
+                        DockPanel.Dock="Top"
+                        IsChecked="{Binding IsRightMotorDisabled}" />
+                </DockPanel>
+                <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" Visibility="{Binding IsAltModeEnabled, Converter={StaticResource BoolToVis}}">
+                    <!--  Variable light rumble emulation enabler  -->
+                    <ui:ToggleSwitch
+                        x:Name="EnableAltModeToggleButtonCombo"
+                        Margin="{StaticResource MyKey_NextLineSpacement}"
+                        Content="Toggle alternative rumble mode via button combo"
+                        DockPanel.Dock="Top"
+                        IsChecked="{Binding IsAltModeToggleButtonComboEnabled}" />
+                    <DockPanel
+                        Margin="{StaticResource MyKey_NextLineSpacement}"
+                        DockPanel.Dock="Top"
+                        IsEnabled="{Binding IsChecked, ElementName=EnableAltModeToggleButtonCombo}"
+                        LastChildFill="False">
+                        <!--  DataContext="{Binding VariableRightEmulToggleCombo}"  -->
+                        <Label
+                            VerticalAlignment="Center"
+                            Content="Toogle combo:"
+                            DockPanel.Dock="Left" />
+                        <!--  Change ComboBox later so it's binding to a enum  -->
+                        <ComboBox
+                            Width="80"
+                            DockPanel.Dock="Left"
+                            ItemsSource="{Binding Source={helpers:EnumBindingSource {x:Type enums:Button}}}"
+                            SelectedItem="{Binding AltModeToggleButttonCombo_Button1}"
+                            Text="{Binding AltModeToggleButttonCombo_Button1}" />
+                        <ComboBox
+                            Width="80"
+                            DockPanel.Dock="Left"
+                            ItemsSource="{Binding Source={helpers:EnumBindingSource {x:Type enums:Button}}}"
+                            SelectedItem="{Binding AltModeToggleButttonCombo_Button2}"
+                            Text="{Binding AltModeToggleButttonCombo_Button2}" />
+                        <ComboBox
+                            Width="80"
+                            DockPanel.Dock="Left"
+                            ItemsSource="{Binding Source={helpers:EnumBindingSource {x:Type enums:Button}}}"
+                            SelectedItem="{Binding AltModeToggleButttonCombo_Button3}"
+                            Text="{Binding AltModeToggleButttonCombo_Button3}" />
+                        <ui:NumberBox
+                            ClearButtonEnabled="False"
+                            Maximum="5"
+                            Minimum="1"
+                            Text="{Binding AltModeToggleComboHoldTime}"
+                            Value="{Binding AltModeToggleComboHoldTime}" />
+                    </DockPanel>
+                    <ui:ToggleSwitch
+                        Margin="{StaticResource MyKey_NextLineSpacement}"
+                        DockPanel.Dock="Top"
+                        IsChecked="{Binding AlwaysStartInNormalRumbleMode}">
+                        <Label Content="Start in normal mode" />
+                    </ui:ToggleSwitch>
+                </DockPanel>
+
+            </DockPanel>
+        </DataTemplate>
+
+        <!--  Template: Output Rate Control  -->
+        <DataTemplate DataType="{x:Type deviceSettings:OutputReportSettingsViewModel}">
+            <DockPanel>
+                <!--  Output rate enabler  -->
+                <ui:ToggleSwitch
+                    Margin="{StaticResource MyKey_NextLineSpacement}"
+                    Content="Limit maximum output rate when wireless"
+                    DockPanel.Dock="Top"
+                    IsChecked="{Binding IsOutputReportRateControlEnabled}" />
+                <!--  Max output rate adjuster  -->
+                <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                    <Label
+                        VerticalAlignment="Center"
+                        Content="Max output rate  (in ms):"
+                        DockPanel.Dock="Left" />
+                    <Label
+                        VerticalAlignment="Center"
+                        Content="{Binding MaxOutputRate}"
+                        DockPanel.Dock="Left" />
+                    <Slider
+                        DockPanel.Dock="Left"
+                        IsSnapToTickEnabled="True"
+                        Maximum="255"
+                        Minimum="1"
+                        TickFrequency="1"
+                        Value="{Binding MaxOutputRate}" />
+                </DockPanel>
+                <!--  Output report detuplicator  -->
+                <ui:ToggleSwitch
+                    Margin="{StaticResource MyKey_NextLineSpacement}"
+                    Content="Enable output report deduplicator"
+                    DockPanel.Dock="Top"
+                    IsChecked="{Binding IsOutputReportDeduplicatorEnabled}" />
+            </DockPanel>
+        </DataTemplate>
+
+        <!--  Template: left motor strength rescale  -->
+        <DataTemplate DataType="{x:Type deviceSettings:LeftMotorRescalingSettingsViewModel}">
+            <DockPanel>
+                <!--  Left motor str rescaling ui:ToggleSwitch  -->
+                <ui:ToggleSwitch
+                    Margin="{StaticResource MyKey_NextLineSpacement}"
+                    Content="Enable rescaling of left motor strength"
+                    DockPanel.Dock="Top"
+                    IsChecked="{Binding IsLeftMotorStrRescalingEnabled}" />
+                <!--  Upper range controls  -->
+                <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                    <Label
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Content="New upper range:"
+                        DockPanel.Dock="Left" />
+                    <Label
+                        VerticalAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Content="{Binding LeftMotorStrRescalingUpperRange}"
+                        DockPanel.Dock="Left" />
+                    <Slider
+                        DockPanel.Dock="Right"
+                        IsSnapToTickEnabled="True"
+                        Maximum="255"
+                        Minimum="2"
+                        TickFrequency="1"
+                        Value="{Binding LeftMotorStrRescalingUpperRange}" />
+                </DockPanel>
+                <!--  lower range controls  -->
+                <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                    <Label
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Content="New lower range:"
+                        DockPanel.Dock="Left" />
+                    <Label
+                        VerticalAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Content="{Binding LeftMotorStrRescalingLowerRange}"
+                        DockPanel.Dock="Left" />
+                    <Slider
+                        DockPanel.Dock="Right"
+                        IsSnapToTickEnabled="True"
+                        Maximum="254"
+                        Minimum="1"
+                        TickFrequency="1"
+                        Value="{Binding LeftMotorStrRescalingLowerRange}" />
+                </DockPanel>
+            </DockPanel>
+        </DataTemplate>
+
+        <!--  Template: alternative rumble mode tuning  -->
+        <DataTemplate DataType="{x:Type deviceSettings:AltRumbleModeSettingsViewModel}">
+            <DockPanel>
+                <!--  Conversion upper range  -->
+                <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                    <Label
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Content="Conversion upper range:"
+                        DockPanel.Dock="Left" />
+                    <Label
+                        VerticalAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Content="{Binding RightRumbleConversionUpperRange}"
+                        DockPanel.Dock="Left" />
+                    <Slider
+                        DockPanel.Dock="Right"
+                        IsSnapToTickEnabled="True"
+                        Maximum="255"
+                        Minimum="2"
+                        TickFrequency="1"
+                        Value="{Binding RightRumbleConversionUpperRange}" />
+                </DockPanel>
+                <!--  Conversion lower range  -->
+                <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                    <Label
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Content="Conversion lower range:"
+                        DockPanel.Dock="Left" />
+                    <Label
+                        VerticalAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Content="{Binding RightRumbleConversionLowerRange}"
+                        DockPanel.Dock="Left" />
+                    <Slider
+                        DockPanel.Dock="Right"
+                        IsSnapToTickEnabled="True"
+                        Maximum="254"
+                        Minimum="1"
+                        TickFrequency="1"
+                        Value="{Binding RightRumbleConversionLowerRange}" />
+                </DockPanel>
+                <Label
+                    Margin="{StaticResource MyKey_NextLineSpacement}"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    Content="Force activate right motor when above..."
+                    DockPanel.Dock="Top" />
+                <!--  Forced right motor activation / light rumble threshold  -->
+                <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                    <ui:ToggleSwitch
+                        x:Name="ForcedRMLeftThresholdCheckbox"
+                        Content="Left rumble threshold:"
+                        DockPanel.Dock="Left"
+                        IsChecked="{Binding IsForcedRightMotorHeavyThreasholdEnabled}" />
+                    <Label
+                        VerticalAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Content="{Binding ForcedRightMotorHeavyThreshold}"
+                        DockPanel.Dock="Left" />
+                    <Slider
+                        DockPanel.Dock="Right"
+                        IsEnabled="{Binding IsChecked, ElementName=ForcedRMLeftThresholdCheckbox}"
+                        IsSnapToTickEnabled="True"
+                        Maximum="255"
+                        Minimum="1"
+                        TickFrequency="1"
+                        Value="{Binding ForcedRightMotorHeavyThreshold}" />
+                </DockPanel>
+                <!--  Forced right motor activation / heavy rumble threshold  -->
+                <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                    <ui:ToggleSwitch
+                        x:Name="ForcedRMRightThresholdCheckbox"
+                        VerticalAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Content="Right rumble threshold:"
+                        DockPanel.Dock="Left"
+                        IsChecked="{Binding IsForcedRightMotorLightThresholdEnabled}" />
+                    <Label
+                        VerticalAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Content="{Binding ForcedRightMotorLightThreshold}"
+                        DockPanel.Dock="Left" />
+                    <Slider
+                        DockPanel.Dock="Right"
+                        IsEnabled="{Binding IsChecked, ElementName=ForcedRMRightThresholdCheckbox}"
+                        IsSnapToTickEnabled="True"
+                        Maximum="255"
+                        Minimum="1"
+                        TickFrequency="1"
+                        Value="{Binding ForcedRightMotorLightThreshold}" />
+                </DockPanel>
+            </DockPanel>
+        </DataTemplate>
+
+
+
+
+
+        <!--#endregion-->
+        <Style BasedOn="{StaticResource {x:Type Label}}" TargetType="Label">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,0,10,0" />
+        </Style>
+    </UserControl.Resources>
+    <ui:DynamicScrollViewer>
+        <DockPanel
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            IsEnabled="{Binding AllowEditing}"
+            LastChildFill="True">
+
+            <!--  Mode unique settings  -->
+            <ContentControl Content="{Binding HidModeVM}" Style="{StaticResource SetGroupItem}" />
+
+            <!--  Mode Settings groups  -->
+            <ContentControl Content="{Binding LedsSettingsVM}" Style="{StaticResource SetGroupItem}" />
+            <ContentControl Content="{Binding WirelessSettingsVM}" Style="{StaticResource SetGroupItem}" />
+
+
+            <ContentControl Content="{Binding SticksSettingsVM}" Style="{StaticResource SetGroupItem}" />
+            <ContentControl Content="{Binding GeneralRumbleSettingsVM}" Style="{StaticResource SetGroupItem}" />
+
+
+            <!--  Advanced options  -->
+
+            <ui:CardExpander
+                Margin="10"
+                DockPanel.Dock="Top"
+                Header="Advanced settings">
+                <ui:CardExpander.Content>
+                    <DockPanel>
+                        <ui:InfoBar
+                            Title="Advanced settings ahead!"
+                            Margin="10"
+                            DockPanel.Dock="Top"
+                            IsClosable="False"
+                            IsOpen="True"
+                            Message=" Don't change them unless you really know what you are doing (documentation on the website)"
+                            Severity="Error" />
+                        <ContentControl
+                            Content="{Binding OutRepSettingsVM}"
+                            DockPanel.Dock="Top"
+                            Style="{StaticResource SetGroupItem}" />
+                        <ContentControl
+                            Content="{Binding LeftMotorRescaleSettingsVM}"
+                            DockPanel.Dock="Top"
+                            Style="{StaticResource SetGroupItem}" />
+                        <ContentControl
+                            Content="{Binding AltRumbleSettingsVM}"
+                            DockPanel.Dock="Top"
+                            Style="{StaticResource SetGroupItem}" />
+                    </DockPanel>
+                </ui:CardExpander.Content>
+            </ui:CardExpander>
+
+        </DockPanel>
+
+
+    </ui:DynamicScrollViewer>
+
+
+</UserControl>
