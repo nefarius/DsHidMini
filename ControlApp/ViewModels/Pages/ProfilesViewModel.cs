@@ -38,9 +38,18 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
             List<ProfileViewModel> newList = new();
             foreach(ProfileData prof in ProfilesDatas)
             {
-                newList.Add(new(prof, _appSnackbarMessagesService, _dshmConfigManager) { IsGlobal = (prof == _dshmConfigManager.GlobalProfile)});
+                newList.Add(new(prof, _appSnackbarMessagesService, _dshmConfigManager));
             }
             ProfilesViewModels = newList;
+            UpdateGlobalProfileCheck();
+        }
+
+        public void UpdateGlobalProfileCheck()
+        {
+            foreach (ProfileViewModel profVM in ProfilesViewModels)
+            {
+                profVM.IsGlobal = (profVM.ProfileData == _dshmConfigManager.GlobalProfile);
+            }
         }
 
 
@@ -75,7 +84,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
                 _appSnackbarMessagesService.ShowGlobalProfileUpdatedMessage();
                 _dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile();
             }
-            UpdateProfileList();
+            UpdateGlobalProfileCheck();
         }
 
         [RelayCommand]
