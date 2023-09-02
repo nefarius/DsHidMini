@@ -228,13 +228,15 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         /// <summary>
         /// Adds to the Profile List a new profile with the given name and settings based on the default profile
         /// </summary>
-        /// <param name="profileName">The name of the profile</param>
-        public void CreateNewProfile(string profileName)
+        /// <param name="profileName">Name of the new profile</param>
+        /// <returns>The created profile</returns>
+        public ProfileData CreateNewProfile(string profileName)
         {
             ProfileData newProfile = new();
             newProfile.ProfileName = profileName;
             //newProfile.DiskFileName = profileName + ".json";
             dshmManagerUserData.Profiles.Add(newProfile);
+            return newProfile;
         }
 
         /// <summary>
