@@ -23,20 +23,51 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         private readonly Timer _batteryQuery;
         private DeviceData deviceUserData;
 
+        /// <summary>
+        /// Settings View Model for device's custom settings
+        /// Editing allowed, changes saved only if applying settings with custom settings mode selected
+        /// </summary>
         [ObservableProperty] private SettingsEditorViewModel _deviceCustomsVM = new() { AllowEditing = true };
+
+        /// <summary>
+        /// Setting View Model for profile device is linked to
+        /// Editing not allowed
+        /// </summary>
         [ObservableProperty] private SettingsEditorViewModel _profileCustomsVM = new();
+
+        /// <summary>
+        /// Settings View Model for current global profile
+        /// Editing not allowed
+        /// </summary>
         [ObservableProperty] private SettingsEditorViewModel _globalCustomsVM = new();
+
+        /// <summary>
+        /// Current selected settings, accordingly to device's settings mode
+        /// </summary>
         [ObservableProperty] private SettingsEditorViewModel _selectedGroupsVM = new();
+
+
         [ObservableProperty] private bool _isEditorEnabled;
+
+        /// <summary>
+        /// Determines if the profile selector is visible.
+        /// True if in Profile settings mode, false otherwise
+        /// </summary>
         [ObservableProperty] private bool _isProfileSelectorVisible;
+
+        /// <summary>
+        /// Desired settings mode for current device. Saved to device data only if applying settings
+        /// </summary>
         [ObservableProperty] private SettingsModes _currentDeviceSettingsMode;
 
         /// <summary>
         ///     Current HID device emulation mode.
         /// </summary>
-
         public DsHidDeviceMode HidEmulationMode => (DsHidDeviceMode)_device.GetProperty<byte>(DsHidMiniDriver.HidDeviceModeProperty);
 
+        /// <summary>
+        /// Summary of device's current HID mode and Settings mode
+        /// </summary>
         public string DeviceSettingsStatus => $"{(HidModeShort)_device.GetProperty<byte>(DsHidMiniDriver.HidDeviceModeProperty)} • {CurrentDeviceSettingsMode}";
 
 
@@ -97,10 +128,19 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
             }
         }
         
+        /// <summary>
+        /// The Bluetooth MAC address of the host radio the controller should pair to if in custom pairing mode
+        /// </summary>
         [ObservableProperty] private string? _customPairingAddress;
 
+        /// <summary>
+        /// The desired Bluetooth pairing mode for the device when plugging via cable or applying settings
+        /// </summary>
         private BluetoothPairingMode? _pairingMode;
 
+        /// <summary>
+        /// Index of the desired Bluetooth pairing mode
+        /// </summary>
         public int PairingMode
         {
             get => (int)_pairingMode;
@@ -120,7 +160,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
             (DsBatteryStatus)_device.GetProperty<byte>(DsHidMiniDriver.BatteryStatusProperty);
 
         /// <summary>
-        ///     Current battery status.
+        ///     String representation of current battery status
         /// </summary>
         public string BatteryStatusInText =>
             ((DsBatteryStatus)_device.GetProperty<byte>(DsHidMiniDriver.BatteryStatusProperty)).ToString();
@@ -177,7 +217,9 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         //}
 
 
-
+        /// <summary>
+        /// The wireless state of the device
+        /// </summary>
         public bool IsWireless
         {
             get
