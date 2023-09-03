@@ -23,6 +23,12 @@
             <Setter Property="Width" Value="200" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
+        <Style x:Key="MyKey_StatusSymbol" TargetType="ui:SymbolIcon">
+            <Setter Property="FontSize" Value="70" />
+            <Setter Property="Width" Value="40" />
+        </Style>
+        <system:Double x:Key="MyKey_SymbolFontSize">25</system:Double>
+
     </UserControl.Resources>
     <DockPanel>
         <DockPanel DockPanel.Dock="Bottom">
@@ -54,11 +60,18 @@
                                 DockPanel.Dock="Left"
                                 Style="{StaticResource MyKey_InfoDescriptionTextbox}"
                                 Text="Device name:" />
+                            <ui:SymbolIcon
+                                DockPanel.Dock="Right"
+                                FontSize="{StaticResource MyKey_SymbolFontSize}"
+                                Style="{StaticResource MyKey_StatusSymbol}"
+                                ToolTipService.ToolTip="Yu" />
                             <ui:TextBox
                                 HorizontalAlignment="Stretch"
-                                DockPanel.Dock="Right"
+                                DockPanel.Dock="Left"
                                 IsReadOnly="True"
                                 Text="{Binding DisplayName, Mode=OneWay}" />
+
+
                         </DockPanel>
                         <!--  Device MAC address  -->
                         <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
@@ -66,10 +79,16 @@
                                 DockPanel.Dock="Left"
                                 Style="{StaticResource MyKey_InfoDescriptionTextbox}"
                                 Text="Device address:" />
+                            <ui:SymbolIcon
+                                DockPanel.Dock="Right"
+                                FontSize="{StaticResource MyKey_SymbolFontSize}"
+                                Style="{StaticResource MyKey_StatusSymbol}" />
+
                             <ui:TextBox
                                 DockPanel.Dock="Right"
                                 IsReadOnly="True"
                                 Text="{Binding DeviceAddressFriendly, Mode=OneWay}" />
+
                         </DockPanel>
                         <!--  Battery status  -->
                         <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
@@ -77,6 +96,10 @@
                                 DockPanel.Dock="Left"
                                 Style="{StaticResource MyKey_InfoDescriptionTextbox}"
                                 Text="Battery status:" />
+                            <ui:SymbolIcon
+                                DockPanel.Dock="Right"
+                                FontSize="{StaticResource MyKey_SymbolFontSize}"
+                                Style="{StaticResource MyKey_StatusSymbol}" />
                             <ui:TextBlock
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
@@ -89,6 +112,10 @@
                                 DockPanel.Dock="Left"
                                 Style="{StaticResource MyKey_InfoDescriptionTextbox}"
                                 Text="Current HID mode:" />
+                            <ui:SymbolIcon
+                                DockPanel.Dock="Right"
+                                FontSize="{StaticResource MyKey_SymbolFontSize}"
+                                Style="{StaticResource MyKey_StatusSymbol}" />
                             <TextBlock
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
@@ -102,6 +129,10 @@
                                 DockPanel.Dock="Left"
                                 Style="{StaticResource MyKey_InfoDescriptionTextbox}"
                                 Text="Paired to (host address):" />
+                            <ui:SymbolIcon
+                                DockPanel.Dock="Right"
+                                FontSize="{StaticResource MyKey_SymbolFontSize}"
+                                Style="{StaticResource MyKey_StatusSymbol}" />
                             <ui:TextBox
                                 DockPanel.Dock="Right"
                                 IsReadOnly="True"
@@ -114,6 +145,10 @@
                                 DockPanel.Dock="Left"
                                 Style="{StaticResource MyKey_InfoDescriptionTextbox}"
                                 Text="Bluetooth pairing mode:" />
+                            <ui:SymbolIcon
+                                DockPanel.Dock="Right"
+                                FontSize="{StaticResource MyKey_SymbolFontSize}"
+                                Style="{StaticResource MyKey_StatusSymbol}" />
                             <ComboBox x:Name="PairingModeComboBox" SelectedIndex="{Binding PairingMode}">
                                 <ComboBoxItem Content="To this PC" />
                                 <ComboBoxItem Content="Custom MAC address" />
@@ -127,6 +162,10 @@
                                 DockPanel.Dock="Left"
                                 Style="{StaticResource MyKey_InfoDescriptionTextbox}"
                                 Text="Custom pairing address:" />
+                            <ui:SymbolIcon
+                                DockPanel.Dock="Right"
+                                FontSize="{StaticResource MyKey_SymbolFontSize}"
+                                Style="{StaticResource MyKey_StatusSymbol}" />
                             <ui:TextBox DockPanel.Dock="Right" Text="{Binding CustomPairingAddress}">
                                 <ui:TextBox.Style>
                                     <Style BasedOn="{StaticResource {x:Type ui:TextBox}}" TargetType="ui:TextBox">
@@ -150,6 +189,10 @@
                                 DockPanel.Dock="Left"
                                 Style="{StaticResource MyKey_InfoDescriptionTextbox}"
                                 Text="Wireless connection time:" />
+                            <ui:SymbolIcon
+                                DockPanel.Dock="Right"
+                                FontSize="{StaticResource MyKey_SymbolFontSize}"
+                                Style="{StaticResource MyKey_StatusSymbol}" />
                             <ui:TextBlock
                                 VerticalAlignment="Center"
                                 DockPanel.Dock="Right"
@@ -162,6 +205,10 @@
                                 DockPanel.Dock="Left"
                                 Style="{StaticResource MyKey_InfoDescriptionTextbox}"
                                 Text="Driver version:" />
+                            <ui:SymbolIcon
+                                DockPanel.Dock="Right"
+                                FontSize="{StaticResource MyKey_SymbolFontSize}"
+                                Style="{StaticResource MyKey_StatusSymbol}" />
                             <ui:TextBox
                                 DockPanel.Dock="Right"
                                 IsReadOnly="True"
@@ -174,6 +221,10 @@
                                 DockPanel.Dock="Left"
                                 Style="{StaticResource MyKey_InfoDescriptionTextbox}"
                                 Text="Instance ID:" />
+                            <ui:SymbolIcon
+                                DockPanel.Dock="Right"
+                                FontSize="{StaticResource MyKey_SymbolFontSize}"
+                                Style="{StaticResource MyKey_StatusSymbol}" />
                             <ui:TextBox
                                 DockPanel.Dock="Right"
                                 IsReadOnly="True"
