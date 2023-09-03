@@ -1,4 +1,5 @@
 ﻿using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
+using Newtonsoft.Json;
 
 namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
 {
@@ -16,7 +17,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         /// </summary>
         public DeviceSettings Settings { get; set; } = new();
 
-        public SettingsContext ExpectedHidMode { get; set; }
+
 
         public DeviceData(string deviceMac)
         {

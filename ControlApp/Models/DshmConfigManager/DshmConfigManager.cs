@@ -192,17 +192,15 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
                 {
                     case SettingsModes.Custom:
                         dev.Settings.ConvertAllToDSHM(dshmDeviceData.DeviceSettings);
-                        dev.ExpectedHidMode = dev.Settings.modesUniqueData.SettingsContext;
                         break;
                     case SettingsModes.Profile:
                         ProfileData devprof = GetProfile(dev.GuidOfProfileToUse);
                         devprof.Settings.ConvertAllToDSHM(dshmDeviceData.DeviceSettings);
-                        dev.ExpectedHidMode = devprof.Settings.modesUniqueData.SettingsContext;
                         break;
 
                     case SettingsModes.Global:
                     default:
-                        dev.ExpectedHidMode = GlobalProfile.Settings.modesUniqueData.SettingsContext;
+                        // Device's in Global settings mode need to have empty settings so global settings are not overwritten
                         break;
                 }
                 dshmConfiguration.Devices.Add(dshmDeviceData);
@@ -248,6 +246,24 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             FixDevicesWithBlankProfiles();
         }
         
+        public SettingsContext GetDeviceExpectedHidMode(DeviceData dev)
+        {
+            switch (dev.SettingsMode)
+            {
+                case SettingsModes.Custom:
+                    return dev.Settings.modesUniqueData.SettingsContext;
+                    break;
+                case SettingsModes.Profile:
+                    return GetProfile(dev.GuidOfProfileToUse).Settings.modesUniqueData.SettingsContext;
+                    break;
+                case SettingsModes.Global:
+                default:
+                    return GlobalProfile.Settings.modesUniqueData.SettingsContext;
+                    break;
+
+            }
+        }
+
         /// <summary>
         /// Gets the DsHidMini config. manager device data of a DsHidMini device.  If it does not exist, a new one will be created for it first before returning
         /// </summary>
@@ -264,7 +280,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             }
             var newDevice = new DeviceData(deviceMac);
             newDevice.DeviceMac = deviceMac;
-            newDevice.ExpectedHidMode = GlobalProfile.Settings.modesUniqueData.SettingsContext;
             dshmManagerUserData.Devices.Add(newDevice);
             return newDevice;
         }
