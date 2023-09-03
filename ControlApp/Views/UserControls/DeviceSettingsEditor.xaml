@@ -71,7 +71,7 @@
                     <Label
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center"
-                        Content="HID Device Mode:"
+                        Content="HID Emulation Mode:"
                         DockPanel.Dock="Left" />
                     <ComboBox
                         VerticalAlignment="Center"
