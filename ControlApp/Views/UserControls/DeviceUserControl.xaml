@@ -115,7 +115,10 @@
                             <ui:SymbolIcon
                                 DockPanel.Dock="Right"
                                 FontSize="{StaticResource MyKey_SymbolFontSize}"
-                                Style="{StaticResource MyKey_StatusSymbol}" />
+                                Foreground="Yellow"
+                                Style="{StaticResource MyKey_StatusSymbol}"
+                                Symbol="Warning24"
+                                Visibility="{Binding IsHidModeMismatched, Converter={StaticResource BoolToVis_TV_FH}}" />
                             <TextBlock
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
