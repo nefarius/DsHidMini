@@ -82,7 +82,8 @@
                             <ui:SymbolIcon
                                 DockPanel.Dock="Right"
                                 FontSize="{StaticResource MyKey_SymbolFontSize}"
-                                Style="{StaticResource MyKey_StatusSymbol}" />
+                                Style="{StaticResource MyKey_StatusSymbol}"
+                                Symbol="{Binding GenuineIcon}" />
 
                             <ui:TextBox
                                 DockPanel.Dock="Right"
@@ -151,7 +152,8 @@
                             <ui:SymbolIcon
                                 DockPanel.Dock="Right"
                                 FontSize="{StaticResource MyKey_SymbolFontSize}"
-                                Style="{StaticResource MyKey_StatusSymbol}" />
+                                Style="{StaticResource MyKey_StatusSymbol}"
+                                Symbol="{Binding LastPairingStatusIcon}" />
                             <ComboBox x:Name="PairingModeComboBox" SelectedIndex="{Binding PairingMode}">
                                 <ComboBoxItem Content="To this PC" />
                                 <ComboBoxItem Content="Custom MAC address" />
