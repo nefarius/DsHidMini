@@ -8,13 +8,14 @@
     }
     public enum SettingsContext
     {
-        Global,
-        General,
+        Unknown,
         SDF,
         GPJ,
         SXS,
         DS4W,
         XInput,
+        General,
+        Global,
     }
 
     public enum SettingsModeGroups
