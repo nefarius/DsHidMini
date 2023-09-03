@@ -196,16 +196,8 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
                         break;
                     case SettingsModes.Profile:
                         ProfileData devprof = GetProfile(dev.GuidOfProfileToUse);
-                        if(devprof == null)
-                        {
-                            // Maybe throw error here instead?
-                            break; ; // If profile set for the controller does not exist anymore then leave settings blank so controller loads Global Profile
-                        }
-                        else
-                        {
-                            devprof.Settings.ConvertAllToDSHM(dshmDeviceData.DeviceSettings);
-                            dev.ExpectedHidMode = devprof.Settings.modesUniqueData.SettingsContext;
-                        }
+                        devprof.Settings.ConvertAllToDSHM(dshmDeviceData.DeviceSettings);
+                        dev.ExpectedHidMode = devprof.Settings.modesUniqueData.SettingsContext;
                         break;
 
                     case SettingsModes.Global:
