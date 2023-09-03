@@ -193,17 +193,19 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
             }
         }
 
-        //public EFontAwesomeIcon LastPairingStatusIcon
-        //{
-        //    get
-        //    {
-        //        var ntstatus = _device.GetProperty<int>(DsHidMiniDriver.LastPairingStatusProperty);
-
-        //        return ntstatus == 0
-        //            ? EFontAwesomeIcon.Regular_CheckCircle
-        //            : EFontAwesomeIcon.Solid_ExclamationTriangle;
-        //    }
-        //}
+        /// <summary>
+        /// Representation of last pairing attempt status
+        /// </summary>
+        public SymbolRegular LastPairingStatusIcon
+        {
+            get
+            {
+                var ntstatus = _device.GetProperty<int>(DsHidMiniDriver.LastPairingStatusProperty);
+                return ( ntstatus == 0) 
+                    ? SymbolRegular.DismissCircle24
+                    : SymbolRegular.ErrorCircle24;
+            }
+        }
 
         //public EFontAwesomeIcon GenuineIcon
         //{
