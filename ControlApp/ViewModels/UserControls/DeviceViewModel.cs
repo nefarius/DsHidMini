@@ -20,11 +20,9 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         private readonly DshmConfigManager _dshmConfigManager;
         private readonly AppSnackbarMessagesService _appSnackbarMessagesService;
         private readonly PnPDevice _device;
-
         private readonly Timer _batteryQuery;
-
-
         private DeviceData deviceUserData;
+
         [ObservableProperty] private SettingsEditorViewModel _deviceCustomsVM = new() { AllowEditing = true };
         [ObservableProperty] private SettingsEditorViewModel _profileCustomsVM = new();
         [ObservableProperty] private SettingsEditorViewModel _globalCustomsVM = new();
@@ -40,17 +38,21 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         public DsHidDeviceMode HidEmulationMode => (DsHidDeviceMode)_device.GetProperty<byte>(DsHidMiniDriver.HidDeviceModeProperty);
 
         public string DeviceSettingsStatus => $"{(HidModeShort)_device.GetProperty<byte>(DsHidMiniDriver.HidDeviceModeProperty)} • {CurrentDeviceSettingsMode}";
-        
+
 
         /// <summary>
-        ///     The device Instance ID.
+        ///     The friendly (product) name of this device.
         /// </summary>
-        public string InstanceId => _device.InstanceId;
+        public string DisplayName
+        {
+            get
+            {
+                var name = _device.GetProperty<string>(DevicePropertyKey.Device_FriendlyName);
 
-        /// <summary>
-        ///     The driver version of the device
-        /// </summary>
-        public string DriverVersion => _device.GetProperty<string>(DevicePropertyKey.Device_DriverVersion).ToUpper();
+                return string.IsNullOrEmpty(name) ? "DS3 Compatible HID Device" : name;
+            }
+        }
+
 
         /// <summary>
         ///     The Bluetooth MAC address of this device.
@@ -174,18 +176,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         //    }
         //}
 
-        /// <summary>
-        ///     The friendly (product) name of this device.
-        /// </summary>
-        public string DisplayName
-        {
-            get
-            {
-                var name = _device.GetProperty<string>(DevicePropertyKey.Device_FriendlyName);
 
-                return string.IsNullOrEmpty(name) ? "DS3 Compatible HID Device" : name;
-            }
-        }
 
         public bool IsWireless
         {
@@ -218,6 +209,16 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         /// </summary>
         public DateTimeOffset LastConnected =>
             _device.GetProperty<DateTimeOffset>(DsHidMiniDriver.BluetoothLastConnectedTimeProperty);
+
+        /// <summary>
+        ///     The driver version of the device
+        /// </summary>
+        public string DriverVersion => _device.GetProperty<string>(DevicePropertyKey.Device_DriverVersion).ToUpper();
+
+        /// <summary>
+        ///     The device Instance ID.
+        /// </summary>
+        public string InstanceId => _device.InstanceId;
 
         private void UpdateBatteryStatus(object state)
         {
