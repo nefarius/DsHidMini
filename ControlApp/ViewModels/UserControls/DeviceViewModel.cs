@@ -364,6 +364,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
             GlobalCustomsVM.LoadDatasToAllGroups(_dshmConfigManager.GlobalProfile.Settings);
             
             this.OnPropertyChanged(nameof(DeviceSettingsStatus));
+            this.OnPropertyChanged(nameof(IsHidModeMismatched));
         }
 
         [RelayCommand]
@@ -385,7 +386,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
 
             _dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile();
             _appSnackbarMessagesService.ShowDsHidMiniConfigurationUpdateSuccessMessage();
-            this.OnPropertyChanged(nameof(DeviceSettingsStatus));
+            RefreshDeviceSettings();
         }
 
         [RelayCommand]
