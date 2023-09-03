@@ -82,8 +82,7 @@
                             <ui:SymbolIcon
                                 DockPanel.Dock="Right"
                                 FontSize="{StaticResource MyKey_SymbolFontSize}"
-                                Style="{StaticResource MyKey_StatusSymbol}"
-                                Symbol="{Binding GenuineIcon}" />
+                                Style="{StaticResource MyKey_StatusSymbol}" />
 
                             <ui:TextBox
                                 DockPanel.Dock="Right"

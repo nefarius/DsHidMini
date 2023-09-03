@@ -241,15 +241,15 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         /// <summary>
         ///     Representation of genuine status of device
         /// </summary>
-        public SymbolRegular GenuineIcon
-        {
-            get
-            {
-                if (Validator.IsGenuineAddress(PhysicalAddress.Parse(DeviceAddress)))
-                    return SymbolRegular.CheckmarkCircle24;
-                return SymbolRegular.ErrorCircle24;
-            }
-        }
+        //public SymbolRegular GenuineIcon
+        //{
+        //    get
+        //    {
+        //        // if (Validator.IsGenuineAddress(PhysicalAddress.Parse(DeviceAddress)))
+        //        //return SymbolRegular.CheckmarkCircle24;
+        //        //return SymbolRegular.ErrorCircle24;
+        //    }
+        //}
 
 
         /// <summary>
