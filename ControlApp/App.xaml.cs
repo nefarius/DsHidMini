@@ -49,9 +49,6 @@ namespace Nefarius.DsHidMini.ControlApp
                 services.AddSingleton<AppSnackbarMessagesService>();
 
                 services.AddSingleton<MainModel>();
-                services.AddSingleton<HostRadio>();
-
-                services.AddSingleton<DshmConfigManager>();
 
                 services.AddSingleton<DevicesPage>();
                 services.AddSingleton<DevicesViewModel>();
