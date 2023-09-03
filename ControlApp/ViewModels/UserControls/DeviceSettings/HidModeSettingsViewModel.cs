@@ -114,13 +114,13 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls.DeviceSettings
 
         //public override void LoadSettingsFromBackingDataContainer(BackingDataContainer dataContainerSource)
         //{
-        //    BackingData_ModesUnique.CopySettings(_tempBackingData, dataContainerSource.HidMode);
+        //    BackingData_ModesUnique.CopySettings(_tempBackingData, dataContainerSource.SettingsContext);
         //    NotifyAllPropertiesHaveChanged();
         //}
 
         //public override void SaveSettingsToBackingDataContainer(BackingDataContainer dataContainerSource)
         //{
-        //    BackingData_ModesUnique.CopySettings(dataContainerSource.HidMode, _tempBackingData);
+        //    BackingData_ModesUnique.CopySettings(dataContainerSource.SettingsContext, _tempBackingData);
         //}
     }
 }
