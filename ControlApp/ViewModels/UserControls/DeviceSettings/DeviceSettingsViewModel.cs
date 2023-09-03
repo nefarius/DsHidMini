@@ -9,13 +9,13 @@ public abstract partial class DeviceSettingsViewModel : ObservableObject
     private static Dictionary<SettingsModeGroups, string> DictGroupHeader = new()
     {
         { SettingsModeGroups.LEDsControl, "LEDs control" },
-        { SettingsModeGroups.WirelessSettings, "Wireless settings" },
+        { SettingsModeGroups.WirelessSettings, "Wireless" },
         { SettingsModeGroups.SticksDeadzone, "Sticks DeadZone" },
-        { SettingsModeGroups.RumbleGeneral, "Rumble settings" },
+        { SettingsModeGroups.RumbleGeneral, "Rumble" },
         { SettingsModeGroups.OutputReportControl, "Output report control" },
-        { SettingsModeGroups.RumbleLeftStrRescale, "Left motor (heavy) rescale" },
+        { SettingsModeGroups.RumbleLeftStrRescale, "Left motor rescale" },
         { SettingsModeGroups.RumbleRightConversion, "Alternative rumble mode adjuster" },
-        { SettingsModeGroups.Unique_All, "Mode specific settings" },
+        { SettingsModeGroups.Unique_All, "HID Mode" },
         { SettingsModeGroups.Unique_Global, "Default settings" },
         { SettingsModeGroups.Unique_General, "General settings" },
         { SettingsModeGroups.Unique_SDF, "SDF mode specific settings" },
