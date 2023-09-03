@@ -1,5 +1,4 @@
-﻿using FontAwesome5;
-using Nefarius.DsHidMini.ControlApp.Models.Drivers;
+﻿using Nefarius.DsHidMini.ControlApp.Models.Drivers;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.Enums;
@@ -194,17 +193,17 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
             }
         }
 
-        public EFontAwesomeIcon LastPairingStatusIcon
-        {
-            get
-            {
-                var ntstatus = _device.GetProperty<int>(DsHidMiniDriver.LastPairingStatusProperty);
+        //public EFontAwesomeIcon LastPairingStatusIcon
+        //{
+        //    get
+        //    {
+        //        var ntstatus = _device.GetProperty<int>(DsHidMiniDriver.LastPairingStatusProperty);
 
-                return ntstatus == 0
-                    ? EFontAwesomeIcon.Regular_CheckCircle
-                    : EFontAwesomeIcon.Solid_ExclamationTriangle;
-            }
-        }
+        //        return ntstatus == 0
+        //            ? EFontAwesomeIcon.Regular_CheckCircle
+        //            : EFontAwesomeIcon.Solid_ExclamationTriangle;
+        //    }
+        //}
 
         //public EFontAwesomeIcon GenuineIcon
         //{
@@ -229,14 +228,6 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
                 return !enumerator.Equals("USB", StringComparison.InvariantCultureIgnoreCase);
             }
         }
-
-        /// <summary>
-        ///     The connection protocol used by this device.
-        /// </summary>
-        public EFontAwesomeIcon ConnectionType =>
-            !IsWireless
-                ? EFontAwesomeIcon.Brands_Usb
-                : EFontAwesomeIcon.Brands_Bluetooth;
 
         /// <summary>
         ///     Icon for connection protocol

@@ -18,7 +18,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="FontAwesome5" Version="2.1.11" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
 	<PackageReference Include="Microsoft.Windows.CsWin32" Version="0.2.46-beta">
 		<PrivateAssets>all</PrivateAssets>
