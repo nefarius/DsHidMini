@@ -9,6 +9,7 @@ using System.Windows.Threading;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Services;
 using Nefarius.DsHidMini.ControlApp.ViewModels.Pages;
@@ -46,6 +47,8 @@ namespace Nefarius.DsHidMini.ControlApp
 
                 services.AddSingleton<DeviceNotificationListener>();
                 services.AddSingleton<AppSnackbarMessagesService>();
+
+                services.AddSingleton<MainModel>();
                 services.AddSingleton<HostRadio>();
 
                 services.AddSingleton<DshmConfigManager>();
