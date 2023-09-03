@@ -1,7 +1,9 @@
-﻿using Nefarius.DsHidMini.ControlApp.Models.Drivers;
+﻿using System.Net.NetworkInformation;
+using Nefarius.DsHidMini.ControlApp.Models.Drivers;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.Enums;
+using Nefarius.DsHidMini.ControlApp.Models.Util.Web;
 using Nefarius.DsHidMini.ControlApp.Services;
 using Nefarius.DsHidMini.ControlApp.ViewModels.Pages;
 using Nefarius.DsHidMini.ControlApp.ViewModels.UserControls;
@@ -207,15 +209,18 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
             }
         }
 
-        //public EFontAwesomeIcon GenuineIcon
-        //{
-        //    get
-        //    {
-        //        if (Validator.IsGenuineAddress(PhysicalAddress.Parse(DeviceAddress)))
-        //            return EFontAwesomeIcon.Regular_CheckCircle;
-        //        return EFontAwesomeIcon.Solid_ExclamationTriangle;
-        //    }
-        //}
+        /// <summary>
+        ///     Representation of genuine status of device
+        /// </summary>
+        public SymbolRegular GenuineIcon
+        {
+            get
+            {
+                if (Validator.IsGenuineAddress(PhysicalAddress.Parse(DeviceAddress)))
+                    return SymbolRegular.CheckmarkCircle24;
+                return SymbolRegular.ErrorCircle24;
+            }
+        }
 
 
         /// <summary>
