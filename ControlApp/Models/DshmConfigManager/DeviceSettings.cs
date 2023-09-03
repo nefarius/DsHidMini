@@ -80,8 +80,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         public LeftMotorRescalingSettings leftRumbleRescaleData { get; set; } = new();
         public AltRumbleModeSettings rightVariableEmulData { get; set; } = new();
 
-        public static readonly DeviceSettings DefaultContainer = new DeviceSettings();
-
         public DeviceSettings()
         {
             this.ResetToDefault();
