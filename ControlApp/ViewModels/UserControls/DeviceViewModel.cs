@@ -233,8 +233,8 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
             {
                 var ntstatus = _device.GetProperty<int>(DsHidMiniDriver.LastPairingStatusProperty);
                 return ( ntstatus == 0) 
-                    ? SymbolRegular.DismissCircle24
-                    : SymbolRegular.ErrorCircle24;
+                    ? SymbolRegular.CheckmarkCircle24
+                    : SymbolRegular.DismissCircle24;
             }
         }
 
