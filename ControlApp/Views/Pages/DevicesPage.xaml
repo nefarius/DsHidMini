@@ -33,12 +33,14 @@
             Width="250"
             MaxWidth="250"
             VerticalAlignment="Stretch">
+            <!--  Devices page title  -->
             <ui:TextBlock
                 HorizontalAlignment="Center"
                 DockPanel.Dock="Top"
                 FontTypography="Title"
                 Text="Devices"
                 TextWrapping="Wrap" />
+            <!--  List of connected DsHidMini devices  -->
             <ListView
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch"
@@ -124,6 +126,8 @@
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
+
+            <!--  Link to troubleshooting page  -->
             <ui:Hyperlink
                 Margin="10"
                 HorizontalAlignment="Center"
@@ -139,6 +143,7 @@
 
         </DockPanel>
 
+        <!--  Selected device info and config  -->
         <ui:Card
             Grid.Column="1"
             Padding="10"
