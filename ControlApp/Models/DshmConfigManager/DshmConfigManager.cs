@@ -251,14 +251,14 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             switch (dev.SettingsMode)
             {
                 case SettingsModes.Custom:
-                    return dev.Settings.modesUniqueData.SettingsContext;
+                    return dev.Settings.HidMode.SettingsContext;
                     break;
                 case SettingsModes.Profile:
-                    return GetProfile(dev.GuidOfProfileToUse).Settings.modesUniqueData.SettingsContext;
+                    return GetProfile(dev.GuidOfProfileToUse).Settings.HidMode.SettingsContext;
                     break;
                 case SettingsModes.Global:
                 default:
-                    return GlobalProfile.Settings.modesUniqueData.SettingsContext;
+                    return GlobalProfile.Settings.HidMode.SettingsContext;
                     break;
 
             }

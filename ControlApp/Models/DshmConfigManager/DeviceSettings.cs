@@ -71,14 +71,14 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
     public class DeviceSettings : IDeviceSettings
     {
 
-        public HidModeSettings modesUniqueData { get; set; } = new();
-        public LedsSettings ledsData { get; set; } = new();
-        public WirelessSettings wirelessData { get; set; } = new();
-        public SticksSettings sticksData { get; set; } = new();
-        public GeneralRumbleSettings rumbleGeneralData { get; set; } = new();
-        public OutputReportSettings outRepData { get; set; } = new();
-        public LeftMotorRescalingSettings leftRumbleRescaleData { get; set; } = new();
-        public AltRumbleModeSettings rightVariableEmulData { get; set; } = new();
+        public HidModeSettings HidMode { get; set; } = new();
+        public LedsSettings LEDs { get; set; } = new();
+        public WirelessSettings Wireless { get; set; } = new();
+        public SticksSettings Sticks { get; set; } = new();
+        public GeneralRumbleSettings GeneralRumble { get; set; } = new();
+        public OutputReportSettings OutputReport { get; set; } = new();
+        public LeftMotorRescalingSettings LeftMotorRescaling { get; set; } = new();
+        public AltRumbleModeSettings AltRumbleAdjusts { get; set; } = new();
 
         public DeviceSettings()
         {
@@ -87,52 +87,52 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
 
         public void ResetToDefault()
         {
-            modesUniqueData.ResetToDefault();
-            ledsData.ResetToDefault();
-            wirelessData.ResetToDefault();
-            sticksData.ResetToDefault();
-            rumbleGeneralData.ResetToDefault();
-            outRepData.ResetToDefault();
-            leftRumbleRescaleData.ResetToDefault();
-            rightVariableEmulData.ResetToDefault();
+            HidMode.ResetToDefault();
+            LEDs.ResetToDefault();
+            Wireless.ResetToDefault();
+            Sticks.ResetToDefault();
+            GeneralRumble.ResetToDefault();
+            OutputReport.ResetToDefault();
+            LeftMotorRescaling.ResetToDefault();
+            AltRumbleAdjusts.ResetToDefault();
         }
 
         public void CopySettingsFromContainer(DeviceSettings container)
         {
-            modesUniqueData.CopySettingsFromContainer(container);
-            ledsData.CopySettingsFromContainer(container);
-            wirelessData.CopySettingsFromContainer(container);
-            sticksData.CopySettingsFromContainer(container);
-            rumbleGeneralData.CopySettingsFromContainer(container);
-            outRepData.CopySettingsFromContainer(container);
-            leftRumbleRescaleData.CopySettingsFromContainer(container);
-            rightVariableEmulData.CopySettingsFromContainer(container);
+            HidMode.CopySettingsFromContainer(container);
+            LEDs.CopySettingsFromContainer(container);
+            Wireless.CopySettingsFromContainer(container);
+            Sticks.CopySettingsFromContainer(container);
+            GeneralRumble.CopySettingsFromContainer(container);
+            OutputReport.CopySettingsFromContainer(container);
+            LeftMotorRescaling.CopySettingsFromContainer(container);
+            AltRumbleAdjusts.CopySettingsFromContainer(container);
         }
 
         public void CopySettingsToContainer(DeviceSettings container)
         {
-            modesUniqueData.CopySettingsToContainer(container);
-            ledsData.CopySettingsToContainer(container);
-            wirelessData.CopySettingsToContainer(container);
-            sticksData.CopySettingsToContainer(container);
-            rumbleGeneralData.CopySettingsToContainer(container);
-            outRepData.CopySettingsToContainer(container);
-            leftRumbleRescaleData.CopySettingsToContainer(container);
-            rightVariableEmulData.CopySettingsToContainer(container);
+            HidMode.CopySettingsToContainer(container);
+            LEDs.CopySettingsToContainer(container);
+            Wireless.CopySettingsToContainer(container);
+            Sticks.CopySettingsToContainer(container);
+            GeneralRumble.CopySettingsToContainer(container);
+            OutputReport.CopySettingsToContainer(container);
+            LeftMotorRescaling.CopySettingsToContainer(container);
+            AltRumbleAdjusts.CopySettingsToContainer(container);
         }
 
         public void ConvertAllToDSHM(DshmDeviceSettings dshm_data)
         {
-            modesUniqueData.SaveToDSHMSettings(dshm_data);
-            ledsData.SaveToDSHMSettings(dshm_data);
-            wirelessData.SaveToDSHMSettings(dshm_data);
-            sticksData.SaveToDSHMSettings(dshm_data);
-            rumbleGeneralData.SaveToDSHMSettings(dshm_data);
-            outRepData.SaveToDSHMSettings(dshm_data);
-            leftRumbleRescaleData.SaveToDSHMSettings(dshm_data);
-            rightVariableEmulData.SaveToDSHMSettings(dshm_data);
+            HidMode.SaveToDSHMSettings(dshm_data);
+            LEDs.SaveToDSHMSettings(dshm_data);
+            Wireless.SaveToDSHMSettings(dshm_data);
+            Sticks.SaveToDSHMSettings(dshm_data);
+            GeneralRumble.SaveToDSHMSettings(dshm_data);
+            OutputReport.SaveToDSHMSettings(dshm_data);
+            LeftMotorRescaling.SaveToDSHMSettings(dshm_data);
+            AltRumbleAdjusts.SaveToDSHMSettings(dshm_data);
 
-            if (modesUniqueData.SettingsContext == SettingsContext.DS4W)
+            if (HidMode.SettingsContext == SettingsContext.DS4W)
             {
                 dshm_data.ContextSettings.DeadZoneLeft.Apply = false;
                 dshm_data.ContextSettings.DeadZoneRight.Apply = false;
@@ -213,12 +213,12 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
 
         public override void CopySettingsFromContainer(DeviceSettings container)
         {
-            CopySettings(this, container.modesUniqueData);
+            CopySettings(this, container.HidMode);
         }
 
         public override void CopySettingsToContainer(DeviceSettings container)
         {
-            CopySettings(container.modesUniqueData, this); 
+            CopySettings(container.HidMode, this); 
         }
     }
 
@@ -243,12 +243,12 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
 
         public override void CopySettingsFromContainer(DeviceSettings container)
         {
-            CopySettings(this, container.ledsData);
+            CopySettings(this, container.LEDs);
         }
 
         public override void CopySettingsToContainer(DeviceSettings container)
         {
-            CopySettings(container.ledsData, this);
+            CopySettings(container.LEDs, this);
         }
 
         public override void SaveToDSHMSettings(DshmDeviceSettings dshmContextSettings)
@@ -381,12 +381,12 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
 
         public override void CopySettingsFromContainer(DeviceSettings container)
         {
-            CopySettings(this, container.wirelessData);
+            CopySettings(this, container.Wireless);
         }
 
         public override void CopySettingsToContainer(DeviceSettings container)
         {
-            CopySettings(container.wirelessData, this);
+            CopySettings(container.Wireless, this);
         }
 
         public override void SaveToDSHMSettings(DshmDeviceSettings dshmContextSettings)
@@ -421,12 +421,12 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
 
         public override void CopySettingsFromContainer(DeviceSettings container)
         {
-            CopySettings(this, container.sticksData);
+            CopySettings(this, container.Sticks);
         }
 
         public override void CopySettingsToContainer(DeviceSettings container)
         {
-            CopySettings(container.sticksData, this);
+            CopySettings(container.Sticks, this);
         }
 
         public override void SaveToDSHMSettings(DshmDeviceSettings dshmContextSettings)
@@ -513,12 +513,12 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
 
         public override void CopySettingsFromContainer(DeviceSettings container)
         {
-            CopySettings(this, container.rumbleGeneralData);
+            CopySettings(this, container.GeneralRumble);
         }
 
         public override void CopySettingsToContainer(DeviceSettings container)
         {
-            CopySettings(container.rumbleGeneralData, this);
+            CopySettings(container.GeneralRumble, this);
         }
 
         public override void SaveToDSHMSettings(DshmDeviceSettings dshmContextSettings)
@@ -562,12 +562,12 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
 
         public override void CopySettingsFromContainer(DeviceSettings container)
         {
-            CopySettings(this, container.outRepData);
+            CopySettings(this, container.OutputReport);
         }
 
         public override void CopySettingsToContainer(DeviceSettings container)
         {
-            CopySettings(container.outRepData, this);
+            CopySettings(container.OutputReport, this);
         }
 
         public override void SaveToDSHMSettings(DshmDeviceSettings dshmContextSettings)
@@ -618,12 +618,12 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
 
         public override void CopySettingsFromContainer(DeviceSettings container)
         {
-            CopySettings(this, container.leftRumbleRescaleData);
+            CopySettings(this, container.LeftMotorRescaling);
         }
 
         public override void CopySettingsToContainer(DeviceSettings container)
         {
-            CopySettings(container.leftRumbleRescaleData, this);
+            CopySettings(container.LeftMotorRescaling, this);
         }
 
         public override void SaveToDSHMSettings(DshmDeviceSettings dshmContextSettings)
@@ -666,12 +666,12 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
 
         public override void CopySettingsFromContainer(DeviceSettings container)
         {
-            CopySettings(this, container.rightVariableEmulData);
+            CopySettings(this, container.AltRumbleAdjusts);
         }
 
         public override void CopySettingsToContainer(DeviceSettings container)
         {
-            CopySettings(container.rightVariableEmulData, this);
+            CopySettings(container.AltRumbleAdjusts, this);
         }
 
         public override void SaveToDSHMSettings(DshmDeviceSettings dshmContextSettings)
