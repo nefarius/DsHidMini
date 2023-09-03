@@ -271,10 +271,11 @@
                                 DockPanel.Dock="Left"
                                 ItemsSource="{Binding Source={helpers:EnumBindingSource {x:Type enums:SettingsModes}}}"
                                 SelectedItem="{Binding CurrentDeviceSettingsMode}" />
-                            <Label
-                                VerticalContentAlignment="Center"
-                                Content="-&gt;"
+                            <ui:SymbolIcon
+                                Margin="10,0,10,0"
                                 DockPanel.Dock="Left"
+                                FontSize="25"
+                                Symbol="ArrowRight24"
                                 Visibility="{Binding IsProfileSelectorVisible, Converter={StaticResource BoolToVis}}" />
                             <ComboBox
                                 x:Name="ProfileSelection_ComboBox"
