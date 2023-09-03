@@ -192,6 +192,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
                 {
                     case SettingsModes.Custom:
                         dev.Settings.ConvertAllToDSHM(dshmDeviceData.DeviceSettings);
+                        dev.ExpectedHidMode = dev.Settings.modesUniqueData.SettingsContext;
                         break;
                     case SettingsModes.Profile:
                         ProfileData devprof = GetProfile(dev.GuidOfProfileToUse);
@@ -203,12 +204,13 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
                         else
                         {
                             devprof.Settings.ConvertAllToDSHM(dshmDeviceData.DeviceSettings);
+                            dev.ExpectedHidMode = devprof.Settings.modesUniqueData.SettingsContext;
                         }
                         break;
 
                     case SettingsModes.Global:
                     default:
-                        // Device's in Global settings mode need to have empty settings so global settings are not overwritten
+                        dev.ExpectedHidMode = GlobalProfile.Settings.modesUniqueData.SettingsContext;
                         break;
                 }
                 dshmConfiguration.Devices.Add(dshmDeviceData);
@@ -253,7 +255,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             dshmManagerUserData.Profiles.Remove(profile);
             FixDevicesWithBlankProfiles();
         }
-
+        
         /// <summary>
         /// Gets the DsHidMini config. manager device data of a DsHidMini device.  If it does not exist, a new one will be created for it first before returning
         /// </summary>
@@ -270,6 +272,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             }
             var newDevice = new DeviceData(deviceMac);
             newDevice.DeviceMac = deviceMac;
+            newDevice.ExpectedHidMode = GlobalProfile.Settings.modesUniqueData.SettingsContext;
             dshmManagerUserData.Devices.Add(newDevice);
             return newDevice;
         }
