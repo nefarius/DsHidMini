@@ -114,8 +114,12 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
 
             if (HidMode.SettingsContext == Enums.SettingsContext.DS4W)
             {
-                dshm_data.ContextSettings.DeadZoneLeft.Apply = false;
-                dshm_data.ContextSettings.DeadZoneRight.Apply = false;
+                if (HidMode.PreventRemappingConflictsInDS4WMode)
+                {
+                    dshm_data.ContextSettings.DeadZoneLeft.Apply = false;
+                    dshm_data.ContextSettings.DeadZoneRight.Apply = false;
+                }
+
             }
         }
     }
