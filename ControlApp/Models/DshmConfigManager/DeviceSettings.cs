@@ -61,9 +61,9 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         {
             IsEnabled = comboToCopy.IsEnabled;
             HoldTime = comboToCopy.HoldTime;
-            Button1 = comboToCopy.Button1;
-            Button2 = comboToCopy.Button2;
-            Button3 = comboToCopy.Button3;
+            button1 = comboToCopy.Button1;
+            button2 = comboToCopy.Button2;
+            button3 = comboToCopy.Button3;
         }
 
     }
