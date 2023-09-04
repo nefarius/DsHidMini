@@ -1,7 +1,7 @@
 version: 3.0.{build}.0
 image: Visual Studio 2022
 platform:
-- x86
+#- x86
 - x64
 - ARM64
 configuration:
@@ -56,6 +56,6 @@ deploy:
   on:
     appveyor_repo_tag: true
 cache:
-- C:\projects\DMF
+- C:\projects\DMF -> appveyor.yml
 - C:\Tools\vcpkg -> appveyor.yml
-- C:\Users\appveyor\AppData\Local\vcpkg
+- C:\Users\appveyor\AppData\Local\vcpkg -> appveyor.yml
