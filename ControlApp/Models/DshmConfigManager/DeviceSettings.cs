@@ -187,8 +187,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
                 (this.SettingsContext == SettingsContext.SDF
                 || this.SettingsContext == SettingsContext.GPJ)
                 ? DshmManagerToDriverConversion.DPadExposureModeManagerToDriver[this.DPadExposureMode] : null;
-
-            dshmContextSettings.ContextSettings.LEDSettings.Authority = this.PreventRemappingConflictsInDS4WMode ? DSHM_LEDsAuthority.Application : DSHM_LEDsAuthority.Driver;
         }
 
         public override void CopySettingsFromContainer(DeviceSettings container)
