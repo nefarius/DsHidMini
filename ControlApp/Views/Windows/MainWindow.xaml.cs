@@ -5,6 +5,7 @@
 
 using System.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
+using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.Drivers;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.ViewModels;
@@ -18,12 +19,12 @@ namespace Nefarius.DsHidMini.ControlApp.Views.Windows
 {
     public partial class MainWindow : INavigationWindow
     {
-        private readonly DeviceNotificationListener _listener;
+        private readonly DshmDevicesManager _dshmDevicesManager;
         public MainWindowViewModel ViewModel { get; }
         
         public MainWindow(
             MainWindowViewModel viewModel,
-            DeviceNotificationListener listener,//
+            DshmDevicesManager dshmDevicesManager,//
             INavigationService navigationService,
             IServiceProvider serviceProvider,
             ISnackbarService snackbarService,
@@ -35,7 +36,7 @@ namespace Nefarius.DsHidMini.ControlApp.Views.Windows
             ViewModel = viewModel;
             DataContext = this;
 
-            _listener = listener;
+            _dshmDevicesManager = dshmDevicesManager;
             
             Wpf.Ui.Appearance.SystemThemeWatcher.Watch(this);
 
@@ -55,15 +56,14 @@ namespace Nefarius.DsHidMini.ControlApp.Views.Windows
             base.OnSourceInitialized(e);
 
             InitializeComponent();
-            _listener.StartListen(DsHidMiniDriver.DeviceInterfaceGuid);
+            _dshmDevicesManager.StartListeningForDshmDevices();
         }
 
         protected override void OnClosing(CancelEventArgs e)
         {
             base.OnClosing(e);
 
-            _listener.StopListen();
-            _listener.Dispose();
+            _dshmDevicesManager.StopListeningForDshmDevices();
         }
 
 

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.Metrics;
+using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Services;
 using Wpf.Ui;
@@ -11,10 +12,13 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
     {
         // ----------------------------------------------------------- FIELDS
 
+        private readonly DshmDevicesManager _dshmDevicesManager;
         private readonly DshmConfigManager _dshmConfigManager;
 
         [ObservableProperty] public List<ProfileViewModel> _profilesViewModels;
         [ObservableProperty] private ProfileViewModel? _selectedProfileVM = null;
+
+
 
         // ----------------------------------------------------------- PROPERTIES
 
@@ -26,8 +30,9 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
 
         // ----------------------------------------------------------- CONSTRUCTOR
 
-        public ProfilesViewModel(AppSnackbarMessagesService appSnackbarMessagesService, DshmConfigManager dshmConfigManager)
+        public ProfilesViewModel(AppSnackbarMessagesService appSnackbarMessagesService, DshmDevicesManager dshmDevicesManager, DshmConfigManager dshmConfigManager)
         {
+            _dshmDevicesManager = dshmDevicesManager;
             _dshmConfigManager = dshmConfigManager;
             _appSnackbarMessagesService = appSnackbarMessagesService;
             UpdateProfileList();

@@ -1,4 +1,5 @@
 ﻿using System.Net.NetworkInformation;
+using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.Drivers;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
@@ -21,6 +22,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         private readonly DshmConfigManager _dshmConfigManager;
         private readonly AppSnackbarMessagesService _appSnackbarMessagesService;
         private readonly PnPDevice _device;
+        private readonly DshmDevicesManager _dshmDevicesManager;
         private readonly Timer _batteryQuery;
         private DeviceData deviceUserData;
 
@@ -298,9 +300,10 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
 
         // ------------------------------------------------------ CONSTRUCTOR
 
-        internal DeviceViewModel(PnPDevice device, DshmConfigManager dshmConfigManager, AppSnackbarMessagesService appSnackbarMessagesService)
+        internal DeviceViewModel(PnPDevice device, DshmDevicesManager dshmDevicesManager, DshmConfigManager dshmConfigManager, AppSnackbarMessagesService appSnackbarMessagesService)
         {
             _device = device;
+            _dshmDevicesManager = dshmDevicesManager;
             _dshmConfigManager = dshmConfigManager;
             _appSnackbarMessagesService = appSnackbarMessagesService;
             _batteryQuery = new Timer(UpdateBatteryStatus, null, 10000, 10000);
@@ -392,24 +395,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         [RelayCommand]
         private void RestartDevice()
         {
-            if(IsWireless)
-            {
-                using (var radio = new HostRadio())
-                {
-                    radio.DisconnectRemoteDevice(DeviceAddress);
-                };
-            }
-            else
-            {
-                try
-                {
-                    (_device).RemoveAndSetup();
-                }
-                catch
-                {
-
-                }
-            }
+            _dshmDevicesManager.DisconnectDevice(_device);
         }
 
     }

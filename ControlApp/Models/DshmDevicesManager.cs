@@ -12,28 +12,41 @@ using Nefarius.DsHidMini.ControlApp.ViewModels;
 
 namespace Nefarius.DsHidMini.ControlApp.Models
 {
-    class MainModel
+    public class DshmDevicesManager
     {
-        private readonly DeviceNotificationListener _listener = new DeviceNotificationListener();
-        private readonly DshmConfigManager.DshmConfigManager _dshmConfigManager = new DshmConfigManager.DshmConfigManager();
+        private DeviceNotificationListener _listener;
         private readonly HostRadio _hostRadio = new HostRadio();
 
-        public DshmConfigManager.DshmConfigManager DshmConfigManag { get; }
+        public List<PnPDevice> Devices { get; private set; } = new();
 
-        /// <summary>
-        ///     Helper to check if run with elevated privileges.
-        /// </summary>
-        public bool IsElevated => SecurityUtil.IsElevated;
-
-        public List<PnPDevice> Devices { get; private set; }
-
-        public MainModel()
+        public DshmDevicesManager()
         {
-            _listener.DeviceArrived += UpdateConnectedDevicesList;
-            _listener.DeviceRemoved += UpdateConnectedDevicesList;
+            UpdateConnectedDshmDevicesList();
         }
 
-        public void UpdateConnectedDevicesList(DeviceEventArgs e)
+        public bool StartListeningForDshmDevices()
+        {
+            if (_listener != null) return false;
+            _listener = new DeviceNotificationListener();
+            _listener.DeviceArrived += OnListenerDevicesRemovedOrAdded;
+            _listener.DeviceRemoved += OnListenerDevicesRemovedOrAdded;
+            _listener.StartListen(DsHidMiniDriver.DeviceInterfaceGuid);
+            return true;
+        }
+
+        public void StopListeningForDshmDevices()
+        {
+            _listener.StopListen();
+            _listener.Dispose();
+            _listener = null;
+        }
+
+        public void OnListenerDevicesRemovedOrAdded(DeviceEventArgs e)
+        {
+            UpdateConnectedDshmDevicesList();
+        }
+
+        public void UpdateConnectedDshmDevicesList()
         {
             Devices.Clear();
             var instance = 0;
@@ -43,7 +56,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models
             }
             ConnectedDeviceListUpdated?.Invoke(this, new());
         }
-
+        
         public void DisconnectDevice(PnPDevice device)
         {
             var enumerator = device.GetProperty<string>(DevicePropertyKey.Device_EnumeratorName);
@@ -56,10 +69,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models
             }
             else
             {
-                if (IsElevated)
-                {
-                    ((UsbPnPDevice)device).CyclePort();
-                }
+                ((UsbPnPDevice)device).CyclePort();
             }
         }
 

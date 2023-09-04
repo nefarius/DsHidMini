@@ -17,8 +17,6 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Windows
     {
         private readonly AppSnackbarMessagesService _appSnackbarMessagesService;
 
-        private readonly DshmConfigManager _dshmConfigManager;
-
         [ObservableProperty]
         private string _applicationTitle = "DsHidMini ControlApp";
 
@@ -56,10 +54,9 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Windows
             new MenuItem { Header = "Home", Tag = "tray_home" }
         };
         
-        public MainWindowViewModel(AppSnackbarMessagesService appSnackbarMessagesService, DshmConfigManager dshmConfigManager)
+        public MainWindowViewModel(AppSnackbarMessagesService appSnackbarMessagesService)
         {
             _appSnackbarMessagesService = appSnackbarMessagesService;
-            _dshmConfigManager = dshmConfigManager;
         }
 
         public ApplicationConfiguration AppConfig => ApplicationConfiguration.Instance;

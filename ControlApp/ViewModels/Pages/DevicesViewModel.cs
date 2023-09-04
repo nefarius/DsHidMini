@@ -7,6 +7,7 @@ using Nefarius.DsHidMini.ControlApp.Models.Drivers;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.Utilities.DeviceManagement.PnP;
 using System.Collections.ObjectModel;
+using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Services;
 using Wpf.Ui.Controls;
 using Newtonsoft.Json.Linq;
@@ -22,7 +23,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         /// </summary>
         public ObservableCollection<DeviceViewModel> Devices { get; set; } = new();
 
-        private readonly DeviceNotificationListener _listener;
+        private readonly DshmDevicesManager _dshmDevicesManager;
         private readonly DshmConfigManager _dshmConfigManager;
         private readonly AppSnackbarMessagesService _appSnackbarMessagesService;
 
@@ -42,13 +43,12 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         /// </summary>
         [ObservableProperty] private bool _anyDeviceSelected = false;
 
-        public DevicesViewModel(DeviceNotificationListener listener, DshmConfigManager dshmConfigManager, AppSnackbarMessagesService appSnackbarMessagesService)
+        public DevicesViewModel(DshmDevicesManager dshmDevicesManager, DshmConfigManager dshmConfigManager, AppSnackbarMessagesService appSnackbarMessagesService)
         {
-            _listener = listener;
-            _appSnackbarMessagesService = appSnackbarMessagesService;
-            _listener.DeviceArrived += ListenerOnDeviceArrived;
-            _listener.DeviceRemoved += ListenerOnDeviceRemoved;
+            _dshmDevicesManager = dshmDevicesManager;
             _dshmConfigManager = dshmConfigManager;
+            _appSnackbarMessagesService = appSnackbarMessagesService;
+            _dshmDevicesManager.ConnectedDeviceListUpdated += OnConnectedDevicesListUpdated;
             RefreshDevicesList();
         }
 
@@ -71,23 +71,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
             SelectedDevice = null;
         }
 
-
-
-
-        /// <summary>
-        ///     DsHidMini device disconnected.
-        /// </summary>
-        /// <param name="obj">The device path.</param>
-        private void ListenerOnDeviceRemoved(DeviceEventArgs e)
-        {
-            RefreshDevicesList();
-        }
-
-        /// <summary>
-        ///     DsHidMini device connected.
-        /// </summary>
-        /// <param name="obj">The device path.</param>
-        private void ListenerOnDeviceArrived(DeviceEventArgs e)
+        public void OnConnectedDevicesListUpdated(object? obj, EventArgs? eventArgs)
         {
             RefreshDevicesList();
         }
@@ -97,10 +81,9 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
             App.Current.Dispatcher.BeginInvoke(new Action(() =>
             {
                 Devices.Clear();
-                var instance = 0;
-                while (Devcon.FindByInterfaceGuid(DsHidMiniDriver.DeviceInterfaceGuid, out var path, out var instanceId, instance++))
+                foreach (PnPDevice device in _dshmDevicesManager.Devices)
                 {
-                    Devices.Add(new DeviceViewModel(PnPDevice.GetDeviceByInstanceId(instanceId), _dshmConfigManager, _appSnackbarMessagesService));
+                    Devices.Add(new DeviceViewModel(device, _dshmDevicesManager, _dshmConfigManager, _appSnackbarMessagesService));
                 }
             }));
         }
