@@ -64,3 +64,72 @@ public abstract partial class DeviceSettingsViewModel : ObservableObject
         //LoadSettingsFromBackingDataContainer(backingDataContainer);
     }
 }
+
+public partial class ButtonComboViewModel : ObservableObject
+{
+    private ButtonsCombo _buttonCombo;
+
+    public bool IsEnabled
+    {
+        get => _buttonCombo.IsEnabled;
+        set
+        {
+            _buttonCombo.IsEnabled = value;
+            OnPropertyChanged(nameof(IsEnabled));
+        }
+    }
+
+    public int HoldTime
+    {
+        get => _buttonCombo.HoldTime;
+        set
+        {
+            _buttonCombo.HoldTime = value;
+            OnPropertyChanged(nameof(IsEnabled));
+        }
+    }
+
+    public int MinHoldTime { get; }
+
+    public Button Button1
+    {
+        get => _buttonCombo.Button1;
+        set
+        {
+            if (value != _buttonCombo.Button2 && value != _buttonCombo.Button3)
+                _buttonCombo.Button1 = value;
+            OnPropertyChanged(nameof(Button1));
+        }
+    }
+    public Button Button2
+    {
+        get => _buttonCombo.Button2;
+        set
+        {
+            if (value != _buttonCombo.Button1 && value != _buttonCombo.Button3)
+                _buttonCombo.Button2 = value;
+            OnPropertyChanged(nameof(Button2));
+        }
+    }
+    public Button Button3
+    {
+        get => _buttonCombo.Button3;
+        set
+        {
+            if (value != _buttonCombo.Button1 && value != _buttonCombo.Button2)
+                _buttonCombo.Button3 = value;
+            OnPropertyChanged(nameof(Button3));
+        }
+    }
+
+    public ButtonComboViewModel(ButtonsCombo buttonsCombo, int minHoldTime)
+    {
+        _buttonCombo = buttonsCombo;
+        MinHoldTime = minHoldTime;
+    }
+
+    public void NotifyAllPropertiesChanged()
+    {
+        this.OnPropertyChanged(nameof(string.Empty));
+    }
+}

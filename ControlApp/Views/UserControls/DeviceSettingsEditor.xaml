@@ -11,7 +11,7 @@
     xmlns:userControls="clr-namespace:Nefarius.DsHidMini.ControlApp.ViewModels.UserControls"
     d:DataContext="{d:DesignInstance userControls:SettingsEditorViewModel,
                                      IsDesignTimeCreatable=True}"
-    d:DesignHeight="450"
+    d:DesignHeight="2000"
     d:DesignWidth="800"
     mc:Ignorable="d">
     <UserControl.Resources>
@@ -54,6 +54,40 @@
                         Severity="Informational" />
                 </DockPanel>
             </ui:Card>
+        </DataTemplate>
+        <DataTemplate x:Key="MyKey_ButtonsComboTemplate" DataType="{x:Type deviceSettings:ButtonComboViewModel}">
+            <DockPanel LastChildFill="False">
+                <!--  DataContext="{Binding VariableRightEmulToggleCombo}"  -->
+                <Label
+                    VerticalAlignment="Center"
+                    Content="Buttons combo:"
+                    DockPanel.Dock="Left" />
+                <!--  Change ComboBox later so it's binding to a enum  -->
+                <ComboBox
+                    Width="80"
+                    DockPanel.Dock="Left"
+                    ItemsSource="{Binding Source={helpers:EnumBindingSource {x:Type enums:Button}}}"
+                    SelectedItem="{Binding Button1}"
+                    Text="{Binding Button1}" />
+                <ComboBox
+                    Width="80"
+                    DockPanel.Dock="Left"
+                    ItemsSource="{Binding Source={helpers:EnumBindingSource {x:Type enums:Button}}}"
+                    SelectedItem="{Binding Button2}"
+                    Text="{Binding Button2}" />
+                <ComboBox
+                    Width="80"
+                    DockPanel.Dock="Left"
+                    ItemsSource="{Binding Source={helpers:EnumBindingSource {x:Type enums:Button}}}"
+                    SelectedItem="{Binding Button3}"
+                    Text="{Binding Button3}" />
+                <ui:NumberBox
+                    ClearButtonEnabled="False"
+                    Maximum="5"
+                    Minimum="{Binding MinHoldTime}"
+                    Text="{Binding HoldTime}"
+                    Value="{Binding HoldTime}" />
+            </DockPanel>
         </DataTemplate>
         <Style x:Key="SetGroupItem" TargetType="ContentControl">
             <Setter Property="DockPanel.Dock" Value="Top" />
@@ -290,46 +324,13 @@
                     Margin="{StaticResource MyKey_NextLineSpacement}"
                     Content="Enable quick disconnect combo"
                     DockPanel.Dock="Top"
-                    IsChecked="{Binding IsQuickDisconnectComboEnabled}" />
+                    IsChecked="{Binding QuickDisconnectButtonCombo.IsEnabled}" />
                 <!--  Quick disconnect combo selection  -->
-                <DockPanel
+                <ContentControl
                     Margin="{StaticResource MyKey_NextLineSpacement}"
-                    DockPanel.Dock="Top"
-                    LastChildFill="False">
-                    <!--  DataContext="{Binding QuickDisconnectCombo}"  -->
-                    <Label
-                        VerticalAlignment="Center"
-                        Content="Quick disconnect combo:"
-                        DockPanel.Dock="Left" />
-                    <!--  Change ComboBox later so it's binding to a enum  -->
-                    <ComboBox
-                        Width="80"
-                        DockPanel.Dock="Left"
-                        IsEnabled="{Binding IsChecked, ElementName=EnableQuickDisconnectComboCheckbox}"
-                        ItemsSource="{Binding Source={helpers:EnumBindingSource {x:Type enums:Button}}}"
-                        SelectedItem="{Binding QuickDisconnectComboButton1}"
-                        Text="{Binding QuickDisconnectComboButton1}" />
-                    <ComboBox
-                        Width="80"
-                        DockPanel.Dock="Left"
-                        IsEnabled="{Binding IsChecked, ElementName=EnableQuickDisconnectComboCheckbox}"
-                        ItemsSource="{Binding Source={helpers:EnumBindingSource {x:Type enums:Button}}}"
-                        SelectedItem="{Binding QuickDisconnectComboButton2}"
-                        Text="{Binding QuickDisconnectComboButton2}" />
-                    <ComboBox
-                        Width="80"
-                        DockPanel.Dock="Left"
-                        IsEnabled="{Binding IsChecked, ElementName=EnableQuickDisconnectComboCheckbox}"
-                        ItemsSource="{Binding Source={helpers:EnumBindingSource {x:Type enums:Button}}}"
-                        SelectedItem="{Binding QuickDisconnectComboButton3}"
-                        Text="{Binding QuickDisconnectComboButton3}" />
-                    <ui:NumberBox
-                        ClearButtonEnabled="False"
-                        Maximum="5"
-                        Minimum="0"
-                        Text="{Binding QuickDisconnectComboHoldTime}"
-                        Value="{Binding QuickDisconnectComboHoldTime}" />
-                </DockPanel>
+                    Content="{Binding QuickDisconnectButtonCombo}"
+                    ContentTemplate="{StaticResource MyKey_ButtonsComboTemplate}"
+                    DockPanel.Dock="Top" />
             </DockPanel>
         </DataTemplate>
 
@@ -483,53 +484,21 @@
                         IsChecked="{Binding IsRightMotorDisabled}" />
                 </DockPanel>
                 <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" Visibility="{Binding IsAltModeEnabled, Converter={StaticResource BoolToVis}}">
-                    <!--  Variable light rumble emulation enabler  -->
                     <ui:ToggleSwitch
-                        x:Name="EnableAltModeToggleButtonCombo"
+                        x:Name="AltModeCombo_ToggleSwitch"
+                        Content="Enable toggling Alt Mode via button combo"
+                        DockPanel.Dock="Top" />
+                    <ContentControl
                         Margin="{StaticResource MyKey_NextLineSpacement}"
-                        Content="Toggle alternative rumble mode via button combo"
+                        Content="{Binding AltModeToggleButtonCombo}"
+                        ContentTemplate="{StaticResource MyKey_ButtonsComboTemplate}"
                         DockPanel.Dock="Top"
-                        IsChecked="{Binding IsAltModeToggleButtonComboEnabled}" />
-                    <DockPanel
-                        Margin="{StaticResource MyKey_NextLineSpacement}"
-                        DockPanel.Dock="Top"
-                        IsEnabled="{Binding IsChecked, ElementName=EnableAltModeToggleButtonCombo}"
-                        LastChildFill="False">
-                        <!--  DataContext="{Binding VariableRightEmulToggleCombo}"  -->
-                        <Label
-                            VerticalAlignment="Center"
-                            Content="Toogle combo:"
-                            DockPanel.Dock="Left" />
-                        <!--  Change ComboBox later so it's binding to a enum  -->
-                        <ComboBox
-                            Width="80"
-                            DockPanel.Dock="Left"
-                            ItemsSource="{Binding Source={helpers:EnumBindingSource {x:Type enums:Button}}}"
-                            SelectedItem="{Binding AltModeToggleButttonCombo_Button1}"
-                            Text="{Binding AltModeToggleButttonCombo_Button1}" />
-                        <ComboBox
-                            Width="80"
-                            DockPanel.Dock="Left"
-                            ItemsSource="{Binding Source={helpers:EnumBindingSource {x:Type enums:Button}}}"
-                            SelectedItem="{Binding AltModeToggleButttonCombo_Button2}"
-                            Text="{Binding AltModeToggleButttonCombo_Button2}" />
-                        <ComboBox
-                            Width="80"
-                            DockPanel.Dock="Left"
-                            ItemsSource="{Binding Source={helpers:EnumBindingSource {x:Type enums:Button}}}"
-                            SelectedItem="{Binding AltModeToggleButttonCombo_Button3}"
-                            Text="{Binding AltModeToggleButttonCombo_Button3}" />
-                        <ui:NumberBox
-                            ClearButtonEnabled="False"
-                            Maximum="5"
-                            Minimum="1"
-                            Text="{Binding AltModeToggleComboHoldTime}"
-                            Value="{Binding AltModeToggleComboHoldTime}" />
-                    </DockPanel>
+                        IsEnabled="{Binding IsChecked, ElementName=AltModeCombo_ToggleSwitch}" />
                     <ui:ToggleSwitch
                         Margin="{StaticResource MyKey_NextLineSpacement}"
                         DockPanel.Dock="Top"
-                        IsChecked="{Binding AlwaysStartInNormalRumbleMode}">
+                        IsChecked="{Binding AlwaysStartInNormalRumbleMode}"
+                        IsEnabled="{Binding IsChecked, ElementName=AltModeCombo_ToggleSwitch}">
                         <Label Content="Start in normal mode" />
                     </ui:ToggleSwitch>
                 </DockPanel>
