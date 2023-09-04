@@ -374,9 +374,8 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         public static void CopySettings(WirelessSettings destiny, WirelessSettings source)
         {
             destiny.IsWirelessIdleDisconnectEnabled = source.IsWirelessIdleDisconnectEnabled;
-            destiny.QuickDisconnectCombo.copyCombo(source.QuickDisconnectCombo);
             destiny.WirelessIdleDisconnectTime = source.WirelessIdleDisconnectTime;
-            destiny.QuickDisconnectCombo = source.QuickDisconnectCombo;
+            destiny.QuickDisconnectCombo.copyCombo(source.QuickDisconnectCombo);
         }
 
         public override void CopySettingsFromContainer(DeviceSettings container)
