@@ -1,4 +1,4 @@
-/* https://forums.vigem.org/topic/294/pid-1-0-example-descriptor */
+/* https://web.archive.org/web/20220630184154/https://forums.vigem.org/topic/294/pid-1-0-example-descriptor */
 #define FFB_DESCRIPTOR_SEGMENT \
 0x05, 0x0F,        /* Usage Page (PID Page) */ \
 0x09, 0x58,        /* Usage (0x58) */ \
