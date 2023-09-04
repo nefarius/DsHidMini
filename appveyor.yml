@@ -21,6 +21,10 @@ install:
     cd "C:\projects\DMF"
     git pull > NUL
     cd %appveyor_build_folder%
+- ps: iwr -Uri "https://download.microsoft.com/download/b/8/5/b85bd06f-491c-4c1c-923e-75ce2fe2378e/windowssdk/winsdksetup.exe" -OutFile "winsdksetup.exe"
+- ps: iwr -Uri "https://download.microsoft.com/download/c/6/4/c64e8e90-4143-4e86-93d7-0209b0b30626/wdk/wdksetup.exe" -OutFile "wdksetup.exe"
+- cmd: .\winsdksetup.exe /features + /q /norestart
+- cmd: .\wdksetup.exe /features + /q /norestart
 dotnet_csproj:
   patch: true
   file: '**\*.csproj'
