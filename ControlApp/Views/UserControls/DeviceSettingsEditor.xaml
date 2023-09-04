@@ -67,20 +67,17 @@
                     Width="80"
                     DockPanel.Dock="Left"
                     ItemsSource="{Binding Source={helpers:EnumBindingSource {x:Type enums:Button}}}"
-                    SelectedItem="{Binding Button1}"
-                    Text="{Binding Button1}" />
+                    SelectedItem="{Binding Button1}" />
                 <ComboBox
                     Width="80"
                     DockPanel.Dock="Left"
                     ItemsSource="{Binding Source={helpers:EnumBindingSource {x:Type enums:Button}}}"
-                    SelectedItem="{Binding Button2}"
-                    Text="{Binding Button2}" />
+                    SelectedItem="{Binding Button2}" />
                 <ComboBox
                     Width="80"
                     DockPanel.Dock="Left"
                     ItemsSource="{Binding Source={helpers:EnumBindingSource {x:Type enums:Button}}}"
-                    SelectedItem="{Binding Button3}"
-                    Text="{Binding Button3}" />
+                    SelectedItem="{Binding Button3}" />
                 <ui:NumberBox
                     ClearButtonEnabled="False"
                     Maximum="5"
