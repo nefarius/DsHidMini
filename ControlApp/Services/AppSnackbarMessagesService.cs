@@ -69,8 +69,8 @@ namespace Nefarius.DsHidMini.ControlApp.Services
                 "Profile updated",
                 "",
                 ControlAppearance.Info,
-                new SymbolIcon(SymbolRegular.ErrorCircle24),
-                TimeSpan.FromSeconds(2)
+                new SymbolIcon(SymbolRegular.CheckmarkCircle24),
+                TimeSpan.FromSeconds(5)
                 );
         }
 
