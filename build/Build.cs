@@ -32,7 +32,7 @@ class Build : NukeBuild
     [Solution] readonly Solution Solution;
     [GitRepository] readonly GitRepository GitRepository;
 
-    AbsolutePath DmfSolution => RootDirectory / "../DMF/Dmf.sln";
+    AbsolutePath DmfSolution => ((AbsolutePath)"C:/projects/DMF/Dmf.sln");
 
     Target Clean => _ => _
         .Before(Restore)
