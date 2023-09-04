@@ -178,12 +178,12 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
                 dshmContextSettings.ContextSettings.HIDDeviceMode = dshmContextSettings.HIDDeviceMode;
             }
 
-            dshmContextSettings.ContextSettings.PressureExposureMode = dshmContextSettings.ContextSettings.PressureExposureMode =
+            dshmContextSettings.ContextSettings.PressureExposureMode =
                 (this.SettingsContext == SettingsContext.SDF
                 || this.SettingsContext == SettingsContext.GPJ)
                 ? DshmManagerToDriverConversion.DsPressureModeManagerToDriver[this.PressureExposureMode] : null;
 
-            dshmContextSettings.ContextSettings.DPadExposureMode = dshmContextSettings.ContextSettings.DPadExposureMode =
+            dshmContextSettings.ContextSettings.DPadExposureMode =
                 (this.SettingsContext == SettingsContext.SDF
                 || this.SettingsContext == SettingsContext.GPJ)
                 ? DshmManagerToDriverConversion.DPadExposureModeManagerToDriver[this.DPadExposureMode] : null;
