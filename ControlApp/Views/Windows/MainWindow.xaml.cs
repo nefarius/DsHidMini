@@ -7,12 +7,11 @@ using System.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.Drivers;
-using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
-using Nefarius.DsHidMini.ControlApp.ViewModels;
-using Nefarius.DsHidMini.ControlApp.ViewModels.Pages;
 using Nefarius.DsHidMini.ControlApp.ViewModels.Windows;
 using Nefarius.Utilities.DeviceManagement.PnP;
+
 using Wpf.Ui;
+using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 
 namespace Nefarius.DsHidMini.ControlApp.Views.Windows
@@ -21,23 +20,23 @@ namespace Nefarius.DsHidMini.ControlApp.Views.Windows
     {
         private readonly DshmDevicesManager _dshmDevicesManager;
         public MainWindowViewModel ViewModel { get; }
-        
+
         public MainWindow(
             MainWindowViewModel viewModel,
-            DshmDevicesManager dshmDevicesManager,//
+            DshmDevicesManager dshmDevicesManager, //
             INavigationService navigationService,
             IServiceProvider serviceProvider,
             ISnackbarService snackbarService,
             IContentDialogService contentDialogService
         )
         {
- 
+
 
             ViewModel = viewModel;
             DataContext = this;
 
             _dshmDevicesManager = dshmDevicesManager;
-            
+
             Wpf.Ui.Appearance.SystemThemeWatcher.Watch(this);
 
             InitializeComponent();
@@ -45,10 +44,6 @@ namespace Nefarius.DsHidMini.ControlApp.Views.Windows
             navigationService.SetNavigationControl(RootNavigation);
             snackbarService.SetSnackbarPresenter(SnackbarPresenter);
             contentDialogService.SetContentPresenter(RootContentDialog);
-
-            
-
-
         }
 
         protected override void OnSourceInitialized(EventArgs e)
@@ -67,25 +62,38 @@ namespace Nefarius.DsHidMini.ControlApp.Views.Windows
         }
 
 
-        
-
         #region INavigationWindow methods
 
-        public INavigationView GetNavigation() => RootNavigation;
+        public INavigationView GetNavigation()
+        {
+            return RootNavigation;
+        }
 
-        public bool Navigate(Type pageType) => RootNavigation.Navigate(pageType);
+        public bool Navigate(Type pageType)
+        {
+            return RootNavigation.Navigate(pageType);
+        }
 
-        public void SetPageService(IPageService pageService) =>
+        public void SetPageService(IPageService pageService)
+        {
             RootNavigation.SetPageService(pageService);
+        }
 
-        public void ShowWindow() => Show();
+        public void ShowWindow()
+        {
+            Show();
+        }
 
-        public void CloseWindow() => Close();
+        public void CloseWindow()
+        {
+            Close();
+        }
 
         public void SetServiceProvider(IServiceProvider serviceProvider)
         {
             throw new NotImplementedException();
         }
+
         #endregion INavigationWindow methods
     }
 }

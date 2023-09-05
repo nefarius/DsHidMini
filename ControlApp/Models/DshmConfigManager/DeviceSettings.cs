@@ -19,42 +19,22 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             set => holdTime = (value >= 0) ? value : 0;
         }
 
-        private Button button1;
-        private Button button2;
-        private Button button3;
-        public Button Button1
-        {
-            get => button1;
-            set
-            {
-                if (value != button2 && value != button3)
-                    button1 = value;
-            }
-        }
-        public Button Button2
-        {
-            get => button2;
-            set
-            {
-                if (value != button1 && value != button3)
-                    button2 = value;
-            }
-        }
-        public Button Button3
-        {
-            get => button3;
-            set
-            {
-                if (value != button1 && value != button2)
-                    button3 = value;
-            }
-        }
+        public Button Button1 { get; set; }
+        public Button Button2 { get; set; }
+        public Button Button3 { get; set; }
 
         public ButtonsCombo() { }
 
         public ButtonsCombo(ButtonsCombo comboToCopy)
         {
             copyCombo(comboToCopy);
+        }
+
+        public bool IsComboValid()
+        {
+            if (Button1 != Button2 && Button1 != Button3 && Button2 != Button3)
+                return true;
+            else return false;
         }
 
         public void copyCombo(ButtonsCombo comboToCopy)
@@ -134,8 +114,12 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
 
             if (HidMode.SettingsContext == Enums.SettingsContext.DS4W)
             {
-                dshm_data.ContextSettings.DeadZoneLeft.Apply = false;
-                dshm_data.ContextSettings.DeadZoneRight.Apply = false;
+                if (HidMode.PreventRemappingConflictsInDS4WMode)
+                {
+                    dshm_data.ContextSettings.DeadZoneLeft.Apply = false;
+                    dshm_data.ContextSettings.DeadZoneRight.Apply = false;
+                }
+
             }
         }
     }
@@ -198,17 +182,15 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
                 dshmContextSettings.ContextSettings.HIDDeviceMode = dshmContextSettings.HIDDeviceMode;
             }
 
-            dshmContextSettings.ContextSettings.PressureExposureMode = dshmContextSettings.ContextSettings.PressureExposureMode =
+            dshmContextSettings.ContextSettings.PressureExposureMode =
                 (this.SettingsContext == SettingsContext.SDF
                 || this.SettingsContext == SettingsContext.GPJ)
                 ? DshmManagerToDriverConversion.DsPressureModeManagerToDriver[this.PressureExposureMode] : null;
 
-            dshmContextSettings.ContextSettings.DPadExposureMode = dshmContextSettings.ContextSettings.DPadExposureMode =
+            dshmContextSettings.ContextSettings.DPadExposureMode =
                 (this.SettingsContext == SettingsContext.SDF
                 || this.SettingsContext == SettingsContext.GPJ)
                 ? DshmManagerToDriverConversion.DPadExposureModeManagerToDriver[this.DPadExposureMode] : null;
-
-            dshmContextSettings.ContextSettings.LEDSettings.Authority = this.PreventRemappingConflictsInDS4WMode ? DSHM_LEDsAuthority.Application : DSHM_LEDsAuthority.Driver;
         }
 
         public override void CopySettingsFromContainer(DeviceSettings container)
@@ -374,9 +356,8 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         public static void CopySettings(WirelessSettings destiny, WirelessSettings source)
         {
             destiny.IsWirelessIdleDisconnectEnabled = source.IsWirelessIdleDisconnectEnabled;
-            destiny.QuickDisconnectCombo.copyCombo(source.QuickDisconnectCombo);
             destiny.WirelessIdleDisconnectTime = source.WirelessIdleDisconnectTime;
-            destiny.QuickDisconnectCombo = source.QuickDisconnectCombo;
+            destiny.QuickDisconnectCombo.copyCombo(source.QuickDisconnectCombo);
         }
 
         public override void CopySettingsFromContainer(DeviceSettings container)
@@ -394,11 +375,19 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             dshmContextSettings.DisableWirelessIdleTimeout = !this.IsWirelessIdleDisconnectEnabled;
             dshmContextSettings.WirelessIdleTimeoutPeriodMs = this.WirelessIdleDisconnectTime * 60 * 1000;
 
-            dshmContextSettings.QuickDisconnectCombo.IsEnabled = this.QuickDisconnectCombo.IsEnabled;
-            dshmContextSettings.QuickDisconnectCombo.HoldTime = this.QuickDisconnectCombo.HoldTime;
-            dshmContextSettings.QuickDisconnectCombo.Button1 = DshmManagerToDriverConversion.ButtonManagerToDriver[QuickDisconnectCombo.Button1];
-            dshmContextSettings.QuickDisconnectCombo.Button2 = DshmManagerToDriverConversion.ButtonManagerToDriver[QuickDisconnectCombo.Button2];
-            dshmContextSettings.QuickDisconnectCombo.Button3 = DshmManagerToDriverConversion.ButtonManagerToDriver[QuickDisconnectCombo.Button3];
+            if (QuickDisconnectCombo.IsComboValid())
+            {
+                dshmContextSettings.QuickDisconnectCombo.IsEnabled = this.QuickDisconnectCombo.IsEnabled;
+                dshmContextSettings.QuickDisconnectCombo.HoldTime = this.QuickDisconnectCombo.HoldTime;
+                dshmContextSettings.QuickDisconnectCombo.Button1 = DshmManagerToDriverConversion.ButtonManagerToDriver[QuickDisconnectCombo.Button1];
+                dshmContextSettings.QuickDisconnectCombo.Button2 = DshmManagerToDriverConversion.ButtonManagerToDriver[QuickDisconnectCombo.Button2];
+                dshmContextSettings.QuickDisconnectCombo.Button3 = DshmManagerToDriverConversion.ButtonManagerToDriver[QuickDisconnectCombo.Button3];
+            }
+            else
+            {
+                dshmContextSettings.QuickDisconnectCombo.IsEnabled = false;
+            }
+
         }
     }
 
@@ -534,11 +523,20 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             dshmRumbleSettings.SMToBMConversion.Enabled = AlwaysStartInNormalMode ? false : this.IsAltRumbleModeEnabled;
 
             // Disable toggle combo if alt Rumble Mode is not supposed to be used
-            dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.IsEnabled = IsAltRumbleModeEnabled ? this.AltModeToggleButtonCombo.IsEnabled : false;
-            dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.HoldTime = this.AltModeToggleButtonCombo.HoldTime;
-            dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.Button1 = DshmManagerToDriverConversion.ButtonManagerToDriver[AltModeToggleButtonCombo.Button1];
-            dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.Button2 = DshmManagerToDriverConversion.ButtonManagerToDriver[AltModeToggleButtonCombo.Button2];
-            dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.Button3 = DshmManagerToDriverConversion.ButtonManagerToDriver[AltModeToggleButtonCombo.Button3];
+            if (AltModeToggleButtonCombo.IsComboValid())
+            {
+                dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.IsEnabled = IsAltRumbleModeEnabled ? this.AltModeToggleButtonCombo.IsEnabled : false;
+                dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.HoldTime = this.AltModeToggleButtonCombo.HoldTime;
+                dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.Button1 = DshmManagerToDriverConversion.ButtonManagerToDriver[AltModeToggleButtonCombo.Button1];
+                dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.Button2 = DshmManagerToDriverConversion.ButtonManagerToDriver[AltModeToggleButtonCombo.Button2];
+                dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.Button3 = DshmManagerToDriverConversion.ButtonManagerToDriver[AltModeToggleButtonCombo.Button3];
+
+            }
+            else
+            {
+                dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.IsEnabled = false;
+            }
+
         }
     }
 
