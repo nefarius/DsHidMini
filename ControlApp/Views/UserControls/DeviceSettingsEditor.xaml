@@ -62,7 +62,6 @@
                     VerticalAlignment="Center"
                     Content="Buttons combo:"
                     DockPanel.Dock="Left" />
-                <!--  Change ComboBox later so it's binding to a enum  -->
                 <ComboBox
                     Width="80"
                     DockPanel.Dock="Left"
