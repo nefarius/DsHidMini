@@ -57,7 +57,8 @@ namespace Nefarius.DsHidMini.ControlApp.Models
             ConnectedDeviceListUpdated?.Invoke(this, new());
         }
         
-        public void DisconnectDevice(PnPDevice device)
+
+        public bool DisconnectDevice(PnPDevice device)
         {
             var enumerator = device.GetProperty<string>(DevicePropertyKey.Device_EnumeratorName);
             var IsWireless = !enumerator.Equals("USB", StringComparison.InvariantCultureIgnoreCase);
@@ -66,10 +67,20 @@ namespace Nefarius.DsHidMini.ControlApp.Models
             {
                 var deviceAddress = device.GetProperty<string>(DsHidMiniDriver.DeviceAddressProperty).ToUpper();
                 _hostRadio.DisconnectRemoteDevice(deviceAddress);
+                return true;
             }
             else
             {
-                ((UsbPnPDevice)device).CyclePort();
+                try
+                {
+                    ((UsbPnPDevice)device).CyclePort();
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    return false;
+                }
             }
         }
 
