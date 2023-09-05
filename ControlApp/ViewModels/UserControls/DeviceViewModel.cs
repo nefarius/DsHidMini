@@ -26,6 +26,8 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         private readonly Timer _batteryQuery;
         private DeviceData deviceUserData;
 
+        public PnPDevice Device => _device;
+
         /// <summary>
         /// Settings View Model for device's custom settings
         /// Editing allowed, changes saved only if applying settings with custom settings mode selected
