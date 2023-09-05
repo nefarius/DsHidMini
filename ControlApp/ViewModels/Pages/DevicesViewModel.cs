@@ -13,6 +13,7 @@ using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Services;
 using Wpf.Ui.Controls;
 using Newtonsoft.Json.Linq;
+using Wpf.Ui;
 
 namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
 {
@@ -28,6 +29,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         private readonly DshmDevMan _dshmDevMan;
         private readonly DshmConfigManager _dshmConfigManager;
         private readonly AppSnackbarMessagesService _appSnackbarMessagesService;
+        private readonly IContentDialogService _contentDialogService;
 
 
         /// <summary>
@@ -45,13 +47,14 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         /// </summary>
         [ObservableProperty] private bool _anyDeviceSelected = false;
 
-        public DevicesViewModel(DshmDevMan dshmDevMan, DshmConfigManager dshmConfigManager, AppSnackbarMessagesService appSnackbarMessagesService)
+        public DevicesViewModel(DshmDevMan dshmDevMan, DshmConfigManager dshmConfigManager, AppSnackbarMessagesService appSnackbarMessagesService, IContentDialogService contentDialogService)
         {
             _dshmDevMan = dshmDevMan;
             _dshmConfigManager = dshmConfigManager;
             _appSnackbarMessagesService = appSnackbarMessagesService;
             _dshmDevMan.ConnectedDeviceListUpdated += OnConnectedDevicesListUpdated;
             _dshmConfigManager.DshmConfigurationUpdated += OnDshmConfigUpdated;
+            _contentDialogService = contentDialogService;
             RefreshDevicesList();
         }
 
@@ -100,12 +103,28 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
 
             if (mismatchedRemains)
             {
-                Debug.WriteLine("mismatch remains");
+                ShowHidMismatchedDevicesDialog();
             }
             else
             {
                 Debug.WriteLine("no mismatches found");
             }
+        }
+
+        private async void ShowHidMismatchedDevicesDialog()
+        {
+            var result = await _contentDialogService.ShowSimpleDialogAsync(
+                new SimpleContentDialogCreateOptions()
+                {
+                    Title = "Failed to update connected devices HID mode",
+                    Content = @"ControlApp tried and failed to reconnect one or more DsHidMini devices to update their HID mode.
+This usually happens with USB connected devices when the ControlApp lack admin permissions.
+Manually reconnected the affected devices or restart the ControlApp with admin permissions and re-apply settings.",
+                    PrimaryButtonText = "Save",
+                    SecondaryButtonText = "Don't Save",
+                    CloseButtonText = "Cancel",
+                }
+            );
         }
 
         private void RefreshDevicesList()
