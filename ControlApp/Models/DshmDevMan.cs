@@ -9,6 +9,7 @@ using Nefarius.Utilities.DeviceManagement.PnP;
 using Nefarius.Utilities.Bluetooth;
 using Nefarius.DsHidMini.ControlApp.Services;
 using Nefarius.DsHidMini.ControlApp.ViewModels;
+using Nefarius.Utilities.DeviceManagement.Extensions;
 
 namespace Nefarius.DsHidMini.ControlApp.Models
 {
@@ -74,7 +75,8 @@ namespace Nefarius.DsHidMini.ControlApp.Models
             {
                 try
                 {
-                    ((UsbPnPDevice)device).CyclePort();
+                    var ohmy = device.ToUsbPnPDevice();
+                    ohmy.CyclePort();
                     return true;
                 }
                 catch (Exception e)
