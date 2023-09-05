@@ -395,7 +395,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         [RelayCommand]
         private void RestartDevice()
         {
-            _dshmDevMan.DisconnectDevice(_device);
+            _dshmDevMan.TryReconnectDevice(_device);
         }
 
     }

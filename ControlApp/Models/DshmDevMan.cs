@@ -58,7 +58,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models
         }
         
 
-        public bool DisconnectDevice(PnPDevice device)
+        public bool TryReconnectDevice(PnPDevice device)
         {
             var enumerator = device.GetProperty<string>(DevicePropertyKey.Device_EnumeratorName);
             var IsWireless = !enumerator.Equals("USB", StringComparison.InvariantCultureIgnoreCase);
