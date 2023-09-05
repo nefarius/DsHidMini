@@ -29,12 +29,12 @@ namespace Nefarius.DsHidMini.UI.Settings
 
         private void DownloadBthPS3_OnClick(object sender, RoutedEventArgs e)
         {
-            Process.Start("https://github.com/ViGEm/BthPS3/releases");
+            Process.Start("https://github.com/nefarius/BthPS3/releases");
         }
 
         private void OpenHelp_OnClick(object sender, RoutedEventArgs e)
         {
-            Process.Start("https://vigem.org/projects/BthPS3/");
+            Process.Start("https://docs.nefarius.at/projects/BthPS3/");
         }
     }
 }

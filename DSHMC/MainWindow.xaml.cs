@@ -67,7 +67,7 @@ namespace Nefarius.DsHidMini
             switch (messageBox.Result)
             {
                 case MessageBoxResult.Yes:
-                    Process.Start("https://vigem.org/Donations/");
+                    Process.Start("https://docs.nefarius.at/Donations/");
                     break;
             }
 
