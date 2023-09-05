@@ -21,7 +21,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models
 
         public DshmDevMan()
         {
-            UpdateConnectedDshmDevicesList();
         }
 
         public bool StartListeningForDshmDevices()
@@ -31,11 +30,13 @@ namespace Nefarius.DsHidMini.ControlApp.Models
             _listener.DeviceArrived += OnListenerDevicesRemovedOrAdded;
             _listener.DeviceRemoved += OnListenerDevicesRemovedOrAdded;
             _listener.StartListen(DsHidMiniDriver.DeviceInterfaceGuid);
+            UpdateConnectedDshmDevicesList();
             return true;
         }
 
         public void StopListeningForDshmDevices()
         {
+            Devices.Clear();
             _listener.StopListen();
             _listener.Dispose();
             _listener = null;
