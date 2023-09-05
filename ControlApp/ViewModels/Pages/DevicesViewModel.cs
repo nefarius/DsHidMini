@@ -7,6 +7,8 @@ using Nefarius.DsHidMini.ControlApp.Models.Drivers;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.Utilities.DeviceManagement.PnP;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+
 using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Services;
 using Wpf.Ui.Controls;
@@ -49,6 +51,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
             _dshmConfigManager = dshmConfigManager;
             _appSnackbarMessagesService = appSnackbarMessagesService;
             _dshmDevMan.ConnectedDeviceListUpdated += OnConnectedDevicesListUpdated;
+            _dshmConfigManager.DshmConfigurationUpdated += OnDshmConfigUpdated;
             RefreshDevicesList();
         }
 
@@ -74,6 +77,35 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         public void OnConnectedDevicesListUpdated(object? obj, EventArgs? eventArgs)
         {
             RefreshDevicesList();
+        }
+
+        public void OnDshmConfigUpdated(object? obj, EventArgs? eventArgs)
+        {
+            ReconnectDevicesWithMismatchedHidMode();
+        }
+
+        private void ReconnectDevicesWithMismatchedHidMode()
+        {
+            bool mismatchedRemains = false;
+            foreach (DeviceViewModel devVM in Devices)
+            {
+                if (devVM.IsHidModeMismatched)
+                {
+                    if (!_dshmDevMan.TryReconnectDevice(devVM.Device))
+                    {
+                        mismatchedRemains = true;
+                    }
+                }
+            }
+
+            if (mismatchedRemains)
+            {
+                Debug.WriteLine("mismatch remains");
+            }
+            else
+            {
+                Debug.WriteLine("no mismatches found");
+            }
         }
 
         private void RefreshDevicesList()
