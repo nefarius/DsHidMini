@@ -12,14 +12,14 @@ using Nefarius.DsHidMini.ControlApp.ViewModels;
 
 namespace Nefarius.DsHidMini.ControlApp.Models
 {
-    public class DshmDevicesManager
+    public class DshmDevMan
     {
         private DeviceNotificationListener _listener;
         private readonly HostRadio _hostRadio = new HostRadio();
 
         public List<PnPDevice> Devices { get; private set; } = new();
 
-        public DshmDevicesManager()
+        public DshmDevMan()
         {
             UpdateConnectedDshmDevicesList();
         }

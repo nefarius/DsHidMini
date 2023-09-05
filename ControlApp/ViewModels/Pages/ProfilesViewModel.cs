@@ -12,7 +12,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
     {
         // ----------------------------------------------------------- FIELDS
 
-        private readonly DshmDevicesManager _dshmDevicesManager;
+        private readonly DshmDevMan _dshmDevMan;
         private readonly DshmConfigManager _dshmConfigManager;
 
         [ObservableProperty] public List<ProfileViewModel> _profilesViewModels;
@@ -30,9 +30,9 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
 
         // ----------------------------------------------------------- CONSTRUCTOR
 
-        public ProfilesViewModel(AppSnackbarMessagesService appSnackbarMessagesService, DshmDevicesManager dshmDevicesManager, DshmConfigManager dshmConfigManager)
+        public ProfilesViewModel(AppSnackbarMessagesService appSnackbarMessagesService, DshmDevMan dshmDevMan, DshmConfigManager dshmConfigManager)
         {
-            _dshmDevicesManager = dshmDevicesManager;
+            _dshmDevMan = dshmDevMan;
             _dshmConfigManager = dshmConfigManager;
             _appSnackbarMessagesService = appSnackbarMessagesService;
             UpdateProfileList();

@@ -18,12 +18,12 @@ namespace Nefarius.DsHidMini.ControlApp.Views.Windows
 {
     public partial class MainWindow : INavigationWindow
     {
-        private readonly DshmDevicesManager _dshmDevicesManager;
+        private readonly DshmDevMan _dshmDevMan;
         public MainWindowViewModel ViewModel { get; }
 
         public MainWindow(
             MainWindowViewModel viewModel,
-            DshmDevicesManager dshmDevicesManager, //
+            DshmDevMan dshmDevMan, //
             INavigationService navigationService,
             IServiceProvider serviceProvider,
             ISnackbarService snackbarService,
@@ -35,7 +35,7 @@ namespace Nefarius.DsHidMini.ControlApp.Views.Windows
             ViewModel = viewModel;
             DataContext = this;
 
-            _dshmDevicesManager = dshmDevicesManager;
+            _dshmDevMan = dshmDevMan;
 
             Wpf.Ui.Appearance.SystemThemeWatcher.Watch(this);
 
@@ -51,14 +51,14 @@ namespace Nefarius.DsHidMini.ControlApp.Views.Windows
             base.OnSourceInitialized(e);
 
             InitializeComponent();
-            _dshmDevicesManager.StartListeningForDshmDevices();
+            _dshmDevMan.StartListeningForDshmDevices();
         }
 
         protected override void OnClosing(CancelEventArgs e)
         {
             base.OnClosing(e);
 
-            _dshmDevicesManager.StopListeningForDshmDevices();
+            _dshmDevMan.StopListeningForDshmDevices();
         }
 
 

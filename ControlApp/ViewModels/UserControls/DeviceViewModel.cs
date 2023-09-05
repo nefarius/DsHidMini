@@ -22,7 +22,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         private readonly DshmConfigManager _dshmConfigManager;
         private readonly AppSnackbarMessagesService _appSnackbarMessagesService;
         private readonly PnPDevice _device;
-        private readonly DshmDevicesManager _dshmDevicesManager;
+        private readonly DshmDevMan _dshmDevMan;
         private readonly Timer _batteryQuery;
         private DeviceData deviceUserData;
 
@@ -300,10 +300,10 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
 
         // ------------------------------------------------------ CONSTRUCTOR
 
-        internal DeviceViewModel(PnPDevice device, DshmDevicesManager dshmDevicesManager, DshmConfigManager dshmConfigManager, AppSnackbarMessagesService appSnackbarMessagesService)
+        internal DeviceViewModel(PnPDevice device, DshmDevMan dshmDevMan, DshmConfigManager dshmConfigManager, AppSnackbarMessagesService appSnackbarMessagesService)
         {
             _device = device;
-            _dshmDevicesManager = dshmDevicesManager;
+            _dshmDevMan = dshmDevMan;
             _dshmConfigManager = dshmConfigManager;
             _appSnackbarMessagesService = appSnackbarMessagesService;
             _batteryQuery = new Timer(UpdateBatteryStatus, null, 10000, 10000);
@@ -395,7 +395,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         [RelayCommand]
         private void RestartDevice()
         {
-            _dshmDevicesManager.DisconnectDevice(_device);
+            _dshmDevMan.DisconnectDevice(_device);
         }
 
     }

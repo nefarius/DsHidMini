@@ -23,7 +23,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         /// </summary>
         public ObservableCollection<DeviceViewModel> Devices { get; set; } = new();
 
-        private readonly DshmDevicesManager _dshmDevicesManager;
+        private readonly DshmDevMan _dshmDevMan;
         private readonly DshmConfigManager _dshmConfigManager;
         private readonly AppSnackbarMessagesService _appSnackbarMessagesService;
 
@@ -43,12 +43,12 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         /// </summary>
         [ObservableProperty] private bool _anyDeviceSelected = false;
 
-        public DevicesViewModel(DshmDevicesManager dshmDevicesManager, DshmConfigManager dshmConfigManager, AppSnackbarMessagesService appSnackbarMessagesService)
+        public DevicesViewModel(DshmDevMan dshmDevMan, DshmConfigManager dshmConfigManager, AppSnackbarMessagesService appSnackbarMessagesService)
         {
-            _dshmDevicesManager = dshmDevicesManager;
+            _dshmDevMan = dshmDevMan;
             _dshmConfigManager = dshmConfigManager;
             _appSnackbarMessagesService = appSnackbarMessagesService;
-            _dshmDevicesManager.ConnectedDeviceListUpdated += OnConnectedDevicesListUpdated;
+            _dshmDevMan.ConnectedDeviceListUpdated += OnConnectedDevicesListUpdated;
             RefreshDevicesList();
         }
 
@@ -81,9 +81,9 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
             App.Current.Dispatcher.BeginInvoke(new Action(() =>
             {
                 Devices.Clear();
-                foreach (PnPDevice device in _dshmDevicesManager.Devices)
+                foreach (PnPDevice device in _dshmDevMan.Devices)
                 {
-                    Devices.Add(new DeviceViewModel(device, _dshmDevicesManager, _dshmConfigManager, _appSnackbarMessagesService));
+                    Devices.Add(new DeviceViewModel(device, _dshmDevMan, _dshmConfigManager, _appSnackbarMessagesService));
                 }
             }));
         }
