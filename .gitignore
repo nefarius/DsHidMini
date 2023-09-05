@@ -346,3 +346,4 @@ healthchecksdb
 /setup/DsHidMini Driver-SetupFiles
 /setup/DsHidMini Driver-cache
 /ControlApp
+vcpkg_installed
