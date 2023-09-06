@@ -72,7 +72,15 @@
                                         FontSize="12"
                                         Text="{Binding DeviceSettingsStatus}" />
                                     <DockPanel Grid.Row="2" LastChildFill="False">
-
+                                        <!--  Warning symbol  -->
+                                        <ui:SymbolIcon
+                                            Margin="0,2,0,0"
+                                            VerticalAlignment="Center"
+                                            DockPanel.Dock="Left"
+                                            FontSize="20"
+                                            Foreground="Yellow"
+                                            Symbol="Warning24"
+                                            Visibility="Hidden" />
                                         <DockPanel DockPanel.Dock="Right">
                                             <!--  Connection type  -->
                                             <ui:SymbolIcon
