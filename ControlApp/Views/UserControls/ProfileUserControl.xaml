@@ -31,7 +31,10 @@
                     Margin="0,0,10,0"
                     VerticalAlignment="Center"
                     Text="Profile name:" />
-                <ui:TextBox IsEnabled="{Binding IsEditEnabled}" Text="{Binding Name}" />
+                <ui:TextBox
+                    IsEnabled="{Binding IsEditEnabled}"
+                    MaxLength="100"
+                    Text="{Binding Name}" />
             </DockPanel>
         </ui:Card>
         <DockPanel DockPanel.Dock="Bottom" IsEnabled="{Binding IsEditEnabled}">
