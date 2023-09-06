@@ -74,7 +74,12 @@
                                         Text="{Binding DeviceSettingsStatus}" />
                                     <DockPanel Grid.Row="2" LastChildFill="False">
 
-
+                                        <Viewbox DockPanel.Dock="Left">
+                                            <ui:SymbolIcon
+                                                Foreground="Yellow"
+                                                Symbol="Warning24"
+                                                Visibility="Hidden" />
+                                        </Viewbox>
 
                                         <DockPanel DockPanel.Dock="Right" LastChildFill="False">
                                             <!--  Connection type  -->
