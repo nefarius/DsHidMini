@@ -49,9 +49,9 @@ public partial class ProfileViewModel : ObservableObject
     [RelayCommand]
     public void SaveChanges()
     {
-        if(_name == null)
+        if(string.IsNullOrEmpty(_name))
         {
-            _name = "User Profile";
+            Name = "User Profile";
         }
         ProfileData.ProfileName = _name;
         VmGroupsCont.SaveAllChangesToBackingData(ProfileData.Settings);
