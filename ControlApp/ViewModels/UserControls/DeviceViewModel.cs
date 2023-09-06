@@ -98,7 +98,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         /// <summary>
         /// Summary of device's current HID mode and Settings mode
         /// </summary>
-        public string DeviceSettingsStatus => $"{(HidModeShort)_device.GetProperty<byte>(DsHidMiniDriver.HidDeviceModeProperty)} • {CurrentDeviceSettingsMode}";
+        public string DeviceSettingsStatus => $"{CurrentDeviceSettingsMode} • {(HidModeShort)_device.GetProperty<byte>(DsHidMiniDriver.HidDeviceModeProperty)}";
 
 
         /// <summary>
