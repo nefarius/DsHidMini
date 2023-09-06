@@ -50,71 +50,69 @@
                 SelectedItem="{Binding ViewModel.SelectedDevice}">
                 <ListView.ItemTemplate>
                     <DataTemplate>
-                        <ui:Card Padding="2">
-                            <Viewbox Margin="10,0,0,0">
-                                <Grid Height="30">
+                        <ui:Card Padding="5,2,5,2">
+                            <Viewbox Margin="0,0,0,0">
+                                <Grid Height="70" ShowGridLines="False">
                                     <Grid.RowDefinitions>
-                                        <RowDefinition />
-                                        <RowDefinition />
+                                        <RowDefinition Height="20" />
+                                        <RowDefinition Height="17" />
+                                        <RowDefinition Height="*" />
                                     </Grid.RowDefinitions>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="50" />
-                                        <ColumnDefinition Width="50" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
                                     <!--  Device name  -->
-                                    <Viewbox Grid.Column="0" Grid.ColumnSpan="2">
+                                    <Viewbox
+                                        Grid.Column="0"
+                                        Grid.ColumnSpan="2"
+                                        MaxHeight="20">
                                         <ui:TextBlock Text="{Binding DisplayName}" />
                                     </Viewbox>
                                     <!--  HID Mode  -->
                                     <ui:TextBlock
                                         Grid.Row="1"
                                         Grid.ColumnSpan="2"
-                                        FontSize="8"
+                                        FontSize="12"
                                         Text="{Binding DeviceSettingsStatus}" />
-                                    <!--  Connection type  -->
-                                    <ui:SymbolIcon
-                                        Grid.RowSpan="2"
-                                        Grid.Column="3"
-                                        FontSize="20"
-                                        Symbol="{Binding ConnectionTypeIcon}" />
-                                    <!--  Battery  -->
-                                    <ui:SymbolIcon
-                                        Grid.RowSpan="2"
-                                        Grid.Column="2"
-                                        FontSize="20"
-                                        Symbol="{Binding BatteryIcon}">
-                                        <ui:SymbolIcon.LayoutTransform>
-                                            <RotateTransform Angle="270" />
-                                        </ui:SymbolIcon.LayoutTransform>
-                                    </ui:SymbolIcon>
+                                    <DockPanel Grid.Row="2" LastChildFill="False">
 
-                                    <!--  Power cycle/Reconnect button  -->
-                                    <Button
-                                        Grid.RowSpan="2"
-                                        Grid.Column="4"
-                                        Width="20"
-                                        Padding="0"
-                                        VerticalAlignment="Stretch"
-                                        HorizontalContentAlignment="Center"
-                                        Command="{Binding RestartDeviceCommand}"
-                                        FontStyle="Normal">
-                                        <Button.Content>
+                                        <DockPanel DockPanel.Dock="Right">
+                                            <!--  Connection type  -->
                                             <ui:SymbolIcon
-                                                Margin="0"
-                                                HorizontalAlignment="Center"
-                                                FontSize="16"
-                                                Foreground="White"
-                                                Symbol="Power24" />
-                                        </Button.Content>
+                                                DockPanel.Dock="Left"
+                                                FontSize="25"
+                                                Symbol="{Binding ConnectionTypeIcon}" />
+                                            <!--  Battery  -->
+                                            <ui:SymbolIcon
+                                                DockPanel.Dock="Left"
+                                                FontSize="25"
+                                                Symbol="{Binding BatteryIcon}">
+                                                <ui:SymbolIcon.LayoutTransform>
+                                                    <RotateTransform Angle="270" />
+                                                </ui:SymbolIcon.LayoutTransform>
+                                            </ui:SymbolIcon>
+
+                                            <!--  Power cycle/Reconnect button  -->
+                                            <Button
+                                                Width="25"
+                                                Padding="0"
+                                                HorizontalAlignment="Stretch"
+                                                VerticalAlignment="Stretch"
+                                                HorizontalContentAlignment="Stretch"
+                                                Command="{Binding RestartDeviceCommand}"
+                                                DockPanel.Dock="Left"
+                                                FontStyle="Normal">
+                                                <Button.Content>
+                                                    <ui:SymbolIcon
+                                                        Margin="0"
+                                                        HorizontalAlignment="Center"
+                                                        FontSize="17"
+                                                        Foreground="White"
+                                                        Symbol="Power24" />
+                                                </Button.Content>
 
 
-                                    </Button>
+                                            </Button>
+                                        </DockPanel>
 
-
-
+                                    </DockPanel>
 
 
                                 </Grid>
