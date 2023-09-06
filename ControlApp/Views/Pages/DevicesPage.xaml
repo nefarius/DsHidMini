@@ -74,14 +74,21 @@
                                         Text="{Binding DeviceSettingsStatus}" />
                                     <DockPanel Grid.Row="2" LastChildFill="False">
 
-                                        <Viewbox DockPanel.Dock="Left">
-                                            <ui:SymbolIcon
-                                                Foreground="Yellow"
-                                                Symbol="Warning24"
-                                                Visibility="Hidden" />
-                                        </Viewbox>
 
                                         <DockPanel DockPanel.Dock="Right" LastChildFill="False">
+                                            <!--  Mismatched HID status  -->
+                                            <Viewbox
+                                                Margin="0,5,5,0"
+                                                DockPanel.Dock="Left"
+                                                Visibility="{Binding IsHidModeMismatched, Converter={StaticResource BoolToVis_TV_FC}}">
+                                                <ui:SymbolIcon Foreground="Yellow" Symbol="Warning24" />
+                                            </Viewbox>
+                                            <Viewbox
+                                                Margin="0,0,3,0"
+                                                VerticalAlignment="Stretch"
+                                                DockPanel.Dock="Left">
+                                                <ui:TextBlock Text="{Binding HidModeShort}" />
+                                            </Viewbox>
                                             <!--  Connection type  -->
                                             <Viewbox Margin="0" DockPanel.Dock="Left">
                                                 <ui:SymbolIcon FontSize="30" Symbol="{Binding ConnectionTypeIcon}" />
