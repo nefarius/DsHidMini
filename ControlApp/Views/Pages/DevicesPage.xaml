@@ -55,7 +55,7 @@
                                 <Grid Width="200" ShowGridLines="False">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="20" />
-                                        <RowDefinition Height="20" />
+                                        <RowDefinition Height="*" />
                                         <RowDefinition Height="25" />
                                     </Grid.RowDefinitions>
                                     <!--  Device name  -->
@@ -109,7 +109,7 @@
                                                 <Button
                                                     Width="50"
                                                     Height="50"
-                                                    Padding="4"
+                                                    Padding="5"
                                                     HorizontalAlignment="Stretch"
                                                     VerticalAlignment="Stretch"
                                                     HorizontalContentAlignment="Stretch"
