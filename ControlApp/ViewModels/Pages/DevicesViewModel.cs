@@ -94,10 +94,8 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
             {
                 if (devVM.IsHidModeMismatched)
                 {
-                    if (!_dshmDevMan.TryReconnectDevice(devVM.Device))
-                    {
-                        mismatchedRemains = true;
-                    }
+                    mismatchedRemains = true;
+                    break;
                 }
             }
 
@@ -115,14 +113,14 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         {
             var result = await _contentDialogService.ShowSimpleDialogAsync(
                 new SimpleContentDialogCreateOptions()
-                {
-                    Title = "Failed to update connected devices HID mode",
-                    Content = @"ControlApp tried and failed to reconnect one or more DsHidMini devices to update their HID mode.
-This usually happens with USB connected devices when the ControlApp lack admin permissions.
-Manually reconnected the affected devices or restart the ControlApp with admin permissions and re-apply settings.",
-                    PrimaryButtonText = "Save",
-                    SecondaryButtonText = "Don't Save",
-                    CloseButtonText = "Cancel",
+                { 
+                    Title = "One or more devices pending reconnection",
+                    Content = @"The HID mode setting of one or more connected device has changed.
+Reconnect the pending devices to make this change effective.",
+                    //PrimaryButtonText = "Ok",
+                    //SecondaryButtonText = "Don't Save",
+                    PrimaryButtonText = "Reconnect them now",
+                    CloseButtonText = "OK",
                 }
             );
         }
