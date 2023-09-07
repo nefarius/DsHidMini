@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.IO;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
@@ -69,11 +70,11 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             ///     Implicitly loads configuration from file.
             /// </summary>
             private static readonly Lazy<DshmConfigManagerUserData> AppConfigLazy =
-                new Lazy<DshmConfigManagerUserData>(() => JsonApplicationConfiguration
+                new Lazy<DshmConfigManagerUserData>(() => JsonDshmUserData
                     .Load<DshmConfigManagerUserData>(
                         GlobalUserDataFileName,
                         true,
-                        true));
+                        GlobalUserDataDirectory));
 
             /// <summary>
             ///     Singleton instance of app configuration.
@@ -85,6 +86,17 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             /// </summary>
             [JsonIgnore]
             public static string GlobalUserDataFileName => "DshmUserData";
+
+            public static string GlobalUserDataFolderName => "ControlApp";
+
+            public static string GlobalUserDataDirectory
+            {
+                get
+                {
+                    var commonFolder = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+                    return Path.Combine(commonFolder, GlobalUserDataFolderName);
+                }
+            }
             /// <summary>
             /// Guid of the profile set as global
             /// </summary>
@@ -107,10 +119,10 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
                 //
                 // Store (modified) configuration to disk
                 // 
-                JsonApplicationConfiguration.Save(
+                JsonDshmUserData.Save(
                     GlobalUserDataFileName,
                     this,
-                    true);
+                    GlobalUserDataDirectory);
             }
 
         }
