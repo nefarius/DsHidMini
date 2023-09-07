@@ -70,10 +70,12 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         /// </summary>
         public DsHidDeviceMode HidEmulationMode => (DsHidDeviceMode)_device.GetProperty<byte>(DsHidMiniDriver.HidDeviceModeProperty);
 
-        /// <summary>
-        /// State of Device's current HID Mode in relation to mode it's expected to be
-        /// </summary>
-        public bool IsHidModeMismatched
+        public HidModeShort HidModeShort => (HidModeShort)HidEmulationMode;
+
+    /// <summary>
+    /// State of Device's current HID Mode in relation to mode it's expected to be
+    /// </summary>
+    public bool IsHidModeMismatched
         {
             get
             {
@@ -102,7 +104,29 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         /// <summary>
         /// Summary of device's current HID mode and Settings mode
         /// </summary>
-        public string DeviceSettingsStatus => $"{(HidModeShort)_device.GetProperty<byte>(DsHidMiniDriver.HidDeviceModeProperty)} • {CurrentDeviceSettingsMode}";
+        public string DeviceSettingsStatus
+        {
+            get
+            {
+                string activeProfile = "";
+                if (CurrentDeviceSettingsMode != SettingsModes.Custom)
+                {
+                    switch (CurrentDeviceSettingsMode)
+                    {
+                        case SettingsModes.Global:
+                            activeProfile = $"{_dshmConfigManager.GlobalProfile.ToString()}";
+                            break;
+                        case SettingsModes.Profile:
+                            activeProfile = $"{SelectedProfile.ToString()}";
+                            break;
+                        default: break;
+                    }
+
+                    activeProfile = $" • {activeProfile}";
+                }
+                return $"{CurrentDeviceSettingsMode}{activeProfile}";
+            }
+        }
 
 
         /// <summary>

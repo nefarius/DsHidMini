@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------
-// <copyright file="JsonApplicationConfiguration.cs" company="Visual JSON Editor">
+// <copyright file="JsonDshmUserData.cs" company="Visual JSON Editor">
 //     Copyright (c) Rico Suter. All rights reserved.
 // </copyright>
 // <license>http://visualjsoneditor.codeplex.com/license</license>
