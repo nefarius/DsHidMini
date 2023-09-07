@@ -18,8 +18,9 @@ jobs:
           issue-comment: >
             :wave: @{issue-author}, we use the issue tracker exclusively
             for bug reports and feature requests. However, this issue appears
-            to be a support request. Please use our support channels
-            to get help with the project.
+            to be a support request or a topic covered in the documentation. 
+            Please consult the documentation first and if that didn't help use 
+            our support channels to get help with your partricular case.
           close-issue: true
           lock-issue: true
           issue-lock-reason: 'off-topic'
