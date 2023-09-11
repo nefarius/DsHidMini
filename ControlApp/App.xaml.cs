@@ -18,6 +18,11 @@ using Nefarius.DsHidMini.ControlApp.Views.Pages;
 using Nefarius.DsHidMini.ControlApp.Views.Windows;
 using Nefarius.Utilities.Bluetooth;
 using Nefarius.Utilities.DeviceManagement.PnP;
+
+using Serilog;
+using Serilog.Core;
+using Serilog.Sinks.File;
+
 using Wpf.Ui;
 
 namespace Nefarius.DsHidMini.ControlApp
@@ -75,6 +80,11 @@ namespace Nefarius.DsHidMini.ControlApp
         /// </summary>
         private void OnStartup(object sender, StartupEventArgs e)
         {
+            var log = new LoggerConfiguration()
+                .WriteTo.File(@"C:\ProgramData\ControlApp\Log\ControlAppLog.txt")
+                .CreateLogger();
+            Log.Logger = log;
+            Log.Logger.Information("App startup");
             _host.Start();
         }
 
@@ -83,8 +93,8 @@ namespace Nefarius.DsHidMini.ControlApp
         /// </summary>
         private async void OnExit(object sender, ExitEventArgs e)
         {
+            Log.Logger.Information("App exiting");
             await _host.StopAsync();
-
             _host.Dispose();
         }
 
