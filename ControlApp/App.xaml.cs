@@ -21,6 +21,7 @@ using Nefarius.Utilities.DeviceManagement.PnP;
 
 using Serilog;
 using Serilog.Core;
+using Serilog.Events;
 using Serilog.Sinks.File;
 
 using Wpf.Ui;
@@ -81,6 +82,7 @@ namespace Nefarius.DsHidMini.ControlApp
         private void OnStartup(object sender, StartupEventArgs e)
         {
             var log = new LoggerConfiguration()
+                .MinimumLevel.Debug()
                 .WriteTo.File(@"C:\ProgramData\ControlApp\Log\ControlAppLog.txt")
                 .CreateLogger();
             Log.Logger = log;
