@@ -6,6 +6,8 @@ using System.Text.Json.Serialization;
 using System.Text.Json;
 using System.Threading.Tasks;
 
+using Serilog;
+
 namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig
 {
     internal static class DshmConfigSerialization
@@ -28,6 +30,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig
         /// <returns>True if the update occurred successfully, false otherwise</returns>
         public static bool UpdateDsHidMiniConfigFile(DshmConfiguration dshmConfig)
         {
+            Log.Logger.Debug("Starting serialization of DsHidMini config object and saving to disk");
             try
             {
                 string dshmSerializedConfiguration = JsonSerializer.Serialize(dshmConfig, DshmConfigSerializerOptions);
@@ -37,7 +40,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Log.Logger.Error(e, "Serialization or saving to disk failed.");
                 return false;
             }
         }
