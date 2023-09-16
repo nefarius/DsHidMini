@@ -294,7 +294,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
                 default:
                     return GlobalProfile.Settings.HidMode.SettingsContext;
                     break;
-
             }
         }
 
@@ -305,7 +304,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         /// <returns>The device data of the DsHidMini device</returns>
         public DeviceData GetDeviceData(string deviceMac)
         {
-            Log.Logger.Information($"Getting device data for MAC {deviceMac}");
+            Log.Logger.Information($"Getting data for device {deviceMac}.");
             foreach (DeviceData dev in dshmManagerUserData.Devices)
             {
                 if (dev.DeviceMac == deviceMac)
