@@ -1,6 +1,9 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.Enums;
+
+using Serilog;
+
 using static Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.DshmDeviceSettings;
 
 namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig
@@ -152,6 +155,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig
         /// <returns>If the update was successfully</returns>
         public bool ApplyConfiguration()
         {
+            Log.Logger.Debug("Converting DsHidMini configuration object to configuration file.");
             return DshmConfigSerialization.UpdateDsHidMiniConfigFile(this);
 
         }
