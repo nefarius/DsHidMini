@@ -16,7 +16,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models
     public class DshmDevMan
     {
         private DeviceNotificationListener _listener;
-        private readonly HostRadio _hostRadio = new HostRadio();
+        //private readonly HostRadio _hostRadio;
 
         public List<PnPDevice> Devices { get; private set; } = new();
 
@@ -67,9 +67,17 @@ namespace Nefarius.DsHidMini.ControlApp.Models
 
             if (IsWireless)
             {
+                try
+                {
+                    HostRadio hostRadio = new();
                 var deviceAddress = device.GetProperty<string>(DsHidMiniDriver.DeviceAddressProperty).ToUpper();
-                _hostRadio.DisconnectRemoteDevice(deviceAddress);
+                    hostRadio.DisconnectRemoteDevice(deviceAddress);
                 return true;
+            }
+                catch(Exception ex)
+                {
+                    return false;
+                }
             }
             else
             {
