@@ -178,6 +178,10 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
                     profile = p;
                     break;
                 }
+            }
+
+            if (profile == null)
+            {
                 Log.Logger.Debug($"No profile with GUID {profileGuid} found.");
             }
             return profile;
