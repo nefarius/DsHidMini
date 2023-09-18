@@ -2,6 +2,8 @@
 using Nefarius.DsHidMini.ControlApp.Services;
 using Nefarius.DsHidMini.ControlApp.ViewModels.UserControls;
 
+using Serilog;
+
 namespace Nefarius.DsHidMini.ControlApp.ViewModels;
 
 public partial class ProfileViewModel : ObservableObject
@@ -49,11 +51,19 @@ public partial class ProfileViewModel : ObservableObject
     [RelayCommand]
     public void SaveChanges()
     {
+        Log.Logger.Information($"Saving changes to profile '{ProfileData.ProfileName}' ({ProfileData.ProfileGuid})");
         if(string.IsNullOrEmpty(_name))
         {
+            Log.Logger.Debug("New profile name is null or empty. Setting name to generic one.");
             Name = "User Profile";
         }
-        ProfileData.ProfileName = _name;
+
+        if (ProfileData.ProfileName != _name)
+        {
+            Log.Logger.Information($"Profile name changed from '{ProfileData.ProfileName}' to '{_name}'");
+            ProfileData.ProfileName = _name;
+        }
+
         VmGroupsCont.SaveAllChangesToBackingData(ProfileData.Settings);
         _dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile();
         IsEditEnabled = false;
@@ -64,6 +74,7 @@ public partial class ProfileViewModel : ObservableObject
     [RelayCommand]
     public void CancelChanges()
     {
+        Log.Logger.Debug($"Canceled changes to profile '{ProfileData.ProfileName}' ({ProfileData.ProfileGuid})");
         VmGroupsCont.LoadDatasToAllGroups(ProfileData.Settings);
         Name = ProfileData.ProfileName;
         IsEditEnabled = false;
