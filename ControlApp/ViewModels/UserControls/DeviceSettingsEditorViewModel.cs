@@ -36,6 +36,8 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls
 
             if (dataContainer != null)
                 LoadDatasToAllGroups(dataContainer);
+
+            UpdateLockStateOfGroups();
         }
 
         private void UpdateLockStateOfGroups()
