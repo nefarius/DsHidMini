@@ -68,6 +68,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls
         {
             switch (e.PropertyName)
             {
+                case "":
                 case nameof(HidModeSettingsViewModel.Context):
                 case nameof(HidModeSettingsViewModel.PreventRemappingConflictsInSXSMode):
                 case nameof(HidModeSettingsViewModel.PreventRemappingConflictsInDS4WMode):
