@@ -88,8 +88,8 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
                 _dshmConfigManager.GlobalProfile = obj.ProfileData;
                 _appSnackbarMessagesService.ShowGlobalProfileUpdatedMessage();
                 _dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile();
+                UpdateGlobalProfileCheck();
             }
-            UpdateGlobalProfileCheck();
         }
 
         [RelayCommand]
