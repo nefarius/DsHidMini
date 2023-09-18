@@ -54,7 +54,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls
 
             if (HidModeVM.Context == SettingsContext.SXS)
             {
-                SticksSettingsVM.IsGroupLocked = HidModeVM.PreventRemappingConflictsInSXSMode;
+                //SticksSettingsVM.IsGroupLocked = HidModeVM.PreventRemappingConflictsInSXSMode;
             }
         }
 
