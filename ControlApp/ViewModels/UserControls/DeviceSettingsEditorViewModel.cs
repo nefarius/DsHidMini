@@ -55,6 +55,12 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls
             if (HidModeVM.Context == SettingsContext.SXS)
             {
                 //SticksSettingsVM.IsGroupLocked = HidModeVM.PreventRemappingConflictsInSXSMode;
+                // Currently, OutReps being sent in SXS modes are passed-thru directly to the controller so
+                // Leds and rumble manipulations aren't applied
+                GeneralRumbleSettingsVM.IsGroupLocked = true;
+                LedsSettingsVM.IsGroupLocked = true;
+                LeftMotorRescaleSettingsVM.IsGroupLocked = true;
+                AltRumbleSettingsVM.IsGroupLocked = true;
             }
         }
 
