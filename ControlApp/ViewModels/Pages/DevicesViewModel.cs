@@ -13,6 +13,9 @@ using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Services;
 using Wpf.Ui.Controls;
 using Newtonsoft.Json.Linq;
+
+using Serilog;
+
 using Wpf.Ui;
 
 namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
@@ -66,6 +69,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
 
         public void OnNavigatedTo()
         {
+            Log.Logger.Debug("Navigating to Devices page. Refreshing dynamic properties of each connected Device ViewModel.");
             foreach(DeviceViewModel device in Devices)
             {
                 device.RefreshDeviceSettings();
@@ -89,6 +93,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
 
         private void ReconnectDevicesWithMismatchedHidMode()
         {
+            Log.Logger.Debug("Checking for devices in non-expected Hid Mode");
             bool mismatchedRemains = false;
             foreach (DeviceViewModel devVM in Devices)
             {
@@ -101,16 +106,18 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
 
             if (mismatchedRemains)
             {
+                Log.Logger.Information("Detected one or more devices with non-expected Hid Mode.");
                 ShowHidMismatchedDevicesDialog();
             }
             else
             {
-                Debug.WriteLine("no mismatches found");
+                Log.Logger.Debug("No mismatches found");
             }
         }
 
         private async void ShowHidMismatchedDevicesDialog()
         {
+            Log.Logger.Debug("Showing Hid Mismatch dialog.");
             var result = await _contentDialogService.ShowSimpleDialogAsync(
                 new SimpleContentDialogCreateOptions()
                 { 
