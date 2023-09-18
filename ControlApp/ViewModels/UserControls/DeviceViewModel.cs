@@ -10,6 +10,9 @@ using Nefarius.DsHidMini.ControlApp.ViewModels.Pages;
 using Nefarius.DsHidMini.ControlApp.ViewModels.UserControls;
 using Nefarius.Utilities.Bluetooth;
 using Nefarius.Utilities.DeviceManagement.PnP;
+
+using Serilog;
+
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 
@@ -328,6 +331,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
 
         internal DeviceViewModel(PnPDevice device, DshmDevMan dshmDevMan, DshmConfigManager dshmConfigManager, AppSnackbarMessagesService appSnackbarMessagesService)
         {
+            Log.Logger.Debug($"Creating Device ViewModel for device '{DeviceAddress}'");
             _device = device;
             _dshmDevMan = dshmDevMan;
             _dshmConfigManager = dshmConfigManager;
@@ -375,12 +379,14 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
 
         partial void OnSelectedProfileChanged(ProfileData? value)
         {
+            Log.Logger.Debug($"Loading profile '{SelectedProfile.ProfileName}' ({SelectedProfile.ProfileGuid}) into Profile Settings ViewModel.");
             ProfileCustomsVM.LoadDatasToAllGroups(SelectedProfile.Settings);
         }
 
         [RelayCommand]
         public void RefreshDeviceSettings()
         {
+            Log.Logger.Debug($"Refreshing ViewModel of Device '{DeviceAddress}'");
             // Bluetooth
             PairingMode = (int)deviceUserData.BluetoothPairingMode;
             CustomPairingAddress = deviceUserData.PairingAddress;
@@ -391,6 +397,12 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
             ListOfProfiles = _dshmConfigManager.GetListOfProfilesWithDefault();
             SelectedProfile = _dshmConfigManager.GetProfile(deviceUserData.GuidOfProfileToUse);
             GlobalCustomsVM.LoadDatasToAllGroups(_dshmConfigManager.GlobalProfile.Settings);
+
+            Log.Logger.Information($"Device '{DeviceAddress}' set for {HidModeShort} HID Mode, {PairingMode} Bluetooth pairing mode.");
+            if ((BluetoothPairingMode)PairingMode == BluetoothPairingMode.Custom)
+            {
+                Log.Logger.Information($"Custom pairing address: {CustomPairingAddress}.");
+            }
             
             this.OnPropertyChanged(nameof(DeviceSettingsStatus));
             this.OnPropertyChanged(nameof(IsHidModeMismatched));
@@ -399,6 +411,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         [RelayCommand]
         private void ApplyChanges()
         {
+            Log.Logger.Information($"Saving and applying changes made to Device '{DeviceAddress}'");
             deviceUserData.BluetoothPairingMode = (BluetoothPairingMode)PairingMode;
             deviceUserData.PairingAddress = CustomPairingAddress;
 
@@ -421,6 +434,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         [RelayCommand]
         private void RestartDevice()
         {
+            Log.Logger.Information($"User instructed device '{DeviceAddress}' to restart/disconnect");
             _dshmDevMan.TryReconnectDevice(_device);
         }
 
