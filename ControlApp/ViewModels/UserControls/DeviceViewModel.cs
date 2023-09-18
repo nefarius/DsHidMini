@@ -331,8 +331,8 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
 
         internal DeviceViewModel(PnPDevice device, DshmDevMan dshmDevMan, DshmConfigManager dshmConfigManager, AppSnackbarMessagesService appSnackbarMessagesService)
         {
-            Log.Logger.Debug($"Creating Device ViewModel for device '{DeviceAddress}'");
             _device = device;
+            Log.Logger.Debug($"Creating Device ViewModel for device '{DeviceAddress}'");
             _dshmDevMan = dshmDevMan;
             _dshmConfigManager = dshmConfigManager;
             _appSnackbarMessagesService = appSnackbarMessagesService;
