@@ -88,7 +88,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         {
             get
             {
-                switch(_dshmConfigManager.GetDeviceExpectedHidMode(deviceUserData))
+                switch(ExpectedHidMode)
                 {
                     case SettingsContext.SDF:
                         if(HidEmulationMode == DsHidDeviceMode.SDF) return false;
