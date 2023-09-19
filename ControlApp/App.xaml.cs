@@ -82,7 +82,7 @@ namespace Nefarius.DsHidMini.ControlApp
         private void OnStartup(object sender, StartupEventArgs e)
         {
             var log = new LoggerConfiguration()
-                .MinimumLevel.Debug()
+                //.MinimumLevel.Debug()
                 .WriteTo.File(@"C:\ProgramData\ControlApp\Log\ControlAppLog.txt")
                 .CreateLogger();
             Log.Logger = log;
