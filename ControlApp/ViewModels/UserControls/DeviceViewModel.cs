@@ -76,6 +76,12 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         public HidModeShort HidModeShort => (HidModeShort)HidEmulationMode;
 
     /// <summary>
+        /// The Hid Mode the device is expected to be based on the device's user data
+        /// </summary>
+        public SettingsContext ExpectedHidMode => _dshmConfigManager.GetDeviceExpectedHidMode(deviceUserData);
+
+
+    /// <summary>
     /// State of Device's current HID Mode in relation to mode it's expected to be
     /// </summary>
     public bool IsHidModeMismatched
