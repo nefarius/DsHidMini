@@ -28,16 +28,23 @@
     </ui:FluentWindow.InputBindings>
 
     <DockPanel>
-        <ui:TitleBar
-            x:Name="TitleBar"
-            Title="{Binding ViewModel.ApplicationTitle}"
-            Grid.Row="0"
-            CloseWindowByDoubleClickOnIcon="False"
-            DockPanel.Dock="Top">
-            <ui:TitleBar.Icon>
-                <ui:ImageIcon Source="pack://application:,,,/Assets/wpfui-icon-256.png" />
-            </ui:TitleBar.Icon>
-        </ui:TitleBar>
+        <DockPanel DockPanel.Dock="Top">
+            <ui:Button
+                Margin="10,0,0,0"
+                Content="Restart 'As Administrator'"
+                DockPanel.Dock="Left" />
+            <ui:TitleBar
+                x:Name="TitleBar"
+                Title="{Binding ViewModel.ApplicationTitle}"
+                Grid.Row="0"
+                CloseWindowByDoubleClickOnIcon="False"
+                DockPanel.Dock="Left">
+                <ui:TitleBar.Icon>
+                    <ui:ImageIcon Source="pack://application:,,,/Assets/wpfui-icon-256.png" />
+                </ui:TitleBar.Icon>
+            </ui:TitleBar>
+        </DockPanel>
+
         <Grid DockPanel.Dock="Top">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="23*" />
