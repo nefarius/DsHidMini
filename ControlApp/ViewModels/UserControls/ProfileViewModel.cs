@@ -22,7 +22,7 @@ public partial class ProfileViewModel : ObservableObject
         get => _vmGroupsCont.AllowEditing;
         private set
         {
-            Log.Logger.Information($"Enable edition of profile '{ProfileData.ProfileName}' ({ProfileData.ProfileGuid})");
+            Log.Logger.Information($"Edition of profile '{ProfileData.ProfileName}' ({ProfileData.ProfileGuid}) set to {value}");
             _vmGroupsCont.AllowEditing = value;
             this.OnPropertyChanged(nameof(IsEditEnabled));
         }
