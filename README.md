@@ -96,9 +96,10 @@ The dependencies used in DsHidMini don't exist in Windows 7/8/8.1 so they can't 
 
 ### Prerequisites
 
-- [Step 1: Install Visual Studio 2019](<https://docs.microsoft.com/en-us/windows-hardware/drivers/other-wdk-downloads#step-1-install-visual-studio>)
-- [Step 2: Install WDK for Windows 10, version 2004](<https://docs.microsoft.com/en-us/windows-hardware/drivers/other-wdk-downloads#step-2-install-the-wdk>)
-- [Step 3: Clone the Driver Module Framework (DMF)](https://github.com/microsoft/DMF) into the same parent directory.
+- [Step 1: Install Visual Studio 2022](https://learn.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk#download-icon-step-1-install-visual-studio-2022)
+- [Step 2: Install Windows 11, version 22H2 SDK](https://learn.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk#download-icon-step-2-install-windows-11-version-22h2-sdk)
+- [Step 3: Install Windows 11, version 22H2 WDK](https://learn.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk#download-icon-step-3-install-windows-11-version-22h2-wdk)
+- [Step 4: Clone the Driver Module Framework (DMF)](https://github.com/microsoft/DMF) into the same parent directory.
   - **Important:** requires *at least* [`v1.1.83`](https://github.com/microsoft/DMF/releases/tag/v1.1.83) or newer
   - Build the `DmfU` project with Release and Debug configurations for all architectures (x64 and Win32).
 
@@ -124,7 +125,7 @@ Pre-built binaries and instructions are provided [on the releases page](../../re
 
 ## Support
 
-To get support [please follow these guidlines](https://docs.nefarius.at/Community-Support/).
+To get support [please follow these guidelines](https://docs.nefarius.at/Community-Support/).
 
 ## Sponsors
 
