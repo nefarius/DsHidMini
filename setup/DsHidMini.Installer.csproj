@@ -17,9 +17,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="WixSharp" Version="1.19.0" />
-    <PackageReference Include="WixSharp.bin" Version="1.19.0" />
-    <PackageReference Include="WixSharp.wix.bin" Version="3.11.2" />
+    <PackageReference Include="Nefarius.Utilities.DeviceManagement" Version="3.17.406" />
+    <PackageReference Include="WixSharp" Version="1.22.1" />
+    <PackageReference Include="WixSharp.bin" Version="1.22.1" />
+    <PackageReference Include="WixSharp.wix.bin" Version="3.14.0" />
   </ItemGroup>
 
   <ItemGroup>
