@@ -711,6 +711,11 @@ DsDevice_HotReloadEventCallback(
 
 		WdfWaitLockRelease(pDevCtx->ConfigurationDirectoryWatcherLock);
 
+		//
+		// Changes to LED settings need to be pushed to the device
+		// 
+		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverHighPriority);
+
 	} while (FALSE);
 
 	FuncExitNoReturn(TRACE_DEVICE);
@@ -798,7 +803,7 @@ void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
 }
 
 /**
- * Register event to disconnect from Bluetooth, bypassing mshudumdf.sys
+ * Register event to disconnect from Bluetooth, bypassing mshidumdf.sys
  *
  * @author	Benjamin "Nefarius" Höglinger-Stelzer
  * @date	15.04.2021

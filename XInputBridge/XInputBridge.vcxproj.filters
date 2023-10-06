@@ -19,6 +19,7 @@
     <None Include="XInput.def">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="vcpkg.json" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">

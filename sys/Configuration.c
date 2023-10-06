@@ -7,6 +7,8 @@ ConfigSetDefaults(
 	_Inout_ PDS_DRIVER_CONFIGURATION Config
 );
 
+#pragma region Helpers
+
 //
 // Translates a friendly name string into the corresponding DS_HID_DEVICE_MODE value
 // 
@@ -92,6 +94,36 @@ static DS_LED_MODE DS_LED_MODE_FROM_NAME(PSTR ModeName)
 	return DsLEDModeBatteryIndicatorPlayerIndex;
 }
 
+//
+// Translates a friendly name string into the corresponding DS_LED_AUTHORITY value
+// 
+static DS_LED_AUTHORITY DS_LED_AUTHORITY_FROM_NAME(PSTR AuthorityName)
+{
+	if (!_strcmpi(AuthorityName, G_DS_LED_AUTHORITY_NAMES[2]))
+	{
+		return DsLEDAuthorityApplication;
+	}
+
+	if (!_strcmpi(AuthorityName, G_DS_LED_AUTHORITY_NAMES[1]))
+	{
+		return DsLEDAuthorityDriver;
+	}
+
+	if (!_strcmpi(AuthorityName, G_DS_LED_AUTHORITY_NAMES[0]))
+	{
+		return DsLEDAuthorityAutomatic;
+	}
+
+	return DsLEDAuthorityAutomatic;
+}
+
+#pragma endregion
+
+#pragma region Parsers
+
+//
+// Parses rumble settings
+// 
 #pragma warning(push)
 #pragma warning( disable : 4706 )
 static void
@@ -191,6 +223,9 @@ ConfigParseRumbleSettings(
 }
 #pragma warning(pop)
 
+//
+// Parses LED settings
+// 
 #pragma warning(push)
 #pragma warning( disable : 4706 )
 static void
@@ -207,9 +242,20 @@ ConfigParseLEDSettings(
 		EventWriteOverrideSettingUInt(LEDSettings->string, "Mode", Config->LEDSettings.Mode);
 	}
 
+	if ((pNode = cJSON_GetObjectItem(LEDSettings, "Authority")))
+	{
+		Config->LEDSettings.Authority = DS_LED_AUTHORITY_FROM_NAME(cJSON_GetStringValue(pNode));
+		EventWriteOverrideSettingUInt(LEDSettings->string, "Authority", Config->LEDSettings.Authority);
+	}
+
 	if (Config->LEDSettings.Mode == DsLEDModeCustomPattern)
 	{
 		const cJSON* pCustomPatterns = cJSON_GetObjectItem(LEDSettings, "CustomPatterns");
+
+		if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "LEDFlags")))
+		{
+			Config->LEDSettings.CustomPatterns.LEDFlags = (UCHAR)cJSON_GetNumberValue(pNode);
+		}
 
 		const PSTR playerSlotNames[] =
 		{
@@ -243,8 +289,8 @@ ConfigParseLEDSettings(
 
 			if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "Enabled")))
 			{
-				pPlayerSlots[playerIndex]->Enabled = (UCHAR)cJSON_GetNumberValue(pNode);
-				EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "Enabled", pPlayerSlots[playerIndex]->Enabled);
+				pPlayerSlots[playerIndex]->EnabledFlags = (UCHAR)cJSON_GetNumberValue(pNode);
+				EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "Enabled", pPlayerSlots[playerIndex]->EnabledFlags);
 			}
 
 			if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "IntervalPortionOff")))
@@ -263,6 +309,9 @@ ConfigParseLEDSettings(
 }
 #pragma warning(pop)
 
+//
+// Parses mode-specific properties
+// 
 #pragma warning(push)
 #pragma warning( disable : 4706 )
 static void
@@ -278,6 +327,9 @@ ConfigParseHidDeviceModeSpecificSettings(
 	// 
 	switch (Config->HidDeviceMode)
 	{
+		//
+		// Properties only present in SDF mode
+		// 
 	case DsHidMiniDeviceModeSDF:
 		if ((pNode = cJSON_GetObjectItem(NodeSettings, "PressureExposureMode")))
 		{
@@ -291,6 +343,9 @@ ConfigParseHidDeviceModeSpecificSettings(
 			EventWriteOverrideSettingUInt(NodeSettings->string, "SDF.DPadExposureMode", Config->SDF.DPadExposureMode);
 		}
 		break;
+		//
+		// Properties only present in GPJ mode
+		// 
 	case DsHidMiniDeviceModeGPJ:
 		if ((pNode = cJSON_GetObjectItem(NodeSettings, "PressureExposureMode")))
 		{
@@ -448,11 +503,44 @@ static void ConfigNodeParse(
 			{
 				ConfigParseLEDSettings(pLEDSettings, pCfg);
 			}
+
+			//
+			// Flip Axis settings
+			// 
+			const cJSON* pFlipAxis = cJSON_GetObjectItem(pModeSpecific, "FlipAxis");
+
+			if (pFlipAxis)
+			{
+				if ((pNode = cJSON_GetObjectItem(pFlipAxis, "LeftX")))
+				{
+					pCfg->FlipAxis.LeftX = (BOOLEAN)cJSON_IsTrue(pNode);
+				}
+
+				if ((pNode = cJSON_GetObjectItem(pFlipAxis, "LeftY")))
+				{
+					pCfg->FlipAxis.LeftY = (BOOLEAN)cJSON_IsTrue(pNode);
+				}
+
+				if ((pNode = cJSON_GetObjectItem(pFlipAxis, "RightX")))
+				{
+					pCfg->FlipAxis.RightX = (BOOLEAN)cJSON_IsTrue(pNode);
+				}
+
+				if ((pNode = cJSON_GetObjectItem(pFlipAxis, "RightY")))
+				{
+					pCfg->FlipAxis.RightY = (BOOLEAN)cJSON_IsTrue(pNode);
+				}
+			}
 		}
 	}
 }
 #pragma warning(pop)
 
+#pragma endregion
+
+//
+// Load/refresh device-specific overrides
+// 
 _Must_inspect_result_
 NTSTATUS
 ConfigLoadForDevice(
@@ -641,69 +729,69 @@ ConfigLoadForDevice(
 			ConfigNodeParse(deviceNode, Context, IsHotReload);
 		}
 
-		//
-		// Verify if SMtoBMConversion values are valid and attempt to calculate rescaling constants in case they are
-		// 
-		if (
-			Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue > Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue
-			&& Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue > 0
-			)
-		{
-			Context->Configuration.RumbleSettings.SMToBMConversion.ConstA =
-				(DOUBLE)(Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue - Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue) / (254);
-
-			Context->Configuration.RumbleSettings.SMToBMConversion.ConstB =
-				Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue - Context->Configuration.RumbleSettings.SMToBMConversion.ConstA * 255;
-
-			TraceVerbose(
-				TRACE_CONFIG,
-				"SMToBMConversion rescaling constants: A = %f and B = %f.",
-				Context->Configuration.RumbleSettings.SMToBMConversion.ConstA,
-				Context->Configuration.RumbleSettings.SMToBMConversion.ConstB
-			);
-
-		}
-		else
-		{
-			TraceVerbose(
-				TRACE_CONFIG,
-				"Invalid values found for SMToBMConversion. Setting disabled."
-			);
-			Context->Configuration.RumbleSettings.SMToBMConversion.Enabled = FALSE;
-		}
-
-		//
-		// Verify if BMStrRescale values are valid and attempt to calculate rescaling constants in case they are
-		// 
-		if (
-			Context->Configuration.RumbleSettings.BMStrRescale.MaxValue > Context->Configuration.RumbleSettings.BMStrRescale.MinValue
-			&& Context->Configuration.RumbleSettings.BMStrRescale.MinValue > 0
-			)
-		{
-			Context->Configuration.RumbleSettings.BMStrRescale.ConstA =
-				(DOUBLE)(Context->Configuration.RumbleSettings.BMStrRescale.MaxValue - Context->Configuration.RumbleSettings.BMStrRescale.MinValue) / (254);
-
-			Context->Configuration.RumbleSettings.BMStrRescale.ConstB =
-				Context->Configuration.RumbleSettings.BMStrRescale.MaxValue - Context->Configuration.RumbleSettings.BMStrRescale.ConstA * 255;
-
-			TraceVerbose(
-				TRACE_CONFIG,
-				"BMStrRescale rescaling constants: A = %f and B = %f.",
-				Context->Configuration.RumbleSettings.BMStrRescale.ConstA,
-				Context->Configuration.RumbleSettings.BMStrRescale.ConstB
-			);
-		}
-		else
-		{
-			TraceVerbose(
-				TRACE_CONFIG,
-				"Invalid values found for BMStrRescale. Setting disabled."
-			);
-
-			Context->Configuration.RumbleSettings.BMStrRescale.Enabled = FALSE;
-		}
-
 	} while (FALSE);
+
+	//
+	// Verify if SMtoBMConversion values are valid and attempt to calculate rescaling constants in case they are
+	// 
+	if (
+		Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue > Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue
+		&& Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue > 0
+		)
+	{
+		Context->Configuration.RumbleSettings.SMToBMConversion.ConstA =
+			(DOUBLE)(Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue - Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue) / (254);
+
+		Context->Configuration.RumbleSettings.SMToBMConversion.ConstB =
+			Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue - Context->Configuration.RumbleSettings.SMToBMConversion.ConstA * 255;
+
+		TraceVerbose(
+			TRACE_CONFIG,
+			"SMToBMConversion rescaling constants: A = %f and B = %f.",
+			Context->Configuration.RumbleSettings.SMToBMConversion.ConstA,
+			Context->Configuration.RumbleSettings.SMToBMConversion.ConstB
+		);
+
+	}
+	else
+	{
+		TraceVerbose(
+			TRACE_CONFIG,
+			"Invalid values found for SMToBMConversion. Setting disabled."
+		);
+		Context->Configuration.RumbleSettings.SMToBMConversion.Enabled = FALSE;
+	}
+
+	//
+	// Verify if BMStrRescale values are valid and attempt to calculate rescaling constants in case they are
+	// 
+	if (
+		Context->Configuration.RumbleSettings.BMStrRescale.MaxValue > Context->Configuration.RumbleSettings.BMStrRescale.MinValue
+		&& Context->Configuration.RumbleSettings.BMStrRescale.MinValue > 0
+		)
+	{
+		Context->Configuration.RumbleSettings.BMStrRescale.ConstA =
+			(DOUBLE)(Context->Configuration.RumbleSettings.BMStrRescale.MaxValue - Context->Configuration.RumbleSettings.BMStrRescale.MinValue) / (254);
+
+		Context->Configuration.RumbleSettings.BMStrRescale.ConstB =
+			Context->Configuration.RumbleSettings.BMStrRescale.MaxValue - Context->Configuration.RumbleSettings.BMStrRescale.ConstA * 255;
+
+		TraceVerbose(
+			TRACE_CONFIG,
+			"BMStrRescale rescaling constants: A = %f and B = %f.",
+			Context->Configuration.RumbleSettings.BMStrRescale.ConstA,
+			Context->Configuration.RumbleSettings.BMStrRescale.ConstB
+		);
+	}
+	else
+	{
+		TraceVerbose(
+			TRACE_CONFIG,
+			"Invalid values found for BMStrRescale. Setting disabled."
+		);
+
+		Context->Configuration.RumbleSettings.BMStrRescale.Enabled = FALSE;
+	}
 
 	if (config_json)
 	{
@@ -764,6 +852,7 @@ ConfigSetDefaults(
 	Config->RumbleSettings.ForcedSM.SMThresholdValue = 230;
 
 	Config->LEDSettings.Mode = DsLEDModeBatteryIndicatorPlayerIndex;
+	Config->LEDSettings.CustomPatterns.LEDFlags = 0x02;
 
 	const PDS_LED pPlayerSlots[] =
 	{
@@ -777,7 +866,7 @@ ConfigSetDefaults(
 	{
 		pPlayerSlots[playerIndex]->Duration = 0xFF;
 		pPlayerSlots[playerIndex]->IntervalDuration = 0xFF;
-		pPlayerSlots[playerIndex]->Enabled = 0x10;
+		pPlayerSlots[playerIndex]->EnabledFlags = 0x10;
 		pPlayerSlots[playerIndex]->IntervalPortionOff = 0x00;
 		pPlayerSlots[playerIndex]->IntervalPortionOn = 0xFF;
 	}

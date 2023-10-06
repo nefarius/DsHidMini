@@ -4,11 +4,30 @@
 
 Virtual HID Mini-user-mode driver for Sony DualShock 3 Controllers
 
-[![Build status](https://ci.appveyor.com/api/projects/status/vmf09i95d06c8mbh/branch/master?svg=true)](https://ci.appveyor.com/project/nefarius/dshidmini/branch/master) [![GitHub All Releases](https://img.shields.io/github/downloads/ViGEm/DsHidMini/total)](https://somsubhra.github.io/github-release-stats/?username=ViGEm&repository=DsHidMini) ![GitHub issues](https://img.shields.io/github/issues/ViGEm/DsHidMini) [![Discord](https://img.shields.io/discord/346756263763378176.svg)](https://discord.vigem.org/) [![Website](https://img.shields.io/website-up-down-green-red/https/vigem.org.svg?label=ViGEm.org)](https://vigem.org/)
+[![Build status](https://ci.appveyor.com/api/projects/status/vmf09i95d06c8mbh/branch/master?svg=true)](https://ci.appveyor.com/project/nefarius/dshidmini/branch/master) [![GitHub All Releases](https://img.shields.io/github/downloads/ViGEm/DsHidMini/total)](https://somsubhra.github.io/github-release-stats/?username=ViGEm&repository=DsHidMini) ![GitHub issues](https://img.shields.io/github/issues/ViGEm/DsHidMini) [![Discord](https://img.shields.io/discord/346756263763378176.svg)](https://discord.nefarius.at/) [![Website](https://img.shields.io/website-up-down-green-red/https/docs.nefarius.at.svg?label=docs.nefarius.at)](https://docs.nefarius.at/)
 
-## 🚨 NEW RELEASE READY PROGRESS 🚨
+## 🚨 What to expect with Version 3 🚨
 
+Next major version is in progress! Here's an overview of what you'll get:
+
+- New driver installer
+- New configuration app
+- **ARM64 support**
+- Full **Windows 11** compatibility
+- Complete LED customization
+- Customize dead-zone thresholds
+- Customize HAT/POV behaviour
+- Adjust rumble strengths
+- Switch DPad to individual buttons
+- Customize the Quick-Disconnect button combination
+- Configure flipping/inverting axes
+- ...and maybe more?
+
+Stay tuned!
+
+<!--
 ![](https://us-central1-progress-markdown.cloudfunctions.net/progress/50)
+-->
 
 ## Summary
 
@@ -59,17 +78,13 @@ The following features are **not** available (and most probably won't in the nea
 
 For in-progress features and bug-fixes please consult the issue tracker.
 
+<details>
+
+<summary>Technical details</summary>
+
 ## How it works
 
 DsHidMini is a filter driver sitting below `mshidumdf.sys` and acts as a function driver for USB and Bluetooth through the [User-mode Driver Framework Reflector](https://docs.microsoft.com/en-us/windows-hardware/drivers/wdf/detailed-view-of-the-umdf-architecture), handling translation of incoming HID I/O traffic to underlying USB/Bluetooth I/O and vice versa. On USB it replaces the Windows stock drivers for the Sony hardware and presents the device as a variety of user-configurable HID devices (see documentation). On Bluetooth in conjunction with BthPS3 it replaces the need for [Shibari](https://github.com/ViGEm/Shibari) as the driver directly communicates over wireless channels and takes care of the necessary translation logic. As a user-mode driver it has limited access to the registry, therefore device-specific settings are stored and retrieved using the [Unified Device Property Model](https://docs.microsoft.com/en-us/windows-hardware/drivers/install/unified-device-property-model--windows-vista-and-later-) API. Most of the core HID heavy lifting is done by the amazing [DMF_VirtualHidMini](https://github.com/microsoft/DMF/blob/master/Dmf/Modules.Library/Dmf_VirtualHidMini.md) module which greatly reduced the need for boilerplate code and sped up development tremendously.
-
-## Licensing
-
-This solution contains **BSD-3-Clause** and other licensed components. For details, please consult the individual `LICENSE` files.
-
-This is a community project and not affiliated with Sony Interactive Entertainment Inc. in any way.
-
-"PlayStation", "PSP", "PS2", "PS one", "DUALSHOCK" and "SIXAXIS" are registered trademarks of Sony Interactive Entertainment Inc.
 
 ## Environment
 
@@ -81,17 +96,28 @@ The dependencies used in DsHidMini don't exist in Windows 7/8/8.1 so they can't 
 
 ### Prerequisites
 
-- [Step 1: Install Visual Studio 2019](<https://docs.microsoft.com/en-us/windows-hardware/drivers/other-wdk-downloads#step-1-install-visual-studio>)
-- [Step 2: Install WDK for Windows 10, version 2004](<https://docs.microsoft.com/en-us/windows-hardware/drivers/other-wdk-downloads#step-2-install-the-wdk>)
-- [Step 3: Clone the Driver Module Framework (DMF)](https://github.com/microsoft/DMF) into the same parent directory.
+- [Step 1: Install Visual Studio 2022](https://learn.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk#download-icon-step-1-install-visual-studio-2022)
+- [Step 2: Install Windows 11, version 22H2 SDK](https://learn.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk#download-icon-step-2-install-windows-11-version-22h2-sdk)
+- [Step 3: Install Windows 11, version 22H2 WDK](https://learn.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk#download-icon-step-3-install-windows-11-version-22h2-wdk)
+- [Step 4: Clone the Driver Module Framework (DMF)](https://github.com/microsoft/DMF) into the same parent directory.
   - **Important:** requires *at least* [`v1.1.83`](https://github.com/microsoft/DMF/releases/tag/v1.1.83) or newer
   - Build the `DmfU` project with Release and Debug configurations for all architectures (x64 and Win32).
 
 You can build individual projects of the solution within Visual Studio.
 
+</details>
+
+## Licensing
+
+This solution contains **BSD-3-Clause** and other licensed components. For details, please consult the individual `LICENSE` files.
+
+This is a community project and not affiliated with Sony Interactive Entertainment Inc. in any way.
+
+"PlayStation", "PSP", "PS2", "PS one", "DUALSHOCK" and "SIXAXIS" are registered trademarks of Sony Interactive Entertainment Inc.
+
 ## Documentation
 
-Take a look at the [project page](https://vigem.org/projects/DsHidMini/) for more information.
+Take a look at the [project page](https://docs.nefarius.at/projects/DsHidMini/) for more information.
 
 ## Installation
 
@@ -99,7 +125,11 @@ Pre-built binaries and instructions are provided [on the releases page](../../re
 
 ## Support
 
-To get support [please follow these guidlines](https://vigem.org/Community-Support/).
+To get support [please follow these guidelines](https://docs.nefarius.at/Community-Support/).
+
+## Sponsors
+
+[<img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/jetbrains/jetbrains-original.svg" title="JetBrains ReSharper" alt="JetBrains" width="120" height="120"/>](https://www.jetbrains.com/resharper/)
 
 ## Sources & 3rd party credits
 

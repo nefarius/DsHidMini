@@ -72,7 +72,7 @@ typedef enum
 } DS_BATTERY_STATUS, * PDS_BATTERY_STATUS;
 
 //
-// See https://vigem.org/projects/DsHidMini/HID-Device-Modes-Explained
+// See https://docs.nefarius.at/projects/DsHidMini/HID-Device-Modes-Explained
 // 
 typedef enum
 {
@@ -285,6 +285,16 @@ typedef enum
 } DS_LED_AUTHORITY;
 
 //
+// Friendly names for reading from JSON
+// 
+static CONST PSTR G_DS_LED_AUTHORITY_NAMES[] =
+{
+	"Automatic",
+	"Driver",
+	"Application"
+};
+
+//
 // Axis dead-zone settings
 // 
 typedef struct _DS_AXIS_DEADZONE
@@ -384,7 +394,7 @@ typedef struct _DS_LED
 
 	UCHAR IntervalDuration;
 
-	UCHAR Enabled;
+	UCHAR EnabledFlags;
 
 	UCHAR IntervalPortionOff;
 
@@ -392,6 +402,9 @@ typedef struct _DS_LED
 
 } DS_LED, * PDS_LED;
 
+//
+// LED Customization
+// 
 typedef struct _DS_LED_SETTINGS
 {
 	//
@@ -400,10 +413,17 @@ typedef struct _DS_LED_SETTINGS
 	DS_LED_MODE Mode;
 
 	//
+	// LED update authority (who is allowed to modify LED states)
+	// 
+	DS_LED_AUTHORITY Authority;
+
+	//
 	// Custom LED parameters
 	// 
 	struct
 	{
+		UCHAR LEDFlags;
+
 		DS_LED Player1;
 
 		DS_LED Player2;
@@ -415,6 +435,21 @@ typedef struct _DS_LED_SETTINGS
 	} CustomPatterns;
 
 } DS_LED_SETTINGS, * PDS_LED_SETTINGS;
+
+//
+// Flags whether to flip (invert) axes
+// 
+typedef struct _DS_FLIP_AXIS_SETTINGS
+{
+	UCHAR LeftX;
+
+	UCHAR LeftY;
+
+	UCHAR RightX;
+
+	UCHAR RightY;
+	
+} DS_FLIP_AXIS_SETTINGS, *PDS_FLIP_AXIS_SETTINGS;
 
 //
 // Per device dynamic configuration properties
@@ -472,6 +507,11 @@ typedef struct _DS_DRIVER_CONFIGURATION
 	// LED customizing
 	// 
 	DS_LED_SETTINGS LEDSettings;
+
+	//
+	// Flip axis settings
+	// 
+	DS_FLIP_AXIS_SETTINGS FlipAxis;
 
 	//
 	// SDF-mode specific

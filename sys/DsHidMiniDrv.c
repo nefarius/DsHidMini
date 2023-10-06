@@ -436,8 +436,8 @@ DsHidMini_GetFeature(
 
 	UNREFERENCED_PARAMETER(Request);
 
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
-	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
+	const DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
@@ -528,6 +528,9 @@ DsHidMini_GetFeature(
 
 #endif
 
+	//
+	// SIXAXIS.SYS emulation
+	// 
 	if (Packet->reportId == 0x00 && pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
 	{
 		//
@@ -550,6 +553,9 @@ DsHidMini_GetFeature(
 
 		status = STATUS_SUCCESS;
 	}
+	//
+	// DS4Windows emulation
+	// 
 	else if (
 		Packet->reportId == 0x12 // Requests device MAC address
 		&& Packet->reportBufferLen == 64
@@ -776,8 +782,8 @@ DsHidMini_WriteReport(
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
-	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
+	const DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
 	PUCHAR buffer = NULL;
 	size_t bufferSize = 0;
 
@@ -1053,13 +1059,42 @@ DsHidMini_WriteReport(
 		);
 
 		//
-		// Overwrite with what we received
+		// Prevent LED states from being overwritten from outside
 		// 
-		RtlCopyMemory(
-			buffer,
-			&Packet->reportBuffer[3],
-			bufferSize
-		);
+		if (pDevCtx->Configuration.LEDSettings.Authority == DsLEDAuthorityDriver)
+		{
+			UCHAR ledBlock[sizeof(UCHAR) + (sizeof(DS_LED) * 4)];
+
+			//
+			// Backup LED states
+			// 
+			RtlCopyMemory(ledBlock, &buffer[10], ARRAYSIZE(ledBlock));
+
+			//
+			// Overwrite with what we received
+			// 
+			RtlCopyMemory(
+				buffer,
+				&Packet->reportBuffer[3],
+				bufferSize
+			);
+
+			//
+			// Restore LED states
+			// 
+			RtlCopyMemory(&buffer[10], ledBlock, ARRAYSIZE(ledBlock));
+		}
+		else
+		{
+			//
+			// Overwrite with what we received
+			// 
+			RtlCopyMemory(
+				buffer,
+				&Packet->reportBuffer[3],
+				bufferSize
+			);
+		}
 
 		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourcePassThrough);
 
@@ -1076,31 +1111,31 @@ DsHidMini_WriteReport(
 		// 
 		pDevCtx->OutputReport.Mode = Ds3OutputReportModeWriteReportPassThrough;
 
-		BOOL isSetRumble = (Packet->reportBuffer[1] >> 0) & 1U;
-		BOOL isSetColor = (Packet->reportBuffer[1] >> 1) & 1U;
-		BOOL isFlagFlash = (Packet->reportBuffer[1] >> 2) & 1U;
+		const BOOL isSetRumble = (Packet->reportBuffer[1] >> 0) & 1U;
+		const BOOL isSetColor = (Packet->reportBuffer[1] >> 1) & 1U;
+		const BOOL isFlagFlash = (Packet->reportBuffer[1] >> 2) & 1U;
 
 		//
 		// Color values (RGB)
 		// 
-		UCHAR r = Packet->reportBuffer[6];
-		UCHAR g = Packet->reportBuffer[7];
-		UCHAR b = Packet->reportBuffer[8];
+		const UCHAR r = Packet->reportBuffer[6];
+		const UCHAR g = Packet->reportBuffer[7];
+		const UCHAR b = Packet->reportBuffer[8];
 
 		//
 		// Flash Bright and Dark duration
 		// 
-		UCHAR fb_dur = Packet->reportBuffer[9];
-		UCHAR fd_dur = Packet->reportBuffer[10];
+		const UCHAR fb_dur = Packet->reportBuffer[9];
+		const UCHAR fd_dur = Packet->reportBuffer[10];
 
-		BOOL isFlashOrPulse = isFlagFlash && (fb_dur != 0 || fd_dur != 0);
+		const BOOL isFlashOrPulse = isFlagFlash && (fb_dur != 0 || fd_dur != 0);
 		BOOL isSetFlashing = FALSE;
 
 		if (isFlashOrPulse) // High Latency DS4Windows function
 		{
+			// Hard-coded colors used in High Latency warning
 			if (r == 0x32 && g == 0x00 && b == 0x00)
 			{
-				// Hard-coded colors used in High Latency warning
 				isSetFlashing = TRUE;
 			}
 		}
@@ -1108,80 +1143,82 @@ DsHidMini_WriteReport(
 		if (isSetRumble)
 		{
 			DS3_SET_BOTH_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[5], Packet->reportBuffer[4]);
-			/*
-			DS3_SET_SMALL_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[4]);
-			DS3_SET_LARGE_RUMBLE_STRENGTH(pDevCtx, Packet->reportBuffer[5]);
-			*/
 		}
 
-		if (isSetColor)
+		//
+		// Only allowed when when in Automatic or Application setting
+		// 
+		if (pDevCtx->Configuration.LEDSettings.Authority != DsLEDAuthorityDriver)
 		{
-			//
-			// Restore defaults to undo any (past) flashing animations
-			// 
-			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 0);
-			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 1);
-			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 2);
-			DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 3);
-
-			//
-			// Single color RED intensity indicates battery level (Light only a single LED from 1 to 4)
-			// 
-			if (g == 0x00 && b == 0x00)
+			if (isSetColor)
 			{
-				if (r >= 202)
-					DS3_SET_LED(pDevCtx, DS3_LED_4);
-				else if (r > 148)
-					DS3_SET_LED(pDevCtx, DS3_LED_3);
-				else if (r > 94)
-					DS3_SET_LED(pDevCtx, DS3_LED_2);
-				else if (r > 64)
-					DS3_SET_LED(pDevCtx, DS3_LED_1);
-				else {
-					DS3_SET_LED(pDevCtx, DS3_LED_1);
-					DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
+				//
+				// Restore defaults to undo any (past) flashing animations
+				// 
+				DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 0);
+				DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 1);
+				DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 2);
+				DS3_SET_LED_DURATION_DEFAULT(pDevCtx, 3);
+
+				//
+				// Single color RED intensity indicates battery level (Light only a single LED from 1 to 4)
+				// 
+				if (g == 0x00 && b == 0x00)
+				{
+					if (r >= 202)
+						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_4);
+					else if (r > 148)
+						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_3);
+					else if (r > 94)
+						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_2);
+					else if (r > 64)
+						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
+					else {
+						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
+						DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
+					}
+				}
+				//
+				// Single color RED intensity indicates battery level ("Fill" LEDs from 1 to 4)
+				// 
+				else if (g == 0x00 && b == 0xFF)
+				{
+					if (r >= 202)
+						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
+					else if (r > 148)
+						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3);
+					else if (r > 94)
+						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1 | DS3_LED_2);
+					else if (r > 64)
+						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
+					else {
+						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
+						DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
+					}
+				}
+				//
+				// Decode custom LED status from color RED intensity
+				// 
+				else if (g == 0xFF && b == 0xFF)
+				{
+					if (r == 0x00)
+						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_OFF);
+					else if (r >= 0x01 && r <= 0x0F)
+						DS3_SET_LED_FLAGS(pDevCtx, r << 1);
 				}
 			}
-			//
-			// Single color RED intensity indicates battery level ("Fill" LEDs from 1 to 4)
-			// 
-			else if (g == 0x00 && b == 0xFF)
-			{
-				if (r >= 202)
-					DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
-				else if (r > 148)
-					DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3);
-				else if (r > 94)
-					DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2);
-				else if (r > 64)
-					DS3_SET_LED(pDevCtx, DS3_LED_1);
-				else {
-					DS3_SET_LED(pDevCtx, DS3_LED_1);
-					DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
-				}
-			}
-			//
-			// Decode custom LED status from color RED intensity
-			// 
-			else if (g == 0xFF && b == 0xFF)
-			{
-				if (r == 0x00)
-					DS3_SET_LED(pDevCtx, DS3_LED_OFF);
-				else if (r >= 0x01 && r <= 0x0F)
-					DS3_SET_LED(pDevCtx, r << 1);
-			}
-		}
 
-		if (isSetFlashing)
-		{
-			//
-			// Set to rapidly flash all 4 LEDs
-			// 
-			DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
-			DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 3, 127, 127);
-			DS3_SET_LED_DURATION(pDevCtx, 1, 0xFF, 3, 127, 127);
-			DS3_SET_LED_DURATION(pDevCtx, 2, 0xFF, 3, 127, 127);
-			DS3_SET_LED_DURATION(pDevCtx, 3, 0xFF, 3, 127, 127);
+			if (isSetFlashing)
+			{
+				//
+				// Set to rapidly flash all 4 LEDs
+				// 
+				DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
+				DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 3, 127, 127);
+				DS3_SET_LED_DURATION(pDevCtx, 1, 0xFF, 3, 127, 127);
+				DS3_SET_LED_DURATION(pDevCtx, 2, 0xFF, 3, 127, 127);
+				DS3_SET_LED_DURATION(pDevCtx, 3, 0xFF, 3, 127, 127);
+			}
 		}
 
 		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDualShock4);
@@ -1240,15 +1277,9 @@ DsHidMini_WriteReport(
 
 #pragma region Input Report processing
 
-/**
- * Process a raw input report depending on HID emulation mode.
- *
- * @author	Benjamin "Nefarius" Höglinger-Stelzer
- * @date	25.02.2021
- *
- * @param 	Context	The context.
- * @param 	Report 	The report.
- */
+//
+// Process a raw input report depending on HID emulation mode
+// 
 void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Report)
 {
 	NTSTATUS status;
@@ -1271,7 +1302,8 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 			pModCtx->InputReport,
 			Context->Configuration.GPJ.PressureExposureMode,
 			Context->Configuration.GPJ.DPadExposureMode,
-			&Context->Configuration.ThumbSettings
+			&Context->Configuration.ThumbSettings,
+			&Context->Configuration.FlipAxis
 		);
 
 #ifdef DBG
@@ -1286,7 +1318,8 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 			pModCtx->InputReport,
 			Context->Configuration.SDF.PressureExposureMode,
 			Context->Configuration.SDF.DPadExposureMode,
-			&Context->Configuration.ThumbSettings
+			&Context->Configuration.ThumbSettings,
+			&Context->Configuration.FlipAxis
 		);
 
 		/*
@@ -1340,7 +1373,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 		{
 			TraceError(
 				TRACE_DSHIDMINIDRV,
-				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", 
+				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!",
 				status
 			);
 			EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_VirtualHidMini_InputReportGenerate", status);
@@ -1356,7 +1389,8 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 		DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
 			Report,
 			pModCtx->InputReport,
-			&Context->Configuration.ThumbSettings
+			&Context->Configuration.ThumbSettings,
+			&Context->Configuration.FlipAxis
 		);
 
 		//
@@ -1370,7 +1404,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 		{
 			TraceError(
 				TRACE_DSHIDMINIDRV,
-				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", 
+				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!",
 				status
 			);
 			EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_VirtualHidMini_InputReportGenerate", status);
@@ -1387,7 +1421,8 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 			Report,
 			pModCtx->InputReport,
 			(Context->ConnectionType == DsDeviceConnectionTypeUsb) ? TRUE : FALSE,
-			&Context->Configuration.ThumbSettings
+			&Context->Configuration.ThumbSettings,
+			&Context->Configuration.FlipAxis
 		);
 
 		//
@@ -1401,7 +1436,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 		{
 			TraceError(
 				TRACE_DSHIDMINIDRV,
-				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", 
+				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!",
 				status
 			);
 			EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_VirtualHidMini_InputReportGenerate", status);
@@ -1417,7 +1452,8 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 		DS3_RAW_TO_XINPUTHID_HID_INPUT_REPORT(
 			Report,
 			(PXINPUT_HID_INPUT_REPORT)pModCtx->InputReport,
-			&Context->Configuration.ThumbSettings
+			&Context->Configuration.ThumbSettings,
+			&Context->Configuration.FlipAxis
 		);
 
 		//
@@ -1431,7 +1467,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 		{
 			TraceError(
 				TRACE_DSHIDMINIDRV,
-				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!", 
+				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!",
 				status
 			);
 			EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_VirtualHidMini_InputReportGenerate", status);
@@ -1542,7 +1578,8 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 		pDevCtx->BatteryStatus = battery;
 
 		if (
-			pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled &&
+			(pLED->Authority == DsLEDAuthorityDriver /* Driver wins over Automatic or Application */ ||
+				pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled) &&
 			pLED->Mode > DsLEDModeUnknown && pLED->Mode < DsLEDModeCustomPattern
 			)
 		{
@@ -1550,12 +1587,12 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 			{
 			case DsLEDModeBatteryIndicatorPlayerIndex:
 
-				DS3_SET_LED(pDevCtx, DS3_LED_4);
+				DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_4);
 
 				break;
 			case DsLEDModeBatteryIndicatorBarGraph:
 
-				DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
+				DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
 
 				break;
 			}
@@ -1593,7 +1630,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 			{
 			case DsLEDModeBatteryIndicatorPlayerIndex:
 
-				led = DS3_GET_LED(pDevCtx) << 1;
+				led = DS3_GET_LED_FLAGS(pDevCtx) << 1;
 
 				//
 				// Cycle through
@@ -1606,7 +1643,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 				break;
 			case DsLEDModeBatteryIndicatorBarGraph:
 
-				led = DS3_GET_LED(pDevCtx);
+				led = DS3_GET_LED_FLAGS(pDevCtx);
 
 				//
 				// Cycle graph from 1 to 4 and repeat
@@ -1624,11 +1661,13 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 			}
 
 			if (
-				pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled &&
+				(pLED->Authority == DsLEDAuthorityDriver /* Driver wins over Automatic or Application */ ||
+					pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled) &&
+				/* validate mode range */
 				pLED->Mode > DsLEDModeUnknown && pLED->Mode < DsLEDModeCustomPattern
 				)
 			{
-				DS3_SET_LED(pDevCtx, led);
+				DS3_SET_LED_FLAGS(pDevCtx, led);
 
 				(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverLowPriority);
 			}
@@ -1800,10 +1839,12 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 			//
 			// Don't send update if not initialized yet or custom pattern
 			// 
-			if (DS3_GET_LED(pDevCtx) != 0x00)
+			if (DS3_GET_LED_FLAGS(pDevCtx) != 0x00)
 			{
 				if (
-					pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled &&
+					(pLED->Authority == DsLEDAuthorityDriver /* Driver wins over Automatic or Application */ ||
+						pDevCtx->OutputReport.Mode == Ds3OutputReportModeDriverHandled) &&
+					/* validate mode range */
 					pLED->Mode > DsLEDModeUnknown && pLED->Mode < DsLEDModeCustomPattern
 					)
 				{
@@ -1823,17 +1864,17 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 						{
 						case DsBatteryStatusCharged:
 						case DsBatteryStatusFull:
-							DS3_SET_LED(pDevCtx, DS3_LED_4);
+							DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_4);
 							break;
 						case DsBatteryStatusHigh:
-							DS3_SET_LED(pDevCtx, DS3_LED_3);
+							DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_3);
 							break;
 						case DsBatteryStatusMedium:
-							DS3_SET_LED(pDevCtx, DS3_LED_2);
+							DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_2);
 							break;
 						case DsBatteryStatusLow:
 						case DsBatteryStatusDying:
-							DS3_SET_LED(pDevCtx, DS3_LED_1);
+							DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
 							DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
 							break;
 						default:
@@ -1847,17 +1888,17 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 						{
 						case DsBatteryStatusCharged:
 						case DsBatteryStatusFull:
-							DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
+							DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
 							break;
 						case DsBatteryStatusHigh:
-							DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3);
+							DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3);
 							break;
 						case DsBatteryStatusMedium:
-							DS3_SET_LED(pDevCtx, DS3_LED_1 | DS3_LED_2);
+							DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1 | DS3_LED_2);
 							break;
 						case DsBatteryStatusLow:
 						case DsBatteryStatusDying:
-							DS3_SET_LED(pDevCtx, DS3_LED_1);
+							DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
 							DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
 							break;
 						default:
@@ -2257,10 +2298,10 @@ DSHM_OutputReportDelayTimerElapsed(
 )
 {
 	NTSTATUS status;
-	WDFDEVICE device = WdfTimerGetParentObject(Timer);
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(device);
+	const WDFDEVICE device = WdfTimerGetParentObject(Timer);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(device);
 	PUCHAR sourceBuffer = pDevCtx->OutputReport.Cache.PendingClientBuffer;
-	PDS_OUTPUT_REPORT_CONTEXT pRepCtx = pDevCtx->OutputReport.Cache.PendingClientBufferContext;
+	const PDS_OUTPUT_REPORT_CONTEXT pRepCtx = pDevCtx->OutputReport.Cache.PendingClientBufferContext;
 	PUCHAR targetBuffer;
 	PDS_OUTPUT_REPORT_CONTEXT targetBufferContext;
 
@@ -2336,6 +2377,7 @@ Ds_SendOutputReport(
 	PUCHAR sourceBuffer, sendBuffer;
 	size_t sourceBufferLength;
 	PDS_OUTPUT_REPORT_CONTEXT sendContext;
+	PDS_DRIVER_CONFIGURATION pConfig = &Context->Configuration;
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
@@ -2345,24 +2387,62 @@ Ds_SendOutputReport(
 		//
 		// Grab new buffer to send
 		//
-		status = DMF_ThreadedBufferQueue_Fetch(
+		if (!NT_SUCCESS(status = DMF_ThreadedBufferQueue_Fetch(
 			Context->OutputReport.Worker,
 			(PVOID*)&sendBuffer,
 			(PVOID*)&sendContext
-		);
-
-		if (!NT_SUCCESS(status)) {
+		)))
+		{
 			TraceError(
 				TRACE_DSHIDMINIDRV,
 				"DMF_ThreadedBufferQueue_Fetch failed with status %!STATUS!",
 				status
 			);
 
-			//
-			// TODO: react to different status codes
-			//
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_ThreadedBufferQueue_Fetch", status);
 
 			break;
+		}
+
+		//
+		// Override LED pattern
+		// 
+		if (pConfig->LEDSettings.Mode == DsLEDModeCustomPattern)
+		{
+			DS3_SET_LED_FLAGS(Context, pConfig->LEDSettings.CustomPatterns.LEDFlags);
+
+			DS3_SET_LED_DURATION(
+				Context,
+				0,
+				pConfig->LEDSettings.CustomPatterns.Player1.Duration,
+				pConfig->LEDSettings.CustomPatterns.Player1.IntervalDuration,
+				pConfig->LEDSettings.CustomPatterns.Player1.IntervalPortionOff,
+				pConfig->LEDSettings.CustomPatterns.Player1.IntervalPortionOn
+			);
+			DS3_SET_LED_DURATION(
+				Context,
+				1,
+				pConfig->LEDSettings.CustomPatterns.Player2.Duration,
+				pConfig->LEDSettings.CustomPatterns.Player2.IntervalDuration,
+				pConfig->LEDSettings.CustomPatterns.Player2.IntervalPortionOff,
+				pConfig->LEDSettings.CustomPatterns.Player2.IntervalPortionOn
+			);
+			DS3_SET_LED_DURATION(
+				Context,
+				2,
+				pConfig->LEDSettings.CustomPatterns.Player3.Duration,
+				pConfig->LEDSettings.CustomPatterns.Player3.IntervalDuration,
+				pConfig->LEDSettings.CustomPatterns.Player3.IntervalPortionOff,
+				pConfig->LEDSettings.CustomPatterns.Player3.IntervalPortionOn
+			);
+			DS3_SET_LED_DURATION(
+				Context,
+				3,
+				pConfig->LEDSettings.CustomPatterns.Player4.Duration,
+				pConfig->LEDSettings.CustomPatterns.Player4.IntervalDuration,
+				pConfig->LEDSettings.CustomPatterns.Player4.IntervalPortionOff,
+				pConfig->LEDSettings.CustomPatterns.Player4.IntervalPortionOn
+			);
 		}
 
 		//
@@ -2446,6 +2526,6 @@ VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength)
 	UNREFERENCED_PARAMETER(Buffer);
 	UNREFERENCED_PARAMETER(BufferLength);
 #endif
-	}
+}
 
 #pragma endregion

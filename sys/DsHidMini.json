@@ -39,36 +39,44 @@
       },
       "LEDSettings": {
         "Mode": "BatteryIndicatorPlayerIndex",
+        "Authority": "Automatic",
         "CustomPatterns": {
+          "LEDFlags": 2,
           "Player1": {
             "Duration": 255,
             "IntervalDuration": 255,
-            "Enabled": 16,
+            "EnabledFlags": 16,
             "IntervalPortionOff": 0,
             "IntervalPortionOn": 255
           },
           "Player2": {
             "Duration": 255,
             "IntervalDuration": 255,
-            "Enabled": 16,
+            "EnabledFlags": 16,
             "IntervalPortionOff": 0,
             "IntervalPortionOn": 255
           },
           "Player3": {
             "Duration": 255,
             "IntervalDuration": 255,
-            "Enabled": 16,
+            "EnabledFlags": 16,
             "IntervalPortionOff": 0,
             "IntervalPortionOn": 255
           },
           "Player4": {
             "Duration": 255,
             "IntervalDuration": 255,
-            "Enabled": 16,
+            "EnabledFlags": 16,
             "IntervalPortionOff": 0,
             "IntervalPortionOn": 255
           }
         }
+      },
+      "FlipAxis": {
+        "LeftX": false,
+        "LeftY": false,
+        "RightX": false,
+        "RightY": false
       }
     },
     "GPJ": {
@@ -105,31 +113,32 @@
       "LEDSettings": {
         "Mode": "BatteryIndicatorPlayerIndex",
         "CustomPatterns": {
+          "LEDFlags": 2,
           "Player1": {
             "Duration": 255,
             "IntervalDuration": 255,
-            "Enabled": 16,
+            "EnabledFlags": 16,
             "IntervalPortionOff": 0,
             "IntervalPortionOn": 255
           },
           "Player2": {
             "Duration": 255,
             "IntervalDuration": 255,
-            "Enabled": 16,
+            "EnabledFlags": 16,
             "IntervalPortionOff": 0,
             "IntervalPortionOn": 255
           },
           "Player3": {
             "Duration": 255,
             "IntervalDuration": 255,
-            "Enabled": 16,
+            "EnabledFlags": 16,
             "IntervalPortionOff": 0,
             "IntervalPortionOn": 255
           },
           "Player4": {
             "Duration": 255,
             "IntervalDuration": 255,
-            "Enabled": 16,
+            "EnabledFlags": 16,
             "IntervalPortionOff": 0,
             "IntervalPortionOn": 255
           }
@@ -168,31 +177,32 @@
       "LEDSettings": {
         "Mode": "BatteryIndicatorPlayerIndex",
         "CustomPatterns": {
+          "LEDFlags": 2,
           "Player1": {
             "Duration": 255,
             "IntervalDuration": 255,
-            "Enabled": 16,
+            "EnabledFlags": 16,
             "IntervalPortionOff": 0,
             "IntervalPortionOn": 255
           },
           "Player2": {
             "Duration": 255,
             "IntervalDuration": 255,
-            "Enabled": 16,
+            "EnabledFlags": 16,
             "IntervalPortionOff": 0,
             "IntervalPortionOn": 255
           },
           "Player3": {
             "Duration": 255,
             "IntervalDuration": 255,
-            "Enabled": 16,
+            "EnabledFlags": 16,
             "IntervalPortionOff": 0,
             "IntervalPortionOn": 255
           },
           "Player4": {
             "Duration": 255,
             "IntervalDuration": 255,
-            "Enabled": 16,
+            "EnabledFlags": 16,
             "IntervalPortionOff": 0,
             "IntervalPortionOn": 255
           }
@@ -231,31 +241,32 @@
       "LEDSettings": {
         "Mode": "BatteryIndicatorPlayerIndex",
         "CustomPatterns": {
+          "LEDFlags": 2,
           "Player1": {
             "Duration": 255,
             "IntervalDuration": 255,
-            "Enabled": 16,
+            "EnabledFlags": 16,
             "IntervalPortionOff": 0,
             "IntervalPortionOn": 255
           },
           "Player2": {
             "Duration": 255,
             "IntervalDuration": 255,
-            "Enabled": 16,
+            "EnabledFlags": 16,
             "IntervalPortionOff": 0,
             "IntervalPortionOn": 255
           },
           "Player3": {
             "Duration": 255,
             "IntervalDuration": 255,
-            "Enabled": 16,
+            "EnabledFlags": 16,
             "IntervalPortionOff": 0,
             "IntervalPortionOn": 255
           },
           "Player4": {
             "Duration": 255,
             "IntervalDuration": 255,
-            "Enabled": 16,
+            "EnabledFlags": 16,
             "IntervalPortionOff": 0,
             "IntervalPortionOn": 255
           }
@@ -294,31 +305,32 @@
       "LEDSettings": {
         "Mode": "BatteryIndicatorPlayerIndex",
         "CustomPatterns": {
+          "LEDFlags": 2,
           "Player1": {
             "Duration": 255,
             "IntervalDuration": 255,
-            "Enabled": 16,
+            "EnabledFlags": 16,
             "IntervalPortionOff": 0,
             "IntervalPortionOn": 255
           },
           "Player2": {
             "Duration": 255,
             "IntervalDuration": 255,
-            "Enabled": 16,
+            "EnabledFlags": 16,
             "IntervalPortionOff": 0,
             "IntervalPortionOn": 255
           },
           "Player3": {
             "Duration": 255,
             "IntervalDuration": 255,
-            "Enabled": 16,
+            "EnabledFlags": 16,
             "IntervalPortionOff": 0,
             "IntervalPortionOn": 255
           },
           "Player4": {
             "Duration": 255,
             "IntervalDuration": 255,
-            "Enabled": 16,
+            "EnabledFlags": 16,
             "IntervalPortionOff": 0,
             "IntervalPortionOn": 255
           }

@@ -6,6 +6,7 @@
 
 #include <climits>
 
+
 //
 // Dead-Zone value to stop jittering
 // 
@@ -104,8 +105,20 @@ float ToAxis(UCHAR value)
 
 #pragma endregion
 
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+nostd::shared_ptr<trace::Tracer> GetTracer()
+{
+	auto provider = trace::Provider::GetTracerProvider();
+	return provider->GetTracer("XInputBridge", OPENTELEMETRY_SDK_VERSION);
+}
+#endif
+
 void SetDeviceDisconnected(DWORD UserIndex)
 {
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scoped_span = trace::Scope(GetTracer()->StartSpan("SetDeviceDisconnected"));
+#endif
+
 	if (UserIndex >= DS3_DEVICES_MAX)
 		return;
 
@@ -124,6 +137,10 @@ void SetDeviceDisconnected(DWORD UserIndex)
 
 bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 {
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scoped_span = trace::Scope(GetTracer()->StartSpan("GetDeviceHandle"));
+#endif
+
 	if (UserIndex >= DS3_DEVICES_MAX)
 		return false;
 
@@ -196,6 +213,10 @@ bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 
 bool GetPacketNumber(DWORD UserIndex, PDS3_RAW_INPUT_REPORT Report, DWORD* PacketNumber)
 {
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scoped_span = trace::Scope(GetTracer()->StartSpan("GetPacketNumber"));
+#endif
+
 	if (UserIndex >= DS3_DEVICES_MAX)
 		return false;
 
@@ -235,6 +256,10 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 {
 	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
 	hid_device* device = nullptr;
+
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scoped_span = trace::Scope(GetTracer()->StartSpan("XInputGetExtended"));
+#endif
 
 	do
 	{
@@ -339,6 +364,10 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 {
 	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
 	hid_device* device = nullptr;
+
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scoped_span = trace::Scope(GetTracer()->StartSpan("XInputGetState"));
+#endif
 
 	do
 	{
@@ -472,6 +501,10 @@ XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
 	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
 	hid_device* device = nullptr;
 
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scoped_span = trace::Scope(GetTracer()->StartSpan("XInputSetState"));
+#endif
+
 	do
 	{
 		//
@@ -534,6 +567,10 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 {
 	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
 
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scoped_span = trace::Scope(GetTracer()->StartSpan("XInputGetCapabilities"));
+#endif
+
 	do
 	{
 		//
@@ -590,6 +627,9 @@ XINPUTBRIDGE_API void WINAPI XInputEnable(
 	_In_ BOOL enable
 )
 {
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scoped_span = trace::Scope(GetTracer()->StartSpan("XInputEnable"));
+#endif
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputGetDSoundAudioDeviceGuids(
@@ -626,6 +666,10 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
 {
 	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
 	hid_device* device = nullptr;
+
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scoped_span = trace::Scope(GetTracer()->StartSpan("XInputGetStateEx"));
+#endif
 
 	do
 	{
