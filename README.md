@@ -138,9 +138,9 @@ The following awesome resources have made this project possible.
 ### Related projects
 
 - [nefarius/ScpToolkit](https://github.com/nefarius/ScpToolkit)
-- [ViGEm/FireShock](https://github.com/ViGEm/FireShock)
-- [ViGEm/AirBender](https://github.com/ViGEm/AirBender)
-- [ViGEm/WireShock](https://github.com/ViGEm/WireShock)
+- [nefarius/FireShock](https://github.com/nefarius/FireShock)
+- [nefarius/AirBender](https://github.com/nefarius/AirBender)
+- [nefarius/WireShock](https://github.com/nefarius/WireShock)
 - [FirstPlatoLV/EmuController](https://github.com/FirstPlatoLV/EmuController)
 - [Arduino - felis/USB_Host_Shield_2.0 - PS3 Information](https://github.com/felis/USB_Host_Shield_2.0/wiki/PS3-Information#USB)
 
