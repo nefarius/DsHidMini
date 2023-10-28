@@ -345,5 +345,4 @@ healthchecksdb
 /XInputBridge/vcpkg_installed/x64-windows-static
 /setup/DsHidMini Driver-SetupFiles
 /setup/DsHidMini Driver-cache
-/ControlApp
 vcpkg_installed

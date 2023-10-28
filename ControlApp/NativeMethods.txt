@@ -1,0 +1,6 @@
+﻿BluetoothFindFirstRadio
+BluetoothFindRadioClose
+BLUETOOTH_FIND_RADIO_PARAMS
+CreateFile
+DeviceIoControl
+WIN32_ERROR
