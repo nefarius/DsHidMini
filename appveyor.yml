@@ -5,7 +5,7 @@ environment:
   DmfRootPath: C:\projects\DMF
   DOMITO_INC_PATH: C:\projects\Domito\include
   DOMITO_LIB_PATH: C:\projects\Domito\lib
-  VCPKG_DEFAULT_BINARY_CACHE: C:\caches\vcpkg\dshidmini
+  VCPKG_BINARY_SOURCES: clear;files,C:\caches\vcpkg\dshidmini
 platform:
 - x64
 - ARM64
