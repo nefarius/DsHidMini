@@ -15,11 +15,6 @@ skip_commits:
   files:
     - '**/*.md'
 install:
-#- cmd: |
-#    cd "C:\Tools\vcpkg"
-#    git pull > NUL
-#    .\bootstrap-vcpkg.bat > NUL
-#    cd %appveyor_build_folder%
 - cmd: git submodule -q update --init
 - cmd: git clone -q https://github.com/microsoft/DMF.git C:\projects\DMF 2> nul || set ERRORLEVEL=0
 - cmd: |
