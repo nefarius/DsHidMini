@@ -34,7 +34,7 @@ class Build : NukeBuild
     readonly Solution Solution;
 
     AbsolutePath DmfSolution => (AbsolutePath)"C:/projects/DMF/Dmf.sln";
-
+    
     Target Clean => _ => _
         .Before(Restore)
         .Executes(() =>
@@ -73,9 +73,11 @@ class Build : NukeBuild
         });
 
     Target Compile => _ => _
-        .DependsOn(Restore)
+        .DependsOn(BuildDmf)
         .Executes(() =>
         {
+            Logging.Level = LogLevel.Normal;
+
             MSBuildTasks.MSBuild(s => s
                 .SetTargetPath(Solution)
                 .SetTargets("Rebuild")
