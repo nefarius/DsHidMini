@@ -6,6 +6,7 @@ In this directory run:
 
 ```PowerShell
 vcpkg install
+vcpkg install --triplet "x64-windows-static"
 vcpkg export --zip --output-dir=.\exports
 ```
 
