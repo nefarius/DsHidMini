@@ -21,6 +21,7 @@
     </None>
     <None Include="vcpkg.json" />
     <None Include="README.md" />
+    <None Include="CI.md" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
