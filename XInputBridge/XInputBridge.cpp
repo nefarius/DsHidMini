@@ -631,6 +631,8 @@ XINPUTBRIDGE_API void WINAPI XInputEnable(
 	_In_ BOOL enable
 )
 {
+    UNREFERENCED_PARAMETER(enable);
+
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scoped_span = trace::Scope(GetTracer()->StartSpan("XInputEnable"));
 #endif
@@ -642,6 +644,10 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetDSoundAudioDeviceGuids(
 	GUID* pDSoundCaptureGuid
 )
 {
+    UNREFERENCED_PARAMETER(dwUserIndex);
+    UNREFERENCED_PARAMETER(pDSoundRenderGuid);
+    UNREFERENCED_PARAMETER(pDSoundCaptureGuid);
+
 	return ERROR_DEVICE_NOT_CONNECTED;
 }
 
@@ -651,6 +657,10 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetBatteryInformation(
 	_Out_ XINPUT_BATTERY_INFORMATION* pBatteryInformation
 )
 {
+    UNREFERENCED_PARAMETER(dwUserIndex);
+    UNREFERENCED_PARAMETER(devType);
+    UNREFERENCED_PARAMETER(pBatteryInformation);
+
 	return ERROR_DEVICE_NOT_CONNECTED;
 }
 
@@ -660,6 +670,10 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetKeystroke(
 	PXINPUT_KEYSTROKE pKeystroke
 )
 {
+    UNREFERENCED_PARAMETER(dwUserIndex);
+    UNREFERENCED_PARAMETER(dwReserved);
+    UNREFERENCED_PARAMETER(pKeystroke);
+
 	return ERROR_DEVICE_NOT_CONNECTED;
 }
 
@@ -810,6 +824,10 @@ XINPUTBRIDGE_API DWORD WINAPI XInputWaitForGuideButton(
 	_In_ LPVOID pVoid
 )
 {
+    UNREFERENCED_PARAMETER(dwUserIndex);
+    UNREFERENCED_PARAMETER(dwFlag);
+    UNREFERENCED_PARAMETER(pVoid);
+
 	return ERROR_DEVICE_NOT_CONNECTED;
 }
 
@@ -817,6 +835,8 @@ XINPUTBRIDGE_API DWORD WINAPI XInputCancelGuideButtonWait(
 	_In_ DWORD dwUserIndex
 )
 {
+    UNREFERENCED_PARAMETER(dwUserIndex);
+
 	return ERROR_DEVICE_NOT_CONNECTED;
 }
 
@@ -824,5 +844,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputPowerOffController(
 	_In_ DWORD dwUserIndex
 )
 {
+    UNREFERENCED_PARAMETER(dwUserIndex);
+
 	return ERROR_DEVICE_NOT_CONNECTED;
 }
