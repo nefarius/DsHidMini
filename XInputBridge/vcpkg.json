@@ -8,7 +8,7 @@
     { "name": "hidapi" },
     {
       "name": "opentelemetry-cpp",
-      "features": [ "jaeger" ]
+      "features": [ "otlp-http" ]
     }
   ]
 }
