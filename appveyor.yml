@@ -5,7 +5,6 @@ environment:
   DmfRootPath: C:\projects\DMF
   DOMITO_INC_PATH: C:\projects\Domito\include
   DOMITO_LIB_PATH: C:\projects\Domito\lib
-  VCPKG_BINARY_SOURCES: clear;files,C:\caches\vcpkg\dshidmini
 platform:
 - x64
 - ARM64
@@ -15,6 +14,9 @@ skip_commits:
   files:
     - '**/*.md'
 install:
+- cmd: vcpkg integrate install
+- cmd: vcpkg update
+- cmd: vcpkg install hidapi:x86-windows-static hidapi:x64-windows-static opentelemetry-cpp[otlp-http]:x64-windows-static
 - cmd: git submodule -q update --init
 - cmd: git clone -q https://github.com/microsoft/DMF.git C:\projects\DMF 2> nul || set ERRORLEVEL=0
 - cmd: |
