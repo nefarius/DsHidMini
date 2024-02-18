@@ -348,3 +348,4 @@ healthchecksdb
 /ControlApp
 vcpkg_installed
 **/*.g.wxs
+/XInputBridge/exports
