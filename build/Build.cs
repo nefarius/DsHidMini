@@ -80,6 +80,8 @@ class Build : NukeBuild
                 .SetTargetPath(Solution)
                 .SetTargets("Rebuild")
                 .SetConfiguration(Configuration)
+                // enables building with OTEL in XInputBridge
+                .SetProperty("SCPLIB_ENABLE_TELEMETRY", true)
                 .SetMaxCpuCount(Environment.ProcessorCount)
                 .SetNodeReuse(IsLocalBuild));
         });
