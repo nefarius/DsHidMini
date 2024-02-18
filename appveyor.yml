@@ -5,7 +5,6 @@ environment:
   DmfRootPath: C:\projects\DMF
   DOMITO_INC_PATH: C:\projects\Domito\include
   DOMITO_LIB_PATH: C:\projects\Domito\lib
-  VCPKG_ROOT: C:\tools\vcpkg\binary-cache\vcpkg-export-20240218-181459
   VCPKG_DEFAULT_BINARY_CACHE: C:\tools\vcpkg\binary-cache\vcpkg-export-20240218-181459
 platform:
 - x64
