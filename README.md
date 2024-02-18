@@ -165,7 +165,7 @@ The following awesome resources have made this project possible.
 - [linux/drivers/hid/hid-sony.c](https://github.com/torvalds/linux/blob/master/drivers/hid/hid-sony.c)
 - [The HID Page](http://janaxelson.com/hidpage.htm)
 
-## DevOps
+### DevOps
 
 - [AppVeyor CI](https://www.appveyor.com/)
 - [NUKE build system](https://nuke.build/)
