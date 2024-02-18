@@ -164,4 +164,8 @@ The following awesome resources have made this project possible.
 - [HID: sony: Update device ids](https://patchwork.kernel.org/patch/9367441/)
 - [linux/drivers/hid/hid-sony.c](https://github.com/torvalds/linux/blob/master/drivers/hid/hid-sony.c)
 - [The HID Page](http://janaxelson.com/hidpage.htm)
+
+## DevOps
+
+- [AppVeyor CI](https://www.appveyor.com/)
 - [NUKE build system](https://nuke.build/)
