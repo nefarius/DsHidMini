@@ -20,6 +20,7 @@
       <Filter>Source Files</Filter>
     </None>
     <None Include="vcpkg.json" />
+    <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">

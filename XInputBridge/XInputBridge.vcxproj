@@ -253,6 +253,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
+    <None Include="README.md" />
     <None Include="vcpkg.json" />
     <None Include="XInput.def" />
   </ItemGroup>
