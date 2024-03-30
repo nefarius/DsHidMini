@@ -56,7 +56,7 @@ class Build : NukeBuild
 
             Log.Information("DMF solution path: {DmfSolution}", DmfSolution);
 
-            if (AppVeyor.Instance.Platform == MSBuildTargetPlatform.Win32)
+            if (AppVeyor.Instance.Platform == MSBuildTargetPlatform.x86 || AppVeyor.Instance.Platform == MSBuildTargetPlatform.Win32)
             {
                 Serilog.Log.Warning("DMF dropped 32-Bit support, skipping build");
                 return;
