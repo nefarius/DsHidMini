@@ -19,7 +19,7 @@ install:
 - cmd: vcpkg integrate install
 - cmd: vcpkg update
 # manifest mode takes forever to build each commit so use global copy instead
-- cmd: vcpkg install hidapi:x86-windows-static hidapi:x64-windows-static opentelemetry-cpp[otlp-http]:x64-windows-static
+- cmd: vcpkg install hidapi:%PLATFORM%-windows-static opentelemetry-cpp[otlp-http]:%PLATFORM%-windows-static
 - cmd: git submodule -q update --init
 - cmd: git clone -q https://github.com/microsoft/DMF.git C:\projects\DMF 2> nul || set ERRORLEVEL=0
 - cmd: |
@@ -42,7 +42,7 @@ before_build:
 build_script:
 - cmd: .\build.cmd
 after_build:
-- cmd: makecab.exe /f .\DsHidMini_%PLATFORM%.ddf
+- cmd: if not %PLATFORM%==x86 makecab.exe /f .\DsHidMini_%PLATFORM%.ddf
 artifacts:
 - path: 'disk1\*.cab'
 - path: 'bin**\$(APPVEYOR_PROJECT_NAME)\*.inf'
