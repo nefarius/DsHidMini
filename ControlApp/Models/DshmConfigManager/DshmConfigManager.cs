@@ -141,7 +141,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         }
 
         /// <summary>
-        /// Links Devices Datas back to the default profile if the profile they are set to use doesn't exist more,
+        /// Links Devices Datas back to the default profile if the profile they are set to use doesn't exist anymore,
         /// also reverting them to the Global Settings Mode if in Profile Setting Mode
         /// </summary>
         private void FixDevicesWithBlankProfiles()
