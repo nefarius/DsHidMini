@@ -514,7 +514,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         {
             DshmDeviceSettings.AllRumbleSettings dshmRumbleSettings = dshmContextSettings.ContextSettings.RumbleSettings;
 
-            if(!IsAltRumbleModeEnabled)
+            if(!this.IsAltRumbleModeEnabled)
             {
                 dshmRumbleSettings.DisableBM = this.IsLeftMotorDisabled;
                 dshmRumbleSettings.DisableSM = this.IsLeftMotorDisabled;
