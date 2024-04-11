@@ -57,6 +57,13 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
 
         [ObservableProperty] private bool _isEditorEnabled;
 
+
+        /// <summary>
+        /// Determines if the settings editor is visible.
+        /// True if in custom mode, false otherwise
+        /// </summary>
+        [ObservableProperty] private bool _isEditorVisible;
+
         /// <summary>
         /// Determines if the profile selector is visible.
         /// True if in Profile settings mode, false otherwise
