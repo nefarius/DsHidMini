@@ -204,7 +204,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             Log.Information("Updating DsHidMini configuration based on DsHidMini User Data");
             Log.Debug("Building DsHidMini configuration object based on DsHidMini User Data");
             var dshmConfiguration = new DshmConfiguration();
-            GlobalProfile.Settings.ConvertAllToDSHM(dshmConfiguration.Global);
+            DshmManagerToDriverConversion.ConvertDeviceSettingsToDriverFormat(GlobalProfile.Settings, dshmConfiguration.Global);
            
             foreach(DeviceData dev in dshmManagerUserData.Devices)
             {
@@ -221,11 +221,11 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
                 switch (dev.SettingsMode)
                 {
                     case SettingsModes.Custom:
-                        dev.Settings.ConvertAllToDSHM(dshmDeviceData.DeviceSettings);
+                        DshmManagerToDriverConversion.ConvertDeviceSettingsToDriverFormat(dev.Settings,dshmDeviceData.DeviceSettings);
                         break;
                     case SettingsModes.Profile:
                         ProfileData devprof = GetProfile(dev.GuidOfProfileToUse);
-                        devprof.Settings.ConvertAllToDSHM(dshmDeviceData.DeviceSettings);
+                        DshmManagerToDriverConversion.ConvertDeviceSettingsToDriverFormat(devprof.Settings,dshmDeviceData.DeviceSettings);
                         break;
 
                     case SettingsModes.Global:

@@ -100,28 +100,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             LeftMotorRescaling.CopySettingsToContainer(container);
             AltRumbleAdjusts.CopySettingsToContainer(container);
         }
-
-        public void ConvertAllToDSHM(DshmDeviceSettings dshm_data)
-        {
-            HidMode.SaveToDSHMSettings(dshm_data);
-            LEDs.SaveToDSHMSettings(dshm_data);
-            Wireless.SaveToDSHMSettings(dshm_data);
-            Sticks.SaveToDSHMSettings(dshm_data);
-            GeneralRumble.SaveToDSHMSettings(dshm_data);
-            OutputReport.SaveToDSHMSettings(dshm_data);
-            LeftMotorRescaling.SaveToDSHMSettings(dshm_data);
-            AltRumbleAdjusts.SaveToDSHMSettings(dshm_data);
-
-            if (HidMode.SettingsContext == Enums.SettingsContext.DS4W)
-            {
-                if (HidMode.PreventRemappingConflictsInDS4WMode)
-                {
-                    dshm_data.ContextSettings.DeadZoneLeft.Apply = false;
-                    dshm_data.ContextSettings.DeadZoneRight.Apply = false;
-                }
-
-            }
-        }
     }
 
 
@@ -140,11 +118,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
 
         public abstract void CopySettingsFromContainer(DeviceSettings container);
 
-        public abstract void CopySettingsToContainer(DeviceSettings container);
-
-        public abstract void SaveToDSHMSettings(DshmDeviceSettings dshmContextSettings);
-
-        
+        public abstract void CopySettingsToContainer(DeviceSettings container);        
     }
 
     public class HidModeSettings : DeviceSubSettings
@@ -171,26 +145,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             destiny.PreventRemappingConflictsInDS4WMode = source.PreventRemappingConflictsInDS4WMode;
             destiny.PreventRemappingConflictsInSXSMode = source.PreventRemappingConflictsInSXSMode;
             destiny.AllowAppsToOverrideLEDsInSXSMode = source.AllowAppsToOverrideLEDsInSXSMode;
-        }
-
-
-        public override void SaveToDSHMSettings(DshmDeviceSettings dshmContextSettings)
-        {
-            if (SettingsContext != SettingsContext.General)
-            {
-                dshmContextSettings.HIDDeviceMode = DshmManagerToDriverConversion.HidDeviceMode[SettingsContext];
-                dshmContextSettings.ContextSettings.HIDDeviceMode = dshmContextSettings.HIDDeviceMode;
-            }
-
-            dshmContextSettings.ContextSettings.PressureExposureMode =
-                (this.SettingsContext == SettingsContext.SDF
-                || this.SettingsContext == SettingsContext.GPJ)
-                ? DshmManagerToDriverConversion.DsPressureModeManagerToDriver[this.PressureExposureMode] : null;
-
-            dshmContextSettings.ContextSettings.DPadExposureMode =
-                (this.SettingsContext == SettingsContext.SDF
-                || this.SettingsContext == SettingsContext.GPJ)
-                ? DshmManagerToDriverConversion.DPadExposureModeManagerToDriver[this.DPadExposureMode] : null;
         }
 
         public override void CopySettingsFromContainer(DeviceSettings container)
@@ -231,44 +185,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         public override void CopySettingsToContainer(DeviceSettings container)
         {
             CopySettings(container.LEDs, this);
-        }
-
-        public override void SaveToDSHMSettings(DshmDeviceSettings dshmContextSettings)
-        {
-            DshmDeviceSettings.AllLEDSettings dshm_AllLEDsSettings = dshmContextSettings.ContextSettings.LEDSettings;
-
-            dshm_AllLEDsSettings.Mode = DshmManagerToDriverConversion.LedModeManagerToDriver[this.LeDMode];
-            dshm_AllLEDsSettings.Authority = AllowExternalLedsControl ? DSHM_LEDsAuthority.Automatic : DSHM_LEDsAuthority.Driver;
-
-            var dshm_Customs = dshm_AllLEDsSettings.CustomPatterns;
-
-            var dshm_singleLED = new DshmDeviceSettings.SingleLEDCustoms[]
-            { dshm_Customs.Player1, dshm_Customs.Player2,dshm_Customs.Player3,dshm_Customs.Player4, };
-
-
-            dshm_Customs.LEDFlags = 0;
-            for (int i = 0; i < LEDsCustoms.LED_x_Customs.Length; i++)
-            {
-                All4LEDsCustoms.singleLEDCustoms singleLEDCustoms = this.LEDsCustoms.LED_x_Customs[i];
-
-                if (singleLEDCustoms.IsLedEnabled)
-                {
-                    dshm_Customs.LEDFlags |= (byte)(1 << (1 + i));
-                }
-
-                if(this.LeDMode == LEDsMode.CustomPattern)
-                {
-                    dshm_singleLED[i].Duration = singleLEDCustoms.Duration;
-                    dshm_singleLED[i].CycleDuration1 = (byte)(singleLEDCustoms.CycleDuration >> 4); // FIX THIS
-                    dshm_singleLED[i].CycleDuration0 = (byte)(singleLEDCustoms.CycleDuration & 0xFF);
-                    dshm_singleLED[i].OffPeriodCycles = singleLEDCustoms.OffPeriodCycles;
-                    dshm_singleLED[i].OnPeriodCycles = singleLEDCustoms.OnPeriodCycles;
-                }
-                else
-                {
-                    dshm_singleLED[i] = null;
-                }
-            }
         }
 
         public class All4LEDsCustoms
@@ -369,26 +285,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         {
             CopySettings(container.Wireless, this);
         }
-
-        public override void SaveToDSHMSettings(DshmDeviceSettings dshmContextSettings)
-        {
-            dshmContextSettings.DisableWirelessIdleTimeout = !this.IsWirelessIdleDisconnectEnabled;
-            dshmContextSettings.WirelessIdleTimeoutPeriodMs = this.WirelessIdleDisconnectTime * 60 * 1000;
-
-            if (QuickDisconnectCombo.IsComboValid())
-            {
-                dshmContextSettings.QuickDisconnectCombo.IsEnabled = this.QuickDisconnectCombo.IsEnabled;
-                dshmContextSettings.QuickDisconnectCombo.HoldTime = this.QuickDisconnectCombo.HoldTime;
-                dshmContextSettings.QuickDisconnectCombo.Button1 = DshmManagerToDriverConversion.ButtonManagerToDriver[QuickDisconnectCombo.Button1];
-                dshmContextSettings.QuickDisconnectCombo.Button2 = DshmManagerToDriverConversion.ButtonManagerToDriver[QuickDisconnectCombo.Button2];
-                dshmContextSettings.QuickDisconnectCombo.Button3 = DshmManagerToDriverConversion.ButtonManagerToDriver[QuickDisconnectCombo.Button3];
-            }
-            else
-            {
-                dshmContextSettings.QuickDisconnectCombo.IsEnabled = false;
-            }
-
-        }
     }
 
     public class SticksSettings : DeviceSubSettings
@@ -417,25 +313,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         {
             CopySettings(container.Sticks, this);
         }
-
-        public override void SaveToDSHMSettings(DshmDeviceSettings dshmContextSettings)
-        {
-            DshmDeviceSettings.DeadZoneSettings dshmLeftDZSettings = dshmContextSettings.ContextSettings.DeadZoneLeft;
-            DshmDeviceSettings.DeadZoneSettings dshmRightDZSettings = dshmContextSettings.ContextSettings.DeadZoneRight;
-            DshmDeviceSettings.AxesFlipping axesFlipping = dshmContextSettings.ContextSettings.FlipAxis;
-
-
-            dshmLeftDZSettings.Apply = this.LeftStickData.IsDeadZoneEnabled;
-            dshmLeftDZSettings.PolarValue = (byte)(this.LeftStickData.DeadZone * 181 / 142);
-            axesFlipping.LeftX = this.LeftStickData.InvertXAxis;
-            axesFlipping.LeftY = this.LeftStickData.InvertYAxis;
-
-            dshmRightDZSettings.Apply = this.RightStickData.IsDeadZoneEnabled;
-            dshmRightDZSettings.PolarValue = (byte)(this.RightStickData.DeadZone * 181 / 142);
-            axesFlipping.RightX = this.RightStickData.InvertXAxis;
-            axesFlipping.RightY = this.RightStickData.InvertYAxis;
-        }
-
+    
         public class StickData
         {
             public bool IsDeadZoneEnabled { get; set; } = true;
@@ -509,35 +387,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         {
             CopySettings(container.GeneralRumble, this);
         }
-
-        public override void SaveToDSHMSettings(DshmDeviceSettings dshmContextSettings)
-        {
-            DshmDeviceSettings.AllRumbleSettings dshmRumbleSettings = dshmContextSettings.ContextSettings.RumbleSettings;
-
-            if(!this.IsAltRumbleModeEnabled)
-            {
-                dshmRumbleSettings.DisableBM = this.IsLeftMotorDisabled;
-                dshmRumbleSettings.DisableSM = this.IsLeftMotorDisabled;
-            }
-
-            dshmRumbleSettings.SMToBMConversion.Enabled = AlwaysStartInNormalMode ? false : this.IsAltRumbleModeEnabled;
-
-            // Disable toggle combo if alt Rumble Mode is not supposed to be used
-            if (AltModeToggleButtonCombo.IsComboValid())
-            {
-                dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.IsEnabled = IsAltRumbleModeEnabled ? this.AltModeToggleButtonCombo.IsEnabled : false;
-                dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.HoldTime = this.AltModeToggleButtonCombo.HoldTime;
-                dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.Button1 = DshmManagerToDriverConversion.ButtonManagerToDriver[AltModeToggleButtonCombo.Button1];
-                dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.Button2 = DshmManagerToDriverConversion.ButtonManagerToDriver[AltModeToggleButtonCombo.Button2];
-                dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.Button3 = DshmManagerToDriverConversion.ButtonManagerToDriver[AltModeToggleButtonCombo.Button3];
-
-            }
-            else
-            {
-                dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.IsEnabled = false;
-            }
-
-        }
     }
 
     public class OutputReportSettings : DeviceSubSettings
@@ -566,13 +415,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         public override void CopySettingsToContainer(DeviceSettings container)
         {
             CopySettings(container.OutputReport, this);
-        }
-
-        public override void SaveToDSHMSettings(DshmDeviceSettings dshmContextSettings)
-        {
-            dshmContextSettings.IsOutputRateControlEnabled = this.IsOutputReportRateControlEnabled;
-            dshmContextSettings.OutputRateControlPeriodMs = (byte)this.MaxOutputRate;
-            dshmContextSettings.IsOutputDeduplicatorEnabled = this.IsOutputReportDeduplicatorEnabled;
         }
     }
 
@@ -603,15 +445,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         public override void CopySettingsToContainer(DeviceSettings container)
         {
             CopySettings(container.LeftMotorRescaling, this);
-        }
-
-        public override void SaveToDSHMSettings(DshmDeviceSettings dshmContextSettings)
-        {
-            DshmDeviceSettings.BMStrRescaleSettings dshmLeftRumbleRescaleSettings = dshmContextSettings.ContextSettings.RumbleSettings.BMStrRescale;
-
-            dshmLeftRumbleRescaleSettings.Enabled = this.IsLeftMotorStrRescalingEnabled;
-            dshmLeftRumbleRescaleSettings.MinValue = (byte)this.LeftMotorStrRescalingLowerRange;
-            dshmLeftRumbleRescaleSettings.MaxValue = (byte)this.LeftMotorStrRescalingUpperRange;
         }
     }
 
@@ -651,33 +484,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         public override void CopySettingsToContainer(DeviceSettings container)
         {
             CopySettings(container.AltRumbleAdjusts, this);
-        }
-
-        public override void SaveToDSHMSettings(DshmDeviceSettings dshmContextSettings)
-        {
-            DshmDeviceSettings.SMToBMConversionSettings dshmSMConversionSettings = dshmContextSettings.ContextSettings.RumbleSettings.SMToBMConversion;
-            DshmDeviceSettings.ForcedSMSettings dshmForcedSMSettings = dshmContextSettings.ContextSettings.RumbleSettings.ForcedSM;
-
-            // Right rumble conversion rescaling adjustment
-            if(RightRumbleConversionLowerRange < RightRumbleConversionUpperRange)
-            {
-                dshmSMConversionSettings.RescaleMinValue = (byte)this.RightRumbleConversionLowerRange;
-                dshmSMConversionSettings.RescaleMaxValue = (byte)this.RightRumbleConversionUpperRange;
-            }
-            else
-            {
-
-            }
-
-            
-
-            // Right rumble (light) threshold
-            dshmForcedSMSettings.SMThresholdEnabled = this.IsForcedRightMotorLightThresholdEnabled;
-            dshmForcedSMSettings.SMThresholdValue = (byte)this.ForcedRightMotorLightThreshold;
-
-            // Left rumble (Heavy) threshold
-            dshmForcedSMSettings.BMThresholdEnabled = this.IsForcedRightMotorHeavyThreasholdEnabled;
-            dshmForcedSMSettings.BMThresholdValue = (byte)this.ForcedRightMotorHeavyThreshold;
         }
     }
 }
