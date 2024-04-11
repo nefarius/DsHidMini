@@ -578,29 +578,10 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
 
     public class LeftMotorRescalingSettings : DeviceSubSettings
     {
-        private int leftMotorStrRescalingUpperRange = 255;
-        private int leftMotorStrRescalingLowerRange = 64;
-
         public bool IsLeftMotorStrRescalingEnabled { get; set; } = true;
-        public int LeftMotorStrRescalingUpperRange
-        {
-            get => leftMotorStrRescalingUpperRange;
-            set
-            {
-                int tempInt = (value < leftMotorStrRescalingLowerRange) ? leftMotorStrRescalingLowerRange + 1 : value;
-                leftMotorStrRescalingUpperRange = tempInt;
+        public int LeftMotorStrRescalingUpperRange { get; set; } = 255;
+        public int LeftMotorStrRescalingLowerRange { get; set; } = 64;
 
-            }
-        }
-        public int LeftMotorStrRescalingLowerRange
-        {
-            get => leftMotorStrRescalingLowerRange;
-            set
-            {
-                int tempInt = (value > leftMotorStrRescalingUpperRange) ? leftMotorStrRescalingUpperRange - 1 : value;
-                leftMotorStrRescalingLowerRange = tempInt;
-            }
-        }
 
         public override void ResetToDefault()
         {
@@ -610,8 +591,8 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         public static void CopySettings(LeftMotorRescalingSettings destiny, LeftMotorRescalingSettings source)
         {
             destiny.IsLeftMotorStrRescalingEnabled = source.IsLeftMotorStrRescalingEnabled;
-            destiny.leftMotorStrRescalingLowerRange = source.LeftMotorStrRescalingLowerRange;
-            destiny.leftMotorStrRescalingUpperRange = source.LeftMotorStrRescalingUpperRange;
+            destiny.LeftMotorStrRescalingLowerRange = source.LeftMotorStrRescalingLowerRange;
+            destiny.LeftMotorStrRescalingUpperRange = source.LeftMotorStrRescalingUpperRange;
         }
 
         public override void CopySettingsFromContainer(DeviceSettings container)

@@ -24,7 +24,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls.DeviceSettings
             get => _tempBackingData.LeftMotorStrRescalingUpperRange;
             set
             {
-                _tempBackingData.LeftMotorStrRescalingUpperRange = value;
+                _tempBackingData.LeftMotorStrRescalingUpperRange = (value < _tempBackingData.LeftMotorStrRescalingLowerRange) ? _tempBackingData.LeftMotorStrRescalingLowerRange + 1 : value;
                 this.OnPropertyChanged(nameof(LeftMotorStrRescalingUpperRange));
             }
         }
@@ -33,7 +33,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls.DeviceSettings
             get => _tempBackingData.LeftMotorStrRescalingLowerRange;
             set
             {
-                _tempBackingData.LeftMotorStrRescalingLowerRange = value;
+                _tempBackingData.LeftMotorStrRescalingLowerRange = (value > _tempBackingData.LeftMotorStrRescalingUpperRange) ? _tempBackingData.LeftMotorStrRescalingUpperRange - 1 : value;
                 this.OnPropertyChanged(nameof(LeftMotorStrRescalingLowerRange));
             }
         }
