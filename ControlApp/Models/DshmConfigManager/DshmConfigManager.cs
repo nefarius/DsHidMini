@@ -3,6 +3,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
+using Serilog;
+using Serilog.Core;
 
 namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
 {
@@ -39,6 +41,8 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
                 ProfileData gp = GetProfile(dshmManagerUserData.GlobalProfileGuid);
                 if (gp == null)
                 {
+                    Log.Logger.Debug("Global profile set to non-existing profile");
+                    Log.Logger.Debug("Reverting Global profile to default profile.");
                     dshmManagerUserData.GlobalProfileGuid = ProfileData.DefaultGuid;
                     GlobalProfileUpdated?.Invoke(this, new());
                     gp = ProfileData.DefaultProfile;
@@ -47,6 +51,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             }
             set
             {
+                Log.Logger.Debug($"Setting profile {value.ProfileName} as Global Profile");
                 dshmManagerUserData.GlobalProfileGuid = value.ProfileGuid;
                 GlobalProfileUpdated?.Invoke(this,new());
             }
@@ -131,11 +136,12 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
 
         public void SaveChanges()
         {
+            Log.Logger.Information("Saving DsHidMini User Data to disk.");
             dshmManagerUserData.Save();
         }
 
         /// <summary>
-        /// Links Devices Datas back to the default profile if the profile they are set to use doesn't exist more,
+        /// Links Devices Datas back to the default profile if the profile they are set to use doesn't exist anymore,
         /// also reverting them to the Global Settings Mode if in Profile Setting Mode
         /// </summary>
         private void FixDevicesWithBlankProfiles()
@@ -144,9 +150,14 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             {
                 if(GetProfile(device.GuidOfProfileToUse) == null)
                 {
+                    Log.Logger.Information($"Device {device.DeviceMac} linked to non-existing profile. Reverting link to default profile.");
                     device.GuidOfProfileToUse = ProfileData.DefaultGuid;
-                    if(device.SettingsMode == SettingsModes.Profile)
+                    if (device.SettingsMode == SettingsModes.Profile)
+                    {
+                        Log.Logger.Information($"Device {device.DeviceMac} was in Profile Settings Mode while using a non-existing profile. Setting device back to Global Settings. ");
                         device.SettingsMode = SettingsModes.Global;
+                    }
+
                 }
             }
         }
@@ -168,6 +179,11 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
                     break;
                 }
             }
+
+            if (profile == null)
+            {
+                Log.Logger.Debug($"No profile with GUID {profileGuid} found.");
+            }
             return profile;
         }
 
@@ -185,6 +201,8 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         /// </summary>
         public void ApplySettings()
         {
+            Log.Information("Updating DsHidMini configuration based on DsHidMini User Data");
+            Log.Debug("Building DsHidMini configuration object based on DsHidMini User Data");
             var dshmConfiguration = new DshmConfiguration();
             GlobalProfile.Settings.ConvertAllToDSHM(dshmConfiguration.Global);
            
@@ -218,6 +236,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
                 dshmConfiguration.Devices.Add(dshmDeviceData);
             }
 
+            Log.Logger.Debug("Configuration object built. Applying configuration.");
             var updateStatus = dshmConfiguration.ApplyConfiguration();
             DshmConfigurationUpdated?.Invoke(this, new DshmUpdatedEventArgs() { UpdatedSuccessfully = updateStatus});
         }
@@ -240,6 +259,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             newProfile.ProfileName = profileName;
             //newProfile.DiskFileName = profileName + ".json";
             dshmManagerUserData.Profiles.Add(newProfile);
+            Log.Logger.Information($"Profile '{profileName}' created on DsHidMini User Data.");
             return newProfile;
         }
 
@@ -250,8 +270,10 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         /// <param name="profile">The profile to be deleted</param>
         public void DeleteProfile(ProfileData profile)
         {
+            Log.Logger.Information($"Deleting profile '{profile.ProfileName}'");
             if (profile == ProfileData.DefaultProfile) // Never remove Default profile from the list
             {
+                Log.Logger.Information($"Default Profile can't be deleted.");
                 return;
             }
             dshmManagerUserData.Profiles.Remove(profile);
@@ -272,7 +294,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
                 default:
                     return GlobalProfile.Settings.HidMode.SettingsContext;
                     break;
-
             }
         }
 
@@ -283,6 +304,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         /// <returns>The device data of the DsHidMini device</returns>
         public DeviceData GetDeviceData(string deviceMac)
         {
+            Log.Logger.Information($"Getting data for device {deviceMac}.");
             foreach (DeviceData dev in dshmManagerUserData.Devices)
             {
                 if (dev.DeviceMac == deviceMac)
@@ -290,6 +312,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
                     return dev;
                 }
             }
+            Log.Logger.Information($"Data for Device {deviceMac} does not exist. Creating new.");
             var newDevice = new DeviceData(deviceMac);
             newDevice.DeviceMac = deviceMac;
             dshmManagerUserData.Devices.Add(newDevice);

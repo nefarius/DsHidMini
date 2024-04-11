@@ -2,6 +2,9 @@
 using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Services;
+
+using Serilog;
+
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 
@@ -40,6 +43,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         
         public void UpdateProfileList()
         {
+            Log.Logger.Debug("Rebuilding profiles' ViewModels.");
             List<ProfileViewModel> newList = new();
             foreach(ProfileData prof in ProfilesDatas)
             {
@@ -51,6 +55,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
 
         public void UpdateGlobalProfileCheck()
         {
+            Log.Logger.Debug("Updating Profiles' ViewModels 'Global' check");
             foreach (ProfileViewModel profVM in ProfilesViewModels)
             {
                 profVM.IsGlobal = (profVM.ProfileData == _dshmConfigManager.GlobalProfile);
@@ -64,6 +69,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         {
             if(SelectedProfileVM != null && SelectedProfileVM.IsEditEnabled)
             {
+                Log.Logger.Information("Navigated away from Profiles page mid-edition. Canceling changes.");
                 SelectedProfileVM.CancelChanges();
                 _appSnackbarMessagesService.ShowProfileChangedCanceledMessage();
             }
@@ -85,16 +91,18 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         {
             if (obj != null)
             {
+                Log.Logger.Information($"Setting profile '{obj.ProfileData.ProfileName}' ({obj.ProfileData.ProfileGuid}) as Global.");
                 _dshmConfigManager.GlobalProfile = obj.ProfileData;
                 _appSnackbarMessagesService.ShowGlobalProfileUpdatedMessage();
                 _dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile();
+                UpdateGlobalProfileCheck();
             }
-            UpdateGlobalProfileCheck();
         }
 
         [RelayCommand]
         private void CreateProfile()
         {
+            Log.Logger.Information("Creating new profile generic name.");
             _dshmConfigManager.CreateProfile("New profile");
             _dshmConfigManager.SaveChanges();
             UpdateProfileList();
@@ -104,8 +112,10 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         private void DeleteProfile(ProfileViewModel? obj)
         {
             if (obj == null) return;
+            Log.Logger.Information($"Deleting profile '{obj.ProfileData.ProfileName}' ({obj.ProfileData.ProfileGuid})");
             if (obj.ProfileData == ProfileData.DefaultProfile)
             {
+                Log.Logger.Information("Profile to be deleted is ControlApp's Default Profile. Delete action canceled.");
                 _appSnackbarMessagesService.ShowDefaultProfileEditingBlockedMessage();
                 return;
             }

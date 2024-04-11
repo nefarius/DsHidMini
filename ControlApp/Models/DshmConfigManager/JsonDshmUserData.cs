@@ -12,6 +12,8 @@ using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
+using Serilog;
+
 namespace Nefarius.DsHidMini.ControlApp.Models
 {
     /// <summary>Provides methods to load and save the application configuration. </summary>
@@ -28,11 +30,15 @@ namespace Nefarius.DsHidMini.ControlApp.Models
         /// <exception cref="IOException">An I/O error occurred while opening the file. </exception>
         public static T Load<T>(string fileNameWithoutExtension, bool alwaysCreateNewSchemaFile, string userDataDir) where T : new()
         {
+            Log.Logger.Debug($"Loading DsHidMini User Data from {fileNameWithoutExtension} file in {userDataDir}.");
             var configPath = CreateFilePath(fileNameWithoutExtension, ConfigExtension, userDataDir);
 
             if (!File.Exists(configPath))
+            {
+                Log.Logger.Debug($"User Data file does not exist in the specified directory. Creating new User Data.");
                 return CreateDefaultConfigurationFile<T>(fileNameWithoutExtension, userDataDir);
-
+            }
+            
             return JsonConvert.DeserializeObject<T>(File.ReadAllText(configPath, Encoding.UTF8));
         }
 
@@ -43,6 +49,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models
         /// <exception cref="IOException">An I/O error occurred while opening the file. </exception>
         public static void Save<T>(string fileNameWithoutExtension, T configuration, string userDataDir) where T : new()
         {
+            Log.Logger.Debug($"Saving DsHidMini User Data to {fileNameWithoutExtension} in dir {userDataDir}");
             var settings = new JsonSerializerSettings();
             settings.Converters.Add(new StringEnumConverter());
 
@@ -58,7 +65,11 @@ namespace Nefarius.DsHidMini.ControlApp.Models
 
                 var directoryPath = Path.GetDirectoryName(filePath);
                 if (directoryPath != null && !Directory.Exists(directoryPath))
+                {
+                    Log.Logger.Debug("Specified directory of DsHidMini User Data does not exist. Creating directory.");
                     Directory.CreateDirectory(directoryPath);
+                }
+
 
                 return filePath;
             }
@@ -67,6 +78,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models
 
         private static T CreateDefaultConfigurationFile<T>(string fileNameWithoutExtension, string userDataDir) where T : new()
         {
+            Log.Logger.Debug("Creating default configuration file for DsHidMini User Data.");
             var config = new T();
             var configData = JsonConvert.SerializeObject(config, Formatting.Indented);
             var configPath = CreateFilePath(fileNameWithoutExtension, ConfigExtension, userDataDir);
