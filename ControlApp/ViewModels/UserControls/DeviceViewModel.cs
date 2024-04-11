@@ -37,24 +37,6 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         /// </summary>
         [ObservableProperty] private SettingsEditorViewModel _deviceCustomsVM = new() { AllowEditing = true };
 
-        /// <summary>
-        /// Setting View Model for profile device is linked to
-        /// Editing not allowed
-        /// </summary>
-        [ObservableProperty] private SettingsEditorViewModel _profileCustomsVM = new();
-
-        /// <summary>
-        /// Settings View Model for current global profile
-        /// Editing not allowed
-        /// </summary>
-        [ObservableProperty] private SettingsEditorViewModel _globalCustomsVM = new();
-
-        /// <summary>
-        /// Current selected settings, accordingly to device's settings mode
-        /// </summary>
-        [ObservableProperty] private SettingsEditorViewModel _selectedGroupsVM = new();
-
-
         [ObservableProperty] private bool _isEditorEnabled;
 
 
@@ -357,7 +339,6 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
 
             //DisplayName = DeviceAddress;
             RefreshDeviceSettings();
-            UpdateSettingsEditor();
         }
 
 
@@ -369,31 +350,8 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
 
         partial void OnCurrentDeviceSettingsModeChanged(SettingsModes value)
         {
-            UpdateSettingsEditor();
-        }
-
-        public void UpdateSettingsEditor()
-        {
-            switch (CurrentDeviceSettingsMode)
-            {
-                case SettingsModes.Custom:
-                    SelectedGroupsVM = DeviceCustomsVM;
-                    break;
-                case SettingsModes.Profile:
-                    SelectedGroupsVM = ProfileCustomsVM;
-                    break;
-                case SettingsModes.Global:
-                default:
-                    SelectedGroupsVM = GlobalCustomsVM;
-                    break;
-            }
             IsProfileSelectorVisible = CurrentDeviceSettingsMode == SettingsModes.Profile;
-        }
-
-        partial void OnSelectedProfileChanged(ProfileData? value)
-        {
-            Log.Logger.Debug($"Loading profile '{SelectedProfile.ProfileName}' ({SelectedProfile.ProfileGuid}) into Profile Settings ViewModel.");
-            ProfileCustomsVM.LoadDatasToAllGroups(SelectedProfile.Settings);
+            IsEditorVisible = CurrentDeviceSettingsMode == SettingsModes.Custom;
         }
 
         [RelayCommand]
@@ -409,7 +367,6 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
             DeviceCustomsVM.LoadDatasToAllGroups(deviceUserData.Settings);
             ListOfProfiles = _dshmConfigManager.GetListOfProfilesWithDefault();
             SelectedProfile = _dshmConfigManager.GetProfile(deviceUserData.GuidOfProfileToUse);
-            GlobalCustomsVM.LoadDatasToAllGroups(_dshmConfigManager.GlobalProfile.Settings);
 
             Log.Logger.Information($"Device '{DeviceAddress}' set for {ExpectedHidMode} HID Mode (currently in {HidModeShort}), {(BluetoothPairingMode)PairingMode} Bluetooth pairing mode.");
             if ((BluetoothPairingMode)PairingMode == BluetoothPairingMode.Custom)
@@ -431,7 +388,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
             deviceUserData.SettingsMode = CurrentDeviceSettingsMode;
             if (CurrentDeviceSettingsMode == SettingsModes.Custom)
             {
-                SelectedGroupsVM.SaveAllChangesToBackingData(deviceUserData.Settings);
+                DeviceCustomsVM.SaveAllChangesToBackingData(deviceUserData.Settings);
             }
 
             if (CurrentDeviceSettingsMode == SettingsModes.Profile)

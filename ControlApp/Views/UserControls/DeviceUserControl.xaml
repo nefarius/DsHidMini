@@ -286,12 +286,14 @@
                         </DockPanel>
                     </ui:Card>
 
+                    <ContentControl Visibility="{Binding IsEditorVisible, Converter={StaticResource BoolToVis}}">
+                        <local:DeviceSettingsEditor
+                            Height="auto"
+                            VerticalAlignment="Stretch"
+                            DataContext="{Binding DeviceCustomsVM}"
+                            DockPanel.Dock="Top" />
+                    </ContentControl>
 
-                    <local:DeviceSettingsEditor
-                        Height="auto"
-                        VerticalAlignment="Stretch"
-                        DataContext="{Binding SelectedGroupsVM}"
-                        DockPanel.Dock="Top" />
                 </DockPanel>
 
 
