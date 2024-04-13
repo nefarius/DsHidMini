@@ -29,7 +29,7 @@ public abstract partial class DeviceSettingsViewModel : ObservableObject
 
     public abstract SettingsModeGroups Group { get; }
 
-    protected abstract IDeviceSettings _myInterface { get; }
+    protected abstract DeviceSubSettings _mySubSetting { get; }
 
     [ObservableProperty] private bool _isGroupLocked = false;
 
@@ -38,7 +38,7 @@ public abstract partial class DeviceSettingsViewModel : ObservableObject
     [RelayCommand]
     public void ResetGroupToOriginalDefaults()
     {
-        _myInterface.ResetToDefault();
+        _mySubSetting.ResetToDefault();
         NotifyAllPropertiesHaveChanged();
     }
 
@@ -49,13 +49,27 @@ public abstract partial class DeviceSettingsViewModel : ObservableObject
 
     public void LoadSettingsFromBackingDataContainer(Models.DshmConfigManager.DeviceSettings dataContainerSource)
     {
-        _myInterface.CopySettingsFromContainer(dataContainerSource);
+        if (_mySubSetting is HidModeSettings tempHid) HidModeSettings.CopySettings(tempHid, dataContainerSource.HidMode);
+        if (_mySubSetting is LedsSettings tempLeds) LedsSettings.CopySettings(tempLeds, dataContainerSource.LEDs);
+        if (_mySubSetting is WirelessSettings tempWireless) WirelessSettings.CopySettings(tempWireless, dataContainerSource.Wireless);
+        if (_mySubSetting is SticksSettings tempSticks) SticksSettings.CopySettings(tempSticks, dataContainerSource.Sticks);
+        if (_mySubSetting is GeneralRumbleSettings tempGenRumble) GeneralRumbleSettings.CopySettings(tempGenRumble, dataContainerSource.GeneralRumble);
+        if (_mySubSetting is OutputReportSettings tempOut) OutputReportSettings.CopySettings(tempOut, dataContainerSource.OutputReport);
+        if (_mySubSetting is LeftMotorRescalingSettings tempLeft) LeftMotorRescalingSettings.CopySettings(tempLeft, dataContainerSource.LeftMotorRescaling);
+        if (_mySubSetting is AltRumbleModeSettings tempAlt) AltRumbleModeSettings.CopySettings(tempAlt, dataContainerSource.AltRumbleAdjusts);
         NotifyAllPropertiesHaveChanged();
     }
 
     public void SaveSettingsToBackingDataContainer(Models.DshmConfigManager.DeviceSettings dataContainerSource)
     {
-        _myInterface.CopySettingsToContainer(dataContainerSource);
+        if (_mySubSetting is HidModeSettings tempHid) HidModeSettings.CopySettings(dataContainerSource.HidMode, tempHid);
+        if (_mySubSetting is LedsSettings tempLeds) LedsSettings.CopySettings(dataContainerSource.LEDs, tempLeds);
+        if (_mySubSetting is WirelessSettings tempWireless) WirelessSettings.CopySettings(dataContainerSource.Wireless, tempWireless);
+        if (_mySubSetting is SticksSettings tempSticks) SticksSettings.CopySettings(dataContainerSource.Sticks, tempSticks);
+        if (_mySubSetting is GeneralRumbleSettings tempGenRumble) GeneralRumbleSettings.CopySettings(dataContainerSource.GeneralRumble, tempGenRumble);
+        if (_mySubSetting is OutputReportSettings tempOut) OutputReportSettings.CopySettings(dataContainerSource.OutputReport, tempOut);
+        if (_mySubSetting is LeftMotorRescalingSettings tempLeft) LeftMotorRescalingSettings.CopySettings(dataContainerSource.LeftMotorRescaling, tempLeft);
+        if (_mySubSetting is AltRumbleModeSettings tempAlt) AltRumbleModeSettings.CopySettings(dataContainerSource.AltRumbleAdjusts, tempAlt);
     }
 
     public DeviceSettingsViewModel()

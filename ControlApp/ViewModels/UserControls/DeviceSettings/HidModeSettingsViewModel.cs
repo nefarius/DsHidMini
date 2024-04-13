@@ -31,7 +31,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls.DeviceSettings
         public static List<DPadMode> ListOfDPadModes { get => listOfDPadModes; }
 
         private HidModeSettings _tempBackingData = new();
-        protected override IDeviceSettings _myInterface => _tempBackingData;
+        protected override DeviceSubSettings _mySubSetting => _tempBackingData;
 
         public override SettingsModeGroups Group { get; } = SettingsModeGroups.Unique_All;
 
@@ -111,6 +111,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls.DeviceSettings
         public HidModeSettingsViewModel() : base()
         {
         }
+
 
         //public override void LoadSettingsFromBackingDataContainer(BackingDataContainer dataContainerSource)
         //{

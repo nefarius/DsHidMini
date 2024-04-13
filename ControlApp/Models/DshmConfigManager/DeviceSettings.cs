@@ -48,7 +48,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
 
     }
     
-    public class DeviceSettings : IDeviceSettings
+    public class DeviceSettings
     {
 
         public HidModeSettings HidMode { get; set; } = new();
@@ -77,48 +77,23 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             AltRumbleAdjusts.ResetToDefault();
         }
 
-        public void CopySettingsFromContainer(DeviceSettings container)
+        public static void CopySettings(DeviceSettings destiny, DeviceSettings source)
         {
-            HidMode.CopySettingsFromContainer(container);
-            LEDs.CopySettingsFromContainer(container);
-            Wireless.CopySettingsFromContainer(container);
-            Sticks.CopySettingsFromContainer(container);
-            GeneralRumble.CopySettingsFromContainer(container);
-            OutputReport.CopySettingsFromContainer(container);
-            LeftMotorRescaling.CopySettingsFromContainer(container);
-            AltRumbleAdjusts.CopySettingsFromContainer(container);
-        }
-
-        public void CopySettingsToContainer(DeviceSettings container)
-        {
-            HidMode.CopySettingsToContainer(container);
-            LEDs.CopySettingsToContainer(container);
-            Wireless.CopySettingsToContainer(container);
-            Sticks.CopySettingsToContainer(container);
-            GeneralRumble.CopySettingsToContainer(container);
-            OutputReport.CopySettingsToContainer(container);
-            LeftMotorRescaling.CopySettingsToContainer(container);
-            AltRumbleAdjusts.CopySettingsToContainer(container);
+            HidModeSettings.CopySettings(destiny.HidMode,source.HidMode);
+            LedsSettings.CopySettings(destiny.LEDs, source.LEDs);
+            WirelessSettings.CopySettings(destiny.Wireless, source.Wireless);
+            SticksSettings.CopySettings(destiny.Sticks, source.Sticks);
+            GeneralRumbleSettings.CopySettings(destiny.GeneralRumble, source.GeneralRumble);
+            OutputReportSettings.CopySettings(destiny.OutputReport, source.OutputReport);
+            LeftMotorRescalingSettings.CopySettings(destiny.LeftMotorRescaling, source.LeftMotorRescaling);
+            AltRumbleModeSettings.CopySettings(destiny.AltRumbleAdjusts, source.AltRumbleAdjusts);
         }
     }
 
 
-    public interface IDeviceSettings
-    {
-        void ResetToDefault();
-
-        void CopySettingsFromContainer(DeviceSettings container);
-
-        void CopySettingsToContainer(DeviceSettings container);
-    }
-
-    public abstract class DeviceSubSettings : IDeviceSettings
+    public abstract class DeviceSubSettings
     {
         public abstract void ResetToDefault();
-
-        public abstract void CopySettingsFromContainer(DeviceSettings container);
-
-        public abstract void CopySettingsToContainer(DeviceSettings container);        
     }
 
     public class HidModeSettings : DeviceSubSettings
@@ -136,6 +111,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             CopySettings(this, new());
         }
 
+
         public static void CopySettings(HidModeSettings destiny, HidModeSettings source)
         {
             destiny.SettingsContext = source.SettingsContext;
@@ -145,16 +121,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             destiny.PreventRemappingConflictsInDS4WMode = source.PreventRemappingConflictsInDS4WMode;
             destiny.PreventRemappingConflictsInSXSMode = source.PreventRemappingConflictsInSXSMode;
             destiny.AllowAppsToOverrideLEDsInSXSMode = source.AllowAppsToOverrideLEDsInSXSMode;
-        }
-
-        public override void CopySettingsFromContainer(DeviceSettings container)
-        {
-            CopySettings(this, container.HidMode);
-        }
-
-        public override void CopySettingsToContainer(DeviceSettings container)
-        {
-            CopySettings(container.HidMode, this); 
         }
     }
 
@@ -175,16 +141,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             destiny.LeDMode = source.LeDMode;
             destiny.AllowExternalLedsControl = source.AllowExternalLedsControl;
             destiny.LEDsCustoms.CopyLEDsCustoms(source.LEDsCustoms);
-        }
-
-        public override void CopySettingsFromContainer(DeviceSettings container)
-        {
-            CopySettings(this, container.LEDs);
-        }
-
-        public override void CopySettingsToContainer(DeviceSettings container)
-        {
-            CopySettings(container.LEDs, this);
         }
 
         public class All4LEDsCustoms
@@ -275,16 +231,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             destiny.WirelessIdleDisconnectTime = source.WirelessIdleDisconnectTime;
             destiny.QuickDisconnectCombo.copyCombo(source.QuickDisconnectCombo);
         }
-
-        public override void CopySettingsFromContainer(DeviceSettings container)
-        {
-            CopySettings(this, container.Wireless);
-        }
-
-        public override void CopySettingsToContainer(DeviceSettings container)
-        {
-            CopySettings(container.Wireless, this);
-        }
     }
 
     public class SticksSettings : DeviceSubSettings
@@ -302,16 +248,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         {
             destiny.LeftStickData.CopyStickDataFromOtherStick(source.LeftStickData);
             destiny.RightStickData.CopyStickDataFromOtherStick(source.RightStickData);
-        }
-
-        public override void CopySettingsFromContainer(DeviceSettings container)
-        {
-            CopySettings(this, container.Sticks);
-        }
-
-        public override void CopySettingsToContainer(DeviceSettings container)
-        {
-            CopySettings(container.Sticks, this);
         }
     
         public class StickData
@@ -377,16 +313,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             destiny.AlwaysStartInNormalMode = source.IsAltModeToggleButtonComboEnabled;
             destiny.AltModeToggleButtonCombo.copyCombo(source.AltModeToggleButtonCombo);
         }
-
-        public override void CopySettingsFromContainer(DeviceSettings container)
-        {
-            CopySettings(this, container.GeneralRumble);
-        }
-
-        public override void CopySettingsToContainer(DeviceSettings container)
-        {
-            CopySettings(container.GeneralRumble, this);
-        }
     }
 
     public class OutputReportSettings : DeviceSubSettings
@@ -405,16 +331,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             destiny.IsOutputReportDeduplicatorEnabled = source.IsOutputReportDeduplicatorEnabled;
             destiny.IsOutputReportRateControlEnabled = source.IsOutputReportRateControlEnabled;
             destiny.MaxOutputRate = source.MaxOutputRate;
-        }
-
-        public override void CopySettingsFromContainer(DeviceSettings container)
-        {
-            CopySettings(this, container.OutputReport);
-        }
-
-        public override void CopySettingsToContainer(DeviceSettings container)
-        {
-            CopySettings(container.OutputReport, this);
         }
     }
 
@@ -435,16 +351,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             destiny.IsLeftMotorStrRescalingEnabled = source.IsLeftMotorStrRescalingEnabled;
             destiny.LeftMotorStrRescalingLowerRange = source.LeftMotorStrRescalingLowerRange;
             destiny.LeftMotorStrRescalingUpperRange = source.LeftMotorStrRescalingUpperRange;
-        }
-
-        public override void CopySettingsFromContainer(DeviceSettings container)
-        {
-            CopySettings(this, container.LeftMotorRescaling);
-        }
-
-        public override void CopySettingsToContainer(DeviceSettings container)
-        {
-            CopySettings(container.LeftMotorRescaling, this);
         }
     }
 
@@ -474,16 +380,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             // Left rumble (Heavy) threshold
             destiny.IsForcedRightMotorHeavyThreasholdEnabled = source.IsForcedRightMotorHeavyThreasholdEnabled;
             destiny.ForcedRightMotorHeavyThreshold = source.ForcedRightMotorHeavyThreshold;
-        }
-
-        public override void CopySettingsFromContainer(DeviceSettings container)
-        {
-            CopySettings(this, container.AltRumbleAdjusts);
-        }
-
-        public override void CopySettingsToContainer(DeviceSettings container)
-        {
-            CopySettings(container.AltRumbleAdjusts, this);
         }
     }
 }

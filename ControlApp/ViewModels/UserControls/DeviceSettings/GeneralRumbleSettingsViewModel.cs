@@ -6,7 +6,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls.DeviceSettings
     public class GeneralRumbleSettingsViewModel : DeviceSettingsViewModel
     {
         private GeneralRumbleSettings _tempBackingData = new();
-        protected override IDeviceSettings _myInterface => _tempBackingData;
+        protected override DeviceSubSettings _mySubSetting => _tempBackingData;
 
         public override SettingsModeGroups Group { get; } = SettingsModeGroups.RumbleGeneral;
 

@@ -19,7 +19,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls.DeviceSettings
             }
         }
 
-        protected override IDeviceSettings _myInterface => _tempBackingData;
+        protected override DeviceSubSettings _mySubSetting => _tempBackingData;
 
         public bool AllowLedsOverride
         {
@@ -59,6 +59,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls.DeviceSettings
                 ledVM.RaisePropertyChangedForAll();
             }
         }
+
 
         //public override void SaveSettingsToBackingDataContainer(BackingDataContainer dataContainerSource)
         //{
