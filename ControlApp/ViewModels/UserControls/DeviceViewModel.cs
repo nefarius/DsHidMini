@@ -5,6 +5,7 @@ using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.Util.Web;
+using Nefarius.DsHidMini.ControlApp.Models.Util;
 using Nefarius.DsHidMini.ControlApp.Services;
 using Nefarius.DsHidMini.ControlApp.ViewModels.Pages;
 using Nefarius.DsHidMini.ControlApp.ViewModels.UserControls;
@@ -60,7 +61,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         /// <summary>
         ///     Current HID device emulation mode.
         /// </summary>
-        public SettingsContext HidEmulationMode => DsHidMiniDriver.HidDeviceMode[_device.GetProperty<byte>(DsHidMiniDriver.HidDeviceModeProperty)];
+        public SettingsContext HidEmulationMode => DshmDriverTranslationUtils.HidDeviceMode[_device.GetProperty<byte>(DsHidMiniDriver.HidDeviceModeProperty)];
 
         public HidModeShort HidModeShort => (HidModeShort)HidEmulationMode;
 
