@@ -48,7 +48,7 @@
         Square,
         Up,
         Right,
-        Dowm,
+        Down,
         Left,
     }
 
