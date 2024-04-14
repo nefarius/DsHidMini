@@ -1,4 +1,6 @@
-﻿using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
+﻿using System.Windows.Ink;
+
+using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 
 namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls.DeviceSettings;
@@ -49,27 +51,27 @@ public abstract partial class DeviceSettingsViewModel : ObservableObject
 
     public void LoadSettingsFromBackingDataContainer(Models.DshmConfigManager.DeviceSettings dataContainerSource)
     {
-        if (_mySubSetting is HidModeSettings tempHid) HidModeSettings.CopySettings(tempHid, dataContainerSource.HidMode);
-        if (_mySubSetting is LedsSettings tempLeds) LedsSettings.CopySettings(tempLeds, dataContainerSource.LEDs);
-        if (_mySubSetting is WirelessSettings tempWireless) WirelessSettings.CopySettings(tempWireless, dataContainerSource.Wireless);
-        if (_mySubSetting is SticksSettings tempSticks) SticksSettings.CopySettings(tempSticks, dataContainerSource.Sticks);
-        if (_mySubSetting is GeneralRumbleSettings tempGenRumble) GeneralRumbleSettings.CopySettings(tempGenRumble, dataContainerSource.GeneralRumble);
-        if (_mySubSetting is OutputReportSettings tempOut) OutputReportSettings.CopySettings(tempOut, dataContainerSource.OutputReport);
-        if (_mySubSetting is LeftMotorRescalingSettings tempLeft) LeftMotorRescalingSettings.CopySettings(tempLeft, dataContainerSource.LeftMotorRescaling);
-        if (_mySubSetting is AltRumbleModeSettings tempAlt) AltRumbleModeSettings.CopySettings(tempAlt, dataContainerSource.AltRumbleAdjusts);
+        if (_mySubSetting is HidModeSettings) HidModeSettings.CopySettings((HidModeSettings)_mySubSetting, dataContainerSource.HidMode);
+        if (_mySubSetting is LedsSettings) LedsSettings.CopySettings((LedsSettings)_mySubSetting, dataContainerSource.LEDs);
+        if (_mySubSetting is WirelessSettings) WirelessSettings.CopySettings((WirelessSettings)_mySubSetting, dataContainerSource.Wireless);
+        if (_mySubSetting is SticksSettings) SticksSettings.CopySettings((SticksSettings)_mySubSetting, dataContainerSource.Sticks);
+        if (_mySubSetting is GeneralRumbleSettings) GeneralRumbleSettings.CopySettings((GeneralRumbleSettings)_mySubSetting, dataContainerSource.GeneralRumble);
+        if (_mySubSetting is OutputReportSettings) OutputReportSettings.CopySettings((OutputReportSettings)_mySubSetting, dataContainerSource.OutputReport);
+        if (_mySubSetting is LeftMotorRescalingSettings) LeftMotorRescalingSettings.CopySettings((LeftMotorRescalingSettings)_mySubSetting, dataContainerSource.LeftMotorRescaling);
+        if (_mySubSetting is AltRumbleModeSettings) AltRumbleModeSettings.CopySettings((AltRumbleModeSettings)_mySubSetting, dataContainerSource.AltRumbleAdjusts);
         NotifyAllPropertiesHaveChanged();
     }
 
     public void SaveSettingsToBackingDataContainer(Models.DshmConfigManager.DeviceSettings dataContainerSource)
     {
-        if (_mySubSetting is HidModeSettings tempHid) HidModeSettings.CopySettings(dataContainerSource.HidMode, tempHid);
-        if (_mySubSetting is LedsSettings tempLeds) LedsSettings.CopySettings(dataContainerSource.LEDs, tempLeds);
-        if (_mySubSetting is WirelessSettings tempWireless) WirelessSettings.CopySettings(dataContainerSource.Wireless, tempWireless);
-        if (_mySubSetting is SticksSettings tempSticks) SticksSettings.CopySettings(dataContainerSource.Sticks, tempSticks);
-        if (_mySubSetting is GeneralRumbleSettings tempGenRumble) GeneralRumbleSettings.CopySettings(dataContainerSource.GeneralRumble, tempGenRumble);
-        if (_mySubSetting is OutputReportSettings tempOut) OutputReportSettings.CopySettings(dataContainerSource.OutputReport, tempOut);
-        if (_mySubSetting is LeftMotorRescalingSettings tempLeft) LeftMotorRescalingSettings.CopySettings(dataContainerSource.LeftMotorRescaling, tempLeft);
-        if (_mySubSetting is AltRumbleModeSettings tempAlt) AltRumbleModeSettings.CopySettings(dataContainerSource.AltRumbleAdjusts, tempAlt);
+        if (_mySubSetting is HidModeSettings) HidModeSettings.CopySettings(dataContainerSource.HidMode, (HidModeSettings)_mySubSetting);
+        if (_mySubSetting is LedsSettings) LedsSettings.CopySettings(dataContainerSource.LEDs, (LedsSettings)_mySubSetting);
+        if (_mySubSetting is WirelessSettings) WirelessSettings.CopySettings(dataContainerSource.Wireless, (WirelessSettings)_mySubSetting);
+        if (_mySubSetting is SticksSettings) SticksSettings.CopySettings(dataContainerSource.Sticks,(SticksSettings)_mySubSetting);
+        if (_mySubSetting is GeneralRumbleSettings) GeneralRumbleSettings.CopySettings(dataContainerSource.GeneralRumble, (GeneralRumbleSettings)_mySubSetting);
+        if (_mySubSetting is OutputReportSettings) OutputReportSettings.CopySettings(dataContainerSource.OutputReport, (OutputReportSettings)_mySubSetting);
+        if (_mySubSetting is LeftMotorRescalingSettings) LeftMotorRescalingSettings.CopySettings(dataContainerSource.LeftMotorRescaling, (LeftMotorRescalingSettings)_mySubSetting);
+        if (_mySubSetting is AltRumbleModeSettings) AltRumbleModeSettings.CopySettings(dataContainerSource.AltRumbleAdjusts, (AltRumbleModeSettings)_mySubSetting);
     }
 
     public DeviceSettingsViewModel()
