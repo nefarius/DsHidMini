@@ -21,6 +21,9 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Windows
         private string _applicationTitle = "DsHidMini ControlApp";
 
         [ObservableProperty]
+        private bool _IsAppElevated = Main.IsAdministrator();
+
+        [ObservableProperty]
         private ObservableCollection<object> _menuItems = new()
         {
             new NavigationViewItem()
@@ -57,9 +60,19 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Windows
         public MainWindowViewModel(AppSnackbarMessagesService appSnackbarMessagesService)
         {
             _appSnackbarMessagesService = appSnackbarMessagesService;
+            if (IsAppElevated)
+            {
+                ApplicationTitle += " [Administrador]";
+            }
         }
 
         public ApplicationConfiguration AppConfig => ApplicationConfiguration.Instance;
+
+        [RelayCommand]
+        public void RestartAsAdmin()
+        {
+            Main.RestartAsAdmin();
+        }
 
 
         /*

@@ -31,8 +31,10 @@
         <DockPanel DockPanel.Dock="Top">
             <ui:Button
                 Margin="10,0,0,0"
+                Command="{Binding ViewModel.RestartAsAdminCommand}"
                 Content="Restart 'As Administrator'"
-                DockPanel.Dock="Left" />
+                DockPanel.Dock="Left"
+                Visibility="{Binding ViewModel.IsAppElevated, Converter={StaticResource BoolToVis_TC_FV}}" />
             <ui:TitleBar
                 x:Name="TitleBar"
                 Title="{Binding ViewModel.ApplicationTitle}"
