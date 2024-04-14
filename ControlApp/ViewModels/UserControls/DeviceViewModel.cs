@@ -60,7 +60,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         /// <summary>
         ///     Current HID device emulation mode.
         /// </summary>
-        public DsHidDeviceMode HidEmulationMode => (DsHidDeviceMode)_device.GetProperty<byte>(DsHidMiniDriver.HidDeviceModeProperty);
+        public SettingsContext HidEmulationMode => DsHidMiniDriver.HidDeviceMode[_device.GetProperty<byte>(DsHidMiniDriver.HidDeviceModeProperty)];
 
         public HidModeShort HidModeShort => (HidModeShort)HidEmulationMode;
 
@@ -70,34 +70,10 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         public SettingsContext ExpectedHidMode => _dshmConfigManager.GetDeviceExpectedHidMode(deviceUserData);
 
 
-    /// <summary>
-    /// State of Device's current HID Mode in relation to mode it's expected to be
-    /// </summary>
-    public bool IsHidModeMismatched
-        {
-            get
-            {
-                switch(ExpectedHidMode)
-                {
-                    case SettingsContext.SDF:
-                        if(HidEmulationMode == DsHidDeviceMode.SDF) return false;
-                        break;
-                    case SettingsContext.GPJ:
-                        if (HidEmulationMode == DsHidDeviceMode.GPJ) return false;
-                        break;
-                    case SettingsContext.SXS:
-                        if (HidEmulationMode == DsHidDeviceMode.SXS) return false;
-                        break;
-                    case SettingsContext.DS4W:
-                        if (HidEmulationMode == DsHidDeviceMode.DS4W) return false;
-                        break;
-                    case SettingsContext.XInput:
-                        if (HidEmulationMode == DsHidDeviceMode.XInput) return false;
-                        break;
-                }
-                return true;
-            }
-        }
+        /// <summary>
+        /// State of Device's current HID Mode in relation to mode it's expected to be
+        /// </summary>
+        public bool IsHidModeMismatched => (HidEmulationMode != ExpectedHidMode) ? true : false;
 
         /// <summary>
         /// Summary of device's current HID mode and Settings mode
