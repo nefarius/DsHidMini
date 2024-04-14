@@ -97,7 +97,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
                         default: break;
                     }
 
-                    activeProfile = $" • {activeProfile}";
+                    activeProfile = $" 🡪 {activeProfile}";
                 }
                 return $"{CurrentDeviceSettingsMode}{activeProfile}";
             }
