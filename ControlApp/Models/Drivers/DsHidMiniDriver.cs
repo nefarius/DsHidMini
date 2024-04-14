@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using Nefarius.DsHidMini.ControlApp.Helpers;
+using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 using Nefarius.DsHidMini.ControlApp.Resources;
 using Nefarius.Utilities.DeviceManagement.PnP;
 
@@ -47,6 +48,15 @@ namespace Nefarius.DsHidMini.ControlApp.Models.Drivers
                 typeof(DateTimeOffset));
 
         #endregion
+
+        public static Dictionary<int, SettingsContext> HidDeviceMode = new()
+        {
+            { 0x01 , SettingsContext.SDF},
+            { 0x02 , SettingsContext.GPJ},
+            { 0x03 , SettingsContext.SXS},
+            { 0x04 , SettingsContext.DS4W},
+            { 0x05 , SettingsContext.XInput},
+        };
     }
 
     /// <summary>
