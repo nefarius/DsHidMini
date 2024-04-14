@@ -63,6 +63,7 @@ namespace Nefarius.DsHidMini.ControlApp
                 services.AddSingleton<ProfilesViewModel>();
                 services.AddSingleton<SettingsPage>();
                 services.AddSingleton<SettingsViewModel>();
+                services.AddSingleton<Main>();
             }).Build();
 
         /// <summary>
