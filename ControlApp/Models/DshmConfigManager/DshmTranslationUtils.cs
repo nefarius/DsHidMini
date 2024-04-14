@@ -68,7 +68,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             { Button.Square, DshmConfig.Enums.Button.Square },
             { Button.Up, DshmConfig.Enums.Button.Up },
             { Button.Right, DshmConfig.Enums.Button.Right },
-            { Button.Down, DshmConfig.Enums.Button.Dowm },
+            { Button.Down, DshmConfig.Enums.Button.Down },
             { Button.Left, DshmConfig.Enums.Button.Left },
         };
     
