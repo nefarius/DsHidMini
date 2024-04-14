@@ -111,7 +111,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             CopySettings(this, new());
         }
 
-
         public static void CopySettings(HidModeSettings destiny, HidModeSettings source)
         {
             destiny.SettingsContext = source.SettingsContext;
