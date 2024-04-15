@@ -161,10 +161,27 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
             }
         }
         
+
+        private string? _customPairingAddress;
+
         /// <summary>
         /// The Bluetooth MAC address of the host radio the controller should pair to if in custom pairing mode
         /// </summary>
-        [ObservableProperty] private string? _customPairingAddress;
+        public string? CustomPairingAddress
+        {
+            get
+            {
+                var regex = "(.{2})(.{2})(.{2})(.{2})(.{2})(.{2})";
+                var replace = "$1:$2:$3:$4:$5:$6";
+                var newformat = Regex.Replace(_customPairingAddress, regex, replace);
+                return newformat;
+            }
+            set
+            {
+                _customPairingAddress = value;
+                this.OnPropertyChanged(nameof(CustomPairingAddress));
+            }
+        }
 
         /// <summary>
         /// The desired Bluetooth pairing mode for the device when plugging via cable or applying settings
