@@ -170,7 +170,10 @@
                                 DockPanel.Dock="Right"
                                 FontSize="{StaticResource MyKey_SymbolFontSize}"
                                 Style="{StaticResource MyKey_StatusSymbol}" />
-                            <ui:TextBox DockPanel.Dock="Right" Text="{Binding CustomPairingAddress}">
+                            <ui:TextBox
+                                DockPanel.Dock="Right"
+                                MaxLength="20"
+                                Text="{Binding CustomPairingAddress}">
                                 <ui:TextBox.Style>
                                     <Style BasedOn="{StaticResource {x:Type ui:TextBox}}" TargetType="ui:TextBox">
                                         <Setter Property="Visibility" Value="Hidden" />
