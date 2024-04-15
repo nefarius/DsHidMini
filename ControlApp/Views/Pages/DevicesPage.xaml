@@ -121,8 +121,18 @@
                                                                 Margin="0"
                                                                 HorizontalAlignment="Center"
                                                                 FontSize="28"
-                                                                Foreground="White"
-                                                                Symbol="Power24" />
+                                                                Foreground="White">
+                                                                <ui:SymbolIcon.Style>
+                                                                    <Style TargetType="ui:SymbolIcon">
+                                                                        <Setter Property="Symbol" Value="ArrowClockWise24" />
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding IsWireless}" Value="True">
+                                                                                <Setter Property="Symbol" Value="Power24" />
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </ui:SymbolIcon.Style>
+                                                            </ui:SymbolIcon>
                                                         </Viewbox>
 
                                                     </Button.Content>
