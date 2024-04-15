@@ -96,5 +96,44 @@ namespace Nefarius.DsHidMini.ControlApp.Services
                 TimeSpan.FromSeconds(5)
                 );
         }
+
+        public void ShowPowerCyclingDeviceMessage(bool isWireless, bool isAppElevated, bool reconnectionResult)
+        {
+            string temp = "";
+            if(!isWireless && !isAppElevated)
+            {
+                _snackbarService.Show(
+                    $"Can't auto-restart USB controller",
+                    "ControlApp needs to be running as admin to try restarting USB controllers.",
+                    ControlAppearance.Caution,
+                    new SymbolIcon(SymbolRegular.ErrorCircle24),
+                    TimeSpan.FromSeconds(8)
+                    );
+                return;
+            }
+
+            if (reconnectionResult)
+            {
+                _snackbarService.Show(
+                    $"Restarting (USB) / Disconnecting (bluetooth) device",
+                    "",
+                    ControlAppearance.Info,
+                    new SymbolIcon(SymbolRegular.Info24),
+                    TimeSpan.FromSeconds(4)
+                    );
+            }
+            else
+            {
+                _snackbarService.Show(
+                    $"Failed to restart (USB) / Disconnect (bluetooth) device",
+                    "Manually reconnecting the device might be required to update its HID mode.",
+                    ControlAppearance.Caution,
+                    new SymbolIcon(SymbolRegular.ErrorCircle24),
+                    TimeSpan.FromSeconds(8)
+                    );
+            }
+
+
+        }
     }
 }
