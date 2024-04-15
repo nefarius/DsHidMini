@@ -17,6 +17,7 @@ using Newtonsoft.Json.Linq;
 using Serilog;
 
 using Wpf.Ui;
+using Wpf.Ui.Extensions;
 
 namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
 {
@@ -91,6 +92,17 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
             ReconnectDevicesWithMismatchedHidMode();
         }
 
+        public void ReconnectAllDevices()
+        {
+            foreach (DeviceViewModel devVM in Devices)
+            {
+                if (devVM.IsHidModeMismatched)
+                {
+                    _dshmDevMan.TryReconnectDevice(devVM.Device);
+                }
+            }
+        }
+
         private void ReconnectDevicesWithMismatchedHidMode()
         {
             Log.Logger.Debug("Checking for devices in non-expected Hid Mode");
@@ -130,6 +142,11 @@ Reconnect the pending devices to make this change effective.",
                     CloseButtonText = "OK",
                 }
             );
+            if (result == ContentDialogResult.Primary)
+            {
+                ReconnectAllDevices();
+            }
+
         }
 
         private void RefreshDevicesList()
