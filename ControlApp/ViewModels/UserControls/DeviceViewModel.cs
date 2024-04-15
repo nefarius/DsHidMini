@@ -383,7 +383,6 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
             CurrentDeviceSettingsMode = deviceUserData.SettingsMode;
             DeviceCustomsVM.LoadDatasToAllGroups(deviceUserData.Settings);
             ListOfProfiles = _dshmConfigManager.GetListOfProfilesWithDefault();
-            //SelectedProfile = _dshmConfigManager.GetProfile(deviceUserData.GuidOfProfileToUse);
 
             Log.Logger.Information($"Device '{DeviceAddress}' set for {ExpectedHidMode} HID Mode (currently in {HidModeShort}), {(BluetoothPairingMode)PairingMode} Bluetooth pairing mode.");
             if ((BluetoothPairingMode)PairingMode == BluetoothPairingMode.Custom)
