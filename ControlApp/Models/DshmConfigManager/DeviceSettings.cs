@@ -126,7 +126,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
     public class LedsSettings : DeviceSubSettings
     {
         public LEDsMode LeDMode { get; set; } = LEDsMode.BatteryIndicatorPlayerIndex;
-        public bool AllowExternalLedsControl { get; set; } = true;
+        public bool AllowExternalLedsControl { get; set; } = false;
         public All4LEDsCustoms LEDsCustoms { get; set; } = new();
 
 
