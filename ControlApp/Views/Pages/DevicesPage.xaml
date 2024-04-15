@@ -41,7 +41,7 @@
                 Text="Devices"
                 TextWrapping="Wrap" />
             <!--  List of connected DsHidMini devices  -->
-            <ListView
+            <ui:ListView
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch"
                 DockPanel.Dock="Top"
@@ -145,10 +145,10 @@
 
                     </DataTemplate>
                 </ListView.ItemTemplate>
-            </ListView>
+            </ui:ListView>
 
             <!--  Link to troubleshooting page  -->
-            <ui:Hyperlink
+            <ui:HyperlinkButton
                 Margin="10"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Bottom"
@@ -156,10 +156,10 @@
                 DockPanel.Dock="Bottom"
                 Icon="{ui:SymbolIcon Link24}"
                 NavigateUri="https://docs.nefarius.at/projects/DsHidMini/How-to-Install/#troubleshooting">
-                <ui:Hyperlink.Content>
+                <ui:HyperlinkButton.Content>
                     <ui:TextBlock Text="Troubleshooting page" TextWrapping="Wrap" />
-                </ui:Hyperlink.Content>
-            </ui:Hyperlink>
+                </ui:HyperlinkButton.Content>
+            </ui:HyperlinkButton>
 
         </DockPanel>
 

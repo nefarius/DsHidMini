@@ -103,7 +103,7 @@
                 </Button>
             </Grid>
 
-            <ListView
+            <ui:ListView
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch"
                 DockPanel.Dock="Top"
@@ -145,7 +145,7 @@
                         </ui:Card>
                     </DataTemplate>
                 </ListView.ItemTemplate>
-            </ListView>
+            </ui:ListView>
         </DockPanel>
 
         <ui:Card

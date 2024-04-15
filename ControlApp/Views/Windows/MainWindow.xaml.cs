@@ -39,6 +39,8 @@ namespace Nefarius.DsHidMini.ControlApp.Views.Windows
 
             Wpf.Ui.Appearance.SystemThemeWatcher.Watch(this);
 
+            ApplicationThemeManager.Apply(ApplicationTheme.Dark);
+
             InitializeComponent();
 
             navigationService.SetNavigationControl(RootNavigation);

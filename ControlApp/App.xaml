@@ -26,7 +26,7 @@
                 False="Hidden"
                 True="Visible" />
             <ResourceDictionary.MergedDictionaries>
-                <ui:ThemesDictionary Theme="Dark" />
+                <!--<ui:ThemesDictionary Theme="Dark" />-->
                 <ui:ControlsDictionary />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
