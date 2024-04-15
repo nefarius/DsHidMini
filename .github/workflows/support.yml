@@ -1,0 +1,29 @@
+name: 'Support Requests'
+
+on:
+  issues:
+    types: [labeled, unlabeled, reopened]
+
+permissions:
+  issues: write
+
+jobs:
+  action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: dessant/support-requests@v2
+        with:
+          github-token: ${{ github.token }}
+          support-label: 'support'
+          issue-comment: >
+            :wave: @{issue-author}, we use the issue tracker exclusively
+            for bug reports and feature requests. However, this issue appears
+            to be a support request, of low quality or a topic covered in the 
+            documentation. Please consult the documentation first and if that 
+            didn't help use our support channels to get help with your particular 
+            case. In the future kindly read the instructions in the issue template 
+            instead of ignoring it. Failing to do so might result in your account 
+            getting blocked for spam. Your compliance is appreciated. 
+          close-issue: true
+          lock-issue: true
+          issue-lock-reason: 'off-topic'

@@ -21,6 +21,7 @@ Next major version is in progress! Here's an overview of what you'll get:
 - Switch DPad to individual buttons
 - Customize the Quick-Disconnect button combination
 - Configure flipping/inverting axes
+- Xbox 360 Emulation out-of-the-box
 - ...and maybe more?
 
 Stay tuned!
@@ -70,9 +71,10 @@ The following features are **not** available (and most probably won't in the nea
 
 - Motion controls a.k.a. SIXAXIS (Gyroscope, Accelerometer)
   - **Contributions welcome!**
-  - See [#217](https://github.com/ViGEm/DsHidMini/issues/217)
+  - See [#217](https://github.com/nefarius/DsHidMini/issues/217)
 - Navigation Controller
   - Majority is done
+  - See [#48](https://github.com/nefarius/DsHidMini/issues/48)
 - Motion Controller
   - Not considered in design at all
 
@@ -96,9 +98,10 @@ The dependencies used in DsHidMini don't exist in Windows 7/8/8.1 so they can't 
 
 ### Prerequisites
 
-- [Step 1: Install Visual Studio 2019](<https://docs.microsoft.com/en-us/windows-hardware/drivers/other-wdk-downloads#step-1-install-visual-studio>)
-- [Step 2: Install WDK for Windows 10, version 2004](<https://docs.microsoft.com/en-us/windows-hardware/drivers/other-wdk-downloads#step-2-install-the-wdk>)
-- [Step 3: Clone the Driver Module Framework (DMF)](https://github.com/microsoft/DMF) into the same parent directory.
+- [Step 1: Install Visual Studio 2022](https://learn.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk#download-icon-step-1-install-visual-studio-2022)
+- [Step 2: Install Windows 11, version 22H2 SDK](https://learn.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk#download-icon-step-2-install-windows-11-version-22h2-sdk)
+- [Step 3: Install Windows 11, version 22H2 WDK](https://learn.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk#download-icon-step-3-install-windows-11-version-22h2-wdk)
+- [Step 4: Clone the Driver Module Framework (DMF)](https://github.com/microsoft/DMF) into the same parent directory.
   - **Important:** requires *at least* [`v1.1.83`](https://github.com/microsoft/DMF/releases/tag/v1.1.83) or newer
   - Build the `DmfU` project with Release and Debug configurations for all architectures (x64 and Win32).
 
@@ -124,7 +127,7 @@ Pre-built binaries and instructions are provided [on the releases page](../../re
 
 ## Support
 
-To get support [please follow these guidlines](https://docs.nefarius.at/Community-Support/).
+To get support [please follow these guidelines](https://docs.nefarius.at/Community-Support/).
 
 ## Sponsors
 
@@ -137,9 +140,9 @@ The following awesome resources have made this project possible.
 ### Related projects
 
 - [nefarius/ScpToolkit](https://github.com/nefarius/ScpToolkit)
-- [ViGEm/FireShock](https://github.com/ViGEm/FireShock)
-- [ViGEm/AirBender](https://github.com/ViGEm/AirBender)
-- [ViGEm/WireShock](https://github.com/ViGEm/WireShock)
+- [nefarius/FireShock](https://github.com/nefarius/FireShock)
+- [nefarius/AirBender](https://github.com/nefarius/AirBender)
+- [nefarius/WireShock](https://github.com/nefarius/WireShock)
 - [FirstPlatoLV/EmuController](https://github.com/FirstPlatoLV/EmuController)
 - [Arduino - felis/USB_Host_Shield_2.0 - PS3 Information](https://github.com/felis/USB_Host_Shield_2.0/wiki/PS3-Information#USB)
 
@@ -161,3 +164,8 @@ The following awesome resources have made this project possible.
 - [HID: sony: Update device ids](https://patchwork.kernel.org/patch/9367441/)
 - [linux/drivers/hid/hid-sony.c](https://github.com/torvalds/linux/blob/master/drivers/hid/hid-sony.c)
 - [The HID Page](http://janaxelson.com/hidpage.htm)
+
+### DevOps
+
+- [AppVeyor CI](https://www.appveyor.com/)
+- [NUKE build system](https://nuke.build/)
