@@ -62,6 +62,7 @@
                 <Button
                     Grid.Column="0"
                     Margin="2"
+                    Padding="0"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"
                     Command="{Binding ViewModel.CreateProfileCommand}">
@@ -72,11 +73,12 @@
                 <Button
                     Grid.Column="1"
                     Margin="2"
+                    Padding="0"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"
                     Command="{Binding ViewModel.SelectedProfileVM.EnableEditingCommand}">
                     <Button.Content>
-                        <ui:SymbolIcon HorizontalAlignment="Center" Symbol="Pen24" />
+                        <ui:TextBlock Text="Edit" />
                     </Button.Content>
                 </Button>
                 <Button
@@ -93,6 +95,7 @@
                 <Button
                     Grid.Column="3"
                     Margin="2"
+                    Padding="0"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"
                     Command="{Binding ViewModel.DeleteProfileCommand}"
