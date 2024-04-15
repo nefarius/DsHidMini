@@ -280,6 +280,7 @@
                                 x:Name="ProfileSelection_ComboBox"
                                 VerticalAlignment="Center"
                                 DockPanel.Dock="Left"
+                                IsEnabled="{Binding IsProfileSelectorEnabled}"
                                 ItemsSource="{Binding ListOfProfiles}"
                                 SelectedItem="{Binding SelectedProfile}"
                                 Visibility="{Binding IsProfileSelectorVisible, Converter={StaticResource BoolToVis}}" />

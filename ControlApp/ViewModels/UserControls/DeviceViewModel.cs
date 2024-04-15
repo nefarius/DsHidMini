@@ -50,9 +50,15 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
 
         /// <summary>
         /// Determines if the profile selector is visible.
-        /// True if in Profile settings mode, false otherwise
+        /// True if in Global or Profile settings mode, false otherwise
         /// </summary>
         [ObservableProperty] private bool _isProfileSelectorVisible;
+
+        /// <summary>
+        /// Determines if the profile selector is enabled.
+        /// True if in Profile settings mode, false otherwise
+        /// </summary>
+        [ObservableProperty] private bool _isProfileSelectorEnabled;
 
         /// <summary>
         /// Desired settings mode for current device. Saved to device data only if applying settings
@@ -331,7 +337,6 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
             // Loads correspondent controller data based on controller's MAC address 
 
 
-
             //DisplayName = DeviceAddress;
             RefreshDeviceSettings();
         }
@@ -345,8 +350,25 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
 
         partial void OnCurrentDeviceSettingsModeChanged(SettingsModes value)
         {
-            IsProfileSelectorVisible = CurrentDeviceSettingsMode == SettingsModes.Profile;
+            AdjustSettingsTabState();
+        }
+
+        private void AdjustSettingsTabState()
+        {
+            IsProfileSelectorVisible = CurrentDeviceSettingsMode != SettingsModes.Custom;
+            IsProfileSelectorEnabled = CurrentDeviceSettingsMode == SettingsModes.Profile;
             IsEditorVisible = CurrentDeviceSettingsMode == SettingsModes.Custom;
+            switch (CurrentDeviceSettingsMode)
+            {
+                case SettingsModes.Global:
+                    SelectedProfile = _dshmConfigManager.GlobalProfile;
+                    break;
+                case SettingsModes.Profile:
+                    SelectedProfile = _dshmConfigManager.GetProfile(deviceUserData.GuidOfProfileToUse);
+                    break;
+                default:
+                    break;
+            }
         }
 
         [RelayCommand]
@@ -361,14 +383,14 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
             CurrentDeviceSettingsMode = deviceUserData.SettingsMode;
             DeviceCustomsVM.LoadDatasToAllGroups(deviceUserData.Settings);
             ListOfProfiles = _dshmConfigManager.GetListOfProfilesWithDefault();
-            SelectedProfile = _dshmConfigManager.GetProfile(deviceUserData.GuidOfProfileToUse);
+            //SelectedProfile = _dshmConfigManager.GetProfile(deviceUserData.GuidOfProfileToUse);
 
             Log.Logger.Information($"Device '{DeviceAddress}' set for {ExpectedHidMode} HID Mode (currently in {HidModeShort}), {(BluetoothPairingMode)PairingMode} Bluetooth pairing mode.");
             if ((BluetoothPairingMode)PairingMode == BluetoothPairingMode.Custom)
             {
                 Log.Logger.Information($"Custom pairing address: {CustomPairingAddress}.");
             }
-            
+            AdjustSettingsTabState();
             this.OnPropertyChanged(nameof(DeviceSettingsStatus));
             this.OnPropertyChanged(nameof(IsHidModeMismatched));
         }
