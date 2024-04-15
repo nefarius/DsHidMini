@@ -103,8 +103,8 @@ namespace Nefarius.DsHidMini.ControlApp.Services
             if(!isWireless && !isAppElevated)
             {
                 _snackbarService.Show(
-                    $"Can't auto-restart USB controller",
-                    "ControlApp needs to be running as admin to try restarting USB controllers.",
+                    $"Auto USB restart denied",
+                    "Restarting USB controller requires the ControlApp to be running as administrator",
                     ControlAppearance.Caution,
                     new SymbolIcon(SymbolRegular.ErrorCircle24),
                     TimeSpan.FromSeconds(8)
