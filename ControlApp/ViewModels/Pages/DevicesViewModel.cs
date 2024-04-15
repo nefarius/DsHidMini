@@ -115,7 +115,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
             var uiMessageBox = new Wpf.Ui.Controls.MessageBox
             {
                 Title = "Failed to restart/reconnect one or more devices",
-                Content = "If using wired controllers make sure the ControlApp is running as administrator .",
+                Content = "To restart USB controllers the ControlApp needs to be running as administrator.\n\nIf it's still failing then reconnect the controllers manually to update their HID mode.",
             };
 
             _ = await uiMessageBox.ShowDialogAsync();
