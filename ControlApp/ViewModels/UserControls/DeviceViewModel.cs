@@ -16,6 +16,7 @@ using Serilog;
 
 using Wpf.Ui;
 using Wpf.Ui.Controls;
+using System.Text.RegularExpressions;
 
 namespace Nefarius.DsHidMini.ControlApp.ViewModels
 {
@@ -377,7 +378,13 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         {
             Log.Logger.Information($"Saving and applying changes made to Device '{DeviceAddress}'");
             deviceUserData.BluetoothPairingMode = (BluetoothPairingMode)PairingMode;
-            deviceUserData.PairingAddress = CustomPairingAddress;
+
+            var formattedCustomMacAddress = Regex.Replace(CustomPairingAddress, @"[^a-fA-F0-9]", "").ToUpper();
+            if(formattedCustomMacAddress.Length > 12)
+            {
+                formattedCustomMacAddress = formattedCustomMacAddress.Substring(0, 12);
+            }
+            deviceUserData.PairingAddress = formattedCustomMacAddress;
 
             deviceUserData.SettingsMode = CurrentDeviceSettingsMode;
             if (CurrentDeviceSettingsMode == SettingsModes.Custom)
