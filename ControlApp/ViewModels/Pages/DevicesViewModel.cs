@@ -94,13 +94,31 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
 
         public void ReconnectAllDevices()
         {
+            bool oneOrMoreFails = false;
             foreach (DeviceViewModel devVM in Devices)
             {
                 if (devVM.IsHidModeMismatched)
                 {
-                    _dshmDevMan.TryReconnectDevice(devVM.Device);
+                    if (!_dshmDevMan.TryReconnectDevice(devVM.Device)){
+                        oneOrMoreFails = true;
+                    }
                 }
             }
+            if(oneOrMoreFails)
+            {
+                ShowReconnectionAttemptFailedMessageBox();
+            }
+        }
+
+        private async void ShowReconnectionAttemptFailedMessageBox()
+        {
+            var uiMessageBox = new Wpf.Ui.Controls.MessageBox
+            {
+                Title = "Failed to restart/reconnect one or more devices",
+                Content = "If using wired controllers make sure the ControlApp is running as administrator .",
+            };
+
+            _ = await uiMessageBox.ShowDialogAsync();
         }
 
         private void ReconnectDevicesWithMismatchedHidMode()
