@@ -381,8 +381,25 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         [RelayCommand]
         private void RestartDevice()
         {
-            Log.Logger.Information($"User instructed device '{DeviceAddress}' to restart/disconnect");
-            _dshmDevMan.TryReconnectDevice(_device);
+            if(!IsWireless && !Main.IsAdministrator())
+            {
+                ShowUSBRestartNotPossibleMessage();
+                Log.Logger.Information($"User instructed wired device '{DeviceAddress}' to restart but ControlApp is not running as administrator. Cancelling attempt.");
+                return;
+            }
+            bool reconnectionResult = _dshmDevMan.TryReconnectDevice(_device);
+            Log.Logger.Information($"User instructed {(IsWireless ? "wireless" : "wired")} device '{DeviceAddress}' to restart/disconnect.");
+        }
+
+        private async void ShowUSBRestartNotPossibleMessage()
+        {
+            var uiMessageBox = new Wpf.Ui.Controls.MessageBox
+            {
+                Title = "Can't restart USB controller",
+                Content = "ControlApp needs to be run as administrator to restart USB controllers.\n\nRestart ControlApp as administrator or manually reconnect the USB controller to update its HID mode.",
+            };
+
+            _ = await uiMessageBox.ShowDialogAsync();
         }
 
     }
