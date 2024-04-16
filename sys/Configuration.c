@@ -734,6 +734,14 @@ ConfigLoadForDevice(
 
 			ConfigNodeParse(deviceNode, Context, IsHotReload);
 		}
+        else
+        {
+            TraceVerbose(
+                TRACE_CONFIG,
+                "Device-specific (%s) config not found",
+                Context->DeviceAddressString
+            );
+        }
 
 	} while (FALSE);
 
