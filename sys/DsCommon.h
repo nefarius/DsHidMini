@@ -515,6 +515,11 @@ typedef struct _DS_DRIVER_CONFIGURATION
 	// 
 	BOOLEAN DisableWirelessIdleTimeout;
 
+    //
+    // Wireless disconnect buttom combo customizing
+    //
+    DS_BUTTON_COMBO WirelessDisconnectButtonCombo;
+
 	//
 	// Thumb stick specific settings
 	// 
