@@ -869,6 +869,12 @@ ConfigSetDefaults(
 	Config->WirelessIdleTimeoutPeriodMs = 300000;
 	Config->DisableWirelessIdleTimeout = FALSE;
 
+    Config->WirelessDisconnectButtonCombo.IsEnabled = TRUE;
+    Config->WirelessDisconnectButtonCombo.HoldTime = 3000;
+    Config->WirelessDisconnectButtonCombo.Buttons[0] = 10;
+    Config->WirelessDisconnectButtonCombo.Buttons[1] = 11;
+    Config->WirelessDisconnectButtonCombo.Buttons[2] = 16;
+
 	Config->ThumbSettings.DeadZoneLeft.Apply = TRUE;
 	Config->ThumbSettings.DeadZoneLeft.PolarValue = 3.0;
 	Config->ThumbSettings.DeadZoneRight.Apply = TRUE;
