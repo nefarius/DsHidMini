@@ -374,14 +374,16 @@ static void ConfigNodeParse(
 	_In_opt_ BOOLEAN IsHotReload
 )
 {
-	PDS_DRIVER_CONFIGURATION pCfg = &Context->Configuration;
+	const PDS_DRIVER_CONFIGURATION pCfg = &Context->Configuration;
 	cJSON* pNode = NULL;
 
-	//
-    // Reset device's idle disconnect timer
-    //
-    Context->Connection.Bth.IdleDisconnectTimestamp.QuadPart = 0;
-
+    if (IsHotReload)
+    {
+        //
+        // Reset device's idle disconnect timer
+        //
+        Context->Connection.Bth.IdleDisconnectTimestamp.QuadPart = 0;
+    }
 
 	//
 	// Common
@@ -619,9 +621,9 @@ ConfigLoadForDevice(
 
 		if (hFile == INVALID_HANDLE_VALUE)
 		{
-			TraceVerbose(
+			TraceError(
 				TRACE_CONFIG,
-				"Configuration file %s not accessible (errno: %d)",
+				"Configuration file %s not accessible, error: %!WINERROR!",
 				configFilePath,
 				error
 			);
@@ -635,6 +637,11 @@ ConfigLoadForDevice(
 		{
 			error = GetLastError();
 
+            TraceError(
+				TRACE_CONFIG,
+				"Failed to get configuration file size, error: %!WINERROR!",
+				error
+			);
 			EventWriteFailedWithWin32Error(__FUNCTION__, L"Getting configuration file size", error);
 
 			status = STATUS_ACCESS_DENIED;
@@ -652,6 +659,11 @@ ConfigLoadForDevice(
 		// 
 		if (size.QuadPart > 20000000 /* 20 MB of JSON, w00t?! */)
 		{
+            TraceError(
+				TRACE_CONFIG,
+				"Configuration file too big to parse, reported size: %I64d",
+				size.QuadPart
+			);
 			EventWriteFailedWithWin32Error(__FUNCTION__, L"Reading configuration file", ERROR_BUFFER_OVERFLOW);
 			status = STATUS_BUFFER_OVERFLOW;
 			break;
@@ -671,6 +683,11 @@ ConfigLoadForDevice(
 		{
 			error = GetLastError();
 
+            TraceError(
+				TRACE_CONFIG,
+				"Failed to read configuration file content, error: %!WINERROR!",
+				error
+			);
 			EventWriteFailedWithWin32Error(__FUNCTION__, L"Reading configuration file content", error);
 			status = STATUS_UNSUCCESSFUL;
 			break;
@@ -720,7 +737,7 @@ ConfigLoadForDevice(
 		//
 		// Try to read device-specific properties
 		// 
-		cJSON* deviceNode = cJSON_GetObjectItem(devicesNode, Context->DeviceAddressString);
+		const cJSON* deviceNode = cJSON_GetObjectItem(devicesNode, Context->DeviceAddressString);
 
 		if (deviceNode)
 		{
