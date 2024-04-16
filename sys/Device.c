@@ -380,6 +380,18 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 			DsDevice_RegisterBthDisconnectListener(pDevCtx);
 
 			DsDevice_RegisterHotReloadListener(pDevCtx);
+
+            sprintf_s(
+                pDevCtx->DeviceAddressString,
+                ARRAYSIZE(pDevCtx->DeviceAddressString),
+                "%02X%02X%02X%02X%02X%02X",
+                pDevCtx->DeviceAddress.Address[5],
+                pDevCtx->DeviceAddress.Address[4],
+                pDevCtx->DeviceAddress.Address[3],
+                pDevCtx->DeviceAddress.Address[2],
+                pDevCtx->DeviceAddress.Address[1],
+                pDevCtx->DeviceAddress.Address[0]
+            );
 		}
 	} while (FALSE);
 

@@ -662,41 +662,17 @@ NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
 
 	} while (FALSE);
 
-	// ReSharper disable once CppIncompleteSwitchStatement
-	// ReSharper disable once CppDefaultCaseNotHandledInSwitchStatement
-	switch (pDevCtx->ConnectionType)  // NOLINT(clang-diagnostic-switch)
-	{
-	case DsDeviceConnectionTypeUsb:
-
-		sprintf_s(
-			pDevCtx->DeviceAddressString,
-			ARRAYSIZE(pDevCtx->DeviceAddressString),
-			"%02X%02X%02X%02X%02X%02X",
-			pDevCtx->DeviceAddress.Address[0],
-			pDevCtx->DeviceAddress.Address[1],
-			pDevCtx->DeviceAddress.Address[2],
-			pDevCtx->DeviceAddress.Address[3],
-			pDevCtx->DeviceAddress.Address[4],
-			pDevCtx->DeviceAddress.Address[5]
-		);
-
-		break;
-	case DsDeviceConnectionTypeBth:
-
-		sprintf_s(
-			pDevCtx->DeviceAddressString,
-			ARRAYSIZE(pDevCtx->DeviceAddressString),
-			"%02X%02X%02X%02X%02X%02X",
-			pDevCtx->DeviceAddress.Address[5],
-			pDevCtx->DeviceAddress.Address[4],
-			pDevCtx->DeviceAddress.Address[3],
-			pDevCtx->DeviceAddress.Address[2],
-			pDevCtx->DeviceAddress.Address[1],
-			pDevCtx->DeviceAddress.Address[0]
-		);
-
-		break;
-	}
+    sprintf_s(
+        pDevCtx->DeviceAddressString,
+        ARRAYSIZE(pDevCtx->DeviceAddressString),
+        "%02X%02X%02X%02X%02X%02X",
+        pDevCtx->DeviceAddress.Address[0],
+        pDevCtx->DeviceAddress.Address[1],
+        pDevCtx->DeviceAddress.Address[2],
+        pDevCtx->DeviceAddress.Address[3],
+        pDevCtx->DeviceAddress.Address[4],
+        pDevCtx->DeviceAddress.Address[5]
+    );
 
 	FuncExit(TRACE_DSUSB, "status=%!STATUS!", status);
 
