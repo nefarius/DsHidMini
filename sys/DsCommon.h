@@ -295,6 +295,28 @@ static CONST PSTR G_DS_LED_AUTHORITY_NAMES[] =
 };
 
 //
+// Button combinations
+// 
+typedef struct _DS_BUTTON_COMBO
+{
+    //
+    // Activates the combination
+    // 
+    BOOL IsEnabled;
+
+    //
+    // How long the combination must be held
+    // 
+    ULONG HoldTime;
+
+    //
+    // The buttons that need to be held
+    // 
+    UCHAR Buttons[3];
+
+} DS_BUTTON_COMBO, * PDS_BUTTON_COMBO;
+
+//
 // Axis dead-zone settings
 // 
 typedef struct _DS_AXIS_DEADZONE
