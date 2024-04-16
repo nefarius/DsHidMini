@@ -870,7 +870,7 @@ ConfigSetDefaults(
 	Config->DisableWirelessIdleTimeout = FALSE;
 
     Config->WirelessDisconnectButtonCombo.IsEnabled = TRUE;
-    Config->WirelessDisconnectButtonCombo.HoldTime = 3000;
+    Config->WirelessDisconnectButtonCombo.HoldTime = 1000;
     Config->WirelessDisconnectButtonCombo.Buttons[0] = 10;
     Config->WirelessDisconnectButtonCombo.Buttons[1] = 11;
     Config->WirelessDisconnectButtonCombo.Buttons[2] = 16;

@@ -1952,7 +1952,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
         //
         // 1 second passed
         // 
-        if (ms > 1000)
+        if (ms > pDevCtx->Configuration.WirelessDisconnectButtonCombo.HoldTime)
         {
             TraceEvents(TRACE_LEVEL_INFORMATION,
                 TRACE_DSHIDMINIDRV,
