@@ -89,11 +89,6 @@
                                                 DockPanel.Dock="Left">
                                                 <ui:TextBlock Text="{Binding HidModeShort}" />
                                             </Viewbox>
-                                            <!--  Connection type  -->
-                                            <Viewbox Margin="0" DockPanel.Dock="Left">
-                                                <ui:SymbolIcon FontSize="30" Symbol="{Binding ConnectionTypeIcon}" />
-                                            </Viewbox>
-
                                             <!--  Battery  -->
                                             <Viewbox DockPanel.Dock="Left">
                                                 <ui:SymbolIcon FontSize="30" Symbol="{Binding BatteryIcon}">
@@ -101,6 +96,11 @@
                                                         <RotateTransform Angle="270" />
                                                     </ui:SymbolIcon.LayoutTransform>
                                                 </ui:SymbolIcon>
+                                            </Viewbox>
+
+                                            <!--  Connection type  -->
+                                            <Viewbox Margin="0" DockPanel.Dock="Left">
+                                                <ui:SymbolIcon FontSize="30" Symbol="{Binding ConnectionTypeIcon}" />
                                             </Viewbox>
 
 
