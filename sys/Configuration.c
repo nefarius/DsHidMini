@@ -697,17 +697,22 @@ ConfigLoadForDevice(
 
 		if (config_json == NULL)
 		{
+            TraceError(
+                TRACE_CONFIG,
+                "JSON parsing failed"
+            );
+
 			const char* error_ptr = cJSON_GetErrorPtr();
 			if (error_ptr != NULL)
 			{
 				TraceError(
 					TRACE_CONFIG,
-					"JSON error: %s",
+					"JSON parsing error: %s",
 					error_ptr
 				);
+                EventWriteJSONParseError(error_ptr);
 			}
-
-			EventWriteJSONParseError(error_ptr);
+            			
 			status = STATUS_ACCESS_VIOLATION;
 			break;
 		}
