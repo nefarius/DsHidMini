@@ -378,6 +378,12 @@ static void ConfigNodeParse(
 	cJSON* pNode = NULL;
 
 	//
+    // Reset device's idle disconnect timer
+    //
+    Context->Connection.Bth.IdleDisconnectTimestamp.QuadPart = 0;
+
+
+	//
 	// Common
 	// 
 
