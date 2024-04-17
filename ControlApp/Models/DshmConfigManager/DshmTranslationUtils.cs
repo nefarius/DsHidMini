@@ -50,26 +50,25 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             { PressureMode.Digital, DshmConfig.Enums.PressureMode.Digital },
         };
 
-        public static Dictionary<Button, DshmConfig.Enums.Button> ButtonManagerToDriver = new()
+        public static Dictionary<Button, int> ButtonManagerToDriver = new()
         {
-            { Button.None, DshmConfig.Enums.Button.None },
-            { Button.PS, DshmConfig.Enums.Button.PS },
-            { Button.START, DshmConfig.Enums.Button.START },
-            { Button.SELECT, DshmConfig.Enums.Button.SELECT },
-            { Button.R1, DshmConfig.Enums.Button.R1 },
-            { Button.L1, DshmConfig.Enums.Button.L1 },
-            { Button.R2, DshmConfig.Enums.Button.R2 },
-            { Button.L2, DshmConfig.Enums.Button.L2 },
-            { Button.R3, DshmConfig.Enums.Button.R3 },
-            { Button.L3, DshmConfig.Enums.Button.L3 },
-            { Button.Triangle, DshmConfig.Enums.Button.Triangle },
-            { Button.Circle, DshmConfig.Enums.Button.Circle },
-            { Button.Cross, DshmConfig.Enums.Button.Cross },
-            { Button.Square, DshmConfig.Enums.Button.Square },
-            { Button.Up, DshmConfig.Enums.Button.Up },
-            { Button.Right, DshmConfig.Enums.Button.Right },
-            { Button.Down, DshmConfig.Enums.Button.Down },
-            { Button.Left, DshmConfig.Enums.Button.Left },
+            { Button.SELECT, 0 },
+            { Button.L3, 1 },
+            { Button.R3, 2 },
+            { Button.START, 3 },
+            { Button.Up, 4 },
+            { Button.Right, 5 },
+            { Button.Down, 6 },
+            { Button.Left, 7 },
+            { Button.L2, 8 },
+            { Button.R2, 9 },
+            { Button.L1, 10 },
+            { Button.R1, 11 },
+            { Button.Triangle, 12 },
+            { Button.Circle, 13 },
+            { Button.Cross, 14 },
+            { Button.Square, 15 },
+            { Button.PS, 16 },
         };
     
         public static void ConvertDeviceSettingsToDriverFormat(DeviceSettings appFormat, DshmDeviceSettings driverFormat)

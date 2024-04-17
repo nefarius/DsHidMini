@@ -69,9 +69,9 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig
         {
             public bool? IsEnabled { get; set; }
             public double? HoldTime { get; set; }
-            public Button? Button1 { get; set; }
-            public Button? Button2 { get; set; }
-            public Button? Button3 { get; set; }
+            public int? Button1 { get; set; }
+            public int? Button2 { get; set; }
+            public int? Button3 { get; set; }
         }
 
         public class ForcedSMSettings
