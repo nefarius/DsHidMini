@@ -293,7 +293,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         public ButtonsCombo AltModeToggleButtonCombo { get; set; } = new()
         {
             IsEnabled = false,
-            HoldTime = 3,
+            HoldTime = 1,
             Button1 = Button.PS,
             Button2 = Button.Select,
             Button3 = Button.None,
