@@ -47,7 +47,6 @@
 
     public enum Button
     {
-        None,
         PS,
         Start,
         Select,
