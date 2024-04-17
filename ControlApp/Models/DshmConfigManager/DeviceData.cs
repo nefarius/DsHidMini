@@ -9,7 +9,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         public string CustomName { get; set; } = "DualShock 3";
         public Guid GuidOfProfileToUse { get; set; } = ProfileData.DefaultGuid;
         public BluetoothPairingMode BluetoothPairingMode { get; set; } = BluetoothPairingMode.Auto;
-        public string? PairingAddress { get; set; } = null;
+        public string? PairingAddress { get; set; } = "";
         public SettingsModes SettingsMode { get; set; } = SettingsModes.Global;
 
         /// <summary>
