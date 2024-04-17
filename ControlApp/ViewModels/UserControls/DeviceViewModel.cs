@@ -169,7 +169,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         }
         
 
-        private string? _customPairingAddress;
+        private string? _customPairingAddress = "";
 
         /// <summary>
         /// The Bluetooth MAC address of the host radio the controller should pair to if in custom pairing mode
