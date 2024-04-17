@@ -213,7 +213,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         public ButtonsCombo QuickDisconnectCombo { get; set; } = new()
         {
             IsEnabled = true,
-            HoldTime = 3,
+            HoldTime = 1,
             Button1 = Button.PS,
             Button2 = Button.R1,
             Button3 = Button.L1,
