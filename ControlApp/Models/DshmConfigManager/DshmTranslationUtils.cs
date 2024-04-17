@@ -135,7 +135,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             var x_Wireless = appFormat.Wireless;
 
             driverFormat.DisableWirelessIdleTimeout = !x_Wireless.IsWirelessIdleDisconnectEnabled;
-            driverFormat.WirelessIdleTimeoutPeriodMs = x_Wireless.WirelessIdleDisconnectTime * 60 * 1000;
+            driverFormat.WirelessIdleTimeoutPeriodMs = x_Wireless.WirelessIdleDisconnectTime;
 
             if (x_Wireless.QuickDisconnectCombo.IsComboValid())
             {

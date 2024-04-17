@@ -97,10 +97,10 @@ public partial class ButtonComboViewModel : ObservableObject
 
     public int HoldTime
     {
-        get => _buttonCombo.HoldTime;
+        get => _buttonCombo.HoldTime * 1000;
         set
         {
-            _buttonCombo.HoldTime = value;
+            _buttonCombo.HoldTime = value / 1000;
             OnPropertyChanged(nameof(IsEnabled));
         }
     }

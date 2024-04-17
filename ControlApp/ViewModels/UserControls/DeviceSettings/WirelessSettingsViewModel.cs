@@ -22,10 +22,10 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls.DeviceSettings
 
         public int WirelessIdleDisconnectTime
         {
-            get => _tempBackingData.WirelessIdleDisconnectTime;
+            get => _tempBackingData.WirelessIdleDisconnectTime / 60000;
             set
             {
-                _tempBackingData.WirelessIdleDisconnectTime = value;
+                _tempBackingData.WirelessIdleDisconnectTime = value * 60000;
                 this.OnPropertyChanged(nameof(WirelessIdleDisconnectTime));
             }
         }

@@ -209,11 +209,11 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
     public class WirelessSettings : DeviceSubSettings
     {
         public bool IsWirelessIdleDisconnectEnabled { get; set; } = true;
-        public int WirelessIdleDisconnectTime { get; set; } = 5;
+        public int WirelessIdleDisconnectTime { get; set; } = 300000; // 5 minutes
         public ButtonsCombo QuickDisconnectCombo { get; set; } = new()
         {
             IsEnabled = true,
-            HoldTime = 1,
+            HoldTime = 1000,
             Button1 = Button.PS,
             Button2 = Button.R1,
             Button3 = Button.L1,
@@ -293,7 +293,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         public ButtonsCombo AltModeToggleButtonCombo { get; set; } = new()
         {
             IsEnabled = false,
-            HoldTime = 1,
+            HoldTime = 1000,
             Button1 = Button.PS,
             Button2 = Button.Select,
             Button3 = Button.None,
