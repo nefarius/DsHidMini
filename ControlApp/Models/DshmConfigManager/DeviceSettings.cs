@@ -291,7 +291,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         {
             IsEnabled = false,
             HoldTime = 1000,
-            ButtonCombo = new[] {Button.PS, Button.Select, Button.None},
+            ButtonCombo = new[] {Button.PS, Button.Select, Button.Select},
         };
 
         public override void ResetToDefault()
