@@ -109,31 +109,31 @@ public partial class ButtonComboViewModel : ObservableObject
 
     public Button Button1
     {
-        get => _buttonCombo.Button1;
+        get => _buttonCombo.ButtonCombo[0];
         set
         {
-            if (value != _buttonCombo.Button2 && value != _buttonCombo.Button3)
-                _buttonCombo.Button1 = value;
+            if (value != _buttonCombo.ButtonCombo[1] && value != _buttonCombo.ButtonCombo[2])
+                _buttonCombo.ButtonCombo[0] = value;
             OnPropertyChanged(nameof(Button1));
         }
     }
     public Button Button2
     {
-        get => _buttonCombo.Button2;
+        get => _buttonCombo.ButtonCombo[1];
         set
         {
-            if (value != _buttonCombo.Button1 && value != _buttonCombo.Button3)
-                _buttonCombo.Button2 = value;
+            if (value != _buttonCombo.ButtonCombo[0] && value != _buttonCombo.ButtonCombo[2])
+                _buttonCombo.ButtonCombo[1] = value;
             OnPropertyChanged(nameof(Button2));
         }
     }
     public Button Button3
     {
-        get => _buttonCombo.Button3;
+        get => _buttonCombo.ButtonCombo[2];
         set
         {
-            if (value != _buttonCombo.Button1 && value != _buttonCombo.Button2)
-                _buttonCombo.Button3 = value;
+            if (value != _buttonCombo.ButtonCombo[0] && value != _buttonCombo.ButtonCombo[1])
+                _buttonCombo.ButtonCombo[2] = value;
             OnPropertyChanged(nameof(Button3));
         }
     }

@@ -141,9 +141,9 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             {
                 driverFormat.QuickDisconnectCombo.IsEnabled = x_Wireless.QuickDisconnectCombo.IsEnabled;
                 driverFormat.QuickDisconnectCombo.HoldTime = x_Wireless.QuickDisconnectCombo.HoldTime;
-                driverFormat.QuickDisconnectCombo.Button1 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_Wireless.QuickDisconnectCombo.Button1];
-                driverFormat.QuickDisconnectCombo.Button2 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_Wireless.QuickDisconnectCombo.Button2];
-                driverFormat.QuickDisconnectCombo.Button3 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_Wireless.QuickDisconnectCombo.Button3];
+                driverFormat.QuickDisconnectCombo.Button1 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_Wireless.QuickDisconnectCombo.ButtonCombo[0]];
+                driverFormat.QuickDisconnectCombo.Button2 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_Wireless.QuickDisconnectCombo.ButtonCombo[1]];
+                driverFormat.QuickDisconnectCombo.Button3 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_Wireless.QuickDisconnectCombo.ButtonCombo[2]];
             }
             else
             {
@@ -187,9 +187,9 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             {
                 dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.IsEnabled = x_RumbleGeneral.IsAltRumbleModeEnabled ? x_RumbleGeneral.AltModeToggleButtonCombo.IsEnabled : false;
                 dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.HoldTime = x_RumbleGeneral.AltModeToggleButtonCombo.HoldTime;
-                dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.Button1 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_RumbleGeneral.AltModeToggleButtonCombo.Button1];
-                dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.Button2 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_RumbleGeneral.AltModeToggleButtonCombo.Button2];
-                dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.Button3 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_RumbleGeneral.AltModeToggleButtonCombo.Button3];
+                dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.Button1 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_RumbleGeneral.AltModeToggleButtonCombo.ButtonCombo[0]];
+                dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.Button2 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_RumbleGeneral.AltModeToggleButtonCombo.ButtonCombo[1]];
+                dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.Button3 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_RumbleGeneral.AltModeToggleButtonCombo.ButtonCombo[2]];
 
             }
             else

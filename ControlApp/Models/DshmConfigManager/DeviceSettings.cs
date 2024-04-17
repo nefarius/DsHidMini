@@ -19,9 +19,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             set => holdTime = (value >= 0) ? value : 0;
         }
 
-        public Button Button1 { get; set; }
-        public Button Button2 { get; set; }
-        public Button Button3 { get; set; }
+        public Button[] ButtonCombo { get; init; } = new Button[3];
 
         public ButtonsCombo() { }
 
@@ -32,7 +30,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
 
         public bool IsComboValid()
         {
-            if (Button1 != Button2 && Button1 != Button3 && Button2 != Button3)
+            if (ButtonCombo[0] != ButtonCombo[1] && ButtonCombo[0] != ButtonCombo[2] && ButtonCombo[1] != ButtonCombo[2])
                 return true;
             else return false;
         }
@@ -41,9 +39,10 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         {
             IsEnabled = comboToCopy.IsEnabled;
             HoldTime = comboToCopy.HoldTime;
-            Button1 = comboToCopy.Button1;
-            Button2 = comboToCopy.Button2;
-            Button3 = comboToCopy.Button3;
+            for(int i = 0; i < ButtonCombo.Length; i++)
+            {
+                ButtonCombo[i] = comboToCopy.ButtonCombo[i];
+            }
         }
 
     }
@@ -214,9 +213,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         {
             IsEnabled = true,
             HoldTime = 1000,
-            Button1 = Button.PS,
-            Button2 = Button.R1,
-            Button3 = Button.L1,
+            ButtonCombo = new[] {Button.PS, Button.R1, Button.L1},
         };
 
         public override void ResetToDefault()
@@ -294,9 +291,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
         {
             IsEnabled = false,
             HoldTime = 1000,
-            Button1 = Button.PS,
-            Button2 = Button.Select,
-            Button3 = Button.None,
+            ButtonCombo = new[] {Button.PS, Button.Select, Button.None},
         };
 
         public override void ResetToDefault()
