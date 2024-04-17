@@ -295,7 +295,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             IsEnabled = false,
             HoldTime = 3,
             Button1 = Button.PS,
-            Button2 = Button.SELECT,
+            Button2 = Button.Select,
             Button3 = Button.None,
         };
 

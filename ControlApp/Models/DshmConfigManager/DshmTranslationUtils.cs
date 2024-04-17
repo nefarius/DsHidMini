@@ -52,10 +52,10 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
 
         public static Dictionary<Button, int> ButtonManagerToDriver = new()
         {
-            { Button.SELECT, 0 },
+            { Button.Select, 0 },
             { Button.L3, 1 },
             { Button.R3, 2 },
-            { Button.START, 3 },
+            { Button.Start, 3 },
             { Button.Up, 4 },
             { Button.Right, 5 },
             { Button.Down, 6 },

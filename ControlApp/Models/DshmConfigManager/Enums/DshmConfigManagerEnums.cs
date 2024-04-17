@@ -49,8 +49,8 @@
     {
         None,
         PS,
-        START,
-        SELECT,
+        Start,
+        Select,
         R1,
         L1,
         R2,
