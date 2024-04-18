@@ -1931,6 +1931,8 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
     //
     // Quick disconnect combo detected
     // 
+    if (&pDevCtx->Configuration.WirelessDisconnectButtonCombo.IsEnabled)
+    {
     if (engagedCount == 3)
     {
         TraceEvents(TRACE_LEVEL_INFORMATION,
@@ -1983,6 +1985,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
     else
     {
         pDevCtx->Connection.Bth.QuickDisconnectTimestamp.QuadPart = 0;
+    }
     }
 
 	//
