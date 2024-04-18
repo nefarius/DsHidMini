@@ -469,7 +469,7 @@ static void ConfigNodeParse(
             if ((pNode = cJSON_GetObjectItem(pDisconnectCombo, comboButtonsNames[buttonIndex])))
             {
                 pCfg->WirelessDisconnectButtonCombo.Buttons[buttonIndex] = (UCHAR)cJSON_GetNumberValue(pNode);
-                //EventWriteOverrideSettingUInt(pDisconnectCombo->string, comboButtonsNames[buttonIndex], pCfg->WirelessDisconnectButtonCombo.Buttons[buttonIndex]);
+                EventWriteOverrideSettingUInt(pDisconnectCombo->string, comboButtonsNames[buttonIndex], pCfg->WirelessDisconnectButtonCombo.Buttons[buttonIndex]);
             }
         }
     }
