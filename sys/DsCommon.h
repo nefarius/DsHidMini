@@ -302,7 +302,7 @@ typedef struct _DS_BUTTON_COMBO
     //
     // Activates the combination
     // 
-    BOOL IsEnabled;
+    BOOLEAN IsEnabled;
 
     //
     // How long the combination must be held
