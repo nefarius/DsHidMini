@@ -1922,7 +1922,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
     //
     // Quick disconnect combo detected
     // 
-    if (&pDevCtx->Configuration.WirelessDisconnectButtonCombo.IsEnabled)
+    if (pDevCtx->Configuration.WirelessDisconnectButtonCombo.IsEnabled)
     {
         int engagedCount = 0;
         for (int buttonIndex = 0; buttonIndex < 3; buttonIndex++)
