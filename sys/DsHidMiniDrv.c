@@ -181,6 +181,7 @@ DMF_DsHidMini_Open(
 	NTSTATUS status = STATUS_SUCCESS;
 	DMF_CONTEXT_DsHidMini* moduleContext;
 	DMF_CONFIG_VirtualHidMini* pHidCfg;
+    WDFDEVICE device;
 	PDEVICE_CONTEXT pDevCtx;
 
 	UNREFERENCED_PARAMETER(DmfModule);
@@ -190,7 +191,8 @@ DMF_DsHidMini_Open(
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
 	moduleContext = DMF_CONTEXT_GET(DmfModule);
-	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
+    device = DMF_ParentDeviceGet(DmfModule);
+	pDevCtx = DeviceGetContext(device);
 	pHidCfg = DMF_ModuleConfigGet(moduleContext->DmfModuleVirtualHidMini);
 
 	//
@@ -280,6 +282,23 @@ DMF_DsHidMini_Open(
 		break;
 	}
 
+    //
+    // Set currently used HID mode
+    // 
+
+    WDF_DEVICE_PROPERTY_DATA propertyData;
+    WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_HidDeviceMode);
+    propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+    propertyData.Lcid = LOCALE_NEUTRAL;
+
+    (void)WdfDeviceAssignProperty(
+        device,
+        &propertyData,
+        DEVPROP_TYPE_BYTE,
+        sizeof(BYTE),
+        &pDevCtx->Configuration.HidDeviceMode
+    );
+
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 
 	return status;
@@ -295,34 +314,9 @@ DMF_DsHidMini_Close(
 	_In_ DMFMODULE DmfModule
 )
 {
-	WDFDEVICE device;
-	PDEVICE_CONTEXT pDevCtx;
-
-
 	PAGED_CODE();
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
-
-	device = DMF_ParentDeviceGet(DmfModule);
-	pDevCtx = DeviceGetContext(device);
-
-	//
-	// Write back currently used mode as other components rely on it
-	// 
-
-	WDF_DEVICE_PROPERTY_DATA propertyData;
-
-	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_HidDeviceMode);
-	propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
-	propertyData.Lcid = LOCALE_NEUTRAL;
-
-	(void)WdfDeviceAssignProperty(
-		device,
-		&propertyData,
-		DEVPROP_TYPE_BYTE,
-		sizeof(BYTE),
-		&pDevCtx->Configuration.HidDeviceMode
-	);
 
 	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
 }
