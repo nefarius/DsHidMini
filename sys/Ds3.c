@@ -92,22 +92,34 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 		//
 		// Grab first (active) radio
 		// 
-		hFind = BluetoothFindFirstRadio(
-			&params,
-			&hRadio
-		);
+        hFind = BluetoothFindFirstRadio(
+            &params,
+            &hRadio
+        );
 
-		if (!hFind)
-		{
-			error = GetLastError();
-			TraceError(
-				TRACE_DS3,
-				"BluetoothFindFirstRadio failed with error %!WINERROR!",
-				error
-			);
-			EventWritePairingNoRadioFound(pDevCtx->DeviceAddressString);
-			break;
-		}
+        if (!hFind)
+        {
+            error = GetLastError();
+
+            if (error == ERROR_NO_MORE_ITEMS)
+            {
+                TraceWarning(
+                    TRACE_DS3,
+                    "No active host radio found, can't pair device"
+                );
+            }
+            else
+            {
+                TraceError(
+                    TRACE_DS3,
+                    "BluetoothFindFirstRadio failed with error %!WINERROR!",
+                    error
+                );
+            }
+
+            EventWritePairingNoRadioFound(pDevCtx->DeviceAddressString);
+            break;
+        }
 
 		//
 		// Get radio info (address)
