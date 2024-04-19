@@ -181,6 +181,7 @@ DMF_DsHidMini_Open(
 	NTSTATUS status = STATUS_SUCCESS;
 	DMF_CONTEXT_DsHidMini* moduleContext;
 	DMF_CONFIG_VirtualHidMini* pHidCfg;
+    WDFDEVICE device;
 	PDEVICE_CONTEXT pDevCtx;
 
 	UNREFERENCED_PARAMETER(DmfModule);
@@ -190,7 +191,8 @@ DMF_DsHidMini_Open(
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
 	moduleContext = DMF_CONTEXT_GET(DmfModule);
-	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
+    device = DMF_ParentDeviceGet(DmfModule);
+	pDevCtx = DeviceGetContext(device);
 	pHidCfg = DMF_ModuleConfigGet(moduleContext->DmfModuleVirtualHidMini);
 
 	//
