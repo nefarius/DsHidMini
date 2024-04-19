@@ -1648,7 +1648,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 				//
 				// Cycle graph from 1 to 4 and repeat
 				// 
-				if (led == (DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4))
+				if (led & 0xF0)
 				{
 					led = DS3_LED_1;
 				}
