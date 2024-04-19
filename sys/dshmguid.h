@@ -17,6 +17,10 @@ DEFINE_GUID(GUID_DEVINTERFACE_DSHIDMINI,
 // Applications read only
 // 
 
+// {6D293077-C3D6-4062-9597-BE4389404C02}
+DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RW_HidDeviceMode,
+    0x6d293077, 0xc3d6, 0x4062, 0x95, 0x97, 0xbe, 0x43, 0x89, 0x40, 0x4c, 0x2, 2); // DEVPROP_TYPE_BYTE
+
 // {3FECF510-CC94-4FBE-8839-738201F84D59}
 DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RO_BatteryStatus,
 	0x3fecf510, 0xcc94, 0x4fbe, 0x88, 0x39, 0x73, 0x82, 0x1, 0xf8, 0x4d, 0x59, 2); // DEVPROP_TYPE_BYTE
@@ -39,8 +43,6 @@ DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RO_IdentificationData,
 // Driver reads only once on power-up
 // 
 
-// {6D293077-C3D6-4062-9597-BE4389404C02}
-DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RW_HidDeviceMode,
-	0x6d293077, 0xc3d6, 0x4062, 0x95, 0x97, 0xbe, 0x43, 0x89, 0x40, 0x4c, 0x2, 2); // DEVPROP_TYPE_BYTE
+
 
 #pragma endregion
