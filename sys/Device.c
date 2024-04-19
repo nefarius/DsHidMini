@@ -974,7 +974,7 @@ void DsDevice_InvokeLocalBthDisconnect(PDEVICE_CONTEXT Context)
 
 		TraceError(
 			TRACE_DSUSB,
-			"GetLastError: %!WINERROR!",
+			"OpenEventW failed with %!WINERROR!",
 			error
 		);
 	}
