@@ -438,6 +438,42 @@ static void ConfigNodeParse(
 		EventWriteOverrideSettingUInt(ParentNode->string, "DisableWirelessIdleTimeout", pCfg->DisableWirelessIdleTimeout);
 	}
 
+    //
+    // Wireless quick disconnect combo
+    // 
+    const cJSON* pDisconnectCombo = cJSON_GetObjectItem(ParentNode, "QuickDisconnectCombo");
+
+    if (pDisconnectCombo)
+    {
+        if ((pNode = cJSON_GetObjectItem(pDisconnectCombo, "IsEnabled")))
+        {
+            pCfg->WirelessDisconnectButtonCombo.IsEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+            EventWriteOverrideSettingUInt(pDisconnectCombo->string, "WirelessDisconnectButtonCombo.IsEnabled", pCfg->WirelessDisconnectButtonCombo.IsEnabled);
+        }
+
+        if ((pNode = cJSON_GetObjectItem(pDisconnectCombo, "HoldTime")))
+        {
+            pCfg->WirelessDisconnectButtonCombo.HoldTime = (ULONG)cJSON_GetNumberValue(pNode);
+            EventWriteOverrideSettingUInt(pDisconnectCombo->string, "WirelessDisconnectButtonCombo.HoldTime", pCfg->WirelessDisconnectButtonCombo.HoldTime);
+        }
+
+        const PSTR comboButtonsNames[] =
+        {
+            "Button1",
+            "Button2",
+            "Button3",
+        };
+
+        for (ULONGLONG buttonIndex = 0; buttonIndex < _countof(pCfg->WirelessDisconnectButtonCombo.Buttons); buttonIndex++)
+        {
+            if ((pNode = cJSON_GetObjectItem(pDisconnectCombo, comboButtonsNames[buttonIndex])))
+            {
+                pCfg->WirelessDisconnectButtonCombo.Buttons[buttonIndex] = (UCHAR)cJSON_GetNumberValue(pNode);
+                EventWriteOverrideSettingUInt(pDisconnectCombo->string, comboButtonsNames[buttonIndex], pCfg->WirelessDisconnectButtonCombo.Buttons[buttonIndex]);
+            }
+        }
+    }
+
 	//
 	// Every mode can have the same properties configured independently
 	// 
@@ -868,6 +904,12 @@ ConfigSetDefaults(
 	Config->IsOutputDeduplicatorEnabled = FALSE;
 	Config->WirelessIdleTimeoutPeriodMs = 300000;
 	Config->DisableWirelessIdleTimeout = FALSE;
+
+    Config->WirelessDisconnectButtonCombo.IsEnabled = TRUE;
+    Config->WirelessDisconnectButtonCombo.HoldTime = 1000;
+    Config->WirelessDisconnectButtonCombo.Buttons[0] = 10;
+    Config->WirelessDisconnectButtonCombo.Buttons[1] = 11;
+    Config->WirelessDisconnectButtonCombo.Buttons[2] = 16;
 
 	Config->ThumbSettings.DeadZoneLeft.Apply = TRUE;
 	Config->ThumbSettings.DeadZoneLeft.PolarValue = 3.0;

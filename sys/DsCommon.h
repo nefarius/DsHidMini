@@ -295,6 +295,28 @@ static CONST PSTR G_DS_LED_AUTHORITY_NAMES[] =
 };
 
 //
+// Button combinations
+// 
+typedef struct _DS_BUTTON_COMBO
+{
+    //
+    // Activates the combination
+    // 
+    BOOLEAN IsEnabled;
+
+    //
+    // How long the combination must be held
+    // 
+    ULONG HoldTime;
+
+    //
+    // The buttons that need to be held
+    // 
+    UCHAR Buttons[3];
+
+} DS_BUTTON_COMBO, * PDS_BUTTON_COMBO;
+
+//
 // Axis dead-zone settings
 // 
 typedef struct _DS_AXIS_DEADZONE
@@ -492,6 +514,11 @@ typedef struct _DS_DRIVER_CONFIGURATION
 	// If set, controller will never auto-disconnect on wireless
 	// 
 	BOOLEAN DisableWirelessIdleTimeout;
+
+    //
+    // Wireless disconnect buttom combo customizing
+    //
+    DS_BUTTON_COMBO WirelessDisconnectButtonCombo;
 
 	//
 	// Thumb stick specific settings

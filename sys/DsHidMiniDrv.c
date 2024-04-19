@@ -1913,66 +1913,74 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 		}
 	}
 
-	//
-	// Quick disconnect combo (L1 + R1 + PS) detected
-	// 
-	if (
-		pInReport->Buttons.Individual.L1
-		&& pInReport->Buttons.Individual.R1
-		&& pInReport->Buttons.Individual.PS
-		)
-	{
-		TraceEvents(TRACE_LEVEL_INFORMATION,
-			TRACE_DSHIDMINIDRV,
-			"!! Quick disconnect combination detected"
-		);
+    //
+    // Quick disconnect combo detected
+    // 
+    if (pDevCtx->Configuration.WirelessDisconnectButtonCombo.IsEnabled)
+    {
+        int engagedCount = 0;
+        for (int buttonIndex = 0; buttonIndex < 3; buttonIndex++)
+        {
+            if ((pInReport->Buttons.lButtons >> pDevCtx->Configuration.WirelessDisconnectButtonCombo.Buttons[buttonIndex]) & 1)
+            {
+                engagedCount++;
+            }
+        }
 
-		t1 = &pDevCtx->Connection.Bth.QuickDisconnectTimestamp;
+        if (engagedCount == 3)
+        {
+            TraceEvents(TRACE_LEVEL_INFORMATION,
+                TRACE_DSHIDMINIDRV,
+                "!! Quick disconnect combination detected"
+            );
 
-		if (pDevCtx->Connection.Bth.QuickDisconnectTimestamp.QuadPart == 0)
-		{
-			QueryPerformanceCounter(t1);
-		}
+            t1 = &pDevCtx->Connection.Bth.QuickDisconnectTimestamp;
 
-		QueryPerformanceCounter(&t2);
+            if (pDevCtx->Connection.Bth.QuickDisconnectTimestamp.QuadPart == 0)
+            {
+                QueryPerformanceCounter(t1);
+            }
 
-		ms = (t2.QuadPart - t1->QuadPart) / (freq.QuadPart / 1000);
+            QueryPerformanceCounter(&t2);
 
-		//
-		// 1 second passed
-		// 
-		if (ms > 1000)
-		{
-			TraceEvents(TRACE_LEVEL_INFORMATION,
-				TRACE_DSHIDMINIDRV,
-				"!! Sending disconnect request"
-			);
+            ms = (t2.QuadPart - t1->QuadPart) / (freq.QuadPart / 1000);
 
-			//
-			// Send disconnect request
-			// 
-			status = DsBth_SendDisconnectRequest(pDevCtx);
+            //
+            // 1 second passed
+            // 
+            if (ms > pDevCtx->Configuration.WirelessDisconnectButtonCombo.HoldTime)
+            {
+                TraceEvents(TRACE_LEVEL_INFORMATION,
+                    TRACE_DSHIDMINIDRV,
+                    "!! Sending disconnect request"
+                );
 
-			if (!NT_SUCCESS(status))
-			{
-				TraceError(
-					TRACE_DSHIDMINIDRV,
-					"Sending disconnect request failed with status %!STATUS!",
-					status
-				);
-				EventWriteFailedWithNTStatus(__FUNCTION__, L"DsBth_SendDisconnectRequest", status);
-			}
+                //
+                // Send disconnect request
+                // 
+                status = DsBth_SendDisconnectRequest(pDevCtx);
 
-			//
-			// No further processing
-			// 
-			return ContinuousRequestTarget_BufferDisposition_ContinuousRequestTargetAndStopStreaming;
-		}
-	}
-	else
-	{
-		pDevCtx->Connection.Bth.QuickDisconnectTimestamp.QuadPart = 0;
-	}
+                if (!NT_SUCCESS(status))
+                {
+                    TraceError(
+                        TRACE_DSHIDMINIDRV,
+                        "Sending disconnect request failed with status %!STATUS!",
+                        status
+                    );
+                    EventWriteFailedWithNTStatus(__FUNCTION__, L"DsBth_SendDisconnectRequest", status);
+                }
+
+                //
+                // No further processing
+                // 
+                return ContinuousRequestTarget_BufferDisposition_ContinuousRequestTargetAndStopStreaming;
+            }
+        }
+        else
+        {
+            pDevCtx->Connection.Bth.QuickDisconnectTimestamp.QuadPart = 0;
+        }
+    }
 
 	//
 	// Idle disconnect detection
