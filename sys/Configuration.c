@@ -454,7 +454,7 @@ static void ConfigNodeParse(
         if ((pNode = cJSON_GetObjectItem(pDisconnectCombo, "HoldTime")))
         {
             pCfg->WirelessDisconnectButtonCombo.HoldTime = (ULONG)cJSON_GetNumberValue(pNode);
-            EventWriteOverrideSettingDouble(pDisconnectCombo->string, "WirelessDisconnectButtonCombo.HoldTime", pCfg->WirelessDisconnectButtonCombo.HoldTime);
+            EventWriteOverrideSettingUInt(pDisconnectCombo->string, "WirelessDisconnectButtonCombo.HoldTime", pCfg->WirelessDisconnectButtonCombo.HoldTime);
         }
 
         const PSTR comboButtonsNames[] =
