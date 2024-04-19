@@ -102,7 +102,7 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 			error = GetLastError();
 			TraceError(
 				TRACE_DS3,
-				"BluetoothFindFirstRadio failed: 0x%X",
+				"BluetoothFindFirstRadio failed with error %!WINERROR!",
 				error
 			);
 			EventWritePairingNoRadioFound(pDevCtx->DeviceAddressString);
@@ -122,7 +122,7 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 			error = ret;
 			TraceError(
 				TRACE_DS3,
-				"BluetoothGetRadioInfo failed: 0x%X",
+				"BluetoothGetRadioInfo failed with error %!WINERROR!",
 				error
 			);
 			EventWriteFailedWithWin32Error(__FUNCTION__, L"BluetoothGetRadioInfo", error);
