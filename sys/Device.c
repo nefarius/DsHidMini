@@ -936,14 +936,14 @@ void DsDevice_InvokeLocalBthDisconnect(PDEVICE_CONTEXT Context)
 	// Disconnect Bluetooth connection, if detected
 	//
 
-	swprintf_s(
-		dcEventName,
-		ARRAYSIZE(dcEventName),
-		DSHM_NAMED_EVENT_DISCONNECT,
-		deviceAddress
-	);
+    (void)swprintf_s(
+        dcEventName,
+        ARRAYSIZE(dcEventName),
+        DSHM_NAMED_EVENT_DISCONNECT,
+        deviceAddress
+    );
 
-	HANDLE dcEvent = OpenEventW(
+	const HANDLE dcEvent = OpenEventW(
 		SYNCHRONIZE | EVENT_MODIFY_STATE,
 		FALSE,
 		dcEventName
@@ -964,14 +964,17 @@ void DsDevice_InvokeLocalBthDisconnect(PDEVICE_CONTEXT Context)
 	{
 		DWORD error = GetLastError();
 
-		if (error == ERROR_NOT_FOUND)
+        // 
+        // Event not present so assume no wireless instance is present
+        // 
+		if (error == ERROR_NOT_FOUND || error == ERROR_FILE_NOT_FOUND)
 		{
 			return;
 		}
 
 		TraceError(
 			TRACE_DSUSB,
-			"GetLastError: %d",
+			"GetLastError: %!WINERROR!",
 			error
 		);
 	}
