@@ -282,6 +282,23 @@ DMF_DsHidMini_Open(
 		break;
 	}
 
+    //
+    // Set currently used HID mode
+    // 
+
+    WDF_DEVICE_PROPERTY_DATA propertyData;
+    WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_HidDeviceMode);
+    propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+    propertyData.Lcid = LOCALE_NEUTRAL;
+
+    (void)WdfDeviceAssignProperty(
+        device,
+        &propertyData,
+        DEVPROP_TYPE_BYTE,
+        sizeof(BYTE),
+        &pDevCtx->Configuration.HidDeviceMode
+    );
+
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 
 	return status;
