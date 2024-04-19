@@ -776,6 +776,19 @@ void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
 			break;
 		}
 
+        //
+        // Check if file exists
+        // 
+        if (GetFileAttributesA(configPath) == INVALID_FILE_ATTRIBUTES)
+        {
+            TraceWarning(
+                TRACE_DEVICE,
+                "Configuration file %s not found, can't listen for changes",
+                configPath
+            );
+            break;
+        }
+
 		Context->ConfigurationDirectoryWatcherEvent = FindFirstChangeNotificationA(
 			configPath,
 			FALSE,
@@ -784,11 +797,13 @@ void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
 
 		if (Context->ConfigurationDirectoryWatcherEvent == NULL)
 		{
+            const DWORD error = GetLastError();
 			TraceError(
 				TRACE_DEVICE,
-				"Failed to create reload event"
+				"FindFirstChangeNotificationA failed with error %!WINERROR!",
+                error
 			);
-			EventWriteFailedWithWin32Error(__FUNCTION__, L"FindFirstChangeNotificationA", GetLastError());
+			EventWriteFailedWithWin32Error(__FUNCTION__, L"FindFirstChangeNotificationA", error);
 			break;
 		}
 
@@ -803,11 +818,13 @@ void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
 
 		if (!ret)
 		{
+            const DWORD error = GetLastError();
 			TraceError(
 				TRACE_DEVICE,
-				"Failed to register wait for reload event"
+				"RegisterWaitForSingleObject failed with error %!WINERROR!",
+                error
 			);
-			EventWriteFailedWithWin32Error(__FUNCTION__, L"RegisterWaitForSingleObject", GetLastError());
+			EventWriteFailedWithWin32Error(__FUNCTION__, L"RegisterWaitForSingleObject", error);
 		}
 	} while (FALSE);
 
