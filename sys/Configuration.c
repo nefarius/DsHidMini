@@ -693,7 +693,7 @@ ConfigLoadForDevice(
 			break;
 		}
 
-		config_json = cJSON_Parse(content);
+		config_json = cJSON_ParseWithLength(content, size.QuadPart);
 
 		if (config_json == NULL)
 		{
