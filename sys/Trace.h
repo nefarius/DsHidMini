@@ -54,6 +54,7 @@
 // USESUFFIX(FuncExit, ">");
 // USEPREFIX(FuncExitVoid, "%!STDPREFIX! [%!FUNC!] <-- Exit");
 // USEPREFIX(TraceError, "%!STDPREFIX! [%!FUNC!] ERROR:");
+// USEPREFIX(TraceWarning, "%!STDPREFIX! [%!FUNC!] WARNING:");
 // USEPREFIX(TraceEvents, "%!STDPREFIX! [%!FUNC!] ");
 // USEPREFIX(TraceInformation, "%!STDPREFIX! [%!FUNC!] ");
 // USEPREFIX(TraceVerbose, "%!STDPREFIX! [%!FUNC!] ");
