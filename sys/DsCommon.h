@@ -433,7 +433,7 @@ typedef struct _DS_LED
 
 	UCHAR BasePortionDuration0;
 
-	UCHAR IntervalPortionOff;
+	UCHAR OffPortionMultiplier;
 
 	UCHAR IntervalPortionOn;
 
