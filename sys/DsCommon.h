@@ -531,7 +531,7 @@ typedef struct _DS_DRIVER_CONFIGURATION
 	BOOLEAN DisableWirelessIdleTimeout;
 
     //
-    // Wireless disconnect buttom combo customizing
+    // Wireless disconnect button combo customizing
     //
     DS_BUTTON_COMBO WirelessDisconnectButtonCombo;
 
