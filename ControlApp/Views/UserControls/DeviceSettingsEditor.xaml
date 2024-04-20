@@ -254,7 +254,7 @@
                                             VerticalAlignment="Center"
                                             ClipToBounds="True"
                                             DockPanel.Dock="Right"
-                                            Maximum="254"
+                                            Maximum="255"
                                             Minimum="0"
                                             Text="{Binding IntervalPortionON}"
                                             ToolTip="{Binding Value, RelativeSource={RelativeSource Self}}" />
@@ -271,7 +271,7 @@
                                             VerticalAlignment="Center"
                                             ClipToBounds="True"
                                             DockPanel.Dock="Right"
-                                            Maximum="254"
+                                            Maximum="255"
                                             Minimum="0"
                                             Value="{Binding IntervalPortionOFF}" />
                                     </DockPanel>
