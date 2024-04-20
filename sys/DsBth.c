@@ -82,7 +82,7 @@ DsBth_EvtControlWriteTimerFunc(
 		case DsBatteryStatusLow:
 		case DsBatteryStatusDying:
 			DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
-			DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
+			DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 00, 127, 127);
 			break;
 		default:
 			break;

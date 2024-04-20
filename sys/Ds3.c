@@ -327,9 +327,10 @@ VOID DS3_SET_LED_DURATION(
 	PDEVICE_CONTEXT Context,
 	UCHAR LedIndex,
 	UCHAR TotalDuration,
-	UCHAR Interval,
-	UCHAR OffInterval,
-	UCHAR OnInterval
+    UCHAR BasePortionDuration1,
+	UCHAR BasePortionDuration0,
+	UCHAR OffPortionMultiplier,
+	UCHAR OnPortionMultiplier
 )
 {
 	if (LedIndex > 3)
@@ -347,9 +348,10 @@ VOID DS3_SET_LED_DURATION(
 	);
 
 	buffer[10 + (LedIndex * 5)] = TotalDuration;
-	buffer[11 + (LedIndex * 5)] = Interval;
-	buffer[13 + (LedIndex * 5)] = OffInterval;
-	buffer[14 + (LedIndex * 5)] = OnInterval;
+	buffer[11 + (LedIndex * 5)] = BasePortionDuration1;
+    buffer[12 + (LedIndex * 5)] = BasePortionDuration0;
+	buffer[13 + (LedIndex * 5)] = OffPortionMultiplier;
+	buffer[14 + (LedIndex * 5)] = OnPortionMultiplier;
 }
 
 //
@@ -361,9 +363,10 @@ VOID DS3_SET_LED_DURATION_DEFAULT(PDEVICE_CONTEXT Context, UCHAR LedIndex)
 		Context,
 		LedIndex,
 		0xFF, // Interval repeat never ends
-		0x27, // Interval duration
+		0x27, // BasePortionDuration1
+        0x00, // BasePortionDuration0
 		0x00, // No OFF-portion
-		0x32 // Default ON-portion
+		0x32 // Default ON-portion multiplier
 	);
 }
 

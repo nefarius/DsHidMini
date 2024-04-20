@@ -35,12 +35,13 @@ extern const UCHAR G_Ds3BthHidOutputReport[];
 
 
 VOID DS3_SET_LED_DURATION(
-	PDEVICE_CONTEXT Context,
-	UCHAR LedIndex,
-	UCHAR TotalDuration,
-	UCHAR Interval,
-	UCHAR OffInterval,
-	UCHAR OnInterval
+    PDEVICE_CONTEXT Context,
+    UCHAR LedIndex,
+    UCHAR TotalDuration,
+    UCHAR BasePortionDuration1,
+    UCHAR BasePortionDuration0,
+    UCHAR OffPortionMultiplier,
+    UCHAR OnPortionMultiplier
 );
 
 VOID DS3_SET_LED_DURATION_DEFAULT(

@@ -1182,7 +1182,7 @@ DsHidMini_WriteReport(
 						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
 					else {
 						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
-						DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
+						DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 00, 127, 127);
 					}
 				}
 				//
@@ -1200,7 +1200,7 @@ DsHidMini_WriteReport(
 						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
 					else {
 						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
-						DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
+						DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 00, 127, 127);
 					}
 				}
 				//
@@ -1221,10 +1221,10 @@ DsHidMini_WriteReport(
 				// Set to rapidly flash all 4 LEDs
 				// 
 				DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4);
-				DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 3, 127, 127);
-				DS3_SET_LED_DURATION(pDevCtx, 1, 0xFF, 3, 127, 127);
-				DS3_SET_LED_DURATION(pDevCtx, 2, 0xFF, 3, 127, 127);
-				DS3_SET_LED_DURATION(pDevCtx, 3, 0xFF, 3, 127, 127);
+				DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 3, 00, 127, 127);
+				DS3_SET_LED_DURATION(pDevCtx, 1, 0xFF, 3, 00, 127, 127);
+				DS3_SET_LED_DURATION(pDevCtx, 2, 0xFF, 3, 00, 127, 127);
+				DS3_SET_LED_DURATION(pDevCtx, 3, 0xFF, 3, 00, 127, 127);
 			}
 		}
 
@@ -1882,7 +1882,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 						case DsBatteryStatusLow:
 						case DsBatteryStatusDying:
 							DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
-							DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
+							DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 00, 127, 127);
 							break;
 						default:
 							break;
@@ -1906,7 +1906,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 						case DsBatteryStatusLow:
 						case DsBatteryStatusDying:
 							DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
-							DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
+							DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 00, 127, 127);
 							break;
 						default:
 							break;
@@ -2403,6 +2403,7 @@ Ds_SendOutputReport(
 				0,
 				pConfig->LEDSettings.CustomPatterns.Player1.Duration,
 				pConfig->LEDSettings.CustomPatterns.Player1.BasePortionDuration1,
+                pConfig->LEDSettings.CustomPatterns.Player1.BasePortionDuration0,
 				pConfig->LEDSettings.CustomPatterns.Player1.OffPortionMultiplier,
 				pConfig->LEDSettings.CustomPatterns.Player1.OnPortionMultiplier
 			);
@@ -2411,6 +2412,7 @@ Ds_SendOutputReport(
 				1,
 				pConfig->LEDSettings.CustomPatterns.Player2.Duration,
 				pConfig->LEDSettings.CustomPatterns.Player2.BasePortionDuration1,
+                pConfig->LEDSettings.CustomPatterns.Player1.BasePortionDuration0,
 				pConfig->LEDSettings.CustomPatterns.Player2.OffPortionMultiplier,
 				pConfig->LEDSettings.CustomPatterns.Player2.OnPortionMultiplier
 			);
@@ -2419,6 +2421,7 @@ Ds_SendOutputReport(
 				2,
 				pConfig->LEDSettings.CustomPatterns.Player3.Duration,
 				pConfig->LEDSettings.CustomPatterns.Player3.BasePortionDuration1,
+                pConfig->LEDSettings.CustomPatterns.Player1.BasePortionDuration0,
 				pConfig->LEDSettings.CustomPatterns.Player3.OffPortionMultiplier,
 				pConfig->LEDSettings.CustomPatterns.Player3.OnPortionMultiplier
 			);
@@ -2427,6 +2430,7 @@ Ds_SendOutputReport(
 				3,
 				pConfig->LEDSettings.CustomPatterns.Player4.Duration,
 				pConfig->LEDSettings.CustomPatterns.Player4.BasePortionDuration1,
+                pConfig->LEDSettings.CustomPatterns.Player1.BasePortionDuration0,
 				pConfig->LEDSettings.CustomPatterns.Player4.OffPortionMultiplier,
 				pConfig->LEDSettings.CustomPatterns.Player4.OnPortionMultiplier
 			);
