@@ -271,16 +271,18 @@ DMF_DsHidMini_Open(
 		pHidCfg->HidDeviceAttributes.VersionNumber = pDevCtx->VersionNumber;
 
 		break;
-	default:
+    default:
 
-		status = STATUS_INVALID_PARAMETER;
+        status = STATUS_INVALID_PARAMETER;
 
-		TraceError(
-			TRACE_DSHIDMINIDRV,
-			"Unknown HID Device Mode: 0x%02X", pDevCtx->Configuration.HidDeviceMode);
+        TraceError(
+            TRACE_DSHIDMINIDRV,
+            "Unknown HID Device Mode: 0x%02X",
+            pDevCtx->Configuration.HidDeviceMode
+        );
 
-		break;
-	}
+        goto exit;
+    }
 
     //
     // Set currently used HID mode
@@ -291,7 +293,7 @@ DMF_DsHidMini_Open(
     propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
     propertyData.Lcid = LOCALE_NEUTRAL;
 
-    (void)WdfDeviceAssignProperty(
+    status = WdfDeviceAssignProperty(
         device,
         &propertyData,
         DEVPROP_TYPE_BYTE,
@@ -299,9 +301,20 @@ DMF_DsHidMini_Open(
         &pDevCtx->Configuration.HidDeviceMode
     );
 
-	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
+exit:
+    if (!NT_SUCCESS(status))
+    {
+        TraceError(
+            TRACE_DSHIDMINIDRV,
+            "HID device configuration failed with status %!STATUS!",
+            status
+        );
+        EventWriteFailedWithNTStatus(__FUNCTION__, L"HID device configuration", status);
+    }
 
-	return status;
+    FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
+
+    return status;
 }
 #pragma code_seg()
 
