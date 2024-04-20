@@ -283,10 +283,10 @@ ConfigParseLEDSettings(
                     EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "Duration", pPlayerSlots[playerIndex]->Duration);
                 }
 
-                if ((pNode = cJSON_GetObjectItem(pPlayer, "IntervalDuration")))
+                if ((pNode = cJSON_GetObjectItem(pPlayer, "BasePortionDuration1")))
                 {
-                    pPlayerSlots[playerIndex]->IntervalDuration = (UCHAR)cJSON_GetNumberValue(pNode);
-                    EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "IntervalDuration", pPlayerSlots[playerIndex]->IntervalDuration);
+                    pPlayerSlots[playerIndex]->BasePortionDuration1 = (UCHAR)cJSON_GetNumberValue(pNode);
+                    EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "BasePortionDuration1", pPlayerSlots[playerIndex]->BasePortionDuration1);
                 }
 
                 if ((pNode = cJSON_GetObjectItem(pPlayer, "Enabled")))
@@ -952,7 +952,7 @@ ConfigSetDefaults(
 	for (ULONGLONG playerIndex = 0; playerIndex < _countof(pPlayerSlots); playerIndex++)
 	{
 		pPlayerSlots[playerIndex]->Duration = 0xFF;
-		pPlayerSlots[playerIndex]->IntervalDuration = 0xFF;
+		pPlayerSlots[playerIndex]->BasePortionDuration1 = 0xFF;
 		pPlayerSlots[playerIndex]->EnabledFlags = 0x10;
 		pPlayerSlots[playerIndex]->IntervalPortionOff = 0x00;
 		pPlayerSlots[playerIndex]->IntervalPortionOn = 0xFF;

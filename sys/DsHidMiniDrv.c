@@ -2402,7 +2402,7 @@ Ds_SendOutputReport(
 				Context,
 				0,
 				pConfig->LEDSettings.CustomPatterns.Player1.Duration,
-				pConfig->LEDSettings.CustomPatterns.Player1.IntervalDuration,
+				pConfig->LEDSettings.CustomPatterns.Player1.BasePortionDuration1,
 				pConfig->LEDSettings.CustomPatterns.Player1.IntervalPortionOff,
 				pConfig->LEDSettings.CustomPatterns.Player1.IntervalPortionOn
 			);
@@ -2410,7 +2410,7 @@ Ds_SendOutputReport(
 				Context,
 				1,
 				pConfig->LEDSettings.CustomPatterns.Player2.Duration,
-				pConfig->LEDSettings.CustomPatterns.Player2.IntervalDuration,
+				pConfig->LEDSettings.CustomPatterns.Player2.BasePortionDuration1,
 				pConfig->LEDSettings.CustomPatterns.Player2.IntervalPortionOff,
 				pConfig->LEDSettings.CustomPatterns.Player2.IntervalPortionOn
 			);
@@ -2418,7 +2418,7 @@ Ds_SendOutputReport(
 				Context,
 				2,
 				pConfig->LEDSettings.CustomPatterns.Player3.Duration,
-				pConfig->LEDSettings.CustomPatterns.Player3.IntervalDuration,
+				pConfig->LEDSettings.CustomPatterns.Player3.BasePortionDuration1,
 				pConfig->LEDSettings.CustomPatterns.Player3.IntervalPortionOff,
 				pConfig->LEDSettings.CustomPatterns.Player3.IntervalPortionOn
 			);
@@ -2426,7 +2426,7 @@ Ds_SendOutputReport(
 				Context,
 				3,
 				pConfig->LEDSettings.CustomPatterns.Player4.Duration,
-				pConfig->LEDSettings.CustomPatterns.Player4.IntervalDuration,
+				pConfig->LEDSettings.CustomPatterns.Player4.BasePortionDuration1,
 				pConfig->LEDSettings.CustomPatterns.Player4.IntervalPortionOff,
 				pConfig->LEDSettings.CustomPatterns.Player4.IntervalPortionOn
 			);

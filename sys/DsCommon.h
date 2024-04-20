@@ -429,7 +429,7 @@ typedef struct _DS_LED
 {
 	UCHAR Duration;
 
-	UCHAR IntervalDuration;
+	UCHAR BasePortionDuration1;
 
 	UCHAR EnabledFlags;
 
