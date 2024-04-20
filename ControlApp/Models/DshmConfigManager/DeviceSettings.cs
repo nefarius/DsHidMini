@@ -199,6 +199,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
                     this.Duration = copySource.Duration;
                     this.CycleDuration = copySource.CycleDuration;
                     this.OnPeriodCycles = copySource.OnPeriodCycles;
+                    this.OffPeriodCycles = copySource.OffPeriodCycles;
                 }
             }
         }
