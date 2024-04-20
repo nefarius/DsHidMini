@@ -289,10 +289,10 @@ ConfigParseLEDSettings(
                     EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "BasePortionDuration1", pPlayerSlots[playerIndex]->BasePortionDuration1);
                 }
 
-                if ((pNode = cJSON_GetObjectItem(pPlayer, "Enabled")))
+                if ((pNode = cJSON_GetObjectItem(pPlayer, "BasePortionDuration0")))
                 {
                     pPlayerSlots[playerIndex]->BasePortionDuration0 = (UCHAR)cJSON_GetNumberValue(pNode);
-                    EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "Enabled", pPlayerSlots[playerIndex]->BasePortionDuration0);
+                    EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "BasePortionDuration0", pPlayerSlots[playerIndex]->BasePortionDuration0);
                 }
 
                 if ((pNode = cJSON_GetObjectItem(pPlayer, "OffPortionMultiplier")))
