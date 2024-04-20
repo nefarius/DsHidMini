@@ -2412,7 +2412,7 @@ Ds_SendOutputReport(
 				1,
 				pConfig->LEDSettings.CustomPatterns.Player2.TotalDuration,
 				pConfig->LEDSettings.CustomPatterns.Player2.BasePortionDuration1,
-                pConfig->LEDSettings.CustomPatterns.Player1.BasePortionDuration0,
+                pConfig->LEDSettings.CustomPatterns.Player2.BasePortionDuration0,
 				pConfig->LEDSettings.CustomPatterns.Player2.OffPortionMultiplier,
 				pConfig->LEDSettings.CustomPatterns.Player2.OnPortionMultiplier
 			);
@@ -2421,7 +2421,7 @@ Ds_SendOutputReport(
 				2,
 				pConfig->LEDSettings.CustomPatterns.Player3.TotalDuration,
 				pConfig->LEDSettings.CustomPatterns.Player3.BasePortionDuration1,
-                pConfig->LEDSettings.CustomPatterns.Player1.BasePortionDuration0,
+                pConfig->LEDSettings.CustomPatterns.Player3.BasePortionDuration0,
 				pConfig->LEDSettings.CustomPatterns.Player3.OffPortionMultiplier,
 				pConfig->LEDSettings.CustomPatterns.Player3.OnPortionMultiplier
 			);
@@ -2430,7 +2430,7 @@ Ds_SendOutputReport(
 				3,
 				pConfig->LEDSettings.CustomPatterns.Player4.TotalDuration,
 				pConfig->LEDSettings.CustomPatterns.Player4.BasePortionDuration1,
-                pConfig->LEDSettings.CustomPatterns.Player1.BasePortionDuration0,
+                pConfig->LEDSettings.CustomPatterns.Player4.BasePortionDuration0,
 				pConfig->LEDSettings.CustomPatterns.Player4.OffPortionMultiplier,
 				pConfig->LEDSettings.CustomPatterns.Player4.OnPortionMultiplier
 			);
