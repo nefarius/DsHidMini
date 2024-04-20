@@ -124,12 +124,12 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls.DeviceSettings
                     this.OnPropertyChanged(nameof(IntervalPortionON));
                 }
             }
-            public byte IntervalPortionOFF
+            public int IntervalPortionOFF
             {
                 get => singleLEDCustoms.OffPeriodCycles;
                 set
                 {
-                    singleLEDCustoms.OffPeriodCycles = value;
+                    singleLEDCustoms.OffPeriodCycles = (byte)value;
                     this.OnPropertyChanged(nameof(IntervalPortionOFF));
                 }
             }
