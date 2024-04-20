@@ -435,7 +435,7 @@ typedef struct _DS_LED
 
 	UCHAR OffPortionMultiplier;
 
-	UCHAR IntervalPortionOn;
+	UCHAR OnPortionMultiplier;
 
 } DS_LED, * PDS_LED;
 

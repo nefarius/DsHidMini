@@ -301,10 +301,10 @@ ConfigParseLEDSettings(
                     EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "OffPortionMultiplier", pPlayerSlots[playerIndex]->OffPortionMultiplier);
                 }
 
-                if ((pNode = cJSON_GetObjectItem(pPlayer, "IntervalPortionOn")))
+                if ((pNode = cJSON_GetObjectItem(pPlayer, "OnPortionMultiplier")))
                 {
-                    pPlayerSlots[playerIndex]->IntervalPortionOn = (UCHAR)cJSON_GetNumberValue(pNode);
-                    EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "IntervalPortionOn", pPlayerSlots[playerIndex]->IntervalPortionOn);
+                    pPlayerSlots[playerIndex]->OnPortionMultiplier = (UCHAR)cJSON_GetNumberValue(pNode);
+                    EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "OnPortionMultiplier", pPlayerSlots[playerIndex]->OnPortionMultiplier);
                 }
             }
 		}
@@ -955,7 +955,7 @@ ConfigSetDefaults(
 		pPlayerSlots[playerIndex]->BasePortionDuration1 = 0xFF;
 		pPlayerSlots[playerIndex]->BasePortionDuration0 = 0x10;
 		pPlayerSlots[playerIndex]->OffPortionMultiplier = 0x00;
-		pPlayerSlots[playerIndex]->IntervalPortionOn = 0xFF;
+		pPlayerSlots[playerIndex]->OnPortionMultiplier = 0xFF;
 	}
 
 	//
