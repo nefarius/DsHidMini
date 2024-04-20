@@ -6,6 +6,13 @@
     "OutputRateControlPeriodMs": 150,
     "IsOutputDeduplicatorEnabled": false,
     "WirelessIdleTimeoutPeriodMs": 300000,
+    "QuickDisconnectCombo": {
+      "IsEnabled": true,
+      "HoldTime": 1000,
+      "Button1": 16,
+      "Button2": 11,
+      "Button3": 10
+    },
     "SDF": {
       "PressureExposureMode": "Default",
       "DPadExposureMode": "Default",
