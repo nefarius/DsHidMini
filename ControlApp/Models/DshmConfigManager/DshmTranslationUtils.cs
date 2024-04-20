@@ -117,11 +117,11 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
 
                 if(x_Leds.LeDMode == LEDsMode.CustomPattern)
                 {
-                    dshm_singleLED[i].Duration = singleLEDCustoms.Duration;
-                    dshm_singleLED[i].CycleDuration1 = (byte)(singleLEDCustoms.CycleDuration >> 4); // FIX THIS
-                    dshm_singleLED[i].CycleDuration0 = (byte)(singleLEDCustoms.CycleDuration & 0xFF);
-                    dshm_singleLED[i].OffPeriodCycles = singleLEDCustoms.OffPeriodCycles;
-                    dshm_singleLED[i].OnPeriodCycles = singleLEDCustoms.OnPeriodCycles;
+                    dshm_singleLED[i].TotalDuration = singleLEDCustoms.Duration;
+                    dshm_singleLED[i].BasePortionDuration1 = (byte)(singleLEDCustoms.CycleDuration >> 4); // FIX THIS
+                    dshm_singleLED[i].BasePortionDuration0 = (byte)(singleLEDCustoms.CycleDuration & 0xFF);
+                    dshm_singleLED[i].OffPortionMultiplier = singleLEDCustoms.OffPeriodCycles;
+                    dshm_singleLED[i].OnPortionMultiplier = singleLEDCustoms.OnPeriodCycles;
                 }
                 else
                 {

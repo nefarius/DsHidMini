@@ -93,11 +93,11 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig
 
         public class SingleLEDCustoms
         {
-            public byte? Duration { get; set; }// = 255;
-            public byte? CycleDuration1 { get; set; }// = 255;
-            public byte? CycleDuration0 { get; set; }// = 0x10;
-            public byte? OffPeriodCycles { get; set; }// = 0;
-            public byte? OnPeriodCycles { get; set; }// = 255;
+            public byte? TotalDuration { get; set; }// = 255;
+            public byte? BasePortionDuration1 { get; set; }// = 255;
+            public byte? BasePortionDuration0 { get; set; }// = 0x10;
+            public byte? OffPortionMultiplier { get; set; }// = 0;
+            public byte? OnPortionMultiplier { get; set; }// = 255;
         }
 
         public class AllLEDSettings
