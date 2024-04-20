@@ -431,7 +431,7 @@ typedef struct _DS_LED
 
 	UCHAR BasePortionDuration1;
 
-	UCHAR EnabledFlags;
+	UCHAR BasePortionDuration0;
 
 	UCHAR IntervalPortionOff;
 
