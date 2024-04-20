@@ -277,10 +277,10 @@ ConfigParseLEDSettings(
 		for (ULONGLONG playerIndex = 0; playerIndex < _countof(playerSlotNames); playerIndex++)
 		{
             if (pPlayer = cJSON_GetObjectItem(pCustomPatterns, playerSlotNames[playerIndex])) {
-                if ((pNode = cJSON_GetObjectItem(pPlayer, "Duration")))
+                if ((pNode = cJSON_GetObjectItem(pPlayer, "TotalDuration")))
                 {
-                    pPlayerSlots[playerIndex]->Duration = (UCHAR)cJSON_GetNumberValue(pNode);
-                    EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "Duration", pPlayerSlots[playerIndex]->Duration);
+                    pPlayerSlots[playerIndex]->TotalDuration = (UCHAR)cJSON_GetNumberValue(pNode);
+                    EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "TotalDuration", pPlayerSlots[playerIndex]->TotalDuration);
                 }
 
                 if ((pNode = cJSON_GetObjectItem(pPlayer, "BasePortionDuration1")))
@@ -951,7 +951,7 @@ ConfigSetDefaults(
 
 	for (ULONGLONG playerIndex = 0; playerIndex < _countof(pPlayerSlots); playerIndex++)
 	{
-		pPlayerSlots[playerIndex]->Duration = 0xFF;
+		pPlayerSlots[playerIndex]->TotalDuration = 0xFF;
 		pPlayerSlots[playerIndex]->BasePortionDuration1 = 0xFF;
 		pPlayerSlots[playerIndex]->BasePortionDuration0 = 0x10;
 		pPlayerSlots[playerIndex]->OffPortionMultiplier = 0x00;

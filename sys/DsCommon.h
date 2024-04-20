@@ -427,7 +427,7 @@ typedef struct _DS_RUMBLE_SETTINGS
 // 
 typedef struct _DS_LED
 {
-	UCHAR Duration;
+	UCHAR TotalDuration;
 
 	UCHAR BasePortionDuration1;
 

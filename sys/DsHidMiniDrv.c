@@ -909,7 +909,7 @@ DsHidMini_WriteReport(
 		pSetEffect = (PPID_SET_EFFECT_REPORT)Packet->reportBuffer;
 
 		TraceVerbose(TRACE_DSHIDMINIDRV, "!! SET_EFFECT_REPORT, EffectBlockIndex: %d, "
-			"EffectType: %d, Duration: %d, TriggerRepeatInterval: %d, "
+			"EffectType: %d, TotalDuration: %d, TriggerRepeatInterval: %d, "
 			"SamplePeriod: %d, Gain: %d, TriggerButton: %d, AxesEnableX: %d, AxesEnableY: %d, "
 			"DirectionEnable: %d, DirectionInstance1: %d, DirectionInstance2: %d, StartDelay: %d",
 			pSetEffect->EffectBlockIndex,
@@ -2401,7 +2401,7 @@ Ds_SendOutputReport(
 			DS3_SET_LED_DURATION(
 				Context,
 				0,
-				pConfig->LEDSettings.CustomPatterns.Player1.Duration,
+				pConfig->LEDSettings.CustomPatterns.Player1.TotalDuration,
 				pConfig->LEDSettings.CustomPatterns.Player1.BasePortionDuration1,
                 pConfig->LEDSettings.CustomPatterns.Player1.BasePortionDuration0,
 				pConfig->LEDSettings.CustomPatterns.Player1.OffPortionMultiplier,
@@ -2410,7 +2410,7 @@ Ds_SendOutputReport(
 			DS3_SET_LED_DURATION(
 				Context,
 				1,
-				pConfig->LEDSettings.CustomPatterns.Player2.Duration,
+				pConfig->LEDSettings.CustomPatterns.Player2.TotalDuration,
 				pConfig->LEDSettings.CustomPatterns.Player2.BasePortionDuration1,
                 pConfig->LEDSettings.CustomPatterns.Player1.BasePortionDuration0,
 				pConfig->LEDSettings.CustomPatterns.Player2.OffPortionMultiplier,
@@ -2419,7 +2419,7 @@ Ds_SendOutputReport(
 			DS3_SET_LED_DURATION(
 				Context,
 				2,
-				pConfig->LEDSettings.CustomPatterns.Player3.Duration,
+				pConfig->LEDSettings.CustomPatterns.Player3.TotalDuration,
 				pConfig->LEDSettings.CustomPatterns.Player3.BasePortionDuration1,
                 pConfig->LEDSettings.CustomPatterns.Player1.BasePortionDuration0,
 				pConfig->LEDSettings.CustomPatterns.Player3.OffPortionMultiplier,
@@ -2428,7 +2428,7 @@ Ds_SendOutputReport(
 			DS3_SET_LED_DURATION(
 				Context,
 				3,
-				pConfig->LEDSettings.CustomPatterns.Player4.Duration,
+				pConfig->LEDSettings.CustomPatterns.Player4.TotalDuration,
 				pConfig->LEDSettings.CustomPatterns.Player4.BasePortionDuration1,
                 pConfig->LEDSettings.CustomPatterns.Player1.BasePortionDuration0,
 				pConfig->LEDSettings.CustomPatterns.Player4.OffPortionMultiplier,
