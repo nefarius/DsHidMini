@@ -898,6 +898,8 @@ ConfigSetDefaults(
 	_Inout_ PDS_DRIVER_CONFIGURATION Config
 )
 {
+    FuncEntry(TRACE_CONFIG);
+
 	//
 	// Common
 	// 
@@ -966,4 +968,6 @@ ConfigSetDefaults(
 
 	Config->GPJ.PressureExposureMode = DsPressureExposureModeDefault;
 	Config->GPJ.DPadExposureMode = DsDPadExposureModeDefault;
+
+    FuncExitNoReturn(TRACE_CONFIG);
 }
