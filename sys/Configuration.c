@@ -457,19 +457,12 @@ static void ConfigNodeParse(
             EventWriteOverrideSettingUInt(pDisconnectCombo->string, "WirelessDisconnectButtonCombo.HoldTime", pCfg->WirelessDisconnectButtonCombo.HoldTime);
         }
 
-        const PSTR comboButtonsNames[] =
-        {
-            "Button1",
-            "Button2",
-            "Button3",
-        };
-
         for (ULONGLONG buttonIndex = 0; buttonIndex < _countof(pCfg->WirelessDisconnectButtonCombo.Buttons); buttonIndex++)
         {
-            if ((pNode = cJSON_GetObjectItem(pDisconnectCombo, comboButtonsNames[buttonIndex])))
+            if ((pNode = cJSON_GetObjectItem(pDisconnectCombo, G_DS_BUTTON_COMBO_NAMES[buttonIndex])))
             {
                 pCfg->WirelessDisconnectButtonCombo.Buttons[buttonIndex] = (UCHAR)cJSON_GetNumberValue(pNode);
-                EventWriteOverrideSettingUInt(pDisconnectCombo->string, comboButtonsNames[buttonIndex], pCfg->WirelessDisconnectButtonCombo.Buttons[buttonIndex]);
+                EventWriteOverrideSettingUInt(pDisconnectCombo->string, G_DS_BUTTON_COMBO_NAMES[buttonIndex], pCfg->WirelessDisconnectButtonCombo.Buttons[buttonIndex]);
             }
         }
     }

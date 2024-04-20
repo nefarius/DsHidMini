@@ -317,6 +317,16 @@ typedef struct _DS_BUTTON_COMBO
 } DS_BUTTON_COMBO, * PDS_BUTTON_COMBO;
 
 //
+// Friendly names for reading from JSON
+// 
+static CONST PSTR G_DS_BUTTON_COMBO_NAMES[] =
+{
+    "Button1",
+    "Button2",
+    "Button3",
+};
+
+//
 // Axis dead-zone settings
 // 
 typedef struct _DS_AXIS_DEADZONE
