@@ -2132,20 +2132,6 @@ DMF_EvtExecuteOutputPacketReceived(
 
 	case DsDeviceConnectionTypeUsb:
 
-		//
-		// Don't send if no state change has occurred
-		// 
-		if (pRepCtx->ReportSource > Ds3OutputReportSourceDriverHighPriority
-			&& pDevCtx->Configuration.IsOutputDeduplicatorEnabled > 0
-			&& RtlCompareMemory(
-				ClientWorkBuffer,
-				pDevCtx->OutputReport.Cache.LastReport,
-				bufferSize
-			) == bufferSize)
-		{
-			break;
-		}
-
 		status = USB_WriteInterruptOutSync(
 			pDevCtx,
 			&memoryDesc
@@ -2167,20 +2153,6 @@ DMF_EvtExecuteOutputPacketReceived(
 #pragma region DsDeviceConnectionTypeBth
 
 	case DsDeviceConnectionTypeBth:
-
-		//
-		// Don't send if no state change has occurred
-		// 
-		if (pRepCtx->ReportSource > Ds3OutputReportSourceDriverHighPriority
-			&& pDevCtx->Configuration.IsOutputDeduplicatorEnabled > 0
-			&& RtlCompareMemory(
-				ClientWorkBuffer,
-				pDevCtx->OutputReport.Cache.LastReport,
-				bufferSize
-			) == bufferSize)
-		{
-			break;
-		}
 
 		//
 		// Calculate delay, the smaller the more frequent packets are sent

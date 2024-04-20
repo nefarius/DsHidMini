@@ -422,12 +422,6 @@ static void ConfigNodeParse(
 		EventWriteOverrideSettingUInt(ParentNode->string, "OutputRateControlPeriodMs", pCfg->OutputRateControlPeriodMs);
 	}
 
-	if ((pNode = cJSON_GetObjectItem(ParentNode, "IsOutputDeduplicatorEnabled")))
-	{
-		pCfg->IsOutputDeduplicatorEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
-		EventWriteOverrideSettingUInt(ParentNode->string, "IsOutputDeduplicatorEnabled", pCfg->IsOutputDeduplicatorEnabled);
-	}
-
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "WirelessIdleTimeoutPeriodMs")))
 	{
 		pCfg->WirelessIdleTimeoutPeriodMs = (ULONG)cJSON_GetNumberValue(pNode);
@@ -912,7 +906,6 @@ ConfigSetDefaults(
 	Config->DisableAutoPairing = FALSE;
 	Config->IsOutputRateControlEnabled = TRUE;
 	Config->OutputRateControlPeriodMs = 150;
-	Config->IsOutputDeduplicatorEnabled = FALSE;
 	Config->WirelessIdleTimeoutPeriodMs = 300000;
 	Config->DisableWirelessIdleTimeout = FALSE;
 

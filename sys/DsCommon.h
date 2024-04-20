@@ -516,11 +516,6 @@ typedef struct _DS_DRIVER_CONFIGURATION
 	UCHAR OutputRateControlPeriodMs;
 
 	//
-	// True if output deduplicator is enabled, false if not
-	// 
-	UCHAR IsOutputDeduplicatorEnabled;
-
-	//
 	// Idle disconnect period in milliseconds
 	// 
 	ULONG WirelessIdleTimeoutPeriodMs;
