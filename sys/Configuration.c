@@ -374,6 +374,8 @@ static void ConfigNodeParse(
 	_In_opt_ BOOLEAN IsHotReload
 )
 {
+    FuncEntry(TRACE_CONFIG);
+
 	const PDS_DRIVER_CONFIGURATION pCfg = &Context->Configuration;
 	cJSON* pNode = NULL;
 
@@ -461,8 +463,22 @@ static void ConfigNodeParse(
         {
             if ((pNode = cJSON_GetObjectItem(pDisconnectCombo, G_DS_BUTTON_COMBO_NAMES[buttonIndex])))
             {
-                pCfg->WirelessDisconnectButtonCombo.Buttons[buttonIndex] = (UCHAR)cJSON_GetNumberValue(pNode);
-                EventWriteOverrideSettingUInt(pDisconnectCombo->string, G_DS_BUTTON_COMBO_NAMES[buttonIndex], pCfg->WirelessDisconnectButtonCombo.Buttons[buttonIndex]);
+                const UCHAR offset = (UCHAR)cJSON_GetNumberValue(pNode);
+                if (offset <= DS_BUTTON_COMBO_MAX_OFFSET)
+                {
+                    pCfg->WirelessDisconnectButtonCombo.Buttons[buttonIndex] = (UCHAR)cJSON_GetNumberValue(pNode);
+                    EventWriteOverrideSettingUInt(pDisconnectCombo->string, G_DS_BUTTON_COMBO_NAMES[buttonIndex],
+                                                  pCfg->WirelessDisconnectButtonCombo.Buttons[buttonIndex]);
+                }
+                else
+                {
+                    TraceError(
+                        TRACE_CONFIG,
+                        "Provided button offset %d for %s out of range, ignoring",
+                        offset,
+                        G_DS_BUTTON_COMBO_NAMES[buttonIndex]
+                    );
+                }
             }
         }
     }
@@ -570,6 +586,8 @@ static void ConfigNodeParse(
 			}
 		}
 	}
+
+    FuncExitNoReturn(TRACE_CONFIG);
 }
 #pragma warning(pop)
 

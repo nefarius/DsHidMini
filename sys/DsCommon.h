@@ -327,6 +327,11 @@ static CONST PSTR G_DS_BUTTON_COMBO_NAMES[] =
 };
 
 //
+// Maximum amount of bits that can be shifted to read valid buttons
+// 
+#define DS_BUTTON_COMBO_MAX_OFFSET 16
+
+//
 // Axis dead-zone settings
 // 
 typedef struct _DS_AXIS_DEADZONE
