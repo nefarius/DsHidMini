@@ -220,13 +220,19 @@
                                             VerticalAlignment="Center"
                                             Content="Duration:"
                                             DockPanel.Dock="Left" />
-                                        <Label Content="{Binding Duration}" DockPanel.Dock="Left" />
                                         <Slider
+                                            Width="400"
+                                            HorizontalAlignment="Right"
                                             VerticalAlignment="Center"
                                             DockPanel.Dock="Right"
                                             Maximum="255"
                                             Minimum="0"
+                                            SmallChange="1"
                                             Value="{Binding Duration}" />
+                                        <Label
+                                            HorizontalAlignment="Right"
+                                            Content="{Binding Duration}"
+                                            DockPanel.Dock="Right" />
                                     </DockPanel>
                                     <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}">
                                         <Label
@@ -234,14 +240,21 @@
                                             VerticalAlignment="Center"
                                             Content="Interval duration:"
                                             DockPanel.Dock="Left" />
-                                        <Label Content="{Binding IntervalDuration}" DockPanel.Dock="Left" />
                                         <Slider
+                                            Width="400"
+                                            HorizontalAlignment="Right"
                                             VerticalAlignment="Center"
+                                            HorizontalContentAlignment="Right"
                                             ClipToBounds="True"
                                             DockPanel.Dock="Right"
                                             Maximum="65535"
                                             Minimum="0"
+                                            SmallChange="1"
                                             Value="{Binding IntervalDuration}" />
+                                        <Label
+                                            HorizontalAlignment="Right"
+                                            Content="{Binding IntervalDuration}"
+                                            DockPanel.Dock="Right" />
                                     </DockPanel>
                                     <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}">
                                         <Label
@@ -249,15 +262,20 @@
                                             VerticalAlignment="Center"
                                             Content="Interval ON portion:"
                                             DockPanel.Dock="Left" />
-                                        <Label Content="{Binding IntervalPortionON}" DockPanel.Dock="Left" />
-                                        <ui:NumberBox
+                                        <Slider
+                                            Width="400"
                                             VerticalAlignment="Center"
                                             ClipToBounds="True"
                                             DockPanel.Dock="Right"
                                             Maximum="255"
                                             Minimum="0"
-                                            Text="{Binding IntervalPortionON}"
-                                            ToolTip="{Binding Value, RelativeSource={RelativeSource Self}}" />
+                                            SmallChange="1"
+                                            ToolTip="{Binding Value, RelativeSource={RelativeSource Self}}"
+                                            Value="{Binding IntervalPortionON}" />
+                                        <Label
+                                            HorizontalAlignment="Right"
+                                            Content="{Binding IntervalPortionON}"
+                                            DockPanel.Dock="Right" />
 
                                     </DockPanel>
                                     <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}">
@@ -266,14 +284,19 @@
                                             VerticalAlignment="Center"
                                             Content="Interval OFF portion:"
                                             DockPanel.Dock="Left" />
-                                        <Label Content="{Binding IntervalPortionOFF}" DockPanel.Dock="Left" />
                                         <Slider
+                                            Width="400"
                                             VerticalAlignment="Center"
                                             ClipToBounds="True"
                                             DockPanel.Dock="Right"
                                             Maximum="255"
                                             Minimum="0"
+                                            SmallChange="1"
                                             Value="{Binding IntervalPortionOFF}" />
+                                        <Label
+                                            HorizontalAlignment="Right"
+                                            Content="{Binding IntervalPortionOFF}"
+                                            DockPanel.Dock="Right" />
                                     </DockPanel>
                                 </StackPanel>
                             </StackPanel>
