@@ -575,7 +575,6 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 	PDEVICE_CONTEXT Context
 ) 
 {
-    {
         DS_RUMBLE_SETTINGS* rumbSet = &Context->Configuration.RumbleSettings;
 
         DS_RESCALE_STATE* heavyResc = &Context->RumbleControlState.HeavyRescale;
