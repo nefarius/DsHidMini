@@ -62,6 +62,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig
             public bool? Enabled { get; set; }// = false;
             public byte? RescaleMinRange { get; set; }// = 1;
             public byte? RescaleMaxRange { get; set; }// = 160;
+            public ForcedSMSettings ForcedRight { get; set; } = new();
             public ButtonCombo? ToggleSMtoBMConversionCombo { get; set; } = new(); // = DSHM_QuickDisconnectCombo.PS_R1_L1
         }
 
@@ -88,7 +89,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig
             public bool? DisableRight { get; set; }// = false;
             public HeavyRescaleSettings HeavyRescale { get; set; } = new();
             public AlternativeModeSettings AlternativeMode { get; set; } = new();
-            public ForcedSMSettings ForcedRight { get; set; } = new();
         }
 
         public class SingleLEDCustoms
