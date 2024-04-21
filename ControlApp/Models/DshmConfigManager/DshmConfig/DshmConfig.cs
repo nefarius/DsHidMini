@@ -50,18 +50,18 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig
 
         }
 
-        public class BMStrRescaleSettings
+        public class HeavyRescaleSettings
         {
             public bool? Enabled { get; set; }// = true;
-            public byte? MinValue { get; set; }// = 64;
-            public byte? MaxValue { get; set; }// = 255;
+            public byte? RescaleMinRange { get; set; }// = 64;
+            public byte? RescaleMaxRange { get; set; }// = 255;
         }
 
-        public class SMToBMConversionSettings
+        public class AlternativeModeSettings
         {
             public bool? Enabled { get; set; }// = false;
-            public byte? RescaleMinValue { get; set; }// = 1;
-            public byte? RescaleMaxValue { get; set; }// = 160;
+            public byte? RescaleMinRange { get; set; }// = 1;
+            public byte? RescaleMaxRange { get; set; }// = 160;
             public ButtonCombo? ToggleSMtoBMConversionCombo { get; set; } = new(); // = DSHM_QuickDisconnectCombo.PS_R1_L1
         }
 
@@ -84,11 +84,11 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig
 
         public class AllRumbleSettings
         {
-            public bool? DisableBM { get; set; }// = false;
-            public bool? DisableSM { get; set; }// = false;
-            public BMStrRescaleSettings BMStrRescale { get; set; } = new();
-            public SMToBMConversionSettings SMToBMConversion { get; set; } = new();
-            public ForcedSMSettings ForcedSM { get; set; } = new();
+            public bool? DisableLeft { get; set; }// = false;
+            public bool? DisableRight { get; set; }// = false;
+            public HeavyRescaleSettings HeavyRescale { get; set; } = new();
+            public AlternativeModeSettings AlternativeMode { get; set; } = new();
+            public ForcedSMSettings ForcedRight { get; set; } = new();
         }
 
         public class SingleLEDCustoms

@@ -180,25 +180,25 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
 
             if(!x_RumbleGeneral.IsAltRumbleModeEnabled)
             {
-                dshmRumbleSettings.DisableBM = x_RumbleGeneral.IsLeftMotorDisabled;
-                dshmRumbleSettings.DisableSM = x_RumbleGeneral.IsLeftMotorDisabled;
+                dshmRumbleSettings.DisableLeft = x_RumbleGeneral.IsLeftMotorDisabled;
+                dshmRumbleSettings.DisableRight = x_RumbleGeneral.IsLeftMotorDisabled;
             }
 
-            dshmRumbleSettings.SMToBMConversion.Enabled = x_RumbleGeneral.AlwaysStartInNormalMode ? false : x_RumbleGeneral.IsAltRumbleModeEnabled;
+            dshmRumbleSettings.AlternativeMode.Enabled = x_RumbleGeneral.AlwaysStartInNormalMode ? false : x_RumbleGeneral.IsAltRumbleModeEnabled;
 
             // Disable toggle combo if alt Rumble Mode is not supposed to be used
             if (x_RumbleGeneral.AltModeToggleButtonCombo.IsComboValid())
             {
-                dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.IsEnabled = x_RumbleGeneral.IsAltRumbleModeEnabled ? x_RumbleGeneral.AltModeToggleButtonCombo.IsEnabled : false;
-                dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.HoldTime = x_RumbleGeneral.AltModeToggleButtonCombo.HoldTime;
-                dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.Button1 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_RumbleGeneral.AltModeToggleButtonCombo.ButtonCombo[0]];
-                dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.Button2 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_RumbleGeneral.AltModeToggleButtonCombo.ButtonCombo[1]];
-                dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.Button3 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_RumbleGeneral.AltModeToggleButtonCombo.ButtonCombo[2]];
+                dshmRumbleSettings.AlternativeMode.ToggleSMtoBMConversionCombo.IsEnabled = x_RumbleGeneral.IsAltRumbleModeEnabled ? x_RumbleGeneral.AltModeToggleButtonCombo.IsEnabled : false;
+                dshmRumbleSettings.AlternativeMode.ToggleSMtoBMConversionCombo.HoldTime = x_RumbleGeneral.AltModeToggleButtonCombo.HoldTime;
+                dshmRumbleSettings.AlternativeMode.ToggleSMtoBMConversionCombo.Button1 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_RumbleGeneral.AltModeToggleButtonCombo.ButtonCombo[0]];
+                dshmRumbleSettings.AlternativeMode.ToggleSMtoBMConversionCombo.Button2 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_RumbleGeneral.AltModeToggleButtonCombo.ButtonCombo[1]];
+                dshmRumbleSettings.AlternativeMode.ToggleSMtoBMConversionCombo.Button3 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_RumbleGeneral.AltModeToggleButtonCombo.ButtonCombo[2]];
 
             }
             else
             {
-                dshmRumbleSettings.SMToBMConversion.ToggleSMtoBMConversionCombo.IsEnabled = false;
+                dshmRumbleSettings.AlternativeMode.ToggleSMtoBMConversionCombo.IsEnabled = false;
             }
 
             ////////////////////////////////////////////////////////////////////////////////
@@ -214,21 +214,21 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             ///  Left Motor Rescaling
             //////////////////////////////////////////////////////////////////////////////// 
             var x_LeftMRescale = appFormat.LeftMotorRescaling;
-            DshmDeviceSettings.BMStrRescaleSettings dshmLeftRumbleRescaleSettings = driverFormat.ContextSettings.RumbleSettings.BMStrRescale;
+            DshmDeviceSettings.HeavyRescaleSettings dshmLeftRumbleRescaleSettings = driverFormat.ContextSettings.RumbleSettings.HeavyRescale;
             
             dshmLeftRumbleRescaleSettings.Enabled = x_LeftMRescale.IsLeftMotorStrRescalingEnabled;
-            dshmLeftRumbleRescaleSettings.MinValue = (byte)x_LeftMRescale.LeftMotorStrRescalingLowerRange;
-            dshmLeftRumbleRescaleSettings.MaxValue = (byte)x_LeftMRescale.LeftMotorStrRescalingUpperRange;
+            dshmLeftRumbleRescaleSettings.RescaleMinRange = (byte)x_LeftMRescale.LeftMotorStrRescalingLowerRange;
+            dshmLeftRumbleRescaleSettings.RescaleMaxRange = (byte)x_LeftMRescale.LeftMotorStrRescalingUpperRange;
             
             ////////////////////////////////////////////////////////////////////////////////
             //  Alt Mode Adjuster
             ////////////////////////////////////////////////////////////////////////////////
             var x_AltRumbleAdjusts = appFormat.AltRumbleAdjusts;
-            DshmDeviceSettings.SMToBMConversionSettings dshmSMConversionSettings = driverFormat.ContextSettings.RumbleSettings.SMToBMConversion;
-            DshmDeviceSettings.ForcedSMSettings dshmForcedSMSettings = driverFormat.ContextSettings.RumbleSettings.ForcedSM;
+            DshmDeviceSettings.AlternativeModeSettings dshmSMConversionSettings = driverFormat.ContextSettings.RumbleSettings.AlternativeMode;
+            DshmDeviceSettings.ForcedSMSettings dshmForcedSMSettings = driverFormat.ContextSettings.RumbleSettings.ForcedRight;
 
-            dshmSMConversionSettings.RescaleMinValue = (byte)x_AltRumbleAdjusts.RightRumbleConversionLowerRange;
-            dshmSMConversionSettings.RescaleMaxValue = (byte)x_AltRumbleAdjusts.RightRumbleConversionUpperRange;
+            dshmSMConversionSettings.RescaleMinRange = (byte)x_AltRumbleAdjusts.RightRumbleConversionLowerRange;
+            dshmSMConversionSettings.RescaleMaxRange = (byte)x_AltRumbleAdjusts.RightRumbleConversionUpperRange;
 
             // Right rumble (light) threshold
             dshmForcedSMSettings.SMThresholdEnabled = x_AltRumbleAdjusts.IsForcedRightMotorLightThresholdEnabled;
