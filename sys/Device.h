@@ -307,6 +307,19 @@ typedef struct _DEVICE_CONTEXT
 
 } DEVICE_CONTEXT, * PDEVICE_CONTEXT;
 
+/// <summary>
+/// Define how the rescalling of rumble values must be managed
+/// </summary>
+typedef struct _DS_RESCALE_STATE
+{
+    BOOLEAN IsAllowed;
+
+    DOUBLE ConstA;
+
+    DOUBLE ConstB;
+
+} DS_RESCALE_STATE, * PDS_RESCALE_STATE;
+
 //
 // This macro will generate an inline function called DeviceGetContext
 // which will be used to get a pointer to the device context memory
