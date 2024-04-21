@@ -870,6 +870,7 @@ ConfigLoadForDevice(
             "Invalid values found for HeavyRescalling.Parameters. Setting disabled."
         );
         Context->RumbleControlState.HeavyRescale.IsAllowed = FALSE;
+    }
 
 	if (config_json)
 	{
