@@ -116,8 +116,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
                     All4LEDsCustoms.singleLEDCustoms singleLEDCustoms = x_Leds.LEDsCustoms.LED_x_Customs[i];
 
                     dshm_singleLED[i].TotalDuration = (byte)0x00;
-                    dshm_singleLED[i].BasePortionDuration1 = (byte)0x00;
-                    dshm_singleLED[i].BasePortionDuration0 = (byte)0x00;
+                    dshm_singleLED[i].BasePortionDuration = (byte)0x00;
                     dshm_singleLED[i].OffPortionMultiplier = (byte)0x00;
                     dshm_singleLED[i].OnPortionMultiplier = (byte)0x00;
 
@@ -127,8 +126,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
                         if(x_Leds.LeDMode == LEDsMode.CustomPattern)
                         {
                             dshm_singleLED[i].TotalDuration = singleLEDCustoms.Duration;
-                            dshm_singleLED[i].BasePortionDuration1 = (byte)(singleLEDCustoms.CycleDuration >> 8);
-                            dshm_singleLED[i].BasePortionDuration0 = (byte)(singleLEDCustoms.CycleDuration & 0xFF);
+                            dshm_singleLED[i].BasePortionDuration = (ushort)(singleLEDCustoms.CycleDuration);
                             dshm_singleLED[i].OffPortionMultiplier = singleLEDCustoms.OffPeriodCycles;
                             dshm_singleLED[i].OnPortionMultiplier = singleLEDCustoms.OnPeriodCycles;
                         }
