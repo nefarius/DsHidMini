@@ -922,18 +922,18 @@ ConfigSetDefaults(
 	Config->ThumbSettings.DeadZoneRight.Apply = TRUE;
 	Config->ThumbSettings.DeadZoneRight.PolarValue = 3.0;
 
-	Config->RumbleSettings.DisableBM = FALSE;
-	Config->RumbleSettings.DisableSM = FALSE;
-	Config->RumbleSettings.BMStrRescale.Enabled = TRUE;
-	Config->RumbleSettings.BMStrRescale.MinValue = 64;
-	Config->RumbleSettings.BMStrRescale.MaxValue = 255;
-	Config->RumbleSettings.SMToBMConversion.Enabled = FALSE;
-	Config->RumbleSettings.SMToBMConversion.RescaleMinValue = 1;
-	Config->RumbleSettings.SMToBMConversion.RescaleMaxValue = 140;
-	Config->RumbleSettings.ForcedSM.BMThresholdEnabled = TRUE;
-	Config->RumbleSettings.ForcedSM.BMThresholdValue = 230;
-	Config->RumbleSettings.ForcedSM.SMThresholdEnabled = FALSE;
-	Config->RumbleSettings.ForcedSM.SMThresholdValue = 230;
+    Config->RumbleSettings.DisableLeft = FALSE;
+    Config->RumbleSettings.DisableRight = FALSE;
+    Config->RumbleSettings.HeavyRescalling.IsEnabled = TRUE;
+    Config->RumbleSettings.HeavyRescalling.MinRange = 64;
+    Config->RumbleSettings.HeavyRescalling.MaxRange = 255;
+    Config->RumbleSettings.AlternativeMode.IsEnabled = FALSE;
+    Config->RumbleSettings.AlternativeMode.MinRange = 1;
+    Config->RumbleSettings.AlternativeMode.MaxRange = 140;
+    Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThresholdEnabled = TRUE;
+    Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThresholdValue = 230;
+    Config->RumbleSettings.AlternativeMode.ForcedRight.LightThresholdEnabled = FALSE;
+    Config->RumbleSettings.AlternativeMode.ForcedRight.LightThresholdValue = 230;
 
 	Config->LEDSettings.Mode = DsLEDModeBatteryIndicatorPlayerIndex;
 	Config->LEDSettings.CustomPatterns.LEDFlags = 0x02;
