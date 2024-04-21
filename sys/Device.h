@@ -304,6 +304,16 @@ typedef struct _DEVICE_CONTEXT
 		UCHAR HeavyCache;
 
         //
+        // Defines if heavy rumble strength rescalling is requested
+        //
+        BOOLEAN HeavyRescaleEnabled;
+
+        //
+        // Defines if alternative rumble mode is enabled
+        //
+        BOOLEAN AltModeEnabled;
+
+        //
         // Current state of heavy rumble rescaling parameters
         //
         DS_RESCALE_STATE HeavyRescale;
