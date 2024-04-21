@@ -184,7 +184,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
                 dshmRumbleSettings.DisableRight = x_RumbleGeneral.IsLeftMotorDisabled;
             }
 
-            dshmRumbleSettings.AlternativeMode.Enabled = x_RumbleGeneral.AlwaysStartInNormalMode ? false : x_RumbleGeneral.IsAltRumbleModeEnabled;
+            dshmRumbleSettings.AlternativeMode.IsEnabled = x_RumbleGeneral.AlwaysStartInNormalMode ? false : x_RumbleGeneral.IsAltRumbleModeEnabled;
 
             // Disable toggle combo if alt Rumble Mode is not supposed to be used
             if (x_RumbleGeneral.AltModeToggleButtonCombo.IsComboValid())
@@ -216,7 +216,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             var x_LeftMRescale = appFormat.LeftMotorRescaling;
             DshmDeviceSettings.HeavyRescaleSettings dshmLeftRumbleRescaleSettings = driverFormat.ContextSettings.RumbleSettings.HeavyRescale;
             
-            dshmLeftRumbleRescaleSettings.Enabled = x_LeftMRescale.IsLeftMotorStrRescalingEnabled;
+            dshmLeftRumbleRescaleSettings.IsEnabled = x_LeftMRescale.IsLeftMotorStrRescalingEnabled;
             dshmLeftRumbleRescaleSettings.RescaleMinRange = (byte)x_LeftMRescale.LeftMotorStrRescalingLowerRange;
             dshmLeftRumbleRescaleSettings.RescaleMaxRange = (byte)x_LeftMRescale.LeftMotorStrRescalingUpperRange;
             

@@ -52,14 +52,14 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig
 
         public class HeavyRescaleSettings
         {
-            public bool? Enabled { get; set; }// = true;
+            public bool? IsEnabled { get; set; }// = true;
             public byte? RescaleMinRange { get; set; }// = 64;
             public byte? RescaleMaxRange { get; set; }// = 255;
         }
 
         public class AlternativeModeSettings
         {
-            public bool? Enabled { get; set; }// = false;
+            public bool? IsEnabled { get; set; }// = false;
             public byte? RescaleMinRange { get; set; }// = 1;
             public byte? RescaleMaxRange { get; set; }// = 160;
             public ForcedRightAdjusts ForcedRight { get; set; } = new();
