@@ -146,7 +146,7 @@ ConfigParseRumbleSettings(
         EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.DisableRight", Config->RumbleSettings.DisableRight);
     }
 
-    const cJSON* pHeavyRescale = cJSON_GetObjectItem(RumbleSettings, "BMStrRescale");
+    const cJSON* pHeavyRescale = cJSON_GetObjectItem(RumbleSettings, "HeavyRescale");
 
     if (pHeavyRescale)
     {
