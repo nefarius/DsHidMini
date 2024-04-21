@@ -370,55 +370,48 @@ typedef struct _DS_THUMB_SETTINGS
 // 
 typedef struct _DS_RUMBLE_SETTINGS
 {
-	//
-	// Disable Big Motor (left) entirely
-	// 
-	BOOLEAN DisableBM;
+    //
+    // Disable Heavy Motor (left) entirely
+    // 
+    BOOLEAN DisableLeft;
 
-	//
-	// Disable Small Motor (right) entirely
-	// 
-	BOOLEAN DisableSM;
+    //
+    // Disable Light Motor (right) entirely
+    // 
+    BOOLEAN DisableRight;
 
-	struct
-	{
-		BOOLEAN Enabled;
+    // Adjustments for heavy (left) motor rescalling
+    struct
+    {
+        BOOLEAN IsEnabled;
 
-		UCHAR MinValue;
+        UCHAR MinRange;
 
-		UCHAR MaxValue;
+        UCHAR MaxRange;
 
-		DOUBLE ConstA;
+    } HeavyRescalling;
 
-		DOUBLE ConstB;
+    struct
+    {
+        BOOLEAN IsEnabled;
 
-	} BMStrRescale;
+        UCHAR MinRange;
 
-	struct
-	{
-		BOOLEAN Enabled;
+        UCHAR MaxRange;
 
-		UCHAR RescaleMinValue;
+        struct
+        {
+            BOOLEAN HeavyThresholdEnabled;
 
-		UCHAR RescaleMaxValue;
+            BOOLEAN LightThresholdEnabled;
 
-		DOUBLE ConstA;
+            UCHAR HeavyThresholdValue;
 
-		DOUBLE ConstB;
+            UCHAR LightThresholdValue;
 
-	} SMToBMConversion;
+        } ForcedRight;
 
-	struct
-	{
-		BOOLEAN BMThresholdEnabled;
-
-		UCHAR BMThresholdValue;
-
-		BOOLEAN SMThresholdEnabled;
-
-		UCHAR SMThresholdValue;
-
-	} ForcedSM;
+    } AlternativeMode;
 
 } DS_RUMBLE_SETTINGS, * PDS_RUMBLE_SETTINGS;
 
