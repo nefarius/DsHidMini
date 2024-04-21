@@ -513,13 +513,26 @@
                         ContentTemplate="{StaticResource MyKey_ButtonsComboTemplate}"
                         DockPanel.Dock="Top"
                         IsEnabled="{Binding IsChecked, ElementName=AltModeCombo_ToggleSwitch}" />
-                    <ui:ToggleSwitch
-                        Margin="{StaticResource MyKey_NextLineSpacement}"
-                        DockPanel.Dock="Top"
-                        IsChecked="{Binding AlwaysStartInNormalRumbleMode}"
-                        IsEnabled="{Binding IsChecked, ElementName=AltModeCombo_ToggleSwitch}">
-                        <Label Content="Start in normal mode" />
-                    </ui:ToggleSwitch>
+                    <DockPanel DockPanel.Dock="Top" Visibility="{Binding IsChecked, ElementName=AltModeCombo_ToggleSwitch, Converter={StaticResource BoolToVis_TV_FH}}">
+                        <ui:ToggleSwitch
+                            Margin="{StaticResource MyKey_NextLineSpacement}"
+                            DockPanel.Dock="Top"
+                            IsChecked="{Binding AlwaysStartInNormalRumbleMode}">
+                            <Label Content="Start in normal mode" />
+                        </ui:ToggleSwitch>
+                        <ui:ToggleSwitch
+                            Margin="{StaticResource MyKey_NextLineSpacement}"
+                            Content="Disable left motor (heavy) when in normal mode"
+                            DockPanel.Dock="Top"
+                            IsChecked="{Binding IsLeftMotorDisabled}" />
+                        <ui:ToggleSwitch
+                            Margin="{StaticResource MyKey_NextLineSpacement}"
+                            Content="Disable right motor (light) when in normal mode"
+                            DockPanel.Dock="Top"
+                            IsChecked="{Binding IsRightMotorDisabled}" />
+
+                    </DockPanel>
+
                 </DockPanel>
 
             </DockPanel>
