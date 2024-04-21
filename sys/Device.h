@@ -176,6 +176,19 @@ typedef struct _DS_OUTPUT_REPORT_CACHE
 	
 } DS_OUTPUT_REPORT_CACHE, *PDS_OUTPUT_REPORT_CACHE;
 
+/// <summary>
+/// Define the rescalling constants and if they are valid that rescalling is allowed
+/// </summary>
+typedef struct _DS_RESCALE_STATE
+{
+    BOOLEAN IsAllowed;
+
+    DOUBLE ConstA;
+
+    DOUBLE ConstB;
+
+} DS_RESCALE_STATE, * PDS_RESCALE_STATE;
+
 typedef struct _DEVICE_CONTEXT
 {
 	//
@@ -326,19 +339,6 @@ typedef struct _DEVICE_CONTEXT
 	} RumbleControlState;
 
 } DEVICE_CONTEXT, * PDEVICE_CONTEXT;
-
-/// <summary>
-/// Define the rescalling constants and if they are valid that rescalling is allowed
-/// </summary>
-typedef struct _DS_RESCALE_STATE
-{
-    BOOLEAN IsAllowed;
-
-    DOUBLE ConstA;
-
-    DOUBLE ConstB;
-
-} DS_RESCALE_STATE, * PDS_RESCALE_STATE;
 
 //
 // This macro will generate an inline function called DeviceGetContext
