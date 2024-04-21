@@ -50,32 +50,32 @@
         "CustomPatterns": {
           "LEDFlags": 2,
           "Player1": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 255,
+            "BasePortionDuration1": 0,
+            "BasePortionDuration0": 1,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 1
           },
           "Player2": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration1": 0,
+            "BasePortionDuration0": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           },
           "Player3": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration1": 0,
+            "BasePortionDuration0": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           },
           "Player4": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration1": 0,
+            "BasePortionDuration0": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           }
         }
       },
@@ -122,32 +122,32 @@
         "CustomPatterns": {
           "LEDFlags": 2,
           "Player1": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 255,
+            "BasePortionDuration1": 0,
+            "BasePortionDuration0": 1,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 1
           },
           "Player2": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration1": 0,
+            "BasePortionDuration0": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           },
           "Player3": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration1": 0,
+            "BasePortionDuration0": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           },
           "Player4": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration1": 0,
+            "BasePortionDuration0": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           }
         }
       }
@@ -186,32 +186,32 @@
         "CustomPatterns": {
           "LEDFlags": 2,
           "Player1": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 255,
+            "BasePortionDuration1": 0,
+            "BasePortionDuration0": 1,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 1
           },
           "Player2": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration1": 0,
+            "BasePortionDuration0": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           },
           "Player3": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration1": 0,
+            "BasePortionDuration0": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           },
           "Player4": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration1": 0,
+            "BasePortionDuration0": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           }
         }
       }
@@ -250,32 +250,32 @@
         "CustomPatterns": {
           "LEDFlags": 2,
           "Player1": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 255,
+            "BasePortionDuration1": 0,
+            "BasePortionDuration0": 1,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 1
           },
           "Player2": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration1": 0,
+            "BasePortionDuration0": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           },
           "Player3": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration1": 0,
+            "BasePortionDuration0": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           },
           "Player4": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration1": 0,
+            "BasePortionDuration0": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           }
         }
       }
@@ -314,32 +314,32 @@
         "CustomPatterns": {
           "LEDFlags": 2,
           "Player1": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 255,
+            "BasePortionDuration1": 0,
+            "BasePortionDuration0": 1,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 1
           },
           "Player2": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration1": 0,
+            "BasePortionDuration0": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           },
           "Player3": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration1": 0,
+            "BasePortionDuration0": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           },
           "Player4": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration1": 0,
+            "BasePortionDuration0": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           }
         }
       }
