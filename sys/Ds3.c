@@ -520,7 +520,7 @@ VOID DS3_SET_SMALL_RUMBLE_STRENGTH(
 	UCHAR Value
 )
 {
-	Context->MotorStrCache.Small = Value;
+	Context->RumbleControlState.LightCache = Value;
 	DS3_PROCESS_RUMBLE_STRENGTH(Context);
 }
 
@@ -556,7 +556,7 @@ VOID DS3_SET_LARGE_RUMBLE_STRENGTH(
 	UCHAR Value
 )
 {
-	Context->MotorStrCache.Big = Value;
+	Context->RumbleControlState.HeavyCache = Value;
 	DS3_PROCESS_RUMBLE_STRENGTH(Context);
 }
 
@@ -566,8 +566,8 @@ VOID DS3_SET_BOTH_RUMBLE_STRENGTH(
 	UCHAR SmallValue
 )
 {
-	Context->MotorStrCache.Small = SmallValue;
-	Context->MotorStrCache.Big = LargeValue;
+	Context->RumbleControlState.LightCache = SmallValue;
+	Context->RumbleControlState.HeavyCache = LargeValue;
 	DS3_PROCESS_RUMBLE_STRENGTH(Context);
 }
 
@@ -576,8 +576,8 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 )
 {
 
-	DOUBLE LargeValue = Context->Configuration.RumbleSettings.DisableBM ? 0 : Context->MotorStrCache.Big;
-	DOUBLE SmallValue = Context->Configuration.RumbleSettings.DisableSM ? 0 : Context->MotorStrCache.Small;
+	DOUBLE LargeValue = Context->Configuration.RumbleSettings.DisableBM ? 0 : Context->RumbleControlState.HeavyCache;
+	DOUBLE SmallValue = Context->Configuration.RumbleSettings.DisableSM ? 0 : Context->RumbleControlState.LightCache;
 
 	if (
 		Context->Configuration.RumbleSettings.SMToBMConversion.Enabled
@@ -599,7 +599,7 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 			// Force Activate Small Motor if original SMALL Motor Strength is above certain level and related boolean is enabled
 			if (
 				Context->Configuration.RumbleSettings.ForcedSM.SMThresholdEnabled
-				&& Context->MotorStrCache.Small >= Context->Configuration.RumbleSettings.ForcedSM.SMThresholdValue
+				&& Context->RumbleControlState.LightCache >= Context->Configuration.RumbleSettings.ForcedSM.SMThresholdValue
 				)
 			{
 				SmallValue = 1;
@@ -611,7 +611,7 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 		// Force Activate Small Motor if original BIG Motor Strength is above certain level and related boolean is enabled
 		if (
 			Context->Configuration.RumbleSettings.ForcedSM.BMThresholdEnabled
-			&& Context->MotorStrCache.Big >= Context->Configuration.RumbleSettings.ForcedSM.BMThresholdValue
+			&& Context->RumbleControlState.HeavyCache >= Context->Configuration.RumbleSettings.ForcedSM.BMThresholdValue
 			)
 		{
 			SmallValue = 1;
