@@ -1075,7 +1075,7 @@ DsHidMini_WriteReport(
 			//
 			// Backup LED states
 			// 
-			RtlCopyMemory(ledBlock, &buffer[10], ARRAYSIZE(ledBlock));
+			RtlCopyMemory(ledBlock, &buffer[9], ARRAYSIZE(ledBlock));
 
 			//
 			// Overwrite with what we received
@@ -1089,7 +1089,7 @@ DsHidMini_WriteReport(
 			//
 			// Restore LED states
 			// 
-			RtlCopyMemory(&buffer[10], ledBlock, ARRAYSIZE(ledBlock));
+			RtlCopyMemory(&buffer[9], ledBlock, ARRAYSIZE(ledBlock));
 		}
 		else
 		{
