@@ -328,7 +328,7 @@ typedef struct _DEVICE_CONTEXT
 } DEVICE_CONTEXT, * PDEVICE_CONTEXT;
 
 /// <summary>
-/// Define how the rescalling of rumble values must be managed
+/// Define the rescalling constants and if they are valid that rescalling is allowed
 /// </summary>
 typedef struct _DS_RESCALE_STATE
 {
