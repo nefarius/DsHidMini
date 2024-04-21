@@ -817,6 +817,8 @@ ConfigLoadForDevice(
         && rumbSet->AlternativeMode.MinRange > 0
         )
     {
+        Context->RumbleControlState.AltModeEnabled = rumbSet->AlternativeMode.IsEnabled;
+
         DOUBLE LConstA = (DOUBLE)(rumbSet->AlternativeMode.MaxRange - rumbSet->AlternativeMode.MinRange) / (254);
         DOUBLE LConstB = rumbSet->AlternativeMode.MaxRange - LConstA * 255;
 
@@ -849,6 +851,8 @@ ConfigLoadForDevice(
         && rumbSet->HeavyRescalling.MinRange > 0
         )
     {
+        Context->RumbleControlState.HeavyRescaleEnabled = rumbSet->HeavyRescalling.IsEnabled;
+
         DOUBLE HConstA = (DOUBLE)(rumbSet->AlternativeMode.MaxRange - rumbSet->AlternativeMode.MinRange) / (254);
         DOUBLE HConstB = rumbSet->AlternativeMode.MaxRange - HConstA * 255;
 
