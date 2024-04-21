@@ -429,9 +429,7 @@ typedef struct _DS_LED
 {
 	UCHAR TotalDuration;
 
-	UCHAR BasePortionDuration1;
-
-	UCHAR BasePortionDuration0;
+	USHORT BasePortionDuration;
 
 	UCHAR OffPortionMultiplier;
 

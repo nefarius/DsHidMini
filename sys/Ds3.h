@@ -38,8 +38,7 @@ VOID DS3_SET_LED_DURATION(
     PDEVICE_CONTEXT Context,
     UCHAR LedIndex,
     UCHAR TotalDuration,
-    UCHAR BasePortionDuration1,
-    UCHAR BasePortionDuration0,
+    USHORT BasePortionDuration,
     UCHAR OffPortionMultiplier,
     UCHAR OnPortionMultiplier
 );
