@@ -115,11 +115,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
                 {
                     All4LEDsCustoms.singleLEDCustoms singleLEDCustoms = x_Leds.LEDsCustoms.LED_x_Customs[i];
 
-                    dshm_singleLED[i].TotalDuration = (byte)0x00;
-                    dshm_singleLED[i].BasePortionDuration = (byte)0x00;
-                    dshm_singleLED[i].OffPortionMultiplier = (byte)0x00;
-                    dshm_singleLED[i].OnPortionMultiplier = (byte)0x00;
-
                     if (singleLEDCustoms.IsLedEnabled)
                     {
                         dshm_Customs.LEDFlags |= (byte)(1 << (1 + i));
@@ -127,6 +122,13 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
                         dshm_singleLED[i].BasePortionDuration = (x_Leds.LeDMode == LEDsMode.CustomPattern) ? (ushort)(singleLEDCustoms.CycleDuration) : (byte)0x01;
                         dshm_singleLED[i].OffPortionMultiplier = (x_Leds.LeDMode == LEDsMode.CustomPattern) ? singleLEDCustoms.OffPeriodCycles : (byte)0x00;
                         dshm_singleLED[i].OnPortionMultiplier = (x_Leds.LeDMode == LEDsMode.CustomPattern) ? singleLEDCustoms.OnPeriodCycles : (byte)0x01;
+                    }
+                    else
+                    {
+                        dshm_singleLED[i].TotalDuration = (byte)0x00;
+                        dshm_singleLED[i].BasePortionDuration = (byte)0x00;
+                        dshm_singleLED[i].OffPortionMultiplier = (byte)0x00;
+                        dshm_singleLED[i].OnPortionMultiplier = (byte)0x00;
                     }
                 }
                 if(dshm_Customs.LEDFlags == 0) dshm_Customs.LEDFlags = (byte)0x20; // Turn off all LEDs with 0x20 if none has been enabled
