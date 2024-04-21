@@ -225,7 +225,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             ////////////////////////////////////////////////////////////////////////////////
             var x_AltRumbleAdjusts = appFormat.AltRumbleAdjusts;
             DshmDeviceSettings.AlternativeModeSettings dshmSMConversionSettings = driverFormat.ContextSettings.RumbleSettings.AlternativeMode;
-            DshmDeviceSettings.ForcedSMSettings dshmForcedSMSettings = driverFormat.ContextSettings.RumbleSettings.AlternativeMode.ForcedRight;
+            DshmDeviceSettings.ForcedRightAdjusts dshmForcedSMSettings = driverFormat.ContextSettings.RumbleSettings.AlternativeMode.ForcedRight;
 
             dshmSMConversionSettings.RescaleMinRange = (byte)x_AltRumbleAdjusts.RightRumbleConversionLowerRange;
             dshmSMConversionSettings.RescaleMaxRange = (byte)x_AltRumbleAdjusts.RightRumbleConversionUpperRange;

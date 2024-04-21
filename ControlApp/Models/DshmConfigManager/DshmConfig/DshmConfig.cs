@@ -62,7 +62,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig
             public bool? Enabled { get; set; }// = false;
             public byte? RescaleMinRange { get; set; }// = 1;
             public byte? RescaleMaxRange { get; set; }// = 160;
-            public ForcedSMSettings ForcedRight { get; set; } = new();
+            public ForcedRightAdjusts ForcedRight { get; set; } = new();
             public ButtonCombo? ToggleSMtoBMConversionCombo { get; set; } = new(); // = DSHM_QuickDisconnectCombo.PS_R1_L1
         }
 
@@ -75,7 +75,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig
             public int? Button3 { get; set; }
         }
 
-        public class ForcedSMSettings
+        public class ForcedRightAdjusts
         {
             public bool? BMThresholdEnabled { get; set; }// = false;
             public byte? BMThresholdValue { get; set; }// = 230;
