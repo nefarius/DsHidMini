@@ -203,13 +203,13 @@ ConfigParseRumbleSettings(
 
             if ((pNode = cJSON_GetObjectItem(pForced, "IsLightThresholdEnabled")))
             {
-                Config->RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled = (UCHAR)cJSON_GetNumberValue(pNode);
+                Config->RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
                 EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled", Config->RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled);
             }
 
             if ((pNode = cJSON_GetObjectItem(pForced, "HeavyThreshold")))
             {
-                Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold = (BOOLEAN)cJSON_IsTrue(pNode);
+                Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold = (UCHAR)cJSON_GetNumberValue(pNode);
                 EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold", Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold);
             }
 
