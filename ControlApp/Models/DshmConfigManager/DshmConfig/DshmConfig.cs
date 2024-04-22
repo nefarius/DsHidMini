@@ -77,10 +77,10 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig
 
         public class ForcedRightAdjusts
         {
-            public bool? BMThresholdEnabled { get; set; }// = false;
-            public byte? BMThresholdValue { get; set; }// = 230;
-            public bool? SMThresholdEnabled { get; set; }// = false;
-            public byte? SMThresholdValue { get; set; }// = 230;
+            public bool? IsHeavyThresholdEnabled { get; set; }// = false;
+            public byte? HeavyThreshold { get; set; }// = 230;
+            public bool? IsLightThresholdEnabled { get; set; }// = false;
+            public byte? LightThreshold { get; set; }// = 230;
         }
 
         public class AllRumbleSettings

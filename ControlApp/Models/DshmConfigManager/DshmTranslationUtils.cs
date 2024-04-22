@@ -231,12 +231,12 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             dshmSMConversionSettings.RescaleMaxRange = (byte)x_AltRumbleAdjusts.RightRumbleConversionUpperRange;
 
             // Right rumble (light) threshold
-            dshmForcedSMSettings.SMThresholdEnabled = x_AltRumbleAdjusts.IsForcedRightMotorLightThresholdEnabled;
-            dshmForcedSMSettings.SMThresholdValue = (byte)x_AltRumbleAdjusts.ForcedRightMotorLightThreshold;
+            dshmForcedSMSettings.IsLightThresholdEnabled = x_AltRumbleAdjusts.IsForcedRightMotorLightThresholdEnabled;
+            dshmForcedSMSettings.LightThreshold = (byte)x_AltRumbleAdjusts.ForcedRightMotorLightThreshold;
 
             // Left rumble (Heavy) threshold
-            dshmForcedSMSettings.BMThresholdEnabled = x_AltRumbleAdjusts.IsForcedRightMotorHeavyThreasholdEnabled;
-            dshmForcedSMSettings.BMThresholdValue = (byte)x_AltRumbleAdjusts.ForcedRightMotorHeavyThreshold;
+            dshmForcedSMSettings.IsHeavyThresholdEnabled = x_AltRumbleAdjusts.IsForcedRightMotorHeavyThreasholdEnabled;
+            dshmForcedSMSettings.HeavyThreshold = (byte)x_AltRumbleAdjusts.ForcedRightMotorHeavyThreshold;
 
             ////////////////////////////////////////////////////////////////////////////////
             //  Fine tweaking
