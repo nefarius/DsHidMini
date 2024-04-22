@@ -195,28 +195,28 @@ ConfigParseRumbleSettings(
 
         if (pForced)
         {
-            if ((pNode = cJSON_GetObjectItem(pForced, "HeavyThresholdEnabled")))
+            if ((pNode = cJSON_GetObjectItem(pForced, "IsHeavyThresholdEnabled")))
             {
-                Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
-                EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.HeavyThresholdEnabled", Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThresholdEnabled);
+                Config->RumbleSettings.AlternativeMode.ForcedRight.IsHeavyThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+                EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.IsHeavyThresholdEnabled", Config->RumbleSettings.AlternativeMode.ForcedRight.IsHeavyThresholdEnabled);
             }
 
-            if ((pNode = cJSON_GetObjectItem(pForced, "LightThresholdEnabled")))
+            if ((pNode = cJSON_GetObjectItem(pForced, "IsLightThresholdEnabled")))
             {
-                Config->RumbleSettings.AlternativeMode.ForcedRight.LightThresholdEnabled = (UCHAR)cJSON_GetNumberValue(pNode);
-                EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.LightThresholdEnabled", Config->RumbleSettings.AlternativeMode.ForcedRight.LightThresholdEnabled);
+                Config->RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled = (UCHAR)cJSON_GetNumberValue(pNode);
+                EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled", Config->RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled);
             }
 
-            if ((pNode = cJSON_GetObjectItem(pForced, "HeavyThresholdValue")))
+            if ((pNode = cJSON_GetObjectItem(pForced, "HeavyThreshold")))
             {
-                Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThresholdValue = (BOOLEAN)cJSON_IsTrue(pNode);
-                EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.HeavyThresholdValue", Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThresholdValue);
+                Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold = (BOOLEAN)cJSON_IsTrue(pNode);
+                EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold", Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold);
             }
 
-            if ((pNode = cJSON_GetObjectItem(pForced, "LightThresholdValue")))
+            if ((pNode = cJSON_GetObjectItem(pForced, "LightThreshold")))
             {
-                Config->RumbleSettings.AlternativeMode.ForcedRight.LightThresholdValue = (UCHAR)cJSON_GetNumberValue(pNode);
-                EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.LightThresholdValue", Config->RumbleSettings.AlternativeMode.ForcedRight.LightThresholdValue);
+                Config->RumbleSettings.AlternativeMode.ForcedRight.LightThreshold = (UCHAR)cJSON_GetNumberValue(pNode);
+                EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.LightThreshold", Config->RumbleSettings.AlternativeMode.ForcedRight.LightThreshold);
             }
         }
     }
@@ -936,10 +936,10 @@ ConfigSetDefaults(
     Config->RumbleSettings.AlternativeMode.IsEnabled = FALSE;
     Config->RumbleSettings.AlternativeMode.MinRange = 1;
     Config->RumbleSettings.AlternativeMode.MaxRange = 140;
-    Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThresholdEnabled = TRUE;
-    Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThresholdValue = 230;
-    Config->RumbleSettings.AlternativeMode.ForcedRight.LightThresholdEnabled = FALSE;
-    Config->RumbleSettings.AlternativeMode.ForcedRight.LightThresholdValue = 230;
+    Config->RumbleSettings.AlternativeMode.ForcedRight.IsHeavyThresholdEnabled = TRUE;
+    Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold = 230;
+    Config->RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled = FALSE;
+    Config->RumbleSettings.AlternativeMode.ForcedRight.LightThreshold = 230;
 
 	Config->LEDSettings.Mode = DsLEDModeBatteryIndicatorPlayerIndex;
 	Config->LEDSettings.CustomPatterns.LEDFlags = 0x02;

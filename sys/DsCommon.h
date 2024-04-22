@@ -401,13 +401,13 @@ typedef struct _DS_RUMBLE_SETTINGS
 
         struct
         {
-            BOOLEAN HeavyThresholdEnabled;
+            BOOLEAN IsHeavyThresholdEnabled;
 
-            BOOLEAN LightThresholdEnabled;
+            BOOLEAN IsLightThresholdEnabled;
 
-            UCHAR HeavyThresholdValue;
+            UCHAR HeavyThreshold;
 
-            UCHAR LightThresholdValue;
+            UCHAR LightThreshold;
 
         } ForcedRight;
 
