@@ -853,11 +853,11 @@ ConfigLoadForDevice(
     {
         Context->RumbleControlState.HeavyRescaleEnabled = rumbSet->HeavyRescalling.IsEnabled;
 
-        DOUBLE HConstA = (DOUBLE)(rumbSet->AlternativeMode.MaxRange - rumbSet->AlternativeMode.MinRange) / (254);
-        DOUBLE HConstB = rumbSet->AlternativeMode.MaxRange - HConstA * 255;
+        DOUBLE HConstA = (DOUBLE)(rumbSet->HeavyRescalling.MaxRange - rumbSet->HeavyRescalling.MinRange) / (254);
+        DOUBLE HConstB = rumbSet->HeavyRescalling.MaxRange - HConstA * 255;
 
         Context->RumbleControlState.HeavyRescale.ConstA = HConstA;
-        Context->RumbleControlState.HeavyRescale.ConstA = HConstB;
+        Context->RumbleControlState.HeavyRescale.ConstB = HConstB;
         Context->RumbleControlState.HeavyRescale.IsAllowed = TRUE;
 
         TraceVerbose(
