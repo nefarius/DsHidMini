@@ -595,18 +595,16 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
                     heavyValue = lightValue;
                 }
                 lightValue = 0; // Always disable Light Motor after the if statement above
+            }
 
-                // Force Activate right motor if original light rumble is above certain level and related boolean is enabled
-                if (
-                    (rumbSet->AlternativeMode.ForcedRight.IsLightThresholdEnabled
-                        && Context->RumbleControlState.LightCache >= rumbSet->AlternativeMode.ForcedRight.LightThreshold)
-                    || (rumbSet->AlternativeMode.ForcedRight.IsHeavyThresholdEnabled
-                        && Context->RumbleControlState.HeavyCache >= rumbSet->AlternativeMode.ForcedRight.HeavyThreshold)
-                    )
-                {
-                    lightValue = 1;
-                }
-
+            // Force Activate right motor if original heavy or light values are above their respective thresholds
+            if (
+                (rumbSet->AlternativeMode.ForcedRight.IsHeavyThresholdEnabled && (Context->RumbleControlState.HeavyCache >= rumbSet->AlternativeMode.ForcedRight.HeavyThreshold))
+                ||
+                (rumbSet->AlternativeMode.ForcedRight.IsLightThresholdEnabled && (Context->RumbleControlState.LightCache >= rumbSet->AlternativeMode.ForcedRight.LightThreshold))
+                )
+            {
+                lightValue = 1;
             }
         }
         else
