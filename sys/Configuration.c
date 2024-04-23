@@ -809,7 +809,7 @@ ConfigLoadForDevice(
 	} while (FALSE);
 
     //
-    // Verify if SMtoBMConversion values are valid and attempt to calculate rescaling constants in case they are
+    // Verify if desired new range for heavy rumbling rescale is valid and attempt to calculate rescaling constants if so
     // 
     DS_RUMBLE_SETTINGS* rumbSet = &Context->Configuration.RumbleSettings;
     if (
@@ -844,7 +844,7 @@ ConfigLoadForDevice(
     }
 
     //
-    // Verify if BMStrRescale values are valid and attempt to calculate rescaling constants in case they are
+    // Verify if desired new range for light rumbling rescale when in alternative mode is valid and attempt to calculate rescaling constants if so
     // 
     if (
         rumbSet->HeavyRescalling.MaxRange > rumbSet->HeavyRescalling.MinRange

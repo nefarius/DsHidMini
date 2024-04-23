@@ -371,42 +371,80 @@ typedef struct _DS_THUMB_SETTINGS
 typedef struct _DS_RUMBLE_SETTINGS
 {
     //
-    // Disable Heavy Motor (left) entirely
+    // Disables Heavy Motor (left) when in normal mode
     // 
     BOOLEAN DisableLeft;
 
     //
-    // Disable Light Motor (right) entirely
+    // Disables Light Motor (right) when in normal mode
     // 
     BOOLEAN DisableRight;
 
     // Adjustments for heavy (left) motor rescalling
     struct
     {
+        //
+        // Enables heavy rumble intensity rescalling if possible
+        //
         BOOLEAN IsEnabled;
 
+        //
+        // Desired new minimum range
+        //
         UCHAR MinRange;
 
+        //
+        // Desired new maximum range
+        //
         UCHAR MaxRange;
 
     } HeavyRescalling;
 
+
+    //
+    // Alternative rumble mode user parameters
+    //
     struct
     {
+        //
+        // Sets that alternative rumble mode should be enabled if possible
+        //
         BOOLEAN IsEnabled;
 
+        //
+        // Desired new minimun range when rescalling light rumble intensity
+        //
         UCHAR MinRange;
 
+        //
+        // New maximum range desired when rescalling light rumble intensity
+        //
         UCHAR MaxRange;
 
+        //
+        // Parameters used for the force activation of the right motor when in alternative rumble mode
+        // 
+        //
         struct
         {
+            //
+            // Enables the heavy rumble threshold
+            //
             BOOLEAN IsHeavyThresholdEnabled;
 
+            //
+            // Enables the light rumble threshold
+            //
             BOOLEAN IsLightThresholdEnabled;
 
+            //
+            // Threshold received heavy rumble instructions must reach to force activate the right motor
+            //
             UCHAR HeavyThreshold;
 
+            //
+            // Threshold received light rumble instructions must reach to force activate the right motor
+            //
             UCHAR LightThreshold;
 
         } ForcedRight;

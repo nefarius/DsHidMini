@@ -176,9 +176,9 @@ typedef struct _DS_OUTPUT_REPORT_CACHE
 	
 } DS_OUTPUT_REPORT_CACHE, *PDS_OUTPUT_REPORT_CACHE;
 
-/// <summary>
-/// Define the rescalling constants and if they are valid that rescalling is allowed
-/// </summary>
+//
+// Stores the constants used for rumble rescalling and if it is allowed
+//
 typedef struct _DS_RESCALE_STATE
 {
     BOOLEAN IsAllowed;
