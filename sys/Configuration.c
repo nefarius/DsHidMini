@@ -828,7 +828,7 @@ ConfigLoadForDevice(
 
         TraceVerbose(
             TRACE_CONFIG,
-            "AlternativeMode.Parameters rescaling constants: A = %f and B = %f.",
+            "Light rumble rescaling constants: A = %f and B = %f.",
             Context->RumbleControlState.LightRescale.ConstA,
             Context->RumbleControlState.LightRescale.ConstB
         );
@@ -838,7 +838,7 @@ ConfigLoadForDevice(
     {
         TraceVerbose(
             TRACE_CONFIG,
-            "Invalid values found for AlternativeMode.Parameters. Setting range as invalid."
+            "Disallowing light rumble rescalling because an invalid range was defined"
         );
         Context->RumbleControlState.LightRescale.IsAllowed = FALSE;
     }
@@ -862,7 +862,7 @@ ConfigLoadForDevice(
 
         TraceVerbose(
             TRACE_CONFIG,
-            "HeavyRescaling.Parameters rescaling constants: A = %f and B = %f.",
+            "Heavy rumble rescaling constants:  A = %f and B = %f.",
             Context->RumbleControlState.HeavyRescale.ConstA,
             Context->RumbleControlState.HeavyRescale.ConstB
         );
@@ -871,7 +871,7 @@ ConfigLoadForDevice(
     {
         TraceVerbose(
             TRACE_CONFIG,
-            "Invalid values found for HeavyRescaling.Parameters. Setting disabled."
+            "Disallowing heavy rumble rescalling because an invalid range was defined"
         );
         Context->RumbleControlState.HeavyRescale.IsAllowed = FALSE;
     }
