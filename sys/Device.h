@@ -177,7 +177,7 @@ typedef struct _DS_OUTPUT_REPORT_CACHE
 } DS_OUTPUT_REPORT_CACHE, *PDS_OUTPUT_REPORT_CACHE;
 
 //
-// Stores the constants used for rumble rescalling and if it is allowed
+// Stores the constants used for rumble rescaling and if it is allowed
 //
 typedef struct _DS_RESCALE_STATE
 {
@@ -317,7 +317,7 @@ typedef struct _DEVICE_CONTEXT
 		UCHAR HeavyCache;
 
         //
-        // Defines if heavy rumble strength rescalling is requested
+        // Defines if heavy rumble strength rescaling is requested
         //
         BOOLEAN HeavyRescaleEnabled;
 

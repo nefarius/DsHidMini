@@ -380,11 +380,11 @@ typedef struct _DS_RUMBLE_SETTINGS
     // 
     BOOLEAN DisableRight;
 
-    // Adjustments for heavy (left) motor rescalling
+    // Adjustments for heavy (left) motor rescaling
     struct
     {
         //
-        // Enables heavy rumble intensity rescalling if possible
+        // Enables heavy rumble intensity rescaling if possible
         //
         BOOLEAN IsEnabled;
 
@@ -398,7 +398,7 @@ typedef struct _DS_RUMBLE_SETTINGS
         //
         UCHAR MaxRange;
 
-    } HeavyRescalling;
+    } HeavyRescaling;
 
 
     //
@@ -412,12 +412,12 @@ typedef struct _DS_RUMBLE_SETTINGS
         BOOLEAN IsEnabled;
 
         //
-        // Desired new minimun range when rescalling light rumble intensity
+        // Desired new minimun range when rescaling light rumble intensity
         //
         UCHAR MinRange;
 
         //
-        // New maximum range desired when rescalling light rumble intensity
+        // New maximum range desired when rescaling light rumble intensity
         //
         UCHAR MaxRange;
 

@@ -152,20 +152,20 @@ ConfigParseRumbleSettings(
     {
         if ((pNode = cJSON_GetObjectItem(pHeavyRescale, "IsEnabled")))
         {
-            Config->RumbleSettings.HeavyRescalling.IsEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
-            EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.HeavyRescalling.IsEnabled", Config->RumbleSettings.HeavyRescalling.IsEnabled);
+            Config->RumbleSettings.HeavyRescaling.IsEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+            EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.HeavyRescaling.IsEnabled", Config->RumbleSettings.HeavyRescaling.IsEnabled);
         }
 
         if ((pNode = cJSON_GetObjectItem(pHeavyRescale, "RescaleMinRange")))
         {
-            Config->RumbleSettings.HeavyRescalling.MinRange = (UCHAR)cJSON_GetNumberValue(pNode);
-            EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.HeavyRescalling.MinRange", Config->RumbleSettings.HeavyRescalling.MinRange);
+            Config->RumbleSettings.HeavyRescaling.MinRange = (UCHAR)cJSON_GetNumberValue(pNode);
+            EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.HeavyRescaling.MinRange", Config->RumbleSettings.HeavyRescaling.MinRange);
         }
 
         if ((pNode = cJSON_GetObjectItem(pHeavyRescale, "RescaleMaxRange")))
         {
-            Config->RumbleSettings.HeavyRescalling.MaxRange = (UCHAR)cJSON_GetNumberValue(pNode);
-            EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.HeavyRescalling.MaxRange", Config->RumbleSettings.HeavyRescalling.MaxRange);
+            Config->RumbleSettings.HeavyRescaling.MaxRange = (UCHAR)cJSON_GetNumberValue(pNode);
+            EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.HeavyRescaling.MaxRange", Config->RumbleSettings.HeavyRescaling.MaxRange);
         }
     }
 
@@ -847,14 +847,14 @@ ConfigLoadForDevice(
     // Verify if desired new range for light rumbling rescale when in alternative mode is valid and attempt to calculate rescaling constants if so
     // 
     if (
-        rumbSet->HeavyRescalling.MaxRange > rumbSet->HeavyRescalling.MinRange
-        && rumbSet->HeavyRescalling.MinRange > 0
+        rumbSet->HeavyRescaling.MaxRange > rumbSet->HeavyRescaling.MinRange
+        && rumbSet->HeavyRescaling.MinRange > 0
         )
     {
-        Context->RumbleControlState.HeavyRescaleEnabled = rumbSet->HeavyRescalling.IsEnabled;
+        Context->RumbleControlState.HeavyRescaleEnabled = rumbSet->HeavyRescaling.IsEnabled;
 
-        DOUBLE HConstA = (DOUBLE)(rumbSet->HeavyRescalling.MaxRange - rumbSet->HeavyRescalling.MinRange) / (254);
-        DOUBLE HConstB = rumbSet->HeavyRescalling.MaxRange - HConstA * 255;
+        DOUBLE HConstA = (DOUBLE)(rumbSet->HeavyRescaling.MaxRange - rumbSet->HeavyRescaling.MinRange) / (254);
+        DOUBLE HConstB = rumbSet->HeavyRescaling.MaxRange - HConstA * 255;
 
         Context->RumbleControlState.HeavyRescale.ConstA = HConstA;
         Context->RumbleControlState.HeavyRescale.ConstB = HConstB;
@@ -862,7 +862,7 @@ ConfigLoadForDevice(
 
         TraceVerbose(
             TRACE_CONFIG,
-            "HeavyRescalling.Parameters rescaling constants: A = %f and B = %f.",
+            "HeavyRescaling.Parameters rescaling constants: A = %f and B = %f.",
             Context->RumbleControlState.HeavyRescale.ConstA,
             Context->RumbleControlState.HeavyRescale.ConstB
         );
@@ -871,7 +871,7 @@ ConfigLoadForDevice(
     {
         TraceVerbose(
             TRACE_CONFIG,
-            "Invalid values found for HeavyRescalling.Parameters. Setting disabled."
+            "Invalid values found for HeavyRescaling.Parameters. Setting disabled."
         );
         Context->RumbleControlState.HeavyRescale.IsAllowed = FALSE;
     }
@@ -930,9 +930,9 @@ ConfigSetDefaults(
 
     Config->RumbleSettings.DisableLeft = FALSE;
     Config->RumbleSettings.DisableRight = FALSE;
-    Config->RumbleSettings.HeavyRescalling.IsEnabled = TRUE;
-    Config->RumbleSettings.HeavyRescalling.MinRange = 64;
-    Config->RumbleSettings.HeavyRescalling.MaxRange = 255;
+    Config->RumbleSettings.HeavyRescaling.IsEnabled = TRUE;
+    Config->RumbleSettings.HeavyRescaling.MinRange = 64;
+    Config->RumbleSettings.HeavyRescaling.MaxRange = 255;
     Config->RumbleSettings.AlternativeMode.IsEnabled = FALSE;
     Config->RumbleSettings.AlternativeMode.MinRange = 1;
     Config->RumbleSettings.AlternativeMode.MaxRange = 140;
