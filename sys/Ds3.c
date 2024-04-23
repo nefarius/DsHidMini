@@ -581,20 +581,20 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
         DS_RESCALE_STATE* lightResc = &Context->RumbleControlState.LightRescale;
 
         // Get last received rumble values so they can be processed
-        DOUBLE heavyValue = Context->RumbleControlState.HeavyCache;
-        DOUBLE lightValue = Context->RumbleControlState.LightCache;
+        DOUBLE heavyRumble = Context->RumbleControlState.HeavyCache;
+        DOUBLE lightRumble = Context->RumbleControlState.LightCache;
 
         if (Context->RumbleControlState.AltModeEnabled && lightResc->IsAllowed)
         {
-            if (lightValue > 0) {
+            if (lightRumble > 0) {
 
                 // Light Motor Strength Rescale 
-                lightValue = lightResc->ConstA * lightValue + lightResc->ConstB;
-                if (lightValue > heavyValue)
+                lightRumble = lightResc->ConstA * lightRumble + lightResc->ConstB;
+                if (lightRumble > heavyRumble)
                 {
-                    heavyValue = lightValue;
+                    heavyRumble = lightRumble;
                 }
-                lightValue = 0; // Always disable Light Motor after the if statement above
+                lightRumble = 0; // Always disable Light Motor after the if statement above
             }
 
             // Force Activate right motor if original heavy or light values are above their respective thresholds
@@ -604,19 +604,19 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
                 (rumbSet->AlternativeMode.ForcedRight.IsLightThresholdEnabled && (Context->RumbleControlState.LightCache >= rumbSet->AlternativeMode.ForcedRight.LightThreshold))
                 )
             {
-                lightValue = 1;
+                lightRumble = 1;
             }
         }
         else
         {
-            if (rumbSet->DisableLeft) heavyValue = 0;
-            if (rumbSet->DisableRight) lightValue = 0;
+            if (rumbSet->DisableLeft) heavyRumble = 0;
+            if (rumbSet->DisableRight) lightRumble = 0;
         }
 
         // Heavy Motor Strength Rescale
-        if (heavyValue > 0 && Context->RumbleControlState.HeavyRescaleEnabled && heavyResc->IsAllowed)
+        if (heavyRumble > 0 && Context->RumbleControlState.HeavyRescaleEnabled && heavyResc->IsAllowed)
         {
-            heavyValue = heavyResc->ConstA * heavyValue + heavyResc->ConstB;
+            heavyRumble = heavyResc->ConstA * heavyRumble + heavyResc->ConstB;
         }
 
         switch (Context->ConnectionType)
@@ -627,12 +627,12 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
                 (PUCHAR)WdfMemoryGetBuffer(
                     Context->OutputReportMemory,
                     NULL
-                ), (UCHAR)heavyValue);
+                ), (UCHAR)heavyRumble);
             DS3_USB_SET_SMALL_RUMBLE_STRENGTH(
                 (PUCHAR)WdfMemoryGetBuffer(
                     Context->OutputReportMemory,
                     NULL
-                ), (UCHAR)lightValue);
+                ), (UCHAR)lightRumble);
             break;
 
         case DsDeviceConnectionTypeBth:
@@ -641,12 +641,12 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
                 (PUCHAR)WdfMemoryGetBuffer(
                     Context->OutputReportMemory,
                     NULL
-                ), (UCHAR)heavyValue);
+                ), (UCHAR)heavyRumble);
             DS3_BTH_SET_SMALL_RUMBLE_STRENGTH(
                 (PUCHAR)WdfMemoryGetBuffer(
                     Context->OutputReportMemory,
                     NULL
-                ), (UCHAR)lightValue);
+                ), (UCHAR)lightRumble);
             break;
         }
     }
