@@ -945,7 +945,7 @@ ConfigSetDefaults(
 
 	for (ULONGLONG playerIndex = 0; playerIndex < _countof(pPlayerSlots); playerIndex++)
 	{
-		pPlayerSlots[playerIndex]->TotalDuration = 0xFF10;
+		pPlayerSlots[playerIndex]->TotalDuration = 0xFF;
 		pPlayerSlots[playerIndex]->BasePortionDuration = 0x01;
 		pPlayerSlots[playerIndex]->OffPortionMultiplier = 0x00;
 		pPlayerSlots[playerIndex]->OnPortionMultiplier = 0x01;
