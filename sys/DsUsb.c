@@ -237,7 +237,7 @@ USB_WriteInterruptOutSync(
 	return status;
 }
 
-NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
+NTSTATUS DsUsb_PrepareHardware(WDFDEVICE Device)
 {
 	NTSTATUS status = STATUS_SUCCESS;
 	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
