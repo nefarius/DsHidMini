@@ -586,6 +586,22 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 	DOUBLE heavyRumble = Context->RumbleControlState.HeavyCache;
 	DOUBLE lightRumble = Context->RumbleControlState.LightCache;
 
+	// LINEAR RANGE RESCALLING
+	// 
+	// To rescale a value that exists in a range into a new range:
+	// newvalue = a * value + b
+	//
+	// a = (max'-min')/(max-min)
+	// b = max' - a * max
+	//
+	// In which max and min are the limits of the the original range
+	// For the DS3 rumble, it's max = 255 and min = 1 since 0 is not considered.
+	// 
+	// max' and min' are the limits of the new range
+	// 0 is not considered for the new range too regarding rumble
+	//
+	// constants a and b are calculated on configuration (re-)loading
+
 	if (Context->RumbleControlState.AltModeEnabled && lightResc->IsAllowed)
 	{
 		if (lightRumble > 0) {
