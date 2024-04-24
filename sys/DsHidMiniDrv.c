@@ -181,7 +181,7 @@ DMF_DsHidMini_Open(
 	NTSTATUS status = STATUS_SUCCESS;
 	DMF_CONTEXT_DsHidMini* moduleContext;
 	DMF_CONFIG_VirtualHidMini* pHidCfg;
-    WDFDEVICE device;
+	WDFDEVICE device;
 	PDEVICE_CONTEXT pDevCtx;
 
 	UNREFERENCED_PARAMETER(DmfModule);
@@ -191,7 +191,7 @@ DMF_DsHidMini_Open(
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
 	moduleContext = DMF_CONTEXT_GET(DmfModule);
-    device = DMF_ParentDeviceGet(DmfModule);
+	device = DMF_ParentDeviceGet(DmfModule);
 	pDevCtx = DeviceGetContext(device);
 	pHidCfg = DMF_ModuleConfigGet(moduleContext->DmfModuleVirtualHidMini);
 
@@ -240,11 +240,11 @@ DMF_DsHidMini_Open(
 		pHidCfg->HidReportDescriptor = G_VendorDefinedUSBDS4HidReportDescriptor;
 		pHidCfg->HidReportDescriptorLength = G_VendorDefinedUSBDS4HidDescriptor.DescriptorList[0].wReportLength;
 
-		//
-		// Required to get properly detected by DS4Windows
-		// Keep in sync with here: 
-		// https://github.com/Ryochan7/DS4Windows/blob/74cdcb06e95af7681ab734bf94994488818067f2/DS4Windows/DS4Library/DS4Devices.cs#L161
-		// 
+	//
+	// Required to get properly detected by DS4Windows
+	// Keep in sync with here: 
+	// https://github.com/Ryochan7/DS4Windows/blob/74cdcb06e95af7681ab734bf94994488818067f2/DS4Windows/DS4Library/DS4Devices.cs#L161
+	// 
 		pHidCfg->VendorId = pDevCtx->VendorId = DS3_DS4WINDOWS_HID_VID;
 		pHidCfg->ProductId = pDevCtx->ProductId = DS3_DS4WINDOWS_HID_PID;
 		pHidCfg->VersionNumber = pDevCtx->VersionNumber;
@@ -260,9 +260,9 @@ DMF_DsHidMini_Open(
 		pHidCfg->HidReportDescriptor = G_XInputHIDCompatible_HidReportDescriptor;
 		pHidCfg->HidReportDescriptorLength = G_XInputHIDCompatible_HidDescriptor.DescriptorList[0].wReportLength;
 
-		//
-		// Required to work around HID-API/SDL/etc. detecting it based on DS3 VID/PID pair
-		// 
+	//
+	// Required to work around HID-API/SDL/etc. detecting it based on DS3 VID/PID pair
+	// 
 		pHidCfg->VendorId = pDevCtx->VendorId = DS3_XINPUT_HID_VID;
 		pHidCfg->ProductId = pDevCtx->ProductId = DS3_XINPUT_HID_PID;
 		pHidCfg->VersionNumber = pDevCtx->VersionNumber;
@@ -271,50 +271,50 @@ DMF_DsHidMini_Open(
 		pHidCfg->HidDeviceAttributes.VersionNumber = pDevCtx->VersionNumber;
 
 		break;
-    default:
+	default:
 
-        status = STATUS_INVALID_PARAMETER;
+		status = STATUS_INVALID_PARAMETER;
 
-        TraceError(
-            TRACE_DSHIDMINIDRV,
-            "Unknown HID Device Mode: 0x%02X",
-            pDevCtx->Configuration.HidDeviceMode
-        );
+		TraceError(
+			TRACE_DSHIDMINIDRV,
+			"Unknown HID Device Mode: 0x%02X",
+			pDevCtx->Configuration.HidDeviceMode
+		);
 
-        goto exit;
-    }
+		goto exit;
+	}
 
-    //
-    // Set currently used HID mode
-    // 
+	//
+	// Set currently used HID mode
+	// 
 
-    WDF_DEVICE_PROPERTY_DATA propertyData;
-    WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_HidDeviceMode);
-    propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
-    propertyData.Lcid = LOCALE_NEUTRAL;
+	WDF_DEVICE_PROPERTY_DATA propertyData;
+	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_HidDeviceMode);
+	propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+	propertyData.Lcid = LOCALE_NEUTRAL;
 
-    status = WdfDeviceAssignProperty(
-        device,
-        &propertyData,
-        DEVPROP_TYPE_BYTE,
-        sizeof(BYTE),
-        &pDevCtx->Configuration.HidDeviceMode
-    );
+	status = WdfDeviceAssignProperty(
+		device,
+		&propertyData,
+		DEVPROP_TYPE_BYTE,
+		sizeof(BYTE),
+		&pDevCtx->Configuration.HidDeviceMode
+	);
 
 exit:
-    if (!NT_SUCCESS(status))
-    {
-        TraceError(
-            TRACE_DSHIDMINIDRV,
-            "HID device configuration failed with status %!STATUS!",
-            status
-        );
-        EventWriteFailedWithNTStatus(__FUNCTION__, L"HID device configuration", status);
-    }
+	if (!NT_SUCCESS(status))
+	{
+		TraceError(
+			TRACE_DSHIDMINIDRV,
+			"HID device configuration failed with status %!STATUS!",
+			status
+		);
+		EventWriteFailedWithNTStatus(__FUNCTION__, L"HID device configuration", status);
+	}
 
-    FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
+	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 
-    return status;
+	return status;
 }
 #pragma code_seg()
 
@@ -463,11 +463,11 @@ DsHidMini_GetFeature(
 
 		pPool = (PPID_POOL_REPORT)Packet->reportBuffer;
 
-		/*
-		 * Static information about the fictitious device memory pool.
-		 * Since we manage everything in software, size constraints
-		 * are not an issue and we can report the maximum values.
-		 */
+	/*
+	 * Static information about the fictitious device memory pool.
+	 * Since we manage everything in software, size constraints
+	 * are not an issue and we can report the maximum values.
+	 */
 
 		pPool->ReportId = PID_POOL_REPORT_ID;
 		pPool->RamPoolSize = 65535;
@@ -489,9 +489,9 @@ DsHidMini_GetFeature(
 		pBlockLoad->RamPoolAvailable = 65535;
 		pBlockLoad->BlockLoadStatus = PidBlsFull;
 
-		//
-		// Here we should have at least one new effect block index ready
-		// 
+	//
+	// Here we should have at least one new effect block index ready
+	// 
 		for (UCHAR index = 1; index < MAX_EFFECT_BLOCKS; index++)
 		{
 			status = DMF_HashTable_Read(
@@ -646,9 +646,9 @@ DsHidMini_SetFeature(
 
 		TraceVerbose(TRACE_DSHIDMINIDRV, "!! PID_CREATE_NEW_EFFECT_REPORT");
 
-		//
-		// Look for free effect block index and allocate new entry
-		// 
+	//
+	// Look for free effect block index and allocate new entry
+	// 
 		for (UCHAR index = 1; index < MAX_EFFECT_BLOCKS; index++)
 		{
 			status = DMF_HashTable_Read(
@@ -679,9 +679,9 @@ DsHidMini_SetFeature(
 			}
 		}
 
-		//
-		// Whoops, guess we're full!
-		// 
+	//
+	// Whoops, guess we're full!
+	// 
 		if (!ffbEntry.IsReserved)
 		{
 			EventWriteFFBNoFreeEffectBlockIndex();
@@ -854,7 +854,7 @@ DsHidMini_WriteReport(
 				}
 			}
 
-			// Fall through
+		// Fall through
 		case PidDcStopAllEffects:
 			TraceVerbose(TRACE_DSHIDMINIDRV, "!! DC Stop All Effects");
 			DS3_SET_BOTH_RUMBLE_STRENGTH(pDevCtx, 0x00, 0x00);
@@ -1021,9 +1021,9 @@ DsHidMini_WriteReport(
 		TraceVerbose(TRACE_DSHIDMINIDRV, "!! PID_BLOCK_FREE_REPORT, EffectBlockIndex: %d",
 			pBlockFree->EffectBlockIndex);
 
-		//
-		// Mark as free
-		// 
+	//
+	// Mark as free
+	// 
 		ffbEntry.IsReserved = FALSE;
 		ffbEntry.IsReported = FALSE;
 
@@ -1180,7 +1180,8 @@ DsHidMini_WriteReport(
 						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_2);
 					else if (r > 64)
 						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
-					else {
+					else
+					{
 						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
 						DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
 					}
@@ -1198,7 +1199,8 @@ DsHidMini_WriteReport(
 						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1 | DS3_LED_2);
 					else if (r > 64)
 						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
-					else {
+					else
+					{
 						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
 						DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
 					}
@@ -1329,11 +1331,11 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 			&Context->Configuration.FlipAxis
 		);
 
-		/*
+	/*
 #ifdef DBG
-		DumpAsHex(">> SINGLE", moduleContext->InputReport, DS3_SPLIT_SINGLE_HID_INPUT_REPORT_SIZE);
+	DumpAsHex(">> SINGLE", moduleContext->InputReport, DS3_SPLIT_SINGLE_HID_INPUT_REPORT_SIZE);
 #endif
-		*/
+	*/
 
 		break;
 	default:
@@ -1490,10 +1492,10 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 // Called when data is available on the USB Interrupt IN pipe.
 //  
 VOID DsUsb_EvtUsbInterruptPipeReadComplete(
-	WDFUSBPIPE  Pipe,
-	WDFMEMORY   Buffer,
-	size_t      NumBytesTransferred,
-	WDFCONTEXT  Context
+	WDFUSBPIPE Pipe,
+	WDFMEMORY Buffer,
+	size_t NumBytesTransferred,
+	WDFCONTEXT Context
 )
 {
 	PDEVICE_CONTEXT pDevCtx;
@@ -1639,9 +1641,9 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 
 				led = DS3_GET_LED_FLAGS(pDevCtx) << 1;
 
-				//
-				// Cycle through
-				// 
+			//
+			// Cycle through
+			// 
 				if (led > DS3_LED_4 || led < DS3_LED_1)
 				{
 					led = DS3_LED_1;
@@ -1652,9 +1654,9 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 
 				led = DS3_GET_LED_FLAGS(pDevCtx);
 
-				//
-				// Cycle graph from 1 to 4 and repeat
-				// 
+			//
+			// Cycle graph from 1 to 4 and repeat
+			// 
 				if (led & 0xF0)
 				{
 					led = DS3_LED_1;
@@ -1926,74 +1928,74 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 		}
 	}
 
-    //
-    // Quick disconnect combo detected
-    // 
-    if (pDevCtx->Configuration.WirelessDisconnectButtonCombo.IsEnabled)
-    {
-        int engagedCount = 0;
-        for (int buttonIndex = 0; buttonIndex < 3; buttonIndex++)
-        {
-            if ((pInReport->Buttons.lButtons >> pDevCtx->Configuration.WirelessDisconnectButtonCombo.Buttons[buttonIndex]) & 1)
-            {
-                engagedCount++;
-            }
-        }
+	//
+	// Quick disconnect combo detected
+	// 
+	if (pDevCtx->Configuration.WirelessDisconnectButtonCombo.IsEnabled)
+	{
+		int engagedCount = 0;
+		for (int buttonIndex = 0; buttonIndex < 3; buttonIndex++)
+		{
+			if ((pInReport->Buttons.lButtons >> pDevCtx->Configuration.WirelessDisconnectButtonCombo.Buttons[buttonIndex]) & 1)
+			{
+				engagedCount++;
+			}
+		}
 
-        if (engagedCount == 3)
-        {
-            TraceEvents(TRACE_LEVEL_INFORMATION,
-                TRACE_DSHIDMINIDRV,
-                "!! Quick disconnect combination detected"
-            );
+		if (engagedCount == 3)
+		{
+			TraceEvents(TRACE_LEVEL_INFORMATION,
+				TRACE_DSHIDMINIDRV,
+				"!! Quick disconnect combination detected"
+			);
 
-            t1 = &pDevCtx->Connection.Bth.QuickDisconnectTimestamp;
+			t1 = &pDevCtx->Connection.Bth.QuickDisconnectTimestamp;
 
-            if (pDevCtx->Connection.Bth.QuickDisconnectTimestamp.QuadPart == 0)
-            {
-                QueryPerformanceCounter(t1);
-            }
+			if (pDevCtx->Connection.Bth.QuickDisconnectTimestamp.QuadPart == 0)
+			{
+				QueryPerformanceCounter(t1);
+			}
 
-            QueryPerformanceCounter(&t2);
+			QueryPerformanceCounter(&t2);
 
-            ms = (t2.QuadPart - t1->QuadPart) / (freq.QuadPart / 1000);
+			ms = (t2.QuadPart - t1->QuadPart) / (freq.QuadPart / 1000);
 
-            //
-            // 1 second passed
-            // 
-            if (ms > pDevCtx->Configuration.WirelessDisconnectButtonCombo.HoldTime)
-            {
-                TraceEvents(TRACE_LEVEL_INFORMATION,
-                    TRACE_DSHIDMINIDRV,
-                    "!! Sending disconnect request"
-                );
+			//
+			// 1 second passed
+			// 
+			if (ms > pDevCtx->Configuration.WirelessDisconnectButtonCombo.HoldTime)
+			{
+				TraceEvents(TRACE_LEVEL_INFORMATION,
+					TRACE_DSHIDMINIDRV,
+					"!! Sending disconnect request"
+				);
 
-                //
-                // Send disconnect request
-                // 
-                status = DsBth_SendDisconnectRequest(pDevCtx);
+				//
+				// Send disconnect request
+				// 
+				status = DsBth_SendDisconnectRequest(pDevCtx);
 
-                if (!NT_SUCCESS(status))
-                {
-                    TraceError(
-                        TRACE_DSHIDMINIDRV,
-                        "Sending disconnect request failed with status %!STATUS!",
-                        status
-                    );
-                    EventWriteFailedWithNTStatus(__FUNCTION__, L"DsBth_SendDisconnectRequest", status);
-                }
+				if (!NT_SUCCESS(status))
+				{
+					TraceError(
+						TRACE_DSHIDMINIDRV,
+						"Sending disconnect request failed with status %!STATUS!",
+						status
+					);
+					EventWriteFailedWithNTStatus(__FUNCTION__, L"DsBth_SendDisconnectRequest", status);
+				}
 
-                //
-                // No further processing
-                // 
-                return ContinuousRequestTarget_BufferDisposition_ContinuousRequestTargetAndStopStreaming;
-            }
-        }
-        else
-        {
-            pDevCtx->Connection.Bth.QuickDisconnectTimestamp.QuadPart = 0;
-        }
-    }
+				//
+				// No further processing
+				// 
+				return ContinuousRequestTarget_BufferDisposition_ContinuousRequestTargetAndStopStreaming;
+			}
+		}
+		else
+		{
+			pDevCtx->Connection.Bth.QuickDisconnectTimestamp.QuadPart = 0;
+		}
+	}
 
 	//
 	// Idle disconnect detection
@@ -2165,9 +2167,9 @@ DMF_EvtExecuteOutputPacketReceived(
 			ms
 		);
 
-		//
-		// Rate limit condition has been detected
-		// 
+	//
+	// Rate limit condition has been detected
+	// 
 		if (pRepCtx->ReportSource > Ds3OutputReportSourceDriverHighPriority
 			&& pDevCtx->Configuration.IsOutputRateControlEnabled > 0
 			&& ms < pDevCtx->Configuration.OutputRateControlPeriodMs)
@@ -2370,7 +2372,8 @@ Ds_SendOutputReport(
 
 	WdfWaitLockAcquire(Context->OutputReport.Lock, NULL);
 
-	do {
+	do
+	{
 		//
 		// Grab new buffer to send
 		//

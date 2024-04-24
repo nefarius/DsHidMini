@@ -159,13 +159,15 @@ ConfigParseRumbleSettings(
 		if ((pNode = cJSON_GetObjectItem(pBMStrRescale, "MinValue")))
 		{
 			Config->RumbleSettings.BMStrRescale.MinValue = (UCHAR)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "BMStrRescale.MinValue", Config->RumbleSettings.BMStrRescale.MinValue);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "BMStrRescale.MinValue",
+				Config->RumbleSettings.BMStrRescale.MinValue);
 		}
 
 		if ((pNode = cJSON_GetObjectItem(pBMStrRescale, "MaxValue")))
 		{
 			Config->RumbleSettings.BMStrRescale.MaxValue = (UCHAR)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "BMStrRescale.MaxValue", Config->RumbleSettings.BMStrRescale.MaxValue);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "BMStrRescale.MaxValue",
+				Config->RumbleSettings.BMStrRescale.MaxValue);
 		}
 	}
 
@@ -176,19 +178,22 @@ ConfigParseRumbleSettings(
 		if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "Enabled")))
 		{
 			Config->RumbleSettings.SMToBMConversion.Enabled = (BOOLEAN)cJSON_IsTrue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "SMToBMConversion.Enabled", Config->RumbleSettings.SMToBMConversion.Enabled);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "SMToBMConversion.Enabled",
+				Config->RumbleSettings.SMToBMConversion.Enabled);
 		}
 
 		if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "RescaleMinValue")))
 		{
 			Config->RumbleSettings.SMToBMConversion.RescaleMinValue = (UCHAR)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "SMToBMConversion.RescaleMinValue", Config->RumbleSettings.SMToBMConversion.RescaleMinValue);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "SMToBMConversion.RescaleMinValue",
+				Config->RumbleSettings.SMToBMConversion.RescaleMinValue);
 		}
 
 		if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "RescaleMaxValue")))
 		{
 			Config->RumbleSettings.SMToBMConversion.RescaleMaxValue = (UCHAR)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "SMToBMConversion.RescaleMaxValue", Config->RumbleSettings.SMToBMConversion.RescaleMaxValue);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "SMToBMConversion.RescaleMaxValue",
+				Config->RumbleSettings.SMToBMConversion.RescaleMaxValue);
 		}
 	}
 
@@ -199,25 +204,29 @@ ConfigParseRumbleSettings(
 		if ((pNode = cJSON_GetObjectItem(pForcedSM, "BMThresholdEnabled")))
 		{
 			Config->RumbleSettings.ForcedSM.BMThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "ForcedSM.BMThresholdEnabled", Config->RumbleSettings.ForcedSM.BMThresholdEnabled);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "ForcedSM.BMThresholdEnabled",
+				Config->RumbleSettings.ForcedSM.BMThresholdEnabled);
 		}
 
 		if ((pNode = cJSON_GetObjectItem(pForcedSM, "BMThresholdValue")))
 		{
 			Config->RumbleSettings.ForcedSM.BMThresholdValue = (UCHAR)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "ForcedSM.BMThresholdValue", Config->RumbleSettings.ForcedSM.BMThresholdValue);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "ForcedSM.BMThresholdValue",
+				Config->RumbleSettings.ForcedSM.BMThresholdValue);
 		}
 
 		if ((pNode = cJSON_GetObjectItem(pForcedSM, "SMThresholdEnabled")))
 		{
 			Config->RumbleSettings.ForcedSM.SMThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "ForcedSM.SMThresholdEnabled", Config->RumbleSettings.ForcedSM.SMThresholdEnabled);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "ForcedSM.SMThresholdEnabled",
+				Config->RumbleSettings.ForcedSM.SMThresholdEnabled);
 		}
 
 		if ((pNode = cJSON_GetObjectItem(pForcedSM, "SMThresholdValue")))
 		{
 			Config->RumbleSettings.ForcedSM.SMThresholdValue = (UCHAR)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "ForcedSM.SMThresholdValue", Config->RumbleSettings.ForcedSM.SMThresholdValue);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "ForcedSM.SMThresholdValue",
+				Config->RumbleSettings.ForcedSM.SMThresholdValue);
 		}
 	}
 }
@@ -273,34 +282,39 @@ ConfigParseLEDSettings(
 			&Config->LEDSettings.CustomPatterns.Player4,
 		};
 
-        cJSON* pPlayer = NULL;
+		cJSON* pPlayer = NULL;
 		for (ULONGLONG playerIndex = 0; playerIndex < _countof(playerSlotNames); playerIndex++)
 		{
-            if (pPlayer = cJSON_GetObjectItem(pCustomPatterns, playerSlotNames[playerIndex])) {
-                if ((pNode = cJSON_GetObjectItem(pPlayer, "TotalDuration")))
-                {
-                    pPlayerSlots[playerIndex]->TotalDuration = (UCHAR)cJSON_GetNumberValue(pNode);
-                    EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "TotalDuration", pPlayerSlots[playerIndex]->TotalDuration);
-                }
+			if (pPlayer = cJSON_GetObjectItem(pCustomPatterns, playerSlotNames[playerIndex]))
+			{
+				if ((pNode = cJSON_GetObjectItem(pPlayer, "TotalDuration")))
+				{
+					pPlayerSlots[playerIndex]->TotalDuration = (UCHAR)cJSON_GetNumberValue(pNode);
+					EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "TotalDuration",
+						pPlayerSlots[playerIndex]->TotalDuration);
+				}
 
-                if ((pNode = cJSON_GetObjectItem(pPlayer, "BasePortionDuration")))
-                {
-                    pPlayerSlots[playerIndex]->BasePortionDuration = (USHORT)cJSON_GetNumberValue(pNode);
-                    EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "BasePortionDuration", pPlayerSlots[playerIndex]->BasePortionDuration);
-                }
+				if ((pNode = cJSON_GetObjectItem(pPlayer, "BasePortionDuration")))
+				{
+					pPlayerSlots[playerIndex]->BasePortionDuration = (USHORT)cJSON_GetNumberValue(pNode);
+					EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "BasePortionDuration",
+						pPlayerSlots[playerIndex]->BasePortionDuration);
+				}
 
-                if ((pNode = cJSON_GetObjectItem(pPlayer, "OffPortionMultiplier")))
-                {
-                    pPlayerSlots[playerIndex]->OffPortionMultiplier = (UCHAR)cJSON_GetNumberValue(pNode);
-                    EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "OffPortionMultiplier", pPlayerSlots[playerIndex]->OffPortionMultiplier);
-                }
+				if ((pNode = cJSON_GetObjectItem(pPlayer, "OffPortionMultiplier")))
+				{
+					pPlayerSlots[playerIndex]->OffPortionMultiplier = (UCHAR)cJSON_GetNumberValue(pNode);
+					EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "OffPortionMultiplier",
+						pPlayerSlots[playerIndex]->OffPortionMultiplier);
+				}
 
-                if ((pNode = cJSON_GetObjectItem(pPlayer, "OnPortionMultiplier")))
-                {
-                    pPlayerSlots[playerIndex]->OnPortionMultiplier = (UCHAR)cJSON_GetNumberValue(pNode);
-                    EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "OnPortionMultiplier", pPlayerSlots[playerIndex]->OnPortionMultiplier);
-                }
-            }
+				if ((pNode = cJSON_GetObjectItem(pPlayer, "OnPortionMultiplier")))
+				{
+					pPlayerSlots[playerIndex]->OnPortionMultiplier = (UCHAR)cJSON_GetNumberValue(pNode);
+					EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "OnPortionMultiplier",
+						pPlayerSlots[playerIndex]->OnPortionMultiplier);
+				}
+			}
 		}
 	}
 }
@@ -324,9 +338,9 @@ ConfigParseHidDeviceModeSpecificSettings(
 	// 
 	switch (Config->HidDeviceMode)
 	{
-		//
-		// Properties only present in SDF mode
-		// 
+	//
+	// Properties only present in SDF mode
+	// 
 	case DsHidMiniDeviceModeSDF:
 		if ((pNode = cJSON_GetObjectItem(NodeSettings, "PressureExposureMode")))
 		{
@@ -340,9 +354,9 @@ ConfigParseHidDeviceModeSpecificSettings(
 			EventWriteOverrideSettingUInt(NodeSettings->string, "SDF.DPadExposureMode", Config->SDF.DPadExposureMode);
 		}
 		break;
-		//
-		// Properties only present in GPJ mode
-		// 
+	//
+	// Properties only present in GPJ mode
+	// 
 	case DsHidMiniDeviceModeGPJ:
 		if ((pNode = cJSON_GetObjectItem(NodeSettings, "PressureExposureMode")))
 		{
@@ -371,18 +385,18 @@ static void ConfigNodeParse(
 	_In_opt_ BOOLEAN IsHotReload
 )
 {
-    FuncEntry(TRACE_CONFIG);
+	FuncEntry(TRACE_CONFIG);
 
 	const PDS_DRIVER_CONFIGURATION pCfg = &Context->Configuration;
 	cJSON* pNode = NULL;
 
-    if (IsHotReload)
-    {
-        //
-        // Reset device's idle disconnect timer
-        //
-        Context->Connection.Bth.IdleDisconnectTimestamp.QuadPart = 0;
-    }
+	if (IsHotReload)
+	{
+		//
+		// Reset device's idle disconnect timer
+		//
+		Context->Connection.Bth.IdleDisconnectTimestamp.QuadPart = 0;
+	}
 
 	//
 	// Common
@@ -431,48 +445,50 @@ static void ConfigNodeParse(
 		EventWriteOverrideSettingUInt(ParentNode->string, "DisableWirelessIdleTimeout", pCfg->DisableWirelessIdleTimeout);
 	}
 
-    //
-    // Wireless quick disconnect combo
-    // 
-    const cJSON* pDisconnectCombo = cJSON_GetObjectItem(ParentNode, "QuickDisconnectCombo");
+	//
+	// Wireless quick disconnect combo
+	// 
+	const cJSON* pDisconnectCombo = cJSON_GetObjectItem(ParentNode, "QuickDisconnectCombo");
 
-    if (pDisconnectCombo)
-    {
-        if ((pNode = cJSON_GetObjectItem(pDisconnectCombo, "IsEnabled")))
-        {
-            pCfg->WirelessDisconnectButtonCombo.IsEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
-            EventWriteOverrideSettingUInt(pDisconnectCombo->string, "WirelessDisconnectButtonCombo.IsEnabled", pCfg->WirelessDisconnectButtonCombo.IsEnabled);
-        }
+	if (pDisconnectCombo)
+	{
+		if ((pNode = cJSON_GetObjectItem(pDisconnectCombo, "IsEnabled")))
+		{
+			pCfg->WirelessDisconnectButtonCombo.IsEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+			EventWriteOverrideSettingUInt(pDisconnectCombo->string, "WirelessDisconnectButtonCombo.IsEnabled",
+				pCfg->WirelessDisconnectButtonCombo.IsEnabled);
+		}
 
-        if ((pNode = cJSON_GetObjectItem(pDisconnectCombo, "HoldTime")))
-        {
-            pCfg->WirelessDisconnectButtonCombo.HoldTime = (ULONG)cJSON_GetNumberValue(pNode);
-            EventWriteOverrideSettingUInt(pDisconnectCombo->string, "WirelessDisconnectButtonCombo.HoldTime", pCfg->WirelessDisconnectButtonCombo.HoldTime);
-        }
+		if ((pNode = cJSON_GetObjectItem(pDisconnectCombo, "HoldTime")))
+		{
+			pCfg->WirelessDisconnectButtonCombo.HoldTime = (ULONG)cJSON_GetNumberValue(pNode);
+			EventWriteOverrideSettingUInt(pDisconnectCombo->string, "WirelessDisconnectButtonCombo.HoldTime",
+				pCfg->WirelessDisconnectButtonCombo.HoldTime);
+		}
 
-        for (ULONGLONG buttonIndex = 0; buttonIndex < _countof(pCfg->WirelessDisconnectButtonCombo.Buttons); buttonIndex++)
-        {
-            if ((pNode = cJSON_GetObjectItem(pDisconnectCombo, G_DS_BUTTON_COMBO_NAMES[buttonIndex])))
-            {
-                const UCHAR offset = (UCHAR)cJSON_GetNumberValue(pNode);
-                if (offset <= DS_BUTTON_COMBO_MAX_OFFSET)
-                {
-                    pCfg->WirelessDisconnectButtonCombo.Buttons[buttonIndex] = (UCHAR)cJSON_GetNumberValue(pNode);
-                    EventWriteOverrideSettingUInt(pDisconnectCombo->string, G_DS_BUTTON_COMBO_NAMES[buttonIndex],
-                                                  pCfg->WirelessDisconnectButtonCombo.Buttons[buttonIndex]);
-                }
-                else
-                {
-                    TraceError(
-                        TRACE_CONFIG,
-                        "Provided button offset %d for %s out of range, ignoring",
-                        offset,
-                        G_DS_BUTTON_COMBO_NAMES[buttonIndex]
-                    );
-                }
-            }
-        }
-    }
+		for (ULONGLONG buttonIndex = 0; buttonIndex < _countof(pCfg->WirelessDisconnectButtonCombo.Buttons); buttonIndex++)
+		{
+			if ((pNode = cJSON_GetObjectItem(pDisconnectCombo, G_DS_BUTTON_COMBO_NAMES[buttonIndex])))
+			{
+				const UCHAR offset = (UCHAR)cJSON_GetNumberValue(pNode);
+				if (offset <= DS_BUTTON_COMBO_MAX_OFFSET)
+				{
+					pCfg->WirelessDisconnectButtonCombo.Buttons[buttonIndex] = (UCHAR)cJSON_GetNumberValue(pNode);
+					EventWriteOverrideSettingUInt(pDisconnectCombo->string, G_DS_BUTTON_COMBO_NAMES[buttonIndex],
+						pCfg->WirelessDisconnectButtonCombo.Buttons[buttonIndex]);
+				}
+				else
+				{
+					TraceError(
+						TRACE_CONFIG,
+						"Provided button offset %d for %s out of range, ignoring",
+						offset,
+						G_DS_BUTTON_COMBO_NAMES[buttonIndex]
+					);
+				}
+			}
+		}
+	}
 
 	//
 	// Every mode can have the same properties configured independently
@@ -498,13 +514,15 @@ static void ConfigNodeParse(
 				if ((pNode = cJSON_GetObjectItem(pDeadZoneLeft, "Apply")))
 				{
 					pCfg->ThumbSettings.DeadZoneLeft.Apply = (BOOLEAN)cJSON_IsTrue(pNode);
-					EventWriteOverrideSettingUInt(pDeadZoneLeft->string, "ThumbSettings.DeadZoneLeft.Apply", pCfg->ThumbSettings.DeadZoneLeft.Apply);
+					EventWriteOverrideSettingUInt(pDeadZoneLeft->string, "ThumbSettings.DeadZoneLeft.Apply",
+						pCfg->ThumbSettings.DeadZoneLeft.Apply);
 				}
 
 				if ((pNode = cJSON_GetObjectItem(pDeadZoneLeft, "PolarValue")))
 				{
 					pCfg->ThumbSettings.DeadZoneLeft.PolarValue = cJSON_GetNumberValue(pNode);
-					EventWriteOverrideSettingDouble(pDeadZoneLeft->string, "ThumbSettings.DeadZoneLeft.PolarValue", pCfg->ThumbSettings.DeadZoneLeft.PolarValue);
+					EventWriteOverrideSettingDouble(pDeadZoneLeft->string, "ThumbSettings.DeadZoneLeft.PolarValue",
+						pCfg->ThumbSettings.DeadZoneLeft.PolarValue);
 				}
 			}
 
@@ -518,13 +536,15 @@ static void ConfigNodeParse(
 				if ((pNode = cJSON_GetObjectItem(pDeadZoneRight, "Apply")))
 				{
 					pCfg->ThumbSettings.DeadZoneRight.Apply = (BOOLEAN)cJSON_IsTrue(pNode);
-					EventWriteOverrideSettingUInt(pDeadZoneRight->string, "ThumbSettings.DeadZoneRight.Apply", pCfg->ThumbSettings.DeadZoneRight.Apply);
+					EventWriteOverrideSettingUInt(pDeadZoneRight->string, "ThumbSettings.DeadZoneRight.Apply",
+						pCfg->ThumbSettings.DeadZoneRight.Apply);
 				}
 
 				if ((pNode = cJSON_GetObjectItem(pDeadZoneRight, "PolarValue")))
 				{
 					pCfg->ThumbSettings.DeadZoneRight.PolarValue = cJSON_GetNumberValue(pNode);
-					EventWriteOverrideSettingDouble(pDeadZoneRight->string, "ThumbSettings.DeadZoneRight.PolarValue", pCfg->ThumbSettings.DeadZoneRight.PolarValue);
+					EventWriteOverrideSettingDouble(pDeadZoneRight->string, "ThumbSettings.DeadZoneRight.PolarValue",
+						pCfg->ThumbSettings.DeadZoneRight.PolarValue);
 				}
 			}
 
@@ -578,7 +598,7 @@ static void ConfigNodeParse(
 		}
 	}
 
-    FuncExitNoReturn(TRACE_CONFIG);
+	FuncExitNoReturn(TRACE_CONFIG);
 }
 #pragma warning(pop)
 
@@ -675,7 +695,7 @@ ConfigLoadForDevice(
 		{
 			error = GetLastError();
 
-            TraceError(
+			TraceError(
 				TRACE_CONFIG,
 				"Failed to get configuration file size, error: %!WINERROR!",
 				error
@@ -697,7 +717,7 @@ ConfigLoadForDevice(
 		// 
 		if (size.QuadPart > 20000000 /* 20 MB of JSON, w00t?! */)
 		{
-            TraceError(
+			TraceError(
 				TRACE_CONFIG,
 				"Configuration file too big to parse, reported size: %I64d",
 				size.QuadPart
@@ -721,7 +741,7 @@ ConfigLoadForDevice(
 		{
 			error = GetLastError();
 
-            TraceError(
+			TraceError(
 				TRACE_CONFIG,
 				"Failed to read configuration file content, error: %!WINERROR!",
 				error
@@ -735,10 +755,10 @@ ConfigLoadForDevice(
 
 		if (config_json == NULL)
 		{
-            TraceError(
-                TRACE_CONFIG,
-                "JSON parsing failed"
-            );
+			TraceError(
+				TRACE_CONFIG,
+				"JSON parsing failed"
+			);
 
 			const char* error_ptr = cJSON_GetErrorPtr();
 			if (error_ptr != NULL)
@@ -748,9 +768,9 @@ ConfigLoadForDevice(
 					"JSON parsing error: %s",
 					error_ptr
 				);
-                EventWriteJSONParseError(error_ptr);
+				EventWriteJSONParseError(error_ptr);
 			}
-            			
+
 			status = STATUS_ACCESS_VIOLATION;
 			break;
 		}
@@ -794,14 +814,14 @@ ConfigLoadForDevice(
 
 			ConfigNodeParse(deviceNode, Context, IsHotReload);
 		}
-        else
-        {
-            TraceVerbose(
-                TRACE_CONFIG,
-                "Device-specific (%s) config not found",
-                Context->DeviceAddressString
-            );
-        }
+		else
+		{
+			TraceVerbose(
+				TRACE_CONFIG,
+				"Device-specific (%s) config not found",
+				Context->DeviceAddressString
+			);
+		}
 
 	} while (FALSE);
 
@@ -809,15 +829,18 @@ ConfigLoadForDevice(
 	// Verify if SMtoBMConversion values are valid and attempt to calculate rescaling constants in case they are
 	// 
 	if (
-		Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue > Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue
+		Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue > Context->Configuration.RumbleSettings.SMToBMConversion.
+		RescaleMinValue
 		&& Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue > 0
 		)
 	{
 		Context->Configuration.RumbleSettings.SMToBMConversion.ConstA =
-			(DOUBLE)(Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue - Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue) / (254);
+		(DOUBLE)(Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue - Context->Configuration.RumbleSettings.
+			SMToBMConversion.RescaleMinValue) / (254);
 
 		Context->Configuration.RumbleSettings.SMToBMConversion.ConstB =
-			Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue - Context->Configuration.RumbleSettings.SMToBMConversion.ConstA * 255;
+		Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue - Context->Configuration.RumbleSettings.SMToBMConversion.
+		ConstA * 255;
 
 		TraceVerbose(
 			TRACE_CONFIG,
@@ -845,10 +868,11 @@ ConfigLoadForDevice(
 		)
 	{
 		Context->Configuration.RumbleSettings.BMStrRescale.ConstA =
-			(DOUBLE)(Context->Configuration.RumbleSettings.BMStrRescale.MaxValue - Context->Configuration.RumbleSettings.BMStrRescale.MinValue) / (254);
+		(DOUBLE)(Context->Configuration.RumbleSettings.BMStrRescale.MaxValue - Context->Configuration.RumbleSettings.BMStrRescale.
+		                                                                                MinValue) / (254);
 
 		Context->Configuration.RumbleSettings.BMStrRescale.ConstB =
-			Context->Configuration.RumbleSettings.BMStrRescale.MaxValue - Context->Configuration.RumbleSettings.BMStrRescale.ConstA * 255;
+		Context->Configuration.RumbleSettings.BMStrRescale.MaxValue - Context->Configuration.RumbleSettings.BMStrRescale.ConstA * 255;
 
 		TraceVerbose(
 			TRACE_CONFIG,
@@ -895,7 +919,7 @@ ConfigSetDefaults(
 	_Inout_ PDS_DRIVER_CONFIGURATION Config
 )
 {
-    FuncEntry(TRACE_CONFIG);
+	FuncEntry(TRACE_CONFIG);
 
 	//
 	// Common
@@ -908,11 +932,11 @@ ConfigSetDefaults(
 	Config->WirelessIdleTimeoutPeriodMs = 300000;
 	Config->DisableWirelessIdleTimeout = FALSE;
 
-    Config->WirelessDisconnectButtonCombo.IsEnabled = TRUE;
-    Config->WirelessDisconnectButtonCombo.HoldTime = 1000;
-    Config->WirelessDisconnectButtonCombo.Buttons[0] = 10;
-    Config->WirelessDisconnectButtonCombo.Buttons[1] = 11;
-    Config->WirelessDisconnectButtonCombo.Buttons[2] = 16;
+	Config->WirelessDisconnectButtonCombo.IsEnabled = TRUE;
+	Config->WirelessDisconnectButtonCombo.HoldTime = 1000;
+	Config->WirelessDisconnectButtonCombo.Buttons[0] = 10;
+	Config->WirelessDisconnectButtonCombo.Buttons[1] = 11;
+	Config->WirelessDisconnectButtonCombo.Buttons[2] = 16;
 
 	Config->ThumbSettings.DeadZoneLeft.Apply = TRUE;
 	Config->ThumbSettings.DeadZoneLeft.PolarValue = 3.0;
@@ -965,5 +989,5 @@ ConfigSetDefaults(
 	Config->GPJ.PressureExposureMode = DsPressureExposureModeDefault;
 	Config->GPJ.DPadExposureMode = DsDPadExposureModeDefault;
 
-    FuncExitNoReturn(TRACE_CONFIG);
+	FuncExitNoReturn(TRACE_CONFIG);
 }

@@ -88,38 +88,39 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 	params.dwSize = sizeof(BLUETOOTH_FIND_RADIO_PARAMS);
 	info.dwSize = sizeof(BLUETOOTH_RADIO_INFO);
 
-	do {
+	do
+	{
 		//
 		// Grab first (active) radio
 		// 
-        hFind = BluetoothFindFirstRadio(
-            &params,
-            &hRadio
-        );
+		hFind = BluetoothFindFirstRadio(
+			&params,
+			&hRadio
+		);
 
-        if (!hFind)
-        {
-            error = GetLastError();
+		if (!hFind)
+		{
+			error = GetLastError();
 
-            if (error == ERROR_NO_MORE_ITEMS)
-            {
-                TraceWarning(
-                    TRACE_DS3,
-                    "No active host radio found, can't pair device"
-                );
-            }
-            else
-            {
-                TraceError(
-                    TRACE_DS3,
-                    "BluetoothFindFirstRadio failed with error %!WINERROR!",
-                    error
-                );
-            }
+			if (error == ERROR_NO_MORE_ITEMS)
+			{
+				TraceWarning(
+					TRACE_DS3,
+					"No active host radio found, can't pair device"
+				);
+			}
+			else
+			{
+				TraceError(
+					TRACE_DS3,
+					"BluetoothFindFirstRadio failed with error %!WINERROR!",
+					error
+				);
+			}
 
-            EventWritePairingNoRadioFound(pDevCtx->DeviceAddressString);
-            break;
-        }
+			EventWritePairingNoRadioFound(pDevCtx->DeviceAddressString);
+			break;
+		}
 
 		//
 		// Get radio info (address)
@@ -150,10 +151,10 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 		// Don't issue request when addresses already match
 		// 
 		if (RtlCompareMemory(
-			&info.address.rgBytes[0],
-			&pDevCtx->HostAddress.Address[0],
-			sizeof(BD_ADDR)
-		) == sizeof(BD_ADDR)
+				&info.address.rgBytes[0],
+				&pDevCtx->HostAddress.Address[0],
+				sizeof(BD_ADDR)
+			) == sizeof(BD_ADDR)
 			)
 		{
 			TraceVerbose(
@@ -327,7 +328,7 @@ VOID DS3_SET_LED_DURATION(
 	PDEVICE_CONTEXT Context,
 	UCHAR LedIndex,
 	UCHAR TotalDuration,
-    USHORT BasePortionDuration,
+	USHORT BasePortionDuration,
 	UCHAR OffPortionMultiplier,
 	UCHAR OnPortionMultiplier
 )
@@ -348,7 +349,7 @@ VOID DS3_SET_LED_DURATION(
 
 	buffer[10 + (LedIndex * 5)] = TotalDuration;
 	buffer[11 + (LedIndex * 5)] = BasePortionDuration >> 8;
-    buffer[12 + (LedIndex * 5)] = BasePortionDuration & 0xFF;
+	buffer[12 + (LedIndex * 5)] = BasePortionDuration & 0xFF;
 	buffer[13 + (LedIndex * 5)] = OffPortionMultiplier;
 	buffer[14 + (LedIndex * 5)] = OnPortionMultiplier;
 }
@@ -584,15 +585,18 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 		Context->Configuration.RumbleSettings.SMToBMConversion.Enabled
 		&& !Context->Configuration.RumbleSettings.DisableSM
 		&& !Context->Configuration.RumbleSettings.DisableBM
-		) {
+		)
+	{
 
-		if (SmallValue > 0) {
+		if (SmallValue > 0)
+		{
 
 			// Small Motor Strength Rescale 
 			SmallValue = Context->Configuration.RumbleSettings.SMToBMConversion.ConstA * SmallValue
-				+ Context->Configuration.RumbleSettings.SMToBMConversion.ConstB;
+			+ Context->Configuration.RumbleSettings.SMToBMConversion.ConstB;
 
-			if (SmallValue > LargeValue) {
+			if (SmallValue > LargeValue)
+			{
 				LargeValue = SmallValue;
 			}
 			SmallValue = 0; // Always disable Small Motor after the if statement above
@@ -622,10 +626,11 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 
 
 	// Big Motor Strength Rescale
-	if (Context->Configuration.RumbleSettings.BMStrRescale.Enabled && LargeValue > 0) {
+	if (Context->Configuration.RumbleSettings.BMStrRescale.Enabled && LargeValue > 0)
+	{
 		LargeValue =
-			Context->Configuration.RumbleSettings.BMStrRescale.ConstA * LargeValue
-			+ Context->Configuration.RumbleSettings.BMStrRescale.ConstB;
+		Context->Configuration.RumbleSettings.BMStrRescale.ConstA * LargeValue
+		+ Context->Configuration.RumbleSettings.BMStrRescale.ConstB;
 	}
 
 
