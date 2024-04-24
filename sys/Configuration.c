@@ -826,27 +826,28 @@ ConfigLoadForDevice(
 	} while (FALSE);
 
 	//
-	// Verify if SMtoBMConversion values are valid and attempt to calculate rescaling constants in case they are
+	// Verify if desired new range for heavy rumbling rescale is valid and attempt to calculate rescaling constants if so
 	// 
+	DS_RUMBLE_SETTINGS* rumbSet = &Context->Configuration.RumbleSettings;
 	if (
-		Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue > Context->Configuration.RumbleSettings.SMToBMConversion.
-		RescaleMinValue
-		&& Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue > 0
+		rumbSet->AlternativeMode.MaxRange > rumbSet->AlternativeMode.MinRange
+		&& rumbSet->AlternativeMode.MinRange > 0
 		)
 	{
-		Context->Configuration.RumbleSettings.SMToBMConversion.ConstA =
-		(DOUBLE)(Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue - Context->Configuration.RumbleSettings.
-			SMToBMConversion.RescaleMinValue) / (254);
+		Context->RumbleControlState.AltModeEnabled = rumbSet->AlternativeMode.IsEnabled;
 
-		Context->Configuration.RumbleSettings.SMToBMConversion.ConstB =
-		Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue - Context->Configuration.RumbleSettings.SMToBMConversion.
-		ConstA * 255;
+		DOUBLE LConstA = (DOUBLE)(rumbSet->AlternativeMode.MaxRange - rumbSet->AlternativeMode.MinRange) / (254);
+		DOUBLE LConstB = rumbSet->AlternativeMode.MaxRange - LConstA * 255;
+
+		Context->RumbleControlState.LightRescale.ConstA = LConstA;
+		Context->RumbleControlState.LightRescale.ConstB = LConstB;
+		Context->RumbleControlState.LightRescale.IsAllowed = TRUE;
 
 		TraceVerbose(
 			TRACE_CONFIG,
-			"SMToBMConversion rescaling constants: A = %f and B = %f.",
-			Context->Configuration.RumbleSettings.SMToBMConversion.ConstA,
-			Context->Configuration.RumbleSettings.SMToBMConversion.ConstB
+			"Light rumble rescaling constants: A = %f and B = %f.",
+			Context->RumbleControlState.LightRescale.ConstA,
+			Context->RumbleControlState.LightRescale.ConstB
 		);
 
 	}
@@ -854,41 +855,42 @@ ConfigLoadForDevice(
 	{
 		TraceVerbose(
 			TRACE_CONFIG,
-			"Invalid values found for SMToBMConversion. Setting disabled."
+			"Disallowing light rumble rescalling because an invalid range was defined"
 		);
-		Context->Configuration.RumbleSettings.SMToBMConversion.Enabled = FALSE;
+		Context->RumbleControlState.LightRescale.IsAllowed = FALSE;
 	}
 
 	//
-	// Verify if BMStrRescale values are valid and attempt to calculate rescaling constants in case they are
+	// Verify if desired new range for light rumbling rescale when in alternative mode is valid and attempt to calculate rescaling constants if so
 	// 
 	if (
-		Context->Configuration.RumbleSettings.BMStrRescale.MaxValue > Context->Configuration.RumbleSettings.BMStrRescale.MinValue
-		&& Context->Configuration.RumbleSettings.BMStrRescale.MinValue > 0
+		rumbSet->HeavyRescaling.MaxRange > rumbSet->HeavyRescaling.MinRange
+		&& rumbSet->HeavyRescaling.MinRange > 0
 		)
 	{
-		Context->Configuration.RumbleSettings.BMStrRescale.ConstA =
-		(DOUBLE)(Context->Configuration.RumbleSettings.BMStrRescale.MaxValue - Context->Configuration.RumbleSettings.BMStrRescale.
-		                                                                                MinValue) / (254);
+		Context->RumbleControlState.HeavyRescaleEnabled = rumbSet->HeavyRescaling.IsEnabled;
 
-		Context->Configuration.RumbleSettings.BMStrRescale.ConstB =
-		Context->Configuration.RumbleSettings.BMStrRescale.MaxValue - Context->Configuration.RumbleSettings.BMStrRescale.ConstA * 255;
+		DOUBLE HConstA = (DOUBLE)(rumbSet->HeavyRescaling.MaxRange - rumbSet->HeavyRescaling.MinRange) / (254);
+		DOUBLE HConstB = rumbSet->HeavyRescaling.MaxRange - HConstA * 255;
+
+		Context->RumbleControlState.HeavyRescale.ConstA = HConstA;
+		Context->RumbleControlState.HeavyRescale.ConstB = HConstB;
+		Context->RumbleControlState.HeavyRescale.IsAllowed = TRUE;
 
 		TraceVerbose(
 			TRACE_CONFIG,
-			"BMStrRescale rescaling constants: A = %f and B = %f.",
-			Context->Configuration.RumbleSettings.BMStrRescale.ConstA,
-			Context->Configuration.RumbleSettings.BMStrRescale.ConstB
+			"Heavy rumble rescaling constants:  A = %f and B = %f.",
+			Context->RumbleControlState.HeavyRescale.ConstA,
+			Context->RumbleControlState.HeavyRescale.ConstB
 		);
 	}
 	else
 	{
 		TraceVerbose(
 			TRACE_CONFIG,
-			"Invalid values found for BMStrRescale. Setting disabled."
+			"Disallowing heavy rumble rescalling because an invalid range was defined"
 		);
-
-		Context->Configuration.RumbleSettings.BMStrRescale.Enabled = FALSE;
+		Context->RumbleControlState.HeavyRescale.IsAllowed = FALSE;
 	}
 
 	if (config_json)
