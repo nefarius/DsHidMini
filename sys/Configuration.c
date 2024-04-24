@@ -943,7 +943,7 @@ ConfigSetDefaults(
 	Config->RumbleSettings.HeavyRescaling.MaxRange = 255;
 	Config->RumbleSettings.AlternativeMode.IsEnabled = FALSE;
 	Config->RumbleSettings.AlternativeMode.MinRange = 1;
-	Config->RumbleSettings.AlternativeMode.MaxRange = 140;
+	Config->RumbleSettings.AlternativeMode.MaxRange = 110;
 	Config->RumbleSettings.AlternativeMode.ForcedRight.IsHeavyThresholdEnabled = TRUE;
 	Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold = 242;
 	Config->RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled = FALSE;
