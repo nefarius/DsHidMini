@@ -35,12 +35,12 @@
         "AlternativeMode": {
           "IsEnabled": false,
           "RescaleMinRange": 1,
-          "RescaleMaxRange": 140,
+          "RescaleMaxRange": 110,
           "ForcedRight": {
             "IsHeavyThresholdEnabled": true,
-            "HeavyThreshold": 230,
+            "HeavyThreshold": 242,
             "IsLightThresholdEnabled": false,
-            "LightThreshold": 230
+            "LightThreshold": 242
           }
         }
       },
@@ -104,12 +104,12 @@
         "AlternativeMode": {
           "IsEnabled": false,
           "RescaleMinRange": 1,
-          "RescaleMaxRange": 140,
+          "RescaleMaxRange": 110,
           "ForcedRight": {
             "IsHeavyThresholdEnabled": true,
-            "HeavyThreshold": 230,
+            "HeavyThreshold": 242,
             "IsLightThresholdEnabled": false,
-            "LightThreshold": 230
+            "LightThreshold": 242
           }
         }
       },
@@ -164,12 +164,12 @@
         "AlternativeMode": {
           "IsEnabled": false,
           "RescaleMinRange": 1,
-          "RescaleMaxRange": 140,
+          "RescaleMaxRange": 110,
           "ForcedRight": {
             "IsHeavyThresholdEnabled": true,
-            "HeavyThreshold": 230,
+            "HeavyThreshold": 242,
             "IsLightThresholdEnabled": false,
-            "LightThreshold": 230
+            "LightThreshold": 242
           }
         }
       },
@@ -224,12 +224,12 @@
         "AlternativeMode": {
           "IsEnabled": false,
           "RescaleMinRange": 1,
-          "RescaleMaxRange": 140,
+          "RescaleMaxRange": 110,
           "ForcedRight": {
             "IsHeavyThresholdEnabled": true,
-            "HeavyThreshold": 230,
+            "HeavyThreshold": 242,
             "IsLightThresholdEnabled": false,
-            "LightThreshold": 230
+            "LightThreshold": 242
           }
         }
       },
@@ -284,12 +284,12 @@
         "AlternativeMode": {
           "IsEnabled": false,
           "RescaleMinRange": 1,
-          "RescaleMaxRange": 140,
+          "RescaleMaxRange": 110,
           "ForcedRight": {
             "IsHeavyThresholdEnabled": true,
-            "HeavyThreshold": 230,
+            "HeavyThreshold": 242,
             "IsLightThresholdEnabled": false,
-            "LightThreshold": 230
+            "LightThreshold": 242
           }
         }
       },
