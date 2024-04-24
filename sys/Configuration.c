@@ -945,9 +945,9 @@ ConfigSetDefaults(
 	Config->RumbleSettings.AlternativeMode.MinRange = 1;
 	Config->RumbleSettings.AlternativeMode.MaxRange = 140;
 	Config->RumbleSettings.AlternativeMode.ForcedRight.IsHeavyThresholdEnabled = TRUE;
-	Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold = 230;
+	Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold = 242;
 	Config->RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled = FALSE;
-	Config->RumbleSettings.AlternativeMode.ForcedRight.LightThreshold = 230;
+	Config->RumbleSettings.AlternativeMode.ForcedRight.LightThreshold = 242;
 
 	Config->LEDSettings.Mode = DsLEDModeBatteryIndicatorPlayerIndex;
 	Config->LEDSettings.CustomPatterns.LEDFlags = 0x02;
