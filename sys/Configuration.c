@@ -273,37 +273,34 @@ ConfigParseLEDSettings(
 			&Config->LEDSettings.CustomPatterns.Player4,
 		};
 
+        cJSON* pPlayer = NULL;
 		for (ULONGLONG playerIndex = 0; playerIndex < _countof(playerSlotNames); playerIndex++)
 		{
-			if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "Duration")))
-			{
-				pPlayerSlots[playerIndex]->Duration = (UCHAR)cJSON_GetNumberValue(pNode);
-				EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "Duration", pPlayerSlots[playerIndex]->Duration);
-			}
+            if (pPlayer = cJSON_GetObjectItem(pCustomPatterns, playerSlotNames[playerIndex])) {
+                if ((pNode = cJSON_GetObjectItem(pPlayer, "TotalDuration")))
+                {
+                    pPlayerSlots[playerIndex]->TotalDuration = (UCHAR)cJSON_GetNumberValue(pNode);
+                    EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "TotalDuration", pPlayerSlots[playerIndex]->TotalDuration);
+                }
 
-			if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "IntervalDuration")))
-			{
-				pPlayerSlots[playerIndex]->IntervalDuration = (UCHAR)cJSON_GetNumberValue(pNode);
-				EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "IntervalDuration", pPlayerSlots[playerIndex]->IntervalDuration);
-			}
+                if ((pNode = cJSON_GetObjectItem(pPlayer, "BasePortionDuration")))
+                {
+                    pPlayerSlots[playerIndex]->BasePortionDuration = (USHORT)cJSON_GetNumberValue(pNode);
+                    EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "BasePortionDuration", pPlayerSlots[playerIndex]->BasePortionDuration);
+                }
 
-			if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "Enabled")))
-			{
-				pPlayerSlots[playerIndex]->EnabledFlags = (UCHAR)cJSON_GetNumberValue(pNode);
-				EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "Enabled", pPlayerSlots[playerIndex]->EnabledFlags);
-			}
+                if ((pNode = cJSON_GetObjectItem(pPlayer, "OffPortionMultiplier")))
+                {
+                    pPlayerSlots[playerIndex]->OffPortionMultiplier = (UCHAR)cJSON_GetNumberValue(pNode);
+                    EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "OffPortionMultiplier", pPlayerSlots[playerIndex]->OffPortionMultiplier);
+                }
 
-			if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "IntervalPortionOff")))
-			{
-				pPlayerSlots[playerIndex]->IntervalPortionOff = (UCHAR)cJSON_GetNumberValue(pNode);
-				EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "IntervalPortionOff", pPlayerSlots[playerIndex]->IntervalPortionOff);
-			}
-
-			if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "IntervalPortionOn")))
-			{
-				pPlayerSlots[playerIndex]->IntervalPortionOn = (UCHAR)cJSON_GetNumberValue(pNode);
-				EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "IntervalPortionOn", pPlayerSlots[playerIndex]->IntervalPortionOn);
-			}
+                if ((pNode = cJSON_GetObjectItem(pPlayer, "OnPortionMultiplier")))
+                {
+                    pPlayerSlots[playerIndex]->OnPortionMultiplier = (UCHAR)cJSON_GetNumberValue(pNode);
+                    EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "OnPortionMultiplier", pPlayerSlots[playerIndex]->OnPortionMultiplier);
+                }
+            }
 		}
 	}
 }
@@ -948,11 +945,10 @@ ConfigSetDefaults(
 
 	for (ULONGLONG playerIndex = 0; playerIndex < _countof(pPlayerSlots); playerIndex++)
 	{
-		pPlayerSlots[playerIndex]->Duration = 0xFF;
-		pPlayerSlots[playerIndex]->IntervalDuration = 0xFF;
-		pPlayerSlots[playerIndex]->EnabledFlags = 0x10;
-		pPlayerSlots[playerIndex]->IntervalPortionOff = 0x00;
-		pPlayerSlots[playerIndex]->IntervalPortionOn = 0xFF;
+		pPlayerSlots[playerIndex]->TotalDuration = 0xFF;
+		pPlayerSlots[playerIndex]->BasePortionDuration = 0x01;
+		pPlayerSlots[playerIndex]->OffPortionMultiplier = 0x00;
+		pPlayerSlots[playerIndex]->OnPortionMultiplier = 0x01;
 	}
 
 	//

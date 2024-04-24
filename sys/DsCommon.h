@@ -427,15 +427,13 @@ typedef struct _DS_RUMBLE_SETTINGS
 // 
 typedef struct _DS_LED
 {
-	UCHAR Duration;
+	UCHAR TotalDuration;
 
-	UCHAR IntervalDuration;
+	USHORT BasePortionDuration;
 
-	UCHAR EnabledFlags;
+	UCHAR OffPortionMultiplier;
 
-	UCHAR IntervalPortionOff;
-
-	UCHAR IntervalPortionOn;
+	UCHAR OnPortionMultiplier;
 
 } DS_LED, * PDS_LED;
 

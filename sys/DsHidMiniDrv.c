@@ -909,7 +909,7 @@ DsHidMini_WriteReport(
 		pSetEffect = (PPID_SET_EFFECT_REPORT)Packet->reportBuffer;
 
 		TraceVerbose(TRACE_DSHIDMINIDRV, "!! SET_EFFECT_REPORT, EffectBlockIndex: %d, "
-			"EffectType: %d, Duration: %d, TriggerRepeatInterval: %d, "
+			"EffectType: %d, TotalDuration: %d, TriggerRepeatInterval: %d, "
 			"SamplePeriod: %d, Gain: %d, TriggerButton: %d, AxesEnableX: %d, AxesEnableY: %d, "
 			"DirectionEnable: %d, DirectionInstance1: %d, DirectionInstance2: %d, StartDelay: %d",
 			pSetEffect->EffectBlockIndex,
@@ -2401,34 +2401,34 @@ Ds_SendOutputReport(
 			DS3_SET_LED_DURATION(
 				Context,
 				0,
-				pConfig->LEDSettings.CustomPatterns.Player1.Duration,
-				pConfig->LEDSettings.CustomPatterns.Player1.IntervalDuration,
-				pConfig->LEDSettings.CustomPatterns.Player1.IntervalPortionOff,
-				pConfig->LEDSettings.CustomPatterns.Player1.IntervalPortionOn
+				pConfig->LEDSettings.CustomPatterns.Player1.TotalDuration,
+				pConfig->LEDSettings.CustomPatterns.Player1.BasePortionDuration,
+				pConfig->LEDSettings.CustomPatterns.Player1.OffPortionMultiplier,
+				pConfig->LEDSettings.CustomPatterns.Player1.OnPortionMultiplier
 			);
 			DS3_SET_LED_DURATION(
 				Context,
 				1,
-				pConfig->LEDSettings.CustomPatterns.Player2.Duration,
-				pConfig->LEDSettings.CustomPatterns.Player2.IntervalDuration,
-				pConfig->LEDSettings.CustomPatterns.Player2.IntervalPortionOff,
-				pConfig->LEDSettings.CustomPatterns.Player2.IntervalPortionOn
+				pConfig->LEDSettings.CustomPatterns.Player2.TotalDuration,
+				pConfig->LEDSettings.CustomPatterns.Player2.BasePortionDuration,
+				pConfig->LEDSettings.CustomPatterns.Player2.OffPortionMultiplier,
+				pConfig->LEDSettings.CustomPatterns.Player2.OnPortionMultiplier
 			);
 			DS3_SET_LED_DURATION(
 				Context,
 				2,
-				pConfig->LEDSettings.CustomPatterns.Player3.Duration,
-				pConfig->LEDSettings.CustomPatterns.Player3.IntervalDuration,
-				pConfig->LEDSettings.CustomPatterns.Player3.IntervalPortionOff,
-				pConfig->LEDSettings.CustomPatterns.Player3.IntervalPortionOn
+				pConfig->LEDSettings.CustomPatterns.Player3.TotalDuration,
+				pConfig->LEDSettings.CustomPatterns.Player3.BasePortionDuration,
+				pConfig->LEDSettings.CustomPatterns.Player3.OffPortionMultiplier,
+				pConfig->LEDSettings.CustomPatterns.Player3.OnPortionMultiplier
 			);
 			DS3_SET_LED_DURATION(
 				Context,
 				3,
-				pConfig->LEDSettings.CustomPatterns.Player4.Duration,
-				pConfig->LEDSettings.CustomPatterns.Player4.IntervalDuration,
-				pConfig->LEDSettings.CustomPatterns.Player4.IntervalPortionOff,
-				pConfig->LEDSettings.CustomPatterns.Player4.IntervalPortionOn
+				pConfig->LEDSettings.CustomPatterns.Player4.TotalDuration,
+				pConfig->LEDSettings.CustomPatterns.Player4.BasePortionDuration,
+				pConfig->LEDSettings.CustomPatterns.Player4.OffPortionMultiplier,
+				pConfig->LEDSettings.CustomPatterns.Player4.OnPortionMultiplier
 			);
 		}
 
