@@ -134,99 +134,90 @@ ConfigParseRumbleSettings(
 {
 	cJSON* pNode = NULL;
 
-	if ((pNode = cJSON_GetObjectItem(RumbleSettings, "DisableBM")))
+	if ((pNode = cJSON_GetObjectItem(RumbleSettings, "DisableLeft")))
 	{
-		Config->RumbleSettings.DisableBM = (BOOLEAN)cJSON_IsTrue(pNode);
-		EventWriteOverrideSettingUInt(RumbleSettings->string, "DisableBM", Config->RumbleSettings.DisableBM);
+		Config->RumbleSettings.DisableLeft = (BOOLEAN)cJSON_IsTrue(pNode);
+		EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.DisableLeft", Config->RumbleSettings.DisableLeft);
 	}
 
-	if ((pNode = cJSON_GetObjectItem(RumbleSettings, "DisableSM")))
+	if ((pNode = cJSON_GetObjectItem(RumbleSettings, "DisableRight")))
 	{
-		Config->RumbleSettings.DisableSM = (BOOLEAN)cJSON_IsTrue(pNode);
-		EventWriteOverrideSettingUInt(RumbleSettings->string, "DisableSM", Config->RumbleSettings.DisableSM);
+		Config->RumbleSettings.DisableRight = (BOOLEAN)cJSON_IsTrue(pNode);
+		EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.DisableRight", Config->RumbleSettings.DisableRight);
 	}
 
-	const cJSON* pBMStrRescale = cJSON_GetObjectItem(RumbleSettings, "BMStrRescale");
+	const cJSON* pHeavyRescale = cJSON_GetObjectItem(RumbleSettings, "HeavyRescale");
 
-	if (pBMStrRescale)
+	if (pHeavyRescale)
 	{
-		if ((pNode = cJSON_GetObjectItem(pBMStrRescale, "Enabled")))
+		if ((pNode = cJSON_GetObjectItem(pHeavyRescale, "IsEnabled")))
 		{
-			Config->RumbleSettings.BMStrRescale.Enabled = (BOOLEAN)cJSON_IsTrue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "BMStrRescale.Enabled", Config->RumbleSettings.BMStrRescale.Enabled);
+			Config->RumbleSettings.HeavyRescaling.IsEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.HeavyRescaling.IsEnabled", Config->RumbleSettings.HeavyRescaling.IsEnabled);
 		}
 
-		if ((pNode = cJSON_GetObjectItem(pBMStrRescale, "MinValue")))
+		if ((pNode = cJSON_GetObjectItem(pHeavyRescale, "RescaleMinRange")))
 		{
-			Config->RumbleSettings.BMStrRescale.MinValue = (UCHAR)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "BMStrRescale.MinValue",
-				Config->RumbleSettings.BMStrRescale.MinValue);
+			Config->RumbleSettings.HeavyRescaling.MinRange = (UCHAR)cJSON_GetNumberValue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.HeavyRescaling.MinRange", Config->RumbleSettings.HeavyRescaling.MinRange);
 		}
 
-		if ((pNode = cJSON_GetObjectItem(pBMStrRescale, "MaxValue")))
+		if ((pNode = cJSON_GetObjectItem(pHeavyRescale, "RescaleMaxRange")))
 		{
-			Config->RumbleSettings.BMStrRescale.MaxValue = (UCHAR)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "BMStrRescale.MaxValue",
-				Config->RumbleSettings.BMStrRescale.MaxValue);
-		}
-	}
-
-	const cJSON* pSMToBMConversion = cJSON_GetObjectItem(RumbleSettings, "SMToBMConversion");
-
-	if (pSMToBMConversion)
-	{
-		if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "Enabled")))
-		{
-			Config->RumbleSettings.SMToBMConversion.Enabled = (BOOLEAN)cJSON_IsTrue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "SMToBMConversion.Enabled",
-				Config->RumbleSettings.SMToBMConversion.Enabled);
-		}
-
-		if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "RescaleMinValue")))
-		{
-			Config->RumbleSettings.SMToBMConversion.RescaleMinValue = (UCHAR)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "SMToBMConversion.RescaleMinValue",
-				Config->RumbleSettings.SMToBMConversion.RescaleMinValue);
-		}
-
-		if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "RescaleMaxValue")))
-		{
-			Config->RumbleSettings.SMToBMConversion.RescaleMaxValue = (UCHAR)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "SMToBMConversion.RescaleMaxValue",
-				Config->RumbleSettings.SMToBMConversion.RescaleMaxValue);
+			Config->RumbleSettings.HeavyRescaling.MaxRange = (UCHAR)cJSON_GetNumberValue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.HeavyRescaling.MaxRange", Config->RumbleSettings.HeavyRescaling.MaxRange);
 		}
 	}
 
-	const cJSON* pForcedSM = cJSON_GetObjectItem(RumbleSettings, "ForcedSM");
+	const cJSON* pAlternativeMode = cJSON_GetObjectItem(RumbleSettings, "AlternativeMode");
 
-	if (pForcedSM)
+	if (pAlternativeMode)
 	{
-		if ((pNode = cJSON_GetObjectItem(pForcedSM, "BMThresholdEnabled")))
+		if ((pNode = cJSON_GetObjectItem(pAlternativeMode, "IsEnabled")))
 		{
-			Config->RumbleSettings.ForcedSM.BMThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "ForcedSM.BMThresholdEnabled",
-				Config->RumbleSettings.ForcedSM.BMThresholdEnabled);
+			Config->RumbleSettings.AlternativeMode.IsEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.IsEnabled", Config->RumbleSettings.AlternativeMode.IsEnabled);
 		}
 
-		if ((pNode = cJSON_GetObjectItem(pForcedSM, "BMThresholdValue")))
+		if ((pNode = cJSON_GetObjectItem(pAlternativeMode, "RescaleMinRange")))
 		{
-			Config->RumbleSettings.ForcedSM.BMThresholdValue = (UCHAR)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "ForcedSM.BMThresholdValue",
-				Config->RumbleSettings.ForcedSM.BMThresholdValue);
+			Config->RumbleSettings.AlternativeMode.MinRange = (UCHAR)cJSON_GetNumberValue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.MinRange", Config->RumbleSettings.AlternativeMode.MinRange);
 		}
 
-		if ((pNode = cJSON_GetObjectItem(pForcedSM, "SMThresholdEnabled")))
+		if ((pNode = cJSON_GetObjectItem(pAlternativeMode, "RescaleMaxRange")))
 		{
-			Config->RumbleSettings.ForcedSM.SMThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "ForcedSM.SMThresholdEnabled",
-				Config->RumbleSettings.ForcedSM.SMThresholdEnabled);
+			Config->RumbleSettings.AlternativeMode.MaxRange = (UCHAR)cJSON_GetNumberValue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.MaxRange", Config->RumbleSettings.AlternativeMode.MaxRange);
 		}
 
-		if ((pNode = cJSON_GetObjectItem(pForcedSM, "SMThresholdValue")))
+		const cJSON* pForced = cJSON_GetObjectItem(pAlternativeMode, "ForcedRight");
+
+		if (pForced)
 		{
-			Config->RumbleSettings.ForcedSM.SMThresholdValue = (UCHAR)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "ForcedSM.SMThresholdValue",
-				Config->RumbleSettings.ForcedSM.SMThresholdValue);
+			if ((pNode = cJSON_GetObjectItem(pForced, "IsHeavyThresholdEnabled")))
+			{
+				Config->RumbleSettings.AlternativeMode.ForcedRight.IsHeavyThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+				EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.IsHeavyThresholdEnabled", Config->RumbleSettings.AlternativeMode.ForcedRight.IsHeavyThresholdEnabled);
+			}
+
+			if ((pNode = cJSON_GetObjectItem(pForced, "IsLightThresholdEnabled")))
+			{
+				Config->RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+				EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled", Config->RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled);
+			}
+
+			if ((pNode = cJSON_GetObjectItem(pForced, "HeavyThreshold")))
+			{
+				Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold = (UCHAR)cJSON_GetNumberValue(pNode);
+				EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold", Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold);
+			}
+
+			if ((pNode = cJSON_GetObjectItem(pForced, "LightThreshold")))
+			{
+				Config->RumbleSettings.AlternativeMode.ForcedRight.LightThreshold = (UCHAR)cJSON_GetNumberValue(pNode);
+				EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.LightThreshold", Config->RumbleSettings.AlternativeMode.ForcedRight.LightThreshold);
+			}
 		}
 	}
 }
