@@ -5,11 +5,12 @@
 // Defines a Bluetooth client MAC address
 // 
 #include <pshpack1.h>
+
 typedef struct _BD_ADDR
 {
 	UCHAR Address[6];
-
 } BD_ADDR, * PBD_ADDR;
+
 #include <poppack.h>
 
 //
@@ -41,7 +42,6 @@ typedef enum
 	// Sony DualShock 4 Controller
 	// 
 	DsDeviceTypeWireless
-
 } DS_DEVICE_TYPE, * PDS_DEVICE_TYPE;
 
 //
@@ -52,7 +52,6 @@ typedef enum
 	DsDeviceConnectionTypeUnknown = 0x00,
 	DsDeviceConnectionTypeUsb,
 	DsDeviceConnectionTypeBth
-
 } DS_CONNECTION_TYPE, * PDS_CONNECTION_TYPE;
 
 //
@@ -68,7 +67,6 @@ typedef enum
 	DsBatteryStatusFull = 0x05,
 	DsBatteryStatusCharging = 0xEE,
 	DsBatteryStatusCharged = 0xEF
-
 } DS_BATTERY_STATUS, * PDS_BATTERY_STATUS;
 
 //
@@ -100,7 +98,6 @@ typedef enum
 	// Microsoft XINPUTHID.SYS compatible
 	// 
 	DsHidMiniDeviceModeXInputHIDCompatible
-
 } DS_HID_DEVICE_MODE, * PDS_HID_DEVICE_MODE;
 
 //
@@ -130,7 +127,6 @@ typedef enum
 	// Output reports come in from "the outside" and get passed on
 	// 
 	Ds3OutputReportModeWriteReportPassThrough
-
 } DS_OUTPUT_REPORT_MODE, * PDS_OUTPUT_REPORT_MODE;
 
 //
@@ -167,7 +163,6 @@ typedef enum
 	// Request came from XINPUTHID.SYS
 	// 
 	Ds3OutputReportSourceXInputHID
-
 } DS_OUTPUT_REPORT_SOURCE, * PDS_OUTPUT_REPORT_SOURCE;
 
 //
@@ -187,7 +182,6 @@ typedef enum
 	// Default behaviour exposes both unaltered
 	// 
 	DsPressureExposureModeDefault = DsPressureExposureModeDigital | DsPressureExposureModeAnalogue
-
 } DS_PRESSURE_EXPOSURE_MODE, * PDS_PRESSURE_EXPOSURE_MODE;
 
 //
@@ -217,7 +211,6 @@ typedef enum
 	// Default behaviour exposes HAT/POV format
 	// 
 	DsDPadExposureModeDefault = DsDPadExposureModeHAT
-
 } DS_DPAD_EXPOSURE_MODE, * PDS_DPAD_EXPOSURE_MODE;
 
 //
@@ -251,7 +244,6 @@ typedef enum
 	// Use whatever pattern is provided by configuration
 	// 
 	DsLEDModeCustomPattern
-
 } DS_LED_MODE;
 
 //
@@ -281,7 +273,6 @@ typedef enum
 	// The application is in charge, the driver will do nothing
 	// 
 	DsLEDAuthorityApplication
-
 } DS_LED_AUTHORITY;
 
 //
@@ -299,21 +290,20 @@ static CONST PSTR G_DS_LED_AUTHORITY_NAMES[] =
 // 
 typedef struct _DS_BUTTON_COMBO
 {
-    //
-    // Activates the combination
-    // 
-    BOOLEAN IsEnabled;
+	//
+	// Activates the combination
+	// 
+	BOOLEAN IsEnabled;
 
-    //
-    // How long the combination must be held
-    // 
-    ULONG HoldTime;
+	//
+	// How long the combination must be held
+	// 
+	ULONG HoldTime;
 
-    //
-    // The buttons that need to be held
-    // 
-    UCHAR Buttons[3];
-
+	//
+	// The buttons that need to be held
+	// 
+	UCHAR Buttons[3];
 } DS_BUTTON_COMBO, * PDS_BUTTON_COMBO;
 
 //
@@ -321,9 +311,9 @@ typedef struct _DS_BUTTON_COMBO
 // 
 static CONST PSTR G_DS_BUTTON_COMBO_NAMES[] =
 {
-    "Button1",
-    "Button2",
-    "Button3",
+	"Button1",
+	"Button2",
+	"Button3",
 };
 
 //
@@ -345,7 +335,6 @@ typedef struct _DS_AXIS_DEADZONE
 	// Dead-zone radius (0-360)
 	// 
 	DOUBLE PolarValue;
-
 } DS_AXIS_DEADZONE, * PDS_AXIS_DEADZONE;
 
 //
@@ -362,7 +351,6 @@ typedef struct _DS_THUMB_SETTINGS
 	// Dead-zone of right thumb stick
 	// 
 	DS_AXIS_DEADZONE DeadZoneRight;
-
 } DS_THUMB_SETTINGS, * PDS_THUMB_SETTINGS;
 
 //
@@ -391,7 +379,6 @@ typedef struct _DS_RUMBLE_SETTINGS
 		DOUBLE ConstA;
 
 		DOUBLE ConstB;
-
 	} BMStrRescale;
 
 	struct
@@ -405,7 +392,6 @@ typedef struct _DS_RUMBLE_SETTINGS
 		DOUBLE ConstA;
 
 		DOUBLE ConstB;
-
 	} SMToBMConversion;
 
 	struct
@@ -417,9 +403,7 @@ typedef struct _DS_RUMBLE_SETTINGS
 		BOOLEAN SMThresholdEnabled;
 
 		UCHAR SMThresholdValue;
-
 	} ForcedSM;
-
 } DS_RUMBLE_SETTINGS, * PDS_RUMBLE_SETTINGS;
 
 //
@@ -434,7 +418,6 @@ typedef struct _DS_LED
 	UCHAR OffPortionMultiplier;
 
 	UCHAR OnPortionMultiplier;
-
 } DS_LED, * PDS_LED;
 
 //
@@ -466,9 +449,7 @@ typedef struct _DS_LED_SETTINGS
 		DS_LED Player3;
 
 		DS_LED Player4;
-
 	} CustomPatterns;
-
 } DS_LED_SETTINGS, * PDS_LED_SETTINGS;
 
 //
@@ -483,8 +464,7 @@ typedef struct _DS_FLIP_AXIS_SETTINGS
 	UCHAR RightX;
 
 	UCHAR RightY;
-	
-} DS_FLIP_AXIS_SETTINGS, *PDS_FLIP_AXIS_SETTINGS;
+} DS_FLIP_AXIS_SETTINGS, * PDS_FLIP_AXIS_SETTINGS;
 
 //
 // Per device dynamic configuration properties
@@ -523,10 +503,10 @@ typedef struct _DS_DRIVER_CONFIGURATION
 	// 
 	BOOLEAN DisableWirelessIdleTimeout;
 
-    //
-    // Wireless disconnect button combo customizing
-    //
-    DS_BUTTON_COMBO WirelessDisconnectButtonCombo;
+	//
+	// Wireless disconnect button combo customizing
+	//
+	DS_BUTTON_COMBO WirelessDisconnectButtonCombo;
 
 	//
 	// Thumb stick specific settings
@@ -556,7 +536,6 @@ typedef struct _DS_DRIVER_CONFIGURATION
 		DS_PRESSURE_EXPOSURE_MODE PressureExposureMode;
 
 		DS_DPAD_EXPOSURE_MODE DPadExposureMode;
-
 	} SDF;
 
 	//
@@ -567,7 +546,5 @@ typedef struct _DS_DRIVER_CONFIGURATION
 		DS_PRESSURE_EXPOSURE_MODE PressureExposureMode;
 
 		DS_DPAD_EXPOSURE_MODE DPadExposureMode;
-
 	} GPJ;
-
 } DS_DRIVER_CONFIGURATION, * PDS_DRIVER_CONFIGURATION;
