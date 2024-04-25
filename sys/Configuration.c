@@ -825,7 +825,7 @@ ConfigLoadForDevice(
 		&& rumbSet->AlternativeMode.MinRange > 0
 		)
 	{
-		Context->RumbleControlState.AltMode.AltModeEnabled = rumbSet->AlternativeMode.IsEnabled;
+		Context->RumbleControlState.AltMode.IsEnabled = rumbSet->AlternativeMode.IsEnabled;
 
 		DOUBLE LConstA = (DOUBLE)(rumbSet->AlternativeMode.MaxRange - rumbSet->AlternativeMode.MinRange) / (254);
 		DOUBLE LConstB = rumbSet->AlternativeMode.MaxRange - LConstA * 255;

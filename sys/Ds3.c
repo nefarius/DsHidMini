@@ -602,7 +602,7 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 	//
 	// constants a and b are calculated on configuration (re-)loading
 
-	if (Context->RumbleControlState.AltMode.AltModeEnabled && lightResc->IsAllowed)
+	if (Context->RumbleControlState.AltMode.IsEnabled && lightResc->IsAllowed)
 	{
 		if (lightRumble > 0) {
 

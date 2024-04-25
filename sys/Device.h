@@ -326,7 +326,7 @@ typedef struct _DEVICE_CONTEXT
 			//
 			// Defines if alternative rumble mode is enabled
 			//
-			BOOLEAN AltModeEnabled;
+			BOOLEAN IsEnabled;
 
 			//
 			// Current state of light rumble rescaling parameters
