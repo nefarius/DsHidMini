@@ -2044,8 +2044,8 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 					//
 					// Send rumble feedback to indicate change in rumble mode
 					//
-					DS3_SET_LARGE_RUMBLE_DURATION(pDevCtx, 0x0F);
-					DS3_SET_SMALL_RUMBLE_DURATION(pDevCtx, 0x0F);
+					DS3_SET_LARGE_RUMBLE_DURATION(pDevCtx, 0x30);
+					DS3_SET_SMALL_RUMBLE_DURATION(pDevCtx, 0x20);
 					DS3_SET_BOTH_RUMBLE_STRENGTH(pDevCtx, 0x00, 0xFF);
 					(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverLowPriority);
 
