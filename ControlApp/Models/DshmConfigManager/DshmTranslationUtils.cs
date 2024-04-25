@@ -178,11 +178,8 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             var x_RumbleGeneral = appFormat.GeneralRumble;
             DshmDeviceSettings.AllRumbleSettings dshmRumbleSettings = driverFormat.ContextSettings.RumbleSettings;
 
-            if(!x_RumbleGeneral.IsAltRumbleModeEnabled)
-            {
-                dshmRumbleSettings.DisableLeft = x_RumbleGeneral.IsLeftMotorDisabled;
-                dshmRumbleSettings.DisableRight = x_RumbleGeneral.IsRightMotorDisabled;
-            }
+            dshmRumbleSettings.DisableLeft = x_RumbleGeneral.IsLeftMotorDisabled;
+            dshmRumbleSettings.DisableRight = x_RumbleGeneral.IsRightMotorDisabled;
 
             dshmRumbleSettings.AlternativeMode.IsEnabled = x_RumbleGeneral.AlwaysStartInNormalMode ? false : x_RumbleGeneral.IsAltRumbleModeEnabled;
 
