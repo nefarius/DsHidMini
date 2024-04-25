@@ -63,7 +63,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig
             public byte? RescaleMinRange { get; set; }// = 1;
             public byte? RescaleMaxRange { get; set; }// = 160;
             public ForcedRightAdjusts ForcedRight { get; set; } = new();
-            public ButtonCombo? ToggleSMtoBMConversionCombo { get; set; } = new(); // = DSHM_QuickDisconnectCombo.PS_R1_L1
+            public ButtonCombo? ToggleCombo { get; set; } = new(); // = DSHM_QuickDisconnectCombo.PS_R1_L1
         }
 
         public class ButtonCombo

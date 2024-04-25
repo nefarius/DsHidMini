@@ -189,16 +189,16 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             // Disable toggle combo if alt Rumble Mode is not supposed to be used
             if (x_RumbleGeneral.AltModeToggleButtonCombo.IsComboValid())
             {
-                dshmRumbleSettings.AlternativeMode.ToggleSMtoBMConversionCombo.IsEnabled = x_RumbleGeneral.IsAltRumbleModeEnabled ? x_RumbleGeneral.AltModeToggleButtonCombo.IsEnabled : false;
-                dshmRumbleSettings.AlternativeMode.ToggleSMtoBMConversionCombo.HoldTime = x_RumbleGeneral.AltModeToggleButtonCombo.HoldTime;
-                dshmRumbleSettings.AlternativeMode.ToggleSMtoBMConversionCombo.Button1 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_RumbleGeneral.AltModeToggleButtonCombo.ButtonCombo[0]];
-                dshmRumbleSettings.AlternativeMode.ToggleSMtoBMConversionCombo.Button2 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_RumbleGeneral.AltModeToggleButtonCombo.ButtonCombo[1]];
-                dshmRumbleSettings.AlternativeMode.ToggleSMtoBMConversionCombo.Button3 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_RumbleGeneral.AltModeToggleButtonCombo.ButtonCombo[2]];
+                dshmRumbleSettings.AlternativeMode.ToggleCombo.IsEnabled = x_RumbleGeneral.IsAltRumbleModeEnabled ? x_RumbleGeneral.AltModeToggleButtonCombo.IsEnabled : false;
+                dshmRumbleSettings.AlternativeMode.ToggleCombo.HoldTime = x_RumbleGeneral.AltModeToggleButtonCombo.HoldTime;
+                dshmRumbleSettings.AlternativeMode.ToggleCombo.Button1 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_RumbleGeneral.AltModeToggleButtonCombo.ButtonCombo[0]];
+                dshmRumbleSettings.AlternativeMode.ToggleCombo.Button2 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_RumbleGeneral.AltModeToggleButtonCombo.ButtonCombo[1]];
+                dshmRumbleSettings.AlternativeMode.ToggleCombo.Button3 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_RumbleGeneral.AltModeToggleButtonCombo.ButtonCombo[2]];
 
             }
             else
             {
-                dshmRumbleSettings.AlternativeMode.ToggleSMtoBMConversionCombo.IsEnabled = false;
+                dshmRumbleSettings.AlternativeMode.ToggleCombo.IsEnabled = false;
             }
 
             ////////////////////////////////////////////////////////////////////////////////
