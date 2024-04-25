@@ -496,46 +496,9 @@ static void ConfigNodeParse(
 	//
 	// Wireless quick disconnect combo
 	// 
-	const cJSON* pDisconnectCombo = cJSON_GetObjectItem(ParentNode, "QuickDisconnectCombo");
-
-	if (pDisconnectCombo)
+	if ((pNode = cJSON_GetObjectItem(ParentNode, "QuickDisconnectCombo")))
 	{
-		if ((pNode = cJSON_GetObjectItem(pDisconnectCombo, "IsEnabled")))
-		{
-			pCfg->WirelessDisconnectButtonCombo.IsEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
-			EventWriteOverrideSettingUInt(pDisconnectCombo->string, "WirelessDisconnectButtonCombo.IsEnabled",
-				pCfg->WirelessDisconnectButtonCombo.IsEnabled);
-		}
-
-		if ((pNode = cJSON_GetObjectItem(pDisconnectCombo, "HoldTime")))
-		{
-			pCfg->WirelessDisconnectButtonCombo.HoldTime = (ULONG)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(pDisconnectCombo->string, "WirelessDisconnectButtonCombo.HoldTime",
-				pCfg->WirelessDisconnectButtonCombo.HoldTime);
-		}
-
-		for (ULONGLONG buttonIndex = 0; buttonIndex < _countof(pCfg->WirelessDisconnectButtonCombo.Buttons); buttonIndex++)
-		{
-			if ((pNode = cJSON_GetObjectItem(pDisconnectCombo, G_DS_BUTTON_COMBO_NAMES[buttonIndex])))
-			{
-				const UCHAR offset = (UCHAR)cJSON_GetNumberValue(pNode);
-				if (offset <= DS_BUTTON_COMBO_MAX_OFFSET)
-				{
-					pCfg->WirelessDisconnectButtonCombo.Buttons[buttonIndex] = (UCHAR)cJSON_GetNumberValue(pNode);
-					EventWriteOverrideSettingUInt(pDisconnectCombo->string, G_DS_BUTTON_COMBO_NAMES[buttonIndex],
-						pCfg->WirelessDisconnectButtonCombo.Buttons[buttonIndex]);
-				}
-				else
-				{
-					TraceError(
-						TRACE_CONFIG,
-						"Provided button offset %d for %s out of range, ignoring",
-						offset,
-						G_DS_BUTTON_COMBO_NAMES[buttonIndex]
-					);
-				}
-			}
-		}
+		ConfigParseButtonComboSettings(pNode, &pCfg->WirelessDisconnectButtonCombo);
 	}
 
 	//
