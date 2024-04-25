@@ -243,6 +243,11 @@ ConfigParseRumbleSettings(
 			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.MaxRange", Config->RumbleSettings.AlternativeMode.MaxRange);
 		}
 
+		if ((pNode = cJSON_GetObjectItem(pAlternativeMode, "ToggleCombo")))
+		{
+			ConfigParseButtonComboSettings(pNode, &Config->RumbleSettings.AlternativeMode.ToggleButtonCombo);
+		}
+
 		const cJSON* pForced = cJSON_GetObjectItem(pAlternativeMode, "ForcedRight");
 
 		if (pForced)
