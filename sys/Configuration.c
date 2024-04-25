@@ -119,6 +119,58 @@ static DS_LED_AUTHORITY DS_LED_AUTHORITY_FROM_NAME(PSTR AuthorityName)
 
 #pragma endregion
 
+//
+// Parse button combo settings
+// 
+#pragma warning(push)
+#pragma warning( disable : 4706 )
+static void
+ConfigParseButtonComboSettings(
+	_In_ const cJSON* ComboSettings,
+	_Inout_ PDS_BUTTON_COMBO Combo
+)
+{
+	cJSON* pNode = NULL;
+
+	if ((pNode = cJSON_GetObjectItem(ComboSettings, "IsEnabled")))
+	{
+		Combo->IsEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+		EventWriteOverrideSettingUInt(ComboSettings->string, "IsEnabled",
+			Combo->IsEnabled);
+	}
+
+	if ((pNode = cJSON_GetObjectItem(ComboSettings, "HoldTime")))
+	{
+		Combo->HoldTime = (ULONG)cJSON_GetNumberValue(pNode);
+		EventWriteOverrideSettingUInt(ComboSettings->string, "HoldTime",
+			Combo->HoldTime);
+	}
+
+	for (ULONGLONG buttonIndex = 0; buttonIndex < _countof(Combo->Buttons); buttonIndex++)
+	{
+		if ((pNode = cJSON_GetObjectItem(ComboSettings, G_DS_BUTTON_COMBO_NAMES[buttonIndex])))
+		{
+			const UCHAR offset = (UCHAR)cJSON_GetNumberValue(pNode);
+			if (offset <= DS_BUTTON_COMBO_MAX_OFFSET)
+			{
+				Combo->Buttons[buttonIndex] = (UCHAR)cJSON_GetNumberValue(pNode);
+				EventWriteOverrideSettingUInt(ComboSettings->string, G_DS_BUTTON_COMBO_NAMES[buttonIndex],
+					Combo->Buttons[buttonIndex]);
+			}
+			else
+			{
+				TraceError(
+					TRACE_CONFIG,
+					"Provided button offset %d for %s out of range, ignoring",
+					offset,
+					G_DS_BUTTON_COMBO_NAMES[buttonIndex]
+				);
+			}
+		}
+	}
+}
+#pragma warning(pop)
+
 #pragma region Parsers
 
 //
