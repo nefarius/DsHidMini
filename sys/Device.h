@@ -321,20 +321,24 @@ typedef struct _DEVICE_CONTEXT
 		//
 		BOOLEAN HeavyRescaleEnabled;
 
-		//
-		// Defines if alternative rumble mode is enabled
-		//
-		BOOLEAN AltModeEnabled;
+		struct {
+
+			//
+			// Defines if alternative rumble mode is enabled
+			//
+			BOOLEAN AltModeEnabled;
+
+			//
+			// Current state of light rumble rescaling parameters
+			//
+			DS_RESCALE_STATE LightRescale;
+
+		} AltMode;
 
 		//
 		// Current state of heavy rumble rescaling parameters
 		//
 		DS_RESCALE_STATE HeavyRescale;
-
-		//
-		// Current state of light rumble rescaling parameters
-		//
-		DS_RESCALE_STATE LightRescale;
 
 	} RumbleControlState;
 

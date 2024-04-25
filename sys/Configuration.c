@@ -825,20 +825,20 @@ ConfigLoadForDevice(
 		&& rumbSet->AlternativeMode.MinRange > 0
 		)
 	{
-		Context->RumbleControlState.AltModeEnabled = rumbSet->AlternativeMode.IsEnabled;
+		Context->RumbleControlState.AltMode.AltModeEnabled = rumbSet->AlternativeMode.IsEnabled;
 
 		DOUBLE LConstA = (DOUBLE)(rumbSet->AlternativeMode.MaxRange - rumbSet->AlternativeMode.MinRange) / (254);
 		DOUBLE LConstB = rumbSet->AlternativeMode.MaxRange - LConstA * 255;
 
-		Context->RumbleControlState.LightRescale.ConstA = LConstA;
-		Context->RumbleControlState.LightRescale.ConstB = LConstB;
-		Context->RumbleControlState.LightRescale.IsAllowed = TRUE;
+		Context->RumbleControlState.AltMode.LightRescale.ConstA = LConstA;
+		Context->RumbleControlState.AltMode.LightRescale.ConstB = LConstB;
+		Context->RumbleControlState.AltMode.LightRescale.IsAllowed = TRUE;
 
 		TraceVerbose(
 			TRACE_CONFIG,
 			"Light rumble rescaling constants: A = %f and B = %f.",
-			Context->RumbleControlState.LightRescale.ConstA,
-			Context->RumbleControlState.LightRescale.ConstB
+			Context->RumbleControlState.AltMode.LightRescale.ConstA,
+			Context->RumbleControlState.AltMode.LightRescale.ConstB
 		);
 
 	}
@@ -848,7 +848,7 @@ ConfigLoadForDevice(
 			TRACE_CONFIG,
 			"Disallowing light rumble rescalling because an invalid range was defined"
 		);
-		Context->RumbleControlState.LightRescale.IsAllowed = FALSE;
+		Context->RumbleControlState.AltMode.LightRescale.IsAllowed = FALSE;
 	}
 
 	//
