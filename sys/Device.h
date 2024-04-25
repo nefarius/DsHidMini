@@ -333,6 +333,16 @@ typedef struct _DEVICE_CONTEXT
 			//
 			DS_RESCALE_STATE LightRescale;
 
+			//
+			// Allows toggling to occur if the button combo conditions are satisfied
+			//
+			BOOLEAN IsToggleAllowed;
+
+			//
+			// Timestamp to calculate alt mode toggle combo detection
+			//
+			LARGE_INTEGER QuickToggleTimestamp;
+
 		} AltMode;
 
 		//
