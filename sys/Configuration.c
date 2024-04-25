@@ -948,6 +948,11 @@ ConfigSetDefaults(
 	Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold = 242;
 	Config->RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled = FALSE;
 	Config->RumbleSettings.AlternativeMode.ForcedRight.LightThreshold = 242;
+	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.IsEnabled = FALSE;
+	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.HoldTime = 1000;
+	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons[0] = 0; // Select
+	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons[1] = 0; // Select
+	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons[2] = 16; // PS
 
 	Config->LEDSettings.Mode = DsLEDModeBatteryIndicatorPlayerIndex;
 	Config->LEDSettings.CustomPatterns.LEDFlags = 0x02;
