@@ -181,7 +181,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             if(!x_RumbleGeneral.IsAltRumbleModeEnabled)
             {
                 dshmRumbleSettings.DisableLeft = x_RumbleGeneral.IsLeftMotorDisabled;
-                dshmRumbleSettings.DisableRight = x_RumbleGeneral.IsLeftMotorDisabled;
+                dshmRumbleSettings.DisableRight = x_RumbleGeneral.IsRightMotorDisabled;
             }
 
             dshmRumbleSettings.AlternativeMode.IsEnabled = x_RumbleGeneral.AlwaysStartInNormalMode ? false : x_RumbleGeneral.IsAltRumbleModeEnabled;
