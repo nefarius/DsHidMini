@@ -176,6 +176,19 @@ typedef struct _DS_OUTPUT_REPORT_CACHE
 	
 } DS_OUTPUT_REPORT_CACHE, *PDS_OUTPUT_REPORT_CACHE;
 
+//
+// Stores the constants used for rumble rescaling and if it is allowed
+//
+typedef struct _DS_RESCALE_STATE
+{
+	BOOLEAN IsAllowed;
+
+	DOUBLE ConstA;
+
+	DOUBLE ConstB;
+
+} DS_RESCALE_STATE, * PDS_RESCALE_STATE;
+
 typedef struct _DEVICE_CONTEXT
 {
 	//
@@ -296,14 +309,34 @@ typedef struct _DEVICE_CONTEXT
 		//
 		// Cache for last received Small Motor Strength value
 		// 
-		UCHAR Small;
+		UCHAR LightCache;
 
 		//
 		// Cache for last received Big Motor Strength value
 		// 
-		UCHAR Big;
+		UCHAR HeavyCache;
 
-	} MotorStrCache;
+		//
+		// Defines if heavy rumble strength rescaling is requested
+		//
+		BOOLEAN HeavyRescaleEnabled;
+
+		//
+		// Defines if alternative rumble mode is enabled
+		//
+		BOOLEAN AltModeEnabled;
+
+		//
+		// Current state of heavy rumble rescaling parameters
+		//
+		DS_RESCALE_STATE HeavyRescale;
+
+		//
+		// Current state of light rumble rescaling parameters
+		//
+		DS_RESCALE_STATE LightRescale;
+
+	} RumbleControlState;
 
 } DEVICE_CONTEXT, * PDEVICE_CONTEXT;
 

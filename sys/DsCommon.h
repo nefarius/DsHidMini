@@ -359,51 +359,85 @@ typedef struct _DS_THUMB_SETTINGS
 typedef struct _DS_RUMBLE_SETTINGS
 {
 	//
-	// Disable Big Motor (left) entirely
+	// Disables Heavy Motor (left) when in normal mode
 	// 
-	BOOLEAN DisableBM;
+	BOOLEAN DisableLeft;
 
 	//
-	// Disable Small Motor (right) entirely
+	// Disables Light Motor (right) when in normal mode
 	// 
-	BOOLEAN DisableSM;
+	BOOLEAN DisableRight;
 
+	// Adjustments for heavy (left) motor rescaling
 	struct
 	{
-		BOOLEAN Enabled;
+		//
+		// Enables heavy rumble intensity rescaling if possible
+		//
+		BOOLEAN IsEnabled;
 
-		UCHAR MinValue;
+		//
+		// Desired new minimum range
+		//
+		UCHAR MinRange;
 
-		UCHAR MaxValue;
+		//
+		// Desired new maximum range
+		//
+		UCHAR MaxRange;
 
-		DOUBLE ConstA;
+	} HeavyRescaling;
 
-		DOUBLE ConstB;
-	} BMStrRescale;
 
+	//
+	// Alternative rumble mode user parameters
+	//
 	struct
 	{
-		BOOLEAN Enabled;
+		//
+		// Sets that alternative rumble mode should be enabled if possible
+		//
+		BOOLEAN IsEnabled;
 
-		UCHAR RescaleMinValue;
+		//
+		// Desired new minimun range when rescaling light rumble intensity
+		//
+		UCHAR MinRange;
 
-		UCHAR RescaleMaxValue;
+		//
+		// New maximum range desired when rescaling light rumble intensity
+		//
+		UCHAR MaxRange;
 
-		DOUBLE ConstA;
+		//
+		// Parameters used for the force activation of the right motor when in alternative rumble mode
+		// 
+		//
+		struct
+		{
+			//
+			// Enables the heavy rumble threshold
+			//
+			BOOLEAN IsHeavyThresholdEnabled;
 
-		DOUBLE ConstB;
-	} SMToBMConversion;
+			//
+			// Enables the light rumble threshold
+			//
+			BOOLEAN IsLightThresholdEnabled;
 
-	struct
-	{
-		BOOLEAN BMThresholdEnabled;
+			//
+			// Threshold received heavy rumble instructions must reach to force activate the right motor
+			//
+			UCHAR HeavyThreshold;
 
-		UCHAR BMThresholdValue;
+			//
+			// Threshold received light rumble instructions must reach to force activate the right motor
+			//
+			UCHAR LightThreshold;
 
-		BOOLEAN SMThresholdEnabled;
+		} ForcedRight;
 
-		UCHAR SMThresholdValue;
-	} ForcedSM;
+	} AlternativeMode;
 } DS_RUMBLE_SETTINGS, * PDS_RUMBLE_SETTINGS;
 
 //

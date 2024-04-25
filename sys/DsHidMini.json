@@ -25,23 +25,23 @@
         "PolarValue": 10.0
       },
       "RumbleSettings": {
-        "DisableBM": false,
-        "DisableSM": false,
-        "BMStrRescale": {
-          "Enabled": true,
-          "MinValue": 64,
-          "MaxValue": 255
+        "DisableLeft": false,
+        "DisableRight": false,
+        "HeavyRescale": {
+          "IsEnabled": true,
+          "RescaleMinRange": 64,
+          "RescaleMaxRange": 255
         },
-        "SMToBMConversion": {
-          "Enabled": false,
-          "RescaleMinValue": 0,
-          "RescaleMaxValue": 160
-        },
-        "ForcedSM": {
-          "BMThresholdEnabled": true,
-          "BMThresholdValue": 230,
-          "SMThresholdEnabled": false,
-          "SMThresholdValue": 230
+        "AlternativeMode": {
+          "IsEnabled": false,
+          "RescaleMinRange": 1,
+          "RescaleMaxRange": 110,
+          "ForcedRight": {
+            "IsHeavyThresholdEnabled": true,
+            "HeavyThreshold": 242,
+            "IsLightThresholdEnabled": false,
+            "LightThreshold": 242
+          }
         }
       },
       "LEDSettings": {
@@ -94,23 +94,23 @@
         "PolarValue": 10.0
       },
       "RumbleSettings": {
-        "DisableBM": false,
-        "DisableSM": false,
-        "BMStrRescale": {
-          "Enabled": true,
-          "MinValue": 64,
-          "MaxValue": 255
+        "DisableLeft": false,
+        "DisableRight": false,
+        "HeavyRescale": {
+          "IsEnabled": true,
+          "RescaleMinRange": 64,
+          "RescaleMaxRange": 255
         },
-        "SMToBMConversion": {
-          "Enabled": false,
-          "RescaleMinValue": 0,
-          "RescaleMaxValue": 160
-        },
-        "ForcedSM": {
-          "BMThresholdEnabled": true,
-          "BMThresholdValue": 230,
-          "SMThresholdEnabled": false,
-          "SMThresholdValue": 230
+        "AlternativeMode": {
+          "IsEnabled": false,
+          "RescaleMinRange": 1,
+          "RescaleMaxRange": 110,
+          "ForcedRight": {
+            "IsHeavyThresholdEnabled": true,
+            "HeavyThreshold": 242,
+            "IsLightThresholdEnabled": false,
+            "LightThreshold": 242
+          }
         }
       },
       "LEDSettings": {
@@ -154,23 +154,23 @@
         "PolarValue": 10.0
       },
       "RumbleSettings": {
-        "DisableBM": false,
-        "DisableSM": false,
-        "BMStrRescale": {
-          "Enabled": true,
-          "MinValue": 64,
-          "MaxValue": 255
+        "DisableLeft": false,
+        "DisableRight": false,
+        "HeavyRescale": {
+          "IsEnabled": true,
+          "RescaleMinRange": 64,
+          "RescaleMaxRange": 255
         },
-        "SMToBMConversion": {
-          "Enabled": false,
-          "RescaleMinValue": 0,
-          "RescaleMaxValue": 160
-        },
-        "ForcedSM": {
-          "BMThresholdEnabled": true,
-          "BMThresholdValue": 230,
-          "SMThresholdEnabled": false,
-          "SMThresholdValue": 230
+        "AlternativeMode": {
+          "IsEnabled": false,
+          "RescaleMinRange": 1,
+          "RescaleMaxRange": 110,
+          "ForcedRight": {
+            "IsHeavyThresholdEnabled": true,
+            "HeavyThreshold": 242,
+            "IsLightThresholdEnabled": false,
+            "LightThreshold": 242
+          }
         }
       },
       "LEDSettings": {
@@ -214,23 +214,23 @@
         "PolarValue": 10.0
       },
       "RumbleSettings": {
-        "DisableBM": false,
-        "DisableSM": false,
-        "BMStrRescale": {
-          "Enabled": true,
-          "MinValue": 64,
-          "MaxValue": 255
+        "DisableLeft": false,
+        "DisableRight": false,
+        "HeavyRescale": {
+          "IsEnabled": true,
+          "RescaleMinRange": 64,
+          "RescaleMaxRange": 255
         },
-        "SMToBMConversion": {
-          "Enabled": false,
-          "RescaleMinValue": 0,
-          "RescaleMaxValue": 160
-        },
-        "ForcedSM": {
-          "BMThresholdEnabled": true,
-          "BMThresholdValue": 230,
-          "SMThresholdEnabled": false,
-          "SMThresholdValue": 230
+        "AlternativeMode": {
+          "IsEnabled": false,
+          "RescaleMinRange": 1,
+          "RescaleMaxRange": 110,
+          "ForcedRight": {
+            "IsHeavyThresholdEnabled": true,
+            "HeavyThreshold": 242,
+            "IsLightThresholdEnabled": false,
+            "LightThreshold": 242
+          }
         }
       },
       "LEDSettings": {
@@ -274,23 +274,23 @@
         "PolarValue": 10.0
       },
       "RumbleSettings": {
-        "DisableBM": false,
-        "DisableSM": false,
-        "BMStrRescale": {
-          "Enabled": true,
-          "MinValue": 64,
-          "MaxValue": 255
+        "DisableLeft": false,
+        "DisableRight": false,
+        "HeavyRescale": {
+          "IsEnabled": true,
+          "RescaleMinRange": 64,
+          "RescaleMaxRange": 255
         },
-        "SMToBMConversion": {
-          "Enabled": false,
-          "RescaleMinValue": 1,
-          "RescaleMaxValue": 140
-        },
-        "ForcedSM": {
-          "BMThresholdEnabled": true,
-          "BMThresholdValue": 230,
-          "SMThresholdEnabled": false,
-          "SMThresholdValue": 230
+        "AlternativeMode": {
+          "IsEnabled": false,
+          "RescaleMinRange": 1,
+          "RescaleMaxRange": 110,
+          "ForcedRight": {
+            "IsHeavyThresholdEnabled": true,
+            "HeavyThreshold": 242,
+            "IsLightThresholdEnabled": false,
+            "LightThreshold": 242
+          }
         }
       },
       "LEDSettings": {

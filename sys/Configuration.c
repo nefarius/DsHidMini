@@ -134,99 +134,90 @@ ConfigParseRumbleSettings(
 {
 	cJSON* pNode = NULL;
 
-	if ((pNode = cJSON_GetObjectItem(RumbleSettings, "DisableBM")))
+	if ((pNode = cJSON_GetObjectItem(RumbleSettings, "DisableLeft")))
 	{
-		Config->RumbleSettings.DisableBM = (BOOLEAN)cJSON_IsTrue(pNode);
-		EventWriteOverrideSettingUInt(RumbleSettings->string, "DisableBM", Config->RumbleSettings.DisableBM);
+		Config->RumbleSettings.DisableLeft = (BOOLEAN)cJSON_IsTrue(pNode);
+		EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.DisableLeft", Config->RumbleSettings.DisableLeft);
 	}
 
-	if ((pNode = cJSON_GetObjectItem(RumbleSettings, "DisableSM")))
+	if ((pNode = cJSON_GetObjectItem(RumbleSettings, "DisableRight")))
 	{
-		Config->RumbleSettings.DisableSM = (BOOLEAN)cJSON_IsTrue(pNode);
-		EventWriteOverrideSettingUInt(RumbleSettings->string, "DisableSM", Config->RumbleSettings.DisableSM);
+		Config->RumbleSettings.DisableRight = (BOOLEAN)cJSON_IsTrue(pNode);
+		EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.DisableRight", Config->RumbleSettings.DisableRight);
 	}
 
-	const cJSON* pBMStrRescale = cJSON_GetObjectItem(RumbleSettings, "BMStrRescale");
+	const cJSON* pHeavyRescale = cJSON_GetObjectItem(RumbleSettings, "HeavyRescale");
 
-	if (pBMStrRescale)
+	if (pHeavyRescale)
 	{
-		if ((pNode = cJSON_GetObjectItem(pBMStrRescale, "Enabled")))
+		if ((pNode = cJSON_GetObjectItem(pHeavyRescale, "IsEnabled")))
 		{
-			Config->RumbleSettings.BMStrRescale.Enabled = (BOOLEAN)cJSON_IsTrue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "BMStrRescale.Enabled", Config->RumbleSettings.BMStrRescale.Enabled);
+			Config->RumbleSettings.HeavyRescaling.IsEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.HeavyRescaling.IsEnabled", Config->RumbleSettings.HeavyRescaling.IsEnabled);
 		}
 
-		if ((pNode = cJSON_GetObjectItem(pBMStrRescale, "MinValue")))
+		if ((pNode = cJSON_GetObjectItem(pHeavyRescale, "RescaleMinRange")))
 		{
-			Config->RumbleSettings.BMStrRescale.MinValue = (UCHAR)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "BMStrRescale.MinValue",
-				Config->RumbleSettings.BMStrRescale.MinValue);
+			Config->RumbleSettings.HeavyRescaling.MinRange = (UCHAR)cJSON_GetNumberValue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.HeavyRescaling.MinRange", Config->RumbleSettings.HeavyRescaling.MinRange);
 		}
 
-		if ((pNode = cJSON_GetObjectItem(pBMStrRescale, "MaxValue")))
+		if ((pNode = cJSON_GetObjectItem(pHeavyRescale, "RescaleMaxRange")))
 		{
-			Config->RumbleSettings.BMStrRescale.MaxValue = (UCHAR)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "BMStrRescale.MaxValue",
-				Config->RumbleSettings.BMStrRescale.MaxValue);
-		}
-	}
-
-	const cJSON* pSMToBMConversion = cJSON_GetObjectItem(RumbleSettings, "SMToBMConversion");
-
-	if (pSMToBMConversion)
-	{
-		if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "Enabled")))
-		{
-			Config->RumbleSettings.SMToBMConversion.Enabled = (BOOLEAN)cJSON_IsTrue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "SMToBMConversion.Enabled",
-				Config->RumbleSettings.SMToBMConversion.Enabled);
-		}
-
-		if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "RescaleMinValue")))
-		{
-			Config->RumbleSettings.SMToBMConversion.RescaleMinValue = (UCHAR)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "SMToBMConversion.RescaleMinValue",
-				Config->RumbleSettings.SMToBMConversion.RescaleMinValue);
-		}
-
-		if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "RescaleMaxValue")))
-		{
-			Config->RumbleSettings.SMToBMConversion.RescaleMaxValue = (UCHAR)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "SMToBMConversion.RescaleMaxValue",
-				Config->RumbleSettings.SMToBMConversion.RescaleMaxValue);
+			Config->RumbleSettings.HeavyRescaling.MaxRange = (UCHAR)cJSON_GetNumberValue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.HeavyRescaling.MaxRange", Config->RumbleSettings.HeavyRescaling.MaxRange);
 		}
 	}
 
-	const cJSON* pForcedSM = cJSON_GetObjectItem(RumbleSettings, "ForcedSM");
+	const cJSON* pAlternativeMode = cJSON_GetObjectItem(RumbleSettings, "AlternativeMode");
 
-	if (pForcedSM)
+	if (pAlternativeMode)
 	{
-		if ((pNode = cJSON_GetObjectItem(pForcedSM, "BMThresholdEnabled")))
+		if ((pNode = cJSON_GetObjectItem(pAlternativeMode, "IsEnabled")))
 		{
-			Config->RumbleSettings.ForcedSM.BMThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "ForcedSM.BMThresholdEnabled",
-				Config->RumbleSettings.ForcedSM.BMThresholdEnabled);
+			Config->RumbleSettings.AlternativeMode.IsEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.IsEnabled", Config->RumbleSettings.AlternativeMode.IsEnabled);
 		}
 
-		if ((pNode = cJSON_GetObjectItem(pForcedSM, "BMThresholdValue")))
+		if ((pNode = cJSON_GetObjectItem(pAlternativeMode, "RescaleMinRange")))
 		{
-			Config->RumbleSettings.ForcedSM.BMThresholdValue = (UCHAR)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "ForcedSM.BMThresholdValue",
-				Config->RumbleSettings.ForcedSM.BMThresholdValue);
+			Config->RumbleSettings.AlternativeMode.MinRange = (UCHAR)cJSON_GetNumberValue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.MinRange", Config->RumbleSettings.AlternativeMode.MinRange);
 		}
 
-		if ((pNode = cJSON_GetObjectItem(pForcedSM, "SMThresholdEnabled")))
+		if ((pNode = cJSON_GetObjectItem(pAlternativeMode, "RescaleMaxRange")))
 		{
-			Config->RumbleSettings.ForcedSM.SMThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "ForcedSM.SMThresholdEnabled",
-				Config->RumbleSettings.ForcedSM.SMThresholdEnabled);
+			Config->RumbleSettings.AlternativeMode.MaxRange = (UCHAR)cJSON_GetNumberValue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.MaxRange", Config->RumbleSettings.AlternativeMode.MaxRange);
 		}
 
-		if ((pNode = cJSON_GetObjectItem(pForcedSM, "SMThresholdValue")))
+		const cJSON* pForced = cJSON_GetObjectItem(pAlternativeMode, "ForcedRight");
+
+		if (pForced)
 		{
-			Config->RumbleSettings.ForcedSM.SMThresholdValue = (UCHAR)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "ForcedSM.SMThresholdValue",
-				Config->RumbleSettings.ForcedSM.SMThresholdValue);
+			if ((pNode = cJSON_GetObjectItem(pForced, "IsHeavyThresholdEnabled")))
+			{
+				Config->RumbleSettings.AlternativeMode.ForcedRight.IsHeavyThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+				EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.IsHeavyThresholdEnabled", Config->RumbleSettings.AlternativeMode.ForcedRight.IsHeavyThresholdEnabled);
+			}
+
+			if ((pNode = cJSON_GetObjectItem(pForced, "IsLightThresholdEnabled")))
+			{
+				Config->RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+				EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled", Config->RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled);
+			}
+
+			if ((pNode = cJSON_GetObjectItem(pForced, "HeavyThreshold")))
+			{
+				Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold = (UCHAR)cJSON_GetNumberValue(pNode);
+				EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold", Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold);
+			}
+
+			if ((pNode = cJSON_GetObjectItem(pForced, "LightThreshold")))
+			{
+				Config->RumbleSettings.AlternativeMode.ForcedRight.LightThreshold = (UCHAR)cJSON_GetNumberValue(pNode);
+				EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.LightThreshold", Config->RumbleSettings.AlternativeMode.ForcedRight.LightThreshold);
+			}
 		}
 	}
 }
@@ -826,27 +817,28 @@ ConfigLoadForDevice(
 	} while (FALSE);
 
 	//
-	// Verify if SMtoBMConversion values are valid and attempt to calculate rescaling constants in case they are
+	// Verify if desired new range for heavy rumbling rescale is valid and attempt to calculate rescaling constants if so
 	// 
+	DS_RUMBLE_SETTINGS* rumbSet = &Context->Configuration.RumbleSettings;
 	if (
-		Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue > Context->Configuration.RumbleSettings.SMToBMConversion.
-		RescaleMinValue
-		&& Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue > 0
+		rumbSet->AlternativeMode.MaxRange > rumbSet->AlternativeMode.MinRange
+		&& rumbSet->AlternativeMode.MinRange > 0
 		)
 	{
-		Context->Configuration.RumbleSettings.SMToBMConversion.ConstA =
-		(DOUBLE)(Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue - Context->Configuration.RumbleSettings.
-			SMToBMConversion.RescaleMinValue) / (254);
+		Context->RumbleControlState.AltModeEnabled = rumbSet->AlternativeMode.IsEnabled;
 
-		Context->Configuration.RumbleSettings.SMToBMConversion.ConstB =
-		Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue - Context->Configuration.RumbleSettings.SMToBMConversion.
-		ConstA * 255;
+		DOUBLE LConstA = (DOUBLE)(rumbSet->AlternativeMode.MaxRange - rumbSet->AlternativeMode.MinRange) / (254);
+		DOUBLE LConstB = rumbSet->AlternativeMode.MaxRange - LConstA * 255;
+
+		Context->RumbleControlState.LightRescale.ConstA = LConstA;
+		Context->RumbleControlState.LightRescale.ConstB = LConstB;
+		Context->RumbleControlState.LightRescale.IsAllowed = TRUE;
 
 		TraceVerbose(
 			TRACE_CONFIG,
-			"SMToBMConversion rescaling constants: A = %f and B = %f.",
-			Context->Configuration.RumbleSettings.SMToBMConversion.ConstA,
-			Context->Configuration.RumbleSettings.SMToBMConversion.ConstB
+			"Light rumble rescaling constants: A = %f and B = %f.",
+			Context->RumbleControlState.LightRescale.ConstA,
+			Context->RumbleControlState.LightRescale.ConstB
 		);
 
 	}
@@ -854,41 +846,42 @@ ConfigLoadForDevice(
 	{
 		TraceVerbose(
 			TRACE_CONFIG,
-			"Invalid values found for SMToBMConversion. Setting disabled."
+			"Disallowing light rumble rescalling because an invalid range was defined"
 		);
-		Context->Configuration.RumbleSettings.SMToBMConversion.Enabled = FALSE;
+		Context->RumbleControlState.LightRescale.IsAllowed = FALSE;
 	}
 
 	//
-	// Verify if BMStrRescale values are valid and attempt to calculate rescaling constants in case they are
+	// Verify if desired new range for light rumbling rescale when in alternative mode is valid and attempt to calculate rescaling constants if so
 	// 
 	if (
-		Context->Configuration.RumbleSettings.BMStrRescale.MaxValue > Context->Configuration.RumbleSettings.BMStrRescale.MinValue
-		&& Context->Configuration.RumbleSettings.BMStrRescale.MinValue > 0
+		rumbSet->HeavyRescaling.MaxRange > rumbSet->HeavyRescaling.MinRange
+		&& rumbSet->HeavyRescaling.MinRange > 0
 		)
 	{
-		Context->Configuration.RumbleSettings.BMStrRescale.ConstA =
-		(DOUBLE)(Context->Configuration.RumbleSettings.BMStrRescale.MaxValue - Context->Configuration.RumbleSettings.BMStrRescale.
-		                                                                                MinValue) / (254);
+		Context->RumbleControlState.HeavyRescaleEnabled = rumbSet->HeavyRescaling.IsEnabled;
 
-		Context->Configuration.RumbleSettings.BMStrRescale.ConstB =
-		Context->Configuration.RumbleSettings.BMStrRescale.MaxValue - Context->Configuration.RumbleSettings.BMStrRescale.ConstA * 255;
+		DOUBLE HConstA = (DOUBLE)(rumbSet->HeavyRescaling.MaxRange - rumbSet->HeavyRescaling.MinRange) / (254);
+		DOUBLE HConstB = rumbSet->HeavyRescaling.MaxRange - HConstA * 255;
+
+		Context->RumbleControlState.HeavyRescale.ConstA = HConstA;
+		Context->RumbleControlState.HeavyRescale.ConstB = HConstB;
+		Context->RumbleControlState.HeavyRescale.IsAllowed = TRUE;
 
 		TraceVerbose(
 			TRACE_CONFIG,
-			"BMStrRescale rescaling constants: A = %f and B = %f.",
-			Context->Configuration.RumbleSettings.BMStrRescale.ConstA,
-			Context->Configuration.RumbleSettings.BMStrRescale.ConstB
+			"Heavy rumble rescaling constants:  A = %f and B = %f.",
+			Context->RumbleControlState.HeavyRescale.ConstA,
+			Context->RumbleControlState.HeavyRescale.ConstB
 		);
 	}
 	else
 	{
 		TraceVerbose(
 			TRACE_CONFIG,
-			"Invalid values found for BMStrRescale. Setting disabled."
+			"Disallowing heavy rumble rescalling because an invalid range was defined"
 		);
-
-		Context->Configuration.RumbleSettings.BMStrRescale.Enabled = FALSE;
+		Context->RumbleControlState.HeavyRescale.IsAllowed = FALSE;
 	}
 
 	if (config_json)
@@ -943,18 +936,18 @@ ConfigSetDefaults(
 	Config->ThumbSettings.DeadZoneRight.Apply = TRUE;
 	Config->ThumbSettings.DeadZoneRight.PolarValue = 3.0;
 
-	Config->RumbleSettings.DisableBM = FALSE;
-	Config->RumbleSettings.DisableSM = FALSE;
-	Config->RumbleSettings.BMStrRescale.Enabled = TRUE;
-	Config->RumbleSettings.BMStrRescale.MinValue = 64;
-	Config->RumbleSettings.BMStrRescale.MaxValue = 255;
-	Config->RumbleSettings.SMToBMConversion.Enabled = FALSE;
-	Config->RumbleSettings.SMToBMConversion.RescaleMinValue = 1;
-	Config->RumbleSettings.SMToBMConversion.RescaleMaxValue = 140;
-	Config->RumbleSettings.ForcedSM.BMThresholdEnabled = TRUE;
-	Config->RumbleSettings.ForcedSM.BMThresholdValue = 230;
-	Config->RumbleSettings.ForcedSM.SMThresholdEnabled = FALSE;
-	Config->RumbleSettings.ForcedSM.SMThresholdValue = 230;
+	Config->RumbleSettings.DisableLeft = FALSE;
+	Config->RumbleSettings.DisableRight = FALSE;
+	Config->RumbleSettings.HeavyRescaling.IsEnabled = TRUE;
+	Config->RumbleSettings.HeavyRescaling.MinRange = 64;
+	Config->RumbleSettings.HeavyRescaling.MaxRange = 255;
+	Config->RumbleSettings.AlternativeMode.IsEnabled = FALSE;
+	Config->RumbleSettings.AlternativeMode.MinRange = 1;
+	Config->RumbleSettings.AlternativeMode.MaxRange = 110;
+	Config->RumbleSettings.AlternativeMode.ForcedRight.IsHeavyThresholdEnabled = TRUE;
+	Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold = 242;
+	Config->RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled = FALSE;
+	Config->RumbleSettings.AlternativeMode.ForcedRight.LightThreshold = 242;
 
 	Config->LEDSettings.Mode = DsLEDModeBatteryIndicatorPlayerIndex;
 	Config->LEDSettings.CustomPatterns.LEDFlags = 0x02;
