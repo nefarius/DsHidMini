@@ -183,10 +183,9 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
 
             dshmRumbleSettings.AlternativeMode.IsEnabled = x_RumbleGeneral.AlwaysStartInNormalMode ? false : x_RumbleGeneral.IsAltRumbleModeEnabled;
 
-            // Disable toggle combo if alt Rumble Mode is not supposed to be used
-            if (x_RumbleGeneral.AltModeToggleButtonCombo.IsComboValid())
+            if (x_RumbleGeneral.IsAltRumbleModeEnabled)
             {
-                dshmRumbleSettings.AlternativeMode.ToggleCombo.IsEnabled = x_RumbleGeneral.IsAltRumbleModeEnabled ? x_RumbleGeneral.AltModeToggleButtonCombo.IsEnabled : false;
+                dshmRumbleSettings.AlternativeMode.ToggleCombo.IsEnabled = true;
                 dshmRumbleSettings.AlternativeMode.ToggleCombo.HoldTime = x_RumbleGeneral.AltModeToggleButtonCombo.HoldTime;
                 dshmRumbleSettings.AlternativeMode.ToggleCombo.Button1 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_RumbleGeneral.AltModeToggleButtonCombo.ButtonCombo[0]];
                 dshmRumbleSettings.AlternativeMode.ToggleCombo.Button2 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_RumbleGeneral.AltModeToggleButtonCombo.ButtonCombo[1]];
