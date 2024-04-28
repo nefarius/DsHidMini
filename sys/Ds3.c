@@ -91,6 +91,16 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 
 	do
 	{
+		if (pDevCtx->Configuration.HostPairingMode == DsDevicePairingModeDisabled)
+		{
+			TraceInformation(
+				TRACE_DS3,
+				"Pairing mode set to disabled. Skipping pairing process"
+			);
+			status = STATUS_SUCCESS;
+			break;
+		}
+
 		if (pDevCtx->Configuration.HostPairingMode == DsDevicePairingModeAuto)
 		{
 			TraceInformation(
