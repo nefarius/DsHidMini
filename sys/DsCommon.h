@@ -130,7 +130,7 @@ typedef enum
 	// Disable pairing entirely
 	// 
 	DsDevicePairingModeDisabled
-} DS_HOST_PAIRING_MODE, * PDS_HOST_PAIRING_MODE;
+} DS_DEVICE_PAIRING_MODE, * PDS_HOST_PAIRING_MODE;
 
 //
 // Friendly names for reading from JSON
@@ -548,7 +548,7 @@ typedef struct _DS_DRIVER_CONFIGURATION
 	//
 	// Determines how the host pairing process should occur
 	// 
-	DS_HOST_PAIRING_MODE HostPairingMode;
+	DS_DEVICE_PAIRING_MODE HostPairingMode;
 
 	//
 	// The host address the device should be paired too if in custom pairing mode

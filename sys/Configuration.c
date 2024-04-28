@@ -28,7 +28,7 @@ static DS_HID_DEVICE_MODE HID_DEVICE_MODE_FROM_NAME(PSTR ModeName)
 //
 // Translates a friendly name string into the corresponding DS_DEVICE_PAIRING_MODE value
 // 
-static DS_HOST_PAIRING_MODE DS_DEVICE_PAIRING_MODE_FROM_NAME(PSTR ModeName)
+static DS_DEVICE_PAIRING_MODE DS_DEVICE_PAIRING_MODE_FROM_NAME(PSTR ModeName)
 {
 	if (!_strcmpi(ModeName, G_DEVICE_PAIRING_MODE_NAMES[2]))
 	{
