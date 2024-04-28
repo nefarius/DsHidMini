@@ -133,6 +133,16 @@ typedef enum
 } DS_HOST_PAIRING_MODE, * PDS_HOST_PAIRING_MODE;
 
 //
+// Friendly names for reading from JSON
+// 
+static CONST PSTR G_DEVICE_PAIRING_MODE_NAMES[] =
+{
+	"Auto",
+	"Custom",
+	"Disabled"
+};
+
+//
 // Output report processing mode
 // 
 typedef enum
