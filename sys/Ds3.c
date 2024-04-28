@@ -91,62 +91,70 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 
 	do
 	{
-		//
-		// Grab first (active) radio
-		// 
-		hFind = BluetoothFindFirstRadio(
-			&params,
-			&hRadio
-		);
-
-		if (!hFind)
+		if (pDevCtx->Configuration.HostPairingMode == DsDevicePairingModeAuto)
 		{
-			error = GetLastError();
+			TraceInformation(
+				TRACE_DS3,
+				"Pairing device to active radio host address"
+			);
 
-			if (error == ERROR_NO_MORE_ITEMS)
+			//
+			// Grab first (active) radio
+			// 
+			hFind = BluetoothFindFirstRadio(
+				&params,
+				&hRadio
+			);
+
+			if (!hFind)
 			{
-				TraceWarning(
-					TRACE_DS3,
-					"No active host radio found, can't pair device"
-				);
+				error = GetLastError();
+
+				if (error == ERROR_NO_MORE_ITEMS)
+				{
+					TraceWarning(
+						TRACE_DS3,
+						"No active host radio found, can't pair device"
+					);
+				}
+				else
+				{
+					TraceError(
+						TRACE_DS3,
+						"BluetoothFindFirstRadio failed with error %!WINERROR!",
+						error
+					);
+				}
+
+				EventWritePairingNoRadioFound(pDevCtx->DeviceAddressString);
+				break;
 			}
-			else
+
+			//
+			// Get radio info (address)
+			// 
+			ret = BluetoothGetRadioInfo(
+				hRadio,
+				&info
+			);
+
+			if (ERROR_SUCCESS != ret)
 			{
+				error = ret;
 				TraceError(
 					TRACE_DS3,
-					"BluetoothFindFirstRadio failed with error %!WINERROR!",
+					"BluetoothGetRadioInfo failed with error %!WINERROR!",
 					error
 				);
+				EventWriteFailedWithWin32Error(__FUNCTION__, L"BluetoothGetRadioInfo", error);
+				break;
 			}
 
-			EventWritePairingNoRadioFound(pDevCtx->DeviceAddressString);
-			break;
-		}
-
-		//
-		// Get radio info (address)
-		// 
-		ret = BluetoothGetRadioInfo(
-			hRadio,
-			&info
-		);
-
-		if (ERROR_SUCCESS != ret)
-		{
-			error = ret;
-			TraceError(
-				TRACE_DS3,
-				"BluetoothGetRadioInfo failed with error %!WINERROR!",
-				error
-			);
-			EventWriteFailedWithWin32Error(__FUNCTION__, L"BluetoothGetRadioInfo", error);
-			break;
-		}
-
-		// Copy and reverse to match expected format/order
-		for (int i = 0; i < sizeof(BD_ADDR); i++)
-		{
-			newHostAddress[sizeof(BD_ADDR) - i] = info.address.rgBytes[i];
+			// Copy and reverse to match expected format/order
+			for (int i = 0; i < sizeof(BD_ADDR); i++)
+			{
+				newHostAddress[sizeof(BD_ADDR) - i] = info.address.rgBytes[i];
+			}
 		}
 
 		//
