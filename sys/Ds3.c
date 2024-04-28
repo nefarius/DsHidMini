@@ -168,6 +168,17 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 		}
 
 		//
+		// Use configured custom mac address if in custom mode
+		//
+		if (pDevCtx->Configuration.HostPairingMode == DsDevicePairingModeCustom)
+		{
+			for (int i = 0; i < sizeof(BD_ADDR); i++)
+			{
+				newHostAddress[i] = pDevCtx->Configuration.CustomHostAddress[i];
+			}
+		}
+
+		//
 		// Don't issue request when addresses already match
 		// 
 		if (RtlCompareMemory(
