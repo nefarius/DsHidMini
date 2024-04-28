@@ -963,6 +963,11 @@ ConfigSetDefaults(
 
 	Config->HidDeviceMode = DsHidMiniDeviceModeXInputHIDCompatible;
 	Config->DisableAutoPairing = FALSE;
+	Config->DevicePairingMode = DsDevicePairingModeAuto;
+	for (int i = 0; i < 6; i++)
+	{
+		Config->CustomHostAddress[i] = 0x00;
+	}
 	Config->IsOutputRateControlEnabled = TRUE;
 	Config->OutputRateControlPeriodMs = 150;
 	Config->WirelessIdleTimeoutPeriodMs = 300000;
