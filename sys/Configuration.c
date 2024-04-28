@@ -26,6 +26,29 @@ static DS_HID_DEVICE_MODE HID_DEVICE_MODE_FROM_NAME(PSTR ModeName)
 }
 
 //
+// Translates a friendly name string into the corresponding DS_DEVICE_PAIRING_MODE value
+// 
+static DS_HOST_PAIRING_MODE DS_DEVICE_PAIRING_MODE_FROM_NAME(PSTR ModeName)
+{
+	if (!_strcmpi(ModeName, G_DEVICE_PAIRING_MODE_NAMES[2]))
+	{
+		return DsDevicePairingModeDisabled;
+	}
+
+	if (!_strcmpi(ModeName, G_DEVICE_PAIRING_MODE_NAMES[1]))
+	{
+		return DsDevicePairingModeCustom;
+	}
+
+	if (!_strcmpi(ModeName, G_DEVICE_PAIRING_MODE_NAMES[0]))
+	{
+		return DsDevicePairingModeAuto;
+	}
+
+	return DsDevicePairingModeDisabled;
+}
+
+//
 // Translates a friendly name string into the corresponding DS_PRESSURE_EXPOSURE_MODE value
 // 
 static DS_PRESSURE_EXPOSURE_MODE DS_PRESSURE_EXPOSURE_MODE_FROM_NAME(PSTR ModeName)
