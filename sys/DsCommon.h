@@ -548,7 +548,7 @@ typedef struct _DS_DRIVER_CONFIGURATION
 	//
 	// Determines how the host pairing process should occur
 	// 
-	DS_DEVICE_PAIRING_MODE HostPairingMode;
+	DS_DEVICE_PAIRING_MODE DevicePairingMode;
 
 	//
 	// The host address the device should be paired too if in custom pairing mode

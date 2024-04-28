@@ -91,7 +91,7 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 
 	do
 	{
-		if (pDevCtx->Configuration.HostPairingMode == DsDevicePairingModeDisabled)
+		if (pDevCtx->Configuration.DevicePairingMode == DsDevicePairingModeDisabled)
 		{
 			TraceInformation(
 				TRACE_DS3,
@@ -101,7 +101,7 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 			break;
 		}
 
-		if (pDevCtx->Configuration.HostPairingMode == DsDevicePairingModeAuto)
+		if (pDevCtx->Configuration.DevicePairingMode == DsDevicePairingModeAuto)
 		{
 			TraceInformation(
 				TRACE_DS3,
@@ -170,7 +170,7 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 		//
 		// Use configured custom mac address if in custom mode
 		//
-		if (pDevCtx->Configuration.HostPairingMode == DsDevicePairingModeCustom)
+		if (pDevCtx->Configuration.DevicePairingMode == DsDevicePairingModeCustom)
 		{
 			for (int i = 0; i < sizeof(BD_ADDR); i++)
 			{
