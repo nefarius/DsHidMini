@@ -546,6 +546,16 @@ typedef struct _DS_DRIVER_CONFIGURATION
 	DS_HID_DEVICE_MODE HidDeviceMode;
 
 	//
+	// Determines how the host pairing process should occur
+	// 
+	DS_HOST_PAIRING_MODE HostPairingMode;
+
+	//
+	// The host address the device should be paired too if in custom pairing mode
+	// 
+	UCHAR CustomHostAddress[6];
+
+	//
 	// When set, pairing will not be attempted on device boot
 	// Can't be altered at runtime
 	// 
