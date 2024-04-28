@@ -505,7 +505,7 @@ static void ConfigNodeParse(
 		for (int i = 0; i < 6; i++)
 		{
 
-			pCfg->CustomHostAddress[6 - i] = (UCHAR)((addressAsNumber >> (8 * i)) & 0xFF);
+			pCfg->CustomHostAddress[5 - i] = (UCHAR)((addressAsNumber >> (8 * i)) & 0xFF);
 		}
 		TraceVerbose(
 			TRACE_DS3,

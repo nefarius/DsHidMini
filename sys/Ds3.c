@@ -163,7 +163,7 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 			// Copy and reverse to match expected format/order
 			for (int i = 0; i < sizeof(BD_ADDR); i++)
 			{
-				newHostAddress[sizeof(BD_ADDR) - i] = info.address.rgBytes[i];
+				newHostAddress[sizeof(BD_ADDR) -1 - i] = info.address.rgBytes[i];
 			}
 		}
 
