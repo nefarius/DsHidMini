@@ -9,6 +9,13 @@
         XInput,
     }
 
+    public enum DevicePairingMode
+    {
+        Auto,
+        Custom,
+        Disabled,
+    }
+
     public enum PressureMode
     {
         Digital,
