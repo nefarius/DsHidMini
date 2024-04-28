@@ -82,6 +82,7 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 	DWORD error = ERROR_SUCCESS;
 	WDF_DEVICE_PROPERTY_DATA propertyData;
 	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	UCHAR newHostAddress[6] = {0,0,0,0,0,0};
 
 	FuncEntry(TRACE_DS3);
 
@@ -142,16 +143,17 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 			break;
 		}
 
-		//
-		// Align address to expected format/order
-		// 
-		REVERSE_BYTE_ARRAY(&info.address.rgBytes[0], sizeof(BD_ADDR));
+		// Copy and reverse to match expected format/order
+		for (int i = 0; i < sizeof(BD_ADDR); i++)
+		{
+			newHostAddress[sizeof(BD_ADDR) - i] = info.address.rgBytes[i];
+		}
 
 		//
 		// Don't issue request when addresses already match
 		// 
 		if (RtlCompareMemory(
-				&info.address.rgBytes[0],
+				&newHostAddress[0],
 				&pDevCtx->HostAddress.Address[0],
 				sizeof(BD_ADDR)
 			) == sizeof(BD_ADDR)
@@ -177,12 +179,12 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 			pDevCtx->HostAddress.Address[3],
 			pDevCtx->HostAddress.Address[4],
 			pDevCtx->HostAddress.Address[5],
-			info.address.rgBytes[0],
-			info.address.rgBytes[1],
-			info.address.rgBytes[2],
-			info.address.rgBytes[3],
-			info.address.rgBytes[4],
-			info.address.rgBytes[5]
+			newHostAddress[0],
+			newHostAddress[1],
+			newHostAddress[2],
+			newHostAddress[3],
+			newHostAddress[4],
+			newHostAddress[5]
 		);
 
 		UCHAR controlBuffer[SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH];
@@ -194,7 +196,7 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 
 		RtlCopyMemory(
 			&controlBuffer[2],
-			&info.address,
+			&newHostAddress,
 			sizeof(BD_ADDR)
 		);
 
@@ -224,7 +226,7 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 		//
 		// Update in device context after success
 		// 
-		RtlCopyMemory(&pDevCtx->HostAddress, &info.address, sizeof(BD_ADDR));
+		RtlCopyMemory(&pDevCtx->HostAddress, &newHostAddress, sizeof(BD_ADDR));
 
 		EventWritePairedSuccessfully(pDevCtx->DeviceAddressString);
 
