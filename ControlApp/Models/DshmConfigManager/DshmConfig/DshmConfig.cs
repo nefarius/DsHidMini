@@ -16,6 +16,8 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig
     {
         public HidDeviceMode? HIDDeviceMode { get; set; }// = DSHM_HidDeviceModes.DS4Windows;
         public bool? DisableAutoPairing { get; set; }
+
+        public DevicePairingMode? DevicePairingMode { get; set; }
         public string? PairingAddress { get; set; }
         public bool? DisableWirelessIdleTimeout { get; set; }// = false;
         public bool? IsOutputRateControlEnabled { get; set; }// = true;
