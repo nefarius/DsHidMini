@@ -219,7 +219,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
 
 
                 // If using custom BT Pairing Mode, set the pairing address to the desired one. Otherwise, leave it blank so DsHidMini auto-pairs to current BT host
-                dshmDeviceData.DeviceSettings.PairingAddress =
+                dshmDeviceData.DeviceSettings.CustomPairingAddress =
                     (dev.BluetoothPairingMode == BluetoothPairingMode.Custom) ? dev.PairingAddress : null;
 
                 switch (dev.SettingsMode)
