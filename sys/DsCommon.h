@@ -114,6 +114,25 @@ static CONST PSTR G_HID_DEVICE_MODE_NAMES[] =
 };
 
 //
+// Device's host address pairing mode
+// 
+typedef enum
+{
+	//
+	// Pair device to current machine's BT radio
+	// 
+	DsDevicePairingModeAuto,
+	//
+	// Pair device to a user defined MAC address
+	// 
+	DsDevicePairingModeCustom,
+	//
+	// Disable pairing entirely
+	// 
+	DsDevicePairingModeDisabled
+} DS_HOST_PAIRING_MODE, * PDS_HOST_PAIRING_MODE;
+
+//
 // Output report processing mode
 // 
 typedef enum
