@@ -492,6 +492,34 @@ static void ConfigNodeParse(
 		}
 	}
 
+	if ((pNode = cJSON_GetObjectItem(ParentNode, "DevicePairingMode")))
+	{
+		pCfg->DevicePairingMode = DS_DEVICE_PAIRING_MODE_FROM_NAME(cJSON_GetStringValue(pNode));
+		EventWriteOverrideSettingUInt(ParentNode->string, "DevicePairingMode", pCfg->DevicePairingMode);
+	}
+
+	if ((pNode = cJSON_GetObjectItem(ParentNode, "CustomPairingAddress")))
+	{
+		char* eptr; // not used
+		long long addressAsNumber = strtoll(cJSON_GetStringValue(pNode), &eptr, 16);
+		for (int i = 0; i < 6; i++)
+		{
+
+			pCfg->CustomHostAddress[6 - i] = (UCHAR)((addressAsNumber >> (8 * i)) & 0xFF);
+		}
+		TraceVerbose(
+			TRACE_DS3,
+			"Configuration custom address: %02X:%02X:%02X:%02X:%02X:%02X",
+			pCfg->CustomHostAddress[0],
+			pCfg->CustomHostAddress[1],
+			pCfg->CustomHostAddress[2],
+			pCfg->CustomHostAddress[3],
+			pCfg->CustomHostAddress[4],
+			pCfg->CustomHostAddress[5]
+		);
+		//EventWriteOverrideSettingUInt(ParentNode->string, "CustomPairingAddress", pCfg->DevicePairingMode);
+	}
+
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "IsOutputRateControlEnabled")))
 	{
 		pCfg->IsOutputRateControlEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
