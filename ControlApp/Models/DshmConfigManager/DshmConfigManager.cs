@@ -214,6 +214,10 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
                 // Disable BT auto-pairing if in Disabled BT Pairing Mode
                 dshmDeviceData.DeviceSettings.DisableAutoPairing =
                     (dev.BluetoothPairingMode == BluetoothPairingMode.Disabled) ? true : false;
+
+                dshmDeviceData.DeviceSettings.DevicePairingMode = DshmManagerToDriverConversion.PairingModeManagerToDriver[dev.BluetoothPairingMode];
+
+
                 // If using custom BT Pairing Mode, set the pairing address to the desired one. Otherwise, leave it blank so DsHidMini auto-pairs to current BT host
                 dshmDeviceData.DeviceSettings.PairingAddress =
                     (dev.BluetoothPairingMode == BluetoothPairingMode.Custom) ? dev.PairingAddress : null;
