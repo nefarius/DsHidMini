@@ -70,6 +70,13 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             { Button.Square, 15 },
             { Button.PS, 16 },
         };
+
+        public static Dictionary<BluetoothPairingMode, DevicePairingMode> PairingModeManagerToDriver = new()
+        {
+            { BluetoothPairingMode.Auto, DevicePairingMode.Auto },
+            { BluetoothPairingMode.Custom, DevicePairingMode.Custom },
+            { BluetoothPairingMode.Disabled, DevicePairingMode.Disabled },
+        };
     
         public static void ConvertDeviceSettingsToDriverFormat(DeviceSettings appFormat, DshmDeviceSettings driverFormat)
         {
