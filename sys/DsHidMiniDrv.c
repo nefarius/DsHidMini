@@ -262,6 +262,7 @@ DMF_DsHidMini_Open(
 
 	//
 	// Required to work around HID-API/SDL/etc. detecting it based on DS3 VID/PID pair
+	// TODO: what would happen if official MS's controller IDs are spoofed here?
 	// 
 		pHidCfg->VendorId = pDevCtx->VendorId = DS3_XINPUT_HID_VID;
 		pHidCfg->ProductId = pDevCtx->ProductId = DS3_XINPUT_HID_PID;
