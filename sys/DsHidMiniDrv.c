@@ -164,15 +164,16 @@ DMF_DsHidMini_ChildModulesAdd(
 
 	vHidCfg.StringSizeCbManufacturer = sizeof(DSHIDMINI_MANUFACTURER_STRING);
 	vHidCfg.StringManufacturer = DSHIDMINI_MANUFACTURER_STRING;
-	vHidCfg.StringSizeCbProduct = sizeof(DSHIDMINI_PRODUCT_STRING);
-
+	
 	if (hidDeviceMode == DsHidMiniDeviceModeXInputHIDCompatible)
 	{
 		vHidCfg.StringProduct = DSHIDMINI_XBOX_PRODUCT_STRING;
+		vHidCfg.StringSizeCbProduct = sizeof(DSHIDMINI_XBOX_PRODUCT_STRING);
 	}
 	else
 	{
 		vHidCfg.StringProduct = DSHIDMINI_PRODUCT_STRING;
+		vHidCfg.StringSizeCbProduct = sizeof(DSHIDMINI_PRODUCT_STRING);
 	}
 
 	vHidCfg.StringSizeCbSerialNumber = sizeof(DSHIDMINI_SERIAL_NUMBER_STRING);
