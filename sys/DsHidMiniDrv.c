@@ -10,7 +10,8 @@ PWSTR G_DsHidMini_Strings[] =
 #define DSHIDMINI_DEVICE_STRING          L"DS3 Compatible HID Device"
 #define DSHIDMINI_MANUFACTURER_STRING    L"Nefarius Software Solutions e.U."
 #define DSHIDMINI_PRODUCT_STRING         L"DS3 Compatible HID Device"
-#define DSHIDMINI_SERIAL_NUMBER_STRING   L"TODO: use device address"
+#define DSHIDMINI_XBOX_PRODUCT_STRING    L"Controller (Xbox One For Windows)"
+#define DSHIDMINI_SERIAL_NUMBER_STRING   L"" // TODO: use device address?
 
 
 // This macro declares the following function:
