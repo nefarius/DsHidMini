@@ -139,6 +139,9 @@ sizeof(G_VendorDefinedUSBDS4HidReportDescriptor) }  // total length of report de
 
 #pragma region DS3 HID Report Descriptor (XINPUT compatible HID device)
 
+/*
+ * Source: https://gist.github.com/DJm00n/07e1b7bb21643725e53b16f45e0e7022#file-giphidgamepaddescriptor-txt
+ */
 CONST HID_REPORT_DESCRIPTOR G_XInputHIDCompatible_HidReportDescriptor[] =
 {
 #include "HID/05_XIH_Col1_XInputHID.h"
