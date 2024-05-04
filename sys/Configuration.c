@@ -119,6 +119,58 @@ static DS_LED_AUTHORITY DS_LED_AUTHORITY_FROM_NAME(PSTR AuthorityName)
 
 #pragma endregion
 
+//
+// Parse button combo settings
+// 
+#pragma warning(push)
+#pragma warning( disable : 4706 )
+static void
+ConfigParseButtonComboSettings(
+	_In_ const cJSON* ComboSettings,
+	_Inout_ PDS_BUTTON_COMBO Combo
+)
+{
+	cJSON* pNode = NULL;
+
+	if ((pNode = cJSON_GetObjectItem(ComboSettings, "IsEnabled")))
+	{
+		Combo->IsEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+		EventWriteOverrideSettingUInt(ComboSettings->string, "IsEnabled",
+			Combo->IsEnabled);
+	}
+
+	if ((pNode = cJSON_GetObjectItem(ComboSettings, "HoldTime")))
+	{
+		Combo->HoldTime = (ULONG)cJSON_GetNumberValue(pNode);
+		EventWriteOverrideSettingUInt(ComboSettings->string, "HoldTime",
+			Combo->HoldTime);
+	}
+
+	for (ULONGLONG buttonIndex = 0; buttonIndex < _countof(Combo->Buttons); buttonIndex++)
+	{
+		if ((pNode = cJSON_GetObjectItem(ComboSettings, G_DS_BUTTON_COMBO_NAMES[buttonIndex])))
+		{
+			const UCHAR offset = (UCHAR)cJSON_GetNumberValue(pNode);
+			if (offset <= DS_BUTTON_COMBO_MAX_OFFSET)
+			{
+				Combo->Buttons[buttonIndex] = (UCHAR)cJSON_GetNumberValue(pNode);
+				EventWriteOverrideSettingUInt(ComboSettings->string, G_DS_BUTTON_COMBO_NAMES[buttonIndex],
+					Combo->Buttons[buttonIndex]);
+			}
+			else
+			{
+				TraceError(
+					TRACE_CONFIG,
+					"Provided button offset %d for %s out of range, ignoring",
+					offset,
+					G_DS_BUTTON_COMBO_NAMES[buttonIndex]
+				);
+			}
+		}
+	}
+}
+#pragma warning(pop)
+
 #pragma region Parsers
 
 //
@@ -189,6 +241,11 @@ ConfigParseRumbleSettings(
 		{
 			Config->RumbleSettings.AlternativeMode.MaxRange = (UCHAR)cJSON_GetNumberValue(pNode);
 			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.MaxRange", Config->RumbleSettings.AlternativeMode.MaxRange);
+		}
+
+		if ((pNode = cJSON_GetObjectItem(pAlternativeMode, "ToggleCombo")))
+		{
+			ConfigParseButtonComboSettings(pNode, &Config->RumbleSettings.AlternativeMode.ToggleButtonCombo);
 		}
 
 		const cJSON* pForced = cJSON_GetObjectItem(pAlternativeMode, "ForcedRight");
@@ -439,46 +496,9 @@ static void ConfigNodeParse(
 	//
 	// Wireless quick disconnect combo
 	// 
-	const cJSON* pDisconnectCombo = cJSON_GetObjectItem(ParentNode, "QuickDisconnectCombo");
-
-	if (pDisconnectCombo)
+	if ((pNode = cJSON_GetObjectItem(ParentNode, "QuickDisconnectCombo")))
 	{
-		if ((pNode = cJSON_GetObjectItem(pDisconnectCombo, "IsEnabled")))
-		{
-			pCfg->WirelessDisconnectButtonCombo.IsEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
-			EventWriteOverrideSettingUInt(pDisconnectCombo->string, "WirelessDisconnectButtonCombo.IsEnabled",
-				pCfg->WirelessDisconnectButtonCombo.IsEnabled);
-		}
-
-		if ((pNode = cJSON_GetObjectItem(pDisconnectCombo, "HoldTime")))
-		{
-			pCfg->WirelessDisconnectButtonCombo.HoldTime = (ULONG)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(pDisconnectCombo->string, "WirelessDisconnectButtonCombo.HoldTime",
-				pCfg->WirelessDisconnectButtonCombo.HoldTime);
-		}
-
-		for (ULONGLONG buttonIndex = 0; buttonIndex < _countof(pCfg->WirelessDisconnectButtonCombo.Buttons); buttonIndex++)
-		{
-			if ((pNode = cJSON_GetObjectItem(pDisconnectCombo, G_DS_BUTTON_COMBO_NAMES[buttonIndex])))
-			{
-				const UCHAR offset = (UCHAR)cJSON_GetNumberValue(pNode);
-				if (offset <= DS_BUTTON_COMBO_MAX_OFFSET)
-				{
-					pCfg->WirelessDisconnectButtonCombo.Buttons[buttonIndex] = (UCHAR)cJSON_GetNumberValue(pNode);
-					EventWriteOverrideSettingUInt(pDisconnectCombo->string, G_DS_BUTTON_COMBO_NAMES[buttonIndex],
-						pCfg->WirelessDisconnectButtonCombo.Buttons[buttonIndex]);
-				}
-				else
-				{
-					TraceError(
-						TRACE_CONFIG,
-						"Provided button offset %d for %s out of range, ignoring",
-						offset,
-						G_DS_BUTTON_COMBO_NAMES[buttonIndex]
-					);
-				}
-			}
-		}
+		ConfigParseButtonComboSettings(pNode, &pCfg->WirelessDisconnectButtonCombo);
 	}
 
 	//
@@ -825,20 +845,20 @@ ConfigLoadForDevice(
 		&& rumbSet->AlternativeMode.MinRange > 0
 		)
 	{
-		Context->RumbleControlState.AltModeEnabled = rumbSet->AlternativeMode.IsEnabled;
+		Context->RumbleControlState.AltMode.IsEnabled = rumbSet->AlternativeMode.IsEnabled;
 
 		DOUBLE LConstA = (DOUBLE)(rumbSet->AlternativeMode.MaxRange - rumbSet->AlternativeMode.MinRange) / (254);
 		DOUBLE LConstB = rumbSet->AlternativeMode.MaxRange - LConstA * 255;
 
-		Context->RumbleControlState.LightRescale.ConstA = LConstA;
-		Context->RumbleControlState.LightRescale.ConstB = LConstB;
-		Context->RumbleControlState.LightRescale.IsAllowed = TRUE;
+		Context->RumbleControlState.AltMode.LightRescale.ConstA = LConstA;
+		Context->RumbleControlState.AltMode.LightRescale.ConstB = LConstB;
+		Context->RumbleControlState.AltMode.LightRescale.IsAllowed = TRUE;
 
 		TraceVerbose(
 			TRACE_CONFIG,
 			"Light rumble rescaling constants: A = %f and B = %f.",
-			Context->RumbleControlState.LightRescale.ConstA,
-			Context->RumbleControlState.LightRescale.ConstB
+			Context->RumbleControlState.AltMode.LightRescale.ConstA,
+			Context->RumbleControlState.AltMode.LightRescale.ConstB
 		);
 
 	}
@@ -848,7 +868,7 @@ ConfigLoadForDevice(
 			TRACE_CONFIG,
 			"Disallowing light rumble rescalling because an invalid range was defined"
 		);
-		Context->RumbleControlState.LightRescale.IsAllowed = FALSE;
+		Context->RumbleControlState.AltMode.LightRescale.IsAllowed = FALSE;
 	}
 
 	//
@@ -943,11 +963,16 @@ ConfigSetDefaults(
 	Config->RumbleSettings.HeavyRescaling.MaxRange = 255;
 	Config->RumbleSettings.AlternativeMode.IsEnabled = FALSE;
 	Config->RumbleSettings.AlternativeMode.MinRange = 1;
-	Config->RumbleSettings.AlternativeMode.MaxRange = 110;
+	Config->RumbleSettings.AlternativeMode.MaxRange = 90;
 	Config->RumbleSettings.AlternativeMode.ForcedRight.IsHeavyThresholdEnabled = TRUE;
 	Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold = 242;
 	Config->RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled = FALSE;
 	Config->RumbleSettings.AlternativeMode.ForcedRight.LightThreshold = 242;
+	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.IsEnabled = FALSE;
+	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.HoldTime = 1000;
+	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons[0] = 0; // Select
+	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons[1] = 0; // Select
+	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons[2] = 16; // PS
 
 	Config->LEDSettings.Mode = DsLEDModeBatteryIndicatorPlayerIndex;
 	Config->LEDSettings.CustomPatterns.LEDFlags = 0x02;

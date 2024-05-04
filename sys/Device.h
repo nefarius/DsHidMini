@@ -321,20 +321,34 @@ typedef struct _DEVICE_CONTEXT
 		//
 		BOOLEAN HeavyRescaleEnabled;
 
-		//
-		// Defines if alternative rumble mode is enabled
-		//
-		BOOLEAN AltModeEnabled;
+		struct {
+
+			//
+			// Defines if alternative rumble mode is enabled
+			//
+			BOOLEAN IsEnabled;
+
+			//
+			// Current state of light rumble rescaling parameters
+			//
+			DS_RESCALE_STATE LightRescale;
+
+			//
+			// Allows toggling to occur if the button combo conditions are satisfied
+			//
+			BOOLEAN IsToggleAllowed;
+
+			//
+			// Timestamp to calculate alt mode toggle combo detection
+			//
+			LARGE_INTEGER QuickToggleTimestamp;
+
+		} AltMode;
 
 		//
 		// Current state of heavy rumble rescaling parameters
 		//
 		DS_RESCALE_STATE HeavyRescale;
-
-		//
-		// Current state of light rumble rescaling parameters
-		//
-		DS_RESCALE_STATE LightRescale;
 
 	} RumbleControlState;
 

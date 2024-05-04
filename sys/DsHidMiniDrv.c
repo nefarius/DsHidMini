@@ -1999,6 +1999,105 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	}
 
 	//
+	// Alternative rumble toggle combo detected
+	// 
+	if (pDevCtx->Configuration.RumbleSettings.AlternativeMode.ToggleButtonCombo.IsEnabled)
+	{
+		int engagedCount = 0;
+		for (int buttonIndex = 0; buttonIndex < 3; buttonIndex++)
+		{
+			if ((pInReport->Buttons.lButtons >> pDevCtx->Configuration.RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons[buttonIndex]) & 1)
+			{
+				engagedCount++;
+			}
+		}
+
+		if (engagedCount == 3)
+		{
+			TraceEvents(TRACE_LEVEL_INFORMATION,
+				TRACE_DSHIDMINIDRV,
+				"!! Alternative mode toggle combination detected"
+			);
+			if (pDevCtx->RumbleControlState.AltMode.IsToggleAllowed)
+			{
+				t1 = &pDevCtx->RumbleControlState.AltMode.QuickToggleTimestamp;
+
+				if (pDevCtx->RumbleControlState.AltMode.QuickToggleTimestamp.QuadPart == 0)
+				{
+					QueryPerformanceCounter(t1);
+				}
+
+				QueryPerformanceCounter(&t2);
+
+				ms = (t2.QuadPart - t1->QuadPart) / (freq.QuadPart / 1000);
+
+				//
+				// Combo was held for the user defined time period
+				// 
+				if (ms > pDevCtx->Configuration.WirelessDisconnectButtonCombo.HoldTime)
+				{
+					TraceEvents(TRACE_LEVEL_INFORMATION,
+						TRACE_DSHIDMINIDRV,
+						"!! Toggling alternative rumble mode"
+					);
+					pDevCtx->RumbleControlState.AltMode.IsEnabled = !pDevCtx->RumbleControlState.AltMode.IsEnabled;
+
+					//
+					// Send rumble feedback to indicate change in rumble mode
+					//
+					DS3_SET_LARGE_RUMBLE_DURATION(pDevCtx, 0x30);
+					DS3_SET_SMALL_RUMBLE_DURATION(pDevCtx, 0x20);
+					DS3_SET_BOTH_RUMBLE_STRENGTH(pDevCtx, 0x00, 0xFF);
+					(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverLowPriority);
+
+					//
+					// Restore default rumble duration
+					//
+					DS3_SET_LARGE_RUMBLE_DURATION(pDevCtx, 0xFF);
+					DS3_SET_SMALL_RUMBLE_DURATION(pDevCtx, 0xFF);
+
+
+					//
+					// Register the time the toggle was triggered
+					// Disallow toggling again while combo is being held
+					//
+					t1->QuadPart = t2.QuadPart;
+					pDevCtx->RumbleControlState.AltMode.IsToggleAllowed = FALSE;
+				}
+			}
+			else
+			{
+				TraceEvents(TRACE_LEVEL_INFORMATION,
+					TRACE_DSHIDMINIDRV,
+					"!! Alternative rumble mode toggling prevented"
+				);
+			}
+		}
+		else
+		{
+			if (pDevCtx->RumbleControlState.AltMode.IsToggleAllowed)
+			{
+				pDevCtx->RumbleControlState.AltMode.QuickToggleTimestamp.QuadPart = 0;
+			}
+			else
+			{
+				t1 = &pDevCtx->RumbleControlState.AltMode.QuickToggleTimestamp;
+				QueryPerformanceCounter(&t2);
+				ms = (t2.QuadPart - t1->QuadPart) / (freq.QuadPart / 1000);
+				if (ms > 1000) // wait 1 second before re-enabling toggle combo after releasing it
+				{
+					TraceEvents(TRACE_LEVEL_INFORMATION,
+						TRACE_DSHIDMINIDRV,
+						"!! Prevention time after releasing alt mode toggle combo has passed. Allowing combo again"
+					);
+					pDevCtx->RumbleControlState.AltMode.IsToggleAllowed = TRUE;
+					pDevCtx->RumbleControlState.AltMode.QuickToggleTimestamp.QuadPart = 0;
+				}
+			}
+		}
+	}
+
+	//
 	// Idle disconnect detection
 	// 
 	if (!pDevCtx->Configuration.DisableWirelessIdleTimeout && DS3_RAW_IS_IDLE(pInReport))

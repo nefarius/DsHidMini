@@ -580,7 +580,7 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 	DS_RUMBLE_SETTINGS* rumbSet = &Context->Configuration.RumbleSettings;
 
 	DS_RESCALE_STATE* heavyResc = &Context->RumbleControlState.HeavyRescale;
-	DS_RESCALE_STATE* lightResc = &Context->RumbleControlState.LightRescale;
+	DS_RESCALE_STATE* lightResc = &Context->RumbleControlState.AltMode.LightRescale;
 
 	// Get last received rumble values so they can be processed
 	DOUBLE heavyRumble = Context->RumbleControlState.HeavyCache;
@@ -602,7 +602,7 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 	//
 	// constants a and b are calculated on configuration (re-)loading
 
-	if (Context->RumbleControlState.AltModeEnabled && lightResc->IsAllowed)
+	if (Context->RumbleControlState.AltMode.IsEnabled && lightResc->IsAllowed)
 	{
 		if (lightRumble > 0) {
 

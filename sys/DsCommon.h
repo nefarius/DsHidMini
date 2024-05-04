@@ -410,6 +410,11 @@ typedef struct _DS_RUMBLE_SETTINGS
 		UCHAR MaxRange;
 
 		//
+		// Button combo for toggling alternative mode
+		//
+		DS_BUTTON_COMBO ToggleButtonCombo;
+
+		//
 		// Parameters used for the force activation of the right motor when in alternative rumble mode
 		// 
 		//
