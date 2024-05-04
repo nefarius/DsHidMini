@@ -10,7 +10,8 @@ PWSTR G_DsHidMini_Strings[] =
 #define DSHIDMINI_DEVICE_STRING          L"DS3 Compatible HID Device"
 #define DSHIDMINI_MANUFACTURER_STRING    L"Nefarius Software Solutions e.U."
 #define DSHIDMINI_PRODUCT_STRING         L"DS3 Compatible HID Device"
-#define DSHIDMINI_SERIAL_NUMBER_STRING   L"TODO: use device address"
+#define DSHIDMINI_XBOX_PRODUCT_STRING    L"Controller (Xbox One For Windows)"
+#define DSHIDMINI_SERIAL_NUMBER_STRING   L"" // TODO: use device address?
 
 
 // This macro declares the following function:
@@ -110,6 +111,9 @@ DMF_DsHidMini_ChildModulesAdd(
 #ifdef DSHM_FEATURE_FFB
 	DMF_CONFIG_HashTable hashCfg;
 #endif
+	WDFDEVICE device = NULL;
+	NTSTATUS status;
+	DS_HID_DEVICE_MODE hidDeviceMode = DsHidMiniDeviceModeXInputHIDCompatible;
 
 	PAGED_CODE();
 
@@ -117,7 +121,37 @@ DMF_DsHidMini_ChildModulesAdd(
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
+	device = DMF_ParentDeviceGet(DmfModule);
 	moduleContext = DMF_CONTEXT_GET(DmfModule);
+
+	ULONG requiredSize = 0;
+	DEVPROPTYPE propType = DEVPROP_TYPE_EMPTY;
+	WDF_DEVICE_PROPERTY_DATA propertyData;
+	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_HidDeviceMode);
+	propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+	propertyData.Lcid = LOCALE_NEUTRAL;
+
+	//
+	// We need the DEVPKEY_DsHidMini_RW_HidDeviceMode value here to make some decisions
+	// It should be set to an initial value by the INF anyway
+	// 
+	if (!NT_SUCCESS(status = WdfDeviceQueryPropertyEx(
+		device,
+		&propertyData,
+		sizeof(BYTE),
+		(PBYTE)&hidDeviceMode,
+		&requiredSize,
+		&propType
+	)))
+	{
+		TraceError(
+			TRACE_DSHIDMINIDRV,
+			"WdfDeviceQueryPropertyEx failed with status %!STATUS!",
+			status
+		);
+
+		// continue using defaults
+	}
 
 	DMF_CONFIG_VirtualHidMini_AND_ATTRIBUTES_INIT(&vHidCfg,
 		&moduleAttributes);
@@ -130,8 +164,18 @@ DMF_DsHidMini_ChildModulesAdd(
 
 	vHidCfg.StringSizeCbManufacturer = sizeof(DSHIDMINI_MANUFACTURER_STRING);
 	vHidCfg.StringManufacturer = DSHIDMINI_MANUFACTURER_STRING;
-	vHidCfg.StringSizeCbProduct = sizeof(DSHIDMINI_PRODUCT_STRING);
-	vHidCfg.StringProduct = DSHIDMINI_PRODUCT_STRING;
+	
+	if (hidDeviceMode == DsHidMiniDeviceModeXInputHIDCompatible)
+	{
+		vHidCfg.StringProduct = DSHIDMINI_XBOX_PRODUCT_STRING;
+		vHidCfg.StringSizeCbProduct = sizeof(DSHIDMINI_XBOX_PRODUCT_STRING);
+	}
+	else
+	{
+		vHidCfg.StringProduct = DSHIDMINI_PRODUCT_STRING;
+		vHidCfg.StringSizeCbProduct = sizeof(DSHIDMINI_PRODUCT_STRING);
+	}
+
 	vHidCfg.StringSizeCbSerialNumber = sizeof(DSHIDMINI_SERIAL_NUMBER_STRING);
 	vHidCfg.StringSerialNumber = DSHIDMINI_SERIAL_NUMBER_STRING;
 

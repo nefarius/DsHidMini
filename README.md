@@ -21,7 +21,7 @@ Next major version is in progress! Here's an overview of what you'll get:
 - Switch DPad to individual buttons
 - Customize the Quick-Disconnect button combination
 - Configure flipping/inverting axes
-- Xbox 360 Emulation out-of-the-box
+- Proper **Xbox One Emulation** out-of-the-box
 - ...and maybe more?
 
 Stay tuned!
