@@ -26,6 +26,8 @@ Next major version is in progress! Here's an overview of what you'll get:
 
 Stay tuned!
 
+## Repository activity
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://ghstats.api.nefarius.systems/widgets/github/nefarius/DsHidMini/changes/latest?darkMode=true">
   <source media="(prefers-color-scheme: light)" srcset="https://ghstats.api.nefarius.systems/widgets/github/nefarius/DsHidMini/changes/latest">
