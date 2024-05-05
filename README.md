@@ -29,9 +29,9 @@ Stay tuned!
 ## Repository activity
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://ghstats.api.nefarius.systems/widgets/github/nefarius/DsHidMini/changes/latest?darkMode=true">
-  <source media="(prefers-color-scheme: light)" srcset="https://ghstats.api.nefarius.systems/widgets/github/nefarius/DsHidMini/changes/latest">
-  <img alt="Repository activity" src="https://ghstats.api.nefarius.systems/widgets/github/nefarius/DsHidMini/changes/latest">
+  <source media="(prefers-color-scheme: dark)" srcset="https://ghstats.api.nefarius.systems/widgets/github/nefarius/DsHidMini/changes/latest?darkMode=true&cb">
+  <source media="(prefers-color-scheme: light)" srcset="https://ghstats.api.nefarius.systems/widgets/github/nefarius/DsHidMini/changes/latest?cb">
+  <img alt="Repository activity" src="https://ghstats.api.nefarius.systems/widgets/github/nefarius/DsHidMini/changes/latest?cb">
 </picture>
 
 <!--
