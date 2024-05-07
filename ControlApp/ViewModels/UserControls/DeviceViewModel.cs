@@ -155,6 +155,10 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         {
             get
             {
+                if (!WasLastHostRequestSuccessful)
+                {
+                    return "Unkown";
+                }
                 var hostAddress = _device.GetProperty<ulong>(DsHidMiniDriver.HostAddressProperty).ToString("X12")
                     .ToUpper();
 
