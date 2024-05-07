@@ -26,6 +26,10 @@ namespace Nefarius.DsHidMini.ControlApp.Models.Drivers
             Guid.Parse("{3FECF510-CC94-4FBE-8839-738201F84D59}"), 3,
             typeof(int));
 
+        public static DevicePropertyKey LastHostRequestStatusProperty => CustomDeviceProperty.CreateCustomDeviceProperty(
+            Guid.Parse("{3FECF510-CC94-4FBE-8839-738201F84D59}"), 5,
+            typeof(int));
+
         #endregion
 
         #region Common device properties
