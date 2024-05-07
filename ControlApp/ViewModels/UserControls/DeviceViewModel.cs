@@ -189,7 +189,12 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
             }
             set
             {
-                _customPairingAddress = value;
+                var formattedCustomMacAddress = Regex.Replace(value, @"[^a-fA-F0-9]", "").ToUpper();
+                if (formattedCustomMacAddress.Length > 12)
+                {
+                    formattedCustomMacAddress = formattedCustomMacAddress.Substring(0, 12);
+                }
+                _customPairingAddress = formattedCustomMacAddress;
                 this.OnPropertyChanged(nameof(CustomPairingAddress));
             }
         }
