@@ -556,6 +556,11 @@ typedef struct _DS_DRIVER_CONFIGURATION
 	UCHAR CustomHostAddress[6];
 
 	//
+	// When set, the pairing process will occur after hot-reloading configurations
+	//
+	BOOLEAN PairOnHotReload;
+
+	//
 	// When set, pairing will not be attempted on device boot
 	// Can't be altered at runtime
 	// 

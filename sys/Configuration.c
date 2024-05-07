@@ -498,6 +498,12 @@ static void ConfigNodeParse(
 		EventWriteOverrideSettingUInt(ParentNode->string, "DevicePairingMode", pCfg->DevicePairingMode);
 	}
 
+	if ((pNode = cJSON_GetObjectItem(ParentNode, "PairOnHotReload")))
+	{
+		pCfg->PairOnHotReload = (BOOLEAN)cJSON_IsTrue(pNode);
+		EventWriteOverrideSettingUInt(ParentNode->string, "PairOnHotReload", pCfg->PairOnHotReload);
+	}
+
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "CustomPairingAddress")))
 	{
 		char* eptr; // not used
@@ -992,6 +998,7 @@ ConfigSetDefaults(
 	Config->HidDeviceMode = DsHidMiniDeviceModeXInputHIDCompatible;
 	Config->DisableAutoPairing = FALSE;
 	Config->DevicePairingMode = DsDevicePairingModeAuto;
+	Config->PairOnHotReload = FALSE;
 	for (int i = 0; i < 6; i++)
 	{
 		Config->CustomHostAddress[i] = 0x00;
