@@ -86,6 +86,8 @@ public static class CustomActions
 
         // TODO: implement me!
 
+        Devcon.Refresh();
+
         session.SetMode(InstallRunMode.RebootAtEnd, rebootRequired);
 
         return ActionResult.Success;
