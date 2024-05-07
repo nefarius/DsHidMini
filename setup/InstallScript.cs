@@ -56,6 +56,29 @@ public static class CustomActions
     [CustomAction]
     public static ActionResult InstallDrivers(Session session)
     {
+        bool rebootRequired = RemoveDrivers();
+
+        // TODO: implement me!
+
+        Devcon.Refresh();
+
+        session.SetMode(InstallRunMode.RebootAtEnd, rebootRequired);
+
+        return ActionResult.Success;
+    }
+
+    [CustomAction]
+    public static ActionResult UninstallDrivers(Session session)
+    {
+        session.SetMode(InstallRunMode.RebootAtEnd, RemoveDrivers());
+
+        Devcon.Refresh();
+
+        return ActionResult.Success;
+    }
+
+    private static bool RemoveDrivers()
+    {
         List<string> allDriverPackages = DriverStore.ExistingDrivers.ToList();
 
         // remove all old copies of DsHidMini
@@ -84,12 +107,6 @@ public static class CustomActions
             }
         }
 
-        // TODO: implement me!
-
-        Devcon.Refresh();
-
-        session.SetMode(InstallRunMode.RebootAtEnd, rebootRequired);
-
-        return ActionResult.Success;
+        return rebootRequired;
     }
 }
