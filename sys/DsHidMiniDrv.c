@@ -10,7 +10,8 @@ PWSTR G_DsHidMini_Strings[] =
 #define DSHIDMINI_DEVICE_STRING          L"DS3 Compatible HID Device"
 #define DSHIDMINI_MANUFACTURER_STRING    L"Nefarius Software Solutions e.U."
 #define DSHIDMINI_PRODUCT_STRING         L"DS3 Compatible HID Device"
-#define DSHIDMINI_SERIAL_NUMBER_STRING   L"TODO: use device address"
+#define DSHIDMINI_XBOX_PRODUCT_STRING    L"Controller (Xbox One For Windows)"
+#define DSHIDMINI_SERIAL_NUMBER_STRING   L"" // TODO: use device address?
 
 
 // This macro declares the following function:
@@ -110,6 +111,9 @@ DMF_DsHidMini_ChildModulesAdd(
 #ifdef DSHM_FEATURE_FFB
 	DMF_CONFIG_HashTable hashCfg;
 #endif
+	WDFDEVICE device = NULL;
+	NTSTATUS status;
+	DS_HID_DEVICE_MODE hidDeviceMode = DsHidMiniDeviceModeXInputHIDCompatible;
 
 	PAGED_CODE();
 
@@ -117,7 +121,37 @@ DMF_DsHidMini_ChildModulesAdd(
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
+	device = DMF_ParentDeviceGet(DmfModule);
 	moduleContext = DMF_CONTEXT_GET(DmfModule);
+
+	ULONG requiredSize = 0;
+	DEVPROPTYPE propType = DEVPROP_TYPE_EMPTY;
+	WDF_DEVICE_PROPERTY_DATA propertyData;
+	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_HidDeviceMode);
+	propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+	propertyData.Lcid = LOCALE_NEUTRAL;
+
+	//
+	// We need the DEVPKEY_DsHidMini_RW_HidDeviceMode value here to make some decisions
+	// It should be set to an initial value by the INF anyway
+	// 
+	if (!NT_SUCCESS(status = WdfDeviceQueryPropertyEx(
+		device,
+		&propertyData,
+		sizeof(BYTE),
+		(PBYTE)&hidDeviceMode,
+		&requiredSize,
+		&propType
+	)))
+	{
+		TraceError(
+			TRACE_DSHIDMINIDRV,
+			"WdfDeviceQueryPropertyEx failed with status %!STATUS!",
+			status
+		);
+
+		// continue using defaults
+	}
 
 	DMF_CONFIG_VirtualHidMini_AND_ATTRIBUTES_INIT(&vHidCfg,
 		&moduleAttributes);
@@ -130,8 +164,18 @@ DMF_DsHidMini_ChildModulesAdd(
 
 	vHidCfg.StringSizeCbManufacturer = sizeof(DSHIDMINI_MANUFACTURER_STRING);
 	vHidCfg.StringManufacturer = DSHIDMINI_MANUFACTURER_STRING;
-	vHidCfg.StringSizeCbProduct = sizeof(DSHIDMINI_PRODUCT_STRING);
-	vHidCfg.StringProduct = DSHIDMINI_PRODUCT_STRING;
+	
+	if (hidDeviceMode == DsHidMiniDeviceModeXInputHIDCompatible)
+	{
+		vHidCfg.StringProduct = DSHIDMINI_XBOX_PRODUCT_STRING;
+		vHidCfg.StringSizeCbProduct = sizeof(DSHIDMINI_XBOX_PRODUCT_STRING);
+	}
+	else
+	{
+		vHidCfg.StringProduct = DSHIDMINI_PRODUCT_STRING;
+		vHidCfg.StringSizeCbProduct = sizeof(DSHIDMINI_PRODUCT_STRING);
+	}
+
 	vHidCfg.StringSizeCbSerialNumber = sizeof(DSHIDMINI_SERIAL_NUMBER_STRING);
 	vHidCfg.StringSerialNumber = DSHIDMINI_SERIAL_NUMBER_STRING;
 
@@ -181,6 +225,7 @@ DMF_DsHidMini_Open(
 	NTSTATUS status = STATUS_SUCCESS;
 	DMF_CONTEXT_DsHidMini* moduleContext;
 	DMF_CONFIG_VirtualHidMini* pHidCfg;
+	WDFDEVICE device;
 	PDEVICE_CONTEXT pDevCtx;
 
 	UNREFERENCED_PARAMETER(DmfModule);
@@ -190,7 +235,8 @@ DMF_DsHidMini_Open(
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
 	moduleContext = DMF_CONTEXT_GET(DmfModule);
-	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
+	device = DMF_ParentDeviceGet(DmfModule);
+	pDevCtx = DeviceGetContext(device);
 	pHidCfg = DMF_ModuleConfigGet(moduleContext->DmfModuleVirtualHidMini);
 
 	//
@@ -238,11 +284,11 @@ DMF_DsHidMini_Open(
 		pHidCfg->HidReportDescriptor = G_VendorDefinedUSBDS4HidReportDescriptor;
 		pHidCfg->HidReportDescriptorLength = G_VendorDefinedUSBDS4HidDescriptor.DescriptorList[0].wReportLength;
 
-		//
-		// Required to get properly detected by DS4Windows
-		// Keep in sync with here: 
-		// https://github.com/Ryochan7/DS4Windows/blob/74cdcb06e95af7681ab734bf94994488818067f2/DS4Windows/DS4Library/DS4Devices.cs#L161
-		// 
+	//
+	// Required to get properly detected by DS4Windows
+	// Keep in sync with here: 
+	// https://github.com/Ryochan7/DS4Windows/blob/74cdcb06e95af7681ab734bf94994488818067f2/DS4Windows/DS4Library/DS4Devices.cs#L161
+	// 
 		pHidCfg->VendorId = pDevCtx->VendorId = DS3_DS4WINDOWS_HID_VID;
 		pHidCfg->ProductId = pDevCtx->ProductId = DS3_DS4WINDOWS_HID_PID;
 		pHidCfg->VersionNumber = pDevCtx->VersionNumber;
@@ -258,9 +304,10 @@ DMF_DsHidMini_Open(
 		pHidCfg->HidReportDescriptor = G_XInputHIDCompatible_HidReportDescriptor;
 		pHidCfg->HidReportDescriptorLength = G_XInputHIDCompatible_HidDescriptor.DescriptorList[0].wReportLength;
 
-		//
-		// Required to work around HID-API/SDL/etc. detecting it based on DS3 VID/PID pair
-		// 
+	//
+	// Required to work around HID-API/SDL/etc. detecting it based on DS3 VID/PID pair
+	// TODO: what would happen if official MS's controller IDs are spoofed here?
+	// 
 		pHidCfg->VendorId = pDevCtx->VendorId = DS3_XINPUT_HID_VID;
 		pHidCfg->ProductId = pDevCtx->ProductId = DS3_XINPUT_HID_PID;
 		pHidCfg->VersionNumber = pDevCtx->VersionNumber;
@@ -275,9 +322,39 @@ DMF_DsHidMini_Open(
 
 		TraceError(
 			TRACE_DSHIDMINIDRV,
-			"Unknown HID Device Mode: 0x%02X", pDevCtx->Configuration.HidDeviceMode);
+			"Unknown HID Device Mode: 0x%02X",
+			pDevCtx->Configuration.HidDeviceMode
+		);
 
-		break;
+		goto exit;
+	}
+
+	//
+	// Set currently used HID mode
+	// 
+
+	WDF_DEVICE_PROPERTY_DATA propertyData;
+	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_HidDeviceMode);
+	propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+	propertyData.Lcid = LOCALE_NEUTRAL;
+
+	status = WdfDeviceAssignProperty(
+		device,
+		&propertyData,
+		DEVPROP_TYPE_BYTE,
+		sizeof(BYTE),
+		&pDevCtx->Configuration.HidDeviceMode
+	);
+
+exit:
+	if (!NT_SUCCESS(status))
+	{
+		TraceError(
+			TRACE_DSHIDMINIDRV,
+			"HID device configuration failed with status %!STATUS!",
+			status
+		);
+		EventWriteFailedWithNTStatus(__FUNCTION__, L"HID device configuration", status);
 	}
 
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
@@ -295,34 +372,9 @@ DMF_DsHidMini_Close(
 	_In_ DMFMODULE DmfModule
 )
 {
-	WDFDEVICE device;
-	PDEVICE_CONTEXT pDevCtx;
-
-
 	PAGED_CODE();
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
-
-	device = DMF_ParentDeviceGet(DmfModule);
-	pDevCtx = DeviceGetContext(device);
-
-	//
-	// Write back currently used mode as other components rely on it
-	// 
-
-	WDF_DEVICE_PROPERTY_DATA propertyData;
-
-	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_HidDeviceMode);
-	propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
-	propertyData.Lcid = LOCALE_NEUTRAL;
-
-	(void)WdfDeviceAssignProperty(
-		device,
-		&propertyData,
-		DEVPROP_TYPE_BYTE,
-		sizeof(BYTE),
-		&pDevCtx->Configuration.HidDeviceMode
-	);
 
 	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
 }
@@ -456,11 +508,11 @@ DsHidMini_GetFeature(
 
 		pPool = (PPID_POOL_REPORT)Packet->reportBuffer;
 
-		/*
-		 * Static information about the fictitious device memory pool.
-		 * Since we manage everything in software, size constraints
-		 * are not an issue and we can report the maximum values.
-		 */
+	/*
+	 * Static information about the fictitious device memory pool.
+	 * Since we manage everything in software, size constraints
+	 * are not an issue and we can report the maximum values.
+	 */
 
 		pPool->ReportId = PID_POOL_REPORT_ID;
 		pPool->RamPoolSize = 65535;
@@ -482,9 +534,9 @@ DsHidMini_GetFeature(
 		pBlockLoad->RamPoolAvailable = 65535;
 		pBlockLoad->BlockLoadStatus = PidBlsFull;
 
-		//
-		// Here we should have at least one new effect block index ready
-		// 
+	//
+	// Here we should have at least one new effect block index ready
+	// 
 		for (UCHAR index = 1; index < MAX_EFFECT_BLOCKS; index++)
 		{
 			status = DMF_HashTable_Read(
@@ -639,9 +691,9 @@ DsHidMini_SetFeature(
 
 		TraceVerbose(TRACE_DSHIDMINIDRV, "!! PID_CREATE_NEW_EFFECT_REPORT");
 
-		//
-		// Look for free effect block index and allocate new entry
-		// 
+	//
+	// Look for free effect block index and allocate new entry
+	// 
 		for (UCHAR index = 1; index < MAX_EFFECT_BLOCKS; index++)
 		{
 			status = DMF_HashTable_Read(
@@ -672,9 +724,9 @@ DsHidMini_SetFeature(
 			}
 		}
 
-		//
-		// Whoops, guess we're full!
-		// 
+	//
+	// Whoops, guess we're full!
+	// 
 		if (!ffbEntry.IsReserved)
 		{
 			EventWriteFFBNoFreeEffectBlockIndex();
@@ -847,7 +899,7 @@ DsHidMini_WriteReport(
 				}
 			}
 
-			// Fall through
+		// Fall through
 		case PidDcStopAllEffects:
 			TraceVerbose(TRACE_DSHIDMINIDRV, "!! DC Stop All Effects");
 			DS3_SET_BOTH_RUMBLE_STRENGTH(pDevCtx, 0x00, 0x00);
@@ -902,7 +954,7 @@ DsHidMini_WriteReport(
 		pSetEffect = (PPID_SET_EFFECT_REPORT)Packet->reportBuffer;
 
 		TraceVerbose(TRACE_DSHIDMINIDRV, "!! SET_EFFECT_REPORT, EffectBlockIndex: %d, "
-			"EffectType: %d, Duration: %d, TriggerRepeatInterval: %d, "
+			"EffectType: %d, TotalDuration: %d, TriggerRepeatInterval: %d, "
 			"SamplePeriod: %d, Gain: %d, TriggerButton: %d, AxesEnableX: %d, AxesEnableY: %d, "
 			"DirectionEnable: %d, DirectionInstance1: %d, DirectionInstance2: %d, StartDelay: %d",
 			pSetEffect->EffectBlockIndex,
@@ -1014,9 +1066,9 @@ DsHidMini_WriteReport(
 		TraceVerbose(TRACE_DSHIDMINIDRV, "!! PID_BLOCK_FREE_REPORT, EffectBlockIndex: %d",
 			pBlockFree->EffectBlockIndex);
 
-		//
-		// Mark as free
-		// 
+	//
+	// Mark as free
+	// 
 		ffbEntry.IsReserved = FALSE;
 		ffbEntry.IsReported = FALSE;
 
@@ -1068,7 +1120,7 @@ DsHidMini_WriteReport(
 			//
 			// Backup LED states
 			// 
-			RtlCopyMemory(ledBlock, &buffer[10], ARRAYSIZE(ledBlock));
+			RtlCopyMemory(ledBlock, &buffer[9], ARRAYSIZE(ledBlock));
 
 			//
 			// Overwrite with what we received
@@ -1082,7 +1134,7 @@ DsHidMini_WriteReport(
 			//
 			// Restore LED states
 			// 
-			RtlCopyMemory(&buffer[10], ledBlock, ARRAYSIZE(ledBlock));
+			RtlCopyMemory(&buffer[9], ledBlock, ARRAYSIZE(ledBlock));
 		}
 		else
 		{
@@ -1173,7 +1225,8 @@ DsHidMini_WriteReport(
 						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_2);
 					else if (r > 64)
 						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
-					else {
+					else
+					{
 						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
 						DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
 					}
@@ -1191,7 +1244,8 @@ DsHidMini_WriteReport(
 						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1 | DS3_LED_2);
 					else if (r > 64)
 						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
-					else {
+					else
+					{
 						DS3_SET_LED_FLAGS(pDevCtx, DS3_LED_1);
 						DS3_SET_LED_DURATION(pDevCtx, 0, 0xFF, 15, 127, 127);
 					}
@@ -1322,11 +1376,11 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 			&Context->Configuration.FlipAxis
 		);
 
-		/*
+	/*
 #ifdef DBG
-		DumpAsHex(">> SINGLE", moduleContext->InputReport, DS3_SPLIT_SINGLE_HID_INPUT_REPORT_SIZE);
+	DumpAsHex(">> SINGLE", moduleContext->InputReport, DS3_SPLIT_SINGLE_HID_INPUT_REPORT_SIZE);
 #endif
-		*/
+	*/
 
 		break;
 	default:
@@ -1483,10 +1537,10 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 // Called when data is available on the USB Interrupt IN pipe.
 //  
 VOID DsUsb_EvtUsbInterruptPipeReadComplete(
-	WDFUSBPIPE  Pipe,
-	WDFMEMORY   Buffer,
-	size_t      NumBytesTransferred,
-	WDFCONTEXT  Context
+	WDFUSBPIPE Pipe,
+	WDFMEMORY Buffer,
+	size_t NumBytesTransferred,
+	WDFCONTEXT Context
 )
 {
 	PDEVICE_CONTEXT pDevCtx;
@@ -1632,9 +1686,9 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 
 				led = DS3_GET_LED_FLAGS(pDevCtx) << 1;
 
-				//
-				// Cycle through
-				// 
+			//
+			// Cycle through
+			// 
 				if (led > DS3_LED_4 || led < DS3_LED_1)
 				{
 					led = DS3_LED_1;
@@ -1645,10 +1699,10 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 
 				led = DS3_GET_LED_FLAGS(pDevCtx);
 
-				//
-				// Cycle graph from 1 to 4 and repeat
-				// 
-				if (led == (DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4))
+			//
+			// Cycle graph from 1 to 4 and repeat
+			// 
+				if (led & 0xF0)
 				{
 					led = DS3_LED_1;
 				}
@@ -1920,64 +1974,171 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	}
 
 	//
-	// Quick disconnect combo (L1 + R1 + PS) detected
+	// Quick disconnect combo detected
 	// 
-	if (
-		pInReport->Buttons.Individual.L1
-		&& pInReport->Buttons.Individual.R1
-		&& pInReport->Buttons.Individual.PS
-		)
+	if (pDevCtx->Configuration.WirelessDisconnectButtonCombo.IsEnabled)
 	{
-		TraceEvents(TRACE_LEVEL_INFORMATION,
-			TRACE_DSHIDMINIDRV,
-			"!! Quick disconnect combination detected"
-		);
-
-		t1 = &pDevCtx->Connection.Bth.QuickDisconnectTimestamp;
-
-		if (pDevCtx->Connection.Bth.QuickDisconnectTimestamp.QuadPart == 0)
+		int engagedCount = 0;
+		for (int buttonIndex = 0; buttonIndex < 3; buttonIndex++)
 		{
-			QueryPerformanceCounter(t1);
+			if ((pInReport->Buttons.lButtons >> pDevCtx->Configuration.WirelessDisconnectButtonCombo.Buttons[buttonIndex]) & 1)
+			{
+				engagedCount++;
+			}
 		}
 
-		QueryPerformanceCounter(&t2);
-
-		ms = (t2.QuadPart - t1->QuadPart) / (freq.QuadPart / 1000);
-
-		//
-		// 1 second passed
-		// 
-		if (ms > 1000)
+		if (engagedCount == 3)
 		{
 			TraceEvents(TRACE_LEVEL_INFORMATION,
 				TRACE_DSHIDMINIDRV,
-				"!! Sending disconnect request"
+				"!! Quick disconnect combination detected"
 			);
 
-			//
-			// Send disconnect request
-			// 
-			status = DsBth_SendDisconnectRequest(pDevCtx);
+			t1 = &pDevCtx->Connection.Bth.QuickDisconnectTimestamp;
 
-			if (!NT_SUCCESS(status))
+			if (pDevCtx->Connection.Bth.QuickDisconnectTimestamp.QuadPart == 0)
 			{
-				TraceError(
-					TRACE_DSHIDMINIDRV,
-					"Sending disconnect request failed with status %!STATUS!",
-					status
-				);
-				EventWriteFailedWithNTStatus(__FUNCTION__, L"DsBth_SendDisconnectRequest", status);
+				QueryPerformanceCounter(t1);
 			}
 
+			QueryPerformanceCounter(&t2);
+
+			ms = (t2.QuadPart - t1->QuadPart) / (freq.QuadPart / 1000);
+
 			//
-			// No further processing
+			// 1 second passed
 			// 
-			return ContinuousRequestTarget_BufferDisposition_ContinuousRequestTargetAndStopStreaming;
+			if (ms > pDevCtx->Configuration.WirelessDisconnectButtonCombo.HoldTime)
+			{
+				TraceEvents(TRACE_LEVEL_INFORMATION,
+					TRACE_DSHIDMINIDRV,
+					"!! Sending disconnect request"
+				);
+
+				//
+				// Send disconnect request
+				// 
+				status = DsBth_SendDisconnectRequest(pDevCtx);
+
+				if (!NT_SUCCESS(status))
+				{
+					TraceError(
+						TRACE_DSHIDMINIDRV,
+						"Sending disconnect request failed with status %!STATUS!",
+						status
+					);
+					EventWriteFailedWithNTStatus(__FUNCTION__, L"DsBth_SendDisconnectRequest", status);
+				}
+
+				//
+				// No further processing
+				// 
+				return ContinuousRequestTarget_BufferDisposition_ContinuousRequestTargetAndStopStreaming;
+			}
+		}
+		else
+		{
+			pDevCtx->Connection.Bth.QuickDisconnectTimestamp.QuadPart = 0;
 		}
 	}
-	else
+
+	//
+	// Alternative rumble toggle combo detected
+	// 
+	if (pDevCtx->Configuration.RumbleSettings.AlternativeMode.ToggleButtonCombo.IsEnabled)
 	{
-		pDevCtx->Connection.Bth.QuickDisconnectTimestamp.QuadPart = 0;
+		int engagedCount = 0;
+		for (int buttonIndex = 0; buttonIndex < 3; buttonIndex++)
+		{
+			if ((pInReport->Buttons.lButtons >> pDevCtx->Configuration.RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons[buttonIndex]) & 1)
+			{
+				engagedCount++;
+			}
+		}
+
+		if (engagedCount == 3)
+		{
+			TraceEvents(TRACE_LEVEL_INFORMATION,
+				TRACE_DSHIDMINIDRV,
+				"!! Alternative mode toggle combination detected"
+			);
+			if (pDevCtx->RumbleControlState.AltMode.IsToggleAllowed)
+			{
+				t1 = &pDevCtx->RumbleControlState.AltMode.QuickToggleTimestamp;
+
+				if (pDevCtx->RumbleControlState.AltMode.QuickToggleTimestamp.QuadPart == 0)
+				{
+					QueryPerformanceCounter(t1);
+				}
+
+				QueryPerformanceCounter(&t2);
+
+				ms = (t2.QuadPart - t1->QuadPart) / (freq.QuadPart / 1000);
+
+				//
+				// Combo was held for the user defined time period
+				// 
+				if (ms > pDevCtx->Configuration.WirelessDisconnectButtonCombo.HoldTime)
+				{
+					TraceEvents(TRACE_LEVEL_INFORMATION,
+						TRACE_DSHIDMINIDRV,
+						"!! Toggling alternative rumble mode"
+					);
+					pDevCtx->RumbleControlState.AltMode.IsEnabled = !pDevCtx->RumbleControlState.AltMode.IsEnabled;
+
+					//
+					// Send rumble feedback to indicate change in rumble mode
+					//
+					DS3_SET_LARGE_RUMBLE_DURATION(pDevCtx, 0x30);
+					DS3_SET_SMALL_RUMBLE_DURATION(pDevCtx, 0x20);
+					DS3_SET_BOTH_RUMBLE_STRENGTH(pDevCtx, 0x00, 0xFF);
+					(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverLowPriority);
+
+					//
+					// Restore default rumble duration
+					//
+					DS3_SET_LARGE_RUMBLE_DURATION(pDevCtx, 0xFF);
+					DS3_SET_SMALL_RUMBLE_DURATION(pDevCtx, 0xFF);
+
+
+					//
+					// Register the time the toggle was triggered
+					// Disallow toggling again while combo is being held
+					//
+					t1->QuadPart = t2.QuadPart;
+					pDevCtx->RumbleControlState.AltMode.IsToggleAllowed = FALSE;
+				}
+			}
+			else
+			{
+				TraceEvents(TRACE_LEVEL_INFORMATION,
+					TRACE_DSHIDMINIDRV,
+					"!! Alternative rumble mode toggling prevented"
+				);
+			}
+		}
+		else
+		{
+			if (pDevCtx->RumbleControlState.AltMode.IsToggleAllowed)
+			{
+				pDevCtx->RumbleControlState.AltMode.QuickToggleTimestamp.QuadPart = 0;
+			}
+			else
+			{
+				t1 = &pDevCtx->RumbleControlState.AltMode.QuickToggleTimestamp;
+				QueryPerformanceCounter(&t2);
+				ms = (t2.QuadPart - t1->QuadPart) / (freq.QuadPart / 1000);
+				if (ms > 1000) // wait 1 second before re-enabling toggle combo after releasing it
+				{
+					TraceEvents(TRACE_LEVEL_INFORMATION,
+						TRACE_DSHIDMINIDRV,
+						"!! Prevention time after releasing alt mode toggle combo has passed. Allowing combo again"
+					);
+					pDevCtx->RumbleControlState.AltMode.IsToggleAllowed = TRUE;
+					pDevCtx->RumbleControlState.AltMode.QuickToggleTimestamp.QuadPart = 0;
+				}
+			}
+		}
 	}
 
 	//
@@ -2117,20 +2278,6 @@ DMF_EvtExecuteOutputPacketReceived(
 
 	case DsDeviceConnectionTypeUsb:
 
-		//
-		// Don't send if no state change has occurred
-		// 
-		if (pRepCtx->ReportSource > Ds3OutputReportSourceDriverHighPriority
-			&& pDevCtx->Configuration.IsOutputDeduplicatorEnabled > 0
-			&& RtlCompareMemory(
-				ClientWorkBuffer,
-				pDevCtx->OutputReport.Cache.LastReport,
-				bufferSize
-			) == bufferSize)
-		{
-			break;
-		}
-
 		status = USB_WriteInterruptOutSync(
 			pDevCtx,
 			&memoryDesc
@@ -2154,20 +2301,6 @@ DMF_EvtExecuteOutputPacketReceived(
 	case DsDeviceConnectionTypeBth:
 
 		//
-		// Don't send if no state change has occurred
-		// 
-		if (pRepCtx->ReportSource > Ds3OutputReportSourceDriverHighPriority
-			&& pDevCtx->Configuration.IsOutputDeduplicatorEnabled > 0
-			&& RtlCompareMemory(
-				ClientWorkBuffer,
-				pDevCtx->OutputReport.Cache.LastReport,
-				bufferSize
-			) == bufferSize)
-		{
-			break;
-		}
-
-		//
 		// Calculate delay, the smaller the more frequent packets are sent
 		// 
 		ms = (t2->QuadPart - t1->QuadPart) / (freq.QuadPart / 1000);
@@ -2178,9 +2311,9 @@ DMF_EvtExecuteOutputPacketReceived(
 			ms
 		);
 
-		//
-		// Rate limit condition has been detected
-		// 
+	//
+	// Rate limit condition has been detected
+	// 
 		if (pRepCtx->ReportSource > Ds3OutputReportSourceDriverHighPriority
 			&& pDevCtx->Configuration.IsOutputRateControlEnabled > 0
 			&& ms < pDevCtx->Configuration.OutputRateControlPeriodMs)
@@ -2383,7 +2516,8 @@ Ds_SendOutputReport(
 
 	WdfWaitLockAcquire(Context->OutputReport.Lock, NULL);
 
-	do {
+	do
+	{
 		//
 		// Grab new buffer to send
 		//
@@ -2414,34 +2548,34 @@ Ds_SendOutputReport(
 			DS3_SET_LED_DURATION(
 				Context,
 				0,
-				pConfig->LEDSettings.CustomPatterns.Player1.Duration,
-				pConfig->LEDSettings.CustomPatterns.Player1.IntervalDuration,
-				pConfig->LEDSettings.CustomPatterns.Player1.IntervalPortionOff,
-				pConfig->LEDSettings.CustomPatterns.Player1.IntervalPortionOn
+				pConfig->LEDSettings.CustomPatterns.Player1.TotalDuration,
+				pConfig->LEDSettings.CustomPatterns.Player1.BasePortionDuration,
+				pConfig->LEDSettings.CustomPatterns.Player1.OffPortionMultiplier,
+				pConfig->LEDSettings.CustomPatterns.Player1.OnPortionMultiplier
 			);
 			DS3_SET_LED_DURATION(
 				Context,
 				1,
-				pConfig->LEDSettings.CustomPatterns.Player2.Duration,
-				pConfig->LEDSettings.CustomPatterns.Player2.IntervalDuration,
-				pConfig->LEDSettings.CustomPatterns.Player2.IntervalPortionOff,
-				pConfig->LEDSettings.CustomPatterns.Player2.IntervalPortionOn
+				pConfig->LEDSettings.CustomPatterns.Player2.TotalDuration,
+				pConfig->LEDSettings.CustomPatterns.Player2.BasePortionDuration,
+				pConfig->LEDSettings.CustomPatterns.Player2.OffPortionMultiplier,
+				pConfig->LEDSettings.CustomPatterns.Player2.OnPortionMultiplier
 			);
 			DS3_SET_LED_DURATION(
 				Context,
 				2,
-				pConfig->LEDSettings.CustomPatterns.Player3.Duration,
-				pConfig->LEDSettings.CustomPatterns.Player3.IntervalDuration,
-				pConfig->LEDSettings.CustomPatterns.Player3.IntervalPortionOff,
-				pConfig->LEDSettings.CustomPatterns.Player3.IntervalPortionOn
+				pConfig->LEDSettings.CustomPatterns.Player3.TotalDuration,
+				pConfig->LEDSettings.CustomPatterns.Player3.BasePortionDuration,
+				pConfig->LEDSettings.CustomPatterns.Player3.OffPortionMultiplier,
+				pConfig->LEDSettings.CustomPatterns.Player3.OnPortionMultiplier
 			);
 			DS3_SET_LED_DURATION(
 				Context,
 				3,
-				pConfig->LEDSettings.CustomPatterns.Player4.Duration,
-				pConfig->LEDSettings.CustomPatterns.Player4.IntervalDuration,
-				pConfig->LEDSettings.CustomPatterns.Player4.IntervalPortionOff,
-				pConfig->LEDSettings.CustomPatterns.Player4.IntervalPortionOn
+				pConfig->LEDSettings.CustomPatterns.Player4.TotalDuration,
+				pConfig->LEDSettings.CustomPatterns.Player4.BasePortionDuration,
+				pConfig->LEDSettings.CustomPatterns.Player4.OffPortionMultiplier,
+				pConfig->LEDSettings.CustomPatterns.Player4.OnPortionMultiplier
 			);
 		}
 

@@ -119,6 +119,58 @@ static DS_LED_AUTHORITY DS_LED_AUTHORITY_FROM_NAME(PSTR AuthorityName)
 
 #pragma endregion
 
+//
+// Parse button combo settings
+// 
+#pragma warning(push)
+#pragma warning( disable : 4706 )
+static void
+ConfigParseButtonComboSettings(
+	_In_ const cJSON* ComboSettings,
+	_Inout_ PDS_BUTTON_COMBO Combo
+)
+{
+	cJSON* pNode = NULL;
+
+	if ((pNode = cJSON_GetObjectItem(ComboSettings, "IsEnabled")))
+	{
+		Combo->IsEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+		EventWriteOverrideSettingUInt(ComboSettings->string, "IsEnabled",
+			Combo->IsEnabled);
+	}
+
+	if ((pNode = cJSON_GetObjectItem(ComboSettings, "HoldTime")))
+	{
+		Combo->HoldTime = (ULONG)cJSON_GetNumberValue(pNode);
+		EventWriteOverrideSettingUInt(ComboSettings->string, "HoldTime",
+			Combo->HoldTime);
+	}
+
+	for (ULONGLONG buttonIndex = 0; buttonIndex < _countof(Combo->Buttons); buttonIndex++)
+	{
+		if ((pNode = cJSON_GetObjectItem(ComboSettings, G_DS_BUTTON_COMBO_NAMES[buttonIndex])))
+		{
+			const UCHAR offset = (UCHAR)cJSON_GetNumberValue(pNode);
+			if (offset <= DS_BUTTON_COMBO_MAX_OFFSET)
+			{
+				Combo->Buttons[buttonIndex] = (UCHAR)cJSON_GetNumberValue(pNode);
+				EventWriteOverrideSettingUInt(ComboSettings->string, G_DS_BUTTON_COMBO_NAMES[buttonIndex],
+					Combo->Buttons[buttonIndex]);
+			}
+			else
+			{
+				TraceError(
+					TRACE_CONFIG,
+					"Provided button offset %d for %s out of range, ignoring",
+					offset,
+					G_DS_BUTTON_COMBO_NAMES[buttonIndex]
+				);
+			}
+		}
+	}
+}
+#pragma warning(pop)
+
 #pragma region Parsers
 
 //
@@ -134,90 +186,95 @@ ConfigParseRumbleSettings(
 {
 	cJSON* pNode = NULL;
 
-	if ((pNode = cJSON_GetObjectItem(RumbleSettings, "DisableBM")))
+	if ((pNode = cJSON_GetObjectItem(RumbleSettings, "DisableLeft")))
 	{
-		Config->RumbleSettings.DisableBM = (BOOLEAN)cJSON_IsTrue(pNode);
-		EventWriteOverrideSettingUInt(RumbleSettings->string, "DisableBM", Config->RumbleSettings.DisableBM);
+		Config->RumbleSettings.DisableLeft = (BOOLEAN)cJSON_IsTrue(pNode);
+		EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.DisableLeft", Config->RumbleSettings.DisableLeft);
 	}
 
-	if ((pNode = cJSON_GetObjectItem(RumbleSettings, "DisableSM")))
+	if ((pNode = cJSON_GetObjectItem(RumbleSettings, "DisableRight")))
 	{
-		Config->RumbleSettings.DisableSM = (BOOLEAN)cJSON_IsTrue(pNode);
-		EventWriteOverrideSettingUInt(RumbleSettings->string, "DisableSM", Config->RumbleSettings.DisableSM);
+		Config->RumbleSettings.DisableRight = (BOOLEAN)cJSON_IsTrue(pNode);
+		EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.DisableRight", Config->RumbleSettings.DisableRight);
 	}
 
-	const cJSON* pBMStrRescale = cJSON_GetObjectItem(RumbleSettings, "BMStrRescale");
+	const cJSON* pHeavyRescale = cJSON_GetObjectItem(RumbleSettings, "HeavyRescale");
 
-	if (pBMStrRescale)
+	if (pHeavyRescale)
 	{
-		if ((pNode = cJSON_GetObjectItem(pBMStrRescale, "Enabled")))
+		if ((pNode = cJSON_GetObjectItem(pHeavyRescale, "IsEnabled")))
 		{
-			Config->RumbleSettings.BMStrRescale.Enabled = (BOOLEAN)cJSON_IsTrue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "BMStrRescale.Enabled", Config->RumbleSettings.BMStrRescale.Enabled);
+			Config->RumbleSettings.HeavyRescaling.IsEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.HeavyRescaling.IsEnabled", Config->RumbleSettings.HeavyRescaling.IsEnabled);
 		}
 
-		if ((pNode = cJSON_GetObjectItem(pBMStrRescale, "MinValue")))
+		if ((pNode = cJSON_GetObjectItem(pHeavyRescale, "RescaleMinRange")))
 		{
-			Config->RumbleSettings.BMStrRescale.MinValue = (UCHAR)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "BMStrRescale.MinValue", Config->RumbleSettings.BMStrRescale.MinValue);
+			Config->RumbleSettings.HeavyRescaling.MinRange = (UCHAR)cJSON_GetNumberValue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.HeavyRescaling.MinRange", Config->RumbleSettings.HeavyRescaling.MinRange);
 		}
 
-		if ((pNode = cJSON_GetObjectItem(pBMStrRescale, "MaxValue")))
+		if ((pNode = cJSON_GetObjectItem(pHeavyRescale, "RescaleMaxRange")))
 		{
-			Config->RumbleSettings.BMStrRescale.MaxValue = (UCHAR)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "BMStrRescale.MaxValue", Config->RumbleSettings.BMStrRescale.MaxValue);
-		}
-	}
-
-	const cJSON* pSMToBMConversion = cJSON_GetObjectItem(RumbleSettings, "SMToBMConversion");
-
-	if (pSMToBMConversion)
-	{
-		if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "Enabled")))
-		{
-			Config->RumbleSettings.SMToBMConversion.Enabled = (BOOLEAN)cJSON_IsTrue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "SMToBMConversion.Enabled", Config->RumbleSettings.SMToBMConversion.Enabled);
-		}
-
-		if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "RescaleMinValue")))
-		{
-			Config->RumbleSettings.SMToBMConversion.RescaleMinValue = (UCHAR)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "SMToBMConversion.RescaleMinValue", Config->RumbleSettings.SMToBMConversion.RescaleMinValue);
-		}
-
-		if ((pNode = cJSON_GetObjectItem(pSMToBMConversion, "RescaleMaxValue")))
-		{
-			Config->RumbleSettings.SMToBMConversion.RescaleMaxValue = (UCHAR)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "SMToBMConversion.RescaleMaxValue", Config->RumbleSettings.SMToBMConversion.RescaleMaxValue);
+			Config->RumbleSettings.HeavyRescaling.MaxRange = (UCHAR)cJSON_GetNumberValue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.HeavyRescaling.MaxRange", Config->RumbleSettings.HeavyRescaling.MaxRange);
 		}
 	}
 
-	const cJSON* pForcedSM = cJSON_GetObjectItem(RumbleSettings, "ForcedSM");
+	const cJSON* pAlternativeMode = cJSON_GetObjectItem(RumbleSettings, "AlternativeMode");
 
-	if (pForcedSM)
+	if (pAlternativeMode)
 	{
-		if ((pNode = cJSON_GetObjectItem(pForcedSM, "BMThresholdEnabled")))
+		if ((pNode = cJSON_GetObjectItem(pAlternativeMode, "IsEnabled")))
 		{
-			Config->RumbleSettings.ForcedSM.BMThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "ForcedSM.BMThresholdEnabled", Config->RumbleSettings.ForcedSM.BMThresholdEnabled);
+			Config->RumbleSettings.AlternativeMode.IsEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.IsEnabled", Config->RumbleSettings.AlternativeMode.IsEnabled);
 		}
 
-		if ((pNode = cJSON_GetObjectItem(pForcedSM, "BMThresholdValue")))
+		if ((pNode = cJSON_GetObjectItem(pAlternativeMode, "RescaleMinRange")))
 		{
-			Config->RumbleSettings.ForcedSM.BMThresholdValue = (UCHAR)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "ForcedSM.BMThresholdValue", Config->RumbleSettings.ForcedSM.BMThresholdValue);
+			Config->RumbleSettings.AlternativeMode.MinRange = (UCHAR)cJSON_GetNumberValue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.MinRange", Config->RumbleSettings.AlternativeMode.MinRange);
 		}
 
-		if ((pNode = cJSON_GetObjectItem(pForcedSM, "SMThresholdEnabled")))
+		if ((pNode = cJSON_GetObjectItem(pAlternativeMode, "RescaleMaxRange")))
 		{
-			Config->RumbleSettings.ForcedSM.SMThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "ForcedSM.SMThresholdEnabled", Config->RumbleSettings.ForcedSM.SMThresholdEnabled);
+			Config->RumbleSettings.AlternativeMode.MaxRange = (UCHAR)cJSON_GetNumberValue(pNode);
+			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.MaxRange", Config->RumbleSettings.AlternativeMode.MaxRange);
 		}
 
-		if ((pNode = cJSON_GetObjectItem(pForcedSM, "SMThresholdValue")))
+		if ((pNode = cJSON_GetObjectItem(pAlternativeMode, "ToggleCombo")))
 		{
-			Config->RumbleSettings.ForcedSM.SMThresholdValue = (UCHAR)cJSON_GetNumberValue(pNode);
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "ForcedSM.SMThresholdValue", Config->RumbleSettings.ForcedSM.SMThresholdValue);
+			ConfigParseButtonComboSettings(pNode, &Config->RumbleSettings.AlternativeMode.ToggleButtonCombo);
+		}
+
+		const cJSON* pForced = cJSON_GetObjectItem(pAlternativeMode, "ForcedRight");
+
+		if (pForced)
+		{
+			if ((pNode = cJSON_GetObjectItem(pForced, "IsHeavyThresholdEnabled")))
+			{
+				Config->RumbleSettings.AlternativeMode.ForcedRight.IsHeavyThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+				EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.IsHeavyThresholdEnabled", Config->RumbleSettings.AlternativeMode.ForcedRight.IsHeavyThresholdEnabled);
+			}
+
+			if ((pNode = cJSON_GetObjectItem(pForced, "IsLightThresholdEnabled")))
+			{
+				Config->RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
+				EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled", Config->RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled);
+			}
+
+			if ((pNode = cJSON_GetObjectItem(pForced, "HeavyThreshold")))
+			{
+				Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold = (UCHAR)cJSON_GetNumberValue(pNode);
+				EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold", Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold);
+			}
+
+			if ((pNode = cJSON_GetObjectItem(pForced, "LightThreshold")))
+			{
+				Config->RumbleSettings.AlternativeMode.ForcedRight.LightThreshold = (UCHAR)cJSON_GetNumberValue(pNode);
+				EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.LightThreshold", Config->RumbleSettings.AlternativeMode.ForcedRight.LightThreshold);
+			}
 		}
 	}
 }
@@ -273,36 +330,38 @@ ConfigParseLEDSettings(
 			&Config->LEDSettings.CustomPatterns.Player4,
 		};
 
+		cJSON* pPlayer = NULL;
 		for (ULONGLONG playerIndex = 0; playerIndex < _countof(playerSlotNames); playerIndex++)
 		{
-			if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "Duration")))
+			if (pPlayer = cJSON_GetObjectItem(pCustomPatterns, playerSlotNames[playerIndex]))
 			{
-				pPlayerSlots[playerIndex]->Duration = (UCHAR)cJSON_GetNumberValue(pNode);
-				EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "Duration", pPlayerSlots[playerIndex]->Duration);
-			}
+				if ((pNode = cJSON_GetObjectItem(pPlayer, "TotalDuration")))
+				{
+					pPlayerSlots[playerIndex]->TotalDuration = (UCHAR)cJSON_GetNumberValue(pNode);
+					EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "TotalDuration",
+						pPlayerSlots[playerIndex]->TotalDuration);
+				}
 
-			if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "IntervalDuration")))
-			{
-				pPlayerSlots[playerIndex]->IntervalDuration = (UCHAR)cJSON_GetNumberValue(pNode);
-				EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "IntervalDuration", pPlayerSlots[playerIndex]->IntervalDuration);
-			}
+				if ((pNode = cJSON_GetObjectItem(pPlayer, "BasePortionDuration")))
+				{
+					pPlayerSlots[playerIndex]->BasePortionDuration = (USHORT)cJSON_GetNumberValue(pNode);
+					EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "BasePortionDuration",
+						pPlayerSlots[playerIndex]->BasePortionDuration);
+				}
 
-			if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "Enabled")))
-			{
-				pPlayerSlots[playerIndex]->EnabledFlags = (UCHAR)cJSON_GetNumberValue(pNode);
-				EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "Enabled", pPlayerSlots[playerIndex]->EnabledFlags);
-			}
+				if ((pNode = cJSON_GetObjectItem(pPlayer, "OffPortionMultiplier")))
+				{
+					pPlayerSlots[playerIndex]->OffPortionMultiplier = (UCHAR)cJSON_GetNumberValue(pNode);
+					EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "OffPortionMultiplier",
+						pPlayerSlots[playerIndex]->OffPortionMultiplier);
+				}
 
-			if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "IntervalPortionOff")))
-			{
-				pPlayerSlots[playerIndex]->IntervalPortionOff = (UCHAR)cJSON_GetNumberValue(pNode);
-				EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "IntervalPortionOff", pPlayerSlots[playerIndex]->IntervalPortionOff);
-			}
-
-			if ((pNode = cJSON_GetObjectItem(pCustomPatterns, "IntervalPortionOn")))
-			{
-				pPlayerSlots[playerIndex]->IntervalPortionOn = (UCHAR)cJSON_GetNumberValue(pNode);
-				EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "IntervalPortionOn", pPlayerSlots[playerIndex]->IntervalPortionOn);
+				if ((pNode = cJSON_GetObjectItem(pPlayer, "OnPortionMultiplier")))
+				{
+					pPlayerSlots[playerIndex]->OnPortionMultiplier = (UCHAR)cJSON_GetNumberValue(pNode);
+					EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "OnPortionMultiplier",
+						pPlayerSlots[playerIndex]->OnPortionMultiplier);
+				}
 			}
 		}
 	}
@@ -327,9 +386,9 @@ ConfigParseHidDeviceModeSpecificSettings(
 	// 
 	switch (Config->HidDeviceMode)
 	{
-		//
-		// Properties only present in SDF mode
-		// 
+	//
+	// Properties only present in SDF mode
+	// 
 	case DsHidMiniDeviceModeSDF:
 		if ((pNode = cJSON_GetObjectItem(NodeSettings, "PressureExposureMode")))
 		{
@@ -343,9 +402,9 @@ ConfigParseHidDeviceModeSpecificSettings(
 			EventWriteOverrideSettingUInt(NodeSettings->string, "SDF.DPadExposureMode", Config->SDF.DPadExposureMode);
 		}
 		break;
-		//
-		// Properties only present in GPJ mode
-		// 
+	//
+	// Properties only present in GPJ mode
+	// 
 	case DsHidMiniDeviceModeGPJ:
 		if ((pNode = cJSON_GetObjectItem(NodeSettings, "PressureExposureMode")))
 		{
@@ -374,8 +433,18 @@ static void ConfigNodeParse(
 	_In_opt_ BOOLEAN IsHotReload
 )
 {
-	PDS_DRIVER_CONFIGURATION pCfg = &Context->Configuration;
+	FuncEntry(TRACE_CONFIG);
+
+	const PDS_DRIVER_CONFIGURATION pCfg = &Context->Configuration;
 	cJSON* pNode = NULL;
+
+	if (IsHotReload)
+	{
+		//
+		// Reset device's idle disconnect timer
+		//
+		Context->Connection.Bth.IdleDisconnectTimestamp.QuadPart = 0;
+	}
 
 	//
 	// Common
@@ -412,12 +481,6 @@ static void ConfigNodeParse(
 		EventWriteOverrideSettingUInt(ParentNode->string, "OutputRateControlPeriodMs", pCfg->OutputRateControlPeriodMs);
 	}
 
-	if ((pNode = cJSON_GetObjectItem(ParentNode, "IsOutputDeduplicatorEnabled")))
-	{
-		pCfg->IsOutputDeduplicatorEnabled = (BOOLEAN)cJSON_IsTrue(pNode);
-		EventWriteOverrideSettingUInt(ParentNode->string, "IsOutputDeduplicatorEnabled", pCfg->IsOutputDeduplicatorEnabled);
-	}
-
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "WirelessIdleTimeoutPeriodMs")))
 	{
 		pCfg->WirelessIdleTimeoutPeriodMs = (ULONG)cJSON_GetNumberValue(pNode);
@@ -428,6 +491,14 @@ static void ConfigNodeParse(
 	{
 		pCfg->DisableWirelessIdleTimeout = (BOOLEAN)cJSON_IsTrue(pNode);
 		EventWriteOverrideSettingUInt(ParentNode->string, "DisableWirelessIdleTimeout", pCfg->DisableWirelessIdleTimeout);
+	}
+
+	//
+	// Wireless quick disconnect combo
+	// 
+	if ((pNode = cJSON_GetObjectItem(ParentNode, "QuickDisconnectCombo")))
+	{
+		ConfigParseButtonComboSettings(pNode, &pCfg->WirelessDisconnectButtonCombo);
 	}
 
 	//
@@ -454,13 +525,15 @@ static void ConfigNodeParse(
 				if ((pNode = cJSON_GetObjectItem(pDeadZoneLeft, "Apply")))
 				{
 					pCfg->ThumbSettings.DeadZoneLeft.Apply = (BOOLEAN)cJSON_IsTrue(pNode);
-					EventWriteOverrideSettingUInt(pDeadZoneLeft->string, "ThumbSettings.DeadZoneLeft.Apply", pCfg->ThumbSettings.DeadZoneLeft.Apply);
+					EventWriteOverrideSettingUInt(pDeadZoneLeft->string, "ThumbSettings.DeadZoneLeft.Apply",
+						pCfg->ThumbSettings.DeadZoneLeft.Apply);
 				}
 
 				if ((pNode = cJSON_GetObjectItem(pDeadZoneLeft, "PolarValue")))
 				{
 					pCfg->ThumbSettings.DeadZoneLeft.PolarValue = cJSON_GetNumberValue(pNode);
-					EventWriteOverrideSettingDouble(pDeadZoneLeft->string, "ThumbSettings.DeadZoneLeft.PolarValue", pCfg->ThumbSettings.DeadZoneLeft.PolarValue);
+					EventWriteOverrideSettingDouble(pDeadZoneLeft->string, "ThumbSettings.DeadZoneLeft.PolarValue",
+						pCfg->ThumbSettings.DeadZoneLeft.PolarValue);
 				}
 			}
 
@@ -474,13 +547,15 @@ static void ConfigNodeParse(
 				if ((pNode = cJSON_GetObjectItem(pDeadZoneRight, "Apply")))
 				{
 					pCfg->ThumbSettings.DeadZoneRight.Apply = (BOOLEAN)cJSON_IsTrue(pNode);
-					EventWriteOverrideSettingUInt(pDeadZoneRight->string, "ThumbSettings.DeadZoneRight.Apply", pCfg->ThumbSettings.DeadZoneRight.Apply);
+					EventWriteOverrideSettingUInt(pDeadZoneRight->string, "ThumbSettings.DeadZoneRight.Apply",
+						pCfg->ThumbSettings.DeadZoneRight.Apply);
 				}
 
 				if ((pNode = cJSON_GetObjectItem(pDeadZoneRight, "PolarValue")))
 				{
 					pCfg->ThumbSettings.DeadZoneRight.PolarValue = cJSON_GetNumberValue(pNode);
-					EventWriteOverrideSettingDouble(pDeadZoneRight->string, "ThumbSettings.DeadZoneRight.PolarValue", pCfg->ThumbSettings.DeadZoneRight.PolarValue);
+					EventWriteOverrideSettingDouble(pDeadZoneRight->string, "ThumbSettings.DeadZoneRight.PolarValue",
+						pCfg->ThumbSettings.DeadZoneRight.PolarValue);
 				}
 			}
 
@@ -533,6 +608,8 @@ static void ConfigNodeParse(
 			}
 		}
 	}
+
+	FuncExitNoReturn(TRACE_CONFIG);
 }
 #pragma warning(pop)
 
@@ -613,9 +690,9 @@ ConfigLoadForDevice(
 
 		if (hFile == INVALID_HANDLE_VALUE)
 		{
-			TraceVerbose(
+			TraceError(
 				TRACE_CONFIG,
-				"Configuration file %s not accessible (errno: %d)",
+				"Configuration file %s not accessible, error: %!WINERROR!",
 				configFilePath,
 				error
 			);
@@ -629,6 +706,11 @@ ConfigLoadForDevice(
 		{
 			error = GetLastError();
 
+			TraceError(
+				TRACE_CONFIG,
+				"Failed to get configuration file size, error: %!WINERROR!",
+				error
+			);
 			EventWriteFailedWithWin32Error(__FUNCTION__, L"Getting configuration file size", error);
 
 			status = STATUS_ACCESS_DENIED;
@@ -646,6 +728,11 @@ ConfigLoadForDevice(
 		// 
 		if (size.QuadPart > 20000000 /* 20 MB of JSON, w00t?! */)
 		{
+			TraceError(
+				TRACE_CONFIG,
+				"Configuration file too big to parse, reported size: %I64d",
+				size.QuadPart
+			);
 			EventWriteFailedWithWin32Error(__FUNCTION__, L"Reading configuration file", ERROR_BUFFER_OVERFLOW);
 			status = STATUS_BUFFER_OVERFLOW;
 			break;
@@ -665,26 +752,36 @@ ConfigLoadForDevice(
 		{
 			error = GetLastError();
 
+			TraceError(
+				TRACE_CONFIG,
+				"Failed to read configuration file content, error: %!WINERROR!",
+				error
+			);
 			EventWriteFailedWithWin32Error(__FUNCTION__, L"Reading configuration file content", error);
 			status = STATUS_UNSUCCESSFUL;
 			break;
 		}
 
-		config_json = cJSON_Parse(content);
+		config_json = cJSON_ParseWithLength(content, size.QuadPart);
 
 		if (config_json == NULL)
 		{
+			TraceError(
+				TRACE_CONFIG,
+				"JSON parsing failed"
+			);
+
 			const char* error_ptr = cJSON_GetErrorPtr();
 			if (error_ptr != NULL)
 			{
 				TraceError(
 					TRACE_CONFIG,
-					"JSON error: %s",
+					"JSON parsing error: %s",
 					error_ptr
 				);
+				EventWriteJSONParseError(error_ptr);
 			}
 
-			EventWriteJSONParseError(error_ptr);
 			status = STATUS_ACCESS_VIOLATION;
 			break;
 		}
@@ -714,7 +811,7 @@ ConfigLoadForDevice(
 		//
 		// Try to read device-specific properties
 		// 
-		cJSON* deviceNode = cJSON_GetObjectItem(devicesNode, Context->DeviceAddressString);
+		const cJSON* deviceNode = cJSON_GetObjectItem(devicesNode, Context->DeviceAddressString);
 
 		if (deviceNode)
 		{
@@ -728,28 +825,40 @@ ConfigLoadForDevice(
 
 			ConfigNodeParse(deviceNode, Context, IsHotReload);
 		}
+		else
+		{
+			TraceVerbose(
+				TRACE_CONFIG,
+				"Device-specific (%s) config not found",
+				Context->DeviceAddressString
+			);
+		}
 
 	} while (FALSE);
 
 	//
-	// Verify if SMtoBMConversion values are valid and attempt to calculate rescaling constants in case they are
+	// Verify if desired new range for heavy rumbling rescale is valid and attempt to calculate rescaling constants if so
 	// 
+	DS_RUMBLE_SETTINGS* rumbSet = &Context->Configuration.RumbleSettings;
 	if (
-		Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue > Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue
-		&& Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue > 0
+		rumbSet->AlternativeMode.MaxRange > rumbSet->AlternativeMode.MinRange
+		&& rumbSet->AlternativeMode.MinRange > 0
 		)
 	{
-		Context->Configuration.RumbleSettings.SMToBMConversion.ConstA =
-			(DOUBLE)(Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue - Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMinValue) / (254);
+		Context->RumbleControlState.AltMode.IsEnabled = rumbSet->AlternativeMode.IsEnabled;
 
-		Context->Configuration.RumbleSettings.SMToBMConversion.ConstB =
-			Context->Configuration.RumbleSettings.SMToBMConversion.RescaleMaxValue - Context->Configuration.RumbleSettings.SMToBMConversion.ConstA * 255;
+		DOUBLE LConstA = (DOUBLE)(rumbSet->AlternativeMode.MaxRange - rumbSet->AlternativeMode.MinRange) / (254);
+		DOUBLE LConstB = rumbSet->AlternativeMode.MaxRange - LConstA * 255;
+
+		Context->RumbleControlState.AltMode.LightRescale.ConstA = LConstA;
+		Context->RumbleControlState.AltMode.LightRescale.ConstB = LConstB;
+		Context->RumbleControlState.AltMode.LightRescale.IsAllowed = TRUE;
 
 		TraceVerbose(
 			TRACE_CONFIG,
-			"SMToBMConversion rescaling constants: A = %f and B = %f.",
-			Context->Configuration.RumbleSettings.SMToBMConversion.ConstA,
-			Context->Configuration.RumbleSettings.SMToBMConversion.ConstB
+			"Light rumble rescaling constants: A = %f and B = %f.",
+			Context->RumbleControlState.AltMode.LightRescale.ConstA,
+			Context->RumbleControlState.AltMode.LightRescale.ConstB
 		);
 
 	}
@@ -757,40 +866,42 @@ ConfigLoadForDevice(
 	{
 		TraceVerbose(
 			TRACE_CONFIG,
-			"Invalid values found for SMToBMConversion. Setting disabled."
+			"Disallowing light rumble rescalling because an invalid range was defined"
 		);
-		Context->Configuration.RumbleSettings.SMToBMConversion.Enabled = FALSE;
+		Context->RumbleControlState.AltMode.LightRescale.IsAllowed = FALSE;
 	}
 
 	//
-	// Verify if BMStrRescale values are valid and attempt to calculate rescaling constants in case they are
+	// Verify if desired new range for light rumbling rescale when in alternative mode is valid and attempt to calculate rescaling constants if so
 	// 
 	if (
-		Context->Configuration.RumbleSettings.BMStrRescale.MaxValue > Context->Configuration.RumbleSettings.BMStrRescale.MinValue
-		&& Context->Configuration.RumbleSettings.BMStrRescale.MinValue > 0
+		rumbSet->HeavyRescaling.MaxRange > rumbSet->HeavyRescaling.MinRange
+		&& rumbSet->HeavyRescaling.MinRange > 0
 		)
 	{
-		Context->Configuration.RumbleSettings.BMStrRescale.ConstA =
-			(DOUBLE)(Context->Configuration.RumbleSettings.BMStrRescale.MaxValue - Context->Configuration.RumbleSettings.BMStrRescale.MinValue) / (254);
+		Context->RumbleControlState.HeavyRescaleEnabled = rumbSet->HeavyRescaling.IsEnabled;
 
-		Context->Configuration.RumbleSettings.BMStrRescale.ConstB =
-			Context->Configuration.RumbleSettings.BMStrRescale.MaxValue - Context->Configuration.RumbleSettings.BMStrRescale.ConstA * 255;
+		DOUBLE HConstA = (DOUBLE)(rumbSet->HeavyRescaling.MaxRange - rumbSet->HeavyRescaling.MinRange) / (254);
+		DOUBLE HConstB = rumbSet->HeavyRescaling.MaxRange - HConstA * 255;
+
+		Context->RumbleControlState.HeavyRescale.ConstA = HConstA;
+		Context->RumbleControlState.HeavyRescale.ConstB = HConstB;
+		Context->RumbleControlState.HeavyRescale.IsAllowed = TRUE;
 
 		TraceVerbose(
 			TRACE_CONFIG,
-			"BMStrRescale rescaling constants: A = %f and B = %f.",
-			Context->Configuration.RumbleSettings.BMStrRescale.ConstA,
-			Context->Configuration.RumbleSettings.BMStrRescale.ConstB
+			"Heavy rumble rescaling constants:  A = %f and B = %f.",
+			Context->RumbleControlState.HeavyRescale.ConstA,
+			Context->RumbleControlState.HeavyRescale.ConstB
 		);
 	}
 	else
 	{
 		TraceVerbose(
 			TRACE_CONFIG,
-			"Invalid values found for BMStrRescale. Setting disabled."
+			"Disallowing heavy rumble rescalling because an invalid range was defined"
 		);
-
-		Context->Configuration.RumbleSettings.BMStrRescale.Enabled = FALSE;
+		Context->RumbleControlState.HeavyRescale.IsAllowed = FALSE;
 	}
 
 	if (config_json)
@@ -821,6 +932,8 @@ ConfigSetDefaults(
 	_Inout_ PDS_DRIVER_CONFIGURATION Config
 )
 {
+	FuncEntry(TRACE_CONFIG);
+
 	//
 	// Common
 	// 
@@ -829,27 +942,37 @@ ConfigSetDefaults(
 	Config->DisableAutoPairing = FALSE;
 	Config->IsOutputRateControlEnabled = TRUE;
 	Config->OutputRateControlPeriodMs = 150;
-	Config->IsOutputDeduplicatorEnabled = FALSE;
 	Config->WirelessIdleTimeoutPeriodMs = 300000;
 	Config->DisableWirelessIdleTimeout = FALSE;
+
+	Config->WirelessDisconnectButtonCombo.IsEnabled = TRUE;
+	Config->WirelessDisconnectButtonCombo.HoldTime = 1000;
+	Config->WirelessDisconnectButtonCombo.Buttons[0] = 10;
+	Config->WirelessDisconnectButtonCombo.Buttons[1] = 11;
+	Config->WirelessDisconnectButtonCombo.Buttons[2] = 16;
 
 	Config->ThumbSettings.DeadZoneLeft.Apply = TRUE;
 	Config->ThumbSettings.DeadZoneLeft.PolarValue = 3.0;
 	Config->ThumbSettings.DeadZoneRight.Apply = TRUE;
 	Config->ThumbSettings.DeadZoneRight.PolarValue = 3.0;
 
-	Config->RumbleSettings.DisableBM = FALSE;
-	Config->RumbleSettings.DisableSM = FALSE;
-	Config->RumbleSettings.BMStrRescale.Enabled = TRUE;
-	Config->RumbleSettings.BMStrRescale.MinValue = 64;
-	Config->RumbleSettings.BMStrRescale.MaxValue = 255;
-	Config->RumbleSettings.SMToBMConversion.Enabled = FALSE;
-	Config->RumbleSettings.SMToBMConversion.RescaleMinValue = 1;
-	Config->RumbleSettings.SMToBMConversion.RescaleMaxValue = 140;
-	Config->RumbleSettings.ForcedSM.BMThresholdEnabled = TRUE;
-	Config->RumbleSettings.ForcedSM.BMThresholdValue = 230;
-	Config->RumbleSettings.ForcedSM.SMThresholdEnabled = FALSE;
-	Config->RumbleSettings.ForcedSM.SMThresholdValue = 230;
+	Config->RumbleSettings.DisableLeft = FALSE;
+	Config->RumbleSettings.DisableRight = FALSE;
+	Config->RumbleSettings.HeavyRescaling.IsEnabled = TRUE;
+	Config->RumbleSettings.HeavyRescaling.MinRange = 64;
+	Config->RumbleSettings.HeavyRescaling.MaxRange = 255;
+	Config->RumbleSettings.AlternativeMode.IsEnabled = FALSE;
+	Config->RumbleSettings.AlternativeMode.MinRange = 1;
+	Config->RumbleSettings.AlternativeMode.MaxRange = 90;
+	Config->RumbleSettings.AlternativeMode.ForcedRight.IsHeavyThresholdEnabled = TRUE;
+	Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold = 242;
+	Config->RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled = FALSE;
+	Config->RumbleSettings.AlternativeMode.ForcedRight.LightThreshold = 242;
+	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.IsEnabled = FALSE;
+	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.HoldTime = 1000;
+	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons[0] = 0; // Select
+	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons[1] = 0; // Select
+	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons[2] = 16; // PS
 
 	Config->LEDSettings.Mode = DsLEDModeBatteryIndicatorPlayerIndex;
 	Config->LEDSettings.CustomPatterns.LEDFlags = 0x02;
@@ -864,11 +987,10 @@ ConfigSetDefaults(
 
 	for (ULONGLONG playerIndex = 0; playerIndex < _countof(pPlayerSlots); playerIndex++)
 	{
-		pPlayerSlots[playerIndex]->Duration = 0xFF;
-		pPlayerSlots[playerIndex]->IntervalDuration = 0xFF;
-		pPlayerSlots[playerIndex]->EnabledFlags = 0x10;
-		pPlayerSlots[playerIndex]->IntervalPortionOff = 0x00;
-		pPlayerSlots[playerIndex]->IntervalPortionOn = 0xFF;
+		pPlayerSlots[playerIndex]->TotalDuration = 0xFF;
+		pPlayerSlots[playerIndex]->BasePortionDuration = 0x01;
+		pPlayerSlots[playerIndex]->OffPortionMultiplier = 0x00;
+		pPlayerSlots[playerIndex]->OnPortionMultiplier = 0x01;
 	}
 
 	//
@@ -884,4 +1006,6 @@ ConfigSetDefaults(
 
 	Config->GPJ.PressureExposureMode = DsPressureExposureModeDefault;
 	Config->GPJ.DPadExposureMode = DsDPadExposureModeDefault;
+
+	FuncExitNoReturn(TRACE_CONFIG);
 }

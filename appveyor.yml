@@ -1,6 +1,7 @@
 version: 3.0.{build}.0
 build_cloud: WIN-LKR467JS4GL
 image: Windows
+test: off
 environment:
   DmfRootPath: C:\projects\DMF
   DOMITO_INC_PATH: C:\projects\Domito\include
@@ -8,6 +9,7 @@ environment:
 platform:
 - x64
 - ARM64
+- x86
 configuration:
 - Release
 skip_commits:
@@ -16,11 +18,10 @@ skip_commits:
     - '**/*.aip'
     - '**/*.json'
 install:
-#- cmd: |
-#    cd "C:\Tools\vcpkg"
-#    git pull > NUL
-#    .\bootstrap-vcpkg.bat > NUL
-#    cd %appveyor_build_folder%
+- cmd: vcpkg integrate install
+- cmd: vcpkg update
+# manifest mode takes forever to build each commit so use global copy instead
+- cmd: vcpkg install hidapi:%PLATFORM%-windows-static opentelemetry-cpp[otlp-http]:%PLATFORM%-windows-static
 - cmd: git submodule -q update --init
 - cmd: git clone -q https://github.com/microsoft/DMF.git C:\projects\DMF 2> nul || set ERRORLEVEL=0
 - cmd: |
@@ -36,17 +37,14 @@ dotnet_csproj:
   file_version: '{version}'
   informational_version: '{version}'
 before_build:
-- cmd: vcpkg integrate install
-- cmd: vcpkg update
-- cmd: vcpkg install hidapi:x86-windows-static hidapi:x64-windows-static
-- nuget restore
+- cmd: nuget restore
 - cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\sys\dshidmini.vcxproj" --vcxproj.inf-time-stamp
 - cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\sys\dshidmini.rc" --resource.file-version --resource.product-version
 - cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\XInputBridge\XInputBridge.rc" --resource.file-version --resource.product-version
 build_script:
 - cmd: .\build.cmd
 after_build:
-- cmd: makecab.exe /f .\DsHidMini_%PLATFORM%.ddf
+- cmd: if not %PLATFORM%==x86 makecab.exe /f .\DsHidMini_%PLATFORM%.ddf
 artifacts:
 - path: 'disk1\*.cab'
 - path: 'bin**\$(APPVEYOR_PROJECT_NAME)\*.inf'

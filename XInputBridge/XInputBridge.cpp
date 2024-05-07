@@ -521,29 +521,32 @@ XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
 
 		ds3_output_report output_report;
 
-		output_report.rumble.small_motor_on = pVibration->wRightMotorSpeed > 0 ? 1 : 0;
-		output_report.rumble.large_motor_force = static_cast<float>(pVibration->wLeftMotorSpeed) / static_cast<float>(
-			USHRT_MAX) * static_cast<float>(UCHAR_MAX);
+        // ReSharper disable CppAssignedValueIsNeverUsed
+        output_report.rumble.small_motor_on = pVibration->wRightMotorSpeed > 0 ? 1 : 0;
+        output_report.rumble.large_motor_force = static_cast<float>(pVibration->wLeftMotorSpeed) / static_cast<float>(
+            USHRT_MAX) * static_cast<float>(UCHAR_MAX);
 
-		switch (dwUserIndex)
-		{
-		case 0: output_report.led_enabled = 0b00000010;
-			break;
-		case 1: output_report.led_enabled = 0b00000100;
-			break;
-		case 2: output_report.led_enabled = 0b00001000;
-			break;
-		case 3: output_report.led_enabled = 0b00010000;
-			break;
-		case 4: output_report.led_enabled = 0b00010010;
-			break;
-		case 5: output_report.led_enabled = 0b00010100;
-			break;
-		case 6: output_report.led_enabled = 0b00011000;
-			break;
-		default:
-			break;
-		}
+        switch (dwUserIndex)
+        {
+        case 0: output_report.led_enabled = 0b00000010;
+
+            break;
+        case 1: output_report.led_enabled = 0b00000100;
+            break;
+        case 2: output_report.led_enabled = 0b00001000;
+            break;
+        case 3: output_report.led_enabled = 0b00010000;
+            break;
+        case 4: output_report.led_enabled = 0b00010010;
+            break;
+        case 5: output_report.led_enabled = 0b00010100;
+            break;
+        case 6: output_report.led_enabled = 0b00011000;
+            break;
+        default:
+            break;
+        }
+        // ReSharper restore CppAssignedValueIsNeverUsed
 
 		const int res = hid_write(device, &output_report.report_id, sizeof(output_report));
 
@@ -565,6 +568,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 	_Out_ XINPUT_CAPABILITIES* pCapabilities
 )
 {
+    UNREFERENCED_PARAMETER(dwFlags);
 	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
@@ -609,10 +613,10 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 			);
 		pCapabilities->Gamepad.bLeftTrigger = UCHAR_MAX;
 		pCapabilities->Gamepad.bRightTrigger = UCHAR_MAX;
-		pCapabilities->Gamepad.sThumbLX = 0xFFC0;
-		pCapabilities->Gamepad.sThumbLY = 0xFFC0;
-		pCapabilities->Gamepad.sThumbRX = 0xFFC0;
-		pCapabilities->Gamepad.sThumbRY = 0xFFC0;
+		pCapabilities->Gamepad.sThumbLX = static_cast<SHORT>(0xFFC0);
+		pCapabilities->Gamepad.sThumbLY = static_cast<SHORT>(0xFFC0);
+		pCapabilities->Gamepad.sThumbRX = static_cast<SHORT>(0xFFC0);
+		pCapabilities->Gamepad.sThumbRY = static_cast<SHORT>(0xFFC0);
 
 		pCapabilities->Vibration.wLeftMotorSpeed = UCHAR_MAX;
 		pCapabilities->Vibration.wRightMotorSpeed = UCHAR_MAX;
@@ -627,6 +631,8 @@ XINPUTBRIDGE_API void WINAPI XInputEnable(
 	_In_ BOOL enable
 )
 {
+    UNREFERENCED_PARAMETER(enable);
+
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scoped_span = trace::Scope(GetTracer()->StartSpan("XInputEnable"));
 #endif
@@ -638,6 +644,10 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetDSoundAudioDeviceGuids(
 	GUID* pDSoundCaptureGuid
 )
 {
+    UNREFERENCED_PARAMETER(dwUserIndex);
+    UNREFERENCED_PARAMETER(pDSoundRenderGuid);
+    UNREFERENCED_PARAMETER(pDSoundCaptureGuid);
+
 	return ERROR_DEVICE_NOT_CONNECTED;
 }
 
@@ -647,6 +657,10 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetBatteryInformation(
 	_Out_ XINPUT_BATTERY_INFORMATION* pBatteryInformation
 )
 {
+    UNREFERENCED_PARAMETER(dwUserIndex);
+    UNREFERENCED_PARAMETER(devType);
+    UNREFERENCED_PARAMETER(pBatteryInformation);
+
 	return ERROR_DEVICE_NOT_CONNECTED;
 }
 
@@ -656,6 +670,10 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetKeystroke(
 	PXINPUT_KEYSTROKE pKeystroke
 )
 {
+    UNREFERENCED_PARAMETER(dwUserIndex);
+    UNREFERENCED_PARAMETER(dwReserved);
+    UNREFERENCED_PARAMETER(pKeystroke);
+
 	return ERROR_DEVICE_NOT_CONNECTED;
 }
 
@@ -806,6 +824,10 @@ XINPUTBRIDGE_API DWORD WINAPI XInputWaitForGuideButton(
 	_In_ LPVOID pVoid
 )
 {
+    UNREFERENCED_PARAMETER(dwUserIndex);
+    UNREFERENCED_PARAMETER(dwFlag);
+    UNREFERENCED_PARAMETER(pVoid);
+
 	return ERROR_DEVICE_NOT_CONNECTED;
 }
 
@@ -813,6 +835,8 @@ XINPUTBRIDGE_API DWORD WINAPI XInputCancelGuideButtonWait(
 	_In_ DWORD dwUserIndex
 )
 {
+    UNREFERENCED_PARAMETER(dwUserIndex);
+
 	return ERROR_DEVICE_NOT_CONNECTED;
 }
 
@@ -820,5 +844,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputPowerOffController(
 	_In_ DWORD dwUserIndex
 )
 {
+    UNREFERENCED_PARAMETER(dwUserIndex);
+
 	return ERROR_DEVICE_NOT_CONNECTED;
 }

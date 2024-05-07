@@ -346,4 +346,5 @@ healthchecksdb
 /setup/DsHidMini Driver-cache
 /ControlApp
 **/vcpkg_installed
-*.g.wxs
+**/*.g.wxs
+/XInputBridge/exports

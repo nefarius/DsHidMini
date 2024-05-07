@@ -16,6 +16,7 @@
     <OutputPath>$(SolutionDir)bin\</OutputPath>
     <UseWPF>true</UseWPF>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>FireShock.ico</ApplicationIcon>

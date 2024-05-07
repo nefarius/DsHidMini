@@ -37,7 +37,7 @@ USB_WriteInterruptOutSync(
 EVT_WDF_REQUEST_COMPLETION_ROUTINE EvtUsbRequestCompletionRoutine;
 
 NTSTATUS
-DsUdb_PrepareHardware(
+DsUsb_PrepareHardware(
     WDFDEVICE Device
 );
 

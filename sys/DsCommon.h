@@ -5,11 +5,12 @@
 // Defines a Bluetooth client MAC address
 // 
 #include <pshpack1.h>
+
 typedef struct _BD_ADDR
 {
 	UCHAR Address[6];
-
 } BD_ADDR, * PBD_ADDR;
+
 #include <poppack.h>
 
 //
@@ -41,7 +42,6 @@ typedef enum
 	// Sony DualShock 4 Controller
 	// 
 	DsDeviceTypeWireless
-
 } DS_DEVICE_TYPE, * PDS_DEVICE_TYPE;
 
 //
@@ -52,7 +52,6 @@ typedef enum
 	DsDeviceConnectionTypeUnknown = 0x00,
 	DsDeviceConnectionTypeUsb,
 	DsDeviceConnectionTypeBth
-
 } DS_CONNECTION_TYPE, * PDS_CONNECTION_TYPE;
 
 //
@@ -68,7 +67,6 @@ typedef enum
 	DsBatteryStatusFull = 0x05,
 	DsBatteryStatusCharging = 0xEE,
 	DsBatteryStatusCharged = 0xEF
-
 } DS_BATTERY_STATUS, * PDS_BATTERY_STATUS;
 
 //
@@ -100,7 +98,6 @@ typedef enum
 	// Microsoft XINPUTHID.SYS compatible
 	// 
 	DsHidMiniDeviceModeXInputHIDCompatible
-
 } DS_HID_DEVICE_MODE, * PDS_HID_DEVICE_MODE;
 
 //
@@ -130,7 +127,6 @@ typedef enum
 	// Output reports come in from "the outside" and get passed on
 	// 
 	Ds3OutputReportModeWriteReportPassThrough
-
 } DS_OUTPUT_REPORT_MODE, * PDS_OUTPUT_REPORT_MODE;
 
 //
@@ -167,7 +163,6 @@ typedef enum
 	// Request came from XINPUTHID.SYS
 	// 
 	Ds3OutputReportSourceXInputHID
-
 } DS_OUTPUT_REPORT_SOURCE, * PDS_OUTPUT_REPORT_SOURCE;
 
 //
@@ -187,7 +182,6 @@ typedef enum
 	// Default behaviour exposes both unaltered
 	// 
 	DsPressureExposureModeDefault = DsPressureExposureModeDigital | DsPressureExposureModeAnalogue
-
 } DS_PRESSURE_EXPOSURE_MODE, * PDS_PRESSURE_EXPOSURE_MODE;
 
 //
@@ -217,7 +211,6 @@ typedef enum
 	// Default behaviour exposes HAT/POV format
 	// 
 	DsDPadExposureModeDefault = DsDPadExposureModeHAT
-
 } DS_DPAD_EXPOSURE_MODE, * PDS_DPAD_EXPOSURE_MODE;
 
 //
@@ -251,7 +244,6 @@ typedef enum
 	// Use whatever pattern is provided by configuration
 	// 
 	DsLEDModeCustomPattern
-
 } DS_LED_MODE;
 
 //
@@ -281,7 +273,6 @@ typedef enum
 	// The application is in charge, the driver will do nothing
 	// 
 	DsLEDAuthorityApplication
-
 } DS_LED_AUTHORITY;
 
 //
@@ -293,6 +284,42 @@ static CONST PSTR G_DS_LED_AUTHORITY_NAMES[] =
 	"Driver",
 	"Application"
 };
+
+//
+// Button combinations
+// 
+typedef struct _DS_BUTTON_COMBO
+{
+	//
+	// Activates the combination
+	// 
+	BOOLEAN IsEnabled;
+
+	//
+	// How long the combination must be held
+	// 
+	ULONG HoldTime;
+
+	//
+	// The buttons that need to be held
+	// 
+	UCHAR Buttons[3];
+} DS_BUTTON_COMBO, * PDS_BUTTON_COMBO;
+
+//
+// Friendly names for reading from JSON
+// 
+static CONST PSTR G_DS_BUTTON_COMBO_NAMES[] =
+{
+	"Button1",
+	"Button2",
+	"Button3",
+};
+
+//
+// Maximum amount of bits that can be shifted to read valid buttons
+// 
+#define DS_BUTTON_COMBO_MAX_OFFSET 16
 
 //
 // Axis dead-zone settings
@@ -308,7 +335,6 @@ typedef struct _DS_AXIS_DEADZONE
 	// Dead-zone radius (0-360)
 	// 
 	DOUBLE PolarValue;
-
 } DS_AXIS_DEADZONE, * PDS_AXIS_DEADZONE;
 
 //
@@ -325,7 +351,6 @@ typedef struct _DS_THUMB_SETTINGS
 	// Dead-zone of right thumb stick
 	// 
 	DS_AXIS_DEADZONE DeadZoneRight;
-
 } DS_THUMB_SETTINGS, * PDS_THUMB_SETTINGS;
 
 //
@@ -334,55 +359,90 @@ typedef struct _DS_THUMB_SETTINGS
 typedef struct _DS_RUMBLE_SETTINGS
 {
 	//
-	// Disable Big Motor (left) entirely
+	// Disables Heavy Motor (left) when in normal mode
 	// 
-	BOOLEAN DisableBM;
+	BOOLEAN DisableLeft;
 
 	//
-	// Disable Small Motor (right) entirely
+	// Disables Light Motor (right) when in normal mode
 	// 
-	BOOLEAN DisableSM;
+	BOOLEAN DisableRight;
 
+	// Adjustments for heavy (left) motor rescaling
 	struct
 	{
-		BOOLEAN Enabled;
+		//
+		// Enables heavy rumble intensity rescaling if possible
+		//
+		BOOLEAN IsEnabled;
 
-		UCHAR MinValue;
+		//
+		// Desired new minimum range
+		//
+		UCHAR MinRange;
 
-		UCHAR MaxValue;
+		//
+		// Desired new maximum range
+		//
+		UCHAR MaxRange;
 
-		DOUBLE ConstA;
+	} HeavyRescaling;
 
-		DOUBLE ConstB;
 
-	} BMStrRescale;
-
+	//
+	// Alternative rumble mode user parameters
+	//
 	struct
 	{
-		BOOLEAN Enabled;
+		//
+		// Sets that alternative rumble mode should be enabled if possible
+		//
+		BOOLEAN IsEnabled;
 
-		UCHAR RescaleMinValue;
+		//
+		// Desired new minimun range when rescaling light rumble intensity
+		//
+		UCHAR MinRange;
 
-		UCHAR RescaleMaxValue;
+		//
+		// New maximum range desired when rescaling light rumble intensity
+		//
+		UCHAR MaxRange;
 
-		DOUBLE ConstA;
+		//
+		// Button combo for toggling alternative mode
+		//
+		DS_BUTTON_COMBO ToggleButtonCombo;
 
-		DOUBLE ConstB;
+		//
+		// Parameters used for the force activation of the right motor when in alternative rumble mode
+		// 
+		//
+		struct
+		{
+			//
+			// Enables the heavy rumble threshold
+			//
+			BOOLEAN IsHeavyThresholdEnabled;
 
-	} SMToBMConversion;
+			//
+			// Enables the light rumble threshold
+			//
+			BOOLEAN IsLightThresholdEnabled;
 
-	struct
-	{
-		BOOLEAN BMThresholdEnabled;
+			//
+			// Threshold received heavy rumble instructions must reach to force activate the right motor
+			//
+			UCHAR HeavyThreshold;
 
-		UCHAR BMThresholdValue;
+			//
+			// Threshold received light rumble instructions must reach to force activate the right motor
+			//
+			UCHAR LightThreshold;
 
-		BOOLEAN SMThresholdEnabled;
+		} ForcedRight;
 
-		UCHAR SMThresholdValue;
-
-	} ForcedSM;
-
+	} AlternativeMode;
 } DS_RUMBLE_SETTINGS, * PDS_RUMBLE_SETTINGS;
 
 //
@@ -390,16 +450,13 @@ typedef struct _DS_RUMBLE_SETTINGS
 // 
 typedef struct _DS_LED
 {
-	UCHAR Duration;
+	UCHAR TotalDuration;
 
-	UCHAR IntervalDuration;
+	USHORT BasePortionDuration;
 
-	UCHAR EnabledFlags;
+	UCHAR OffPortionMultiplier;
 
-	UCHAR IntervalPortionOff;
-
-	UCHAR IntervalPortionOn;
-
+	UCHAR OnPortionMultiplier;
 } DS_LED, * PDS_LED;
 
 //
@@ -431,9 +488,7 @@ typedef struct _DS_LED_SETTINGS
 		DS_LED Player3;
 
 		DS_LED Player4;
-
 	} CustomPatterns;
-
 } DS_LED_SETTINGS, * PDS_LED_SETTINGS;
 
 //
@@ -448,8 +503,7 @@ typedef struct _DS_FLIP_AXIS_SETTINGS
 	UCHAR RightX;
 
 	UCHAR RightY;
-	
-} DS_FLIP_AXIS_SETTINGS, *PDS_FLIP_AXIS_SETTINGS;
+} DS_FLIP_AXIS_SETTINGS, * PDS_FLIP_AXIS_SETTINGS;
 
 //
 // Per device dynamic configuration properties
@@ -479,11 +533,6 @@ typedef struct _DS_DRIVER_CONFIGURATION
 	UCHAR OutputRateControlPeriodMs;
 
 	//
-	// True if output deduplicator is enabled, false if not
-	// 
-	UCHAR IsOutputDeduplicatorEnabled;
-
-	//
 	// Idle disconnect period in milliseconds
 	// 
 	ULONG WirelessIdleTimeoutPeriodMs;
@@ -492,6 +541,11 @@ typedef struct _DS_DRIVER_CONFIGURATION
 	// If set, controller will never auto-disconnect on wireless
 	// 
 	BOOLEAN DisableWirelessIdleTimeout;
+
+	//
+	// Wireless disconnect button combo customizing
+	//
+	DS_BUTTON_COMBO WirelessDisconnectButtonCombo;
 
 	//
 	// Thumb stick specific settings
@@ -521,7 +575,6 @@ typedef struct _DS_DRIVER_CONFIGURATION
 		DS_PRESSURE_EXPOSURE_MODE PressureExposureMode;
 
 		DS_DPAD_EXPOSURE_MODE DPadExposureMode;
-
 	} SDF;
 
 	//
@@ -532,7 +585,5 @@ typedef struct _DS_DRIVER_CONFIGURATION
 		DS_PRESSURE_EXPOSURE_MODE PressureExposureMode;
 
 		DS_DPAD_EXPOSURE_MODE DPadExposureMode;
-
 	} GPJ;
-
 } DS_DRIVER_CONFIGURATION, * PDS_DRIVER_CONFIGURATION;

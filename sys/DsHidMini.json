@@ -6,6 +6,13 @@
     "OutputRateControlPeriodMs": 150,
     "IsOutputDeduplicatorEnabled": false,
     "WirelessIdleTimeoutPeriodMs": 300000,
+    "QuickDisconnectCombo": {
+      "IsEnabled": true,
+      "HoldTime": 1000,
+      "Button1": 16,
+      "Button2": 11,
+      "Button3": 10
+    },
     "SDF": {
       "PressureExposureMode": "Default",
       "DPadExposureMode": "Default",
@@ -18,23 +25,30 @@
         "PolarValue": 10.0
       },
       "RumbleSettings": {
-        "DisableBM": false,
-        "DisableSM": false,
-        "BMStrRescale": {
-          "Enabled": true,
-          "MinValue": 64,
-          "MaxValue": 255
+        "DisableLeft": false,
+        "DisableRight": false,
+        "HeavyRescale": {
+          "IsEnabled": true,
+          "RescaleMinRange": 64,
+          "RescaleMaxRange": 255
         },
-        "SMToBMConversion": {
-          "Enabled": false,
-          "RescaleMinValue": 0,
-          "RescaleMaxValue": 160
-        },
-        "ForcedSM": {
-          "BMThresholdEnabled": true,
-          "BMThresholdValue": 230,
-          "SMThresholdEnabled": false,
-          "SMThresholdValue": 230
+        "AlternativeMode": {
+          "IsEnabled": false,
+          "RescaleMinRange": 1,
+          "RescaleMaxRange": 110,
+          "ForcedRight": {
+            "IsHeavyThresholdEnabled": true,
+            "HeavyThreshold": 242,
+            "IsLightThresholdEnabled": false,
+            "LightThreshold": 242
+          },
+          "ToggleCombo": {
+            "IsEnabled": true,
+            "HoldTime": 1000,
+            "Button1": 16,
+            "Button2": 0,
+            "Button3": 0
+          }
         }
       },
       "LEDSettings": {
@@ -43,32 +57,28 @@
         "CustomPatterns": {
           "LEDFlags": 2,
           "Player1": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 255,
+            "BasePortionDuration": 1,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 1
           },
           "Player2": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           },
           "Player3": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           },
           "Player4": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           }
         }
       },
@@ -91,23 +101,30 @@
         "PolarValue": 10.0
       },
       "RumbleSettings": {
-        "DisableBM": false,
-        "DisableSM": false,
-        "BMStrRescale": {
-          "Enabled": true,
-          "MinValue": 64,
-          "MaxValue": 255
+        "DisableLeft": false,
+        "DisableRight": false,
+        "HeavyRescale": {
+          "IsEnabled": true,
+          "RescaleMinRange": 64,
+          "RescaleMaxRange": 255
         },
-        "SMToBMConversion": {
-          "Enabled": false,
-          "RescaleMinValue": 0,
-          "RescaleMaxValue": 160
-        },
-        "ForcedSM": {
-          "BMThresholdEnabled": true,
-          "BMThresholdValue": 230,
-          "SMThresholdEnabled": false,
-          "SMThresholdValue": 230
+        "AlternativeMode": {
+          "IsEnabled": false,
+          "RescaleMinRange": 1,
+          "RescaleMaxRange": 110,
+          "ForcedRight": {
+            "IsHeavyThresholdEnabled": true,
+            "HeavyThreshold": 242,
+            "IsLightThresholdEnabled": false,
+            "LightThreshold": 242
+          },
+          "ToggleCombo": {
+            "IsEnabled": true,
+            "HoldTime": 1000,
+            "Button1": 16,
+            "Button2": 0,
+            "Button3": 0
+          }
         }
       },
       "LEDSettings": {
@@ -115,32 +132,28 @@
         "CustomPatterns": {
           "LEDFlags": 2,
           "Player1": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 255,
+            "BasePortionDuration": 1,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 1
           },
           "Player2": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           },
           "Player3": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           },
           "Player4": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           }
         }
       }
@@ -155,23 +168,30 @@
         "PolarValue": 10.0
       },
       "RumbleSettings": {
-        "DisableBM": false,
-        "DisableSM": false,
-        "BMStrRescale": {
-          "Enabled": true,
-          "MinValue": 64,
-          "MaxValue": 255
+        "DisableLeft": false,
+        "DisableRight": false,
+        "HeavyRescale": {
+          "IsEnabled": true,
+          "RescaleMinRange": 64,
+          "RescaleMaxRange": 255
         },
-        "SMToBMConversion": {
-          "Enabled": false,
-          "RescaleMinValue": 0,
-          "RescaleMaxValue": 160
-        },
-        "ForcedSM": {
-          "BMThresholdEnabled": true,
-          "BMThresholdValue": 230,
-          "SMThresholdEnabled": false,
-          "SMThresholdValue": 230
+        "AlternativeMode": {
+          "IsEnabled": false,
+          "RescaleMinRange": 1,
+          "RescaleMaxRange": 110,
+          "ForcedRight": {
+            "IsHeavyThresholdEnabled": true,
+            "HeavyThreshold": 242,
+            "IsLightThresholdEnabled": false,
+            "LightThreshold": 242
+          },
+          "ToggleCombo": {
+            "IsEnabled": true,
+            "HoldTime": 1000,
+            "Button1": 16,
+            "Button2": 0,
+            "Button3": 0
+          }
         }
       },
       "LEDSettings": {
@@ -179,32 +199,28 @@
         "CustomPatterns": {
           "LEDFlags": 2,
           "Player1": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 255,
+            "BasePortionDuration": 1,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 1
           },
           "Player2": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           },
           "Player3": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           },
           "Player4": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           }
         }
       }
@@ -219,23 +235,30 @@
         "PolarValue": 10.0
       },
       "RumbleSettings": {
-        "DisableBM": false,
-        "DisableSM": false,
-        "BMStrRescale": {
-          "Enabled": true,
-          "MinValue": 64,
-          "MaxValue": 255
+        "DisableLeft": false,
+        "DisableRight": false,
+        "HeavyRescale": {
+          "IsEnabled": true,
+          "RescaleMinRange": 64,
+          "RescaleMaxRange": 255
         },
-        "SMToBMConversion": {
-          "Enabled": false,
-          "RescaleMinValue": 0,
-          "RescaleMaxValue": 160
-        },
-        "ForcedSM": {
-          "BMThresholdEnabled": true,
-          "BMThresholdValue": 230,
-          "SMThresholdEnabled": false,
-          "SMThresholdValue": 230
+        "AlternativeMode": {
+          "IsEnabled": false,
+          "RescaleMinRange": 1,
+          "RescaleMaxRange": 110,
+          "ForcedRight": {
+            "IsHeavyThresholdEnabled": true,
+            "HeavyThreshold": 242,
+            "IsLightThresholdEnabled": false,
+            "LightThreshold": 242
+          },
+          "ToggleCombo": {
+            "IsEnabled": true,
+            "HoldTime": 1000,
+            "Button1": 16,
+            "Button2": 0,
+            "Button3": 0
+          }
         }
       },
       "LEDSettings": {
@@ -243,32 +266,28 @@
         "CustomPatterns": {
           "LEDFlags": 2,
           "Player1": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 255,
+            "BasePortionDuration": 1,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 1
           },
           "Player2": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           },
           "Player3": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           },
           "Player4": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           }
         }
       }
@@ -283,23 +302,30 @@
         "PolarValue": 10.0
       },
       "RumbleSettings": {
-        "DisableBM": false,
-        "DisableSM": false,
-        "BMStrRescale": {
-          "Enabled": true,
-          "MinValue": 64,
-          "MaxValue": 255
+        "DisableLeft": false,
+        "DisableRight": false,
+        "HeavyRescale": {
+          "IsEnabled": true,
+          "RescaleMinRange": 64,
+          "RescaleMaxRange": 255
         },
-        "SMToBMConversion": {
-          "Enabled": false,
-          "RescaleMinValue": 1,
-          "RescaleMaxValue": 140
-        },
-        "ForcedSM": {
-          "BMThresholdEnabled": true,
-          "BMThresholdValue": 230,
-          "SMThresholdEnabled": false,
-          "SMThresholdValue": 230
+        "AlternativeMode": {
+          "IsEnabled": false,
+          "RescaleMinRange": 1,
+          "RescaleMaxRange": 110,
+          "ForcedRight": {
+            "IsHeavyThresholdEnabled": true,
+            "HeavyThreshold": 242,
+            "IsLightThresholdEnabled": false,
+            "LightThreshold": 242
+          },
+          "ToggleCombo": {
+            "IsEnabled": true,
+            "HoldTime": 1000,
+            "Button1": 16,
+            "Button2": 0,
+            "Button3": 0
+          }
         }
       },
       "LEDSettings": {
@@ -307,32 +333,28 @@
         "CustomPatterns": {
           "LEDFlags": 2,
           "Player1": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 255,
+            "BasePortionDuration": 1,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 1
           },
           "Player2": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           },
           "Player3": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           },
           "Player4": {
-            "Duration": 255,
-            "IntervalDuration": 255,
-            "EnabledFlags": 16,
-            "IntervalPortionOff": 0,
-            "IntervalPortionOn": 255
+            "TotalDuration": 0,
+            "BasePortionDuration": 0,
+            "OffPortionMultiplier": 0,
+            "OnPortionMultiplier": 0
           }
         }
       }

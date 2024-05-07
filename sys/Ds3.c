@@ -88,7 +88,8 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 	params.dwSize = sizeof(BLUETOOTH_FIND_RADIO_PARAMS);
 	info.dwSize = sizeof(BLUETOOTH_RADIO_INFO);
 
-	do {
+	do
+	{
 		//
 		// Grab first (active) radio
 		// 
@@ -100,11 +101,23 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 		if (!hFind)
 		{
 			error = GetLastError();
-			TraceError(
-				TRACE_DS3,
-				"BluetoothFindFirstRadio failed: 0x%X",
-				error
-			);
+
+			if (error == ERROR_NO_MORE_ITEMS)
+			{
+				TraceWarning(
+					TRACE_DS3,
+					"No active host radio found, can't pair device"
+				);
+			}
+			else
+			{
+				TraceError(
+					TRACE_DS3,
+					"BluetoothFindFirstRadio failed with error %!WINERROR!",
+					error
+				);
+			}
+
 			EventWritePairingNoRadioFound(pDevCtx->DeviceAddressString);
 			break;
 		}
@@ -122,7 +135,7 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 			error = ret;
 			TraceError(
 				TRACE_DS3,
-				"BluetoothGetRadioInfo failed: 0x%X",
+				"BluetoothGetRadioInfo failed with error %!WINERROR!",
 				error
 			);
 			EventWriteFailedWithWin32Error(__FUNCTION__, L"BluetoothGetRadioInfo", error);
@@ -138,10 +151,10 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 		// Don't issue request when addresses already match
 		// 
 		if (RtlCompareMemory(
-			&info.address.rgBytes[0],
-			&pDevCtx->HostAddress.Address[0],
-			sizeof(BD_ADDR)
-		) == sizeof(BD_ADDR)
+				&info.address.rgBytes[0],
+				&pDevCtx->HostAddress.Address[0],
+				sizeof(BD_ADDR)
+			) == sizeof(BD_ADDR)
 			)
 		{
 			TraceVerbose(
@@ -315,9 +328,9 @@ VOID DS3_SET_LED_DURATION(
 	PDEVICE_CONTEXT Context,
 	UCHAR LedIndex,
 	UCHAR TotalDuration,
-	UCHAR Interval,
-	UCHAR OffInterval,
-	UCHAR OnInterval
+	USHORT BasePortionDuration,
+	UCHAR OffPortionMultiplier,
+	UCHAR OnPortionMultiplier
 )
 {
 	if (LedIndex > 3)
@@ -335,9 +348,10 @@ VOID DS3_SET_LED_DURATION(
 	);
 
 	buffer[10 + (LedIndex * 5)] = TotalDuration;
-	buffer[11 + (LedIndex * 5)] = Interval;
-	buffer[13 + (LedIndex * 5)] = OffInterval;
-	buffer[14 + (LedIndex * 5)] = OnInterval;
+	buffer[11 + (LedIndex * 5)] = BasePortionDuration >> 8;
+	buffer[12 + (LedIndex * 5)] = BasePortionDuration & 0xFF;
+	buffer[13 + (LedIndex * 5)] = OffPortionMultiplier;
+	buffer[14 + (LedIndex * 5)] = OnPortionMultiplier;
 }
 
 //
@@ -349,9 +363,9 @@ VOID DS3_SET_LED_DURATION_DEFAULT(PDEVICE_CONTEXT Context, UCHAR LedIndex)
 		Context,
 		LedIndex,
 		0xFF, // Interval repeat never ends
-		0x27, // Interval duration
+		0x27, // BasePortionDuration
 		0x00, // No OFF-portion
-		0x32 // Default ON-portion
+		0x32 // Default ON-portion multiplier
 	);
 }
 
@@ -508,7 +522,7 @@ VOID DS3_SET_SMALL_RUMBLE_STRENGTH(
 	UCHAR Value
 )
 {
-	Context->MotorStrCache.Small = Value;
+	Context->RumbleControlState.LightCache = Value;
 	DS3_PROCESS_RUMBLE_STRENGTH(Context);
 }
 
@@ -544,7 +558,7 @@ VOID DS3_SET_LARGE_RUMBLE_STRENGTH(
 	UCHAR Value
 )
 {
-	Context->MotorStrCache.Big = Value;
+	Context->RumbleControlState.HeavyCache = Value;
 	DS3_PROCESS_RUMBLE_STRENGTH(Context);
 }
 
@@ -554,8 +568,8 @@ VOID DS3_SET_BOTH_RUMBLE_STRENGTH(
 	UCHAR SmallValue
 )
 {
-	Context->MotorStrCache.Small = SmallValue;
-	Context->MotorStrCache.Big = LargeValue;
+	Context->RumbleControlState.LightCache = SmallValue;
+	Context->RumbleControlState.HeavyCache = LargeValue;
 	DS3_PROCESS_RUMBLE_STRENGTH(Context);
 }
 
@@ -563,58 +577,65 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 	PDEVICE_CONTEXT Context
 )
 {
+	DS_RUMBLE_SETTINGS* rumbSet = &Context->Configuration.RumbleSettings;
 
-	DOUBLE LargeValue = Context->Configuration.RumbleSettings.DisableBM ? 0 : Context->MotorStrCache.Big;
-	DOUBLE SmallValue = Context->Configuration.RumbleSettings.DisableSM ? 0 : Context->MotorStrCache.Small;
+	DS_RESCALE_STATE* heavyResc = &Context->RumbleControlState.HeavyRescale;
+	DS_RESCALE_STATE* lightResc = &Context->RumbleControlState.AltMode.LightRescale;
 
-	if (
-		Context->Configuration.RumbleSettings.SMToBMConversion.Enabled
-		&& !Context->Configuration.RumbleSettings.DisableSM
-		&& !Context->Configuration.RumbleSettings.DisableBM
-		) {
+	// Get last received rumble values so they can be processed
+	DOUBLE heavyRumble = Context->RumbleControlState.HeavyCache;
+	DOUBLE lightRumble = Context->RumbleControlState.LightCache;
 
-		if (SmallValue > 0) {
+	// LINEAR RANGE RESCALLING
+	// 
+	// To rescale a value that exists in a range into a new range:
+	// newvalue = a * value + b
+	//
+	// a = (max'-min')/(max-min)
+	// b = max' - a * max
+	//
+	// In which max and min are the limits of the the original range
+	// For the DS3 rumble, it's max = 255 and min = 1 since 0 is not considered.
+	// 
+	// max' and min' are the limits of the new range
+	// 0 is not considered for the new range too regarding rumble
+	//
+	// constants a and b are calculated on configuration (re-)loading
 
-			// Small Motor Strength Rescale 
-			SmallValue = Context->Configuration.RumbleSettings.SMToBMConversion.ConstA * SmallValue
-				+ Context->Configuration.RumbleSettings.SMToBMConversion.ConstB;
+	if (Context->RumbleControlState.AltMode.IsEnabled && lightResc->IsAllowed)
+	{
+		if (lightRumble > 0) {
 
-			if (SmallValue > LargeValue) {
-				LargeValue = SmallValue;
-			}
-			SmallValue = 0; // Always disable Small Motor after the if statement above
-
-			// Force Activate Small Motor if original SMALL Motor Strength is above certain level and related boolean is enabled
-			if (
-				Context->Configuration.RumbleSettings.ForcedSM.SMThresholdEnabled
-				&& Context->MotorStrCache.Small >= Context->Configuration.RumbleSettings.ForcedSM.SMThresholdValue
-				)
+			// Light Motor Strength Rescale 
+			lightRumble = lightResc->ConstA * lightRumble + lightResc->ConstB;
+			if (lightRumble > heavyRumble)
 			{
-				SmallValue = 1;
+				heavyRumble = lightRumble;
 			}
-
+			lightRumble = 0; // Always disable Light Motor after the if statement above
 		}
 
-
-		// Force Activate Small Motor if original BIG Motor Strength is above certain level and related boolean is enabled
+		// Force Activate right motor if original heavy or light values are above their respective thresholds
 		if (
-			Context->Configuration.RumbleSettings.ForcedSM.BMThresholdEnabled
-			&& Context->MotorStrCache.Big >= Context->Configuration.RumbleSettings.ForcedSM.BMThresholdValue
+			(rumbSet->AlternativeMode.ForcedRight.IsHeavyThresholdEnabled && (Context->RumbleControlState.HeavyCache >= rumbSet->AlternativeMode.ForcedRight.HeavyThreshold))
+			||
+			(rumbSet->AlternativeMode.ForcedRight.IsLightThresholdEnabled && (Context->RumbleControlState.LightCache >= rumbSet->AlternativeMode.ForcedRight.LightThreshold))
 			)
 		{
-			SmallValue = 1;
+			lightRumble = 1;
 		}
-
+	}
+	else
+	{
+		if (rumbSet->DisableLeft) heavyRumble = 0;
+		if (rumbSet->DisableRight) lightRumble = 0;
 	}
 
-
-	// Big Motor Strength Rescale
-	if (Context->Configuration.RumbleSettings.BMStrRescale.Enabled && LargeValue > 0) {
-		LargeValue =
-			Context->Configuration.RumbleSettings.BMStrRescale.ConstA * LargeValue
-			+ Context->Configuration.RumbleSettings.BMStrRescale.ConstB;
+	// Heavy Motor Strength Rescale
+	if (heavyRumble > 0 && Context->RumbleControlState.HeavyRescaleEnabled && heavyResc->IsAllowed)
+	{
+		heavyRumble = heavyResc->ConstA * heavyRumble + heavyResc->ConstB;
 	}
-
 
 	switch (Context->ConnectionType)
 	{
@@ -624,12 +645,12 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 			(PUCHAR)WdfMemoryGetBuffer(
 				Context->OutputReportMemory,
 				NULL
-			), (UCHAR)LargeValue);
+			), (UCHAR)heavyRumble);
 		DS3_USB_SET_SMALL_RUMBLE_STRENGTH(
 			(PUCHAR)WdfMemoryGetBuffer(
 				Context->OutputReportMemory,
 				NULL
-			), (UCHAR)SmallValue);
+			), (UCHAR)lightRumble);
 		break;
 
 	case DsDeviceConnectionTypeBth:
@@ -638,12 +659,12 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 			(PUCHAR)WdfMemoryGetBuffer(
 				Context->OutputReportMemory,
 				NULL
-			), (UCHAR)LargeValue);
+			), (UCHAR)heavyRumble);
 		DS3_BTH_SET_SMALL_RUMBLE_STRENGTH(
 			(PUCHAR)WdfMemoryGetBuffer(
 				Context->OutputReportMemory,
 				NULL
-			), (UCHAR)SmallValue);
+			), (UCHAR)lightRumble);
 		break;
 	}
 
