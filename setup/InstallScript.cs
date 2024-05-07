@@ -15,23 +15,33 @@ internal class InstallScript
 {
     private static void Main()
     {
-        Project project = new("DsHidMini",
+        ManagedProject project = new("DsHidMini",
             new Dir(@"%ProgramFiles%\Nefarius Software Solutions\DsHidMini",
                 new File("InstallScript.cs") /* TODO: dummy demo file, remove */),
             new ManagedAction(CustomActions.InstallDrivers, Return.check,
                 When.After,
                 Step.InstallInitialize,
-                Condition.NOT_Installed));
+                Condition.NOT_Installed)
+        );
 
         project.GUID = new Guid("6fe30b47-2577-43ad-9095-1861ba25889b");
         project.LicenceFile = "EULA.rtf";
         // embed types of Nefarius.Utilities.DeviceManagement
         project.DefaultRefAssemblies.Add(typeof(Devcon).Assembly.Location);
+        project.AfterInstall += ProjectOnAfterInstall;
 
         //project.SourceBaseDir = "<input dir path>";
         //project.OutDir = "<output dir path>";
 
         project.BuildMsi();
+    }
+
+    private static void ProjectOnAfterInstall(SetupEventArgs e)
+    {
+        if (e.IsUninstalling)
+        {
+            CustomActions.UninstallDrivers();
+        }
     }
 }
 
@@ -56,7 +66,7 @@ public static class CustomActions
     [CustomAction]
     public static ActionResult InstallDrivers(Session session)
     {
-        bool rebootRequired = RemoveDrivers();
+        bool rebootRequired = UninstallDrivers();
 
         // TODO: implement me!
 
@@ -67,17 +77,7 @@ public static class CustomActions
         return ActionResult.Success;
     }
 
-    [CustomAction]
-    public static ActionResult UninstallDrivers(Session session)
-    {
-        session.SetMode(InstallRunMode.RebootAtEnd, RemoveDrivers());
-
-        Devcon.Refresh();
-
-        return ActionResult.Success;
-    }
-
-    private static bool RemoveDrivers()
+    public static bool UninstallDrivers()
     {
         List<string> allDriverPackages = DriverStore.ExistingDrivers.ToList();
 
