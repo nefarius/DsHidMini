@@ -22,7 +22,7 @@ internal class InstallScript
                 Condition.NOT_Installed));
 
         project.GUID = new Guid("6fe30b47-2577-43ad-9095-1861ba25889b");
-
+        project.LicenceFile = "DsHidMini.licence.rtf";
         project.DefaultRefAssemblies.Add(typeof(Devcon).Assembly.Location);
 
         //project.SourceBaseDir = "<input dir path>";
