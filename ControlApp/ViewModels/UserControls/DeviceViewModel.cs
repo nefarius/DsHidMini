@@ -439,6 +439,24 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
             Log.Logger.Information($"User instructed {(IsWireless ? "wireless" : "wired")} device '{DeviceAddress}' to restart/disconnect.");
             _appSnackbarMessagesService.ShowPowerCyclingDeviceMessage(IsWireless, Main.IsAdministrator(), reconnectionResult);
         }
+
+        [RelayCommand]
+        private void TriggerPairingOnHotReload()
+        {
+            deviceUserData.BluetoothPairingMode = (BluetoothPairingMode)PairingMode;
+            var formattedCustomMacAddress = Regex.Replace(CustomPairingAddress, @"[^a-fA-F0-9]", "").ToUpper();
+            if (formattedCustomMacAddress.Length > 12)
+            {
+                formattedCustomMacAddress = formattedCustomMacAddress.Substring(0, 12);
+            }
+            deviceUserData.PairingAddress = formattedCustomMacAddress;
+
+            deviceUserData.PairOnHotReload = true;
+            _dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile();
+            Thread.Sleep(3000);
+            deviceUserData.PairOnHotReload = false;
+            _dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile();
+        }
     }
 
 }
