@@ -266,6 +266,11 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         }
 
         /// <summary>
+        /// True if last host request was sucessful
+        /// </summary>
+        public bool WasLastHostRequestSuccessful => _device.GetProperty<int>(DsHidMiniDriver.LastHostRequestStatusProperty) == 0;
+
+        /// <summary>
         ///     Representation of genuine status of device
         /// </summary>
         //public SymbolRegular GenuineIcon
