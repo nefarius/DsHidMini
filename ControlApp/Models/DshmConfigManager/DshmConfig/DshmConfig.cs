@@ -18,6 +18,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig
         public bool? DisableAutoPairing { get; set; }
 
         public DevicePairingMode? DevicePairingMode { get; set; }
+        public bool? PairOnHotReload { get; set; } // = false;
         public string? CustomPairingAddress { get; set; }
         public bool? DisableWirelessIdleTimeout { get; set; }// = false;
         public bool? IsOutputRateControlEnabled { get; set; }// = true;
