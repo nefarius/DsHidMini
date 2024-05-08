@@ -17,6 +17,7 @@ using Serilog;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 using System.Text.RegularExpressions;
+using Wpf.Ui.Extensions;
 
 namespace Nefarius.DsHidMini.ControlApp.ViewModels
 {
