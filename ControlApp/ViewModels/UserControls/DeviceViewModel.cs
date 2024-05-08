@@ -26,6 +26,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
 
         private readonly DshmConfigManager _dshmConfigManager;
         private readonly AppSnackbarMessagesService _appSnackbarMessagesService;
+        private readonly IContentDialogService _contentDialogService;
         private readonly PnPDevice _device;
         private readonly DshmDevMan _dshmDevMan;
         private readonly Timer _batteryQuery;
@@ -339,13 +340,14 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
 
         // ------------------------------------------------------ CONSTRUCTOR
 
-        internal DeviceViewModel(PnPDevice device, DshmDevMan dshmDevMan, DshmConfigManager dshmConfigManager, AppSnackbarMessagesService appSnackbarMessagesService)
+        internal DeviceViewModel(PnPDevice device, DshmDevMan dshmDevMan, DshmConfigManager dshmConfigManager, AppSnackbarMessagesService appSnackbarMessagesService, IContentDialogService contentDialogService)
         {
             _device = device;
             Log.Logger.Debug($"Creating Device ViewModel for device '{DeviceAddress}'");
             _dshmDevMan = dshmDevMan;
             _dshmConfigManager = dshmConfigManager;
             _appSnackbarMessagesService = appSnackbarMessagesService;
+            _contentDialogService = contentDialogService;
             _batteryQuery = new Timer(UpdateBatteryStatus, null, 10000, 10000);
             deviceUserData = _dshmConfigManager.GetDeviceData(DeviceAddress);
             // Loads correspondent controller data based on controller's MAC address 
