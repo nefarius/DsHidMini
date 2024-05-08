@@ -449,7 +449,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
         }
 
         [RelayCommand]
-        private void TriggerPairingOnHotReload()
+        private async void TriggerPairingOnHotReload()
         {
             deviceUserData.BluetoothPairingMode = (BluetoothPairingMode)PairingMode;
             var formattedCustomMacAddress = Regex.Replace(CustomPairingAddress, @"[^a-fA-F0-9]", "").ToUpper();
@@ -461,9 +461,27 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
 
             deviceUserData.PairOnHotReload = true;
             _dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile();
-            Thread.Sleep(3000);
+            await ShowPairingDialog();
             deviceUserData.PairOnHotReload = false;
             _dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile();
+            this.OnPropertyChanged(nameof(HostAddress));
+            this.OnPropertyChanged(nameof(LastPairingStatusIcon));
+        }
+
+        private async Task ShowPairingDialog()
+        {
+            var result = await _contentDialogService.ShowSimpleDialogAsync(
+                new SimpleContentDialogCreateOptions()
+                {
+                    Title = "Manual pairing triggered",
+                    Content = @"Pairing was requested.
+
+Wait 2 or 5 seconds before hitting ok to check for results.",
+                    //PrimaryButtonText = "Ok",
+                    //SecondaryButtonText = "Don't Save",
+                    CloseButtonText = "OK",
+                }
+            );
         }
     }
 
