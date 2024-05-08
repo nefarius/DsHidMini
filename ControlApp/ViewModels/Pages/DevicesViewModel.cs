@@ -174,7 +174,7 @@ Reconnect the pending devices to make this change effective.",
                 Devices.Clear();
                 foreach (PnPDevice device in _dshmDevMan.Devices)
                 {
-                    Devices.Add(new DeviceViewModel(device, _dshmDevMan, _dshmConfigManager, _appSnackbarMessagesService));
+                    Devices.Add(new DeviceViewModel(device, _dshmDevMan, _dshmConfigManager, _appSnackbarMessagesService, _contentDialogService));
                 }
             }));
         }
