@@ -190,7 +190,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels
             }
             set
             {
-                var formattedCustomMacAddress = Regex.Replace(value, @"[^a-fA-F0-9]", "").ToUpper();
+                var formattedCustomMacAddress = Regex.Replace(value, @"[^a-fA-F0-9]", string.Empty).ToUpper();
                 if (formattedCustomMacAddress.Length > 12)
                 {
                     formattedCustomMacAddress = formattedCustomMacAddress.Substring(0, 12);
