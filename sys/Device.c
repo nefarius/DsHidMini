@@ -731,7 +731,7 @@ DsDevice_HotReloadEventCallback(
 			&& pDevCtx->Configuration.DevicePairingMode != DsDevicePairingModeDisabled)
 		{
 			WDFDEVICE wdfDev = DMF_ParentDeviceGet(pDevCtx->DsHidMiniModule);
-			DsUsb_Ds3PairToHost(wdfDev);
+			DsUsb_Ds3PairToNewHost(wdfDev);
 			DsUsb_Ds3RequestHostAddress(wdfDev);
 		}
 
