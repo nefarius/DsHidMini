@@ -443,14 +443,6 @@ NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 				status);
 			break;
 		}
-
-		//
-		// Update in device context after success
-		// 
-		RtlCopyMemory(&pDevCtx->HostAddress, &newHostAddress, sizeof(BD_ADDR));
-
-		EventWritePairedSuccessfully(pDevCtx->DeviceAddressString);
-
 	} while (FALSE);
 
 	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RO_LastPairingStatus);
