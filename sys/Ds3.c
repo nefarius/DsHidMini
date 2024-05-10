@@ -42,7 +42,7 @@ const UCHAR G_Ds3BthHidOutputReport[] = {
 NTSTATUS DsUsb_Ds3RequestHostAddress(WDFDEVICE Device)
 {
 	NTSTATUS status;
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 	UCHAR controlTransferBuffer[CONTROL_TRANSFER_BUFFER_LENGTH];
 	WDF_DEVICE_PROPERTY_DATA propertyData;
 	UINT64 hostAddress;
@@ -368,7 +368,7 @@ NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 {
 	NTSTATUS status = STATUS_UNSUCCESSFUL;
 	WDF_DEVICE_PROPERTY_DATA propertyData;
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 	BD_ADDR newHostAddress = { 0 };
 
 	FuncEntry(TRACE_DS3);
