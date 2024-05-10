@@ -426,7 +426,7 @@ NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 			) == sizeof(BD_ADDR)
 			)
 		{
-			TraceVerbose(
+			TraceInformation(
 				TRACE_DS3,
 				"Device's current host address equals desired new address, skipping"
 			);
