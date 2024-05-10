@@ -80,11 +80,12 @@ NTSTATUS DsUsb_Ds3RequestHostAddress(WDFDEVICE Device)
 		);
 		EventWriteFailedWithNTStatus(__FUNCTION__, L"Requesting host address", status);
 
-		UCHAR unkownHostAddress[6] = { 0,0,0,0,0,0 };
+		const BD_ADDR zeroAddress = { 0 };
 		RtlCopyMemory(
 			&pDevCtx->HostAddress,
-			&unkownHostAddress[0],
-			sizeof(BD_ADDR));
+			&zeroAddress,
+			sizeof(BD_ADDR)
+		);
 	}
 
 	//
