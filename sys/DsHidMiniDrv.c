@@ -335,6 +335,7 @@ DMF_DsHidMini_Open(
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb && pDevCtx->Configuration.DevicePairingMode != DsDevicePairingModeDisabled)
 	{
 		DsUsb_Ds3PairToNewHost(device);
+		DsUsb_Ds3RequestHostAddress(device);
 	}
 
 	//
