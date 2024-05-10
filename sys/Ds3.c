@@ -405,6 +405,11 @@ NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 		//
 		if (pDevCtx->Configuration.DevicePairingMode == DsDevicePairingModeCustom)
 		{
+			TraceInformation(
+				TRACE_DS3,
+				"Pairing device to user defined MAC address"
+			);
+
 			for (int i = 0; i < sizeof(BD_ADDR); i++)
 			{
 				newHostAddress[i] = pDevCtx->Configuration.CustomHostAddress[i];
