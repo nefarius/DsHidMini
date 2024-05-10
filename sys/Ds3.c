@@ -185,22 +185,22 @@ NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context)
 //
 // Sends a pairing request to the device, stores result status in property
 // 
-NTSTATUS DsUsb_Ds3SendPairingRequest(WDFDEVICE Device, UCHAR newHostAddress[6])
+NTSTATUS DsUsb_Ds3SendPairingRequest(WDFDEVICE Device, BD_ADDR NewHostAddress)
 {
 	NTSTATUS status = STATUS_UNSUCCESSFUL;
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 
 	FuncEntry(TRACE_DS3);
 
 	TraceInformation(
 		TRACE_DS3,
 		"Sending pairing request with new host address defined as %02X:%02X:%02X:%02X:%02X:%02X",
-		newHostAddress[0],
-		newHostAddress[1],
-		newHostAddress[2],
-		newHostAddress[3],
-		newHostAddress[4],
-		newHostAddress[5]
+		NewHostAddress.Address[0],
+		NewHostAddress.Address[1],
+		NewHostAddress.Address[2],
+		NewHostAddress.Address[3],
+		NewHostAddress.Address[4],
+		NewHostAddress.Address[5]
 	);
 
 	UCHAR controlBuffer[SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH];
@@ -212,7 +212,7 @@ NTSTATUS DsUsb_Ds3SendPairingRequest(WDFDEVICE Device, UCHAR newHostAddress[6])
 
 	RtlCopyMemory(
 		&controlBuffer[2],
-		newHostAddress,
+		&NewHostAddress,
 		sizeof(BD_ADDR)
 	);
 
@@ -247,7 +247,7 @@ NTSTATUS DsUsb_Ds3SendPairingRequest(WDFDEVICE Device, UCHAR newHostAddress[6])
 //
 // Pairs DS3 to current BT host or to user defined host address, depending on current pairing mode
 // 
-NTSTATUS DS3_GetActiveRadioAddress(BYTE buffer[6])
+NTSTATUS DS3_GetActiveRadioAddress(BD_ADDR* Address)
 {
 	NTSTATUS status = STATUS_UNSUCCESSFUL;
 	HANDLE hRadio = NULL;
@@ -291,8 +291,7 @@ NTSTATUS DS3_GetActiveRadioAddress(BYTE buffer[6])
 					error
 				);
 			}
-
-			//EventWritePairingNoRadioFound(pDevCtx->DeviceAddressString);
+			
 			break;
 		}
 
@@ -319,7 +318,7 @@ NTSTATUS DS3_GetActiveRadioAddress(BYTE buffer[6])
 		// Copy and reverse to match expected format/order
 		for (int i = 0; i < sizeof(BD_ADDR); i++)
 		{
-			buffer[sizeof(BD_ADDR) - 1 - i] = info.address.rgBytes[i];
+			Address->Address[sizeof(BD_ADDR) - 1 - i] = info.address.rgBytes[i];
 		}
 
 		status = STATUS_SUCCESS;
@@ -368,7 +367,7 @@ NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 	NTSTATUS status = STATUS_UNSUCCESSFUL;
 	WDF_DEVICE_PROPERTY_DATA propertyData;
 	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
-	UCHAR newHostAddress[6] = {0,0,0,0,0,0};
+	BD_ADDR newHostAddress = { 0 };
 
 	FuncEntry(TRACE_DS3);
 
@@ -391,7 +390,7 @@ NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 				"Pairing device to active radio host address"
 			);
 
-			if (!NT_SUCCESS(DS3_GetActiveRadioAddress(newHostAddress)))
+			if (!NT_SUCCESS(DS3_GetActiveRadioAddress(&newHostAddress)))
 			{
 				TraceError(
 					TRACE_DS3,
@@ -413,7 +412,7 @@ NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 
 			for (int i = 0; i < sizeof(BD_ADDR); i++)
 			{
-				newHostAddress[i] = pDevCtx->Configuration.CustomHostAddress[i];
+				newHostAddress.Address[i] = pDevCtx->Configuration.CustomHostAddress[i];
 			}
 		}
 
@@ -421,7 +420,7 @@ NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 		// Don't issue request when addresses already match
 		// 
 		if (RtlCompareMemory(
-				&newHostAddress[0],
+				&newHostAddress,
 				&pDevCtx->HostAddress.Address[0],
 				sizeof(BD_ADDR)
 			) == sizeof(BD_ADDR)
@@ -441,12 +440,13 @@ NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 		//
 		// Send pairing request
 		//
-		if (status = DsUsb_Ds3SendPairingRequest(Device, newHostAddress))
+		if (!NT_SUCCESS(status = DsUsb_Ds3SendPairingRequest(Device, newHostAddress)))
 		{
 			TraceError(
 				TRACE_DS3,
 				"DsUsb_Ds3SendPairingRequest failed with status %!STATUS!",
-				status);
+				status
+			);
 			break;
 		}
 

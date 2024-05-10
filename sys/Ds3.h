@@ -143,9 +143,9 @@ typedef enum
 
 NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context);
 
-NTSTATUS DsUsb_Ds3SendPairingRequest(WDFDEVICE Device, UCHAR newHostAddress[6]);
+NTSTATUS DsUsb_Ds3SendPairingRequest(WDFDEVICE Device, BD_ADDR NewHostAddress);
 
-NTSTATUS DS3_GetActiveRadioAddress(BYTE buffer[6]);
+NTSTATUS DS3_GetActiveRadioAddress(BD_ADDR* Address);
 
 NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device);
 
