@@ -463,6 +463,15 @@ NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 		&status
 	);
 
+	if (!NT_SUCCESS(status))
+	{
+		TraceError(
+			TRACE_DS3,
+			"Setting DEVPKEY_DsHidMini_RO_LastPairingStatus failed with status %!STATUS!",
+			status
+		);
+	}
+
 	FuncExit(TRACE_DS3, "status=%!STATUS!", status);
 
 	return status;
