@@ -298,9 +298,9 @@ NTSTATUS DS3_GetActiveRadioAddress(BYTE buffer[6])
 }
 
 //
-// Auto-pair this device to first found host radio.
+// Pairs DS3 to current BT host or to user defined host address, depending on current pairing mode
 // 
-NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
+NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 {
 	NTSTATUS status = STATUS_UNSUCCESSFUL;
 	WDF_DEVICE_PROPERTY_DATA propertyData;

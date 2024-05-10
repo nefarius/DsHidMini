@@ -628,16 +628,16 @@ NTSTATUS DsUsb_PrepareHardware(WDFDEVICE Device)
 			//
 			// Auto-pair to first found radio
 			// 
-			status = DsUsb_Ds3PairToFirstRadio(Device);
+			status = DsUsb_Ds3PairToNewHost(Device);
 
 			if (!NT_SUCCESS(status))
 			{
 				TraceError(
 					TRACE_DSUSB,
-					"DsUsb_Ds3PairToFirstRadio failed with status %!STATUS!",
+					"DsUsb_Ds3PairToNewHost failed with status %!STATUS!",
 					status
 				);
-				EventWriteFailedWithNTStatus(__FUNCTION__, L"DsUsb_Ds3PairToFirstRadio", status);
+				EventWriteFailedWithNTStatus(__FUNCTION__, L"DsUsb_Ds3PairToNewHost", status);
 			}
 		}
 		else
