@@ -148,3 +148,5 @@ NTSTATUS DS3_GetActiveRadioAddress(BYTE buffer[6]);
 NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device);
 
 NTSTATUS DsBth_Ds3Init(PDEVICE_CONTEXT Context);
+
+NTSTATUS DsUsb_Ds3RequestHostAddress(WDFDEVICE Device);
