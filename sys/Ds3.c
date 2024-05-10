@@ -63,10 +63,17 @@ NTSTATUS DsUsb_Ds3RequestHostAddress(WDFDEVICE Device)
 		CONTROL_TRANSFER_BUFFER_LENGTH
 	)))
 	{
+		/*
+		 * NOTE: the first byte is 0x01 followed by a 0x00 and then
+		 * the host radio MAC address the device is currently paired to.
+		 * The remaining ~36 bytes also contain data but we do not know
+		 * what it stands for by the time of writing. Help pls!
+		 */
 		RtlCopyMemory(
 			&pDevCtx->HostAddress,
 			&controlTransferBuffer[2],
-			sizeof(BD_ADDR));
+			sizeof(BD_ADDR)
+		);
 	}
 	else
 	{
