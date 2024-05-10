@@ -69,9 +69,9 @@ NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context)
 }
 
 //
-// Auto-pair this device to first found host radio.
+// Pairs DS3 to current BT host or to user defined host address, depending on current pairing mode
 // 
-NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
+NTSTATUS DS3_GetActiveRadioAddress(BYTE buffer[6])
 {
 	NTSTATUS status = STATUS_UNSUCCESSFUL;
 	HANDLE hRadio = NULL;
@@ -80,14 +80,121 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 	BLUETOOTH_RADIO_INFO info;
 	DWORD ret;
 	DWORD error = ERROR_SUCCESS;
+
+	params.dwSize = sizeof(BLUETOOTH_FIND_RADIO_PARAMS);
+	info.dwSize = sizeof(BLUETOOTH_RADIO_INFO);
+
+	FuncEntry(TRACE_DS3);
+
+	do
+	{
+		//
+		// Grab first (active) radio
+		// 
+		hFind = BluetoothFindFirstRadio(
+			&params,
+			&hRadio
+		);
+
+		if (!hFind)
+		{
+			error = GetLastError();
+
+			if (error == ERROR_NO_MORE_ITEMS)
+			{
+				TraceWarning(
+					TRACE_DS3,
+					"No active host radio found."
+				);
+			}
+			else
+			{
+				TraceError(
+					TRACE_DS3,
+					"BluetoothFindFirstRadio failed with error %!WINERROR!",
+					error
+				);
+			}
+
+			//EventWritePairingNoRadioFound(pDevCtx->DeviceAddressString);
+			break;
+		}
+
+		//
+		// Get radio info (address)
+		// 
+		ret = BluetoothGetRadioInfo(
+			hRadio,
+			&info
+		);
+
+		if (ERROR_SUCCESS != ret)
+		{
+			error = ret;
+			TraceError(
+				TRACE_DS3,
+				"BluetoothGetRadioInfo failed with error %!WINERROR!",
+				error
+			);
+			EventWriteFailedWithWin32Error(__FUNCTION__, L"BluetoothGetRadioInfo", error);
+			break;
+		}
+
+		// Copy and reverse to match expected format/order
+		for (int i = 0; i < sizeof(BD_ADDR); i++)
+		{
+			buffer[sizeof(BD_ADDR) - 1 - i] = info.address.rgBytes[i];
+		}
+
+		status = STATUS_SUCCESS;
+
+	} while (FALSE);
+
+	//
+	// Translate Win32 error codes to NTSTATUS
+	// 
+	if (!NT_SUCCESS(status))
+	{
+		switch (error)
+		{
+		case ERROR_NO_MORE_ITEMS:
+			status = STATUS_NO_MORE_ENTRIES;
+			break;
+		case ERROR_INVALID_PARAMETER:
+			status = STATUS_INVALID_PARAMETER;
+			break;
+		case ERROR_REVISION_MISMATCH:
+			status = STATUS_REVISION_MISMATCH;
+			break;
+		case ERROR_OUTOFMEMORY:
+			status = STATUS_SECTION_NOT_EXTENDED;
+			break;
+		default:
+			break;
+		}
+	}
+
+	if (hRadio)
+		CloseHandle(hRadio);
+	if (hFind)
+		BluetoothFindRadioClose(hFind);
+
+	FuncExit(TRACE_DS3, "status=%!STATUS!", status);
+
+	return status;
+}
+
+//
+// Auto-pair this device to first found host radio.
+// 
+NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
+{
+	NTSTATUS status = STATUS_UNSUCCESSFUL;
 	WDF_DEVICE_PROPERTY_DATA propertyData;
 	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 	UCHAR newHostAddress[6] = {0,0,0,0,0,0};
 
 	FuncEntry(TRACE_DS3);
-
-	params.dwSize = sizeof(BLUETOOTH_FIND_RADIO_PARAMS);
-	info.dwSize = sizeof(BLUETOOTH_RADIO_INFO);
 
 	do
 	{
@@ -108,62 +215,13 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 				"Pairing device to active radio host address"
 			);
 
-			//
-			// Grab first (active) radio
-			// 
-			hFind = BluetoothFindFirstRadio(
-				&params,
-				&hRadio
-			);
-
-			if (!hFind)
+			if (!NT_SUCCESS(DS3_GetActiveRadioAddress(newHostAddress)))
 			{
-				error = GetLastError();
-
-				if (error == ERROR_NO_MORE_ITEMS)
-				{
-					TraceWarning(
-						TRACE_DS3,
-						"No active host radio found, can't pair device"
-					);
-				}
-				else
-				{
-					TraceError(
-						TRACE_DS3,
-						"BluetoothFindFirstRadio failed with error %!WINERROR!",
-						error
-					);
-				}
-
-				EventWritePairingNoRadioFound(pDevCtx->DeviceAddressString);
-				break;
-			}
-
-			//
-			// Get radio info (address)
-			// 
-			ret = BluetoothGetRadioInfo(
-				hRadio,
-				&info
-			);
-
-			if (ERROR_SUCCESS != ret)
-			{
-				error = ret;
 				TraceError(
 					TRACE_DS3,
-					"BluetoothGetRadioInfo failed with error %!WINERROR!",
-					error
+					"Failed to get active radio host address"
 				);
-				EventWriteFailedWithWin32Error(__FUNCTION__, L"BluetoothGetRadioInfo", error);
 				break;
-			}
-
-			// Copy and reverse to match expected format/order
-			for (int i = 0; i < sizeof(BD_ADDR); i++)
-			{
-				newHostAddress[sizeof(BD_ADDR) -1 - i] = info.address.rgBytes[i];
 			}
 		}
 
@@ -260,35 +318,6 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 		EventWritePairedSuccessfully(pDevCtx->DeviceAddressString);
 
 	} while (FALSE);
-
-	if (hRadio)
-		CloseHandle(hRadio);
-	if (hFind)
-		BluetoothFindRadioClose(hFind);
-
-	//
-	// Translate Win32 error codes to NTSTATUS
-	// 
-	if (!NT_SUCCESS(status))
-	{
-		switch (error)
-		{
-		case ERROR_NO_MORE_ITEMS:
-			status = STATUS_NO_MORE_ENTRIES;
-			break;
-		case ERROR_INVALID_PARAMETER:
-			status = STATUS_INVALID_PARAMETER;
-			break;
-		case ERROR_REVISION_MISMATCH:
-			status = STATUS_REVISION_MISMATCH;
-			break;
-		case ERROR_OUTOFMEMORY:
-			status = STATUS_SECTION_NOT_EXTENDED;
-			break;
-		default:
-			break;
-		}
-	}
 
 	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RO_LastPairingStatus);
 	propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
