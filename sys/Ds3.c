@@ -443,6 +443,9 @@ NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 				status);
 			break;
 		}
+
+		status = STATUS_SUCCESS;
+
 	} while (FALSE);
 
 	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RO_LastPairingStatus);
