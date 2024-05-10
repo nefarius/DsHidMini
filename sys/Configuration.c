@@ -484,12 +484,6 @@ static void ConfigNodeParse(
 			pCfg->HidDeviceMode = HID_DEVICE_MODE_FROM_NAME(cJSON_GetStringValue(pNode));
 			EventWriteOverrideSettingUInt(ParentNode->string, "HidDeviceMode", pCfg->HidDeviceMode);
 		}
-
-		if ((pNode = cJSON_GetObjectItem(ParentNode, "DisableAutoPairing")))
-		{
-			pCfg->DisableAutoPairing = (BOOLEAN)cJSON_IsTrue(pNode);
-			EventWriteOverrideSettingUInt(ParentNode->string, "DisableAutoPairing", pCfg->DisableAutoPairing);
-		}
 	}
 
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "DevicePairingMode")))
@@ -996,7 +990,6 @@ ConfigSetDefaults(
 	// 
 
 	Config->HidDeviceMode = DsHidMiniDeviceModeXInputHIDCompatible;
-	Config->DisableAutoPairing = FALSE;
 	Config->DevicePairingMode = DsDevicePairingModeAuto;
 	Config->PairOnHotReload = FALSE;
 	for (int i = 0; i < 6; i++)

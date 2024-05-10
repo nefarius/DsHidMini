@@ -1,7 +1,6 @@
 {
   "Global": {
     "HidDeviceMode": "DS4Windows",
-    "DisableAutoPairing": false,
     "IsOutputRateControlEnabled": true,
     "OutputRateControlPeriodMs": 150,
     "IsOutputDeduplicatorEnabled": false,

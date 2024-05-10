@@ -561,12 +561,6 @@ typedef struct _DS_DRIVER_CONFIGURATION
 	BOOLEAN PairOnHotReload;
 
 	//
-	// When set, pairing will not be attempted on device boot
-	// Can't be altered at runtime
-	// 
-	BOOLEAN DisableAutoPairing;
-
-	//
 	// True if output rate control is enabled, false if not
 	// 
 	BOOLEAN IsOutputRateControlEnabled;
