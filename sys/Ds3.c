@@ -203,13 +203,8 @@ NTSTATUS DsUsb_Ds3SendPairingRequest(WDFDEVICE Device, BD_ADDR NewHostAddress)
 		NewHostAddress.Address[5]
 	);
 
-	UCHAR controlBuffer[SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH];
-
-	RtlZeroMemory(
-		controlBuffer,
-		SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH
-	);
-
+	UCHAR controlBuffer[SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH] = { 0x01, 0x00 };
+	
 	RtlCopyMemory(
 		&controlBuffer[2],
 		&NewHostAddress,
