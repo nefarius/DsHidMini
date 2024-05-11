@@ -129,7 +129,7 @@ static void SetDeviceDisconnected(DWORD UserIndex)
 
 	state->isConnected = false;
 	state->packetNumber = 0;
-	memset(&state->lastReport, 0, sizeof(DS3_RAW_INPUT_REPORT));
+	RtlZeroMemory(&state->lastReport, sizeof(DS3_RAW_INPUT_REPORT));
 
 	if (state->deviceHandle)
 	{
