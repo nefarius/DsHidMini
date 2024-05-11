@@ -6,8 +6,15 @@
 // Windows Header Files
 #include <Windows.h>
 
+//
+// Driver-shared types
+// 
 #include <DsHidMini/ScpTypes.h>
 #include <DsHidMini/Ds3Types.h>
+
+//
+// HIDAPI
+// 
 #include <hidapi/hidapi.h>
 
 //
