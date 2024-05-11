@@ -566,7 +566,6 @@ XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
 		{
 		case 0:
 			outputReport.led_enabled = 0b00000010;
-
 			break;
 		case 1:
 			outputReport.led_enabled = 0b00000100;
