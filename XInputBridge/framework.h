@@ -1,14 +1,4 @@
-// header.h : include file for standard system include files,
-// or project specific include files
-//
-
 #pragma once
-
-/*
- * Uncomment to enable building with OpenTelemetry to allow recording performance traces
- * The library size will get inflated quite a bit as it gets statically linked in
- */
-//#define SCPLIB_ENABLE_TELEMETRY
 
 #define _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
 #define NOMINMAX
