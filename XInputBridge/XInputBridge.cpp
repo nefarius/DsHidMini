@@ -81,7 +81,7 @@ struct ds3_output_report
 
 #pragma region Utility functions
 
-SHORT ScaleDsToXi(UCHAR value, BOOLEAN invert)
+static SHORT ScaleDsToXi(UCHAR value, BOOLEAN invert)
 {
 	auto intValue = value - 0x80;
 	if (intValue == -128) intValue = -127;
@@ -91,14 +91,14 @@ SHORT ScaleDsToXi(UCHAR value, BOOLEAN invert)
 	return static_cast<short>(invert ? -wtfValue : wtfValue);
 }
 
-float ClampAxis(float value)
+static float ClampAxis(float value)
 {
 	if (value > 1.0f) return 1.0f;
 	if (value < -1.0f) return -1.0f;
 	return value;
 }
 
-float ToAxis(UCHAR value)
+static float ToAxis(UCHAR value)
 {
 	return ClampAxis((((value & 0xFF) - 0x7F) * 2) / 254.0f);
 }
@@ -106,14 +106,17 @@ float ToAxis(UCHAR value)
 #pragma endregion
 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-nostd::shared_ptr<trace::Tracer> GetTracer()
+static nostd::shared_ptr<trace::Tracer> GetTracer()
 {
 	const auto provider = trace::Provider::GetTracerProvider();
 	return provider->GetTracer("XInputBridge", OPENTELEMETRY_SDK_VERSION);
 }
 #endif
 
-void SetDeviceDisconnected(DWORD UserIndex)
+//
+// Marks a given user index HID device as not available
+// 
+static void SetDeviceDisconnected(DWORD UserIndex)
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scoped_span = trace::Scope(GetTracer()->StartSpan("SetDeviceDisconnected"));
@@ -135,7 +138,10 @@ void SetDeviceDisconnected(DWORD UserIndex)
 	}
 }
 
-bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
+//
+// Gets a device handle for a given user index, if it is connected
+// 
+static bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scoped_span = trace::Scope(GetTracer()->StartSpan("GetDeviceHandle"));
@@ -212,7 +218,10 @@ bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 	return result;
 }
 
-bool GetPacketNumber(DWORD UserIndex, PDS3_RAW_INPUT_REPORT Report, DWORD* PacketNumber)
+//
+// Returns a packet number for a given user index that increments only if the input report has changed
+// 
+static bool GetPacketNumber(DWORD UserIndex, PDS3_RAW_INPUT_REPORT Report, DWORD* PacketNumber)
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scopedSpan = trace::Scope(GetTracer()->StartSpan("GetPacketNumber"));
@@ -249,6 +258,9 @@ bool GetPacketNumber(DWORD UserIndex, PDS3_RAW_INPUT_REPORT Report, DWORD* Packe
 	return true;
 }
 
+//
+// Public API exports
+// 
 
 XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 	_In_ DWORD dwUserIndex,
