@@ -86,7 +86,7 @@ SHORT ScaleDsToXi(UCHAR value, BOOLEAN invert)
 	auto intValue = value - 0x80;
 	if (intValue == -128) intValue = -127;
 
-	auto wtfValue = intValue * 258.00787401574803149606299212599f; // what the fuck?
+	const auto wtfValue = intValue * 258.00787401574803149606299212599f; // what the fuck?
 
 	return static_cast<short>(invert ? -wtfValue : wtfValue);
 }
@@ -108,7 +108,7 @@ float ToAxis(UCHAR value)
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 nostd::shared_ptr<trace::Tracer> GetTracer()
 {
-	auto provider = trace::Provider::GetTracerProvider();
+	const auto provider = trace::Provider::GetTracerProvider();
 	return provider->GetTracer("XInputBridge", OPENTELEMETRY_SDK_VERSION);
 }
 #endif
@@ -147,7 +147,7 @@ bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 	bool result = false;
 	const auto state = &g_deviceStates[UserIndex];
 	hid_device* device = nullptr;
-	struct hid_device_info* devs = nullptr, * cur_dev;
+	struct hid_device_info* devices = nullptr;
 	DWORD index = 0;
 
 	do
@@ -166,28 +166,29 @@ bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 		//
 		// Look for device of interest
 		// 
-		devs = hid_enumerate(DS3_VID, DS3_PID);
+		devices = hid_enumerate(DS3_VID, DS3_PID);
 
-		if (devs == nullptr)
+		if (devices == nullptr)
 			return false;
 
-		cur_dev = devs;
-		while (cur_dev)
+		const struct hid_device_info* currentDevice = devices;
+
+		while (currentDevice)
 		{
 			if (index++ == UserIndex)
 				break;
 
-			cur_dev = cur_dev->next;
+			currentDevice = currentDevice->next;
 		}
 
-		if (cur_dev == nullptr)
+		if (currentDevice == nullptr)
 		{
 			state->deviceHandle = nullptr;
 			state->isConnected = false;
 			break;
 		}
 
-		device = hid_open_path(cur_dev->path);
+		device = hid_open_path(currentDevice->path);
 
 		if (device == nullptr)
 		{
@@ -205,8 +206,8 @@ bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 
 	} while (FALSE);
 
-	if (devs)
-		hid_free_enumeration(devs);
+	if (devices)
+		hid_free_enumeration(devices);
 
 	return result;
 }
@@ -214,7 +215,7 @@ bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 bool GetPacketNumber(DWORD UserIndex, PDS3_RAW_INPUT_REPORT Report, DWORD* PacketNumber)
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scoped_span = trace::Scope(GetTracer()->StartSpan("GetPacketNumber"));
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan("GetPacketNumber"));
 #endif
 
 	if (UserIndex >= DS3_DEVICES_MAX)
@@ -258,7 +259,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 	hid_device* device = nullptr;
 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scoped_span = trace::Scope(GetTracer()->StartSpan("XInputGetExtended"));
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan("XInputGetExtended"));
 #endif
 
 	do
@@ -366,7 +367,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 	hid_device* device = nullptr;
 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scoped_span = trace::Scope(GetTracer()->StartSpan("XInputGetState"));
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan("XInputGetState"));
 #endif
 
 	do
@@ -519,36 +520,36 @@ XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
 		if (!GetDeviceHandle(dwUserIndex, &device))
 			break;
 
-		ds3_output_report output_report;
+		ds3_output_report outputReport;
 
         // ReSharper disable CppAssignedValueIsNeverUsed
-        output_report.rumble.small_motor_on = pVibration->wRightMotorSpeed > 0 ? 1 : 0;
-        output_report.rumble.large_motor_force = static_cast<float>(pVibration->wLeftMotorSpeed) / static_cast<float>(
+        outputReport.rumble.small_motor_on = pVibration->wRightMotorSpeed > 0 ? 1 : 0;
+        outputReport.rumble.large_motor_force = static_cast<float>(pVibration->wLeftMotorSpeed) / static_cast<float>(
             USHRT_MAX) * static_cast<float>(UCHAR_MAX);
 
         switch (dwUserIndex)
         {
-        case 0: output_report.led_enabled = 0b00000010;
+        case 0: outputReport.led_enabled = 0b00000010;
 
             break;
-        case 1: output_report.led_enabled = 0b00000100;
+        case 1: outputReport.led_enabled = 0b00000100;
             break;
-        case 2: output_report.led_enabled = 0b00001000;
+        case 2: outputReport.led_enabled = 0b00001000;
             break;
-        case 3: output_report.led_enabled = 0b00010000;
+        case 3: outputReport.led_enabled = 0b00010000;
             break;
-        case 4: output_report.led_enabled = 0b00010010;
+        case 4: outputReport.led_enabled = 0b00010010;
             break;
-        case 5: output_report.led_enabled = 0b00010100;
+        case 5: outputReport.led_enabled = 0b00010100;
             break;
-        case 6: output_report.led_enabled = 0b00011000;
+        case 6: outputReport.led_enabled = 0b00011000;
             break;
         default:
             break;
         }
         // ReSharper restore CppAssignedValueIsNeverUsed
 
-		const int res = hid_write(device, &output_report.report_id, sizeof(output_report));
+		const int res = hid_write(device, &outputReport.report_id, sizeof(outputReport));
 
 		if (res <= 0)
 		{
@@ -572,7 +573,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scoped_span = trace::Scope(GetTracer()->StartSpan("XInputGetCapabilities"));
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan("XInputGetCapabilities"));
 #endif
 
 	do
@@ -634,7 +635,7 @@ XINPUTBRIDGE_API void WINAPI XInputEnable(
     UNREFERENCED_PARAMETER(enable);
 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scoped_span = trace::Scope(GetTracer()->StartSpan("XInputEnable"));
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan("XInputEnable"));
 #endif
 }
 
@@ -686,7 +687,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
 	hid_device* device = nullptr;
 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scoped_span = trace::Scope(GetTracer()->StartSpan("XInputGetStateEx"));
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan("XInputGetStateEx"));
 #endif
 
 	do
