@@ -118,7 +118,9 @@ static nostd::shared_ptr<trace::Tracer> GetTracer()
 static void SetDeviceDisconnected(DWORD UserIndex)
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan("SetDeviceDisconnected"));
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan("SetDeviceDisconnected", {
+		{ "xinput.userIndex", std::to_string(UserIndex) }
+	}));
 #endif
 
 	if (UserIndex >= DS3_DEVICES_MAX)
@@ -143,7 +145,9 @@ static void SetDeviceDisconnected(DWORD UserIndex)
 static bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan("GetDeviceHandle"));
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan("GetDeviceHandle", {
+		{ "xinput.userIndex", std::to_string(UserIndex) }
+	}));
 #endif
 
 	if (UserIndex >= DS3_DEVICES_MAX)
@@ -223,7 +227,9 @@ static bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 static bool GetPacketNumber(DWORD UserIndex, PDS3_RAW_INPUT_REPORT Report, DWORD* PacketNumber)
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan("GetPacketNumber"));
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan("GetPacketNumber", {
+		{ "xinput.userIndex", std::to_string(UserIndex) }
+	}));
 #endif
 
 	if (UserIndex >= DS3_DEVICES_MAX)
@@ -270,7 +276,9 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 	hid_device* device = nullptr;
 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan("XInputGetExtended"));
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan("XInputGetExtended", {
+		{ "xinput.userIndex", std::to_string(dwUserIndex) }
+	}));
 #endif
 
 	do
@@ -378,7 +386,9 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 	hid_device* device = nullptr;
 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan("XInputGetState"));
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan("XInputGetState", {
+		{ "xinput.userIndex", std::to_string(dwUserIndex) }
+	}));
 #endif
 
 	do
@@ -514,7 +524,9 @@ XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
 	hid_device* device = nullptr;
 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scoped_span = trace::Scope(GetTracer()->StartSpan("XInputSetState"));
+	auto scoped_span = trace::Scope(GetTracer()->StartSpan("XInputSetState", {
+		{ "xinput.userIndex", std::to_string(dwUserIndex) }
+	}));
 #endif
 
 	do
@@ -591,7 +603,9 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan("XInputGetCapabilities"));
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan("XInputGetCapabilities", {
+		{ "xinput.userIndex", std::to_string(dwUserIndex) }
+	}));
 #endif
 
 	do
@@ -705,7 +719,9 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
 	hid_device* device = nullptr;
 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan("XInputGetStateEx"));
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan("XInputGetStateEx", {
+		{ "xinput.userIndex", std::to_string(dwUserIndex) }
+	}));
 #endif
 
 	do
