@@ -58,7 +58,7 @@ struct device_state
 //
 // Keep track on device states for better lookup performance
 // 
-device_state G_DEVICE_STATES[DS3_DEVICES_MAX];
+static device_state G_DEVICE_STATES[DS3_DEVICES_MAX];
 
 void ScpLibInitialize()
 {
