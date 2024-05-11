@@ -118,7 +118,7 @@ static nostd::shared_ptr<trace::Tracer> GetTracer()
 static void SetDeviceDisconnected(DWORD UserIndex)
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scoped_span = trace::Scope(GetTracer()->StartSpan("SetDeviceDisconnected"));
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan("SetDeviceDisconnected"));
 #endif
 
 	if (UserIndex >= DS3_DEVICES_MAX)
@@ -143,7 +143,7 @@ static void SetDeviceDisconnected(DWORD UserIndex)
 static bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scoped_span = trace::Scope(GetTracer()->StartSpan("GetDeviceHandle"));
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan("GetDeviceHandle"));
 #endif
 
 	if (UserIndex >= DS3_DEVICES_MAX)
