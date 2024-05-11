@@ -33,12 +33,49 @@ struct device_state
 	DS3_RAW_INPUT_REPORT lastReport;
 
 	CRITICAL_SECTION lock;
+
+	//
+	// System-provided XInput exports
+	// 
+	struct
+	{
+		bool isPopulated;
+
+		decltype(XInputGetState)* fpnXInputGetState;
+		decltype(XInputSetState)* fpnXInputSetState;
+		decltype(XInputGetCapabilities)* fpnXInputGetCapabilities;
+		decltype(XInputEnable)* fpnXInputEnable;
+		decltype(XInputGetDSoundAudioDeviceGuids)* fpnXInputGetDSoundAudioDeviceGuids;
+		decltype(XInputGetBatteryInformation)* fpnXInputGetBatteryInformation;
+		decltype(XInputGetKeystroke)* fpnXInputGetKeystroke;
+		decltype(XInputGetStateEx)* fpnXInputGetStateEx;
+		decltype(XInputWaitForGuideButton)* fpnXInputWaitForGuideButton;
+		decltype(XInputCancelGuideButtonWait)* fpnXInputCancelGuideButtonWait;
+		decltype(XInputPowerOffController)* fpnXInputPowerOffController;
+	} XInput;
 };
 
 //
 // Keep track on device states for better lookup performance
 // 
 device_state G_DEVICE_STATES[DS3_DEVICES_MAX];
+
+void ScpLibInitializeStates()
+{
+	for (auto state : G_DEVICE_STATES)
+	{
+		InitializeCriticalSection(&state.lock);
+	}
+}
+
+void ScpLibDestroyStates()
+{
+	for (auto state : G_DEVICE_STATES)
+	{
+		DeleteCriticalSection(&state.lock);
+	}
+}
+
 
 #pragma region Rumble helper types
 
@@ -276,6 +313,74 @@ static bool GetPacketNumber(DWORD UserIndex, PDS3_RAW_INPUT_REPORT Report, DWORD
 #endif
 
 	*PacketNumber = state->packetNumber;
+
+	return true;
+}
+
+#pragma endregion
+
+#pragma region XInput proxying
+
+static bool PopulateSystemXInputExports(DWORD UserIndex)
+{
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	const auto span = GetTracer()->StartSpan(__FUNCTION__, {
+		{ "xinput.userIndex", std::to_string(UserIndex) }
+	});
+	auto scopedSpan = trace::Scope(span);
+#endif
+
+	if (UserIndex >= DS3_DEVICES_MAX)
+		return false;
+
+	const auto state = &G_DEVICE_STATES[UserIndex];
+
+	if (state->XInput.isPopulated)
+		return true;
+
+	CHAR systemDir[MAX_PATH] = {};
+
+	if (GetSystemDirectoryA(systemDir, MAX_PATH) == 0)
+		return false;
+
+	CHAR fullXiPath[MAX_PATH] = {};
+
+	if (PathCombineA(fullXiPath, systemDir, "XInput1_3.dll") == nullptr)
+		return false;
+
+	const HMODULE xiLib = LoadLibraryA(fullXiPath);
+
+	if (xiLib == nullptr)
+		return false;
+
+	//
+	// Grab the function pointers from the OS-provided exports
+	// 
+
+	state->XInput.fpnXInputGetState =
+	reinterpret_cast<decltype(XInputGetState)*>(GetProcAddress(xiLib, "XInputGetState"));
+	state->XInput.fpnXInputSetState =
+	reinterpret_cast<decltype(XInputSetState)*>(GetProcAddress(xiLib, "XInputSetState"));
+	state->XInput.fpnXInputGetCapabilities =
+	reinterpret_cast<decltype(XInputGetCapabilities)*>(GetProcAddress(xiLib, "XInputGetCapabilities"));
+	state->XInput.fpnXInputEnable =
+	reinterpret_cast<decltype(XInputEnable)*>(GetProcAddress(xiLib, "XInputEnable"));
+	state->XInput.fpnXInputGetDSoundAudioDeviceGuids =
+	reinterpret_cast<decltype(XInputGetDSoundAudioDeviceGuids)*>(GetProcAddress(xiLib, "XInputGetDSoundAudioDeviceGuids"));
+	state->XInput.fpnXInputGetBatteryInformation =
+	reinterpret_cast<decltype(XInputGetBatteryInformation)*>(GetProcAddress(xiLib, "XInputGetBatteryInformation"));
+	state->XInput.fpnXInputGetKeystroke =
+	reinterpret_cast<decltype(XInputGetKeystroke)*>(GetProcAddress(xiLib, "XInputGetKeystroke"));
+	state->XInput.fpnXInputGetStateEx =
+	reinterpret_cast<decltype(XInputGetStateEx)*>(GetProcAddress(xiLib, MAKEINTRESOURCEA(100)));
+	state->XInput.fpnXInputWaitForGuideButton =
+	reinterpret_cast<decltype(XInputWaitForGuideButton)*>(GetProcAddress(xiLib, MAKEINTRESOURCEA(101)));
+	state->XInput.fpnXInputCancelGuideButtonWait =
+	reinterpret_cast<decltype(XInputCancelGuideButtonWait)*>(GetProcAddress(xiLib, MAKEINTRESOURCEA(102)));
+	state->XInput.fpnXInputPowerOffController =
+	reinterpret_cast<decltype(XInputPowerOffController)*>(GetProcAddress(xiLib, MAKEINTRESOURCEA(103)));
+
+	state->XInput.isPopulated = true;
 
 	return true;
 }
@@ -721,7 +826,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetBatteryInformation(
 	UNREFERENCED_PARAMETER(dwUserIndex);
 	UNREFERENCED_PARAMETER(devType);
 	UNREFERENCED_PARAMETER(pBatteryInformation);
-	
+
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	const auto span = GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
@@ -741,7 +846,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetKeystroke(
 	UNREFERENCED_PARAMETER(dwUserIndex);
 	UNREFERENCED_PARAMETER(dwReserved);
 	UNREFERENCED_PARAMETER(pKeystroke);
-	
+
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	const auto span = GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
@@ -905,7 +1010,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputWaitForGuideButton(
 	UNREFERENCED_PARAMETER(dwUserIndex);
 	UNREFERENCED_PARAMETER(dwFlag);
 	UNREFERENCED_PARAMETER(pVoid);
-	
+
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	const auto span = GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
@@ -921,7 +1026,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputCancelGuideButtonWait(
 )
 {
 	UNREFERENCED_PARAMETER(dwUserIndex);
-	
+
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	const auto span = GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
@@ -937,7 +1042,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputPowerOffController(
 )
 {
 	UNREFERENCED_PARAMETER(dwUserIndex);
-	
+
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	const auto span = GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }

@@ -5,6 +5,7 @@
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 // Windows Header Files
 #include <Windows.h>
+#include <Shlwapi.h>
 
 //
 // Driver-shared types
@@ -34,3 +35,7 @@ namespace nostd     = opentelemetry::nostd;
 namespace trace_sdk = opentelemetry::sdk::trace;
 namespace otlp      = opentelemetry::exporter::otlp;
 #endif
+
+void ScpLibInitializeStates();
+
+void ScpLibDestroyStates();
