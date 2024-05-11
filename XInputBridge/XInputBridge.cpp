@@ -227,9 +227,10 @@ static bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 static bool GetPacketNumber(DWORD UserIndex, PDS3_RAW_INPUT_REPORT Report, DWORD* PacketNumber)
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan("GetPacketNumber", {
+	const auto span = GetTracer()->StartSpan("GetPacketNumber", {
 		{ "xinput.userIndex", std::to_string(UserIndex) }
-	}));
+	});
+	auto scopedSpan = trace::Scope(span);
 #endif
 
 	if (UserIndex >= DS3_DEVICES_MAX)
@@ -257,6 +258,10 @@ static bool GetPacketNumber(DWORD UserIndex, PDS3_RAW_INPUT_REPORT Report, DWORD
 		state->packetNumber++;
 		memcpy(&state->lastReport, Report, sizeof(DS3_RAW_INPUT_REPORT));
 	}
+
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	span->SetAttribute("xinput.packetNumber", std::to_string(state->packetNumber));
+#endif
 
 	*PacketNumber = state->packetNumber;
 
@@ -418,7 +423,8 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 
 		const auto pReport = reinterpret_cast<PDS3_RAW_INPUT_REPORT>(&buf[1]);
 
-		GetPacketNumber(dwUserIndex, pReport, &pState->dwPacketNumber);
+		if (!GetPacketNumber(dwUserIndex, pReport, &pState->dwPacketNumber))
+			break;
 
 		RtlZeroMemory(&pState->Gamepad, sizeof(pState->Gamepad));
 
@@ -751,7 +757,8 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
 
 		const auto pReport = reinterpret_cast<PDS3_RAW_INPUT_REPORT>(&buf[1]);
 
-		GetPacketNumber(dwUserIndex, pReport, &pState->dwPacketNumber);
+		if (!GetPacketNumber(dwUserIndex, pReport, &pState->dwPacketNumber))
+			break;
 
 		RtlZeroMemory(&pState->Gamepad, sizeof(pState->Gamepad));
 
