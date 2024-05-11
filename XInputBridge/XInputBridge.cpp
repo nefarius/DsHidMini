@@ -106,6 +106,8 @@ static float ToAxis(UCHAR value)
 
 #pragma endregion
 
+#pragma region Device state handling
+
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 static nostd::shared_ptr<trace::Tracer> GetTracer()
 {
@@ -277,6 +279,10 @@ static bool GetPacketNumber(DWORD UserIndex, PDS3_RAW_INPUT_REPORT Report, DWORD
 
 	return true;
 }
+
+#pragma endregion
+
+#pragma region Public exports
 
 //
 // Public API exports
@@ -941,3 +947,5 @@ XINPUTBRIDGE_API DWORD WINAPI XInputPowerOffController(
 
 	return ERROR_DEVICE_NOT_CONNECTED;
 }
+
+#pragma endregion
