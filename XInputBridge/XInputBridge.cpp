@@ -169,7 +169,7 @@ static bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 			break;
 		}
 
-		memset(&state->lastReport, 0, sizeof(DS3_RAW_INPUT_REPORT));
+		RtlZeroMemory(&state->lastReport, sizeof(DS3_RAW_INPUT_REPORT));
 		state->packetNumber = 0;
 
 		//
