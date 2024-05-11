@@ -31,6 +31,8 @@ struct device_state
 	DWORD packetNumber;
 
 	DS3_RAW_INPUT_REPORT lastReport;
+
+	CRITICAL_SECTION lock;
 };
 
 //
@@ -159,6 +161,8 @@ static bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 	struct hid_device_info* devices = nullptr;
 	DWORD index = 0;
 
+	EnterCriticalSection(&state->lock);
+
 	do
 	{
 		if (state->isConnected)
@@ -217,6 +221,8 @@ static bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 
 	if (devices)
 		hid_free_enumeration(devices);
+
+	LeaveCriticalSection(&state->lock);
 
 	return result;
 }
