@@ -16,11 +16,7 @@
 #define DS3_PID							0x0268
 #define SXS_MODE_GET_FEATURE_REPORT_ID	0xF2
 #define SXS_MODE_GET_FEATURE_BUFFER_LEN	0x40
-
-//
-// This is really an artificial limit so set high
-// 
-#define DS3_DEVICES_MAX					0xFF
+#define DS3_DEVICES_MAX					8
 
 
 //
