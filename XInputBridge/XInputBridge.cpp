@@ -771,7 +771,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
 			break;
 
 		UCHAR buf[64];
-		buf[0] = 0xF2;
+		buf[0] = SXS_MODE_GET_FEATURE_REPORT_ID;
 
 		const int res = hid_get_feature_report(device, buf, ARRAYSIZE(buf));
 
