@@ -130,6 +130,8 @@ static void SetDeviceDisconnected(DWORD UserIndex)
 
 	const auto state = &g_deviceStates[UserIndex];
 
+	EnterCriticalSection(&state->lock);
+
 	state->isConnected = false;
 	state->packetNumber = 0;
 	RtlZeroMemory(&state->lastReport, sizeof(DS3_RAW_INPUT_REPORT));
@@ -139,6 +141,8 @@ static void SetDeviceDisconnected(DWORD UserIndex)
 		hid_close(state->deviceHandle);
 		state->deviceHandle = nullptr;
 	}
+
+	LeaveCriticalSection(&state->lock);
 }
 
 //
