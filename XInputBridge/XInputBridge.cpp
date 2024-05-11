@@ -84,7 +84,8 @@ struct ds3_output_report
 static SHORT ScaleDsToXi(UCHAR value, BOOLEAN invert)
 {
 	auto intValue = value - 0x80;
-	if (intValue == -128) intValue = -127;
+	if (intValue == -128)
+		intValue = -127;
 
 	const auto wtfValue = intValue * 258.00787401574803149606299212599f; // what the fuck?
 
@@ -93,8 +94,10 @@ static SHORT ScaleDsToXi(UCHAR value, BOOLEAN invert)
 
 static float ClampAxis(float value)
 {
-	if (value > 1.0f) return 1.0f;
-	if (value < -1.0f) return -1.0f;
+	if (value > 1.0f)
+		return 1.0f;
+	if (value < -1.0f)
+		return -1.0f;
 	return value;
 }
 
@@ -352,16 +355,16 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 		// Thumb axes
 		//
 		if (pReport->LeftThumbX < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
-			|| pReport->LeftThumbX >(UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
+			|| pReport->LeftThumbX > (UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
 			pState->SCP_LX = ToAxis(pReport->LeftThumbX);
 		if (pReport->LeftThumbY < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
-			|| pReport->LeftThumbY >(UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
+			|| pReport->LeftThumbY > (UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
 			pState->SCP_LY = ToAxis(pReport->LeftThumbY) * -1.0f;
 		if (pReport->RightThumbX < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
-			|| pReport->RightThumbX >(UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
+			|| pReport->RightThumbX > (UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
 			pState->SCP_RX = ToAxis(pReport->RightThumbX);
 		if (pReport->RightThumbY < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
-			|| pReport->RightThumbY >(UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
+			|| pReport->RightThumbY > (UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
 			pState->SCP_RY = ToAxis(pReport->RightThumbY) * -1.0f;
 
 		status = ERROR_SUCCESS;
@@ -534,32 +537,39 @@ XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
 
 		ds3_output_report outputReport;
 
-        // ReSharper disable CppAssignedValueIsNeverUsed
-        outputReport.rumble.small_motor_on = pVibration->wRightMotorSpeed > 0 ? 1 : 0;
-        outputReport.rumble.large_motor_force = static_cast<float>(pVibration->wLeftMotorSpeed) / static_cast<float>(
-            USHRT_MAX) * static_cast<float>(UCHAR_MAX);
+		// ReSharper disable CppAssignedValueIsNeverUsed
+		outputReport.rumble.small_motor_on = pVibration->wRightMotorSpeed > 0 ? 1 : 0;
+		outputReport.rumble.large_motor_force = static_cast<float>(pVibration->wLeftMotorSpeed) / static_cast<float>(
+			USHRT_MAX) * static_cast<float>(UCHAR_MAX);
 
-        switch (dwUserIndex)
-        {
-        case 0: outputReport.led_enabled = 0b00000010;
+		switch (dwUserIndex)
+		{
+		case 0:
+			outputReport.led_enabled = 0b00000010;
 
-            break;
-        case 1: outputReport.led_enabled = 0b00000100;
-            break;
-        case 2: outputReport.led_enabled = 0b00001000;
-            break;
-        case 3: outputReport.led_enabled = 0b00010000;
-            break;
-        case 4: outputReport.led_enabled = 0b00010010;
-            break;
-        case 5: outputReport.led_enabled = 0b00010100;
-            break;
-        case 6: outputReport.led_enabled = 0b00011000;
-            break;
-        default:
-            break;
-        }
-        // ReSharper restore CppAssignedValueIsNeverUsed
+			break;
+		case 1:
+			outputReport.led_enabled = 0b00000100;
+			break;
+		case 2:
+			outputReport.led_enabled = 0b00001000;
+			break;
+		case 3:
+			outputReport.led_enabled = 0b00010000;
+			break;
+		case 4:
+			outputReport.led_enabled = 0b00010010;
+			break;
+		case 5:
+			outputReport.led_enabled = 0b00010100;
+			break;
+		case 6:
+			outputReport.led_enabled = 0b00011000;
+			break;
+		default:
+			break;
+		}
+		// ReSharper restore CppAssignedValueIsNeverUsed
 
 		const int res = hid_write(device, &outputReport.report_id, sizeof(outputReport));
 
@@ -581,7 +591,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 	_Out_ XINPUT_CAPABILITIES* pCapabilities
 )
 {
-    UNREFERENCED_PARAMETER(dwFlags);
+	UNREFERENCED_PARAMETER(dwFlags);
 	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
@@ -623,7 +633,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 			XINPUT_GAMEPAD_B |
 			XINPUT_GAMEPAD_X |
 			XINPUT_GAMEPAD_Y
-			);
+		);
 		pCapabilities->Gamepad.bLeftTrigger = UCHAR_MAX;
 		pCapabilities->Gamepad.bRightTrigger = UCHAR_MAX;
 		pCapabilities->Gamepad.sThumbLX = static_cast<SHORT>(0xFFC0);
@@ -644,7 +654,7 @@ XINPUTBRIDGE_API void WINAPI XInputEnable(
 	_In_ BOOL enable
 )
 {
-    UNREFERENCED_PARAMETER(enable);
+	UNREFERENCED_PARAMETER(enable);
 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scopedSpan = trace::Scope(GetTracer()->StartSpan("XInputEnable"));
@@ -657,9 +667,9 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetDSoundAudioDeviceGuids(
 	GUID* pDSoundCaptureGuid
 )
 {
-    UNREFERENCED_PARAMETER(dwUserIndex);
-    UNREFERENCED_PARAMETER(pDSoundRenderGuid);
-    UNREFERENCED_PARAMETER(pDSoundCaptureGuid);
+	UNREFERENCED_PARAMETER(dwUserIndex);
+	UNREFERENCED_PARAMETER(pDSoundRenderGuid);
+	UNREFERENCED_PARAMETER(pDSoundCaptureGuid);
 
 	return ERROR_DEVICE_NOT_CONNECTED;
 }
@@ -670,9 +680,9 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetBatteryInformation(
 	_Out_ XINPUT_BATTERY_INFORMATION* pBatteryInformation
 )
 {
-    UNREFERENCED_PARAMETER(dwUserIndex);
-    UNREFERENCED_PARAMETER(devType);
-    UNREFERENCED_PARAMETER(pBatteryInformation);
+	UNREFERENCED_PARAMETER(dwUserIndex);
+	UNREFERENCED_PARAMETER(devType);
+	UNREFERENCED_PARAMETER(pBatteryInformation);
 
 	return ERROR_DEVICE_NOT_CONNECTED;
 }
@@ -683,9 +693,9 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetKeystroke(
 	PXINPUT_KEYSTROKE pKeystroke
 )
 {
-    UNREFERENCED_PARAMETER(dwUserIndex);
-    UNREFERENCED_PARAMETER(dwReserved);
-    UNREFERENCED_PARAMETER(pKeystroke);
+	UNREFERENCED_PARAMETER(dwUserIndex);
+	UNREFERENCED_PARAMETER(dwReserved);
+	UNREFERENCED_PARAMETER(pKeystroke);
 
 	return ERROR_DEVICE_NOT_CONNECTED;
 }
@@ -837,9 +847,9 @@ XINPUTBRIDGE_API DWORD WINAPI XInputWaitForGuideButton(
 	_In_ LPVOID pVoid
 )
 {
-    UNREFERENCED_PARAMETER(dwUserIndex);
-    UNREFERENCED_PARAMETER(dwFlag);
-    UNREFERENCED_PARAMETER(pVoid);
+	UNREFERENCED_PARAMETER(dwUserIndex);
+	UNREFERENCED_PARAMETER(dwFlag);
+	UNREFERENCED_PARAMETER(pVoid);
 
 	return ERROR_DEVICE_NOT_CONNECTED;
 }
@@ -848,7 +858,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputCancelGuideButtonWait(
 	_In_ DWORD dwUserIndex
 )
 {
-    UNREFERENCED_PARAMETER(dwUserIndex);
+	UNREFERENCED_PARAMETER(dwUserIndex);
 
 	return ERROR_DEVICE_NOT_CONNECTED;
 }
@@ -857,7 +867,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputPowerOffController(
 	_In_ DWORD dwUserIndex
 )
 {
-    UNREFERENCED_PARAMETER(dwUserIndex);
+	UNREFERENCED_PARAMETER(dwUserIndex);
 
 	return ERROR_DEVICE_NOT_CONNECTED;
 }
