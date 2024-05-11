@@ -60,17 +60,17 @@ struct device_state
 // 
 static device_state G_DEVICE_STATES[DS3_DEVICES_MAX];
 
-static decltype(XInputGetState)* G_fpnXInputGetState;
-static decltype(XInputSetState)* G_fpnXInputSetState;
-static decltype(XInputGetCapabilities)* G_fpnXInputGetCapabilities;
-static decltype(XInputEnable)* G_fpnXInputEnable;
-static decltype(XInputGetDSoundAudioDeviceGuids)* G_fpnXInputGetDSoundAudioDeviceGuids;
-static decltype(XInputGetBatteryInformation)* G_fpnXInputGetBatteryInformation;
-static decltype(XInputGetKeystroke)* G_fpnXInputGetKeystroke;
-static decltype(XInputGetStateEx)* G_fpnXInputGetStateEx;
-static decltype(XInputWaitForGuideButton)* G_fpnXInputWaitForGuideButton;
-static decltype(XInputCancelGuideButtonWait)* G_fpnXInputCancelGuideButtonWait;
-static decltype(XInputPowerOffController)* G_fpnXInputPowerOffController;
+static decltype(XInputGetState)* G_fpnXInputGetState = nullptr;
+static decltype(XInputSetState)* G_fpnXInputSetState = nullptr;
+static decltype(XInputGetCapabilities)* G_fpnXInputGetCapabilities = nullptr;
+static decltype(XInputEnable)* G_fpnXInputEnable = nullptr;
+static decltype(XInputGetDSoundAudioDeviceGuids)* G_fpnXInputGetDSoundAudioDeviceGuids = nullptr;
+static decltype(XInputGetBatteryInformation)* G_fpnXInputGetBatteryInformation = nullptr;
+static decltype(XInputGetKeystroke)* G_fpnXInputGetKeystroke = nullptr;
+static decltype(XInputGetStateEx)* G_fpnXInputGetStateEx = nullptr;
+static decltype(XInputWaitForGuideButton)* G_fpnXInputWaitForGuideButton = nullptr;
+static decltype(XInputCancelGuideButtonWait)* G_fpnXInputCancelGuideButtonWait = nullptr;
+static decltype(XInputPowerOffController)* G_fpnXInputPowerOffController = nullptr;
 
 static DWORD WINAPI InitAsync(
 	_In_ LPVOID lpParameter
@@ -378,11 +378,6 @@ static bool GetPacketNumber(DWORD UserIndex, PDS3_RAW_INPUT_REPORT Report, DWORD
 
 #pragma endregion
 
-#pragma region XInput proxying
-
-
-#pragma endregion
-
 #pragma region Public exports
 
 //
@@ -525,7 +520,11 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 		// Look for device of interest
 		// 
 		if (!GetDeviceHandle(dwUserIndex, &device))
+		{
+			if (G_fpnXInputGetState)
+				status = G_fpnXInputGetState(dwUserIndex, pState);
 			break;
+		}
 
 		UCHAR buf[SXS_MODE_GET_FEATURE_BUFFER_LEN];
 		buf[0] = SXS_MODE_GET_FEATURE_REPORT_ID;
@@ -664,7 +663,11 @@ XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
 		// Look for device of interest
 		// 
 		if (!GetDeviceHandle(dwUserIndex, &device))
+		{
+			if (G_fpnXInputSetState)
+				status = G_fpnXInputSetState(dwUserIndex, pVibration);
 			break;
+		}
 
 		ds3_output_report outputReport;
 
@@ -742,7 +745,11 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 		// Look for device of interest
 		// 
 		if (!GetDeviceHandle(dwUserIndex, nullptr))
+		{
+			if (G_fpnXInputGetCapabilities)
+				status = G_fpnXInputGetCapabilities(dwUserIndex, dwFlags, pCapabilities);
 			break;
+		}
 
 		RtlZeroMemory(pCapabilities, sizeof(XINPUT_CAPABILITIES));
 
@@ -791,6 +798,9 @@ XINPUTBRIDGE_API void WINAPI XInputEnable(
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
 #endif
+
+	if (G_fpnXInputEnable)
+		G_fpnXInputEnable(enable);
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputGetDSoundAudioDeviceGuids(
@@ -799,10 +809,6 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetDSoundAudioDeviceGuids(
 	GUID* pDSoundCaptureGuid
 )
 {
-	UNREFERENCED_PARAMETER(dwUserIndex);
-	UNREFERENCED_PARAMETER(pDSoundRenderGuid);
-	UNREFERENCED_PARAMETER(pDSoundCaptureGuid);
-
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	const auto span = GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
@@ -810,7 +816,9 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetDSoundAudioDeviceGuids(
 	auto scopedSpan = trace::Scope(span);
 #endif
 
-	return ERROR_DEVICE_NOT_CONNECTED;
+	return G_fpnXInputGetDSoundAudioDeviceGuids
+	? G_fpnXInputGetDSoundAudioDeviceGuids(dwUserIndex, pDSoundRenderGuid, pDSoundCaptureGuid)
+	: ERROR_DEVICE_NOT_CONNECTED;
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputGetBatteryInformation(
@@ -819,10 +827,6 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetBatteryInformation(
 	_Out_ XINPUT_BATTERY_INFORMATION* pBatteryInformation
 )
 {
-	UNREFERENCED_PARAMETER(dwUserIndex);
-	UNREFERENCED_PARAMETER(devType);
-	UNREFERENCED_PARAMETER(pBatteryInformation);
-
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	const auto span = GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
@@ -830,7 +834,9 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetBatteryInformation(
 	auto scopedSpan = trace::Scope(span);
 #endif
 
-	return ERROR_DEVICE_NOT_CONNECTED;
+	return G_fpnXInputGetBatteryInformation
+	? G_fpnXInputGetBatteryInformation(dwUserIndex, devType, pBatteryInformation)
+	: ERROR_DEVICE_NOT_CONNECTED;
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputGetKeystroke(
@@ -850,7 +856,9 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetKeystroke(
 	auto scopedSpan = trace::Scope(span);
 #endif
 
-	return ERROR_DEVICE_NOT_CONNECTED;
+	return G_fpnXInputGetKeystroke
+	? G_fpnXInputGetKeystroke(dwUserIndex, dwReserved, pKeystroke)
+	: ERROR_DEVICE_NOT_CONNECTED;
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
@@ -879,7 +887,11 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
 		// Look for device of interest
 		// 
 		if (!GetDeviceHandle(dwUserIndex, &device))
+		{
+			if (G_fpnXInputGetStateEx)
+				status = G_fpnXInputGetStateEx(dwUserIndex, pState);
 			break;
+		}
 
 		UCHAR buf[64];
 		buf[0] = SXS_MODE_GET_FEATURE_REPORT_ID;
@@ -1003,10 +1015,6 @@ XINPUTBRIDGE_API DWORD WINAPI XInputWaitForGuideButton(
 	_In_ LPVOID pVoid
 )
 {
-	UNREFERENCED_PARAMETER(dwUserIndex);
-	UNREFERENCED_PARAMETER(dwFlag);
-	UNREFERENCED_PARAMETER(pVoid);
-
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	const auto span = GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
@@ -1014,15 +1022,15 @@ XINPUTBRIDGE_API DWORD WINAPI XInputWaitForGuideButton(
 	auto scopedSpan = trace::Scope(span);
 #endif
 
-	return ERROR_DEVICE_NOT_CONNECTED;
+	return G_fpnXInputWaitForGuideButton
+	? G_fpnXInputWaitForGuideButton(dwUserIndex, dwFlag, pVoid)
+	: ERROR_DEVICE_NOT_CONNECTED;
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputCancelGuideButtonWait(
 	_In_ DWORD dwUserIndex
 )
 {
-	UNREFERENCED_PARAMETER(dwUserIndex);
-
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	const auto span = GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
@@ -1030,15 +1038,15 @@ XINPUTBRIDGE_API DWORD WINAPI XInputCancelGuideButtonWait(
 	auto scopedSpan = trace::Scope(span);
 #endif
 
-	return ERROR_DEVICE_NOT_CONNECTED;
+	return G_fpnXInputCancelGuideButtonWait
+	? G_fpnXInputCancelGuideButtonWait(dwUserIndex)
+	: ERROR_DEVICE_NOT_CONNECTED;
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputPowerOffController(
 	_In_ DWORD dwUserIndex
 )
 {
-	UNREFERENCED_PARAMETER(dwUserIndex);
-
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	const auto span = GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
@@ -1046,7 +1054,9 @@ XINPUTBRIDGE_API DWORD WINAPI XInputPowerOffController(
 	auto scopedSpan = trace::Scope(span);
 #endif
 
-	return ERROR_DEVICE_NOT_CONNECTED;
+	return G_fpnXInputPowerOffController
+	? G_fpnXInputPowerOffController(dwUserIndex)
+	: ERROR_DEVICE_NOT_CONNECTED;
 }
 
 #pragma endregion
