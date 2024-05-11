@@ -38,7 +38,7 @@ struct device_state
 //
 // Keep track on device states for better lookup performance
 // 
-device_state g_deviceStates[DS3_DEVICES_MAX];
+device_state G_DEVICE_STATES[DS3_DEVICES_MAX];
 
 #pragma region Rumble helper types
 
@@ -128,7 +128,7 @@ static void SetDeviceDisconnected(DWORD UserIndex)
 	if (UserIndex >= DS3_DEVICES_MAX)
 		return;
 
-	const auto state = &g_deviceStates[UserIndex];
+	const auto state = &G_DEVICE_STATES[UserIndex];
 
 	EnterCriticalSection(&state->lock);
 
@@ -160,7 +160,7 @@ static bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 		return false;
 
 	bool result = false;
-	const auto state = &g_deviceStates[UserIndex];
+	const auto state = &G_DEVICE_STATES[UserIndex];
 	hid_device* device = nullptr;
 	struct hid_device_info* devices = nullptr;
 	DWORD index = 0;
@@ -249,7 +249,7 @@ static bool GetPacketNumber(DWORD UserIndex, PDS3_RAW_INPUT_REPORT Report, DWORD
 	if (!PacketNumber || !Report)
 		return false;
 
-	const auto state = &g_deviceStates[UserIndex];
+	const auto state = &G_DEVICE_STATES[UserIndex];
 
 	//
 	// Exclude noisy motion stuff from comparison
