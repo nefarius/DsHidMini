@@ -372,6 +372,8 @@ DMF_DsHidMini_Close(
 	_In_ DMFMODULE DmfModule
 )
 {
+	UNREFERENCED_PARAMETER(DmfModule);
+
 	PAGED_CODE();
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
