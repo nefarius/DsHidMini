@@ -15,7 +15,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
     switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH:
-		ScpLibInitializeStates();
+		ScpLibInitialize();
         hid_init();		
 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
@@ -30,7 +30,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
         break;
     case DLL_PROCESS_DETACH:
         hid_exit();
-		ScpLibDestroyStates();
+		ScpLibDestroy();
         break;
     }
     return TRUE;

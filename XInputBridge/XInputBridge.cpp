@@ -60,7 +60,7 @@ struct device_state
 // 
 device_state G_DEVICE_STATES[DS3_DEVICES_MAX];
 
-void ScpLibInitializeStates()
+void ScpLibInitialize()
 {
 	for (auto state : G_DEVICE_STATES)
 	{
@@ -68,7 +68,7 @@ void ScpLibInitializeStates()
 	}
 }
 
-void ScpLibDestroyStates()
+void ScpLibDestroy()
 {
 	for (auto state : G_DEVICE_STATES)
 	{

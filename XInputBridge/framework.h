@@ -36,6 +36,6 @@ namespace trace_sdk = opentelemetry::sdk::trace;
 namespace otlp      = opentelemetry::exporter::otlp;
 #endif
 
-void ScpLibInitializeStates();
+void ScpLibInitialize();
 
-void ScpLibDestroyStates();
+void ScpLibDestroy();
