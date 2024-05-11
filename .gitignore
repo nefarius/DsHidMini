@@ -349,3 +349,4 @@ healthchecksdb
 vcpkg_installed
 **/*.g.wxs
 /XInputBridge/exports
+**/*_OTEL
