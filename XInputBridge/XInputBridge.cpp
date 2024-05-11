@@ -24,6 +24,8 @@
 // 
 struct device_state
 {
+	volatile bool isInitialized = false;
+
 	bool isConnected = false;
 
 	hid_device* deviceHandle = nullptr;
@@ -116,9 +118,10 @@ static DWORD WINAPI InitAsync(
 
 void ScpLibInitialize()
 {
-	for (auto state : G_DEVICE_STATES)
+	for (auto& state : G_DEVICE_STATES)
 	{
 		InitializeCriticalSection(&state.lock);
+		state.isInitialized = true;
 	}
 
 	//
@@ -129,7 +132,7 @@ void ScpLibInitialize()
 
 void ScpLibDestroy()
 {
-	for (auto state : G_DEVICE_STATES)
+	for (auto& state : G_DEVICE_STATES)
 	{
 		DeleteCriticalSection(&state.lock);
 	}
@@ -263,10 +266,13 @@ static bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 	struct hid_device_info* devices = nullptr;
 	DWORD index = 0;
 
-	EnterCriticalSection(&state->lock);
-
 	do
 	{
+		if (!state->isInitialized)
+			break;
+
+		EnterCriticalSection(&state->lock);
+
 		if (state->isConnected)
 		{
 			if (Handle)

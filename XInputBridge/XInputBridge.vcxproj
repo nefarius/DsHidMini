@@ -219,7 +219,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <TargetName>XInput1_3</TargetName>
+    <TargetName>XInput</TargetName>
+    <OutDir>$(SolutionDir)bin\Debug\$(PlatformShortName)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_OTEL|x64'">
     <LinkIncremental>true</LinkIncremental>
