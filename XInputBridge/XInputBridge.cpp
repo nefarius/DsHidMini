@@ -60,12 +60,71 @@ struct device_state
 // 
 static device_state G_DEVICE_STATES[DS3_DEVICES_MAX];
 
+static decltype(XInputGetState)* G_fpnXInputGetState;
+static decltype(XInputSetState)* G_fpnXInputSetState;
+static decltype(XInputGetCapabilities)* G_fpnXInputGetCapabilities;
+static decltype(XInputEnable)* G_fpnXInputEnable;
+static decltype(XInputGetDSoundAudioDeviceGuids)* G_fpnXInputGetDSoundAudioDeviceGuids;
+static decltype(XInputGetBatteryInformation)* G_fpnXInputGetBatteryInformation;
+static decltype(XInputGetKeystroke)* G_fpnXInputGetKeystroke;
+static decltype(XInputGetStateEx)* G_fpnXInputGetStateEx;
+static decltype(XInputWaitForGuideButton)* G_fpnXInputWaitForGuideButton;
+static decltype(XInputCancelGuideButtonWait)* G_fpnXInputCancelGuideButtonWait;
+static decltype(XInputPowerOffController)* G_fpnXInputPowerOffController;
+
+static DWORD WINAPI InitAsync(
+	_In_ LPVOID lpParameter
+)
+{
+	CHAR systemDir[MAX_PATH] = {};
+
+	if (GetSystemDirectoryA(systemDir, MAX_PATH) == 0)
+		return 1;
+
+	CHAR fullXiPath[MAX_PATH] = {};
+
+	if (PathCombineA(fullXiPath, systemDir, "XInput1_3.dll") == nullptr)
+		return 1;
+
+	const HMODULE xiLib = LoadLibraryA(fullXiPath);
+
+	if (xiLib == nullptr)
+		return 1;
+
+	//
+	// Grab the function pointers from the OS-provided exports
+	// 
+
+	G_fpnXInputGetState = reinterpret_cast<decltype(XInputGetState)*>(GetProcAddress(xiLib, "XInputGetState"));
+	G_fpnXInputSetState = reinterpret_cast<decltype(XInputSetState)*>(GetProcAddress(xiLib, "XInputSetState"));
+	G_fpnXInputGetCapabilities = reinterpret_cast<decltype(XInputGetCapabilities)*>(GetProcAddress(xiLib, "XInputGetCapabilities"));
+	G_fpnXInputEnable = reinterpret_cast<decltype(XInputEnable)*>(GetProcAddress(xiLib, "XInputEnable"));
+	G_fpnXInputGetDSoundAudioDeviceGuids = reinterpret_cast<decltype(XInputGetDSoundAudioDeviceGuids)*>(GetProcAddress(xiLib,
+		"XInputGetDSoundAudioDeviceGuids"));
+	G_fpnXInputGetBatteryInformation = reinterpret_cast<decltype(XInputGetBatteryInformation)*>(GetProcAddress(xiLib,
+		"XInputGetBatteryInformation"));
+	G_fpnXInputGetKeystroke = reinterpret_cast<decltype(XInputGetKeystroke)*>(GetProcAddress(xiLib, "XInputGetKeystroke"));
+	G_fpnXInputGetStateEx = reinterpret_cast<decltype(XInputGetStateEx)*>(GetProcAddress(xiLib, MAKEINTRESOURCEA(100)));
+	G_fpnXInputWaitForGuideButton = reinterpret_cast<decltype(XInputWaitForGuideButton)*>(GetProcAddress(xiLib, MAKEINTRESOURCEA(101)));
+	G_fpnXInputCancelGuideButtonWait = reinterpret_cast<decltype(XInputCancelGuideButtonWait)*>(GetProcAddress(xiLib,
+		MAKEINTRESOURCEA(102)));
+	G_fpnXInputPowerOffController = reinterpret_cast<decltype(XInputPowerOffController)*>(GetProcAddress(xiLib, MAKEINTRESOURCEA(103)));
+
+	return 0;
+
+}
+
 void ScpLibInitialize()
 {
 	for (auto state : G_DEVICE_STATES)
 	{
 		InitializeCriticalSection(&state.lock);
 	}
+
+	//
+	// Call stuff that must not be done in DllMain in the background
+	// 
+	CreateThread(nullptr, 0, InitAsync, nullptr, 0, nullptr);
 }
 
 void ScpLibDestroy()
@@ -321,69 +380,6 @@ static bool GetPacketNumber(DWORD UserIndex, PDS3_RAW_INPUT_REPORT Report, DWORD
 
 #pragma region XInput proxying
 
-static bool PopulateSystemXInputExports(DWORD UserIndex)
-{
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	const auto span = GetTracer()->StartSpan(__FUNCTION__, {
-		{ "xinput.userIndex", std::to_string(UserIndex) }
-	});
-	auto scopedSpan = trace::Scope(span);
-#endif
-
-	if (UserIndex >= DS3_DEVICES_MAX)
-		return false;
-
-	const auto state = &G_DEVICE_STATES[UserIndex];
-
-	if (state->XInput.isPopulated)
-		return true;
-
-	CHAR systemDir[MAX_PATH] = {};
-
-	if (GetSystemDirectoryA(systemDir, MAX_PATH) == 0)
-		return false;
-
-	CHAR fullXiPath[MAX_PATH] = {};
-
-	if (PathCombineA(fullXiPath, systemDir, "XInput1_3.dll") == nullptr)
-		return false;
-
-	const HMODULE xiLib = LoadLibraryA(fullXiPath);
-
-	if (xiLib == nullptr)
-		return false;
-
-	//
-	// Grab the function pointers from the OS-provided exports
-	// 
-
-	state->XInput.fpnXInputGetState =
-	reinterpret_cast<decltype(XInputGetState)*>(GetProcAddress(xiLib, "XInputGetState"));
-	state->XInput.fpnXInputSetState =
-	reinterpret_cast<decltype(XInputSetState)*>(GetProcAddress(xiLib, "XInputSetState"));
-	state->XInput.fpnXInputGetCapabilities =
-	reinterpret_cast<decltype(XInputGetCapabilities)*>(GetProcAddress(xiLib, "XInputGetCapabilities"));
-	state->XInput.fpnXInputEnable =
-	reinterpret_cast<decltype(XInputEnable)*>(GetProcAddress(xiLib, "XInputEnable"));
-	state->XInput.fpnXInputGetDSoundAudioDeviceGuids =
-	reinterpret_cast<decltype(XInputGetDSoundAudioDeviceGuids)*>(GetProcAddress(xiLib, "XInputGetDSoundAudioDeviceGuids"));
-	state->XInput.fpnXInputGetBatteryInformation =
-	reinterpret_cast<decltype(XInputGetBatteryInformation)*>(GetProcAddress(xiLib, "XInputGetBatteryInformation"));
-	state->XInput.fpnXInputGetKeystroke =
-	reinterpret_cast<decltype(XInputGetKeystroke)*>(GetProcAddress(xiLib, "XInputGetKeystroke"));
-	state->XInput.fpnXInputGetStateEx =
-	reinterpret_cast<decltype(XInputGetStateEx)*>(GetProcAddress(xiLib, MAKEINTRESOURCEA(100)));
-	state->XInput.fpnXInputWaitForGuideButton =
-	reinterpret_cast<decltype(XInputWaitForGuideButton)*>(GetProcAddress(xiLib, MAKEINTRESOURCEA(101)));
-	state->XInput.fpnXInputCancelGuideButtonWait =
-	reinterpret_cast<decltype(XInputCancelGuideButtonWait)*>(GetProcAddress(xiLib, MAKEINTRESOURCEA(102)));
-	state->XInput.fpnXInputPowerOffController =
-	reinterpret_cast<decltype(XInputPowerOffController)*>(GetProcAddress(xiLib, MAKEINTRESOURCEA(103)));
-
-	state->XInput.isPopulated = true;
-
-	return true;
-}
 
 #pragma endregion
 
