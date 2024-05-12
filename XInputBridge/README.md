@@ -68,3 +68,4 @@ The library can be built with `/D SCPLIB_ENABLE_TELEMETRY` which will pull in th
 - [pcsx2/pcsx2/PAD/Windows/XInputEnum.cpp](https://github.com/PCSX2/pcsx2/blob/6f7890b709d5e3f7f5b824781e493455efc92339/pcsx2/PAD/Windows/XInputEnum.cpp)
 - [HIDAPI library for Windows, Linux, FreeBSD and macOS](https://github.com/libusb/hidapi)
   - A Simple library for communicating with USB and Bluetooth HID devices on Linux, Mac and Windows.
+- [DJm00n/RawInputDemo](https://github.com/DJm00n/RawInputDemo)
