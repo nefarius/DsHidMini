@@ -72,6 +72,7 @@ static std::vector<XI_DEVICE_STATE> G_DEVICE_STATES(DS3_DEVICES_MAX);
 static HCMNOTIFICATION G_DS3_NOTIFICATION_HANDLE = nullptr;
 static HCMNOTIFICATION G_XUSB_NOTIFICATION_HANDLE = nullptr;
 
+#define NAMEOF(name) #name
 #define CALL_FPN_SAFE(fpn, ...)	((fpn)) ? (fpn)(__VA_ARGS__) : ERROR_DEVICE_NOT_CONNECTED
 #define CALL_FPN_SAFE_NO_RETURN(fpn, ...)	((fpn)) ? (fpn)(__VA_ARGS__) : void(0)
 
@@ -267,20 +268,39 @@ static DWORD WINAPI InitAsync(
 	// Grab the function pointers from the OS-provided exports
 	// 
 
-	G_fpnXInputGetState = reinterpret_cast<decltype(XInputGetState)*>(GetProcAddress(xiLib, "XInputGetState"));
-	G_fpnXInputSetState = reinterpret_cast<decltype(XInputSetState)*>(GetProcAddress(xiLib, "XInputSetState"));
-	G_fpnXInputGetCapabilities = reinterpret_cast<decltype(XInputGetCapabilities)*>(GetProcAddress(xiLib, "XInputGetCapabilities"));
-	G_fpnXInputEnable = reinterpret_cast<decltype(XInputEnable)*>(GetProcAddress(xiLib, "XInputEnable"));
+	G_fpnXInputGetState = reinterpret_cast<decltype(XInputGetState)*>(GetProcAddress(xiLib,
+		NAMEOF(XInputGetState)
+	));
+	G_fpnXInputSetState = reinterpret_cast<decltype(XInputSetState)*>(GetProcAddress(xiLib,
+		NAMEOF(XInputSetState)
+	));
+	G_fpnXInputGetCapabilities = reinterpret_cast<decltype(XInputGetCapabilities)*>(GetProcAddress(xiLib,
+		NAMEOF(XInputGetCapabilities)
+	));
+	G_fpnXInputEnable = reinterpret_cast<decltype(XInputEnable)*>(GetProcAddress(xiLib,
+		NAMEOF(XInputEnable)
+	));
 	G_fpnXInputGetDSoundAudioDeviceGuids = reinterpret_cast<decltype(XInputGetDSoundAudioDeviceGuids)*>(GetProcAddress(xiLib,
-		"XInputGetDSoundAudioDeviceGuids"));
+		NAMEOF(XInputGetDSoundAudioDeviceGuids)
+	));
 	G_fpnXInputGetBatteryInformation = reinterpret_cast<decltype(XInputGetBatteryInformation)*>(GetProcAddress(xiLib,
-		"XInputGetBatteryInformation"));
-	G_fpnXInputGetKeystroke = reinterpret_cast<decltype(XInputGetKeystroke)*>(GetProcAddress(xiLib, "XInputGetKeystroke"));
-	G_fpnXInputGetStateEx = reinterpret_cast<decltype(XInputGetStateEx)*>(GetProcAddress(xiLib, MAKEINTRESOURCEA(100)));
-	G_fpnXInputWaitForGuideButton = reinterpret_cast<decltype(XInputWaitForGuideButton)*>(GetProcAddress(xiLib, MAKEINTRESOURCEA(101)));
+		NAMEOF(XInputGetBatteryInformation)
+	));
+	G_fpnXInputGetKeystroke = reinterpret_cast<decltype(XInputGetKeystroke)*>(GetProcAddress(xiLib,
+		NAMEOF(XInputGetKeystroke)
+	));
+	G_fpnXInputGetStateEx = reinterpret_cast<decltype(XInputGetStateEx)*>(GetProcAddress(xiLib,
+		MAKEINTRESOURCEA(100)
+	));
+	G_fpnXInputWaitForGuideButton = reinterpret_cast<decltype(XInputWaitForGuideButton)*>(GetProcAddress(xiLib,
+		MAKEINTRESOURCEA(101)
+	));
 	G_fpnXInputCancelGuideButtonWait = reinterpret_cast<decltype(XInputCancelGuideButtonWait)*>(GetProcAddress(xiLib,
-		MAKEINTRESOURCEA(102)));
-	G_fpnXInputPowerOffController = reinterpret_cast<decltype(XInputPowerOffController)*>(GetProcAddress(xiLib, MAKEINTRESOURCEA(103)));
+		MAKEINTRESOURCEA(102)
+	));
+	G_fpnXInputPowerOffController = reinterpret_cast<decltype(XInputPowerOffController)*>(GetProcAddress(xiLib,
+		MAKEINTRESOURCEA(103)
+	));
 
 	//
 	// ^ TODO: maybe cover the exports of XInput1_4 as well?
@@ -343,7 +363,7 @@ void ScpLibInitialize()
 	spdlog::set_level(spdlog::level::debug);
 	logger->flush_on(spdlog::level::debug);
 #else
-			logger->flush_on(spdlog::level::info);
+	logger->flush_on(spdlog::level::info);
 #endif
 
 	set_default_logger(logger);
@@ -465,7 +485,7 @@ static void SetDeviceDisconnected(DWORD UserIndex)
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(UserIndex) }
-	}));
+		}));
 #endif
 
 	if (UserIndex >= DS3_DEVICES_MAX)
@@ -496,7 +516,7 @@ static bool TryGetDs3DeviceHandle(DWORD UserIndex, hid_device** Handle)
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(UserIndex) }
-	}));
+		}));
 #endif
 
 	if (UserIndex >= DS3_DEVICES_MAX)
@@ -585,7 +605,7 @@ static bool GetPacketNumber(DWORD UserIndex, PDS3_RAW_INPUT_REPORT Report, DWORD
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	const auto span = GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(UserIndex) }
-	});
+		});
 	auto scopedSpan = trace::Scope(span);
 #endif
 
@@ -643,7 +663,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
-	}));
+		}));
 #endif
 
 	do
@@ -753,7 +773,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
-	}));
+		}));
 #endif
 
 	do
@@ -895,7 +915,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scoped_span = trace::Scope(GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
-	}));
+		}));
 #endif
 
 	do
@@ -976,7 +996,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
-	}));
+		}));
 #endif
 
 	do
@@ -1056,7 +1076,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetDSoundAudioDeviceGuids(
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	const auto span = GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
-	});
+		});
 	auto scopedSpan = trace::Scope(span);
 #endif
 
@@ -1072,7 +1092,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetBatteryInformation(
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	const auto span = GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
-	});
+		});
 	auto scopedSpan = trace::Scope(span);
 #endif
 
@@ -1092,7 +1112,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetKeystroke(
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	const auto span = GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
-	});
+		});
 	auto scopedSpan = trace::Scope(span);
 #endif
 
@@ -1110,7 +1130,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
-	}));
+		}));
 #endif
 
 	do
@@ -1255,7 +1275,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputWaitForGuideButton(
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	const auto span = GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
-	});
+		});
 	auto scopedSpan = trace::Scope(span);
 #endif
 
@@ -1269,7 +1289,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputCancelGuideButtonWait(
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	const auto span = GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
-	});
+		});
 	auto scopedSpan = trace::Scope(span);
 #endif
 
@@ -1283,7 +1303,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputPowerOffController(
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	const auto span = GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
-	});
+		});
 	auto scopedSpan = trace::Scope(span);
 #endif
 
