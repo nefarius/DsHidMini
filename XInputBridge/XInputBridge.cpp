@@ -15,6 +15,7 @@
 #define SXS_MODE_GET_FEATURE_REPORT_ID	0xF2
 #define SXS_MODE_GET_FEATURE_BUFFER_LEN	0x40
 #define DS3_DEVICES_MAX					8
+#define LOGGER_NAME						"XInputBridge"
 
 
 //
@@ -60,11 +61,11 @@ struct device_state
 // 
 static device_state G_DEVICE_STATES[DS3_DEVICES_MAX];
 
-static HCMNOTIFICATION G_DS3_NOTIFICATION_HANDLE = NULL;
-static HCMNOTIFICATION G_XUSB_NOTIFICATION_HANDLE = NULL;
+static HCMNOTIFICATION G_DS3_NOTIFICATION_HANDLE = nullptr;
+static HCMNOTIFICATION G_XUSB_NOTIFICATION_HANDLE = nullptr;
 
 // {EC87F1E3-C13B-4100-B5F7-8B84D54260CB}
-DEFINE_GUID(XUSB_INTERFACE_CLASS_GUID, 
+DEFINE_GUID(XUSB_INTERFACE_CLASS_GUID,
 	0xEC87F1E3, 0xC13B, 0x4100, 0xB5, 0xF7, 0x8B, 0x84, 0xD5, 0x42, 0x60, 0xCB);
 
 static decltype(XInputGetState)* G_fpnXInputGetState = nullptr;
@@ -81,23 +82,23 @@ static decltype(XInputPowerOffController)* G_fpnXInputPowerOffController = nullp
 
 
 static DWORD CALLBACK Ds3NotificationCallback(
-    _In_ HCMNOTIFICATION       hNotify,
-    _In_opt_ PVOID             Context,
-    _In_ CM_NOTIFY_ACTION      Action,
-    _In_reads_bytes_(EventDataSize) PCM_NOTIFY_EVENT_DATA EventData,
-    _In_ DWORD                 EventDataSize
-    )
+	_In_ HCMNOTIFICATION hNotify,
+	_In_opt_ PVOID Context,
+	_In_ CM_NOTIFY_ACTION Action,
+	_In_reads_bytes_(EventDataSize) PCM_NOTIFY_EVENT_DATA EventData,
+	_In_ DWORD EventDataSize
+)
 {
 	return ERROR_SUCCESS;
 }
 
 static DWORD CALLBACK XusbNotificationCallback(
-    _In_ HCMNOTIFICATION       hNotify,
-    _In_opt_ PVOID             Context,
-    _In_ CM_NOTIFY_ACTION      Action,
-    _In_reads_bytes_(EventDataSize) PCM_NOTIFY_EVENT_DATA EventData,
-    _In_ DWORD                 EventDataSize
-    )
+	_In_ HCMNOTIFICATION hNotify,
+	_In_opt_ PVOID Context,
+	_In_ CM_NOTIFY_ACTION Action,
+	_In_reads_bytes_(EventDataSize) PCM_NOTIFY_EVENT_DATA EventData,
+	_In_ DWORD EventDataSize
+)
 {
 	return ERROR_SUCCESS;
 }
@@ -106,22 +107,33 @@ static DWORD WINAPI InitAsync(
 	_In_ LPVOID lpParameter
 )
 {
+	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
+
 	UNREFERENCED_PARAMETER(lpParameter);
 
 	CHAR systemDir[MAX_PATH] = {};
 
 	if (GetSystemDirectoryA(systemDir, MAX_PATH) == 0)
+	{
+		logger->error("GetSystemDirectoryA failed: {:#x}", GetLastError());
 		return GetLastError();
+	}
 
 	CHAR fullXiPath[MAX_PATH] = {};
 
 	if (PathCombineA(fullXiPath, systemDir, "XInput1_3.dll") == nullptr)
+	{
+		logger->error("PathCombineA failed: {:#x}", GetLastError());
 		return GetLastError();
+	}
 
 	const HMODULE xiLib = LoadLibraryA(fullXiPath);
 
 	if (xiLib == nullptr)
+	{
+		logger->error("LoadLibraryA failed: {:#x}", GetLastError());
 		return GetLastError();
+	}
 
 	//
 	// Grab the function pointers from the OS-provided exports
@@ -150,7 +162,7 @@ static DWORD WINAPI InitAsync(
 	// Register notifications for device arrival/removal
 	// 
 
-	CM_NOTIFY_FILTER ds3Filter ={};
+	CM_NOTIFY_FILTER ds3Filter = {};
 	ds3Filter.cbSize = sizeof(CM_NOTIFY_FILTER);
 	ds3Filter.FilterType = CM_NOTIFY_FILTER_TYPE_DEVICEINTERFACE;
 	ds3Filter.u.DeviceInterface.ClassGuid = GUID_DEVINTERFACE_DSHIDMINI;
@@ -158,9 +170,14 @@ static DWORD WINAPI InitAsync(
 	//
 	// Register DsHidMini device interface
 	// 
-	CM_Register_Notification(&ds3Filter, NULL, Ds3NotificationCallback, &G_DS3_NOTIFICATION_HANDLE);
+	CONFIGRET ret = CM_Register_Notification(&ds3Filter, nullptr, Ds3NotificationCallback, &G_DS3_NOTIFICATION_HANDLE);
 
-	CM_NOTIFY_FILTER xusbFilter ={};
+	if (ret != CR_SUCCESS)
+	{
+		logger->error("CM_Register_Notification (DS3) failed: {:#x}", std::to_string(ret));
+	}
+
+	CM_NOTIFY_FILTER xusbFilter = {};
 	xusbFilter.cbSize = sizeof(CM_NOTIFY_FILTER);
 	xusbFilter.FilterType = CM_NOTIFY_FILTER_TYPE_DEVICEINTERFACE;
 	xusbFilter.u.DeviceInterface.ClassGuid = XUSB_INTERFACE_CLASS_GUID;
@@ -168,14 +185,41 @@ static DWORD WINAPI InitAsync(
 	//
 	// Register X360/XBONE device interface
 	// 
-	CM_Register_Notification(&xusbFilter, NULL, XusbNotificationCallback, &G_XUSB_NOTIFICATION_HANDLE);
+	ret = CM_Register_Notification(&xusbFilter, nullptr, XusbNotificationCallback, &G_XUSB_NOTIFICATION_HANDLE);
+
+	if (ret != CR_SUCCESS)
+	{
+		logger->error("CM_Register_Notification (XUSB) failed: {:#x}", std::to_string(ret));
+	}
 
 	return ERROR_SUCCESS;
 
 }
 
+EXTERN_C IMAGE_DOS_HEADER __ImageBase;
+
 void ScpLibInitialize()
 {
+	CHAR dllPath[MAX_PATH];
+
+	GetModuleFileNameA((HINSTANCE)&__ImageBase, dllPath, MAX_PATH);
+	PathRemoveFileSpecA(dllPath);
+	const auto dllDir = std::string(dllPath);
+
+	auto logger = spdlog::basic_logger_mt(
+		LOGGER_NAME,
+		dllDir + "\\XInputBridge.log"
+	);
+
+#if _DEBUG
+	spdlog::set_level(spdlog::level::debug);
+	logger->flush_on(spdlog::level::debug);
+#else
+			logger->flush_on(spdlog::level::info);
+#endif
+
+	set_default_logger(logger);
+
 	for (auto& state : G_DEVICE_STATES)
 	{
 		InitializeCriticalSection(&state.lock);
