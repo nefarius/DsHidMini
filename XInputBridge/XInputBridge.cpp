@@ -98,7 +98,7 @@ static decltype(XInputPowerOffController)* G_fpnXInputPowerOffController = nullp
 //
 // https://github.com/DJm00n/RawInputDemo/blob/master/RawInputLib/RawInputDeviceHid.cpp#L275-L339
 // 
-static bool SymlinkToUserIndex(_In_ PCWSTR Symlink, _Inout_ PDWORD UserIndex)
+static bool XUSB_SymlinkToUserIndex(_In_ PCWSTR Symlink, _Inout_ PDWORD UserIndex)
 {
 	constexpr DWORD desiredAccess = (GENERIC_WRITE | GENERIC_READ);
 	constexpr DWORD shareMode = FILE_SHARE_READ | FILE_SHARE_WRITE;
@@ -200,7 +200,7 @@ static DWORD CALLBACK DeviceNotificationCallback(
 			logger->info("New XUSB device arrived: {}", ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink));
 
 			DWORD userIndex = 0xFF;
-			if (SymlinkToUserIndex(EventData->u.DeviceInterface.SymbolicLink, &userIndex))
+			if (XUSB_SymlinkToUserIndex(EventData->u.DeviceInterface.SymbolicLink, &userIndex))
 			{
 				logger->info("User index: {}", userIndex);
 			}
