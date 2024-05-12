@@ -6,6 +6,7 @@
   "supports": "!(arm | uwp)",
   "dependencies": [
     { "name": "hidapi" },
+    { "name": "spdlog" },
     {
       "name": "opentelemetry-cpp",
       "features": [ "otlp-http" ]
