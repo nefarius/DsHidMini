@@ -53,7 +53,7 @@ struct XI_DEVICE_STATE
 	//
 	// Path of backing DS3 or XUSB device
 	// 
-	std::wstring SymbolicLink;
+	std::string SymbolicLink;
 
 	std::atomic<XI_DEVICE_TYPE> Type = XI_DEVICE_TYPE_NOT_CONNECTED;
 
@@ -62,6 +62,13 @@ struct XI_DEVICE_STATE
 		hid_device* DeviceHandle = nullptr;
 		DWORD UserIndex;
 	} Backend;
+
+	void SetOnlineAsXusb(const std::string& Symlink, DWORD UserIndex)
+	{
+		SymbolicLink = Symlink;
+		Backend.UserIndex = UserIndex;
+		Type = XI_DEVICE_TYPE_XUSB;
+	}
 };
 
 //
@@ -198,12 +205,28 @@ static DWORD CALLBACK DeviceNotificationCallback(
 
 		if (IsEqualGUID(XUSB_INTERFACE_CLASS_GUID, EventData->u.DeviceInterface.ClassGuid))
 		{
-			logger->info("New XUSB device arrived: {}", ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink));
+			const auto symlink = ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink);
 
-			DWORD userIndex = 0xFF;
+			logger->info("New XUSB device arrived: {}", symlink);
+
+			DWORD userIndex = K_INVALID_X_INPUT_USER_ID;
 			if (XUSB_SymlinkToUserIndex(EventData->u.DeviceInterface.SymbolicLink, &userIndex))
 			{
 				logger->info("User index: {}", userIndex);
+
+				const auto item = std::ranges::find_if(G_DEVICE_STATES, [](const XI_DEVICE_STATE& element)
+				{
+					return element.Type == XI_DEVICE_TYPE_NOT_CONNECTED;
+				});
+
+				if (item != G_DEVICE_STATES.end())
+				{
+					item->SetOnlineAsXusb(symlink, userIndex);
+				}
+				else
+				{
+					logger->warn("No free slot for {}", symlink);
+				}
 			}
 			else
 			{
@@ -214,12 +237,35 @@ static DWORD CALLBACK DeviceNotificationCallback(
 	case CM_NOTIFY_ACTION_DEVICEINTERFACEREMOVAL:
 		if (IsEqualGUID(GUID_DEVINTERFACE_DSHIDMINI, EventData->u.DeviceInterface.ClassGuid))
 		{
-			logger->info("DS3 device got removed: {}", ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink));
+			const std::string symlink = ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink);
+			logger->info("DS3 device got removed: {}", symlink);
+
+			const auto item = std::ranges::find_if(G_DEVICE_STATES, [symlink](const XI_DEVICE_STATE& element)
+			{
+				return absl::EqualsIgnoreCase(element.SymbolicLink, symlink);
+			});
+
+			if (item != G_DEVICE_STATES.end())
+			{
+				item->Type = XI_DEVICE_TYPE_NOT_CONNECTED;
+			}
 		}
 
 		if (IsEqualGUID(XUSB_INTERFACE_CLASS_GUID, EventData->u.DeviceInterface.ClassGuid))
 		{
-			logger->info("XUSB device got removed: {}", ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink));
+			const std::string symlink = ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink);
+			logger->info("XUSB device got removed: {}", symlink);
+
+			const auto item = std::ranges::find_if(G_DEVICE_STATES, [symlink](const XI_DEVICE_STATE& element)
+			{
+				return absl::EqualsIgnoreCase(element.SymbolicLink, symlink);
+			});
+
+			if (item != G_DEVICE_STATES.end())
+			{
+				item->Type = XI_DEVICE_TYPE_NOT_CONNECTED;
+				item->Backend.UserIndex = K_INVALID_X_INPUT_USER_ID;
+			}
 		}
 		break;
 	default:
@@ -322,7 +368,7 @@ static DWORD WINAPI InitAsync(
 
 	if (ret != CR_SUCCESS)
 	{
-		logger->error("CM_Register_Notification (DS3) failed: {:#x}", std::to_string(ret));
+		logger->error("CM_Register_Notification (DS3) failed: {:#x}", ret);
 	}
 
 	CM_NOTIFY_FILTER xusbFilter = {};
@@ -337,7 +383,7 @@ static DWORD WINAPI InitAsync(
 
 	if (ret != CR_SUCCESS)
 	{
-		logger->error("CM_Register_Notification (XUSB) failed: {:#x}", std::to_string(ret));
+		logger->error("CM_Register_Notification (XUSB) failed: {:#x}", ret);
 	}
 
 	return ERROR_SUCCESS;

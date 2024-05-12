@@ -69,3 +69,4 @@ The library can be built with `/D SCPLIB_ENABLE_TELEMETRY` which will pull in th
 - [DJm00n/RawInputDemo](https://github.com/DJm00n/RawInputDemo)
 - [A modern C++ scope guard that is easy to use but hard to misuse](https://github.com/ricab/scope_guard)
 - [OpenXInput](https://github.com/Nemirtingas/OpenXinput)
+- [Abseil C++ library](https://abseil.io/)

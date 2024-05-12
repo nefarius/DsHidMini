@@ -8,6 +8,7 @@
     { "name": "hidapi" },
     { "name": "spdlog" },
     { "name": "scope-guard" },
+    { "name": "abseil" },
     {
       "name": "opentelemetry-cpp",
       "features": [ "otlp-http" ]
