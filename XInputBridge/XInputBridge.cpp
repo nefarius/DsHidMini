@@ -20,9 +20,19 @@
 
 
 //
-// Device state information to improve performance
+// Type of the device behind a give user index
 // 
-struct device_state
+enum XI_DEVICE_TYPE
+{
+	XI_DEVICE_TYPE_NOT_CONNECTED = 0,
+	XI_DEVICE_TYPE_DS3,
+	XI_DEVICE_TYPE_XUSB,
+};
+
+//
+// Device state information of each user index to improve performance
+// 
+struct XI_DEVICE_STATE
 {
 	volatile bool isInitialized = false;
 
@@ -35,12 +45,14 @@ struct device_state
 	DS3_RAW_INPUT_REPORT lastReport;
 
 	CRITICAL_SECTION lock;
+
+	volatile XI_DEVICE_TYPE type;
 };
 
 //
 // Keep track on device states for better lookup performance
 // 
-static device_state G_DEVICE_STATES[DS3_DEVICES_MAX];
+static XI_DEVICE_STATE G_DEVICE_STATES[DS3_DEVICES_MAX];
 
 static HCMNOTIFICATION G_DS3_NOTIFICATION_HANDLE = nullptr;
 static HCMNOTIFICATION G_XUSB_NOTIFICATION_HANDLE = nullptr;
@@ -113,6 +125,9 @@ static DWORD CALLBACK DeviceNotificationCallback(
 	return ERROR_SUCCESS;
 }
 
+//
+// Performs startup tasks too dangerous to do in DllMain
+// 
 static DWORD WINAPI InitAsync(
 	_In_ LPVOID lpParameter
 )
