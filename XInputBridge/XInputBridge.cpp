@@ -76,6 +76,17 @@ struct XI_DEVICE_STATE
 // 
 static std::vector<XI_DEVICE_STATE> G_DEVICE_STATES(DS3_DEVICES_MAX);
 
+static XI_DEVICE_STATE* GetFreeSlot()
+{
+	const std::ranges::borrowed_iterator_t<std::vector<XI_DEVICE_STATE>&> item = std::ranges::find_if(G_DEVICE_STATES,
+		[](const XI_DEVICE_STATE& element)
+		{
+			return element.Type == XI_DEVICE_TYPE_NOT_CONNECTED;
+		});
+
+	return (item != G_DEVICE_STATES.end()) ? &(*item) : nullptr;
+}
+
 static HCMNOTIFICATION G_DS3_NOTIFICATION_HANDLE = nullptr;
 static HCMNOTIFICATION G_XUSB_NOTIFICATION_HANDLE = nullptr;
 
@@ -214,14 +225,9 @@ static DWORD CALLBACK DeviceNotificationCallback(
 			{
 				logger->info("User index: {}", userIndex);
 
-				const auto item = std::ranges::find_if(G_DEVICE_STATES, [](const XI_DEVICE_STATE& element)
+				if (const auto slot = GetFreeSlot())
 				{
-					return element.Type == XI_DEVICE_TYPE_NOT_CONNECTED;
-				});
-
-				if (item != G_DEVICE_STATES.end())
-				{
-					item->SetOnlineAsXusb(symlink, userIndex);
+					slot->SetOnlineAsXusb(symlink, userIndex);
 				}
 				else
 				{
