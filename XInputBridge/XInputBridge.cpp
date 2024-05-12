@@ -3,6 +3,7 @@
 
 #include "framework.h"
 #include "XInputBridge.h"
+#include "UniUtil.h"
 
 
 //
@@ -81,7 +82,10 @@ static decltype(XInputCancelGuideButtonWait)* G_fpnXInputCancelGuideButtonWait =
 static decltype(XInputPowerOffController)* G_fpnXInputPowerOffController = nullptr;
 
 
-static DWORD CALLBACK Ds3NotificationCallback(
+//
+// Gets called when a device of interest got attached or removed
+// 
+static DWORD CALLBACK DeviceNotificationCallback(
 	_In_ HCMNOTIFICATION hNotify,
 	_In_opt_ PVOID Context,
 	_In_ CM_NOTIFY_ACTION Action,
@@ -89,20 +93,39 @@ static DWORD CALLBACK Ds3NotificationCallback(
 	_In_ DWORD EventDataSize
 )
 {
+	UNREFERENCED_PARAMETER(hNotify);
+	UNREFERENCED_PARAMETER(Context);
+	UNREFERENCED_PARAMETER(EventDataSize);
+
 	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
 
-	return ERROR_SUCCESS;
-}
+	switch (Action)
+	{
+	case CM_NOTIFY_ACTION_DEVICEINTERFACEARRIVAL:
+		if (IsEqualGUID(GUID_DEVINTERFACE_DSHIDMINI, EventData->u.DeviceInterface.ClassGuid))
+		{
+			logger->info("New DS3 device arrived: {}", ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink));
+		}
 
-static DWORD CALLBACK XusbNotificationCallback(
-	_In_ HCMNOTIFICATION hNotify,
-	_In_opt_ PVOID Context,
-	_In_ CM_NOTIFY_ACTION Action,
-	_In_reads_bytes_(EventDataSize) PCM_NOTIFY_EVENT_DATA EventData,
-	_In_ DWORD EventDataSize
-)
-{
-	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
+		if (IsEqualGUID(XUSB_INTERFACE_CLASS_GUID, EventData->u.DeviceInterface.ClassGuid))
+		{
+			logger->info("New XUSB device arrived: {}", ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink));
+		}
+		break;
+	case CM_NOTIFY_ACTION_DEVICEINSTANCEREMOVED:
+		if (IsEqualGUID(GUID_DEVINTERFACE_DSHIDMINI, EventData->u.DeviceInterface.ClassGuid))
+		{
+			logger->info("DS3 device got removed: {}", ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink));
+		}
+
+		if (IsEqualGUID(XUSB_INTERFACE_CLASS_GUID, EventData->u.DeviceInterface.ClassGuid))
+		{
+			logger->info("XUSB device got removed: {}", ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink));
+		}
+		break;
+	default:
+		return ERROR_SUCCESS;
+	}
 
 	return ERROR_SUCCESS;
 }
@@ -174,7 +197,7 @@ static DWORD WINAPI InitAsync(
 	//
 	// Register DsHidMini device interface
 	// 
-	CONFIGRET ret = CM_Register_Notification(&ds3Filter, nullptr, Ds3NotificationCallback, &G_DS3_NOTIFICATION_HANDLE);
+	CONFIGRET ret = CM_Register_Notification(&ds3Filter, nullptr, DeviceNotificationCallback, &G_DS3_NOTIFICATION_HANDLE);
 
 	if (ret != CR_SUCCESS)
 	{
@@ -189,7 +212,7 @@ static DWORD WINAPI InitAsync(
 	//
 	// Register X360/XBONE device interface
 	// 
-	ret = CM_Register_Notification(&xusbFilter, nullptr, XusbNotificationCallback, &G_XUSB_NOTIFICATION_HANDLE);
+	ret = CM_Register_Notification(&xusbFilter, nullptr, DeviceNotificationCallback, &G_XUSB_NOTIFICATION_HANDLE);
 
 	if (ret != CR_SUCCESS)
 	{
