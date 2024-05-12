@@ -67,7 +67,7 @@ struct XI_DEVICE_STATE
 //
 // Keep track on device states for better lookup performance
 // 
-static XI_DEVICE_STATE G_DEVICE_STATES[DS3_DEVICES_MAX];
+static std::vector<XI_DEVICE_STATE> G_DEVICE_STATES(DS3_DEVICES_MAX);
 
 static HCMNOTIFICATION G_DS3_NOTIFICATION_HANDLE = nullptr;
 static HCMNOTIFICATION G_XUSB_NOTIFICATION_HANDLE = nullptr;
