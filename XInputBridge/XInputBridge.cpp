@@ -63,6 +63,10 @@ static device_state G_DEVICE_STATES[DS3_DEVICES_MAX];
 static HCMNOTIFICATION G_DS3_NOTIFICATION_HANDLE = NULL;
 static HCMNOTIFICATION G_XUSB_NOTIFICATION_HANDLE = NULL;
 
+// {EC87F1E3-C13B-4100-B5F7-8B84D54260CB}
+DEFINE_GUID(XUSB_INTERFACE_CLASS_GUID, 
+	0xEC87F1E3, 0xC13B, 0x4100, 0xB5, 0xF7, 0x8B, 0x84, 0xD5, 0x42, 0x60, 0xCB);
+
 static decltype(XInputGetState)* G_fpnXInputGetState = nullptr;
 static decltype(XInputSetState)* G_fpnXInputSetState = nullptr;
 static decltype(XInputGetCapabilities)* G_fpnXInputGetCapabilities = nullptr;
@@ -77,6 +81,17 @@ static decltype(XInputPowerOffController)* G_fpnXInputPowerOffController = nullp
 
 
 static DWORD CALLBACK Ds3NotificationCallback(
+    _In_ HCMNOTIFICATION       hNotify,
+    _In_opt_ PVOID             Context,
+    _In_ CM_NOTIFY_ACTION      Action,
+    _In_reads_bytes_(EventDataSize) PCM_NOTIFY_EVENT_DATA EventData,
+    _In_ DWORD                 EventDataSize
+    )
+{
+	return ERROR_SUCCESS;
+}
+
+static DWORD CALLBACK XusbNotificationCallback(
     _In_ HCMNOTIFICATION       hNotify,
     _In_opt_ PVOID             Context,
     _In_ CM_NOTIFY_ACTION      Action,
@@ -127,12 +142,33 @@ static DWORD WINAPI InitAsync(
 		MAKEINTRESOURCEA(102)));
 	G_fpnXInputPowerOffController = reinterpret_cast<decltype(XInputPowerOffController)*>(GetProcAddress(xiLib, MAKEINTRESOURCEA(103)));
 
+	//
+	// ^ TODO: maybe cover the exports of XInput1_4 as well?
+	// 
+
+	//
+	// Register notifications for device arrival/removal
+	// 
+
 	CM_NOTIFY_FILTER ds3Filter ={};
 	ds3Filter.cbSize = sizeof(CM_NOTIFY_FILTER);
 	ds3Filter.FilterType = CM_NOTIFY_FILTER_TYPE_DEVICEINTERFACE;
-	//filter.u.DeviceInterface.ClassGuid = iface;
+	ds3Filter.u.DeviceInterface.ClassGuid = GUID_DEVINTERFACE_DSHIDMINI;
 
+	//
+	// Register DsHidMini device interface
+	// 
 	CM_Register_Notification(&ds3Filter, NULL, Ds3NotificationCallback, &G_DS3_NOTIFICATION_HANDLE);
+
+	CM_NOTIFY_FILTER xusbFilter ={};
+	xusbFilter.cbSize = sizeof(CM_NOTIFY_FILTER);
+	xusbFilter.FilterType = CM_NOTIFY_FILTER_TYPE_DEVICEINTERFACE;
+	xusbFilter.u.DeviceInterface.ClassGuid = XUSB_INTERFACE_CLASS_GUID;
+
+	//
+	// Register X360/XBONE device interface
+	// 
+	CM_Register_Notification(&xusbFilter, NULL, XusbNotificationCallback, &G_XUSB_NOTIFICATION_HANDLE);
 
 	return ERROR_SUCCESS;
 
@@ -154,6 +190,9 @@ void ScpLibInitialize()
 
 void ScpLibDestroy()
 {
+	CM_Unregister_Notification(G_DS3_NOTIFICATION_HANDLE);
+	CM_Unregister_Notification(G_XUSB_NOTIFICATION_HANDLE);
+
 	for (auto& state : G_DEVICE_STATES)
 	{
 		DeleteCriticalSection(&state.lock);
