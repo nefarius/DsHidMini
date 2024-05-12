@@ -20,6 +20,9 @@
 #define XI_SYSTEM_LIB_NAME				"XInput1_3.dll"
 
 
+static constexpr uint8_t K_INVALID_X_INPUT_USER_ID = 0xff; // XUSER_INDEX_ANY
+
+
 //
 // Type of the device behind a give user index
 // 
@@ -39,17 +42,26 @@ struct XI_DEVICE_STATE
 
 	bool isConnected = false;
 
-	hid_device* deviceHandle = nullptr;
+	hid_device* oldDeviceHandle = nullptr;
 
 	DWORD PacketNumber;
 
-	DS3_RAW_INPUT_REPORT lastReport;
+	DS3_RAW_INPUT_REPORT LastReport;
 
 	CRITICAL_SECTION lock;
 
+	//
+	// Path of backing DS3 or XUSB device
+	// 
 	std::wstring SymbolicLink;
 
-	std::atomic<XI_DEVICE_TYPE> Type;
+	std::atomic<XI_DEVICE_TYPE> Type = XI_DEVICE_TYPE_NOT_CONNECTED;
+
+	union
+	{
+		hid_device* DeviceHandle = nullptr;
+		DWORD UserIndex;
+	} Backend;
 };
 
 //
@@ -82,15 +94,24 @@ static decltype(XInputWaitForGuideButton)* G_fpnXInputWaitForGuideButton = nullp
 static decltype(XInputCancelGuideButtonWait)* G_fpnXInputCancelGuideButtonWait = nullptr;
 static decltype(XInputPowerOffController)* G_fpnXInputPowerOffController = nullptr;
 
+
 //
 // https://github.com/DJm00n/RawInputDemo/blob/master/RawInputLib/RawInputDeviceHid.cpp#L275-L339
 // 
-static bool SymlinkToUserIndex(PCWSTR Symlink, PDWORD UserIndex)
+static bool SymlinkToUserIndex(_In_ PCWSTR Symlink, _Inout_ PDWORD UserIndex)
 {
 	constexpr DWORD desiredAccess = (GENERIC_WRITE | GENERIC_READ);
 	constexpr DWORD shareMode = FILE_SHARE_READ | FILE_SHARE_WRITE;
 
-	HANDLE handle = CreateFileW(Symlink, desiredAccess, shareMode, nullptr, OPEN_EXISTING, 0, nullptr);
+	HANDLE handle = CreateFileW(
+		Symlink,
+		desiredAccess,
+		shareMode,
+		nullptr,
+		OPEN_EXISTING,
+		0,
+		nullptr
+	);
 
 	const auto guard = sg::make_scope_guard([handle]() noexcept
 	{
@@ -120,14 +141,12 @@ static bool SymlinkToUserIndex(PCWSTR Symlink, PDWORD UserIndex)
 		return false;
 	}
 
-	static constexpr uint8_t kInvalidXInputUserId = 0xff; // XUSER_INDEX_ANY
-
 	// https://www.partsnotincluded.com/xbox-360-controller-led-animations-info/
 	// https://github.com/paroj/xpad/blob/5978d1020344c3288701ef70ea9a54dfc3312733/xpad.c#L1382-L1402
 	constexpr uint8_t XINPUT_LED_TO_PORT_MAP[] =
 	{
-		kInvalidXInputUserId, // All off
-		kInvalidXInputUserId, // All blinking, then previous setting
+		K_INVALID_X_INPUT_USER_ID, // All off
+		K_INVALID_X_INPUT_USER_ID, // All blinking, then previous setting
 		0, // 1 flashes, then on
 		1, // 2 flashes, then on
 		2, // 3 flashes, then on
@@ -136,12 +155,12 @@ static bool SymlinkToUserIndex(PCWSTR Symlink, PDWORD UserIndex)
 		1, // 2 on
 		2, // 3 on
 		3, // 4 on
-		kInvalidXInputUserId, // Rotate
-		kInvalidXInputUserId, // Blink, based on previous setting
-		kInvalidXInputUserId, // Slow blink, based on previous setting
-		kInvalidXInputUserId, // Rotate with two lights
-		kInvalidXInputUserId, // Persistent slow all blink
-		kInvalidXInputUserId, // Blink once, then previous setting
+		K_INVALID_X_INPUT_USER_ID, // Rotate
+		K_INVALID_X_INPUT_USER_ID, // Blink, based on previous setting
+		K_INVALID_X_INPUT_USER_ID, // Slow blink, based on previous setting
+		K_INVALID_X_INPUT_USER_ID, // Rotate with two lights
+		K_INVALID_X_INPUT_USER_ID, // Persistent slow all blink
+		K_INVALID_X_INPUT_USER_ID, // Blink once, then previous setting
 	};
 
 	const uint8_t ledState = ledStateData[2];
@@ -458,12 +477,12 @@ static void SetDeviceDisconnected(DWORD UserIndex)
 
 	state->isConnected = false;
 	state->PacketNumber = 0;
-	RtlZeroMemory(&state->lastReport, sizeof(DS3_RAW_INPUT_REPORT));
+	RtlZeroMemory(&state->LastReport, sizeof(DS3_RAW_INPUT_REPORT));
 
-	if (state->deviceHandle)
+	if (state->oldDeviceHandle)
 	{
-		hid_close(state->deviceHandle);
-		state->deviceHandle = nullptr;
+		hid_close(state->oldDeviceHandle);
+		state->oldDeviceHandle = nullptr;
 	}
 
 	LeaveCriticalSection(&state->lock);
@@ -499,12 +518,12 @@ static bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 		if (state->isConnected)
 		{
 			if (Handle)
-				*Handle = state->deviceHandle;
+				*Handle = state->oldDeviceHandle;
 			result = true;
 			break;
 		}
 
-		RtlZeroMemory(&state->lastReport, sizeof(DS3_RAW_INPUT_REPORT));
+		RtlZeroMemory(&state->LastReport, sizeof(DS3_RAW_INPUT_REPORT));
 		state->PacketNumber = 0;
 
 		//
@@ -527,7 +546,7 @@ static bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 
 		if (currentDevice == nullptr)
 		{
-			state->deviceHandle = nullptr;
+			state->oldDeviceHandle = nullptr;
 			state->isConnected = false;
 			break;
 		}
@@ -536,7 +555,7 @@ static bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 
 		if (device == nullptr)
 		{
-			state->deviceHandle = nullptr;
+			state->oldDeviceHandle = nullptr;
 			state->isConnected = false;
 			break;
 		}
@@ -544,7 +563,7 @@ static bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 		if (Handle)
 			*Handle = device;
 
-		state->deviceHandle = device;
+		state->oldDeviceHandle = device;
 		state->isConnected = true;
 		result = true;
 
@@ -587,13 +606,13 @@ static bool GetPacketNumber(DWORD UserIndex, PDS3_RAW_INPUT_REPORT Report, DWORD
 	// Only increment when a change happened
 	// 
 	if (memcmp(
-		&state->lastReport,
+		&state->LastReport,
 		Report,
 		bytesToCompare
 	) != 0)
 	{
 		state->PacketNumber++;
-		memcpy(&state->lastReport, Report, sizeof(DS3_RAW_INPUT_REPORT));
+		memcpy(&state->LastReport, Report, sizeof(DS3_RAW_INPUT_REPORT));
 	}
 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
