@@ -42,6 +42,7 @@
   <ItemGroup>
     <ClInclude Include="..\include\DsHidMini\Ds3Types.h" />
     <ClInclude Include="..\include\DsHidMini\ScpTypes.h" />
+    <ClInclude Include="..\include\DsHidMini\dshmguid.h" />
     <ClInclude Include="Configuration.h" />
     <ClInclude Include="Device.h" />
     <ClInclude Include="Driver.h" />
@@ -49,8 +50,7 @@
     <ClInclude Include="DsBth.h" />
     <ClInclude Include="DsCommon.h" />
     <ClInclude Include="DsHid.h" />
-    <ClInclude Include="DsHidMiniDrv.h" />
-    <ClInclude Include="dshmguid.h" />
+    <ClInclude Include="DsHidMiniDrv.h" />    
     <ClInclude Include="DsInternal.h" />
     <ClInclude Include="DsUsb.h" />
     <ClInclude Include="HID\01_SDF_Col1_GamePad.h" />

@@ -129,9 +129,6 @@
     <ClInclude Include="uthash.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="dshmguid.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="DsInternal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -139,6 +136,9 @@
       <Filter>Header Files\Public</Filter>
     </ClInclude>
     <ClInclude Include="..\include\DsHidMini\ScpTypes.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\DsHidMini\dshmguid.h">
       <Filter>Header Files\Public</Filter>
     </ClInclude>
     <ClInclude Include="HID\02_GPJ_Col1_GamePad.h">
