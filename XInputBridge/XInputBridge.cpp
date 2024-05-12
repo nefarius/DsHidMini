@@ -57,6 +57,9 @@ static XI_DEVICE_STATE G_DEVICE_STATES[DS3_DEVICES_MAX];
 static HCMNOTIFICATION G_DS3_NOTIFICATION_HANDLE = nullptr;
 static HCMNOTIFICATION G_XUSB_NOTIFICATION_HANDLE = nullptr;
 
+#define CALL_FPN_SAFE(fpn, ...)	((fpn)) ? (fpn)(__VA_ARGS__) : ERROR_DEVICE_NOT_CONNECTED
+#define CALL_FPN_SAFE_NO_RETURN(fpn, ...)	((fpn)) ? (fpn)(__VA_ARGS__) : void(0)
+
 //
 // Applies to both Xbox 360 and Xbox One controllers
 // 
@@ -666,8 +669,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 		// 
 		if (!GetDeviceHandle(dwUserIndex, &device))
 		{
-			if (G_fpnXInputGetState)
-				status = G_fpnXInputGetState(dwUserIndex, pState);
+			status = CALL_FPN_SAFE(G_fpnXInputGetState, dwUserIndex, pState);
 			break;
 		}
 
@@ -809,8 +811,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
 		// 
 		if (!GetDeviceHandle(dwUserIndex, &device))
 		{
-			if (G_fpnXInputSetState)
-				status = G_fpnXInputSetState(dwUserIndex, pVibration);
+			status = CALL_FPN_SAFE(G_fpnXInputSetState, dwUserIndex, pVibration);
 			break;
 		}
 
@@ -891,8 +892,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 		// 
 		if (!GetDeviceHandle(dwUserIndex, nullptr))
 		{
-			if (G_fpnXInputGetCapabilities)
-				status = G_fpnXInputGetCapabilities(dwUserIndex, dwFlags, pCapabilities);
+			status = CALL_FPN_SAFE(G_fpnXInputGetCapabilities, dwUserIndex, dwFlags, pCapabilities);
 			break;
 		}
 
@@ -944,8 +944,7 @@ XINPUTBRIDGE_API void WINAPI XInputEnable(
 	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
 #endif
 
-	if (G_fpnXInputEnable)
-		G_fpnXInputEnable(enable);
+	CALL_FPN_SAFE_NO_RETURN(G_fpnXInputEnable, enable);
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputGetDSoundAudioDeviceGuids(
@@ -961,9 +960,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetDSoundAudioDeviceGuids(
 	auto scopedSpan = trace::Scope(span);
 #endif
 
-	return G_fpnXInputGetDSoundAudioDeviceGuids
-	? G_fpnXInputGetDSoundAudioDeviceGuids(dwUserIndex, pDSoundRenderGuid, pDSoundCaptureGuid)
-	: ERROR_DEVICE_NOT_CONNECTED;
+	return CALL_FPN_SAFE(G_fpnXInputGetDSoundAudioDeviceGuids, dwUserIndex, pDSoundRenderGuid, pDSoundCaptureGuid);
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputGetBatteryInformation(
@@ -979,9 +976,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetBatteryInformation(
 	auto scopedSpan = trace::Scope(span);
 #endif
 
-	return G_fpnXInputGetBatteryInformation
-	? G_fpnXInputGetBatteryInformation(dwUserIndex, devType, pBatteryInformation)
-	: ERROR_DEVICE_NOT_CONNECTED;
+	return CALL_FPN_SAFE(G_fpnXInputGetBatteryInformation, dwUserIndex, devType, pBatteryInformation);
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputGetKeystroke(
@@ -1001,9 +996,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetKeystroke(
 	auto scopedSpan = trace::Scope(span);
 #endif
 
-	return G_fpnXInputGetKeystroke
-	? G_fpnXInputGetKeystroke(dwUserIndex, dwReserved, pKeystroke)
-	: ERROR_DEVICE_NOT_CONNECTED;
+	return CALL_FPN_SAFE(G_fpnXInputGetKeystroke, dwUserIndex, dwReserved, pKeystroke);
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
@@ -1033,8 +1026,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
 		// 
 		if (!GetDeviceHandle(dwUserIndex, &device))
 		{
-			if (G_fpnXInputGetStateEx)
-				status = G_fpnXInputGetStateEx(dwUserIndex, pState);
+			status = CALL_FPN_SAFE(G_fpnXInputGetStateEx, dwUserIndex, pState);
 			break;
 		}
 
@@ -1167,9 +1159,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputWaitForGuideButton(
 	auto scopedSpan = trace::Scope(span);
 #endif
 
-	return G_fpnXInputWaitForGuideButton
-	? G_fpnXInputWaitForGuideButton(dwUserIndex, dwFlag, pVoid)
-	: ERROR_DEVICE_NOT_CONNECTED;
+	return CALL_FPN_SAFE(G_fpnXInputWaitForGuideButton, dwUserIndex, dwFlag, pVoid);
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputCancelGuideButtonWait(
@@ -1183,9 +1173,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputCancelGuideButtonWait(
 	auto scopedSpan = trace::Scope(span);
 #endif
 
-	return G_fpnXInputCancelGuideButtonWait
-	? G_fpnXInputCancelGuideButtonWait(dwUserIndex)
-	: ERROR_DEVICE_NOT_CONNECTED;
+	return CALL_FPN_SAFE(G_fpnXInputCancelGuideButtonWait, dwUserIndex);
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputPowerOffController(
@@ -1199,9 +1187,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputPowerOffController(
 	auto scopedSpan = trace::Scope(span);
 #endif
 
-	return G_fpnXInputPowerOffController
-	? G_fpnXInputPowerOffController(dwUserIndex)
-	: ERROR_DEVICE_NOT_CONNECTED;
+	return CALL_FPN_SAFE(G_fpnXInputPowerOffController, dwUserIndex);
 }
 
 #pragma endregion
