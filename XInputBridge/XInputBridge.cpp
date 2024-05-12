@@ -35,26 +35,6 @@ struct device_state
 	DS3_RAW_INPUT_REPORT lastReport;
 
 	CRITICAL_SECTION lock;
-
-	//
-	// System-provided XInput exports
-	// 
-	struct
-	{
-		bool isPopulated;
-
-		decltype(XInputGetState)* fpnXInputGetState;
-		decltype(XInputSetState)* fpnXInputSetState;
-		decltype(XInputGetCapabilities)* fpnXInputGetCapabilities;
-		decltype(XInputEnable)* fpnXInputEnable;
-		decltype(XInputGetDSoundAudioDeviceGuids)* fpnXInputGetDSoundAudioDeviceGuids;
-		decltype(XInputGetBatteryInformation)* fpnXInputGetBatteryInformation;
-		decltype(XInputGetKeystroke)* fpnXInputGetKeystroke;
-		decltype(XInputGetStateEx)* fpnXInputGetStateEx;
-		decltype(XInputWaitForGuideButton)* fpnXInputWaitForGuideButton;
-		decltype(XInputCancelGuideButtonWait)* fpnXInputCancelGuideButtonWait;
-		decltype(XInputPowerOffController)* fpnXInputPowerOffController;
-	} XInput;
 };
 
 //
