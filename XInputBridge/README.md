@@ -69,3 +69,4 @@ The library can be built with `/D SCPLIB_ENABLE_TELEMETRY` which will pull in th
 - [HIDAPI library for Windows, Linux, FreeBSD and macOS](https://github.com/libusb/hidapi)
   - A Simple library for communicating with USB and Bluetooth HID devices on Linux, Mac and Windows.
 - [DJm00n/RawInputDemo](https://github.com/DJm00n/RawInputDemo)
+- [A modern C++ scope guard that is easy to use but hard to misuse](https://github.com/ricab/scope_guard)
