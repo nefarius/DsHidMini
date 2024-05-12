@@ -17,6 +17,7 @@
 #define SXS_MODE_GET_FEATURE_BUFFER_LEN	0x40
 #define DS3_DEVICES_MAX					8
 #define LOGGER_NAME						"XInputBridge"
+#define XI_SYSTEM_LIB_NAME				"XInput1_3.dll"
 
 
 //
@@ -86,10 +87,10 @@ static decltype(XInputPowerOffController)* G_fpnXInputPowerOffController = nullp
 // 
 static bool SymlinkToUserIndex(PCWSTR Symlink, PDWORD UserIndex)
 {
-	const DWORD desired_access = (GENERIC_WRITE | GENERIC_READ);
-	const DWORD share_mode = FILE_SHARE_READ | FILE_SHARE_WRITE;
+	constexpr DWORD desiredAccess = (GENERIC_WRITE | GENERIC_READ);
+	constexpr DWORD shareMode = FILE_SHARE_READ | FILE_SHARE_WRITE;
 
-	HANDLE handle = CreateFileW(Symlink, desired_access, share_mode, nullptr, OPEN_EXISTING, 0, nullptr);
+	HANDLE handle = CreateFileW(Symlink, desiredAccess, shareMode, nullptr, OPEN_EXISTING, 0, nullptr);
 
 	const auto guard = sg::make_scope_guard([handle]() noexcept
 	{
@@ -229,7 +230,7 @@ static DWORD WINAPI InitAsync(
 
 	CHAR fullXiPath[MAX_PATH] = {};
 
-	if (PathCombineA(fullXiPath, systemDir, "XInput1_3.dll") == nullptr)
+	if (PathCombineA(fullXiPath, systemDir, XI_SYSTEM_LIB_NAME) == nullptr)
 	{
 		logger->error("PathCombineA failed: {:#x}", GetLastError());
 		return GetLastError();
