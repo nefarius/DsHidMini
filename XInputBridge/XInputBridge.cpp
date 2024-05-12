@@ -50,7 +50,7 @@ struct XI_DEVICE_STATE
 
 	CRITICAL_SECTION lock;
 
-//private:
+	//private:
 	//
 	// Path of backing DS3 or XUSB device
 	// 
@@ -80,7 +80,7 @@ static std::vector<XI_DEVICE_STATE> G_DEVICE_STATES(DS3_DEVICES_MAX);
 
 static XI_DEVICE_STATE* GetFreeSlot()
 {
-	const std::ranges::borrowed_iterator_t<std::vector<XI_DEVICE_STATE>&> item = std::ranges::find_if(G_DEVICE_STATES,
+	const auto item = std::ranges::find_if(G_DEVICE_STATES,
 		[](const XI_DEVICE_STATE& element)
 		{
 			return element.Type == XI_DEVICE_TYPE_NOT_CONNECTED;
@@ -135,10 +135,10 @@ static bool XUSB_SymlinkToUserIndex(_In_ PCWSTR Symlink, _Inout_ PDWORD UserInde
 	);
 
 	const auto guard = sg::make_scope_guard([handle]() noexcept
-		{
-			if (handle != INVALID_HANDLE_VALUE)
-				CloseHandle(handle);
-		});
+	{
+		if (handle != INVALID_HANDLE_VALUE)
+			CloseHandle(handle);
+	});
 
 	std::array<uint8_t, 3> gamepadStateRequest0101{ 0x01, 0x01, 0x00 };
 	std::array<uint8_t, 3> ledStateData{};
@@ -249,9 +249,9 @@ static DWORD CALLBACK DeviceNotificationCallback(
 			logger->info("DS3 device got removed: {}", symlink);
 
 			const auto item = std::ranges::find_if(G_DEVICE_STATES, [symlink](const XI_DEVICE_STATE& element)
-				{
-					return absl::EqualsIgnoreCase(element.SymbolicLink, symlink);
-				});
+			{
+				return absl::EqualsIgnoreCase(element.SymbolicLink, symlink);
+			});
 
 			if (item != G_DEVICE_STATES.end())
 			{
@@ -265,9 +265,9 @@ static DWORD CALLBACK DeviceNotificationCallback(
 			logger->info("XUSB device got removed: {}", symlink);
 
 			const auto item = std::ranges::find_if(G_DEVICE_STATES, [symlink](const XI_DEVICE_STATE& element)
-				{
-					return absl::EqualsIgnoreCase(element.SymbolicLink, symlink);
-				});
+			{
+				return absl::EqualsIgnoreCase(element.SymbolicLink, symlink);
+			});
 
 			if (item != G_DEVICE_STATES.end())
 			{
@@ -693,7 +693,7 @@ static bool GetPacketNumber(DWORD UserIndex, PDS3_RAW_INPUT_REPORT Report, DWORD
 	span->SetAttribute("xinput.packetNumber", std::to_string(state->packetNumber));
 #endif
 
-	* PacketNumber = state->PacketNumber;
+	*PacketNumber = state->PacketNumber;
 
 	return true;
 }
@@ -798,16 +798,16 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 		// Thumb axes
 		//
 		if (pReport->LeftThumbX < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
-			|| pReport->LeftThumbX >(UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
+			|| pReport->LeftThumbX > (UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
 			pState->SCP_LX = ToAxis(pReport->LeftThumbX);
 		if (pReport->LeftThumbY < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
-			|| pReport->LeftThumbY >(UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
+			|| pReport->LeftThumbY > (UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
 			pState->SCP_LY = ToAxis(pReport->LeftThumbY) * -1.0f;
 		if (pReport->RightThumbX < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
-			|| pReport->RightThumbX >(UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
+			|| pReport->RightThumbX > (UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
 			pState->SCP_RX = ToAxis(pReport->RightThumbX);
 		if (pReport->RightThumbY < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
-			|| pReport->RightThumbY >(UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
+			|| pReport->RightThumbY > (UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
 			pState->SCP_RY = ToAxis(pReport->RightThumbY) * -1.0f;
 
 		status = ERROR_SUCCESS;
@@ -1091,7 +1091,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 			XINPUT_GAMEPAD_B |
 			XINPUT_GAMEPAD_X |
 			XINPUT_GAMEPAD_Y
-			);
+		);
 		pCapabilities->Gamepad.bLeftTrigger = UCHAR_MAX;
 		pCapabilities->Gamepad.bRightTrigger = UCHAR_MAX;
 		pCapabilities->Gamepad.sThumbLX = static_cast<SHORT>(0xFFC0);
