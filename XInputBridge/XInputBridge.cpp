@@ -89,6 +89,8 @@ static DWORD CALLBACK Ds3NotificationCallback(
 	_In_ DWORD EventDataSize
 )
 {
+	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
+
 	return ERROR_SUCCESS;
 }
 
@@ -100,6 +102,8 @@ static DWORD CALLBACK XusbNotificationCallback(
 	_In_ DWORD EventDataSize
 )
 {
+	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
+
 	return ERROR_SUCCESS;
 }
 
@@ -229,11 +233,20 @@ void ScpLibInitialize()
 	//
 	// Call stuff that must not be done in DllMain in the background
 	// 
-	CreateThread(nullptr, 0, InitAsync, nullptr, 0, nullptr);
+	const HANDLE hThread = CreateThread(nullptr, 0, InitAsync, nullptr, 0, nullptr);
+
+	if (hThread == nullptr)
+	{
+		logger->error("Failed to create thread");
+	}
 }
 
 void ScpLibDestroy()
 {
+	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
+
+	logger->info("Library getting unloaded");
+
 	CM_Unregister_Notification(G_DS3_NOTIFICATION_HANDLE);
 	CM_Unregister_Notification(G_XUSB_NOTIFICATION_HANDLE);
 
