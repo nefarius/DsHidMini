@@ -491,7 +491,7 @@ static void SetDeviceDisconnected(DWORD UserIndex)
 //
 // Gets a device handle for a given user index, if it is connected
 // 
-static bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
+static bool TryGetDs3DeviceHandle(DWORD UserIndex, hid_device** Handle)
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__, {
@@ -657,7 +657,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 		//
 		// Look for device of interest
 		// 
-		if (!GetDeviceHandle(dwUserIndex, &device))
+		if (!TryGetDs3DeviceHandle(dwUserIndex, &device))
 			break;
 
 		UCHAR buf[SXS_MODE_GET_FEATURE_BUFFER_LEN];
@@ -767,7 +767,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 		//
 		// Look for device of interest
 		// 
-		if (!GetDeviceHandle(dwUserIndex, &device))
+		if (!TryGetDs3DeviceHandle(dwUserIndex, &device))
 		{
 			status = CALL_FPN_SAFE(G_fpnXInputGetState, dwUserIndex, pState);
 			break;
@@ -909,7 +909,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
 		//
 		// Look for device of interest
 		// 
-		if (!GetDeviceHandle(dwUserIndex, &device))
+		if (!TryGetDs3DeviceHandle(dwUserIndex, &device))
 		{
 			status = CALL_FPN_SAFE(G_fpnXInputSetState, dwUserIndex, pVibration);
 			break;
@@ -990,7 +990,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 		//
 		// Look for device of interest
 		// 
-		if (!GetDeviceHandle(dwUserIndex, nullptr))
+		if (!TryGetDs3DeviceHandle(dwUserIndex, nullptr))
 		{
 			status = CALL_FPN_SAFE(G_fpnXInputGetCapabilities, dwUserIndex, dwFlags, pCapabilities);
 			break;
@@ -1124,7 +1124,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
 		//
 		// Look for device of interest
 		// 
-		if (!GetDeviceHandle(dwUserIndex, &device))
+		if (!TryGetDs3DeviceHandle(dwUserIndex, &device))
 		{
 			status = CALL_FPN_SAFE(G_fpnXInputGetStateEx, dwUserIndex, pState);
 			break;
