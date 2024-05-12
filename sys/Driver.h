@@ -26,7 +26,7 @@
 #include "Configuration.h"
 #include "Device.h"
 
-#include "dshmguid.h"
+#include <DsHidMini/dshmguid.h>
 #include "DsInternal.h"
 #include "DsHidMiniDrv.h"
 #include "Power.h"
