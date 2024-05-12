@@ -6,6 +6,7 @@
 // Windows Header Files
 #include <Windows.h>
 #include <Shlwapi.h>
+#include <cfgmgr32.h>
 
 //
 // Driver-shared types
@@ -17,6 +18,11 @@
 // HIDAPI
 // 
 #include <hidapi/hidapi.h>
+
+//
+// STL
+// 
+#include <climits>
 
 //
 // OpenTelemetry

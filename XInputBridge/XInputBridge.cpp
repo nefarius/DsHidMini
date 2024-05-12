@@ -4,8 +4,6 @@
 #include "framework.h"
 #include "XInputBridge.h"
 
-#include <climits>
-
 
 //
 // Dead-Zone value to stop jittering
@@ -62,6 +60,9 @@ struct device_state
 // 
 static device_state G_DEVICE_STATES[DS3_DEVICES_MAX];
 
+static HCMNOTIFICATION G_DS3_NOTIFICATION_HANDLE = NULL;
+static HCMNOTIFICATION G_XUSB_NOTIFICATION_HANDLE = NULL;
+
 static decltype(XInputGetState)* G_fpnXInputGetState = nullptr;
 static decltype(XInputSetState)* G_fpnXInputSetState = nullptr;
 static decltype(XInputGetCapabilities)* G_fpnXInputGetCapabilities = nullptr;
@@ -73,6 +74,18 @@ static decltype(XInputGetStateEx)* G_fpnXInputGetStateEx = nullptr;
 static decltype(XInputWaitForGuideButton)* G_fpnXInputWaitForGuideButton = nullptr;
 static decltype(XInputCancelGuideButtonWait)* G_fpnXInputCancelGuideButtonWait = nullptr;
 static decltype(XInputPowerOffController)* G_fpnXInputPowerOffController = nullptr;
+
+
+static DWORD CALLBACK Ds3NotificationCallback(
+    _In_ HCMNOTIFICATION       hNotify,
+    _In_opt_ PVOID             Context,
+    _In_ CM_NOTIFY_ACTION      Action,
+    _In_reads_bytes_(EventDataSize) PCM_NOTIFY_EVENT_DATA EventData,
+    _In_ DWORD                 EventDataSize
+    )
+{
+	return ERROR_SUCCESS;
+}
 
 static DWORD WINAPI InitAsync(
 	_In_ LPVOID lpParameter
@@ -113,6 +126,13 @@ static DWORD WINAPI InitAsync(
 	G_fpnXInputCancelGuideButtonWait = reinterpret_cast<decltype(XInputCancelGuideButtonWait)*>(GetProcAddress(xiLib,
 		MAKEINTRESOURCEA(102)));
 	G_fpnXInputPowerOffController = reinterpret_cast<decltype(XInputPowerOffController)*>(GetProcAddress(xiLib, MAKEINTRESOURCEA(103)));
+
+	CM_NOTIFY_FILTER ds3Filter ={};
+	ds3Filter.cbSize = sizeof(CM_NOTIFY_FILTER);
+	ds3Filter.FilterType = CM_NOTIFY_FILTER_TYPE_DEVICEINTERFACE;
+	//filter.u.DeviceInterface.ClassGuid = iface;
+
+	CM_Register_Notification(&ds3Filter, NULL, Ds3NotificationCallback, &G_DS3_NOTIFICATION_HANDLE);
 
 	return ERROR_SUCCESS;
 
