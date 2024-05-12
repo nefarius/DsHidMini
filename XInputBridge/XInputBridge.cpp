@@ -78,20 +78,22 @@ static DWORD WINAPI InitAsync(
 	_In_ LPVOID lpParameter
 )
 {
+	UNREFERENCED_PARAMETER(lpParameter);
+
 	CHAR systemDir[MAX_PATH] = {};
 
 	if (GetSystemDirectoryA(systemDir, MAX_PATH) == 0)
-		return 1;
+		return GetLastError();
 
 	CHAR fullXiPath[MAX_PATH] = {};
 
 	if (PathCombineA(fullXiPath, systemDir, "XInput1_3.dll") == nullptr)
-		return 1;
+		return GetLastError();
 
 	const HMODULE xiLib = LoadLibraryA(fullXiPath);
 
 	if (xiLib == nullptr)
-		return 1;
+		return GetLastError();
 
 	//
 	// Grab the function pointers from the OS-provided exports
@@ -112,7 +114,7 @@ static DWORD WINAPI InitAsync(
 		MAKEINTRESOURCEA(102)));
 	G_fpnXInputPowerOffController = reinterpret_cast<decltype(XInputPowerOffController)*>(GetProcAddress(xiLib, MAKEINTRESOURCEA(103)));
 
-	return 0;
+	return ERROR_SUCCESS;
 
 }
 
