@@ -34,7 +34,7 @@ enum XI_DEVICE_TYPE
 // 
 struct XI_DEVICE_STATE
 {
-	volatile bool isInitialized = false;
+	bool isInitialized = false;
 
 	bool isConnected = false;
 
@@ -46,7 +46,7 @@ struct XI_DEVICE_STATE
 
 	CRITICAL_SECTION lock;
 
-	volatile XI_DEVICE_TYPE type;
+	std::atomic<XI_DEVICE_TYPE> type;
 };
 
 //
@@ -79,6 +79,74 @@ static decltype(XInputWaitForGuideButton)* G_fpnXInputWaitForGuideButton = nullp
 static decltype(XInputCancelGuideButtonWait)* G_fpnXInputCancelGuideButtonWait = nullptr;
 static decltype(XInputPowerOffController)* G_fpnXInputPowerOffController = nullptr;
 
+//
+// https://github.com/DJm00n/RawInputDemo/blob/master/RawInputLib/RawInputDeviceHid.cpp#L275-L339
+// 
+static bool SymlinkToUserIndex(PCWSTR Symlink, PDWORD UserIndex)
+{
+	const DWORD desired_access = (GENERIC_WRITE | GENERIC_READ);
+	const DWORD share_mode = FILE_SHARE_READ | FILE_SHARE_WRITE;
+
+	HANDLE handle = CreateFileW(Symlink, desired_access, share_mode, nullptr, OPEN_EXISTING, 0, nullptr);
+
+	const auto guard = sg::make_scope_guard([handle]() noexcept
+	{
+		if (handle != INVALID_HANDLE_VALUE)
+			CloseHandle(handle);
+	});
+
+	std::array<uint8_t, 3> gamepadStateRequest0101{ 0x01, 0x01, 0x00 };
+	std::array<uint8_t, 3> ledStateData{};
+	DWORD len = 0;
+
+	// https://github.com/nefarius/XInputHooker/issues/1
+	// https://gist.github.com/mmozeiko/b8ccc54037a5eaf35432396feabbe435
+	constexpr DWORD IOCTL_XUSB_GET_LED_STATE = 0x8000E008;
+
+	if (!DeviceIoControl(handle,
+		IOCTL_XUSB_GET_LED_STATE,
+		gamepadStateRequest0101.data(),
+		gamepadStateRequest0101.size(),
+		ledStateData.data(),
+		ledStateData.size(),
+		&len,
+		nullptr
+	))
+	{
+		// GetLastError()
+		return false;
+	}
+
+	static constexpr uint8_t kInvalidXInputUserId = 0xff; // XUSER_INDEX_ANY
+
+	// https://www.partsnotincluded.com/xbox-360-controller-led-animations-info/
+	// https://github.com/paroj/xpad/blob/5978d1020344c3288701ef70ea9a54dfc3312733/xpad.c#L1382-L1402
+	constexpr uint8_t XINPUT_LED_TO_PORT_MAP[] =
+	{
+		kInvalidXInputUserId, // All off
+		kInvalidXInputUserId, // All blinking, then previous setting
+		0, // 1 flashes, then on
+		1, // 2 flashes, then on
+		2, // 3 flashes, then on
+		3, // 4 flashes, then on
+		0, // 1 on
+		1, // 2 on
+		2, // 3 on
+		3, // 4 on
+		kInvalidXInputUserId, // Rotate
+		kInvalidXInputUserId, // Blink, based on previous setting
+		kInvalidXInputUserId, // Slow blink, based on previous setting
+		kInvalidXInputUserId, // Rotate with two lights
+		kInvalidXInputUserId, // Persistent slow all blink
+		kInvalidXInputUserId, // Blink once, then previous setting
+	};
+
+	const uint8_t ledState = ledStateData[2];
+
+	*UserIndex = XINPUT_LED_TO_PORT_MAP[ledState];
+
+	return true;
+}
 
 //
 // Gets called when a device of interest got attached or removed
@@ -108,9 +176,19 @@ static DWORD CALLBACK DeviceNotificationCallback(
 		if (IsEqualGUID(XUSB_INTERFACE_CLASS_GUID, EventData->u.DeviceInterface.ClassGuid))
 		{
 			logger->info("New XUSB device arrived: {}", ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink));
+
+			DWORD userIndex = 0xFF;
+			if (SymlinkToUserIndex(EventData->u.DeviceInterface.SymbolicLink, &userIndex))
+			{
+				logger->info("User index: {}", userIndex);
+			}
+			else
+			{
+				logger->error("User index lookup failed");
+			}
 		}
 		break;
-	case CM_NOTIFY_ACTION_DEVICEINSTANCEREMOVED:
+	case CM_NOTIFY_ACTION_DEVICEINTERFACEREMOVAL:
 		if (IsEqualGUID(GUID_DEVINTERFACE_DSHIDMINI, EventData->u.DeviceInterface.ClassGuid))
 		{
 			logger->info("DS3 device got removed: {}", ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink));
