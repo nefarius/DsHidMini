@@ -40,13 +40,15 @@ struct XI_DEVICE_STATE
 
 	hid_device* deviceHandle = nullptr;
 
-	DWORD packetNumber;
+	DWORD PacketNumber;
 
 	DS3_RAW_INPUT_REPORT lastReport;
 
 	CRITICAL_SECTION lock;
 
-	std::atomic<XI_DEVICE_TYPE> type;
+	std::wstring SymbolicLink;
+
+	std::atomic<XI_DEVICE_TYPE> Type;
 };
 
 //
@@ -454,7 +456,7 @@ static void SetDeviceDisconnected(DWORD UserIndex)
 	EnterCriticalSection(&state->lock);
 
 	state->isConnected = false;
-	state->packetNumber = 0;
+	state->PacketNumber = 0;
 	RtlZeroMemory(&state->lastReport, sizeof(DS3_RAW_INPUT_REPORT));
 
 	if (state->deviceHandle)
@@ -502,7 +504,7 @@ static bool GetDeviceHandle(DWORD UserIndex, hid_device** Handle)
 		}
 
 		RtlZeroMemory(&state->lastReport, sizeof(DS3_RAW_INPUT_REPORT));
-		state->packetNumber = 0;
+		state->PacketNumber = 0;
 
 		//
 		// Look for device of interest
@@ -589,7 +591,7 @@ static bool GetPacketNumber(DWORD UserIndex, PDS3_RAW_INPUT_REPORT Report, DWORD
 		bytesToCompare
 	) != 0)
 	{
-		state->packetNumber++;
+		state->PacketNumber++;
 		memcpy(&state->lastReport, Report, sizeof(DS3_RAW_INPUT_REPORT));
 	}
 
@@ -597,7 +599,7 @@ static bool GetPacketNumber(DWORD UserIndex, PDS3_RAW_INPUT_REPORT Report, DWORD
 	span->SetAttribute("xinput.packetNumber", std::to_string(state->packetNumber));
 #endif
 
-	*PacketNumber = state->packetNumber;
+	*PacketNumber = state->PacketNumber;
 
 	return true;
 }
