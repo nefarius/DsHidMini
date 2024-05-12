@@ -13,6 +13,7 @@
 // 
 #include <DsHidMini/ScpTypes.h>
 #include <DsHidMini/Ds3Types.h>
+#include <DsHidMini/dshmguid.h>
 
 //
 // HIDAPI
