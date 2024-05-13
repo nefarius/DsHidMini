@@ -189,9 +189,11 @@ bool GlobalState::SymlinkToUserIndex(PCWSTR Symlink, PDWORD UserIndex)
 	if (!DeviceIoControl(handle,
 		IOCTL_XUSB_GET_LED_STATE,
 		gamepadStateRequest0101.data(),
-		gamepadStateRequest0101.size(),
+		// ReSharper disable once CppRedundantCastExpression
+		(DWORD)gamepadStateRequest0101.size(),
 		ledStateData.data(),
-		ledStateData.size(),
+		// ReSharper disable once CppRedundantCastExpression
+		(DWORD)ledStateData.size(),
 		&len,
 		nullptr
 	))
