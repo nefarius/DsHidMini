@@ -370,60 +370,6 @@ static DWORD WINAPI InitAsync(
 
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 
-void ScpLibInitialize()
-{
-	CHAR dllPath[MAX_PATH];
-
-	GetModuleFileNameA((HINSTANCE)&__ImageBase, dllPath, MAX_PATH);
-	PathRemoveFileSpecA(dllPath);
-	const auto dllDir = std::string(dllPath);
-
-	auto logger = spdlog::basic_logger_mt(
-		LOGGER_NAME,
-		dllDir + "\\XInputBridge.log"
-	);
-
-#if _DEBUG
-	spdlog::set_level(spdlog::level::debug);
-	logger->flush_on(spdlog::level::debug);
-#else
-	logger->flush_on(spdlog::level::info);
-#endif
-
-	set_default_logger(logger);
-
-	for (auto& state : G_DEVICE_STATES)
-	{
-		InitializeCriticalSection(&state.lock);
-		state.isInitialized = true;
-	}
-
-	//
-	// Call stuff that must not be done in DllMain in the background
-	// 
-	const HANDLE hThread = CreateThread(nullptr, 0, InitAsync, nullptr, 0, nullptr);
-
-	if (hThread == nullptr)
-	{
-		logger->error("Failed to create thread");
-	}
-}
-
-void ScpLibDestroy()
-{
-	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
-
-	logger->info("Library getting unloaded");
-
-	CM_Unregister_Notification(G_DS3_NOTIFICATION_HANDLE);
-	CM_Unregister_Notification(G_XUSB_NOTIFICATION_HANDLE);
-
-	for (auto& state : G_DEVICE_STATES)
-	{
-		DeleteCriticalSection(&state.lock);
-	}
-}
-
 
 #pragma region Rumble helper types
 

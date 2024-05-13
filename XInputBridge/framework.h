@@ -57,7 +57,3 @@ namespace nostd     = opentelemetry::nostd;
 namespace trace_sdk = opentelemetry::sdk::trace;
 namespace otlp      = opentelemetry::exporter::otlp;
 #endif
-
-void ScpLibInitialize();
-
-void ScpLibDestroy();
