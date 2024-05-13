@@ -501,6 +501,7 @@
     <ClCompile Include="DeviceState.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="GlobalState.cpp" />
+    <ClCompile Include="GlobalState.XInput.cpp" />
     <ClCompile Include="XInputBridge.cpp" />
   </ItemGroup>
   <ItemGroup>

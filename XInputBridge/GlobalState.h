@@ -15,6 +15,68 @@ class GlobalState
 public:
 	void Initialize();
 	void Destroy() const;
+
+#pragma region XInput API proxies
+
+	DWORD RealXInputGetState(
+		_In_ DWORD dwUserIndex,
+		_Out_ XINPUT_STATE* pState
+	) const;
+
+	DWORD RealXInputSetState(
+		_In_ DWORD dwUserIndex,
+		_In_ XINPUT_VIBRATION* pVibration
+	) const;
+
+	DWORD RealXInputGetCapabilities(
+		_In_ DWORD dwUserIndex,
+		_In_ DWORD dwFlags,
+		_Out_ XINPUT_CAPABILITIES* pCapabilities
+	) const;
+
+	void RealXInputEnable(
+		_In_ BOOL enable
+	) const;
+
+	DWORD RealXInputGetDSoundAudioDeviceGuids(
+		DWORD dwUserIndex,
+		GUID* pDSoundRenderGuid,
+		GUID* pDSoundCaptureGuid
+	) const;
+
+	DWORD RealXInputGetBatteryInformation(
+		_In_ DWORD dwUserIndex,
+		_In_ BYTE devType,
+		_Out_ XINPUT_BATTERY_INFORMATION* pBatteryInformation
+	) const;
+
+	DWORD RealXInputGetKeystroke(
+		DWORD dwUserIndex,
+		DWORD dwReserved,
+		PXINPUT_KEYSTROKE pKeystroke
+	) const;
+
+	DWORD RealXInputGetStateEx(
+		_In_ DWORD dwUserIndex,
+		_Out_ XINPUT_STATE* pState
+	) const;
+
+	DWORD RealXInputWaitForGuideButton(
+		_In_ DWORD dwUserIndex,
+		_In_ DWORD dwFlag,
+		_In_ LPVOID pVoid
+	) const;
+
+	DWORD RealXInputCancelGuideButtonWait(
+		_In_ DWORD dwUserIndex
+	) const;
+
+	DWORD RealXInputPowerOffController(
+		_In_ DWORD dwUserIndex
+	) const;
+
+#pragma endregion
+
 private:
 	std::vector<DeviceState> States{ DS3_DEVICES_MAX };
 	HCMNOTIFICATION Ds3NotificationHandle{};

@@ -66,311 +66,6 @@ static XI_DEVICE_STATE* GetFreeSlot()
 	return (item != G_DEVICE_STATES.end()) ? &(*item) : nullptr;
 }
 
-static HCMNOTIFICATION G_DS3_NOTIFICATION_HANDLE = nullptr;
-static HCMNOTIFICATION G_XUSB_NOTIFICATION_HANDLE = nullptr;
-
-
-
-
-
-static decltype(XInputGetState)* G_fpnXInputGetState = nullptr;
-static decltype(XInputSetState)* G_fpnXInputSetState = nullptr;
-static decltype(XInputGetCapabilities)* G_fpnXInputGetCapabilities = nullptr;
-static decltype(XInputEnable)* G_fpnXInputEnable = nullptr;
-static decltype(XInputGetDSoundAudioDeviceGuids)* G_fpnXInputGetDSoundAudioDeviceGuids = nullptr;
-static decltype(XInputGetBatteryInformation)* G_fpnXInputGetBatteryInformation = nullptr;
-static decltype(XInputGetKeystroke)* G_fpnXInputGetKeystroke = nullptr;
-static decltype(XInputGetStateEx)* G_fpnXInputGetStateEx = nullptr;
-static decltype(XInputWaitForGuideButton)* G_fpnXInputWaitForGuideButton = nullptr;
-static decltype(XInputCancelGuideButtonWait)* G_fpnXInputCancelGuideButtonWait = nullptr;
-static decltype(XInputPowerOffController)* G_fpnXInputPowerOffController = nullptr;
-
-
-//
-// https://github.com/DJm00n/RawInputDemo/blob/master/RawInputLib/RawInputDeviceHid.cpp#L275-L339
-// 
-static bool XUSB_SymlinkToUserIndex(_In_ PCWSTR Symlink, _Inout_ PDWORD UserIndex)
-{
-	constexpr DWORD desiredAccess = (GENERIC_WRITE | GENERIC_READ);
-	constexpr DWORD shareMode = FILE_SHARE_READ | FILE_SHARE_WRITE;
-
-	HANDLE handle = CreateFileW(
-		Symlink,
-		desiredAccess,
-		shareMode,
-		nullptr,
-		OPEN_EXISTING,
-		0,
-		nullptr
-	);
-
-	const auto guard = sg::make_scope_guard([handle]() noexcept
-	{
-		if (handle != INVALID_HANDLE_VALUE)
-			CloseHandle(handle);
-	});
-
-	std::array<uint8_t, 3> gamepadStateRequest0101{ 0x01, 0x01, 0x00 };
-	std::array<uint8_t, 3> ledStateData{};
-	DWORD len = 0;
-
-	// https://github.com/nefarius/XInputHooker/issues/1
-	// https://gist.github.com/mmozeiko/b8ccc54037a5eaf35432396feabbe435
-	constexpr DWORD IOCTL_XUSB_GET_LED_STATE = 0x8000E008;
-
-	if (!DeviceIoControl(handle,
-		IOCTL_XUSB_GET_LED_STATE,
-		gamepadStateRequest0101.data(),
-		gamepadStateRequest0101.size(),
-		ledStateData.data(),
-		ledStateData.size(),
-		&len,
-		nullptr
-	))
-	{
-		// GetLastError()
-		return false;
-	}
-
-	// https://www.partsnotincluded.com/xbox-360-controller-led-animations-info/
-	// https://github.com/paroj/xpad/blob/5978d1020344c3288701ef70ea9a54dfc3312733/xpad.c#L1382-L1402
-	constexpr uint8_t XINPUT_LED_TO_PORT_MAP[] =
-	{
-		K_INVALID_X_INPUT_USER_ID, // All off
-		K_INVALID_X_INPUT_USER_ID, // All blinking, then previous setting
-		0, // 1 flashes, then on
-		1, // 2 flashes, then on
-		2, // 3 flashes, then on
-		3, // 4 flashes, then on
-		0, // 1 on
-		1, // 2 on
-		2, // 3 on
-		3, // 4 on
-		K_INVALID_X_INPUT_USER_ID, // Rotate
-		K_INVALID_X_INPUT_USER_ID, // Blink, based on previous setting
-		K_INVALID_X_INPUT_USER_ID, // Slow blink, based on previous setting
-		K_INVALID_X_INPUT_USER_ID, // Rotate with two lights
-		K_INVALID_X_INPUT_USER_ID, // Persistent slow all blink
-		K_INVALID_X_INPUT_USER_ID, // Blink once, then previous setting
-	};
-
-	const uint8_t ledState = ledStateData[2];
-
-	*UserIndex = XINPUT_LED_TO_PORT_MAP[ledState];
-
-	return true;
-}
-
-//
-// Gets called when a device of interest got attached or removed
-// 
-static DWORD CALLBACK DeviceNotificationCallback(
-	_In_ HCMNOTIFICATION hNotify,
-	_In_opt_ PVOID Context,
-	_In_ CM_NOTIFY_ACTION Action,
-	_In_reads_bytes_(EventDataSize) PCM_NOTIFY_EVENT_DATA EventData,
-	_In_ DWORD EventDataSize
-)
-{
-	UNREFERENCED_PARAMETER(hNotify);
-	UNREFERENCED_PARAMETER(Context);
-	UNREFERENCED_PARAMETER(EventDataSize);
-
-	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
-
-	switch (Action)
-	{
-	case CM_NOTIFY_ACTION_DEVICEINTERFACEARRIVAL:
-		if (IsEqualGUID(GUID_DEVINTERFACE_DSHIDMINI, EventData->u.DeviceInterface.ClassGuid))
-		{
-			logger->info("New DS3 device arrived: {}", ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink));
-		}
-
-		if (IsEqualGUID(XUSB_INTERFACE_CLASS_GUID, EventData->u.DeviceInterface.ClassGuid))
-		{
-			const auto symlink = ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink);
-
-			logger->info("New XUSB device arrived: {}", symlink);
-
-			DWORD userIndex = K_INVALID_X_INPUT_USER_ID;
-			if (XUSB_SymlinkToUserIndex(EventData->u.DeviceInterface.SymbolicLink, &userIndex))
-			{
-				logger->info("User index: {}", userIndex);
-
-				if (const auto slot = GetFreeSlot())
-				{
-					slot->SetOnlineAsXusb(symlink, userIndex);
-				}
-				else
-				{
-					logger->warn("No free slot for {}", symlink);
-				}
-			}
-			else
-			{
-				logger->error("User index lookup failed");
-			}
-		}
-		break;
-	case CM_NOTIFY_ACTION_DEVICEINTERFACEREMOVAL:
-		if (IsEqualGUID(GUID_DEVINTERFACE_DSHIDMINI, EventData->u.DeviceInterface.ClassGuid))
-		{
-			const std::string symlink = ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink);
-			logger->info("DS3 device got removed: {}", symlink);
-
-			const auto item = std::ranges::find_if(G_DEVICE_STATES, [symlink](const XI_DEVICE_STATE& element)
-			{
-				return absl::EqualsIgnoreCase(element.SymbolicLink, symlink);
-			});
-
-			if (item != G_DEVICE_STATES.end())
-			{
-				item->Type = XI_DEVICE_TYPE_NOT_CONNECTED;
-			}
-		}
-
-		if (IsEqualGUID(XUSB_INTERFACE_CLASS_GUID, EventData->u.DeviceInterface.ClassGuid))
-		{
-			const std::string symlink = ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink);
-			logger->info("XUSB device got removed: {}", symlink);
-
-			const auto item = std::ranges::find_if(G_DEVICE_STATES, [symlink](const XI_DEVICE_STATE& element)
-			{
-				return absl::EqualsIgnoreCase(element.SymbolicLink, symlink);
-			});
-
-			if (item != G_DEVICE_STATES.end())
-			{
-				item->Type = XI_DEVICE_TYPE_NOT_CONNECTED;
-				item->Backend.UserIndex = K_INVALID_X_INPUT_USER_ID;
-			}
-		}
-		break;
-	default:
-		return ERROR_SUCCESS;
-	}
-
-	return ERROR_SUCCESS;
-}
-
-//
-// Performs startup tasks too dangerous to do in DllMain
-// 
-static DWORD WINAPI InitAsync(
-	_In_ LPVOID lpParameter
-)
-{
-	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
-
-	UNREFERENCED_PARAMETER(lpParameter);
-
-	CHAR systemDir[MAX_PATH] = {};
-
-	if (GetSystemDirectoryA(systemDir, MAX_PATH) == 0)
-	{
-		logger->error("GetSystemDirectoryA failed: {:#x}", GetLastError());
-		return GetLastError();
-	}
-
-	CHAR fullXiPath[MAX_PATH] = {};
-
-	if (PathCombineA(fullXiPath, systemDir, XI_SYSTEM_LIB_NAME) == nullptr)
-	{
-		logger->error("PathCombineA failed: {:#x}", GetLastError());
-		return GetLastError();
-	}
-
-	const HMODULE xiLib = LoadLibraryA(fullXiPath);
-
-	if (xiLib == nullptr)
-	{
-		logger->error("LoadLibraryA failed: {:#x}", GetLastError());
-		return GetLastError();
-	}
-
-	//
-	// Grab the function pointers from the OS-provided exports
-	// 
-
-	G_fpnXInputGetState = reinterpret_cast<decltype(XInputGetState)*>(GetProcAddress(xiLib,
-		NAMEOF(XInputGetState)
-	));
-	G_fpnXInputSetState = reinterpret_cast<decltype(XInputSetState)*>(GetProcAddress(xiLib,
-		NAMEOF(XInputSetState)
-	));
-	G_fpnXInputGetCapabilities = reinterpret_cast<decltype(XInputGetCapabilities)*>(GetProcAddress(xiLib,
-		NAMEOF(XInputGetCapabilities)
-	));
-	G_fpnXInputEnable = reinterpret_cast<decltype(XInputEnable)*>(GetProcAddress(xiLib,
-		NAMEOF(XInputEnable)
-	));
-	G_fpnXInputGetDSoundAudioDeviceGuids = reinterpret_cast<decltype(XInputGetDSoundAudioDeviceGuids)*>(GetProcAddress(xiLib,
-		NAMEOF(XInputGetDSoundAudioDeviceGuids)
-	));
-	G_fpnXInputGetBatteryInformation = reinterpret_cast<decltype(XInputGetBatteryInformation)*>(GetProcAddress(xiLib,
-		NAMEOF(XInputGetBatteryInformation)
-	));
-	G_fpnXInputGetKeystroke = reinterpret_cast<decltype(XInputGetKeystroke)*>(GetProcAddress(xiLib,
-		NAMEOF(XInputGetKeystroke)
-	));
-	G_fpnXInputGetStateEx = reinterpret_cast<decltype(XInputGetStateEx)*>(GetProcAddress(xiLib,
-		MAKEINTRESOURCEA(100)
-	));
-	G_fpnXInputWaitForGuideButton = reinterpret_cast<decltype(XInputWaitForGuideButton)*>(GetProcAddress(xiLib,
-		MAKEINTRESOURCEA(101)
-	));
-	G_fpnXInputCancelGuideButtonWait = reinterpret_cast<decltype(XInputCancelGuideButtonWait)*>(GetProcAddress(xiLib,
-		MAKEINTRESOURCEA(102)
-	));
-	G_fpnXInputPowerOffController = reinterpret_cast<decltype(XInputPowerOffController)*>(GetProcAddress(xiLib,
-		MAKEINTRESOURCEA(103)
-	));
-
-	//
-	// ^ TODO: maybe cover the exports of XInput1_4 as well?
-	// 
-
-	//
-	// Register notifications for device arrival/removal
-	// 
-
-	CM_NOTIFY_FILTER ds3Filter = {};
-	ds3Filter.cbSize = sizeof(CM_NOTIFY_FILTER);
-	ds3Filter.FilterType = CM_NOTIFY_FILTER_TYPE_DEVICEINTERFACE;
-	ds3Filter.u.DeviceInterface.ClassGuid = GUID_DEVINTERFACE_DSHIDMINI;
-
-	//
-	// Register DsHidMini device interface
-	// 
-	CONFIGRET ret = CM_Register_Notification(&ds3Filter, nullptr, DeviceNotificationCallback, &G_DS3_NOTIFICATION_HANDLE);
-
-	if (ret != CR_SUCCESS)
-	{
-		logger->error("CM_Register_Notification (DS3) failed: {:#x}", ret);
-	}
-
-	CM_NOTIFY_FILTER xusbFilter = {};
-	xusbFilter.cbSize = sizeof(CM_NOTIFY_FILTER);
-	xusbFilter.FilterType = CM_NOTIFY_FILTER_TYPE_DEVICEINTERFACE;
-	xusbFilter.u.DeviceInterface.ClassGuid = XUSB_INTERFACE_CLASS_GUID;
-
-	//
-	// Register X360/XBONE device interface
-	// 
-	ret = CM_Register_Notification(&xusbFilter, nullptr, DeviceNotificationCallback, &G_XUSB_NOTIFICATION_HANDLE);
-
-	if (ret != CR_SUCCESS)
-	{
-		logger->error("CM_Register_Notification (XUSB) failed: {:#x}", ret);
-	}
-
-	return ERROR_SUCCESS;
-
-}
-
-EXTERN_C IMAGE_DOS_HEADER __ImageBase;
-
-
 #pragma region Rumble helper types
 
 /*
@@ -759,7 +454,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 		// 
 		if (!TryGetDs3DeviceHandle(dwUserIndex, &device))
 		{
-			status = CALL_FPN_SAFE(G_fpnXInputGetState, dwUserIndex, pState);
+			status = G_State.RealXInputGetState(dwUserIndex, pState);
 			break;
 		}
 
@@ -901,7 +596,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
 		// 
 		if (!TryGetDs3DeviceHandle(dwUserIndex, &device))
 		{
-			status = CALL_FPN_SAFE(G_fpnXInputSetState, dwUserIndex, pVibration);
+			status = G_State.RealXInputSetState(dwUserIndex, pVibration);
 			break;
 		}
 
@@ -982,7 +677,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 		// 
 		if (!TryGetDs3DeviceHandle(dwUserIndex, nullptr))
 		{
-			status = CALL_FPN_SAFE(G_fpnXInputGetCapabilities, dwUserIndex, dwFlags, pCapabilities);
+			status = G_State.RealXInputGetCapabilities(dwUserIndex, dwFlags, pCapabilities);
 			break;
 		}
 
@@ -1034,7 +729,7 @@ XINPUTBRIDGE_API void WINAPI XInputEnable(
 	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
 #endif
 
-	CALL_FPN_SAFE_NO_RETURN(G_fpnXInputEnable, enable);
+	G_State.RealXInputEnable(enable);
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputGetDSoundAudioDeviceGuids(
@@ -1050,7 +745,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetDSoundAudioDeviceGuids(
 	auto scopedSpan = trace::Scope(span);
 #endif
 
-	return CALL_FPN_SAFE(G_fpnXInputGetDSoundAudioDeviceGuids, dwUserIndex, pDSoundRenderGuid, pDSoundCaptureGuid);
+	return G_State.RealXInputGetDSoundAudioDeviceGuids(dwUserIndex, pDSoundRenderGuid, pDSoundCaptureGuid);
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputGetBatteryInformation(
@@ -1066,7 +761,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetBatteryInformation(
 	auto scopedSpan = trace::Scope(span);
 #endif
 
-	return CALL_FPN_SAFE(G_fpnXInputGetBatteryInformation, dwUserIndex, devType, pBatteryInformation);
+	return G_State.RealXInputGetBatteryInformation(dwUserIndex, devType, pBatteryInformation);
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputGetKeystroke(
@@ -1086,7 +781,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetKeystroke(
 	auto scopedSpan = trace::Scope(span);
 #endif
 
-	return CALL_FPN_SAFE(G_fpnXInputGetKeystroke, dwUserIndex, dwReserved, pKeystroke);
+	return G_State.RealXInputGetKeystroke(dwUserIndex, dwReserved, pKeystroke);
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
@@ -1116,7 +811,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
 		// 
 		if (!TryGetDs3DeviceHandle(dwUserIndex, &device))
 		{
-			status = CALL_FPN_SAFE(G_fpnXInputGetStateEx, dwUserIndex, pState);
+			status = G_State.RealXInputGetStateEx(dwUserIndex, pState);
 			break;
 		}
 
@@ -1249,7 +944,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputWaitForGuideButton(
 	auto scopedSpan = trace::Scope(span);
 #endif
 
-	return CALL_FPN_SAFE(G_fpnXInputWaitForGuideButton, dwUserIndex, dwFlag, pVoid);
+	return G_State.RealXInputWaitForGuideButton(dwUserIndex, dwFlag, pVoid);
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputCancelGuideButtonWait(
@@ -1263,7 +958,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputCancelGuideButtonWait(
 	auto scopedSpan = trace::Scope(span);
 #endif
 
-	return CALL_FPN_SAFE(G_fpnXInputCancelGuideButtonWait, dwUserIndex);
+	return G_State.RealXInputCancelGuideButtonWait(dwUserIndex);
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputPowerOffController(
@@ -1277,7 +972,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputPowerOffController(
 	auto scopedSpan = trace::Scope(span);
 #endif
 
-	return CALL_FPN_SAFE(G_fpnXInputPowerOffController, dwUserIndex);
+	return G_State.RealXInputPowerOffController(dwUserIndex);
 }
 
 #pragma endregion
