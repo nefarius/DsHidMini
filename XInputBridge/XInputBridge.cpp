@@ -4,34 +4,11 @@
 #include "framework.h"
 #include "XInputBridge.h"
 #include "UniUtil.h"
+#include "Macros.h"
+#include "Types.h"
+#include "GlobalState.h"
 
-
-//
-// Dead-Zone value to stop jittering
-// 
-#define DS3_AXIS_ANTI_JITTER_OFFSET		10
-
-#define DS3_VID							0x054C
-#define DS3_PID							0x0268
-#define SXS_MODE_GET_FEATURE_REPORT_ID	0xF2
-#define SXS_MODE_GET_FEATURE_BUFFER_LEN	0x40
-#define DS3_DEVICES_MAX					8
-#define LOGGER_NAME						"XInputBridge"
-#define XI_SYSTEM_LIB_NAME				"XInput1_3.dll"
-
-
-static constexpr uint8_t K_INVALID_X_INPUT_USER_ID = 0xff; // XUSER_INDEX_ANY
-
-
-//
-// Type of the device behind a give user index
-// 
-enum XI_DEVICE_TYPE
-{
-	XI_DEVICE_TYPE_NOT_CONNECTED = 0,
-	XI_DEVICE_TYPE_DS3,
-	XI_DEVICE_TYPE_XUSB,
-};
+GlobalState G_State{};
 
 //
 // Device state information of each user index to improve performance
@@ -92,16 +69,9 @@ static XI_DEVICE_STATE* GetFreeSlot()
 static HCMNOTIFICATION G_DS3_NOTIFICATION_HANDLE = nullptr;
 static HCMNOTIFICATION G_XUSB_NOTIFICATION_HANDLE = nullptr;
 
-#define NAMEOF(name) #name
-#define CALL_FPN_SAFE(fpn, ...)	((fpn)) ? (fpn)(__VA_ARGS__) : ERROR_DEVICE_NOT_CONNECTED
-#define CALL_FPN_SAFE_NO_RETURN(fpn, ...)	((fpn)) ? (fpn)(__VA_ARGS__) : void(0)
 
-//
-// Applies to both Xbox 360 and Xbox One controllers
-// 
-// {EC87F1E3-C13B-4100-B5F7-8B84D54260CB}
-DEFINE_GUID(XUSB_INTERFACE_CLASS_GUID,
-	0xEC87F1E3, 0xC13B, 0x4100, 0xB5, 0xF7, 0x8B, 0x84, 0xD5, 0x42, 0x60, 0xCB);
+
+
 
 static decltype(XInputGetState)* G_fpnXInputGetState = nullptr;
 static decltype(XInputSetState)* G_fpnXInputSetState = nullptr;

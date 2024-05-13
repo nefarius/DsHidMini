@@ -488,13 +488,19 @@
     <None Include="XInput.def" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DeviceState.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="GlobalState.h" />
+    <ClInclude Include="Macros.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="Types.h" />
     <ClInclude Include="UniUtil.h" />
     <ClInclude Include="XInputBridge.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DeviceState.cpp" />
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="GlobalState.cpp" />
     <ClCompile Include="XInputBridge.cpp" />
   </ItemGroup>
   <ItemGroup>

@@ -1,4 +1,7 @@
 #include "framework.h"
+#include "GlobalState.h"
+
+extern GlobalState G_State;
 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 otlp::OtlpHttpExporterOptions opts;
@@ -14,8 +17,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
     switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH:
-		ScpLibInitialize();
-        hid_init();		
+		G_State.Initialize();
 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
         {
@@ -28,8 +30,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 #endif
         break;
     case DLL_PROCESS_DETACH:
-        hid_exit();
-		ScpLibDestroy();
+		G_State.Destroy();
         break;
     }
     return TRUE;
