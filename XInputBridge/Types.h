@@ -10,4 +10,4 @@ enum XI_DEVICE_TYPE
 	XI_DEVICE_TYPE_XUSB,
 };
 
-constexpr uint8_t K_INVALID_X_INPUT_USER_ID = 0xff; // XUSER_INDEX_ANY
+constexpr uint8_t INVALID_X_INPUT_USER_ID = 0xff; // XUSER_INDEX_ANY

@@ -93,7 +93,7 @@ DWORD GlobalState::DeviceNotificationCallback(
 
 			logger->info("New XUSB device arrived: {}", symlink);
 
-			DWORD userIndex = K_INVALID_X_INPUT_USER_ID;
+			DWORD userIndex = INVALID_X_INPUT_USER_ID;
 			if (SymlinkToUserIndex(EventData->u.DeviceInterface.SymbolicLink, &userIndex))
 			{
 				logger->info("User index: {}", userIndex);
@@ -206,8 +206,8 @@ bool GlobalState::SymlinkToUserIndex(PCWSTR Symlink, PDWORD UserIndex)
 	// https://github.com/paroj/xpad/blob/5978d1020344c3288701ef70ea9a54dfc3312733/xpad.c#L1382-L1402
 	constexpr uint8_t XINPUT_LED_TO_PORT_MAP[] =
 	{
-		K_INVALID_X_INPUT_USER_ID, // All off
-		K_INVALID_X_INPUT_USER_ID, // All blinking, then previous setting
+		INVALID_X_INPUT_USER_ID, // All off
+		INVALID_X_INPUT_USER_ID, // All blinking, then previous setting
 		0, // 1 flashes, then on
 		1, // 2 flashes, then on
 		2, // 3 flashes, then on
@@ -216,12 +216,12 @@ bool GlobalState::SymlinkToUserIndex(PCWSTR Symlink, PDWORD UserIndex)
 		1, // 2 on
 		2, // 3 on
 		3, // 4 on
-		K_INVALID_X_INPUT_USER_ID, // Rotate
-		K_INVALID_X_INPUT_USER_ID, // Blink, based on previous setting
-		K_INVALID_X_INPUT_USER_ID, // Slow blink, based on previous setting
-		K_INVALID_X_INPUT_USER_ID, // Rotate with two lights
-		K_INVALID_X_INPUT_USER_ID, // Persistent slow all blink
-		K_INVALID_X_INPUT_USER_ID, // Blink once, then previous setting
+		INVALID_X_INPUT_USER_ID, // Rotate
+		INVALID_X_INPUT_USER_ID, // Blink, based on previous setting
+		INVALID_X_INPUT_USER_ID, // Slow blink, based on previous setting
+		INVALID_X_INPUT_USER_ID, // Rotate with two lights
+		INVALID_X_INPUT_USER_ID, // Persistent slow all blink
+		INVALID_X_INPUT_USER_ID, // Blink once, then previous setting
 	};
 
 	const uint8_t ledState = ledStateData[2];
