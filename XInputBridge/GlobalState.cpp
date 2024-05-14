@@ -3,11 +3,11 @@
 #include <memory>
 #include <spdlog/logger.h>
 #include <spdlog/spdlog.h>
-#include <scope_guard.hpp>
 #include <Shlwapi.h>
 #include <hidapi/hidapi.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <absl/strings/match.h>
+#include <absl/cleanup/cleanup.h>
 
 #include "Types.h"
 #include "UniUtil.h"
@@ -84,11 +84,11 @@ bool GlobalState::SymlinkToUserIndex(PCWSTR Symlink, PDWORD UserIndex)
 		nullptr
 	);
 
-	const auto guard = sg::make_scope_guard([handle]() noexcept
+	absl::Cleanup handleFree = [handle]
 	{
 		if (handle != INVALID_HANDLE_VALUE)
 			CloseHandle(handle);
-	});
+	};
 
 	std::array<uint8_t, 3> gamepadStateRequest0101{ 0x01, 0x01, 0x00 };
 	std::array<uint8_t, 3> ledStateData{};

@@ -454,7 +454,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 		// 
 		if (!TryGetDs3DeviceHandle(dwUserIndex, &device))
 		{
-			status = G_State.RealXInputGetState(dwUserIndex, pState);
+			status = G_State.ProxyXInputGetState(dwUserIndex, pState);
 			break;
 		}
 
@@ -596,7 +596,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
 		// 
 		if (!TryGetDs3DeviceHandle(dwUserIndex, &device))
 		{
-			status = G_State.RealXInputSetState(dwUserIndex, pVibration);
+			status = G_State.ProxyXInputSetState(dwUserIndex, pVibration);
 			break;
 		}
 
@@ -677,7 +677,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 		// 
 		if (!TryGetDs3DeviceHandle(dwUserIndex, nullptr))
 		{
-			status = G_State.RealXInputGetCapabilities(dwUserIndex, dwFlags, pCapabilities);
+			status = G_State.ProxyXInputGetCapabilities(dwUserIndex, dwFlags, pCapabilities);
 			break;
 		}
 
@@ -729,7 +729,7 @@ XINPUTBRIDGE_API void WINAPI XInputEnable(
 	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
 #endif
 
-	G_State.RealXInputEnable(enable);
+	G_State.ProxyXInputEnable(enable);
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputGetDSoundAudioDeviceGuids(
@@ -745,7 +745,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetDSoundAudioDeviceGuids(
 	auto scopedSpan = trace::Scope(span);
 #endif
 
-	return G_State.RealXInputGetDSoundAudioDeviceGuids(dwUserIndex, pDSoundRenderGuid, pDSoundCaptureGuid);
+	return G_State.ProxyXInputGetDSoundAudioDeviceGuids(dwUserIndex, pDSoundRenderGuid, pDSoundCaptureGuid);
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputGetBatteryInformation(
@@ -761,7 +761,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetBatteryInformation(
 	auto scopedSpan = trace::Scope(span);
 #endif
 
-	return G_State.RealXInputGetBatteryInformation(dwUserIndex, devType, pBatteryInformation);
+	return G_State.ProxyXInputGetBatteryInformation(dwUserIndex, devType, pBatteryInformation);
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputGetKeystroke(
@@ -781,7 +781,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetKeystroke(
 	auto scopedSpan = trace::Scope(span);
 #endif
 
-	return G_State.RealXInputGetKeystroke(dwUserIndex, dwReserved, pKeystroke);
+	return G_State.ProxyXInputGetKeystroke(dwUserIndex, dwReserved, pKeystroke);
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
@@ -811,7 +811,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
 		// 
 		if (!TryGetDs3DeviceHandle(dwUserIndex, &device))
 		{
-			status = G_State.RealXInputGetStateEx(dwUserIndex, pState);
+			status = G_State.ProxyXInputGetStateEx(dwUserIndex, pState);
 			break;
 		}
 
@@ -944,7 +944,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputWaitForGuideButton(
 	auto scopedSpan = trace::Scope(span);
 #endif
 
-	return G_State.RealXInputWaitForGuideButton(dwUserIndex, dwFlag, pVoid);
+	return G_State.ProxyXInputWaitForGuideButton(dwUserIndex, dwFlag, pVoid);
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputCancelGuideButtonWait(
@@ -958,7 +958,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputCancelGuideButtonWait(
 	auto scopedSpan = trace::Scope(span);
 #endif
 
-	return G_State.RealXInputCancelGuideButtonWait(dwUserIndex);
+	return G_State.ProxyXInputCancelGuideButtonWait(dwUserIndex);
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputPowerOffController(
@@ -972,7 +972,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputPowerOffController(
 	auto scopedSpan = trace::Scope(span);
 #endif
 
-	return G_State.RealXInputPowerOffController(dwUserIndex);
+	return G_State.ProxyXInputPowerOffController(dwUserIndex);
 }
 
 #pragma endregion

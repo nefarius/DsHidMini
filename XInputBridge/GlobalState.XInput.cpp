@@ -1,56 +1,95 @@
 ﻿#include "GlobalState.h"
+#include <absl/cleanup/cleanup.h>
 
-DWORD GlobalState::RealXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState) const
+
+DWORD GlobalState::ProxyXInputGetExtended(DWORD dwUserIndex, SCP_EXTN* pState)
 {
+	AcquireSRWLockShared(&this->StatesLock);
+	absl::Cleanup lockRelease = [this]
+	{
+		ReleaseSRWLockShared(&this->StatesLock);
+	};
+
+	return -1;
+}
+
+DWORD GlobalState::ProxyXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
+{
+	AcquireSRWLockShared(&this->StatesLock);
+	absl::Cleanup lockRelease = [this]
+	{
+		ReleaseSRWLockShared(&this->StatesLock);
+	};
+
 	return CALL_FPN_SAFE(FpnXInputGetState, dwUserIndex, pState);
 }
 
-DWORD GlobalState::RealXInputSetState(DWORD dwUserIndex, XINPUT_VIBRATION* pVibration) const
+DWORD GlobalState::ProxyXInputSetState(DWORD dwUserIndex, XINPUT_VIBRATION* pVibration)
 {
+	AcquireSRWLockShared(&this->StatesLock);
+	absl::Cleanup lockRelease = [this]
+	{
+		ReleaseSRWLockShared(&this->StatesLock);
+	};
+
 	return CALL_FPN_SAFE(FpnXInputSetState, dwUserIndex, pVibration);
 }
 
-DWORD GlobalState::RealXInputGetCapabilities(DWORD dwUserIndex, DWORD dwFlags, XINPUT_CAPABILITIES* pCapabilities) const
+DWORD GlobalState::ProxyXInputGetCapabilities(DWORD dwUserIndex, DWORD dwFlags, XINPUT_CAPABILITIES* pCapabilities)
 {
+	AcquireSRWLockShared(&this->StatesLock);
+	absl::Cleanup lockRelease = [this]
+	{
+		ReleaseSRWLockShared(&this->StatesLock);
+	};
+
 	return CALL_FPN_SAFE(FpnXInputGetCapabilities, dwUserIndex, dwFlags, pCapabilities);
 }
 
-void GlobalState::RealXInputEnable(BOOL enable) const
+void GlobalState::ProxyXInputEnable(BOOL enable) const
 {
 	CALL_FPN_SAFE_NO_RETURN(FpnXInputEnable, enable);
 }
 
-DWORD GlobalState::RealXInputGetDSoundAudioDeviceGuids(DWORD dwUserIndex, GUID* pDSoundRenderGuid, GUID* pDSoundCaptureGuid) const
+DWORD GlobalState::ProxyXInputGetDSoundAudioDeviceGuids(DWORD dwUserIndex, GUID* pDSoundRenderGuid, GUID* pDSoundCaptureGuid) const
 {
 	return CALL_FPN_SAFE(FpnXInputGetDSoundAudioDeviceGuids, dwUserIndex, pDSoundRenderGuid, pDSoundCaptureGuid);
 }
 
-DWORD GlobalState::RealXInputGetBatteryInformation(DWORD dwUserIndex, BYTE devType, XINPUT_BATTERY_INFORMATION* pBatteryInformation) const
+DWORD GlobalState::ProxyXInputGetBatteryInformation(DWORD dwUserIndex,
+                                                    BYTE devType,
+                                                    XINPUT_BATTERY_INFORMATION* pBatteryInformation) const
 {
 	return CALL_FPN_SAFE(FpnXInputGetBatteryInformation, dwUserIndex, devType, pBatteryInformation);
 }
 
-DWORD GlobalState::RealXInputGetKeystroke(DWORD dwUserIndex, DWORD dwReserved, PXINPUT_KEYSTROKE pKeystroke) const
+DWORD GlobalState::ProxyXInputGetKeystroke(DWORD dwUserIndex, DWORD dwReserved, PXINPUT_KEYSTROKE pKeystroke) const
 {
 	return CALL_FPN_SAFE(FpnXInputGetKeystroke, dwUserIndex, dwReserved, pKeystroke);
 }
 
-DWORD GlobalState::RealXInputGetStateEx(DWORD dwUserIndex, XINPUT_STATE* pState) const
+DWORD GlobalState::ProxyXInputGetStateEx(DWORD dwUserIndex, XINPUT_STATE* pState)
 {
+	AcquireSRWLockShared(&this->StatesLock);
+	absl::Cleanup lockRelease = [this]
+	{
+		ReleaseSRWLockShared(&this->StatesLock);
+	};
+
 	return CALL_FPN_SAFE(FpnXInputGetStateEx, dwUserIndex, pState);
 }
 
-DWORD GlobalState::RealXInputWaitForGuideButton(DWORD dwUserIndex, DWORD dwFlag, LPVOID pVoid) const
+DWORD GlobalState::ProxyXInputWaitForGuideButton(DWORD dwUserIndex, DWORD dwFlag, LPVOID pVoid) const
 {
 	return CALL_FPN_SAFE(FpnXInputWaitForGuideButton, dwUserIndex, dwFlag, pVoid);
 }
 
-DWORD GlobalState::RealXInputCancelGuideButtonWait(DWORD dwUserIndex) const
+DWORD GlobalState::ProxyXInputCancelGuideButtonWait(DWORD dwUserIndex) const
 {
 	return CALL_FPN_SAFE(FpnXInputCancelGuideButtonWait, dwUserIndex);
 }
 
-DWORD GlobalState::RealXInputPowerOffController(DWORD dwUserIndex) const
+DWORD GlobalState::ProxyXInputPowerOffController(DWORD dwUserIndex) const
 {
 	return CALL_FPN_SAFE(FpnXInputPowerOffController, dwUserIndex);
 }

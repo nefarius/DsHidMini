@@ -29,11 +29,6 @@
 #include <absl/strings/match.h>
 
 //
-// Scope guard
-// 
-#include <scope_guard.hpp>
-
-//
 // Logging
 // 
 #include <spdlog/spdlog.h>

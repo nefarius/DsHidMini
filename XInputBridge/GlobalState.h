@@ -19,60 +19,65 @@ public:
 
 #pragma region XInput API proxies
 
-	DWORD RealXInputGetState(
+	DWORD WINAPI ProxyXInputGetExtended(
+		_In_ DWORD dwUserIndex,
+		_Out_ SCP_EXTN* pState
+	);
+
+	DWORD ProxyXInputGetState(
 		_In_ DWORD dwUserIndex,
 		_Out_ XINPUT_STATE* pState
-	) const;
+	);
 
-	DWORD RealXInputSetState(
+	DWORD ProxyXInputSetState(
 		_In_ DWORD dwUserIndex,
 		_In_ XINPUT_VIBRATION* pVibration
-	) const;
+	);
 
-	DWORD RealXInputGetCapabilities(
+	DWORD ProxyXInputGetCapabilities(
 		_In_ DWORD dwUserIndex,
 		_In_ DWORD dwFlags,
 		_Out_ XINPUT_CAPABILITIES* pCapabilities
-	) const;
+	);
 
-	void RealXInputEnable(
+	void ProxyXInputEnable(
 		_In_ BOOL enable
 	) const;
 
-	DWORD RealXInputGetDSoundAudioDeviceGuids(
+	DWORD ProxyXInputGetDSoundAudioDeviceGuids(
 		DWORD dwUserIndex,
 		GUID* pDSoundRenderGuid,
 		GUID* pDSoundCaptureGuid
 	) const;
 
-	DWORD RealXInputGetBatteryInformation(
+	DWORD ProxyXInputGetBatteryInformation(
 		_In_ DWORD dwUserIndex,
 		_In_ BYTE devType,
 		_Out_ XINPUT_BATTERY_INFORMATION* pBatteryInformation
 	) const;
 
-	DWORD RealXInputGetKeystroke(
+	DWORD ProxyXInputGetKeystroke(
 		DWORD dwUserIndex,
 		DWORD dwReserved,
 		PXINPUT_KEYSTROKE pKeystroke
 	) const;
 
-	DWORD RealXInputGetStateEx(
+	DWORD ProxyXInputGetStateEx(
 		_In_ DWORD dwUserIndex,
 		_Out_ XINPUT_STATE* pState
-	) const;
+	);
 
-	DWORD RealXInputWaitForGuideButton(
+	DWORD ProxyXInputWaitForGuideButton(
 		_In_ DWORD dwUserIndex,
 		_In_ DWORD dwFlag,
 		_In_ LPVOID pVoid
 	) const;
 
-	DWORD RealXInputCancelGuideButtonWait(
+	DWORD ProxyXInputCancelGuideButtonWait(
 		_In_ DWORD dwUserIndex
 	) const;
 
-	DWORD RealXInputPowerOffController(
+	DWORD ProxyXInputPowerOffController(
 		_In_ DWORD dwUserIndex
 	) const;
 
@@ -89,7 +94,7 @@ private:
 
 #pragma region XInput declarations
 
-		decltype(XInputGetState)* FpnXInputGetState = nullptr;
+	decltype(XInputGetState)* FpnXInputGetState = nullptr;
 	decltype(XInputSetState)* FpnXInputSetState = nullptr;
 	decltype(XInputGetCapabilities)* FpnXInputGetCapabilities = nullptr;
 	decltype(XInputEnable)* FpnXInputEnable = nullptr;
