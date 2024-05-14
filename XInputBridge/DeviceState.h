@@ -25,8 +25,11 @@ private:
 	bool InitializeAsDs3(const std::wstring& Symlink);
 	void Dispose();
 
-	bool Ds3GetPacketNumber(PDS3_RAW_INPUT_REPORT Report, DWORD* PacketNumber);
-	bool Ds3GetDeviceHandle(hid_device** Handle) const;
+	_Must_inspect_result_
+	bool Ds3GetPacketNumber(_In_ PDS3_RAW_INPUT_REPORT Report, _Inout_ DWORD* PacketNumber);
+
+	_Must_inspect_result_
+	bool Ds3GetDeviceHandle(_Inout_opt_ hid_device** Handle) const;
 
 	friend class GlobalState;
 };
