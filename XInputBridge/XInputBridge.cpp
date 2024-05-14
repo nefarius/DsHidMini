@@ -66,43 +66,6 @@ static XI_DEVICE_STATE* GetFreeSlot()
 	return (item != G_DEVICE_STATES.end()) ? &(*item) : nullptr;
 }
 
-#pragma region Rumble helper types
-
-/*
- * Source: https://github.com/RPCS3/rpcs3/blob/5e436984a2b5753ad340d2c97462bf3be6e86237/rpcs3/Input/ds3_pad_handler.cpp#L9-L40
- */
-
-struct ds3_rumble
-{
-	UCHAR padding = 0x00;
-	UCHAR small_motor_duration = 0xFF; // 0xff means forever
-	UCHAR small_motor_on = 0x00; // 0 or 1 (off/on)
-	UCHAR large_motor_duration = 0xFF; // 0xff means forever
-	UCHAR large_motor_force = 0x00; // 0 to 255
-};
-
-struct ds3_led
-{
-	UCHAR duration = 0xFF; // total duration, 0xff means forever
-	UCHAR interval_duration = 0xFF; // interval duration in deciseconds
-	UCHAR enabled = 0x10;
-	UCHAR interval_portion_off = 0x00; // in percent (100% = 0xFF)
-	UCHAR interval_portion_on = 0xFF; // in percent (100% = 0xFF)
-};
-
-struct ds3_output_report
-{
-	UCHAR report_id = 0x00;
-	UCHAR idk_what_this_is[3] = { 0x02, 0x00, 0x00 };
-	ds3_rumble rumble;
-	UCHAR padding[4] = { 0x00, 0x00, 0x00, 0x00 };
-	UCHAR led_enabled = 0x00; // LED 1 = 0x02, LED 2 = 0x04, etc.
-	ds3_led led[4];
-	ds3_led led_5; // reserved for another LED
-};
-
-#pragma endregion
-
 #pragma region Utility functions
 
 static SHORT ScaleDsToXi(UCHAR value, BOOLEAN invert)
@@ -114,20 +77,6 @@ static SHORT ScaleDsToXi(UCHAR value, BOOLEAN invert)
 	const auto wtfValue = intValue * 258.00787401574803149606299212599f; // what the fuck?
 
 	return static_cast<short>(invert ? -wtfValue : wtfValue);
-}
-
-static float ClampAxis(float value)
-{
-	if (value > 1.0f)
-		return 1.0f;
-	if (value < -1.0f)
-		return -1.0f;
-	return value;
-}
-
-static float ToAxis(UCHAR value)
-{
-	return ClampAxis((((value & 0xFF) - 0x7F) * 2) / 254.0f);
 }
 
 #pragma endregion
@@ -336,141 +285,13 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 	_Out_ XINPUT_STATE* pState
 )
 {
-	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
-	hid_device* device = nullptr;
-
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
 		}));
 #endif
 
-	do
-	{
-		//
-		// User might troll us
-		// 
-		if (pState == nullptr)
-			break;
-
-		//
-		// Look for device of interest
-		// 
-		if (!TryGetDs3DeviceHandle(dwUserIndex, &device))
-		{
-			status = G_State.ProxyXInputGetState(dwUserIndex, pState);
-			break;
-		}
-
-		UCHAR buf[SXS_MODE_GET_FEATURE_BUFFER_LEN];
-		buf[0] = SXS_MODE_GET_FEATURE_REPORT_ID;
-
-		const int res = hid_get_feature_report(device, buf, ARRAYSIZE(buf));
-
-		if (res <= 0)
-		{
-			SetDeviceDisconnected(dwUserIndex);
-			break;
-		}
-
-		const auto pReport = reinterpret_cast<PDS3_RAW_INPUT_REPORT>(&buf[1]);
-
-		if (!GetPacketNumber(dwUserIndex, pReport, &pState->dwPacketNumber))
-			break;
-
-		RtlZeroMemory(&pState->Gamepad, sizeof(pState->Gamepad));
-
-		//
-		// D-Pad translation
-		// 
-		switch (pReport->Buttons.bButtons[0] & ~0xF)
-		{
-		case 0x10: // N
-			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_UP;
-			break;
-		case 0x30: // NE
-			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_UP;
-			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_RIGHT;
-			break;
-		case 0x20: // E
-			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_RIGHT;
-			break;
-		case 0x60: // SE
-			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_RIGHT;
-			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_DOWN;
-			break;
-		case 0x40: // S
-			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_DOWN;
-			break;
-		case 0xC0: // SW
-			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_DOWN;
-			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_LEFT;
-			break;
-		case 0x80: // W
-			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_LEFT;
-			break;
-		case 0x90: // NW
-			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_UP;
-			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_LEFT;
-			break;
-		default: // Released
-			break;
-		}
-
-		//
-		// Start/Select
-		// 
-		if (pReport->Buttons.Individual.Start)
-			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_START;
-		if (pReport->Buttons.Individual.Select)
-			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_BACK;
-
-		//
-		// Thumbs
-		// 
-		if (pReport->Buttons.Individual.L3)
-			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_LEFT_THUMB;
-		if (pReport->Buttons.Individual.R3)
-			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_RIGHT_THUMB;
-
-		//
-		// Shoulders
-		// 
-		if (pReport->Buttons.Individual.L1)
-			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_LEFT_SHOULDER;
-		if (pReport->Buttons.Individual.R1)
-			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_RIGHT_SHOULDER;
-
-		//
-		// Face buttons
-		// 
-		if (pReport->Buttons.Individual.Triangle)
-			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_Y;
-		if (pReport->Buttons.Individual.Circle)
-			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_B;
-		if (pReport->Buttons.Individual.Cross)
-			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_A;
-		if (pReport->Buttons.Individual.Square)
-			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_X;
-
-		//
-		// Triggers
-		// 
-		pState->Gamepad.bLeftTrigger = pReport->Pressure.Values.L2;
-		pState->Gamepad.bRightTrigger = pReport->Pressure.Values.R2;
-
-		//
-		// Thumb axes
-		// 
-		pState->Gamepad.sThumbLX = ScaleDsToXi(pReport->LeftThumbX, FALSE);
-		pState->Gamepad.sThumbLY = ScaleDsToXi(pReport->LeftThumbY, TRUE);
-		pState->Gamepad.sThumbRX = ScaleDsToXi(pReport->RightThumbX, FALSE);
-		pState->Gamepad.sThumbRY = ScaleDsToXi(pReport->RightThumbY, TRUE);
-
-		status = ERROR_SUCCESS;
-	} while (FALSE);
-
-	return status;
+	return G_State.ProxyXInputGetState(dwUserIndex, pState);
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
