@@ -14,7 +14,7 @@ class GlobalState
 {
 public:
 	void Initialize();
-	void Destroy() const;
+	void Destroy();
 
 #pragma region XInput API proxies
 
@@ -79,6 +79,7 @@ public:
 
 private:
 	std::vector<DeviceState> States{ DS3_DEVICES_MAX };
+	CRITICAL_SECTION StatesLock{};
 	HCMNOTIFICATION Ds3NotificationHandle{};
 	HCMNOTIFICATION XusbNotificationHandle{};
 

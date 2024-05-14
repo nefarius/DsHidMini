@@ -16,6 +16,8 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 
 void GlobalState::Initialize()
 {
+	InitializeCriticalSection(&StatesLock);
+
 	CHAR dllPath[MAX_PATH];
 
 	GetModuleFileNameA((HINSTANCE)&__ImageBase, dllPath, MAX_PATH);
@@ -45,7 +47,7 @@ void GlobalState::Initialize()
 	//
 	// Call stuff that must not be done in DllMain in the background
 	// 
-	const HANDLE hThread = CreateThread(nullptr, 0, InitAsync, nullptr, 0, nullptr);
+	const HANDLE hThread = CreateThread(nullptr, 0, InitAsync, this, 0, nullptr);
 
 	if (hThread == nullptr)
 	{
@@ -53,7 +55,7 @@ void GlobalState::Initialize()
 	}
 }
 
-void GlobalState::Destroy() const
+void GlobalState::Destroy()
 {
 	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
 
@@ -63,6 +65,8 @@ void GlobalState::Destroy() const
 	(void)CM_Unregister_Notification(XusbNotificationHandle);
 
 	(void)hid_exit();
+
+	DeleteCriticalSection(&StatesLock);
 }
 
 DWORD GlobalState::DeviceNotificationCallback(
