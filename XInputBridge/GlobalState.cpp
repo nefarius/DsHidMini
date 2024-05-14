@@ -15,6 +15,10 @@
 
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 
+
+//
+// Initialization safe to perform in DllMain
+// 
 void GlobalState::Initialize()
 {
 	InitializeSRWLock(&StatesLock);
@@ -38,12 +42,6 @@ void GlobalState::Initialize()
 #endif
 
 	set_default_logger(logger);
-
-	/*for (auto& state : G_DEVICE_STATES)
-	{
-		InitializeCriticalSection(&state.lock);
-		state.isInitialized = true;
-	}*/
 
 	//
 	// Call stuff that must not be done in DllMain in the background

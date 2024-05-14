@@ -6,6 +6,10 @@
 #include "UniUtil.h"
 #include "DsHidMini/dshmguid.h"
 
+
+//
+// Invoked on device arrival or removal
+// 
 DWORD GlobalState::DeviceNotificationCallback(
 	HCMNOTIFICATION hNotify,
 	PVOID Context,
@@ -118,6 +122,9 @@ DWORD GlobalState::DeviceNotificationCallback(
 	return ERROR_SUCCESS;
 }
 
+//
+// Initialization tasks on a background thread
+// 
 DWORD WINAPI GlobalState::InitAsync(LPVOID lpParameter)
 {
 	const auto _this = static_cast<GlobalState*>(lpParameter);
