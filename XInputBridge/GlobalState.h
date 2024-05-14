@@ -2,6 +2,7 @@
 
 #include <Windows.h>
 #include <cfgmgr32.h>
+#include <optional>
 
 #include <vector>
 
@@ -79,13 +80,15 @@ public:
 
 private:
 	std::vector<DeviceState> States{ DS3_DEVICES_MAX };
-	CRITICAL_SECTION StatesLock{};
+	SRWLOCK StatesLock{};
 	HCMNOTIFICATION Ds3NotificationHandle{};
 	HCMNOTIFICATION XusbNotificationHandle{};
 
+	DeviceState* GetFreeState();
+
 #pragma region XInput declarations
 
-	decltype(XInputGetState)* FpnXInputGetState = nullptr;
+		decltype(XInputGetState)* FpnXInputGetState = nullptr;
 	decltype(XInputSetState)* FpnXInputSetState = nullptr;
 	decltype(XInputGetCapabilities)* FpnXInputGetCapabilities = nullptr;
 	decltype(XInputEnable)* FpnXInputEnable = nullptr;
@@ -110,4 +113,6 @@ private:
 	static bool SymlinkToUserIndex(_In_ PCWSTR Symlink, _Inout_ PDWORD UserIndex);
 
 	static DWORD WINAPI InitAsync(_In_ LPVOID lpParameter);
+
+	//friend class DeviceState;
 };
