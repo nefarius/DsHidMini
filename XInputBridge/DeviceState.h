@@ -10,10 +10,8 @@
 
 class DeviceState
 {
-public:
-	
-
 private:
+	/** The device and connection type */
 	std::atomic<XI_DEVICE_TYPE> Type{XI_DEVICE_TYPE_NOT_CONNECTED};
 	/** The symbolic link of the USB/BTH device (_NOT_ the HID device) */
 	std::string SymbolicLink{};

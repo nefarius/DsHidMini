@@ -89,9 +89,13 @@ public:
 	static std::optional<uint8_t> GetDs3HidDeviceModeProperty(const std::wstring& Ds3InstanceId);
 
 private:
+	/** The states of each user index slot */
 	std::vector<DeviceState> States{ DS3_DEVICES_MAX };
+	/** The lock protecting modifying access to the states */
 	SRWLOCK StatesLock{};
+	/** Handle of the DS3 device notification */
 	HCMNOTIFICATION Ds3NotificationHandle{};
+	/** Handle of the XUSB device notification */
 	HCMNOTIFICATION XusbNotificationHandle{};
 
 	DeviceState* GetNextFreeSlot();
