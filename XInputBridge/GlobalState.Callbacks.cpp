@@ -17,7 +17,7 @@ DWORD GlobalState::DeviceNotificationCallback(
 	UNREFERENCED_PARAMETER(hNotify);
 	UNREFERENCED_PARAMETER(EventDataSize);
 
-	const GlobalState* _this = static_cast<GlobalState*>(Context);
+	auto _this = static_cast<GlobalState*>(Context);
 	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
 
 	switch (Action)
@@ -25,7 +25,21 @@ DWORD GlobalState::DeviceNotificationCallback(
 	case CM_NOTIFY_ACTION_DEVICEINTERFACEARRIVAL:
 		if (IsEqualGUID(GUID_DEVINTERFACE_DSHIDMINI, EventData->u.DeviceInterface.ClassGuid))
 		{
-			logger->info("New DS3 device arrived: {}", ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink));
+			const auto symlink = ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink);
+			logger->info("New DS3 device arrived: {}", symlink);
+
+			AcquireSRWLockExclusive(&_this->StatesLock);
+			{
+				if (const auto slot = _this->GetNextFreeSlot())
+				{
+					slot->Dispose();
+					if (!slot->InitializeAsDs3(EventData->u.DeviceInterface.SymbolicLink))
+					{
+						logger->error("Failed to initialize {} as a DS3 HID device", symlink);
+					}
+				}
+			}
+			ReleaseSRWLockExclusive(&_this->StatesLock);
 		}
 
 		if (IsEqualGUID(XUSB_INTERFACE_CLASS_GUID, EventData->u.DeviceInterface.ClassGuid))
@@ -39,14 +53,18 @@ DWORD GlobalState::DeviceNotificationCallback(
 			{
 				logger->info("User index: {}", userIndex);
 
-				/*if (const auto slot = GetFreeSlot())
+				AcquireSRWLockExclusive(&_this->StatesLock);
 				{
-					slot->SetOnlineAsXusb(symlink, userIndex);
+					if (const auto slot = _this->GetNextFreeSlot())
+					{
+						slot->Dispose();
+						if (!slot->InitializeAsXusb(EventData->u.DeviceInterface.SymbolicLink, userIndex))
+						{
+							logger->error("Failed to initialize {} as a XUSB device", symlink);
+						}
+					}
 				}
-				else
-				{
-					logger->warn("No free slot for {}", symlink);
-				}*/
+				ReleaseSRWLockExclusive(&_this->StatesLock);
 			}
 			else
 			{

@@ -7,8 +7,10 @@
 #include <Shlwapi.h>
 #include <hidapi/hidapi.h>
 #include <spdlog/sinks/basic_file_sink.h>
+#include <absl/strings/match.h>
 
 #include "Types.h"
+#include "UniUtil.h"
 
 
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
@@ -143,12 +145,25 @@ bool GlobalState::SymlinkToUserIndex(PCWSTR Symlink, PDWORD UserIndex)
 	return true;
 }
 
-DeviceState* GlobalState::GetFreeState()
+DeviceState* GlobalState::GetNextFreeSlot()
 {
 	const auto item = std::ranges::find_if(this->States,
 		[](const DeviceState& element)
 		{
 			return element.Type == XI_DEVICE_TYPE_NOT_CONNECTED;
+		});
+
+	return (item != this->States.end()) ? &(*item) : nullptr;
+}
+
+DeviceState* GlobalState::FindBySymbolicLink(const std::wstring& Symlink)
+{
+	const auto narrow = ConvertWideToANSI(Symlink);
+
+	const auto item = std::ranges::find_if(this->States,
+		[narrow](const DeviceState& element)
+		{
+			return absl::EqualsIgnoreCase(element.SymbolicLink, narrow);
 		});
 
 	return (item != this->States.end()) ? &(*item) : nullptr;

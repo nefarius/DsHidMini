@@ -84,7 +84,8 @@ private:
 	HCMNOTIFICATION Ds3NotificationHandle{};
 	HCMNOTIFICATION XusbNotificationHandle{};
 
-	DeviceState* GetFreeState();
+	DeviceState* GetNextFreeSlot();
+	DeviceState* FindBySymbolicLink(const std::wstring& Symlink);
 
 #pragma region XInput declarations
 
