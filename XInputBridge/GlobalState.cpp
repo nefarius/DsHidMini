@@ -278,5 +278,9 @@ void GlobalState::EnumerateDs3Devices()
 			state->Dispose();
 			state->InitializeAsDs3(hidSymlink);
 		}
+		else
+		{
+			logger->warn("No free slot to assign {} to", ConvertWideToANSI(symlink));
+		}
 	}
 }
