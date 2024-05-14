@@ -257,6 +257,16 @@ void GlobalState::EnumerateDs3Devices()
 	{
 		auto instanceId = InterfaceIdToInstanceId(symlink);
 
+		if (!instanceId.has_value())
+			continue;
+
+		auto children = GetDeviceChildren(instanceId.value());
+
+		if (!children.has_value())
+			continue;
+
+		const auto hidDeviceId = children.value()[0];
+
 		if (const auto state = this->GetNextFreeSlot())
 		{
 			state->Dispose();
