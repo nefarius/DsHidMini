@@ -7,6 +7,8 @@
 #include <absl/cleanup/cleanup.h>
 #include <winreg/WinReg.hpp>
 
+#include "DsHidMini/dshmguid.h"
+
 SHORT GlobalState::ScaleDsToXi(UCHAR value, BOOLEAN invert)
 {
 	auto intValue = value - 0x80;
@@ -167,4 +169,36 @@ std::optional<std::vector<std::wstring>> GlobalState::InstanceIdToHidPaths(const
 	const auto symlinks = winreg::winreg_internal::ParseMultiString(multiString);
 
 	return symlinks;
+}
+
+std::optional<uint8_t> GlobalState::GetDs3HidDeviceModeProperty(const std::wstring& Ds3InstanceId)
+{
+	DEVINST instance{ 0 };
+	DEVPROPTYPE type{ 0 };
+
+	CONFIGRET ret = CM_Locate_DevNodeW(
+		&instance,
+		const_cast<DEVINSTID_W>(Ds3InstanceId.c_str()),
+		CM_LOCATE_DEVNODE_NORMAL
+	);
+
+	if (ret != CR_SUCCESS)
+		return std::nullopt;
+
+	uint8_t hidDeviceMode = 0;
+	ULONG size = sizeof(uint8_t);
+
+	ret = CM_Get_DevNode_PropertyW(
+		instance,
+		&DEVPKEY_DsHidMini_RW_HidDeviceMode,
+		&type,
+		&hidDeviceMode,
+		&size,
+		0
+	);
+
+	if (ret != CR_SUCCESS)
+		return std::nullopt;
+
+	return hidDeviceMode;
 }

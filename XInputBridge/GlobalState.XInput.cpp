@@ -24,7 +24,7 @@ DWORD GlobalState::ProxyXInputGetExtended(DWORD dwUserIndex, SCP_EXTN* pState)
 		//
 		// Look for device of interest
 		// 
-		if (!this->GetDs3ByUserIndex(dwUserIndex, &state))
+		if (!this->GetConnectedDs3ByUserIndex(dwUserIndex, &state))
 			break;
 
 		UCHAR buf[SXS_MODE_GET_FEATURE_BUFFER_LEN];
@@ -128,7 +128,7 @@ DWORD GlobalState::ProxyXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 		//
 		// Look for device of interest
 		// 
-		if (!this->GetDs3ByUserIndex(dwUserIndex, &state))
+		if (!this->GetConnectedDs3ByUserIndex(dwUserIndex, &state))
 		{
 			status = CALL_FPN_SAFE(FpnXInputGetState, dwUserIndex, pState);
 			break;
@@ -264,7 +264,7 @@ DWORD GlobalState::ProxyXInputSetState(DWORD dwUserIndex, XINPUT_VIBRATION* pVib
 		//
 		// Look for device of interest
 		// 
-		if (!this->GetDs3ByUserIndex(dwUserIndex, &state))
+		if (!this->GetConnectedDs3ByUserIndex(dwUserIndex, &state))
 		{
 			status = CALL_FPN_SAFE(FpnXInputSetState, dwUserIndex, pVibration);
 			break;
@@ -343,7 +343,7 @@ DWORD GlobalState::ProxyXInputGetCapabilities(DWORD dwUserIndex, DWORD dwFlags, 
 		//
 		// Look for device of interest
 		// 
-		if (!this->IsConnectedDs3(dwUserIndex))
+		if (!this->GetConnectedDs3ByUserIndex(dwUserIndex, nullptr))
 		{
 			status = CALL_FPN_SAFE(FpnXInputGetCapabilities, dwUserIndex, dwFlags, pCapabilities);
 			break;
@@ -464,7 +464,7 @@ DWORD GlobalState::ProxyXInputGetStateEx(DWORD dwUserIndex, XINPUT_STATE* pState
 		//
 		// Look for device of interest
 		// 
-		if (!this->GetDs3ByUserIndex(dwUserIndex, &state))
+		if (!this->GetConnectedDs3ByUserIndex(dwUserIndex, &state))
 		{
 			status = CALL_FPN_SAFE(FpnXInputGetStateEx, dwUserIndex, pState);
 			break;

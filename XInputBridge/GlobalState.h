@@ -83,6 +83,11 @@ public:
 
 #pragma endregion
 
+	static std::optional<std::wstring> InterfaceIdToInstanceId(const std::wstring& Symlink);
+	static std::optional<std::vector<std::wstring>> GetDeviceChildren(const std::wstring& ParentDeviceId);
+	static std::optional<std::vector<std::wstring>> InstanceIdToHidPaths(const std::wstring& InstanceId);
+	static std::optional<uint8_t> GetDs3HidDeviceModeProperty(const std::wstring& Ds3InstanceId);
+
 private:
 	std::vector<DeviceState> States{ DS3_DEVICES_MAX };
 	SRWLOCK StatesLock{};
@@ -92,8 +97,7 @@ private:
 	DeviceState* GetNextFreeSlot();
 	DeviceState* FindBySymbolicLink(const std::wstring& Symlink);
 	DeviceState* GetXusbByUserIndex(const DWORD UserIndex);
-	bool GetDs3ByUserIndex(const DWORD UserIndex, DeviceState** Handle) const;
-	bool IsConnectedDs3(const DWORD UserIndex) const;
+	bool GetConnectedDs3ByUserIndex(_In_ const DWORD UserIndex, _Out_opt_ DeviceState** Handle) const;
 	void EnumerateDs3Devices();
 
 #pragma region XInput declarations
@@ -127,8 +131,4 @@ private:
 	static SHORT ScaleDsToXi(UCHAR value, BOOLEAN invert);
 	static float ClampAxis(float value);
 	static float ToAxis(UCHAR value);
-
-	static std::optional<std::wstring> InterfaceIdToInstanceId(const std::wstring& Symlink);
-	static std::optional<std::vector<std::wstring>> GetDeviceChildren(const std::wstring& ParentDeviceId);
-	static std::optional<std::vector<std::wstring>> InstanceIdToHidPaths(const std::wstring& InstanceId);
 };

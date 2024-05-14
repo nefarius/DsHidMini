@@ -95,6 +95,7 @@ bool DeviceState::Ds3GetPacketNumber(PDS3_RAW_INPUT_REPORT Report, DWORD* Packet
 
 	return true;
 }
+
 bool DeviceState::Ds3GetDeviceHandle(hid_device** Handle) const
 {
 	if (this->Type != XI_DEVICE_TYPE_DS3)

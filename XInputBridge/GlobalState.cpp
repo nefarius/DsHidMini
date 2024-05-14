@@ -183,32 +183,27 @@ DeviceState* GlobalState::GetXusbByUserIndex(const DWORD UserIndex)
 	return (item != this->States.end()) ? &(*item) : nullptr;
 }
 
-bool GlobalState::GetDs3ByUserIndex(const DWORD UserIndex, DeviceState** Handle) const
+bool GlobalState::GetConnectedDs3ByUserIndex(const DWORD UserIndex, DeviceState** Handle) const
 {
 	if (UserIndex >= DS3_DEVICES_MAX)
 		return false;
 
+	const auto state = const_cast<DeviceState*>(&this->States[UserIndex]);
+
+	if (state->Type != XI_DEVICE_TYPE_DS3)
+		return false;
+
 	if (Handle)
-		*Handle = const_cast<DeviceState*>(&this->States[UserIndex]);
+		*Handle = state;
 
 	return true;
-}
-
-bool GlobalState::IsConnectedDs3(const DWORD UserIndex) const
-{
-	DeviceState* state = nullptr;
-
-	if (GetDs3ByUserIndex(UserIndex, &state))
-	{
-		return state->Type == XI_DEVICE_TYPE_DS3;
-	}
-
-	return false;
 }
 
 void GlobalState::EnumerateDs3Devices()
 {
 	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
+
+	constexpr uint8_t DsHidMiniDeviceModeSixaxisCompatible = 0x03;
 
 	ULONG requiredNumChars = 0;
 
@@ -229,17 +224,17 @@ void GlobalState::EnumerateDs3Devices()
 		// single NULL character means list is empty
 		return;
 
-	auto buffer = static_cast<PZZWSTR>(calloc(requiredNumChars, sizeof(WCHAR)));
+	auto szListBuffer = static_cast<PZZWSTR>(calloc(requiredNumChars, sizeof(WCHAR)));
 
-	absl::Cleanup lockRelease = [buffer]
+	absl::Cleanup lockRelease = [szListBuffer]
 	{
-		free(buffer);
+		free(szListBuffer);
 	};
 
 	ret = CM_Get_Device_Interface_ListW(
 		const_cast<LPGUID>(&GUID_DEVINTERFACE_DSHIDMINI),
 		nullptr,
-		buffer,
+		szListBuffer,
 		requiredNumChars,
 		CM_GET_DEVICE_INTERFACE_LIST_PRESENT
 	);
@@ -250,7 +245,7 @@ void GlobalState::EnumerateDs3Devices()
 		return;
 	}
 
-	const std::vector<wchar_t> multiString{ &buffer[0], buffer + requiredNumChars };
+	const std::vector<wchar_t> multiString{ &szListBuffer[0], szListBuffer + requiredNumChars };
 	const auto symlinks = winreg::winreg_internal::ParseMultiString(multiString);
 
 	for (const auto& symlink : symlinks)
@@ -259,6 +254,14 @@ void GlobalState::EnumerateDs3Devices()
 
 		if (!instanceId.has_value())
 			continue;
+
+		const auto hidDeviceMode = GetDs3HidDeviceModeProperty(instanceId.value());
+
+		if (hidDeviceMode != DsHidMiniDeviceModeSixaxisCompatible)
+		{
+			logger->warn("DS3 device {} not in SXS mode, skipping", ConvertWideToANSI(symlink));
+			continue;
+		}
 
 		const auto children = GetDeviceChildren(instanceId.value());
 
