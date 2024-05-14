@@ -34,6 +34,8 @@ DWORD GlobalState::DeviceNotificationCallback(
 			const auto symlink = std::wstring(EventData->u.DeviceInterface.SymbolicLink);
 			logger->info("New DS3 device arrived: {}", ConvertWideToANSI(symlink));
 
+			// child device boot is not instant so we need to do 
+			// this in the background to not block this callback
 			std::thread asyncArrival{
 				[_this, logger, symlink]
 				{

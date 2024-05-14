@@ -103,7 +103,7 @@ void DeviceState::Dispose()
 	}
 
 	RtlZeroMemory(&this->LastReport, sizeof(DS3_RAW_INPUT_REPORT));
-	this->PacketNumber = 0;
+	this->SyntheticPacketNumber = 0;
 	this->Type = XI_DEVICE_TYPE_NOT_CONNECTED;
 }
 
@@ -129,7 +129,7 @@ bool DeviceState::Ds3GetPacketNumber(PDS3_RAW_INPUT_REPORT Report, DWORD* Packet
 		bytesToCompare
 	) != 0)
 	{
-		this->PacketNumber++;
+		this->SyntheticPacketNumber++;
 		memcpy(&this->LastReport, Report, sizeof(DS3_RAW_INPUT_REPORT));
 	}
 
@@ -137,7 +137,7 @@ bool DeviceState::Ds3GetPacketNumber(PDS3_RAW_INPUT_REPORT Report, DWORD* Packet
 	span->SetAttribute("xinput.packetNumber", std::to_string(state->packetNumber));
 #endif
 
-	*PacketNumber = this->PacketNumber;
+	*PacketNumber = this->SyntheticPacketNumber;
 
 	return true;
 }

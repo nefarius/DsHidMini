@@ -22,7 +22,7 @@ private:
 	/** When in DS3 mode, the open handle to the HID device */
 	hid_device* HidDeviceHandle{};
 	/** The synthetic packet number */
-	DWORD PacketNumber{};
+	DWORD SyntheticPacketNumber{};
 	/** The previous cached report copy */
 	DS3_RAW_INPUT_REPORT LastReport{};
 
