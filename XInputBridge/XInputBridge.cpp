@@ -723,8 +723,6 @@ XINPUTBRIDGE_API void WINAPI XInputEnable(
 	_In_ BOOL enable
 )
 {
-	UNREFERENCED_PARAMETER(enable);
-
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
 #endif
