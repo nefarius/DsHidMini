@@ -2,7 +2,6 @@
 
 #include <Windows.h>
 #include <cfgmgr32.h>
-#include <optional>
 
 #include <vector>
 
@@ -125,6 +124,4 @@ private:
 	static SHORT ScaleDsToXi(UCHAR value, BOOLEAN invert);
 	static float ClampAxis(float value);
 	static float ToAxis(UCHAR value);
-
-	//friend class DeviceState;
 };
