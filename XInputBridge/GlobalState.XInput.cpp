@@ -324,7 +324,67 @@ DWORD GlobalState::ProxyXInputGetCapabilities(DWORD dwUserIndex, DWORD dwFlags, 
 		ReleaseSRWLockShared(&this->StatesLock);
 	};
 
-	return CALL_FPN_SAFE(FpnXInputGetCapabilities, dwUserIndex, dwFlags, pCapabilities);
+	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
+
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__, {
+		{ "xinput.userIndex", std::to_string(dwUserIndex) }
+		}));
+#endif
+
+	do
+	{
+		//
+		// User might troll us
+		// 
+		if (pCapabilities == nullptr)
+			break;
+
+		//
+		// Look for device of interest
+		// 
+		if (!this->GetDs3ByUserIndex(dwUserIndex, nullptr))
+		{
+			status = CALL_FPN_SAFE(FpnXInputGetCapabilities, dwUserIndex, dwFlags, pCapabilities);
+			break;
+		}
+
+		RtlZeroMemory(pCapabilities, sizeof(XINPUT_CAPABILITIES));
+
+		pCapabilities->Type = XINPUT_DEVTYPE_GAMEPAD;
+		pCapabilities->SubType = XINPUT_DEVSUBTYPE_GAMEPAD;
+		pCapabilities->Flags += XINPUT_CAPS_FFB_SUPPORTED;
+
+		pCapabilities->Gamepad.wButtons = (
+			XINPUT_GAMEPAD_DPAD_UP |
+			XINPUT_GAMEPAD_DPAD_DOWN |
+			XINPUT_GAMEPAD_DPAD_LEFT |
+			XINPUT_GAMEPAD_DPAD_RIGHT |
+			XINPUT_GAMEPAD_START |
+			XINPUT_GAMEPAD_BACK |
+			XINPUT_GAMEPAD_LEFT_THUMB |
+			XINPUT_GAMEPAD_RIGHT_THUMB |
+			XINPUT_GAMEPAD_LEFT_SHOULDER |
+			XINPUT_GAMEPAD_RIGHT_SHOULDER |
+			XINPUT_GAMEPAD_A |
+			XINPUT_GAMEPAD_B |
+			XINPUT_GAMEPAD_X |
+			XINPUT_GAMEPAD_Y
+		);
+		pCapabilities->Gamepad.bLeftTrigger = UCHAR_MAX;
+		pCapabilities->Gamepad.bRightTrigger = UCHAR_MAX;
+		pCapabilities->Gamepad.sThumbLX = static_cast<SHORT>(0xFFC0);
+		pCapabilities->Gamepad.sThumbLY = static_cast<SHORT>(0xFFC0);
+		pCapabilities->Gamepad.sThumbRX = static_cast<SHORT>(0xFFC0);
+		pCapabilities->Gamepad.sThumbRY = static_cast<SHORT>(0xFFC0);
+
+		pCapabilities->Vibration.wLeftMotorSpeed = UCHAR_MAX;
+		pCapabilities->Vibration.wRightMotorSpeed = UCHAR_MAX;
+
+		status = ERROR_SUCCESS;
+	} while (FALSE);
+
+	return status;
 }
 
 void GlobalState::ProxyXInputEnable(BOOL enable) const
@@ -390,7 +450,137 @@ DWORD GlobalState::ProxyXInputGetStateEx(DWORD dwUserIndex, XINPUT_STATE* pState
 		ReleaseSRWLockShared(&this->StatesLock);
 	};
 
-	return CALL_FPN_SAFE(FpnXInputGetStateEx, dwUserIndex, pState);
+	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
+	DeviceState* state = nullptr;
+
+	do
+	{
+		//
+		// User might troll us
+		// 
+		if (pState == nullptr)
+			break;
+
+		//
+		// Look for device of interest
+		// 
+		if (!this->GetDs3ByUserIndex(dwUserIndex, &state))
+		{
+			status = CALL_FPN_SAFE(FpnXInputGetStateEx, dwUserIndex, pState);
+			break;
+		}
+
+		UCHAR buf[64];
+		buf[0] = SXS_MODE_GET_FEATURE_REPORT_ID;
+
+		const int res = hid_get_feature_report(state->Ds3Device, buf, ARRAYSIZE(buf));
+
+		if (res <= 0)
+			break;
+
+		const auto pReport = reinterpret_cast<PDS3_RAW_INPUT_REPORT>(&buf[1]);
+
+		if (!state->Ds3GetPacketNumber(pReport, &pState->dwPacketNumber))
+			break;
+
+		RtlZeroMemory(&pState->Gamepad, sizeof(pState->Gamepad));
+
+		//
+		// D-Pad translation
+		// 
+		switch (pReport->Buttons.bButtons[0] & ~0xF)
+		{
+		case 0x10: // N
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_UP;
+			break;
+		case 0x30: // NE
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_UP;
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_RIGHT;
+			break;
+		case 0x20: // E
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_RIGHT;
+			break;
+		case 0x60: // SE
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_RIGHT;
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_DOWN;
+			break;
+		case 0x40: // S
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_DOWN;
+			break;
+		case 0xC0: // SW
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_DOWN;
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_LEFT;
+			break;
+		case 0x80: // W
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_LEFT;
+			break;
+		case 0x90: // NW
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_UP;
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_DPAD_LEFT;
+			break;
+		default: // Released
+			break;
+		}
+
+		//
+		// Start/Select
+		// 
+		if (pReport->Buttons.Individual.Start)
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_START;
+		if (pReport->Buttons.Individual.Select)
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_BACK;
+
+		//
+		// Thumbs
+		// 
+		if (pReport->Buttons.Individual.L3)
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_LEFT_THUMB;
+		if (pReport->Buttons.Individual.R3)
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_RIGHT_THUMB;
+
+		//
+		// Shoulders
+		// 
+		if (pReport->Buttons.Individual.L1)
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_LEFT_SHOULDER;
+		if (pReport->Buttons.Individual.R1)
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_RIGHT_SHOULDER;
+
+		//
+		// Face buttons
+		// 
+		if (pReport->Buttons.Individual.Triangle)
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_Y;
+		if (pReport->Buttons.Individual.Circle)
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_B;
+		if (pReport->Buttons.Individual.Cross)
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_A;
+		if (pReport->Buttons.Individual.Square)
+			pState->Gamepad.wButtons |= XINPUT_GAMEPAD_X;
+
+		//
+		// Triggers
+		// 
+		pState->Gamepad.bLeftTrigger = pReport->Pressure.Values.L2;
+		pState->Gamepad.bRightTrigger = pReport->Pressure.Values.R2;
+
+		//
+		// Thumb axes
+		// 
+		pState->Gamepad.sThumbLX = ScaleDsToXi(pReport->LeftThumbX, FALSE);
+		pState->Gamepad.sThumbLY = ScaleDsToXi(pReport->LeftThumbY, TRUE);
+		pState->Gamepad.sThumbRX = ScaleDsToXi(pReport->RightThumbX, FALSE);
+		pState->Gamepad.sThumbRY = ScaleDsToXi(pReport->RightThumbY, TRUE);
+
+		//
+		// PS/Guide
+		// 
+		pState->Gamepad.wButtons |= XINPUT_GAMEPAD_GUIDE;
+
+		status = ERROR_SUCCESS;
+	} while (FALSE);
+
+	return status;
 }
 
 DWORD GlobalState::ProxyXInputWaitForGuideButton(DWORD dwUserIndex, DWORD dwFlag, LPVOID pVoid)

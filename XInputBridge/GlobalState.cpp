@@ -183,7 +183,8 @@ bool GlobalState::GetDs3ByUserIndex(const DWORD UserIndex, DeviceState** Handle)
 	if (UserIndex >= DS3_DEVICES_MAX)
 		return false;
 
-	*Handle = const_cast<DeviceState*>(&this->States[UserIndex]);
+	if (Handle)
+		*Handle = const_cast<DeviceState*>(&this->States[UserIndex]);
 
 	return true;
 }
