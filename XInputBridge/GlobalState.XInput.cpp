@@ -51,7 +51,7 @@ void GlobalState::ProxyXInputEnable(BOOL enable) const
 	CALL_FPN_SAFE_NO_RETURN(FpnXInputEnable, enable);
 }
 
-DWORD GlobalState::ProxyXInputGetDSoundAudioDeviceGuids(DWORD dwUserIndex, GUID* pDSoundRenderGuid, GUID* pDSoundCaptureGuid) 
+DWORD GlobalState::ProxyXInputGetDSoundAudioDeviceGuids(DWORD dwUserIndex, GUID* pDSoundRenderGuid, GUID* pDSoundCaptureGuid)
 {
 	AcquireSRWLockShared(&this->StatesLock);
 	absl::Cleanup lockRelease = [this]
@@ -59,7 +59,12 @@ DWORD GlobalState::ProxyXInputGetDSoundAudioDeviceGuids(DWORD dwUserIndex, GUID*
 		ReleaseSRWLockShared(&this->StatesLock);
 	};
 
-	return CALL_FPN_SAFE(FpnXInputGetDSoundAudioDeviceGuids, dwUserIndex, pDSoundRenderGuid, pDSoundCaptureGuid);
+	if (const auto state = GetXusbByUserIndex(dwUserIndex))
+	{
+		return CALL_FPN_SAFE(FpnXInputGetDSoundAudioDeviceGuids, state->RealUserIndex, pDSoundRenderGuid, pDSoundCaptureGuid);
+	}
+
+	return ERROR_DEVICE_NOT_CONNECTED;
 }
 
 DWORD GlobalState::ProxyXInputGetBatteryInformation(DWORD dwUserIndex,
@@ -72,7 +77,12 @@ DWORD GlobalState::ProxyXInputGetBatteryInformation(DWORD dwUserIndex,
 		ReleaseSRWLockShared(&this->StatesLock);
 	};
 
-	return CALL_FPN_SAFE(FpnXInputGetBatteryInformation, dwUserIndex, devType, pBatteryInformation);
+	if (const auto state = GetXusbByUserIndex(dwUserIndex))
+	{
+		return CALL_FPN_SAFE(FpnXInputGetBatteryInformation, state->RealUserIndex, devType, pBatteryInformation);
+	}
+
+	return ERROR_DEVICE_NOT_CONNECTED;
 }
 
 DWORD GlobalState::ProxyXInputGetKeystroke(DWORD dwUserIndex, DWORD dwReserved, PXINPUT_KEYSTROKE pKeystroke)
@@ -83,7 +93,12 @@ DWORD GlobalState::ProxyXInputGetKeystroke(DWORD dwUserIndex, DWORD dwReserved, 
 		ReleaseSRWLockShared(&this->StatesLock);
 	};
 
-	return CALL_FPN_SAFE(FpnXInputGetKeystroke, dwUserIndex, dwReserved, pKeystroke);
+	if (const auto state = GetXusbByUserIndex(dwUserIndex))
+	{
+		return CALL_FPN_SAFE(FpnXInputGetKeystroke, state->RealUserIndex, dwReserved, pKeystroke);
+	}
+
+	return ERROR_DEVICE_NOT_CONNECTED;
 }
 
 DWORD GlobalState::ProxyXInputGetStateEx(DWORD dwUserIndex, XINPUT_STATE* pState)
@@ -105,7 +120,12 @@ DWORD GlobalState::ProxyXInputWaitForGuideButton(DWORD dwUserIndex, DWORD dwFlag
 		ReleaseSRWLockShared(&this->StatesLock);
 	};
 
-	return CALL_FPN_SAFE(FpnXInputWaitForGuideButton, dwUserIndex, dwFlag, pVoid);
+	if (const auto state = GetXusbByUserIndex(dwUserIndex))
+	{
+		return CALL_FPN_SAFE(FpnXInputWaitForGuideButton, state->RealUserIndex, dwFlag, pVoid);
+	}
+
+	return ERROR_DEVICE_NOT_CONNECTED;
 }
 
 DWORD GlobalState::ProxyXInputCancelGuideButtonWait(DWORD dwUserIndex)
@@ -116,7 +136,12 @@ DWORD GlobalState::ProxyXInputCancelGuideButtonWait(DWORD dwUserIndex)
 		ReleaseSRWLockShared(&this->StatesLock);
 	};
 
-	return CALL_FPN_SAFE(FpnXInputCancelGuideButtonWait, dwUserIndex);
+	if (const auto state = GetXusbByUserIndex(dwUserIndex))
+	{
+		return CALL_FPN_SAFE(FpnXInputCancelGuideButtonWait, state->RealUserIndex);
+	}
+
+	return ERROR_DEVICE_NOT_CONNECTED;
 }
 
 DWORD GlobalState::ProxyXInputPowerOffController(DWORD dwUserIndex)
@@ -127,5 +152,10 @@ DWORD GlobalState::ProxyXInputPowerOffController(DWORD dwUserIndex)
 		ReleaseSRWLockShared(&this->StatesLock);
 	};
 
-	return CALL_FPN_SAFE(FpnXInputPowerOffController, dwUserIndex);
+	if (const auto state = GetXusbByUserIndex(dwUserIndex))
+	{
+		return CALL_FPN_SAFE(FpnXInputPowerOffController, state->RealUserIndex);
+	}
+
+	return ERROR_DEVICE_NOT_CONNECTED;
 }

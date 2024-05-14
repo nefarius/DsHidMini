@@ -91,6 +91,7 @@ private:
 
 	DeviceState* GetNextFreeSlot();
 	DeviceState* FindBySymbolicLink(const std::wstring& Symlink);
+	DeviceState* GetXusbByUserIndex(const DWORD UserIndex);
 
 #pragma region XInput declarations
 
