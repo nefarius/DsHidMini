@@ -78,15 +78,18 @@ DWORD GlobalState::DeviceNotificationCallback(
 			const std::string symlink = ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink);
 			logger->info("DS3 device got removed: {}", symlink);
 
-			/*const auto item = std::ranges::find_if(G_DEVICE_STATES, [symlink](const XI_DEVICE_STATE& element)
+			AcquireSRWLockExclusive(&_this->StatesLock);
 			{
-				return absl::EqualsIgnoreCase(element.SymbolicLink, symlink);
-			});
-
-			if (item != G_DEVICE_STATES.end())
-			{
-				item->Type = XI_DEVICE_TYPE_NOT_CONNECTED;
-			}*/
+				if (const auto slot = _this->FindBySymbolicLink(EventData->u.DeviceInterface.SymbolicLink))
+				{
+					slot->Dispose();
+				}
+				else
+				{
+					logger->warn("No state found for {}", symlink);
+				}
+			}
+			ReleaseSRWLockExclusive(&_this->StatesLock);
 		}
 
 		if (IsEqualGUID(XUSB_INTERFACE_CLASS_GUID, EventData->u.DeviceInterface.ClassGuid))
@@ -94,16 +97,18 @@ DWORD GlobalState::DeviceNotificationCallback(
 			const std::string symlink = ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink);
 			logger->info("XUSB device got removed: {}", symlink);
 
-			/*const auto item = std::ranges::find_if(G_DEVICE_STATES, [symlink](const XI_DEVICE_STATE& element)
+			AcquireSRWLockExclusive(&_this->StatesLock);
 			{
-				return absl::EqualsIgnoreCase(element.SymbolicLink, symlink);
-			});
-
-			if (item != G_DEVICE_STATES.end())
-			{
-				item->Type = XI_DEVICE_TYPE_NOT_CONNECTED;
-				item->Backend.UserIndex = K_INVALID_X_INPUT_USER_ID;
-			}*/
+				if (const auto slot = _this->FindBySymbolicLink(EventData->u.DeviceInterface.SymbolicLink))
+				{
+					slot->Dispose();
+				}
+				else
+				{
+					logger->warn("No state found for {}", symlink);
+				}
+			}
+			ReleaseSRWLockExclusive(&_this->StatesLock);
 		}
 		break;
 	default:
