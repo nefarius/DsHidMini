@@ -1,4 +1,5 @@
 ﻿#include "DeviceState.h"
+#include "GlobalState.h"
 
 #include <spdlog/spdlog.h>
 
@@ -23,12 +24,30 @@ bool DeviceState::InitializeAsDs3(const std::wstring& Symlink)
 	this->Type = XI_DEVICE_TYPE_NOT_CONNECTED;
 	this->SymbolicLink = ConvertWideToANSI(Symlink);
 
-	const auto device = hid_open_path(this->SymbolicLink.c_str());
+	const auto instanceId = GlobalState::InterfaceIdToInstanceId(Symlink);
+
+	if (!instanceId.has_value())
+		return false;
+
+	const auto children = GlobalState::GetDeviceChildren(instanceId.value());
+
+	if (!children.has_value())
+		return false;
+
+	const auto hidDeviceId = children.value()[0];
+	const auto hidPaths = GlobalState::InstanceIdToHidPaths(hidDeviceId);
+
+	if (!hidPaths.has_value())
+		return false;
+
+	const auto hidSymlink = hidPaths.value()[0];
+
+	const auto device = hid_open_path(ConvertWideToANSI(hidSymlink).c_str());
 
 	if (device == nullptr)
 	{
 		logger->error("Failed to open hid device {} with error {}",
-			this->SymbolicLink,
+			ConvertWideToANSI(hidSymlink),
 			ConvertWideToANSI(hid_error(nullptr))
 		);
 		return false;
@@ -103,7 +122,7 @@ bool DeviceState::Ds3GetDeviceHandle(hid_device** Handle) const
 
 	if (!this->HidDeviceHandle)
 		return false;
-	
+
 	if (Handle)
 		*Handle = this->HidDeviceHandle;
 

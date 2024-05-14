@@ -263,23 +263,10 @@ void GlobalState::EnumerateDs3Devices()
 			continue;
 		}
 
-		const auto children = GetDeviceChildren(instanceId.value());
-
-		if (!children.has_value())
-			continue;
-
-		const auto hidDeviceId = children.value()[0];
-		const auto hidPaths = InstanceIdToHidPaths(hidDeviceId);
-
-		if (!hidPaths.has_value())
-			continue;
-
-		const auto hidSymlink = hidPaths.value()[0];
-
 		if (const auto state = this->GetNextFreeSlot())
 		{
 			state->Dispose();
-			state->InitializeAsDs3(hidSymlink);
+			state->InitializeAsDs3(symlink);
 		}
 		else
 		{

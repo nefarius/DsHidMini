@@ -15,10 +15,15 @@ public:
 
 private:
 	std::atomic<XI_DEVICE_TYPE> Type{XI_DEVICE_TYPE_NOT_CONNECTED};
+	/** The symbolic link of the USB/BTH device (_NOT_ the HID device) */
 	std::string SymbolicLink{};
+	/** When in XUSB mode, the real underlying user index */
 	DWORD RealUserIndex{INVALID_X_INPUT_USER_ID};
+	/** When in DS3 mode, the open handle to the HID device */
 	hid_device* HidDeviceHandle{};
+	/** The synthetic packet number */
 	DWORD PacketNumber{};
+	/** The previous cached report copy */
 	DS3_RAW_INPUT_REPORT LastReport{};
 
 	bool InitializeAsXusb(const std::wstring& Symlink, const DWORD UserIndex);

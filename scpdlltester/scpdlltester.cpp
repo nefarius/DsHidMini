@@ -14,10 +14,10 @@ int main()
 
 		if (ret == ERROR_SUCCESS)
 		{
-			std::cout << "\r" << "Pad 0 Packet counter: " << state.dwPacketNumber << std::endl;
+			std::cout << "\r" << "Pad 0 Packet counter: " << state.dwPacketNumber;
 		}
 
-		Sleep(200);
+		Sleep(20);
 	}
 
 #if 0
