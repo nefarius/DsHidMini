@@ -48,19 +48,19 @@ public:
 		DWORD dwUserIndex,
 		GUID* pDSoundRenderGuid,
 		GUID* pDSoundCaptureGuid
-	) const;
+	);
 
 	DWORD ProxyXInputGetBatteryInformation(
 		_In_ DWORD dwUserIndex,
 		_In_ BYTE devType,
 		_Out_ XINPUT_BATTERY_INFORMATION* pBatteryInformation
-	) const;
+	);
 
 	DWORD ProxyXInputGetKeystroke(
 		DWORD dwUserIndex,
 		DWORD dwReserved,
 		PXINPUT_KEYSTROKE pKeystroke
-	) const;
+	);
 
 	DWORD ProxyXInputGetStateEx(
 		_In_ DWORD dwUserIndex,
@@ -71,15 +71,15 @@ public:
 		_In_ DWORD dwUserIndex,
 		_In_ DWORD dwFlag,
 		_In_ LPVOID pVoid
-	) const;
+	);
 
 	DWORD ProxyXInputCancelGuideButtonWait(
 		_In_ DWORD dwUserIndex
-	) const;
+	);
 
 	DWORD ProxyXInputPowerOffController(
 		_In_ DWORD dwUserIndex
-	) const;
+	);
 
 #pragma endregion
 

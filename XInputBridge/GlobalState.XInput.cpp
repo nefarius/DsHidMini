@@ -51,20 +51,38 @@ void GlobalState::ProxyXInputEnable(BOOL enable) const
 	CALL_FPN_SAFE_NO_RETURN(FpnXInputEnable, enable);
 }
 
-DWORD GlobalState::ProxyXInputGetDSoundAudioDeviceGuids(DWORD dwUserIndex, GUID* pDSoundRenderGuid, GUID* pDSoundCaptureGuid) const
+DWORD GlobalState::ProxyXInputGetDSoundAudioDeviceGuids(DWORD dwUserIndex, GUID* pDSoundRenderGuid, GUID* pDSoundCaptureGuid) 
 {
+	AcquireSRWLockShared(&this->StatesLock);
+	absl::Cleanup lockRelease = [this]
+	{
+		ReleaseSRWLockShared(&this->StatesLock);
+	};
+
 	return CALL_FPN_SAFE(FpnXInputGetDSoundAudioDeviceGuids, dwUserIndex, pDSoundRenderGuid, pDSoundCaptureGuid);
 }
 
 DWORD GlobalState::ProxyXInputGetBatteryInformation(DWORD dwUserIndex,
                                                     BYTE devType,
-                                                    XINPUT_BATTERY_INFORMATION* pBatteryInformation) const
+                                                    XINPUT_BATTERY_INFORMATION* pBatteryInformation)
 {
+	AcquireSRWLockShared(&this->StatesLock);
+	absl::Cleanup lockRelease = [this]
+	{
+		ReleaseSRWLockShared(&this->StatesLock);
+	};
+
 	return CALL_FPN_SAFE(FpnXInputGetBatteryInformation, dwUserIndex, devType, pBatteryInformation);
 }
 
-DWORD GlobalState::ProxyXInputGetKeystroke(DWORD dwUserIndex, DWORD dwReserved, PXINPUT_KEYSTROKE pKeystroke) const
+DWORD GlobalState::ProxyXInputGetKeystroke(DWORD dwUserIndex, DWORD dwReserved, PXINPUT_KEYSTROKE pKeystroke)
 {
+	AcquireSRWLockShared(&this->StatesLock);
+	absl::Cleanup lockRelease = [this]
+	{
+		ReleaseSRWLockShared(&this->StatesLock);
+	};
+
 	return CALL_FPN_SAFE(FpnXInputGetKeystroke, dwUserIndex, dwReserved, pKeystroke);
 }
 
@@ -79,17 +97,35 @@ DWORD GlobalState::ProxyXInputGetStateEx(DWORD dwUserIndex, XINPUT_STATE* pState
 	return CALL_FPN_SAFE(FpnXInputGetStateEx, dwUserIndex, pState);
 }
 
-DWORD GlobalState::ProxyXInputWaitForGuideButton(DWORD dwUserIndex, DWORD dwFlag, LPVOID pVoid) const
+DWORD GlobalState::ProxyXInputWaitForGuideButton(DWORD dwUserIndex, DWORD dwFlag, LPVOID pVoid)
 {
+	AcquireSRWLockShared(&this->StatesLock);
+	absl::Cleanup lockRelease = [this]
+	{
+		ReleaseSRWLockShared(&this->StatesLock);
+	};
+
 	return CALL_FPN_SAFE(FpnXInputWaitForGuideButton, dwUserIndex, dwFlag, pVoid);
 }
 
-DWORD GlobalState::ProxyXInputCancelGuideButtonWait(DWORD dwUserIndex) const
+DWORD GlobalState::ProxyXInputCancelGuideButtonWait(DWORD dwUserIndex)
 {
+	AcquireSRWLockShared(&this->StatesLock);
+	absl::Cleanup lockRelease = [this]
+	{
+		ReleaseSRWLockShared(&this->StatesLock);
+	};
+
 	return CALL_FPN_SAFE(FpnXInputCancelGuideButtonWait, dwUserIndex);
 }
 
-DWORD GlobalState::ProxyXInputPowerOffController(DWORD dwUserIndex) const
+DWORD GlobalState::ProxyXInputPowerOffController(DWORD dwUserIndex)
 {
+	AcquireSRWLockShared(&this->StatesLock);
+	absl::Cleanup lockRelease = [this]
+	{
+		ReleaseSRWLockShared(&this->StatesLock);
+	};
+
 	return CALL_FPN_SAFE(FpnXInputPowerOffController, dwUserIndex);
 }
