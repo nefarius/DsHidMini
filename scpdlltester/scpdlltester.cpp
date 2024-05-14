@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <iomanip>
 #include <iostream>
 #include <Windows.h>
 #include "../include/DsHidMini/ScpTypes.h"
@@ -14,7 +15,11 @@ int main()
 
 		if (ret == ERROR_SUCCESS)
 		{
-			std::cout << "\r" << "Pad 0 Packet counter: " << state.dwPacketNumber;
+			std::cout << "\r" << "Pad 0 connected, packet counter: " << std::setw(5) << state.dwPacketNumber;
+		}
+		else if (ret == ERROR_DEVICE_NOT_CONNECTED)
+		{
+			std::cout << "\r" << "Pad 0 not connected" << std::setfill(' ') << std::setw(30);
 		}
 
 		Sleep(20);

@@ -2,6 +2,8 @@
 #include <spdlog/logger.h>
 #include <spdlog/spdlog.h>
 
+#include <thread>
+
 #include "GlobalState.h"
 #include "UniUtil.h"
 #include "DsHidMini/dshmguid.h"
@@ -29,21 +31,28 @@ DWORD GlobalState::DeviceNotificationCallback(
 	case CM_NOTIFY_ACTION_DEVICEINTERFACEARRIVAL:
 		if (IsEqualGUID(GUID_DEVINTERFACE_DSHIDMINI, EventData->u.DeviceInterface.ClassGuid))
 		{
-			const auto symlink = ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink);
-			logger->info("New DS3 device arrived: {}", symlink);
+			const auto symlink = std::wstring(EventData->u.DeviceInterface.SymbolicLink);
+			logger->info("New DS3 device arrived: {}", ConvertWideToANSI(symlink));
 
-			AcquireSRWLockExclusive(&_this->StatesLock);
-			{
-				if (const auto slot = _this->GetNextFreeSlot())
+			std::thread asyncArrival{
+				[_this, logger, symlink]
 				{
-					slot->Dispose();
-					if (!slot->InitializeAsDs3(EventData->u.DeviceInterface.SymbolicLink))
+					AcquireSRWLockExclusive(&_this->StatesLock);
 					{
-						logger->error("Failed to initialize {} as a DS3 HID device", symlink);
+						if (const auto slot = _this->GetNextFreeSlot())
+						{
+							slot->Dispose();
+							if (!slot->InitializeAsDs3(symlink))
+							{
+								logger->error("Failed to initialize {} as a DS3 HID device", ConvertWideToANSI(symlink));
+							}
+						}
 					}
+					ReleaseSRWLockExclusive(&_this->StatesLock);
 				}
-			}
-			ReleaseSRWLockExclusive(&_this->StatesLock);
+			};
+
+			asyncArrival.detach();
 		}
 
 		if (IsEqualGUID(XUSB_INTERFACE_CLASS_GUID, EventData->u.DeviceInterface.ClassGuid))

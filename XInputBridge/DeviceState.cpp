@@ -21,24 +21,51 @@ bool DeviceState::InitializeAsDs3(const std::wstring& Symlink)
 {
 	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
 
+	int retries = 5;
+
 	this->Type = XI_DEVICE_TYPE_NOT_CONNECTED;
 	this->SymbolicLink = ConvertWideToANSI(Symlink);
 
 	const auto instanceId = GlobalState::InterfaceIdToInstanceId(Symlink);
 
 	if (!instanceId.has_value())
+	{
+		logger->error("Failed to get Instance ID for instance {}", this->SymbolicLink);
 		return false;
+	}
 
-	const auto children = GlobalState::GetDeviceChildren(instanceId.value());
+	auto children = GlobalState::GetDeviceChildren(instanceId.value());
 
-	if (!children.has_value())
-		return false;
+	while (!children.has_value())
+	{
+		if (--retries == 0)
+		{
+			logger->error("Failed to get child devices for instance {}", this->SymbolicLink);
+			return false;
+		}
+
+		Sleep(100);
+
+		children = GlobalState::GetDeviceChildren(instanceId.value());
+	}
+
+	retries = 5;
 
 	const auto hidDeviceId = children.value()[0];
-	const auto hidPaths = GlobalState::InstanceIdToHidPaths(hidDeviceId);
+	auto hidPaths = GlobalState::InstanceIdToHidPaths(hidDeviceId);
 
-	if (!hidPaths.has_value())
-		return false;
+	while (!hidPaths.has_value())
+	{
+		if (--retries == 0)
+		{
+			logger->error("Failed to get HID instance path for instance {}", this->SymbolicLink);
+			return false;
+		}
+
+		Sleep(100);
+
+		hidPaths = GlobalState::InstanceIdToHidPaths(hidDeviceId);
+	}
 
 	const auto hidSymlink = hidPaths.value()[0];
 
