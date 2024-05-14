@@ -34,7 +34,7 @@ bool DeviceState::InitializeAsDs3(const std::wstring& Symlink)
 		return false;
 	}
 
-	this->Ds3Device = device;
+	this->HidDeviceHandle = device;
 	this->Type = XI_DEVICE_TYPE_DS3;
 
 	return true;
@@ -45,10 +45,10 @@ void DeviceState::Dispose()
 	switch (this->Type)
 	{
 	case XI_DEVICE_TYPE_DS3:
-		if (this->Ds3Device != nullptr)
+		if (this->HidDeviceHandle != nullptr)
 		{
-			hid_close(this->Ds3Device);
-			this->Ds3Device = nullptr;
+			hid_close(this->HidDeviceHandle);
+			this->HidDeviceHandle = nullptr;
 		}
 		break;
 	case XI_DEVICE_TYPE_XUSB:
@@ -100,11 +100,11 @@ bool DeviceState::Ds3GetDeviceHandle(hid_device** Handle) const
 	if (this->Type != XI_DEVICE_TYPE_DS3)
 		return false;
 
-	if (!this->Ds3Device)
+	if (!this->HidDeviceHandle)
 		return false;
 	
 	if (Handle)
-		*Handle = this->Ds3Device;
+		*Handle = this->HidDeviceHandle;
 
 	return true;
 }

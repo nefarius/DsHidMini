@@ -17,7 +17,7 @@ private:
 	std::atomic<XI_DEVICE_TYPE> Type{XI_DEVICE_TYPE_NOT_CONNECTED};
 	std::string SymbolicLink{};
 	DWORD RealUserIndex{INVALID_X_INPUT_USER_ID};
-	hid_device* Ds3Device{};
+	hid_device* HidDeviceHandle{};
 	DWORD PacketNumber{};
 	DS3_RAW_INPUT_REPORT LastReport{};
 

@@ -30,7 +30,7 @@ DWORD GlobalState::ProxyXInputGetExtended(DWORD dwUserIndex, SCP_EXTN* pState)
 		UCHAR buf[SXS_MODE_GET_FEATURE_BUFFER_LEN];
 		buf[0] = SXS_MODE_GET_FEATURE_REPORT_ID;
 
-		const int res = hid_get_feature_report(state->Ds3Device, buf, ARRAYSIZE(buf));
+		const int res = hid_get_feature_report(state->HidDeviceHandle, buf, ARRAYSIZE(buf));
 
 		if (res == 0)
 			break;
@@ -137,7 +137,7 @@ DWORD GlobalState::ProxyXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 		UCHAR buf[SXS_MODE_GET_FEATURE_BUFFER_LEN];
 		buf[0] = SXS_MODE_GET_FEATURE_REPORT_ID;
 
-		const int res = hid_get_feature_report(state->Ds3Device, buf, ARRAYSIZE(buf));
+		const int res = hid_get_feature_report(state->HidDeviceHandle, buf, ARRAYSIZE(buf));
 
 		if (res <= 0)
 			break;
@@ -305,7 +305,7 @@ DWORD GlobalState::ProxyXInputSetState(DWORD dwUserIndex, XINPUT_VIBRATION* pVib
 		}
 		// ReSharper restore CppAssignedValueIsNeverUsed
 
-		const int res = hid_write(state->Ds3Device, &outputReport.report_id, sizeof(outputReport));
+		const int res = hid_write(state->HidDeviceHandle, &outputReport.report_id, sizeof(outputReport));
 
 		if (res <= 0)
 			break;
@@ -473,7 +473,7 @@ DWORD GlobalState::ProxyXInputGetStateEx(DWORD dwUserIndex, XINPUT_STATE* pState
 		UCHAR buf[64];
 		buf[0] = SXS_MODE_GET_FEATURE_REPORT_ID;
 
-		const int res = hid_get_feature_report(state->Ds3Device, buf, ARRAYSIZE(buf));
+		const int res = hid_get_feature_report(state->HidDeviceHandle, buf, ARRAYSIZE(buf));
 
 		if (res <= 0)
 			break;
