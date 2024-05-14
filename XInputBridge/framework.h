@@ -17,18 +17,6 @@
 #include <DsHidMini/dshmguid.h>
 
 //
-// HIDAPI
-// 
-#include <hidapi/hidapi.h>
-
-//
-// STL
-// 
-#include <climits>
-
-#include <absl/strings/match.h>
-
-//
 // Logging
 // 
 #include <spdlog/spdlog.h>
