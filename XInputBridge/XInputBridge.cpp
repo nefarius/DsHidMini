@@ -299,79 +299,13 @@ XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
 	_In_ XINPUT_VIBRATION* pVibration
 )
 {
-	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
-	hid_device* device = nullptr;
-
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scoped_span = trace::Scope(GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
 		}));
 #endif
 
-	do
-	{
-		//
-		// User might troll us
-		// 
-		if (pVibration == nullptr)
-			break;
-
-		//
-		// Look for device of interest
-		// 
-		if (!TryGetDs3DeviceHandle(dwUserIndex, &device))
-		{
-			status = G_State.ProxyXInputSetState(dwUserIndex, pVibration);
-			break;
-		}
-
-		ds3_output_report outputReport;
-
-		// ReSharper disable CppAssignedValueIsNeverUsed
-		outputReport.rumble.small_motor_on = pVibration->wRightMotorSpeed > 0 ? 1 : 0;
-		outputReport.rumble.large_motor_force = static_cast<float>(pVibration->wLeftMotorSpeed) / static_cast<float>(
-			USHRT_MAX) * static_cast<float>(UCHAR_MAX);
-
-		switch (dwUserIndex)
-		{
-		case 0:
-			outputReport.led_enabled = 0b00000010;
-			break;
-		case 1:
-			outputReport.led_enabled = 0b00000100;
-			break;
-		case 2:
-			outputReport.led_enabled = 0b00001000;
-			break;
-		case 3:
-			outputReport.led_enabled = 0b00010000;
-			break;
-		case 4:
-			outputReport.led_enabled = 0b00010010;
-			break;
-		case 5:
-			outputReport.led_enabled = 0b00010100;
-			break;
-		case 6:
-			outputReport.led_enabled = 0b00011000;
-			break;
-		default:
-			break;
-		}
-		// ReSharper restore CppAssignedValueIsNeverUsed
-
-		const int res = hid_write(device, &outputReport.report_id, sizeof(outputReport));
-
-		if (res <= 0)
-		{
-			SetDeviceDisconnected(dwUserIndex);
-			break;
-		}
-
-		status = ERROR_SUCCESS;
-	} while (FALSE);
-
-	return status;
+	return G_State.ProxyXInputSetState(dwUserIndex, pVibration);
 }
 
 XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
