@@ -343,7 +343,7 @@ DWORD GlobalState::ProxyXInputGetCapabilities(DWORD dwUserIndex, DWORD dwFlags, 
 		//
 		// Look for device of interest
 		// 
-		if (!this->GetDs3ByUserIndex(dwUserIndex, nullptr))
+		if (!this->IsConnectedDs3(dwUserIndex))
 		{
 			status = CALL_FPN_SAFE(FpnXInputGetCapabilities, dwUserIndex, dwFlags, pCapabilities);
 			break;

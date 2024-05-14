@@ -188,3 +188,15 @@ bool GlobalState::GetDs3ByUserIndex(const DWORD UserIndex, DeviceState** Handle)
 
 	return true;
 }
+
+bool GlobalState::IsConnectedDs3(const DWORD UserIndex) const
+{
+	DeviceState* state = nullptr;
+
+	if (GetDs3ByUserIndex(UserIndex, &state))
+	{
+		return state->Type == XI_DEVICE_TYPE_DS3;
+	}
+
+	return false;
+}

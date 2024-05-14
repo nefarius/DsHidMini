@@ -21,7 +21,7 @@ DWORD GlobalState::DeviceNotificationCallback(
 	UNREFERENCED_PARAMETER(hNotify);
 	UNREFERENCED_PARAMETER(EventDataSize);
 
-	auto _this = static_cast<GlobalState*>(Context);
+	const auto _this = static_cast<GlobalState*>(Context);
 	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
 
 	switch (Action)
@@ -206,7 +206,7 @@ DWORD WINAPI GlobalState::InitAsync(LPVOID lpParameter)
 	//
 	// Register DsHidMini device interface
 	// 
-	CONFIGRET ret = CM_Register_Notification(&ds3Filter, nullptr, DeviceNotificationCallback, &_this->Ds3NotificationHandle);
+	CONFIGRET ret = CM_Register_Notification(&ds3Filter, _this, DeviceNotificationCallback, &_this->Ds3NotificationHandle);
 
 	if (ret != CR_SUCCESS)
 	{
@@ -221,7 +221,7 @@ DWORD WINAPI GlobalState::InitAsync(LPVOID lpParameter)
 	//
 	// Register X360/XBONE device interface
 	// 
-	ret = CM_Register_Notification(&xusbFilter, nullptr, DeviceNotificationCallback, &_this->XusbNotificationHandle);
+	ret = CM_Register_Notification(&xusbFilter, _this, DeviceNotificationCallback, &_this->XusbNotificationHandle);
 
 	if (ret != CR_SUCCESS)
 	{

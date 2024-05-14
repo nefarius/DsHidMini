@@ -92,6 +92,7 @@ private:
 	DeviceState* FindBySymbolicLink(const std::wstring& Symlink);
 	DeviceState* GetXusbByUserIndex(const DWORD UserIndex);
 	bool GetDs3ByUserIndex(const DWORD UserIndex, DeviceState** Handle) const;
+	bool IsConnectedDs3(const DWORD UserIndex) const;
 
 #pragma region XInput declarations
 
