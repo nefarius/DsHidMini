@@ -255,22 +255,28 @@ void GlobalState::EnumerateDs3Devices()
 
 	for (const auto& symlink : symlinks)
 	{
-		auto instanceId = InterfaceIdToInstanceId(symlink);
+		const auto instanceId = InterfaceIdToInstanceId(symlink);
 
 		if (!instanceId.has_value())
 			continue;
 
-		auto children = GetDeviceChildren(instanceId.value());
+		const auto children = GetDeviceChildren(instanceId.value());
 
 		if (!children.has_value())
 			continue;
 
 		const auto hidDeviceId = children.value()[0];
+		const auto hidPaths = InstanceIdToHidPaths(hidDeviceId);
+
+		if (!hidPaths.has_value())
+			continue;
+
+		const auto hidSymlink = hidPaths.value()[0];
 
 		if (const auto state = this->GetNextFreeSlot())
 		{
 			state->Dispose();
-			state->InitializeAsDs3(symlink);
+			state->InitializeAsDs3(hidSymlink);
 		}
 	}
 }

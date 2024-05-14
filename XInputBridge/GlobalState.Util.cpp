@@ -2,6 +2,7 @@
 #include <initguid.h>
 #include <devpkey.h>
 #include <cfgmgr32.h>
+#include <hidclass.h>
 
 #include <absl/cleanup/cleanup.h>
 #include <winreg/WinReg.hpp>
@@ -124,4 +125,46 @@ std::optional<std::vector<std::wstring>> GlobalState::GetDeviceChildren(const st
 	const auto childIds = winreg::winreg_internal::ParseMultiString(multiString);
 
 	return childIds;
+}
+
+std::optional<std::vector<std::wstring>> GlobalState::InstanceIdToHidPaths(const std::wstring& InstanceId)
+{
+	ULONG requiredNumChars = 0;
+
+	CONFIGRET ret = CM_Get_Device_Interface_List_SizeW(
+		&requiredNumChars,
+		const_cast<LPGUID>(&GUID_DEVINTERFACE_HID),
+		const_cast<DEVINSTID_W>(InstanceId.c_str()),
+		CM_GET_DEVICE_INTERFACE_LIST_PRESENT
+	);
+
+	if (ret != CR_SUCCESS)
+		return std::nullopt;
+
+	if (requiredNumChars <= 1)
+		// single NULL character means list is empty
+		return std::nullopt;
+
+	auto buffer = static_cast<PZZWSTR>(calloc(requiredNumChars, sizeof(WCHAR)));
+
+	absl::Cleanup lockRelease = [buffer]
+	{
+		free(buffer);
+	};
+
+	ret = CM_Get_Device_Interface_ListW(
+		const_cast<LPGUID>(&GUID_DEVINTERFACE_HID),
+		const_cast<DEVINSTID_W>(InstanceId.c_str()),
+		buffer,
+		requiredNumChars,
+		CM_GET_DEVICE_INTERFACE_LIST_PRESENT
+	);
+
+	if (ret != CR_SUCCESS)
+		return std::nullopt;
+
+	const std::vector<wchar_t> multiString{ &buffer[0], buffer + requiredNumChars };
+	const auto symlinks = winreg::winreg_internal::ParseMultiString(multiString);
+
+	return symlinks;
 }
