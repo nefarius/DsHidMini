@@ -502,6 +502,7 @@
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="GlobalState.Callbacks.cpp" />
     <ClCompile Include="GlobalState.cpp" />
+    <ClCompile Include="GlobalState.Util.cpp" />
     <ClCompile Include="GlobalState.XInput.cpp" />
     <ClCompile Include="XInputBridge.cpp" />
   </ItemGroup>

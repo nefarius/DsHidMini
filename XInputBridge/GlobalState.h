@@ -92,6 +92,7 @@ private:
 	DeviceState* GetNextFreeSlot();
 	DeviceState* FindBySymbolicLink(const std::wstring& Symlink);
 	DeviceState* GetXusbByUserIndex(const DWORD UserIndex);
+	bool GetDs3DeviceByUserIndex(const DWORD UserIndex, hid_device** Handle) const;
 
 #pragma region XInput declarations
 
@@ -120,6 +121,10 @@ private:
 	static bool SymlinkToUserIndex(_In_ PCWSTR Symlink, _Inout_ PDWORD UserIndex);
 
 	static DWORD WINAPI InitAsync(_In_ LPVOID lpParameter);
+
+	static SHORT ScaleDsToXi(UCHAR value, BOOLEAN invert);
+	static float ClampAxis(float value);
+	static float ToAxis(UCHAR value);
 
 	//friend class DeviceState;
 };

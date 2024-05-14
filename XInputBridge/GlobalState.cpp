@@ -177,3 +177,11 @@ DeviceState* GlobalState::GetXusbByUserIndex(const DWORD UserIndex)
 
 	return (item != this->States.end()) ? &(*item) : nullptr;
 }
+
+bool GlobalState::GetDs3DeviceByUserIndex(const DWORD UserIndex, hid_device** Handle) const
+{
+	if (UserIndex >= DS3_DEVICES_MAX)
+		return false;
+
+	return this->States[UserIndex].Ds3GetDeviceHandle(Handle);
+}
