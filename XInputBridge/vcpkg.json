@@ -8,6 +8,7 @@
     { "name": "hidapi" },
     { "name": "spdlog" },
     { "name": "abseil" },
+    { "name": "winreg" },
     {
       "name": "opentelemetry-cpp",
       "features": [ "otlp-http" ]

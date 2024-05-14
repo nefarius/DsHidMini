@@ -2,6 +2,7 @@
 
 #include <Windows.h>
 #include <cfgmgr32.h>
+#include <optional>
 
 #include <vector>
 
@@ -93,6 +94,7 @@ private:
 	DeviceState* GetXusbByUserIndex(const DWORD UserIndex);
 	bool GetDs3ByUserIndex(const DWORD UserIndex, DeviceState** Handle) const;
 	bool IsConnectedDs3(const DWORD UserIndex) const;
+	void EnumerateDs3Devices();
 
 #pragma region XInput declarations
 
@@ -125,4 +127,6 @@ private:
 	static SHORT ScaleDsToXi(UCHAR value, BOOLEAN invert);
 	static float ClampAxis(float value);
 	static float ToAxis(UCHAR value);
+
+	static std::optional<std::wstring> InterfaceIdToInstanceId(const std::wstring& Symlink);
 };

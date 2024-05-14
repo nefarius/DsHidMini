@@ -233,5 +233,7 @@ DWORD WINAPI GlobalState::InitAsync(LPVOID lpParameter)
 		logger->error("hid_init failed: {}", ConvertWideToANSI(hid_error(nullptr)));
 	}
 
+	_this->EnumerateDs3Devices();
+
 	return ERROR_SUCCESS;
 }

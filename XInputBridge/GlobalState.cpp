@@ -4,10 +4,15 @@
 #include <spdlog/logger.h>
 #include <spdlog/spdlog.h>
 #include <Shlwapi.h>
+#include <initguid.h>
+#include <devpkey.h>
 #include <hidapi/hidapi.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <absl/strings/match.h>
 #include <absl/cleanup/cleanup.h>
+#include <winreg/WinReg.hpp>
+
+#include "DsHidMini/dshmguid.h"
 
 #include "Types.h"
 #include "UniUtil.h"
@@ -199,4 +204,63 @@ bool GlobalState::IsConnectedDs3(const DWORD UserIndex) const
 	}
 
 	return false;
+}
+
+void GlobalState::EnumerateDs3Devices()
+{
+	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
+
+	ULONG requiredNumChars = 0;
+
+	CONFIGRET ret = CM_Get_Device_Interface_List_SizeW(
+		&requiredNumChars,
+		const_cast<LPGUID>(&GUID_DEVINTERFACE_DSHIDMINI),
+		nullptr,
+		CM_GET_DEVICE_INTERFACE_LIST_PRESENT
+	);
+
+	if (ret != CR_SUCCESS)
+	{
+		logger->error("CM_Get_Device_Interface_List_SizeW failed with {:#x}", ret);
+		return;
+	}
+
+	if (requiredNumChars <= 1)
+		// single NULL character means list is empty
+		return;
+
+	auto buffer = static_cast<PZZWSTR>(calloc(requiredNumChars, sizeof(WCHAR)));
+
+	absl::Cleanup lockRelease = [buffer]
+	{
+		free(buffer);
+	};
+
+	ret = CM_Get_Device_Interface_ListW(
+		const_cast<LPGUID>(&GUID_DEVINTERFACE_DSHIDMINI),
+		nullptr,
+		buffer,
+		requiredNumChars,
+		CM_GET_DEVICE_INTERFACE_LIST_PRESENT
+	);
+
+	if (ret != CR_SUCCESS)
+	{
+		logger->error("CM_Get_Device_Interface_ListW failed with {:#x}", ret);
+		return;
+	}
+
+	const std::vector<wchar_t> multiString{ &buffer[0], buffer + requiredNumChars };
+	const auto symlinks = winreg::winreg_internal::ParseMultiString(multiString);
+
+	for (const auto& symlink : symlinks)
+	{
+		auto instanceId = InterfaceIdToInstanceId(symlink);
+
+		if (const auto state = this->GetNextFreeSlot())
+		{
+			state->Dispose();
+			state->InitializeAsDs3(symlink);
+		}
+	}
 }
