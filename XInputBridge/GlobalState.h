@@ -83,6 +83,8 @@ private:
 	HCMNOTIFICATION Ds3NotificationHandle{};
 	HCMNOTIFICATION XusbNotificationHandle{};
 
+#pragma region XInput declarations
+
 	decltype(XInputGetState)* FpnXInputGetState = nullptr;
 	decltype(XInputSetState)* FpnXInputSetState = nullptr;
 	decltype(XInputGetCapabilities)* FpnXInputGetCapabilities = nullptr;
@@ -94,6 +96,8 @@ private:
 	decltype(XInputWaitForGuideButton)* FpnXInputWaitForGuideButton = nullptr;
 	decltype(XInputCancelGuideButtonWait)* FpnXInputCancelGuideButtonWait = nullptr;
 	decltype(XInputPowerOffController)* FpnXInputPowerOffController = nullptr;
+
+#pragma endregion
 
 	static DWORD CALLBACK DeviceNotificationCallback(
 		_In_ HCMNOTIFICATION hNotify,
