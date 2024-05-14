@@ -60,3 +60,51 @@ void DeviceState::Dispose()
 	this->PacketNumber = 0;
 	this->Type = XI_DEVICE_TYPE_NOT_CONNECTED;
 }
+
+bool DeviceState::Ds3GetPacketNumber(PDS3_RAW_INPUT_REPORT Report, DWORD* PacketNumber)
+{
+	if (!Report || !PacketNumber)
+		return false;
+
+	if (this->Type != XI_DEVICE_TYPE_DS3)
+		return false;
+
+	//
+	// Exclude noisy motion stuff from comparison
+	// 
+	constexpr size_t bytesToCompare = sizeof(DS3_RAW_INPUT_REPORT) - 18;
+
+	//
+	// Only increment when a change happened
+	// 
+	if (memcmp(
+		&this->LastReport,
+		Report,
+		bytesToCompare
+	) != 0)
+	{
+		this->PacketNumber++;
+		memcpy(&this->LastReport, Report, sizeof(DS3_RAW_INPUT_REPORT));
+	}
+
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	span->SetAttribute("xinput.packetNumber", std::to_string(state->packetNumber));
+#endif
+
+	*PacketNumber = this->PacketNumber;
+
+	return true;
+}
+bool DeviceState::Ds3GetDeviceHandle(hid_device** Handle) const
+{
+	if (this->Type != XI_DEVICE_TYPE_DS3)
+		return false;
+
+	if (!this->Ds3Device)
+		return false;
+	
+	if (Handle)
+		*Handle = this->Ds3Device;
+
+	return true;
+}
