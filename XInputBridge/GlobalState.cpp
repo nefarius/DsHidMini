@@ -213,7 +213,7 @@ void GlobalState::EnumerateDs3Devices()
 
 	if (!symlinks.has_value())
 	{
-		logger->error("DS3 interface enumeration failed");
+		logger->warn("No DS3 interface devices found");
 		return;
 	}
 
@@ -252,7 +252,7 @@ void GlobalState::EnumerateXusbDevices()
 
 	if (!symlinks.has_value())
 	{
-		logger->error("XUSB interface enumeration failed");
+		logger->warn("No XUSB interface devices found");
 		return;
 	}
 
