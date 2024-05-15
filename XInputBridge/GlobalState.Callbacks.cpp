@@ -70,10 +70,8 @@ DWORD GlobalState::DeviceNotificationCallback(
 
 				AcquireSRWLockExclusive(&_this->StatesLock);
 				{
-					ULONG slotIndex = 0;
-					if (const auto slot = _this->GetNextFreeSlot(&slotIndex))
+					if (const auto slot = _this->GetNextFreeSlot())
 					{
-						logger->info("Assigning {} to slot index {}", symlink, slotIndex);
 						slot->Dispose();
 						if (!slot->InitializeAsXusb(EventData->u.DeviceInterface.SymbolicLink, userIndex))
 						{
