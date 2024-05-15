@@ -179,13 +179,12 @@ DeviceState* GlobalState::FindBySymbolicLink(const std::wstring& Symlink)
 
 DeviceState* GlobalState::GetXusbByUserIndex(const DWORD UserIndex)
 {
-	const auto item = std::ranges::find_if(this->States,
-		[UserIndex](const DeviceState& element)
-		{
-			return element.Type == XI_DEVICE_TYPE_XUSB && element.RealUserIndex == UserIndex;
-		});
+	if (UserIndex >= DS3_DEVICES_MAX)
+		return nullptr;
 
-	return (item != this->States.end()) ? &(*item) : nullptr;
+	const auto state = &this->States[UserIndex];
+
+	return state->Type == XI_DEVICE_TYPE_XUSB ? state : nullptr;
 }
 
 bool GlobalState::GetConnectedDs3ByUserIndex(const DWORD UserIndex, DeviceState** Handle) const

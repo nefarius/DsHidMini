@@ -126,7 +126,11 @@ DWORD GlobalState::ProxyXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 		// 
 		if (!this->GetConnectedDs3ByUserIndex(dwUserIndex, &state))
 		{
-			status = CALL_FPN_SAFE(FpnXInputGetState, dwUserIndex, pState);
+			if ((state = GetXusbByUserIndex(dwUserIndex)))
+			{
+				status = CALL_FPN_SAFE(FpnXInputGetState, state->RealUserIndex, pState);
+			}
+
 			break;
 		}
 
@@ -270,7 +274,11 @@ DWORD GlobalState::ProxyXInputSetState(DWORD dwUserIndex, XINPUT_VIBRATION* pVib
 		// 
 		if (!this->GetConnectedDs3ByUserIndex(dwUserIndex, &state))
 		{
-			status = CALL_FPN_SAFE(FpnXInputSetState, dwUserIndex, pVibration);
+			if ((state = GetXusbByUserIndex(dwUserIndex)))
+			{
+				status = CALL_FPN_SAFE(FpnXInputSetState, state->RealUserIndex, pVibration);
+			}
+
 			break;
 		}
 
@@ -470,7 +478,11 @@ DWORD GlobalState::ProxyXInputGetStateEx(DWORD dwUserIndex, XINPUT_STATE* pState
 		// 
 		if (!this->GetConnectedDs3ByUserIndex(dwUserIndex, &state))
 		{
-			status = CALL_FPN_SAFE(FpnXInputGetStateEx, dwUserIndex, pState);
+			if ((state = GetXusbByUserIndex(dwUserIndex)))
+			{
+				status = CALL_FPN_SAFE(FpnXInputGetStateEx, state->RealUserIndex, pState);
+			}
+
 			break;
 		}
 
