@@ -87,17 +87,13 @@ DWORD GlobalState::ProxyXInputGetExtended(DWORD dwUserIndex, SCP_EXTN* pState)
 		//
 		// Thumb axes
 		//
-		if (pReport->LeftThumbX < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
-			|| pReport->LeftThumbX > (UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
+		if (IS_OUTSIDE_DZ(pReport->LeftThumbX))
 			pState->SCP_LX = ToAxis(pReport->LeftThumbX);
-		if (pReport->LeftThumbY < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
-			|| pReport->LeftThumbY > (UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
+		if (IS_OUTSIDE_DZ(pReport->LeftThumbY))
 			pState->SCP_LY = ToAxis(pReport->LeftThumbY) * -1.0f;
-		if (pReport->RightThumbX < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
-			|| pReport->RightThumbX > (UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
+		if (IS_OUTSIDE_DZ(pReport->RightThumbX))
 			pState->SCP_RX = ToAxis(pReport->RightThumbX);
-		if (pReport->RightThumbY < (UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET
-			|| pReport->RightThumbY > (UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET)
+		if (IS_OUTSIDE_DZ(pReport->RightThumbY))
 			pState->SCP_RY = ToAxis(pReport->RightThumbY) * -1.0f;
 
 		status = ERROR_SUCCESS;
@@ -235,10 +231,14 @@ DWORD GlobalState::ProxyXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 		//
 		// Thumb axes
 		// 
-		pState->Gamepad.sThumbLX = ScaleDsToXi(pReport->LeftThumbX, FALSE);
-		pState->Gamepad.sThumbLY = ScaleDsToXi(pReport->LeftThumbY, TRUE);
-		pState->Gamepad.sThumbRX = ScaleDsToXi(pReport->RightThumbX, FALSE);
-		pState->Gamepad.sThumbRY = ScaleDsToXi(pReport->RightThumbY, TRUE);
+		if (IS_OUTSIDE_DZ(pReport->LeftThumbX))
+			pState->Gamepad.sThumbLX = ScaleDsToXi(pReport->LeftThumbX, FALSE);
+		if (IS_OUTSIDE_DZ(pReport->LeftThumbY))
+			pState->Gamepad.sThumbLY = ScaleDsToXi(pReport->LeftThumbY, TRUE);
+		if (IS_OUTSIDE_DZ(pReport->RightThumbX))
+			pState->Gamepad.sThumbRX = ScaleDsToXi(pReport->RightThumbX, FALSE);
+		if (IS_OUTSIDE_DZ(pReport->RightThumbY))
+			pState->Gamepad.sThumbRY = ScaleDsToXi(pReport->RightThumbY, TRUE);
 
 		status = ERROR_SUCCESS;
 	} while (FALSE);
@@ -575,10 +575,14 @@ DWORD GlobalState::ProxyXInputGetStateEx(DWORD dwUserIndex, XINPUT_STATE* pState
 		//
 		// Thumb axes
 		// 
-		pState->Gamepad.sThumbLX = ScaleDsToXi(pReport->LeftThumbX, FALSE);
-		pState->Gamepad.sThumbLY = ScaleDsToXi(pReport->LeftThumbY, TRUE);
-		pState->Gamepad.sThumbRX = ScaleDsToXi(pReport->RightThumbX, FALSE);
-		pState->Gamepad.sThumbRY = ScaleDsToXi(pReport->RightThumbY, TRUE);
+		if (IS_OUTSIDE_DZ(pReport->LeftThumbX))
+			pState->Gamepad.sThumbLX = ScaleDsToXi(pReport->LeftThumbX, FALSE);
+		if (IS_OUTSIDE_DZ(pReport->LeftThumbY))
+			pState->Gamepad.sThumbLY = ScaleDsToXi(pReport->LeftThumbY, TRUE);
+		if (IS_OUTSIDE_DZ(pReport->RightThumbX))
+			pState->Gamepad.sThumbRX = ScaleDsToXi(pReport->RightThumbX, FALSE);
+		if (IS_OUTSIDE_DZ(pReport->RightThumbY))
+			pState->Gamepad.sThumbRY = ScaleDsToXi(pReport->RightThumbY, TRUE);
 
 		//
 		// PS/Guide

@@ -5,6 +5,9 @@
 // 
 #define DS3_AXIS_ANTI_JITTER_OFFSET		10
 
+#define IS_OUTSIDE_DZ(_axis_)	((_axis_) < ((UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET) \
+								|| (_axis_) > ((UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET))
+
 //
 // Constants
 // 
