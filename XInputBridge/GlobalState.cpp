@@ -246,10 +246,35 @@ void GlobalState::EnumerateDs3Devices()
 
 void GlobalState::EnumerateXusbDevices()
 {
-	// TODO: implement me!
+	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
 
-	for (int userIndex = 0; userIndex < XUSB_DEVICES_MAX; userIndex++)
+	const auto symlinks = GetSymbolicLinksForDeviceInterfaceClass(&XUSB_INTERFACE_CLASS_GUID);
+
+	if (!symlinks.has_value())
 	{
+		logger->error("XUSB interface enumeration failed");
+		return;
+	}
 
+	for (const auto& symlink : symlinks.value())
+	{
+		DWORD userIndex = INVALID_X_INPUT_USER_ID;
+		if (SymlinkToUserIndex(symlink.c_str(), &userIndex))
+		{
+			logger->info("User index: {}", userIndex);
+
+			if (const auto slot = this->GetNextFreeSlot())
+			{
+				slot->Dispose();
+				if (!slot->InitializeAsXusb(symlink, userIndex))
+				{
+					logger->error("Failed to initialize {} as a XUSB device", ConvertWideToANSI(symlink));
+				}
+			}
+		}
+		else
+		{
+			logger->error("User index lookup failed");
+		}
 	}
 }
