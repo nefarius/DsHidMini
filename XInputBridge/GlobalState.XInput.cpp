@@ -338,12 +338,6 @@ DWORD GlobalState::ProxyXInputGetCapabilities(DWORD dwUserIndex, DWORD dwFlags, 
 
 	DWORD status = ERROR_DEVICE_NOT_CONNECTED;
 
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__, {
-		{ "xinput.userIndex", std::to_string(dwUserIndex) }
-		}));
-#endif
-
 	do
 	{
 		//
@@ -357,7 +351,11 @@ DWORD GlobalState::ProxyXInputGetCapabilities(DWORD dwUserIndex, DWORD dwFlags, 
 		// 
 		if (!this->GetConnectedDs3ByUserIndex(dwUserIndex, nullptr))
 		{
-			status = CALL_FPN_SAFE(FpnXInputGetCapabilities, dwUserIndex, dwFlags, pCapabilities);
+			if (const DeviceState* state = nullptr; (state = GetXusbByUserIndex(dwUserIndex)))
+			{
+				status = CALL_FPN_SAFE(FpnXInputGetCapabilities, state->RealUserIndex, dwFlags, pCapabilities);
+			}
+
 			break;
 		}
 
