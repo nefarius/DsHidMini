@@ -26,19 +26,19 @@ Returns the typical Xbox 360 Controller compatible capabilities for every connec
 
 ### `XInputEnable`
 
-Not implemented. Does nothing.
+Gets proxied to `C:\Windows\System32\XInput1_3.dll`.
 
 ### `XInputGetDSoundAudioDeviceGuids`
 
-Not implemented. Always returns `ERROR_DEVICE_NOT_CONNECTED`.
+Gets proxied to `C:\Windows\System32\XInput1_3.dll`.
 
 ### `XInputGetBatteryInformation`
 
-Not implemented. Always returns `ERROR_DEVICE_NOT_CONNECTED`.
+Gets proxied to `C:\Windows\System32\XInput1_3.dll`.
 
 ### `XInputGetKeystroke`
 
-Not implemented. Always returns `ERROR_DEVICE_NOT_CONNECTED`.
+Gets proxied to `C:\Windows\System32\XInput1_3.dll`.
 
 ### `XInputGetStateEx`
 
@@ -46,15 +46,15 @@ Reports back [`XINPUT_GAMEPAD` structure](https://docs.microsoft.com/en-us/windo
 
 ### `XInputWaitForGuideButton`
 
-Not implemented. Always returns `ERROR_DEVICE_NOT_CONNECTED`.
+Gets proxied to `C:\Windows\System32\XInput1_3.dll`.
 
 ### `XInputCancelGuideButtonWait`
 
-Not implemented. Always returns `ERROR_DEVICE_NOT_CONNECTED`.
+Gets proxied to `C:\Windows\System32\XInput1_3.dll`.
 
 ### `XInputPowerOffController`
 
-Not implemented. Always returns `ERROR_DEVICE_NOT_CONNECTED`.
+Gets proxied to `C:\Windows\System32\XInput1_3.dll`.
 
 ## OpenTelemetry
 
@@ -67,6 +67,7 @@ The library can be built with `/D SCPLIB_ENABLE_TELEMETRY` which will pull in th
 - [pcsx2/pcsx2/PAD/Windows/XInputEnum.cpp](https://github.com/PCSX2/pcsx2/blob/6f7890b709d5e3f7f5b824781e493455efc92339/pcsx2/PAD/Windows/XInputEnum.cpp)
 - [HIDAPI library for Windows, Linux, FreeBSD and macOS](https://github.com/libusb/hidapi)
 - [DJm00n/RawInputDemo](https://github.com/DJm00n/RawInputDemo)
-- [A modern C++ scope guard that is easy to use but hard to misuse](https://github.com/ricab/scope_guard)
 - [OpenXInput](https://github.com/Nemirtingas/OpenXinput)
 - [Abseil C++ library](https://abseil.io/)
+- [Convenient high-level C++ wrapper around the Windows Registry API](https://github.com/GiovanniDicanio/WinReg)
+- [Fast C++ logging library](https://github.com/gabime/spdlog)
