@@ -6,7 +6,6 @@
 // Windows Header Files
 #include <Windows.h>
 #include <initguid.h>
-#include <Shlwapi.h>
 #include <cfgmgr32.h>
 
 //
