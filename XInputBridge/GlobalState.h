@@ -83,6 +83,7 @@ public:
 
 #pragma endregion
 
+	static std::optional<std::vector<std::wstring>> GetSymbolicLinksForDeviceInterfaceClass(const GUID* InterfaceGuid);
 	static std::optional<std::wstring> InterfaceIdToInstanceId(const std::wstring& Symlink);
 	static std::optional<std::vector<std::wstring>> GetDeviceChildren(const std::wstring& ParentDeviceId);
 	static std::optional<std::vector<std::wstring>> InstanceIdToHidPaths(const std::wstring& InstanceId);

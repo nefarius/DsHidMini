@@ -209,50 +209,15 @@ void GlobalState::EnumerateDs3Devices()
 
 	constexpr uint8_t DsHidMiniDeviceModeSixaxisCompatible = 0x03;
 
-	ULONG requiredNumChars = 0;
+	const auto symlinks = GetSymbolicLinksForDeviceInterfaceClass(&GUID_DEVINTERFACE_DSHIDMINI);
 
-	CONFIGRET ret = CM_Get_Device_Interface_List_SizeW(
-		&requiredNumChars,
-		const_cast<LPGUID>(&GUID_DEVINTERFACE_DSHIDMINI),
-		nullptr,
-		CM_GET_DEVICE_INTERFACE_LIST_PRESENT
-	);
-
-	if (ret != CR_SUCCESS)
+	if (!symlinks.has_value())
 	{
-		logger->error("CM_Get_Device_Interface_List_SizeW failed with {:#x}", ret);
+		logger->error("DS3 interface enumeration failed");
 		return;
 	}
 
-	if (requiredNumChars <= 1)
-		// single NULL character means list is empty
-		return;
-
-	auto szListBuffer = static_cast<PZZWSTR>(calloc(requiredNumChars, sizeof(WCHAR)));
-
-	absl::Cleanup lockRelease = [szListBuffer]
-	{
-		free(szListBuffer);
-	};
-
-	ret = CM_Get_Device_Interface_ListW(
-		const_cast<LPGUID>(&GUID_DEVINTERFACE_DSHIDMINI),
-		nullptr,
-		szListBuffer,
-		requiredNumChars,
-		CM_GET_DEVICE_INTERFACE_LIST_PRESENT
-	);
-
-	if (ret != CR_SUCCESS)
-	{
-		logger->error("CM_Get_Device_Interface_ListW failed with {:#x}", ret);
-		return;
-	}
-
-	const std::vector<wchar_t> multiString{ &szListBuffer[0], szListBuffer + requiredNumChars };
-	const auto symlinks = winreg::winreg_internal::ParseMultiString(multiString);
-
-	for (const auto& symlink : symlinks)
+	for (const auto& symlink : symlinks.value())
 	{
 		const auto instanceId = InterfaceIdToInstanceId(symlink);
 
@@ -285,6 +250,6 @@ void GlobalState::EnumerateXusbDevices()
 
 	for (int userIndex = 0; userIndex < XUSB_DEVICES_MAX; userIndex++)
 	{
-		
+
 	}
 }
