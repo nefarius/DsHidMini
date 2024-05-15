@@ -144,6 +144,10 @@ DWORD GlobalState::ProxyXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 
 		const auto pReport = reinterpret_cast<PDS3_RAW_INPUT_REPORT>(&buf[1]);
 
+		// invalid packet, discard
+		if (pReport->BatteryStatus == 0)
+			break;
+
 		if (!state->Ds3GetPacketNumber(pReport, &pState->dwPacketNumber))
 			break;
 
@@ -479,6 +483,10 @@ DWORD GlobalState::ProxyXInputGetStateEx(DWORD dwUserIndex, XINPUT_STATE* pState
 			break;
 
 		const auto pReport = reinterpret_cast<PDS3_RAW_INPUT_REPORT>(&buf[1]);
+
+		// invalid packet, discard
+		if (pReport->BatteryStatus == 0)
+			break;
 
 		if (!state->Ds3GetPacketNumber(pReport, &pState->dwPacketNumber))
 			break;
