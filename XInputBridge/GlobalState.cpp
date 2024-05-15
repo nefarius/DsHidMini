@@ -278,3 +278,13 @@ void GlobalState::EnumerateDs3Devices()
 		}
 	}
 }
+
+void GlobalState::EnumerateXusbDevices()
+{
+	// TODO: implement me!
+
+	for (int userIndex = 0; userIndex < XUSB_DEVICES_MAX; userIndex++)
+	{
+		
+	}
+}

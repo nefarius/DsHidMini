@@ -103,6 +103,7 @@ private:
 	DeviceState* GetXusbByUserIndex(const DWORD UserIndex);
 	bool GetConnectedDs3ByUserIndex(_In_ const DWORD UserIndex, _Out_opt_ DeviceState** Handle) const;
 	void EnumerateDs3Devices();
+	void EnumerateXusbDevices();
 
 #pragma region XInput declarations
 

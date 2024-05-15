@@ -17,6 +17,7 @@
 #define SXS_MODE_GET_FEATURE_REPORT_ID	0xF2
 #define SXS_MODE_GET_FEATURE_BUFFER_LEN	0x40
 #define DS3_DEVICES_MAX					8
+#define XUSB_DEVICES_MAX				DS3_DEVICES_MAX
 #define LOGGER_NAME						"XInputBridge"
 #define XI_SYSTEM_LIB_NAME				"XInput1_3.dll"
 
