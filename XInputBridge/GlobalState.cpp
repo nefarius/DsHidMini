@@ -148,15 +148,20 @@ bool GlobalState::SymlinkToUserIndex(PCWSTR Symlink, PDWORD UserIndex)
 	return true;
 }
 
-DeviceState* GlobalState::GetNextFreeSlot()
+DeviceState* GlobalState::GetNextFreeSlot(_Out_opt_ PULONG SlotIndex)
 {
-	const auto item = std::ranges::find_if(this->States,
+	const auto it = std::ranges::find_if(this->States,
 		[](const DeviceState& element)
 		{
 			return element.Type == XI_DEVICE_TYPE_NOT_CONNECTED;
 		});
 
-	return (item != this->States.end()) ? &(*item) : nullptr;
+	const auto state = (it != this->States.end()) ? &(*it) : nullptr;
+
+	if (state && SlotIndex)
+		*SlotIndex = std::distance(this->States.begin(), it);
+
+	return state;
 }
 
 DeviceState* GlobalState::FindBySymbolicLink(const std::wstring& Symlink)
