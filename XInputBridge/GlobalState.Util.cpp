@@ -54,7 +54,7 @@ std::optional<std::vector<std::wstring>> GlobalState::GetSymbolicLinksForDeviceI
 
 	auto szListBuffer = static_cast<PZZWSTR>(calloc(requiredNumChars, sizeof(WCHAR)));
 
-	absl::Cleanup lockRelease = [szListBuffer]
+	absl::Cleanup freeBuffer = [szListBuffer]
 	{
 		free(szListBuffer);
 	};
@@ -95,7 +95,7 @@ std::optional<std::wstring> GlobalState::InterfaceIdToInstanceId(const std::wstr
 
 	const auto instanceIdBuf = static_cast<PBYTE>(calloc(instanceIdBytes, 1));
 
-	absl::Cleanup lockRelease = [instanceIdBuf]
+	absl::Cleanup freeBuffer = [instanceIdBuf]
 	{
 		free(instanceIdBuf);
 	};
@@ -146,7 +146,7 @@ std::optional<std::vector<std::wstring>> GlobalState::GetDeviceChildren(const st
 
 	const auto childrenIdBuf = static_cast<PBYTE>(calloc(childrenIdBytes, 1));
 
-	absl::Cleanup lockRelease = [childrenIdBuf]
+	absl::Cleanup freeBuffer = [childrenIdBuf]
 	{
 		free(childrenIdBuf);
 	};
@@ -191,7 +191,7 @@ std::optional<std::vector<std::wstring>> GlobalState::InstanceIdToHidPaths(const
 
 	auto buffer = static_cast<PZZWSTR>(calloc(requiredNumChars, sizeof(WCHAR)));
 
-	absl::Cleanup lockRelease = [buffer]
+	absl::Cleanup freeBuffer = [buffer]
 	{
 		free(buffer);
 	};
