@@ -10,6 +10,10 @@ The library supportes detection and proxying of up to 8 DS3s in [SXS mode](https
 
 This project is actively maintained and considered stable, it can also be used in new projects that need simple access to DS3 pressure values.
 
+### Known limitations
+
+Routing of Wireless Xbox 360 pads using the Microsoft Wireless Dongle will probably not work properly since the dongle hides multiple controllers behind one single device instance, so arrival and removal notifications for every subsequent wireless device will not fire. Testing welcome.
+
 ## API Overview
 
 A brief summary of the exported library functions.
