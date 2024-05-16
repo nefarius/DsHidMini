@@ -13,6 +13,7 @@
         "minidriver",
         "mshidumdf",
         "opentelemetry",
+        "OTEL",
         "otlp",
         "proxied",
         "ribbotson",

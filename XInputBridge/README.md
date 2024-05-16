@@ -58,7 +58,7 @@ Gets proxied to `C:\Windows\System32\XInput1_3.dll`.
 
 ## OpenTelemetry
 
-The library can be built with `/D SCPLIB_ENABLE_TELEMETRY` which will pull in the [OpenTelemetry C++ Client](https://github.com/open-telemetry/opentelemetry-cpp) and register an [OTLP](https://opentelemetry.io/docs/specs/otlp/) exporter you can use in conjunction with e.g. [Jaeger Tracing](https://www.jaegertracing.io/) to visualize performance metrics. OTEL support isn't enabed by default as it inflates resulting binary size and most users will never need this functionality.
+The library can be built with `/D SCPLIB_ENABLE_TELEMETRY` which will pull in the [OpenTelemetry C++ Client](https://github.com/open-telemetry/opentelemetry-cpp) and register an [OTLP](https://opentelemetry.io/docs/specs/otlp/) exporter you can use in conjunction with e.g. [Jaeger Tracing](https://www.jaegertracing.io/) to visualize performance metrics. OTEL support isn't enabled by default as it inflates resulting binary size and most users will never need this functionality.
 
 ## 3rd party credits
 
