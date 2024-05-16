@@ -59,7 +59,7 @@ void GlobalState::Initialize()
 	}
 }
 
-void GlobalState::Destroy()
+void GlobalState::Destroy() const
 {
 	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
 

@@ -15,7 +15,7 @@ class GlobalState
 {
 public:
 	void Initialize();
-	void Destroy();
+	void Destroy() const;
 
 #pragma region XInput API proxies
 
