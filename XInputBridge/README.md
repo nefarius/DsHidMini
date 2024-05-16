@@ -12,17 +12,25 @@ A brief summary of the exported library functions.
 
 Reports back `struct _SCP_EXTN` with pressure values. For implementation details see `ScpTypes.h`. A value of `1.0f` represents fully pressed/engaged and `0.0f` represents default/disengaged. For axes, a value of `-1.0f` is equal to most west/south position, `0.0f` represents the centered/resting position and `1.0f` is equal to most east/north position.
 
+If the provided user index is occupied by an XUSB device it returns `ERROR_DEVICE_NOT_CONNECTED`.
+
 ### `XInputGetState`
 
 Reports back [`XINPUT_GAMEPAD` structure](https://docs.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_gamepad) with all DS3 buttons and axes mapped identical to the Xbox 360 layout. It does *not* report the PS/Guide button.
+
+If the provided user index is occupied by an XUSB device the request gets proxied to `C:\Windows\System32\XInput1_3.dll`. Otherwise returns `ERROR_DEVICE_NOT_CONNECTED`.
 
 ### `XInputSetState`
 
 Converts a vibration request into a DS3 output report. Translates and scales the rumble motor values accordingly (left gets mapped to strong, right gets mapped to weak motor). The player LED gets set to the (zero-based) `dwUserIndex` the function got invoked with (0 sets player 1, 1 sets player 2 and so forth).
 
+If the provided user index is occupied by an XUSB device the request gets proxied to `C:\Windows\System32\XInput1_3.dll`. Otherwise returns `ERROR_DEVICE_NOT_CONNECTED`.
+
 ### `XInputGetCapabilities`
 
-Returns the typical Xbox 360 Controller compatible capabilities for every connected player index. Otherwise returns `ERROR_DEVICE_NOT_CONNECTED`.
+Returns the typical Xbox 360 Controller compatible capabilities for every connected player index.
+
+If the provided user index is occupied by an XUSB device the request gets proxied to `C:\Windows\System32\XInput1_3.dll`. Otherwise returns `ERROR_DEVICE_NOT_CONNECTED`.
 
 ### `XInputEnable`
 
@@ -44,6 +52,8 @@ Gets proxied to `C:\Windows\System32\XInput1_3.dll`.
 
 Reports back [`XINPUT_GAMEPAD` structure](https://docs.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_gamepad) with all DS3 buttons and axes mapped identical to the Xbox 360 layout. It *does* report the PS/Guide button.
 
+If the provided user index is occupied by an XUSB device the request gets proxied to `C:\Windows\System32\XInput1_3.dll`. Otherwise returns `ERROR_DEVICE_NOT_CONNECTED`.
+
 ### `XInputWaitForGuideButton`
 
 Gets proxied to `C:\Windows\System32\XInput1_3.dll`.
@@ -60,7 +70,9 @@ Gets proxied to `C:\Windows\System32\XInput1_3.dll`.
 
 The library can be built with `/D SCPLIB_ENABLE_TELEMETRY` which will pull in the [OpenTelemetry C++ Client](https://github.com/open-telemetry/opentelemetry-cpp) and register an [OTLP](https://opentelemetry.io/docs/specs/otlp/) exporter you can use in conjunction with e.g. [Jaeger Tracing](https://www.jaegertracing.io/) to visualize performance metrics. OTEL support isn't enabled by default as it inflates resulting binary size and most users will never need this functionality.
 
-## 3rd party credits
+## Sources & 3rd party credits
+
+This application benefits from these awesome projects ❤ (appearance in no special order):
 
 - [araghon007/X1nput](https://github.com/araghon007/X1nput)
 - [rpcs3/rpcs3/Input/ds3_pad_handler.cpp](https://github.com/RPCS3/rpcs3/blob/5e436984a2b5753ad340d2c97462bf3be6e86237/rpcs3/Input/ds3_pad_handler.cpp)

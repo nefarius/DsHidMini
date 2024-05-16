@@ -26,6 +26,7 @@
         "vcpkg",
         "vpatch",
         "Wiimote",
-        "winreg"
+        "winreg",
+        "XUSB"
     ]
 }
