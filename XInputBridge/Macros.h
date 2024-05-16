@@ -8,6 +8,10 @@
 #define IS_OUTSIDE_DZ(_axis_)	((_axis_) < ((UCHAR_MAX / 2) - DS3_AXIS_ANTI_JITTER_OFFSET) \
 								|| (_axis_) > ((UCHAR_MAX / 2) + DS3_AXIS_ANTI_JITTER_OFFSET))
 
+#define DS3_RAW_SLIDER_IDLE_THRESHOLD			0x7F // 127 ( (256 * 0,5 ) -1 )
+#define DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER		0x3F // 63 ( ( 128 * 0,5 ) - 1 )
+#define DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER		0xC0 // 192 ( ( 128 * 1,5 ) - 1 )
+
 //
 // Constants
 // 
