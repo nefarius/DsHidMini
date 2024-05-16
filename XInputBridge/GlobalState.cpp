@@ -18,7 +18,7 @@
 #include "UniUtil.h"
 
 
-EXTERN_C IMAGE_DOS_HEADER __ImageBase;  // NOLINT(bugprone-reserved-identifier)
+EXTERN_C IMAGE_DOS_HEADER __ImageBase; // NOLINT(bugprone-reserved-identifier)
 
 
 //
@@ -161,7 +161,7 @@ DeviceState* GlobalState::GetNextFreeSlot(_Out_opt_ PULONG SlotIndex)
 	const auto state = (it != this->States.end()) ? &(*it) : nullptr;
 
 	if (state && SlotIndex)
-		*SlotIndex = std::distance(this->States.begin(), it);
+		*SlotIndex = static_cast<ULONG>(std::distance(this->States.begin(), it));
 
 	return state;
 }
@@ -211,20 +211,27 @@ void GlobalState::EnumerateDs3Devices()
 
 	constexpr uint8_t DsHidMiniDeviceModeSixaxisCompatible = 0x03;
 
+	logger->info("Running DS3 enumeration");
+
 	const auto symlinks = GetSymbolicLinksForDeviceInterfaceClass(&GUID_DEVINTERFACE_DSHIDMINI);
 
 	if (!symlinks.has_value())
 	{
 		logger->info("No DS3 interface devices found");
-		return;
+		goto exit;
 	}
+
+	logger->info("Found {} devices", symlinks.value().size());
 
 	for (const auto& symlink : symlinks.value())
 	{
 		const auto instanceId = InterfaceIdToInstanceId(symlink);
 
 		if (!instanceId.has_value())
+		{
+			logger->warn("Instance ID lookup failed for {}", ConvertWideToANSI(symlink));
 			continue;
+		}
 
 		const auto hidDeviceMode = GetDs3HidDeviceModeProperty(instanceId.value());
 
@@ -248,19 +255,26 @@ void GlobalState::EnumerateDs3Devices()
 		}
 		ReleaseSRWLockExclusive(&this->StatesLock);
 	}
+
+exit:
+	logger->info("DS3 enumeration finished");
 }
 
 void GlobalState::EnumerateXusbDevices()
 {
 	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
 
+	logger->info("Running XUSB enumeration");
+
 	const auto symlinks = GetSymbolicLinksForDeviceInterfaceClass(&XUSB_INTERFACE_CLASS_GUID);
 
 	if (!symlinks.has_value())
 	{
 		logger->info("No XUSB interface devices found");
-		return;
+		goto exit;
 	}
+
+	logger->info("Found {} devices", symlinks.value().size());
 
 	for (const auto& symlink : symlinks.value())
 	{
@@ -287,4 +301,7 @@ void GlobalState::EnumerateXusbDevices()
 			logger->error("User index lookup failed");
 		}
 	}
+
+exit:
+	logger->info("XUSB enumeration finished");
 }
