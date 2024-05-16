@@ -243,10 +243,19 @@ void GlobalState::EnumerateDs3Devices()
 
 		AcquireSRWLockExclusive(&this->StatesLock);
 		{
-			if (const auto state = this->GetNextFreeSlot())
+			DWORD slotIndex = 0;
+			if (const auto state = this->GetNextFreeSlot(&slotIndex))
 			{
+
 				state->Dispose();
-				state->InitializeAsDs3(symlink);
+				if (!state->InitializeAsDs3(symlink))
+				{
+					logger->error("Failed to initialize {} as a DS3 device", ConvertWideToANSI(symlink));
+				}
+				else
+				{
+					logger->info("Assigned {} to index {}", ConvertWideToANSI(symlink), slotIndex);
+				}
 			}
 			else
 			{
@@ -285,12 +294,17 @@ void GlobalState::EnumerateXusbDevices()
 
 			AcquireSRWLockExclusive(&this->StatesLock);
 			{
-				if (const auto slot = this->GetNextFreeSlot())
+				DWORD slotIndex = 0;
+				if (const auto slot = this->GetNextFreeSlot(&slotIndex))
 				{
 					slot->Dispose();
-					if (!slot->InitializeAsXusb(symlink, userIndex))
+					if (!slot->InitializeAsXusb(symlink, slotIndex))
 					{
 						logger->error("Failed to initialize {} as a XUSB device", ConvertWideToANSI(symlink));
+					}
+					else
+					{
+						logger->info("Assigned {} to index {}", ConvertWideToANSI(symlink), slotIndex);
 					}
 				}
 			}

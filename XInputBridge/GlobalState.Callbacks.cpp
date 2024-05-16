@@ -41,12 +41,17 @@ DWORD GlobalState::DeviceNotificationCallback(
 				{
 					AcquireSRWLockExclusive(&_this->StatesLock);
 					{
-						if (const auto slot = _this->GetNextFreeSlot())
+						DWORD slotIndex = 0;
+						if (const auto slot = _this->GetNextFreeSlot(&slotIndex))
 						{
 							slot->Dispose();
 							if (!slot->InitializeAsDs3(symlink))
 							{
 								logger->error("Failed to initialize {} as a DS3 HID device", ConvertWideToANSI(symlink));
+							}
+							else
+							{
+								logger->info("Assigned {} to index {}", ConvertWideToANSI(symlink), slotIndex);
 							}
 						}
 					}
@@ -70,12 +75,17 @@ DWORD GlobalState::DeviceNotificationCallback(
 
 				AcquireSRWLockExclusive(&_this->StatesLock);
 				{
-					if (const auto slot = _this->GetNextFreeSlot())
+					DWORD slotIndex = 0;
+					if (const auto slot = _this->GetNextFreeSlot(&slotIndex))
 					{
 						slot->Dispose();
 						if (!slot->InitializeAsXusb(EventData->u.DeviceInterface.SymbolicLink, userIndex))
 						{
 							logger->error("Failed to initialize {} as a XUSB device", symlink);
+						}
+						else
+						{
+							logger->info("Assigned {} to index {}", symlink, slotIndex);
 						}
 					}
 				}
