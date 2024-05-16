@@ -221,7 +221,7 @@ void GlobalState::EnumerateDs3Devices()
 		goto exit;
 	}
 
-	logger->info("Found {} devices", symlinks.value().size());
+	logger->info("Found {} device(s)", symlinks.value().size());
 
 	for (const auto& symlink : symlinks.value())
 	{
@@ -274,7 +274,7 @@ void GlobalState::EnumerateXusbDevices()
 		goto exit;
 	}
 
-	logger->info("Found {} devices", symlinks.value().size());
+	logger->info("Found {} device(s)", symlinks.value().size());
 
 	for (const auto& symlink : symlinks.value())
 	{
