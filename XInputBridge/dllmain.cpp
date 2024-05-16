@@ -12,6 +12,8 @@ BOOL APIENTRY DllMain(HMODULE hModule,
                       LPVOID lpReserved
 )
 {
+	UNREFERENCED_PARAMETER(lpReserved);
+
     DisableThreadLibraryCalls(hModule);
 
     switch (ul_reason_for_call)
