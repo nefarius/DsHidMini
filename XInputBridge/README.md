@@ -4,6 +4,10 @@
 
 This project brings back the [extended XInput API provided by ScpServer/ScpToolkit](https://github.com/nefarius/ScpToolkit/tree/master/ScpXInputBridge) to DsHidMini as a drop-in replacement for the now abandoned [SCP proxy DLL](https://github.com/nefarius/ScpToolkit/tree/9f4076ad6912002687d1824494258607d859c67e/XInput_Scp). In addition to the common XInput functions, it also provides the `XInputGetExtended` API, which returns all possible pressure values.
 
+### Info for developers
+
+This project is actively maintained and considered stable, it can also be used in new projects that need simple access to DS3 pressure values.
+
 ## API Overview
 
 A brief summary of the exported library functions.
