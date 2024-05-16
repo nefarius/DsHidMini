@@ -12,11 +12,15 @@ A brief summary of the exported library functions.
 
 Reports back `struct _SCP_EXTN` with pressure values. For implementation details see `ScpTypes.h`. A value of `1.0f` represents fully pressed/engaged and `0.0f` represents default/disengaged. For axes, a value of `-1.0f` is equal to most west/south position, `0.0f` represents the centered/resting position and `1.0f` is equal to most east/north position.
 
+A jitter compensation dead-zone is applied to the thumb axes.
+
 If the provided user index is occupied by an XUSB device it returns `ERROR_DEVICE_NOT_CONNECTED`.
 
 ### `XInputGetState`
 
 Reports back [`XINPUT_GAMEPAD` structure](https://docs.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_gamepad) with all DS3 buttons and axes mapped identical to the Xbox 360 layout. It does *not* report the PS/Guide button.
+
+A jitter compensation dead-zone is applied to the thumb axes.
 
 If the provided user index is occupied by an XUSB device the request gets proxied to `C:\Windows\System32\XInput1_3.dll`. Otherwise returns `ERROR_DEVICE_NOT_CONNECTED`.
 
@@ -51,6 +55,8 @@ Gets proxied to `C:\Windows\System32\XInput1_3.dll`.
 ### `XInputGetStateEx`
 
 Reports back [`XINPUT_GAMEPAD` structure](https://docs.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_gamepad) with all DS3 buttons and axes mapped identical to the Xbox 360 layout. It *does* report the PS/Guide button.
+
+A jitter compensation dead-zone is applied to the thumb axes.
 
 If the provided user index is occupied by an XUSB device the request gets proxied to `C:\Windows\System32\XInput1_3.dll`. Otherwise returns `ERROR_DEVICE_NOT_CONNECTED`.
 
