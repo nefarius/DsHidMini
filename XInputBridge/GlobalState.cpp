@@ -246,7 +246,6 @@ void GlobalState::EnumerateDs3Devices()
 			DWORD slotIndex = 0;
 			if (const auto state = this->GetNextFreeSlot(&slotIndex))
 			{
-
 				state->Dispose();
 				if (!state->InitializeAsDs3(symlink))
 				{
