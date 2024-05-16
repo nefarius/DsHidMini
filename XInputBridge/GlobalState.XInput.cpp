@@ -4,6 +4,8 @@
 
 DWORD GlobalState::ProxyXInputGetExtended(DWORD dwUserIndex, SCP_EXTN* pState)
 {
+	WaitForSingleObject(this->StartupFinishedEvent, 3000);
+
 	AcquireSRWLockShared(&this->StatesLock);
 	absl::Cleanup lockRelease = [this]
 	{
@@ -104,6 +106,8 @@ DWORD GlobalState::ProxyXInputGetExtended(DWORD dwUserIndex, SCP_EXTN* pState)
 
 DWORD GlobalState::ProxyXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 {
+	WaitForSingleObject(this->StartupFinishedEvent, 3000);
+
 	AcquireSRWLockShared(&this->StatesLock);
 	absl::Cleanup lockRelease = [this]
 	{

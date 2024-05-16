@@ -257,5 +257,7 @@ DWORD WINAPI GlobalState::InitAsync(LPVOID lpParameter)
 	_this->EnumerateDs3Devices();
 	_this->EnumerateXusbDevices();
 
+	SetEvent(_this->StartupFinishedEvent);
+
 	return ERROR_SUCCESS;
 }
