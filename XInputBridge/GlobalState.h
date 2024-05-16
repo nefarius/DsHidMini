@@ -98,11 +98,13 @@ private:
 	HCMNOTIFICATION Ds3NotificationHandle{};
 	/** Handle of the XUSB device notification */
 	HCMNOTIFICATION XusbNotificationHandle{};
+	/** Handle of the startup finished event */
+	HANDLE StartupFinishedEvent{ INVALID_HANDLE_VALUE };
 
-	DeviceState* GetNextFreeSlot(_Out_opt_ PULONG SlotIndex = NULL);
+	DeviceState* GetNextFreeSlot(_Out_opt_ PULONG SlotIndex = nullptr);
 	DeviceState* FindBySymbolicLink(const std::wstring& Symlink);
-	DeviceState* GetXusbByUserIndex(const DWORD UserIndex);
-	bool GetConnectedDs3ByUserIndex(_In_ const DWORD UserIndex, _Out_opt_ DeviceState** Handle) const;
+	DeviceState* GetXusbByUserIndex(DWORD UserIndex);
+	bool GetConnectedDs3ByUserIndex(_In_ DWORD UserIndex, _Out_opt_ DeviceState** Handle) const;
 	void EnumerateDs3Devices();
 	void EnumerateXusbDevices();
 

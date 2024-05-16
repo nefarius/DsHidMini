@@ -28,6 +28,8 @@ void GlobalState::Initialize()
 {
 	InitializeSRWLock(&StatesLock);
 
+	this->StartupFinishedEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr);
+
 	CHAR dllPath[MAX_PATH];
 
 	GetModuleFileNameA((HINSTANCE)&__ImageBase, dllPath, MAX_PATH);
@@ -67,8 +69,9 @@ void GlobalState::Destroy() const
 
 	logger->info("Library getting unloaded from PID {}", GetCurrentProcessId());
 
-	(void)CM_Unregister_Notification(Ds3NotificationHandle);
-	(void)CM_Unregister_Notification(XusbNotificationHandle);
+	(void)CloseHandle(this->StartupFinishedEvent);
+	(void)CM_Unregister_Notification(this->Ds3NotificationHandle);
+	(void)CM_Unregister_Notification(this->XusbNotificationHandle);
 
 	(void)hid_exit();
 }
