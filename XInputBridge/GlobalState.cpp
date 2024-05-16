@@ -18,7 +18,7 @@
 #include "UniUtil.h"
 
 
-EXTERN_C IMAGE_DOS_HEADER __ImageBase;
+EXTERN_C IMAGE_DOS_HEADER __ImageBase;  // NOLINT(bugprone-reserved-identifier)
 
 
 //
