@@ -1,24 +1,19 @@
-// header.h : include file for standard system include files,
-// or project specific include files
-//
-
 #pragma once
-
-/*
- * Uncomment to enable building with OpenTelemetry to allow recording performance traces
- * The library size will get inflated quite a bit as it gets statically linked in
- */
-//#define SCPLIB_ENABLE_TELEMETRY
 
 #define _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 // Windows Header Files
 #include <Windows.h>
+#include <initguid.h>
+#include <cfgmgr32.h>
 
+//
+// Driver-shared types
+// 
 #include <DsHidMini/ScpTypes.h>
 #include <DsHidMini/Ds3Types.h>
-#include <hidapi/hidapi.h>
+#include <DsHidMini/dshmguid.h>
 
 //
 // OpenTelemetry
