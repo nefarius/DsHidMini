@@ -7,14 +7,20 @@
         "Eleccelerator",
         "ERRORLEVEL",
         "hidapi",
+        "makecab",
         "minidriver",
         "mshidumdf",
+        "opentelemetry",
+        "otlp",
         "ribbotson",
+        "SCPLIB",
         "Shibari",
         "SIXAXIS",
+        "spdlog",
         "Ultralightweight",
         "vcpkg",
         "vpatch",
-        "Wiimote"
+        "Wiimote",
+        "winreg"
     ]
 }
