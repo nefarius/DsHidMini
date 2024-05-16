@@ -48,6 +48,8 @@ void GlobalState::Initialize()
 
 	set_default_logger(logger);
 
+	logger->info("Library got loaded into PID {}", GetCurrentProcessId());
+
 	//
 	// Call stuff that must not be done in DllMain in the background
 	// 
@@ -63,7 +65,7 @@ void GlobalState::Destroy() const
 {
 	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
 
-	logger->info("Library getting unloaded");
+	logger->info("Library getting unloaded from PID {}", GetCurrentProcessId());
 
 	(void)CM_Unregister_Notification(Ds3NotificationHandle);
 	(void)CM_Unregister_Notification(XusbNotificationHandle);
@@ -213,7 +215,7 @@ void GlobalState::EnumerateDs3Devices()
 
 	if (!symlinks.has_value())
 	{
-		logger->warn("No DS3 interface devices found");
+		logger->info("No DS3 interface devices found");
 		return;
 	}
 
@@ -256,7 +258,7 @@ void GlobalState::EnumerateXusbDevices()
 
 	if (!symlinks.has_value())
 	{
-		logger->warn("No XUSB interface devices found");
+		logger->info("No XUSB interface devices found");
 		return;
 	}
 
