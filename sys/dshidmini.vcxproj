@@ -40,6 +40,7 @@
     <ClCompile Include="Power.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\DsHidMini\Ds3Shared.h" />
     <ClInclude Include="..\include\DsHidMini\Ds3Types.h" />
     <ClInclude Include="..\include\DsHidMini\ScpTypes.h" />
     <ClInclude Include="..\include\DsHidMini\dshmguid.h" />
@@ -50,7 +51,7 @@
     <ClInclude Include="DsBth.h" />
     <ClInclude Include="DsCommon.h" />
     <ClInclude Include="DsHid.h" />
-    <ClInclude Include="DsHidMiniDrv.h" />    
+    <ClInclude Include="DsHidMiniDrv.h" />
     <ClInclude Include="DsInternal.h" />
     <ClInclude Include="DsUsb.h" />
     <ClInclude Include="HID\01_SDF_Col1_GamePad.h" />

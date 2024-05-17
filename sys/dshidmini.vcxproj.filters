@@ -168,6 +168,9 @@
     <ClInclude Include="Configuration.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\DsHidMini\Ds3Shared.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Device.c">

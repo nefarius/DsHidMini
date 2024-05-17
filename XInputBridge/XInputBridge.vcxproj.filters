@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\Public">
+      <UniqueIdentifier>{b1bb6d19-187d-4996-a0c4-1f723531a5a7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
@@ -46,6 +49,18 @@
     </ClInclude>
     <ClInclude Include="Macros.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\DsHidMini\Ds3Shared.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\DsHidMini\Ds3Types.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\DsHidMini\dshmguid.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\DsHidMini\ScpTypes.h">
+      <Filter>Header Files\Public</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
