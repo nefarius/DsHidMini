@@ -6,6 +6,10 @@ This project brings back the [extended XInput API provided by ScpServer/ScpToolk
 
 The library supportes detection and proxying of up to 8 DS3s in [SXS mode](https://docs.nefarius.at/projects/DsHidMini/HID-Device-Modes-Explained/#sxs) and/or any XInput-compatible controller mixed.
 
+### Info fo users
+
+Please read the [Usage documentation](https://docs.nefarius.at/projects/DsHidMini/SCP-XInput-Bridge/).
+
 ### Info for developers
 
 This project is actively maintained and considered stable, it can also be used in new projects that need simple access to DS3 pressure values.
