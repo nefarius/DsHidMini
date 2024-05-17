@@ -36,6 +36,7 @@ bool DeviceState::InitializeAsDs3(const std::wstring& Symlink)
 
 	auto children = GlobalState::GetDeviceChildren(instanceId.value());
 
+	// PnP manager needs a bit of time to bring the device online
 	while (!children.has_value())
 	{
 		if (--retries == 0)
@@ -54,6 +55,7 @@ bool DeviceState::InitializeAsDs3(const std::wstring& Symlink)
 	const auto hidDeviceId = children.value()[0];
 	auto hidPaths = GlobalState::InstanceIdToHidPaths(hidDeviceId);
 
+	// HID driver needs a bit of time to bring the interface online
 	while (!hidPaths.has_value())
 	{
 		if (--retries == 0)
