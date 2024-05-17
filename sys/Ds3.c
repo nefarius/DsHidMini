@@ -37,6 +37,127 @@ const UCHAR G_Ds3BthHidOutputReport[] = {
 };
 
 //
+// Requests device host address, defaulting to a pre-defined address in case of failure, and sets the WDF_DEVICE's host address
+//
+NTSTATUS DsUsb_Ds3RequestHostAddress(WDFDEVICE Device)
+{
+	NTSTATUS status;
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	UCHAR controlTransferBuffer[CONTROL_TRANSFER_BUFFER_LENGTH];
+	WDF_DEVICE_PROPERTY_DATA propertyData;
+	UINT64 hostAddress;
+
+	FuncEntry(TRACE_DS3);
+
+	//
+	// Request host BTH address
+	// 
+	if (NT_SUCCESS(status = USB_SendControlRequest(
+		pDevCtx,
+		BmRequestDeviceToHost,
+		BmRequestClass,
+		GetReport,
+		Ds3FeatureHostAddress,
+		0,
+		controlTransferBuffer,
+		CONTROL_TRANSFER_BUFFER_LENGTH
+	)))
+	{
+		/*
+		 * NOTE: the first byte is 0x01 followed by a 0x00 and then
+		 * the host radio MAC address the device is currently paired to.
+		 * The remaining ~36 bytes also contain data but we do not know
+		 * what it stands for by the time of writing. Help pls!
+		 */
+		RtlCopyMemory(
+			&pDevCtx->HostAddress,
+			&controlTransferBuffer[2],
+			sizeof(BD_ADDR)
+		);
+	}
+	else
+	{
+		//
+		// Set context's host radio address to pre-defined address in case of failure
+		// 
+		TraceError(
+			TRACE_DS3,
+			"Requesting host address failed with %!STATUS!. Setting device's context host address to 00:00:00:00:00:00",
+			status
+		);
+		EventWriteFailedWithNTStatus(__FUNCTION__, L"Requesting host address", status);
+
+		const BD_ADDR zeroAddress = { 0 };
+		RtlCopyMemory(
+			&pDevCtx->HostAddress,
+			&zeroAddress,
+			sizeof(BD_ADDR)
+		);
+	}
+
+	//
+	// Store in property
+	// 
+
+	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RO_LastHostRequestStatus);
+	propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+	propertyData.Lcid = LOCALE_NEUTRAL;
+
+	status = WdfDeviceAssignProperty(
+		Device,
+		&propertyData,
+		DEVPROP_TYPE_NTSTATUS,
+		sizeof(NTSTATUS),
+		&status
+	);
+
+	if (!NT_SUCCESS(status))
+	{
+		TraceError(
+			TRACE_DS3,
+			"Setting DEVPKEY_DsHidMini_RO_LastHostRequestStatus failed with status %!STATUS!",
+			status
+		);
+	}
+
+	//
+	// Set host radio address property
+	// 
+
+	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_BluetoothRadio_Address);
+	propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+	propertyData.Lcid = LOCALE_NEUTRAL;
+
+	hostAddress = (UINT64)(pDevCtx->HostAddress.Address[5]) |
+		(UINT64)(pDevCtx->HostAddress.Address[4]) << 8 |
+		(UINT64)(pDevCtx->HostAddress.Address[3]) << 16 |
+		(UINT64)(pDevCtx->HostAddress.Address[2]) << 24 |
+		(UINT64)(pDevCtx->HostAddress.Address[1]) << 32 |
+		(UINT64)(pDevCtx->HostAddress.Address[0]) << 40;
+
+	status = WdfDeviceAssignProperty(
+		Device,
+		&propertyData,
+		DEVPROP_TYPE_UINT64,
+		sizeof(UINT64),
+		&hostAddress
+	);
+
+	if (!NT_SUCCESS(status))
+	{
+		TraceError(
+			TRACE_DS3,
+			"Setting DEVPKEY_BluetoothRadio_Address failed with status %!STATUS!",
+			status
+		);
+	}
+
+	FuncExit(TRACE_DS3, "status=%!STATUS!", status);
+
+	return status;
+}
+
+//
 // Sends the "magic packet" to the DS3 so it starts its interrupt endpoint.
 // 
 NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context)
@@ -69,9 +190,66 @@ NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context)
 }
 
 //
-// Auto-pair this device to first found host radio.
+// Sends a pairing request to the device, stores result status in property
 // 
-NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
+NTSTATUS DsUsb_Ds3SendPairingRequest(WDFDEVICE Device, BD_ADDR NewHostAddress)
+{
+	NTSTATUS status = STATUS_UNSUCCESSFUL;
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+
+	FuncEntry(TRACE_DS3);
+
+	TraceInformation(
+		TRACE_DS3,
+		"Sending pairing request with new host address defined as %02X:%02X:%02X:%02X:%02X:%02X",
+		NewHostAddress.Address[0],
+		NewHostAddress.Address[1],
+		NewHostAddress.Address[2],
+		NewHostAddress.Address[3],
+		NewHostAddress.Address[4],
+		NewHostAddress.Address[5]
+	);
+
+	UCHAR controlBuffer[SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH] = { 0x01, 0x00 };
+	
+	RtlCopyMemory(
+		&controlBuffer[2],
+		&NewHostAddress,
+		sizeof(BD_ADDR)
+	);
+
+	//
+	// Submit new host address
+	// 
+	if (!NT_SUCCESS(status = USB_SendControlRequest(
+		pDevCtx,
+		BmRequestHostToDevice,
+		BmRequestClass,
+		SetReport,
+		Ds3FeatureHostAddress,
+		0,
+		controlBuffer,
+		SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH
+	)))
+	{
+		TraceError(
+			TRACE_DS3,
+			"Setting host address failed with %!STATUS!",
+			status
+		);
+		EventWriteFailedWithNTStatus(__FUNCTION__, L"Pairing", status);
+	}
+
+	FuncExit(TRACE_DS3, "status=%!STATUS!", status);
+
+	return status;
+}
+
+
+//
+// Pairs DS3 to current BT host or to user defined host address, depending on current pairing mode
+// 
+NTSTATUS DS3_GetActiveRadioAddress(BD_ADDR* Address)
 {
 	NTSTATUS status = STATUS_UNSUCCESSFUL;
 	HANDLE hRadio = NULL;
@@ -80,13 +258,11 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 	BLUETOOTH_RADIO_INFO info;
 	DWORD ret;
 	DWORD error = ERROR_SUCCESS;
-	WDF_DEVICE_PROPERTY_DATA propertyData;
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
-
-	FuncEntry(TRACE_DS3);
 
 	params.dwSize = sizeof(BLUETOOTH_FIND_RADIO_PARAMS);
 	info.dwSize = sizeof(BLUETOOTH_RADIO_INFO);
+
+	FuncEntry(TRACE_DS3);
 
 	do
 	{
@@ -106,7 +282,7 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 			{
 				TraceWarning(
 					TRACE_DS3,
-					"No active host radio found, can't pair device"
+					"No active host radio found."
 				);
 			}
 			else
@@ -117,8 +293,7 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 					error
 				);
 			}
-
-			EventWritePairingNoRadioFound(pDevCtx->DeviceAddressString);
+			
 			break;
 		}
 
@@ -142,98 +317,15 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 			break;
 		}
 
-		//
-		// Align address to expected format/order
-		// 
-		REVERSE_BYTE_ARRAY(&info.address.rgBytes[0], sizeof(BD_ADDR));
-
-		//
-		// Don't issue request when addresses already match
-		// 
-		if (RtlCompareMemory(
-				&info.address.rgBytes[0],
-				&pDevCtx->HostAddress.Address[0],
-				sizeof(BD_ADDR)
-			) == sizeof(BD_ADDR)
-			)
+		// Copy and reverse to match expected format/order
+		for (int i = 0; i < sizeof(BD_ADDR); i++)
 		{
-			TraceVerbose(
-				TRACE_DS3,
-				"Host address equals local radio address, skipping"
-			);
-
-			EventWriteAlreadyPaired(pDevCtx->DeviceAddressString);
-
-			status = STATUS_SUCCESS;
-			break;
+			Address->Address[sizeof(BD_ADDR) - 1 - i] = info.address.rgBytes[i];
 		}
 
-		TraceInformation(
-			TRACE_DS3,
-			"Updating host address from %02X:%02X:%02X:%02X:%02X:%02X to %02X:%02X:%02X:%02X:%02X:%02X",
-			pDevCtx->HostAddress.Address[0],
-			pDevCtx->HostAddress.Address[1],
-			pDevCtx->HostAddress.Address[2],
-			pDevCtx->HostAddress.Address[3],
-			pDevCtx->HostAddress.Address[4],
-			pDevCtx->HostAddress.Address[5],
-			info.address.rgBytes[0],
-			info.address.rgBytes[1],
-			info.address.rgBytes[2],
-			info.address.rgBytes[3],
-			info.address.rgBytes[4],
-			info.address.rgBytes[5]
-		);
-
-		UCHAR controlBuffer[SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH];
-
-		RtlZeroMemory(
-			controlBuffer,
-			SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH
-		);
-
-		RtlCopyMemory(
-			&controlBuffer[2],
-			&info.address,
-			sizeof(BD_ADDR)
-		);
-
-		//
-		// Submit new host address
-		// 
-		if (!NT_SUCCESS(status = USB_SendControlRequest(
-			pDevCtx,
-			BmRequestHostToDevice,
-			BmRequestClass,
-			SetReport,
-			Ds3FeatureHostAddress,
-			0,
-			controlBuffer,
-			SET_HOST_BD_ADDR_CONTROL_BUFFER_LENGTH
-		)))
-		{
-			TraceError(
-				TRACE_DS3,
-				"Setting host address failed with %!STATUS!",
-				status
-			);
-			EventWriteFailedWithNTStatus(__FUNCTION__, L"Pairing", status);
-			break;
-		}
-
-		//
-		// Update in device context after success
-		// 
-		RtlCopyMemory(&pDevCtx->HostAddress, &info.address, sizeof(BD_ADDR));
-
-		EventWritePairedSuccessfully(pDevCtx->DeviceAddressString);
+		status = STATUS_SUCCESS;
 
 	} while (FALSE);
-
-	if (hRadio)
-		CloseHandle(hRadio);
-	if (hFind)
-		BluetoothFindRadioClose(hFind);
 
 	//
 	// Translate Win32 error codes to NTSTATUS
@@ -259,6 +351,111 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 		}
 	}
 
+	if (hRadio)
+		CloseHandle(hRadio);
+	if (hFind)
+		BluetoothFindRadioClose(hFind);
+
+	FuncExit(TRACE_DS3, "status=%!STATUS!", status);
+
+	return status;
+}
+
+//
+// Pairs DS3 to current BT host or to user defined host address, depending on current pairing mode
+// 
+NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
+{
+	NTSTATUS status = STATUS_UNSUCCESSFUL;
+	WDF_DEVICE_PROPERTY_DATA propertyData;
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	BD_ADDR newHostAddress = { 0 };
+
+	FuncEntry(TRACE_DS3);
+
+	do
+	{
+		if (pDevCtx->Configuration.DevicePairingMode == DsDevicePairingModeDisabled)
+		{
+			TraceInformation(
+				TRACE_DS3,
+				"Pairing mode set to disabled. Skipping pairing process"
+			);
+			status = STATUS_SUCCESS;
+			break;
+		}
+
+		if (pDevCtx->Configuration.DevicePairingMode == DsDevicePairingModeAuto)
+		{
+			TraceInformation(
+				TRACE_DS3,
+				"Pairing device to active radio host address"
+			);
+
+			if (!NT_SUCCESS(DS3_GetActiveRadioAddress(&newHostAddress)))
+			{
+				TraceError(
+					TRACE_DS3,
+					"Failed to get active radio host address"
+				);
+				break;
+			}
+		}
+
+		//
+		// Use configured custom mac address if in custom mode
+		//
+		if (pDevCtx->Configuration.DevicePairingMode == DsDevicePairingModeCustom)
+		{
+			TraceInformation(
+				TRACE_DS3,
+				"Pairing device to user defined MAC address"
+			);
+
+			for (int i = 0; i < sizeof(BD_ADDR); i++)
+			{
+				newHostAddress.Address[i] = pDevCtx->Configuration.CustomHostAddress[i];
+			}
+		}
+
+		//
+		// Don't issue request when addresses already match
+		// 
+		if (RtlCompareMemory(
+				&newHostAddress,
+				&pDevCtx->HostAddress.Address[0],
+				sizeof(BD_ADDR)
+			) == sizeof(BD_ADDR)
+			)
+		{
+			TraceInformation(
+				TRACE_DS3,
+				"Device's current host address equals desired new address, skipping"
+			);
+
+			EventWriteAlreadyPaired(pDevCtx->DeviceAddressString);
+
+			status = STATUS_SUCCESS;
+			break;
+		}
+
+		//
+		// Send pairing request
+		//
+		if (!NT_SUCCESS(status = DsUsb_Ds3SendPairingRequest(Device, newHostAddress)))
+		{
+			TraceError(
+				TRACE_DS3,
+				"DsUsb_Ds3SendPairingRequest failed with status %!STATUS!",
+				status
+			);
+			break;
+		}
+
+		status = STATUS_SUCCESS;
+
+	} while (FALSE);
+
 	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RO_LastPairingStatus);
 	propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
 	propertyData.Lcid = LOCALE_NEUTRAL;
@@ -273,6 +470,15 @@ NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device)
 		sizeof(NTSTATUS),
 		&status
 	);
+
+	if (!NT_SUCCESS(status))
+	{
+		TraceError(
+			TRACE_DS3,
+			"Setting DEVPKEY_DsHidMini_RO_LastPairingStatus failed with status %!STATUS!",
+			status
+		);
+	}
 
 	FuncExit(TRACE_DS3, "status=%!STATUS!", status);
 

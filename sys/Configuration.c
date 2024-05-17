@@ -26,6 +26,29 @@ static DS_HID_DEVICE_MODE HID_DEVICE_MODE_FROM_NAME(PSTR ModeName)
 }
 
 //
+// Translates a friendly name string into the corresponding DS_DEVICE_PAIRING_MODE value
+// 
+static DS_DEVICE_PAIRING_MODE DS_DEVICE_PAIRING_MODE_FROM_NAME(PSTR ModeName)
+{
+	if (!_strcmpi(ModeName, G_DEVICE_PAIRING_MODE_NAMES[2]))
+	{
+		return DsDevicePairingModeDisabled;
+	}
+
+	if (!_strcmpi(ModeName, G_DEVICE_PAIRING_MODE_NAMES[1]))
+	{
+		return DsDevicePairingModeCustom;
+	}
+
+	if (!_strcmpi(ModeName, G_DEVICE_PAIRING_MODE_NAMES[0]))
+	{
+		return DsDevicePairingModeAuto;
+	}
+
+	return DsDevicePairingModeDisabled;
+}
+
+//
 // Translates a friendly name string into the corresponding DS_PRESSURE_EXPOSURE_MODE value
 // 
 static DS_PRESSURE_EXPOSURE_MODE DS_PRESSURE_EXPOSURE_MODE_FROM_NAME(PSTR ModeName)
@@ -461,12 +484,40 @@ static void ConfigNodeParse(
 			pCfg->HidDeviceMode = HID_DEVICE_MODE_FROM_NAME(cJSON_GetStringValue(pNode));
 			EventWriteOverrideSettingUInt(ParentNode->string, "HidDeviceMode", pCfg->HidDeviceMode);
 		}
+	}
 
-		if ((pNode = cJSON_GetObjectItem(ParentNode, "DisableAutoPairing")))
+	if ((pNode = cJSON_GetObjectItem(ParentNode, "DevicePairingMode")))
+	{
+		pCfg->DevicePairingMode = DS_DEVICE_PAIRING_MODE_FROM_NAME(cJSON_GetStringValue(pNode));
+		EventWriteOverrideSettingUInt(ParentNode->string, "DevicePairingMode", pCfg->DevicePairingMode);
+	}
+
+	if ((pNode = cJSON_GetObjectItem(ParentNode, "PairOnHotReload")))
+	{
+		pCfg->PairOnHotReload = (BOOLEAN)cJSON_IsTrue(pNode);
+		EventWriteOverrideSettingUInt(ParentNode->string, "PairOnHotReload", pCfg->PairOnHotReload);
+	}
+
+	if ((pNode = cJSON_GetObjectItem(ParentNode, "CustomPairingAddress")))
+	{
+		char* eptr; // not used
+		long long addressAsNumber = strtoll(cJSON_GetStringValue(pNode), &eptr, 16);
+		for (int i = 0; i < 6; i++)
 		{
-			pCfg->DisableAutoPairing = (BOOLEAN)cJSON_IsTrue(pNode);
-			EventWriteOverrideSettingUInt(ParentNode->string, "DisableAutoPairing", pCfg->DisableAutoPairing);
+
+			pCfg->CustomHostAddress[5 - i] = (UCHAR)((addressAsNumber >> (8 * i)) & 0xFF);
 		}
+		TraceVerbose(
+			TRACE_DS3,
+			"Configuration custom address: %02X:%02X:%02X:%02X:%02X:%02X",
+			pCfg->CustomHostAddress[0],
+			pCfg->CustomHostAddress[1],
+			pCfg->CustomHostAddress[2],
+			pCfg->CustomHostAddress[3],
+			pCfg->CustomHostAddress[4],
+			pCfg->CustomHostAddress[5]
+		);
+		//EventWriteOverrideSettingUInt(ParentNode->string, "CustomPairingAddress", pCfg->DevicePairingMode);
 	}
 
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "IsOutputRateControlEnabled")))
@@ -939,7 +990,12 @@ ConfigSetDefaults(
 	// 
 
 	Config->HidDeviceMode = DsHidMiniDeviceModeXInputHIDCompatible;
-	Config->DisableAutoPairing = FALSE;
+	Config->DevicePairingMode = DsDevicePairingModeAuto;
+	Config->PairOnHotReload = FALSE;
+	for (int i = 0; i < 6; i++)
+	{
+		Config->CustomHostAddress[i] = 0x00;
+	}
 	Config->IsOutputRateControlEnabled = TRUE;
 	Config->OutputRateControlPeriodMs = 150;
 	Config->WirelessIdleTimeoutPeriodMs = 300000;
