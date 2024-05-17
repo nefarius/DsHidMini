@@ -116,11 +116,6 @@ bool DeviceState::Ds3GetPacketNumber(PDS3_RAW_INPUT_REPORT Report, DWORD* Packet
 		return false;
 
 	//
-	// Exclude noisy motion stuff from comparison
-	// 
-	constexpr size_t bytesToCompare = sizeof(DS3_RAW_INPUT_REPORT) - 18;
-
-	//
 	// Only increment when a change happened
 	// 
 	if (!DS3_RAW_IS_IDLE(Report))
