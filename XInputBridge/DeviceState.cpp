@@ -123,7 +123,7 @@ bool DeviceState::Ds3GetPacketNumber(PDS3_RAW_INPUT_REPORT Report, DWORD* Packet
 	//
 	// Only increment when a change happened
 	// 
-	if (!Ds3RawReportIsIdle(Report))
+	if (!DS3_RAW_IS_IDLE(Report))
 	{
 		this->SyntheticPacketNumber++;
 		memcpy(&this->LastReport, Report, sizeof(DS3_RAW_INPUT_REPORT));
@@ -150,57 +150,4 @@ bool DeviceState::Ds3GetDeviceHandle(hid_device** Handle) const
 		*Handle = this->HidDeviceHandle;
 
 	return true;
-}
-
-//
-// Checks whether the pad inputs are in default (idle) state
-// 
-BOOLEAN DeviceState::Ds3RawReportIsIdle(
-	_In_ PDS3_RAW_INPUT_REPORT Input
-)
-{
-	//
-	// Button states
-	// 
-
-	if (Input->Buttons.lButtons)
-	{
-		return FALSE;
-	}
-
-	//
-	// Axes
-	// 
-
-	if (
-		Input->LeftThumbX < DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER
-		|| Input->LeftThumbX > DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER
-		|| Input->LeftThumbY < DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER
-		|| Input->LeftThumbY > DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER
-		|| Input->RightThumbX < DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER
-		|| Input->RightThumbX > DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER
-		|| Input->RightThumbY < DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER
-		|| Input->RightThumbY > DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER
-		)
-	{
-		return FALSE;
-	}
-
-	//
-	// Sliders
-	// 
-
-	if (
-		Input->Pressure.Values.L2 > DS3_RAW_SLIDER_IDLE_THRESHOLD
-		|| Input->Pressure.Values.R2 > DS3_RAW_SLIDER_IDLE_THRESHOLD
-		)
-	{
-		return FALSE;
-	}
-
-	//
-	// If we end up here, no movement is going on
-	// 
-
-	return TRUE;
 }

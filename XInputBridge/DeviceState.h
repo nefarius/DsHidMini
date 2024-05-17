@@ -34,8 +34,5 @@ private:
 	_Must_inspect_result_
 	bool Ds3GetDeviceHandle(_Inout_opt_ hid_device** Handle) const;
 
-	_Must_inspect_result_
-	static BOOLEAN Ds3RawReportIsIdle(_In_ PDS3_RAW_INPUT_REPORT Input);
-
 	friend class GlobalState;
 };
