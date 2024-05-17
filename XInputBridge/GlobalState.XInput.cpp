@@ -4,7 +4,7 @@
 
 DWORD GlobalState::ProxyXInputGetExtended(DWORD dwUserIndex, SCP_EXTN* pState)
 {
-	WaitForSingleObject(this->StartupFinishedEvent, 3000);
+	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
 
 	AcquireSRWLockShared(&this->StatesLock);
 	absl::Cleanup lockRelease = [this]
@@ -106,7 +106,7 @@ DWORD GlobalState::ProxyXInputGetExtended(DWORD dwUserIndex, SCP_EXTN* pState)
 
 DWORD GlobalState::ProxyXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 {
-	WaitForSingleObject(this->StartupFinishedEvent, 3000);
+	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
 
 	AcquireSRWLockShared(&this->StatesLock);
 	absl::Cleanup lockRelease = [this]
@@ -256,7 +256,7 @@ DWORD GlobalState::ProxyXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 
 DWORD GlobalState::ProxyXInputSetState(DWORD dwUserIndex, XINPUT_VIBRATION* pVibration)
 {
-	WaitForSingleObject(this->StartupFinishedEvent, 3000);
+	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
 
 	AcquireSRWLockShared(&this->StatesLock);
 	absl::Cleanup lockRelease = [this]
@@ -336,7 +336,7 @@ DWORD GlobalState::ProxyXInputSetState(DWORD dwUserIndex, XINPUT_VIBRATION* pVib
 
 DWORD GlobalState::ProxyXInputGetCapabilities(DWORD dwUserIndex, DWORD dwFlags, XINPUT_CAPABILITIES* pCapabilities)
 {
-	WaitForSingleObject(this->StartupFinishedEvent, 3000);
+	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
 
 	AcquireSRWLockShared(&this->StatesLock);
 	absl::Cleanup lockRelease = [this]
@@ -462,6 +462,8 @@ DWORD GlobalState::ProxyXInputGetKeystroke(DWORD dwUserIndex, DWORD dwReserved, 
 
 DWORD GlobalState::ProxyXInputGetStateEx(DWORD dwUserIndex, XINPUT_STATE* pState)
 {
+	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
+
 	AcquireSRWLockShared(&this->StatesLock);
 	absl::Cleanup lockRelease = [this]
 	{
