@@ -1,4 +1,4 @@
-#include "framework.h"
+#include "Common.h"
 #include "GlobalState.h"
 
 extern GlobalState G_State;

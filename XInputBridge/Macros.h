@@ -20,6 +20,7 @@
 #define DS3_DEVICES_MAX					8
 #define XUSB_DEVICES_MAX				DS3_DEVICES_MAX
 #define LOGGER_NAME						"XInputBridge"
+#define TRACER_NAME						LOGGER_NAME
 #define XI_SYSTEM_LIB_NAME				"XInput1_3.dll"
 #define MAX_STARTUP_WAIT_MS				3000 // ms
 

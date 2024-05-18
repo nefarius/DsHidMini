@@ -26,9 +26,6 @@
     <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="framework.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="XInputBridge.h">
       <Filter>Header Files</Filter>
     </ClInclude>

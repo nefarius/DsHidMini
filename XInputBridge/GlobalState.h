@@ -83,6 +83,8 @@ public:
 	static std::optional<std::vector<std::wstring>> InstanceIdToHidPaths(const std::wstring& InstanceId);
 	static std::optional<uint8_t> GetDs3HidDeviceModeProperty(const std::wstring& Ds3InstanceId);
 
+	static nostd::shared_ptr<trace::Tracer> GetTracer();
+
 private:
 	/** The states of each user index slot */
 	std::vector<DeviceState> States{ DS3_DEVICES_MAX };

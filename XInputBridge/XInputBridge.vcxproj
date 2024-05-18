@@ -495,7 +495,6 @@
     <ClInclude Include="..\include\DsHidMini\ScpTypes.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="DeviceState.h" />
-    <ClInclude Include="framework.h" />
     <ClInclude Include="GlobalState.h" />
     <ClInclude Include="Macros.h" />
     <ClInclude Include="resource.h" />

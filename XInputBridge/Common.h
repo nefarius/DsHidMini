@@ -28,3 +28,28 @@
 // 
 #include <spdlog/logger.h>
 #include <spdlog/spdlog.h>
+
+//
+// Abseil
+// 
+#include <absl/cleanup/cleanup.h>
+#include <absl/strings/match.h>
+
+//
+// OpenTelemetry
+// 
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+#define HAVE_ABSEIL // fixes redefinitions of absl types
+#include <opentelemetry/exporters/otlp/otlp_http_exporter_factory.h>
+#include <opentelemetry/exporters/otlp/otlp_http_exporter_options.h>
+#include <opentelemetry/sdk/trace/processor.h>
+#include <opentelemetry/sdk/trace/simple_processor_factory.h>
+#include <opentelemetry/sdk/trace/tracer_provider_factory.h>
+#include <opentelemetry/trace/provider.h>
+
+namespace trace     = opentelemetry::trace;
+namespace nostd     = opentelemetry::nostd;
+namespace trace_sdk = opentelemetry::sdk::trace;
+namespace otlp      = opentelemetry::exporter::otlp;
+#endif
+

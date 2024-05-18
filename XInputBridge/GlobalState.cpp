@@ -3,11 +3,7 @@
 #include <Shlwapi.h>
 #include <hidapi/hidapi.h>
 #include <spdlog/sinks/basic_file_sink.h>
-#include <absl/strings/match.h>
-#include <absl/cleanup/cleanup.h>
 #include <winreg/WinReg.hpp>
-
-#include "DsHidMini/dshmguid.h"
 
 #include "Types.h"
 #include "UniUtil.h"
@@ -33,7 +29,7 @@ void GlobalState::Initialize()
 
 	auto logger = spdlog::basic_logger_mt(
 		LOGGER_NAME,
-		dllDir + "\\XInputBridge.log"
+		dllDir + "\\" LOGGER_NAME ".log"
 	);
 
 #if _DEBUG

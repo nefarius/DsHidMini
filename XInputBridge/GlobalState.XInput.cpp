@@ -1,5 +1,4 @@
 ﻿#include "GlobalState.h"
-#include <absl/cleanup/cleanup.h>
 
 
 DWORD GlobalState::ProxyXInputGetExtended(DWORD dwUserIndex, SCP_EXTN* pState)
