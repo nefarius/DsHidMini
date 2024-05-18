@@ -43,6 +43,20 @@ void GlobalState::Initialize()
 
 	logger->info("Library got loaded into PID {}", GetCurrentProcessId());
 
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	const auto resourceAttributes = sdkresource::ResourceAttributes{
+		{ opentelemetry::sdk::resource::SemanticConventions::kServiceName, TRACER_NAME }
+	};
+
+	auto resource = sdkresource::Resource::Create(resourceAttributes);
+	auto exporter = otlp::OtlpHttpExporterFactory::Create();
+	auto processor = sdktrace::SimpleSpanProcessorFactory::Create(std::move(exporter));
+	const std::shared_ptr provider = sdktrace::TracerProviderFactory::Create(std::move(processor), std::move(resource));
+
+	// Set the global trace provider
+	trace::Provider::SetTracerProvider(provider);
+#endif
+
 	//
 	// Call stuff that must not be done in DllMain in the background
 	// 
