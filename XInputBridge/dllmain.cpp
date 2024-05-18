@@ -20,11 +20,11 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 		{
-			const auto resource_attributes = sdkresource::ResourceAttributes{
+			const auto resourceAttributes = sdkresource::ResourceAttributes{
 				{ opentelemetry::sdk::resource::SemanticConventions::kServiceName, TRACER_NAME }
 			};
 
-			const auto resource = sdkresource::Resource::Create(resource_attributes);
+			auto resource = sdkresource::Resource::Create(resourceAttributes);
 			auto exporter = otlp::OtlpHttpExporterFactory::Create();
 			auto processor = sdktrace::SimpleSpanProcessorFactory::Create(std::move(exporter));
 			const std::shared_ptr provider = sdktrace::TracerProviderFactory::Create(std::move(processor), std::move(resource));
