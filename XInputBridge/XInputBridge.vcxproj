@@ -493,6 +493,7 @@
     <ClInclude Include="..\include\DsHidMini\Ds3Types.h" />
     <ClInclude Include="..\include\DsHidMini\dshmguid.h" />
     <ClInclude Include="..\include\DsHidMini\ScpTypes.h" />
+    <ClInclude Include="Common.h" />
     <ClInclude Include="DeviceState.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="GlobalState.h" />

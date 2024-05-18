@@ -1,8 +1,5 @@
 ﻿#include "DeviceState.h"
 #include "GlobalState.h"
-
-#include <spdlog/spdlog.h>
-
 #include "Macros.h"
 #include "UniUtil.h"
 

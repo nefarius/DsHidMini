@@ -1,11 +1,7 @@
 ﻿#pragma once
-#include <Windows.h>
-#include <string>
-#include <memory>
 
+#include "Common.h"
 #include <hidapi/hidapi.h>
-
-#include <DsHidMini/Ds3Types.h>
 #include "Types.h"
 
 class DeviceState

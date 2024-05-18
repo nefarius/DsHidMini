@@ -1,14 +1,8 @@
 ﻿#pragma once
 
-#include <Windows.h>
-#include <cfgmgr32.h>
-#include <optional>
-
-#include <vector>
-
+#include "Common.h"
 #include "Macros.h"
 #include "DeviceState.h"
-#include <DsHidMini/ScpTypes.h>
 #include "XInputBridge.h"
 
 class GlobalState

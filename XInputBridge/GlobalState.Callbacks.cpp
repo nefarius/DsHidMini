@@ -1,9 +1,4 @@
 ﻿#include <Shlwapi.h>
-#include <spdlog/logger.h>
-#include <spdlog/spdlog.h>
-
-#include <thread>
-
 #include "GlobalState.h"
 #include "UniUtil.h"
 #include "DsHidMini/dshmguid.h"

@@ -1,10 +1,6 @@
 ﻿#include "GlobalState.h"
 
-#include <memory>
-#include <spdlog/logger.h>
-#include <spdlog/spdlog.h>
 #include <Shlwapi.h>
-#include <initguid.h>
 #include <devpkey.h>
 #include <hidapi/hidapi.h>
 #include <spdlog/sinks/basic_file_sink.h>
