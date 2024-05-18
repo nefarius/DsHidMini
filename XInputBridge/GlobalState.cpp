@@ -48,10 +48,10 @@ void GlobalState::Initialize()
 		{ opentelemetry::sdk::resource::SemanticConventions::kServiceName, TRACER_NAME }
 	};
 
-	auto resource = sdkresource::Resource::Create(resourceAttributes);
+	const auto resource = sdkresource::Resource::Create(resourceAttributes);
 	auto exporter = otlp::OtlpHttpExporterFactory::Create();
 	auto processor = sdktrace::SimpleSpanProcessorFactory::Create(std::move(exporter));
-	const std::shared_ptr provider = sdktrace::TracerProviderFactory::Create(std::move(processor), std::move(resource));
+	const std::shared_ptr provider = sdktrace::TracerProviderFactory::Create(std::move(processor), resource);
 
 	// Set the global trace provider
 	trace::Provider::SetTracerProvider(provider);
