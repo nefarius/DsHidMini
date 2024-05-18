@@ -126,10 +126,6 @@ bool DeviceState::Ds3GetPacketNumber(PDS3_RAW_INPUT_REPORT Report, DWORD* Packet
 		memcpy(&this->LastReport, Report, sizeof(DS3_RAW_INPUT_REPORT));
 	}
 
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	span->SetAttribute("xinput.packetNumber", std::to_string(state->packetNumber));
-#endif
-
 	*PacketNumber = this->SyntheticPacketNumber;
 
 	return true;
