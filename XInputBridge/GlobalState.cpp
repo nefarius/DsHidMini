@@ -1,7 +1,6 @@
 ﻿#include "GlobalState.h"
 
 #include <Shlwapi.h>
-#include <devpkey.h>
 #include <hidapi/hidapi.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <absl/strings/match.h>
