@@ -1,7 +1,6 @@
 ﻿#include "GlobalState.h"
 #include <initguid.h>
 #include <devpkey.h>
-#include <cfgmgr32.h>
 #include <hidclass.h>
 
 #include <absl/cleanup/cleanup.h>
