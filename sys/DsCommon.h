@@ -114,6 +114,35 @@ static CONST PSTR G_HID_DEVICE_MODE_NAMES[] =
 };
 
 //
+// Device's host address pairing mode
+// 
+typedef enum
+{
+	//
+	// Pair device to current machine's BT radio
+	// 
+	DsDevicePairingModeAuto,
+	//
+	// Pair device to a user defined MAC address
+	// 
+	DsDevicePairingModeCustom,
+	//
+	// Disable pairing entirely
+	// 
+	DsDevicePairingModeDisabled
+} DS_DEVICE_PAIRING_MODE, * PDS_HOST_PAIRING_MODE;
+
+//
+// Friendly names for reading from JSON
+// 
+static CONST PSTR G_DEVICE_PAIRING_MODE_NAMES[] =
+{
+	"Auto",
+	"Custom",
+	"Disabled"
+};
+
+//
 // Output report processing mode
 // 
 typedef enum
@@ -517,10 +546,19 @@ typedef struct _DS_DRIVER_CONFIGURATION
 	DS_HID_DEVICE_MODE HidDeviceMode;
 
 	//
-	// When set, pairing will not be attempted on device boot
-	// Can't be altered at runtime
+	// Determines how the host pairing process should occur
 	// 
-	BOOLEAN DisableAutoPairing;
+	DS_DEVICE_PAIRING_MODE DevicePairingMode;
+
+	//
+	// The host address the device should be paired too if in custom pairing mode
+	// 
+	UCHAR CustomHostAddress[6];
+
+	//
+	// When set, the pairing process will occur after hot-reloading configurations
+	//
+	BOOLEAN PairOnHotReload;
 
 	//
 	// True if output rate control is enabled, false if not

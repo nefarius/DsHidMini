@@ -330,6 +330,15 @@ DMF_DsHidMini_Open(
 	}
 
 	//
+	// If not in disabled pairing mode and if on USB then execute pairing process then request currently set host address
+	//
+	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb && pDevCtx->Configuration.DevicePairingMode != DsDevicePairingModeDisabled)
+	{
+		DsUsb_Ds3PairToNewHost(device);
+		DsUsb_Ds3RequestHostAddress(device);
+	}
+
+	//
 	// Set currently used HID mode
 	// 
 
