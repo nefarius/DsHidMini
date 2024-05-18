@@ -3,9 +3,6 @@
 
 extern GlobalState G_State;
 
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-otlp::OtlpHttpExporterOptions opts;
-#endif
 
 BOOL APIENTRY DllMain(HMODULE hModule,
                       DWORD ul_reason_for_call,
@@ -23,12 +20,15 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 		{
-			//SetEnvironmentVariableA("OTEL_SERVICE_NAME", TRACER_NAME);
+			const auto resource_attributes = sdkresource::ResourceAttributes{
+				{ opentelemetry::sdk::resource::SemanticConventions::kServiceName, TRACER_NAME }
+			};
 
-		
-			auto exporter = otlp::OtlpHttpExporterFactory::Create(opts);
-			auto processor = trace_sdk::SimpleSpanProcessorFactory::Create(std::move(exporter));
-			const std::shared_ptr provider = trace_sdk::TracerProviderFactory::Create(std::move(processor));
+			const auto resource = sdkresource::Resource::Create(resource_attributes);
+			auto exporter = otlp::OtlpHttpExporterFactory::Create();
+			auto processor = sdktrace::SimpleSpanProcessorFactory::Create(std::move(exporter));
+			const std::shared_ptr provider = sdktrace::TracerProviderFactory::Create(std::move(processor), std::move(resource));
+
 			// Set the global trace provider
 			trace::Provider::SetTracerProvider(provider);
 		}

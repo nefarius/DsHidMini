@@ -45,11 +45,14 @@
 #include <opentelemetry/sdk/trace/processor.h>
 #include <opentelemetry/sdk/trace/simple_processor_factory.h>
 #include <opentelemetry/sdk/trace/tracer_provider_factory.h>
+#include <opentelemetry/sdk/resource/resource.h>
+#include <opentelemetry/sdk/resource/semantic_conventions.h>
 #include <opentelemetry/trace/provider.h>
 
-namespace trace     = opentelemetry::trace;
-namespace nostd     = opentelemetry::nostd;
-namespace trace_sdk = opentelemetry::sdk::trace;
-namespace otlp      = opentelemetry::exporter::otlp;
+namespace trace			= opentelemetry::trace;
+namespace nostd			= opentelemetry::nostd;
+namespace sdktrace		= opentelemetry::sdk::trace;
+namespace otlp			= opentelemetry::exporter::otlp;
+namespace sdkresource	= opentelemetry::sdk::resource;
 #endif
 
