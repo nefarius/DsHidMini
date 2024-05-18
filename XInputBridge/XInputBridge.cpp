@@ -8,15 +8,6 @@
 GlobalState G_State{};
 
 
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-static nostd::shared_ptr<trace::Tracer> GetTracer()
-{
-	const auto provider = trace::Provider::GetTracerProvider();
-	return provider->GetTracer("XInputBridge", OPENTELEMETRY_SDK_VERSION);
-}
-#endif
-
-
 #pragma region Public exports
 
 //
@@ -29,7 +20,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 )
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__, {
+	auto scopedSpan = trace::Scope(GlobalState::GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
 		}));
 #endif
@@ -43,7 +34,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 )
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__, {
+	auto scopedSpan = trace::Scope(GlobalState::GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
 		}));
 #endif
@@ -57,7 +48,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
 )
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scoped_span = trace::Scope(GetTracer()->StartSpan(__FUNCTION__, {
+	auto scoped_span = trace::Scope(GlobalState::GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
 		}));
 #endif
@@ -72,7 +63,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 )
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__, {
+	auto scopedSpan = trace::Scope(GlobalState::GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
 		}));
 #endif
@@ -85,7 +76,7 @@ XINPUTBRIDGE_API void WINAPI XInputEnable(
 )
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
+	auto scopedSpan = trace::Scope(GlobalState::GetTracer()->StartSpan(__FUNCTION__));
 #endif
 
 	G_State.ProxyXInputEnable(enable);
@@ -98,7 +89,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetDSoundAudioDeviceGuids(
 )
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	const auto span = GetTracer()->StartSpan(__FUNCTION__, {
+	const auto span = GlobalState::GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
 		});
 	auto scopedSpan = trace::Scope(span);
@@ -114,7 +105,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetBatteryInformation(
 )
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	const auto span = GetTracer()->StartSpan(__FUNCTION__, {
+	const auto span = GlobalState::GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
 		});
 	auto scopedSpan = trace::Scope(span);
@@ -130,7 +121,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetKeystroke(
 )
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	const auto span = GetTracer()->StartSpan(__FUNCTION__, {
+	const auto span = GlobalState::GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
 		});
 	auto scopedSpan = trace::Scope(span);
@@ -145,7 +136,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
 )
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__, {
+	auto scopedSpan = trace::Scope(GlobalState::GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
 		}));
 #endif
@@ -160,7 +151,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputWaitForGuideButton(
 )
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	const auto span = GetTracer()->StartSpan(__FUNCTION__, {
+	const auto span = GlobalState::GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
 		});
 	auto scopedSpan = trace::Scope(span);
@@ -174,7 +165,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputCancelGuideButtonWait(
 )
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	const auto span = GetTracer()->StartSpan(__FUNCTION__, {
+	const auto span = GlobalState::GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
 		});
 	auto scopedSpan = trace::Scope(span);
@@ -188,7 +179,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputPowerOffController(
 )
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-	const auto span = GetTracer()->StartSpan(__FUNCTION__, {
+	const auto span = GlobalState::GetTracer()->StartSpan(__FUNCTION__, {
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
 		});
 	auto scopedSpan = trace::Scope(span);
