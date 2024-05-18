@@ -9,6 +9,10 @@
 
 SHORT GlobalState::ScaleDsToXi(UCHAR value, BOOLEAN invert)
 {
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
+#endif
+
 	auto intValue = value - 0x80;
 	if (intValue == -128)
 		intValue = -127;
@@ -250,4 +254,3 @@ nostd::shared_ptr<trace::Tracer> GlobalState::GetTracer()
 	return provider->GetTracer(TRACER_NAME, OPENTELEMETRY_SDK_VERSION);
 }
 #endif
-

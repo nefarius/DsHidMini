@@ -105,6 +105,12 @@ DWORD GlobalState::ProxyXInputGetExtended(DWORD dwUserIndex, SCP_EXTN* pState)
 
 DWORD GlobalState::ProxyXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 {
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__, {
+		{ "xinput.userIndex", std::to_string(dwUserIndex) }
+	}));
+#endif
+
 	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
 
 	AcquireSRWLockShared(&this->StatesLock);
@@ -140,7 +146,15 @@ DWORD GlobalState::ProxyXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 		UCHAR buf[SXS_MODE_GET_FEATURE_BUFFER_LEN];
 		buf[0] = SXS_MODE_GET_FEATURE_REPORT_ID;
 
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+		const auto readReportSpan = GetTracer()->StartSpan("hid_get_feature_report");
+#endif
+
 		const int res = hid_get_feature_report(state->HidDeviceHandle, buf, ARRAYSIZE(buf));
+
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+		readReportSpan->End();
+#endif
 
 		if (res <= 0)
 			break;
@@ -153,6 +167,10 @@ DWORD GlobalState::ProxyXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 
 		if (!state->Ds3GetPacketNumber(pReport, &pState->dwPacketNumber))
 			break;
+
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+		const auto transformReportSpan = GetTracer()->StartSpan("Report Transformation");
+#endif
 
 		RtlZeroMemory(&pState->Gamepad, sizeof(pState->Gamepad));
 
@@ -246,6 +264,10 @@ DWORD GlobalState::ProxyXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 			pState->Gamepad.sThumbRX = ScaleDsToXi(pReport->RightThumbX, FALSE);
 		if (IS_OUTSIDE_DZ(pReport->RightThumbY))
 			pState->Gamepad.sThumbRY = ScaleDsToXi(pReport->RightThumbY, TRUE);
+
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+		transformReportSpan->End();
+#endif
 
 		status = ERROR_SUCCESS;
 	} while (FALSE);

@@ -189,6 +189,12 @@ DeviceState* GlobalState::FindBySymbolicLink(const std::wstring& Symlink)
 
 DeviceState* GlobalState::GetXusbByUserIndex(const DWORD UserIndex)
 {
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__, {
+		{ "xinput.userIndex", std::to_string(UserIndex) }
+	}));
+#endif
+
 	if (UserIndex >= DS3_DEVICES_MAX)
 		return nullptr;
 
@@ -199,6 +205,12 @@ DeviceState* GlobalState::GetXusbByUserIndex(const DWORD UserIndex)
 
 bool GlobalState::GetConnectedDs3ByUserIndex(const DWORD UserIndex, DeviceState** Handle) const
 {
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__, {
+		{ "xinput.userIndex", std::to_string(UserIndex) }
+	}));
+#endif
+
 	if (UserIndex >= DS3_DEVICES_MAX)
 		return false;
 

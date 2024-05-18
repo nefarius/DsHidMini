@@ -108,6 +108,10 @@ void DeviceState::Dispose()
 
 bool DeviceState::Ds3GetPacketNumber(PDS3_RAW_INPUT_REPORT Report, DWORD* PacketNumber)
 {
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scopedSpan = trace::Scope(GlobalState::GetTracer()->StartSpan(__FUNCTION__));
+#endif
+
 	if (!Report || !PacketNumber)
 		return false;
 
