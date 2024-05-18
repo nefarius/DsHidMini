@@ -86,6 +86,10 @@ void GlobalState::Destroy() const
 // 
 bool GlobalState::SymlinkToUserIndex(PCWSTR Symlink, PDWORD UserIndex)
 {
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
+#endif
+
 	constexpr DWORD desiredAccess = (GENERIC_WRITE | GENERIC_READ);
 	constexpr DWORD shareMode = FILE_SHARE_READ | FILE_SHARE_WRITE;
 
@@ -160,6 +164,10 @@ bool GlobalState::SymlinkToUserIndex(PCWSTR Symlink, PDWORD UserIndex)
 
 DeviceState* GlobalState::GetNextFreeSlot(_Out_opt_ PULONG SlotIndex)
 {
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
+#endif
+
 	const auto it = std::ranges::find_if(this->States,
 		[](const DeviceState& element)
 		{
@@ -176,6 +184,10 @@ DeviceState* GlobalState::GetNextFreeSlot(_Out_opt_ PULONG SlotIndex)
 
 DeviceState* GlobalState::FindBySymbolicLink(const std::wstring& Symlink)
 {
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
+#endif
+
 	const auto narrow = ConvertWideToANSI(Symlink);
 
 	const auto item = std::ranges::find_if(this->States,
@@ -228,6 +240,10 @@ bool GlobalState::GetConnectedDs3ByUserIndex(const DWORD UserIndex, DeviceState*
 void GlobalState::EnumerateDs3Devices()
 {
 	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
+
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
+#endif
 
 	constexpr uint8_t DsHidMiniDeviceModeSixaxisCompatible = 0x03;
 
@@ -291,6 +307,10 @@ exit:
 void GlobalState::EnumerateXusbDevices()
 {
 	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
+
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
+#endif
 
 	logger->info("Running XUSB enumeration");
 

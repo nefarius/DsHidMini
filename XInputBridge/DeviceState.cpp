@@ -5,6 +5,10 @@
 
 bool DeviceState::InitializeAsXusb(const std::wstring& Symlink, const DWORD UserIndex)
 {
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scopedSpan = trace::Scope(GlobalState::GetTracer()->StartSpan(__FUNCTION__));
+#endif
+
 	this->Type = XI_DEVICE_TYPE_NOT_CONNECTED;
 
 	this->SymbolicLink = ConvertWideToANSI(Symlink);
@@ -17,6 +21,10 @@ bool DeviceState::InitializeAsXusb(const std::wstring& Symlink, const DWORD User
 bool DeviceState::InitializeAsDs3(const std::wstring& Symlink)
 {
 	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
+
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scopedSpan = trace::Scope(GlobalState::GetTracer()->StartSpan(__FUNCTION__));
+#endif
 
 	int retries = 5;
 
@@ -87,6 +95,10 @@ bool DeviceState::InitializeAsDs3(const std::wstring& Symlink)
 
 void DeviceState::Dispose()
 {
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scopedSpan = trace::Scope(GlobalState::GetTracer()->StartSpan(__FUNCTION__));
+#endif
+
 	switch (this->Type)
 	{
 	case XI_DEVICE_TYPE_DS3:
@@ -134,6 +146,10 @@ bool DeviceState::Ds3GetPacketNumber(PDS3_RAW_INPUT_REPORT Report, DWORD* Packet
 
 bool DeviceState::Ds3GetDeviceHandle(hid_device** Handle) const
 {
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scopedSpan = trace::Scope(GlobalState::GetTracer()->StartSpan(__FUNCTION__));
+#endif
+
 	if (this->Type != XI_DEVICE_TYPE_DS3)
 		return false;
 

@@ -38,6 +38,10 @@ float GlobalState::ToAxis(UCHAR value)
 
 std::optional<std::vector<std::wstring>> GlobalState::GetSymbolicLinksForDeviceInterfaceClass(const GUID* InterfaceGuid)
 {
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
+#endif
+
 	ULONG requiredNumChars = 0;
 
 	CONFIGRET ret = CM_Get_Device_Interface_List_SizeW(
@@ -80,6 +84,10 @@ std::optional<std::vector<std::wstring>> GlobalState::GetSymbolicLinksForDeviceI
 
 std::optional<std::wstring> GlobalState::InterfaceIdToInstanceId(const std::wstring& Symlink)
 {
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
+#endif
+
 	ULONG instanceIdBytes = 0;
 	DEVPROPTYPE type{ 0 };
 
@@ -121,6 +129,10 @@ std::optional<std::wstring> GlobalState::InterfaceIdToInstanceId(const std::wstr
 
 std::optional<std::vector<std::wstring>> GlobalState::GetDeviceChildren(const std::wstring& ParentDeviceId)
 {
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
+#endif
+
 	DEVINST instance{ 0 };
 	DEVPROPTYPE type{ 0 };
 	ULONG childrenIdBytes = 0;
@@ -175,6 +187,10 @@ std::optional<std::vector<std::wstring>> GlobalState::GetDeviceChildren(const st
 
 std::optional<std::vector<std::wstring>> GlobalState::InstanceIdToHidPaths(const std::wstring& InstanceId)
 {
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
+#endif
+
 	ULONG requiredNumChars = 0;
 
 	CONFIGRET ret = CM_Get_Device_Interface_List_SizeW(
@@ -217,6 +233,10 @@ std::optional<std::vector<std::wstring>> GlobalState::InstanceIdToHidPaths(const
 
 std::optional<uint8_t> GlobalState::GetDs3HidDeviceModeProperty(const std::wstring& Ds3InstanceId)
 {
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
+#endif
+
 	DEVINST instance{ 0 };
 	DEVPROPTYPE type{ 0 };
 

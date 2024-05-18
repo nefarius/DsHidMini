@@ -21,6 +21,10 @@ DWORD GlobalState::DeviceNotificationCallback(
 	const auto _this = static_cast<GlobalState*>(Context);
 	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
 
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
+#endif
+
 	switch (Action)
 	{
 	case CM_NOTIFY_ACTION_DEVICEINTERFACEARRIVAL:
@@ -145,6 +149,10 @@ DWORD WINAPI GlobalState::InitAsync(LPVOID lpParameter)
 {
 	const auto _this = static_cast<GlobalState*>(lpParameter);
 	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
+
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
+#endif
 
 	logger->info("Async library startup initialized");
 
