@@ -68,26 +68,31 @@ class Build : NukeBuild
         {
             Logging.Level = LogLevel.Normal;
 
+            // regular Release config
+            MSBuildTasks.MSBuild(s => s
+                .SetTargetPath(Solution)
+                .SetTargets("Rebuild")
+                .SetConfiguration(Configuration)
+                .SetMaxCpuCount(Environment.ProcessorCount)
+                .SetNodeReuse(IsLocalBuild)
+            );
+
             bool enableTelemetry =
                 bool.TryParse(Environment.GetEnvironmentVariable("SCPLIB_ENABLE_TELEMETRY"), out bool isSet) && isSet;
 
-            MSBuildTasks.MSBuild(s =>
+            if (enableTelemetry)
             {
-                s
+                // OTEL build
+                MSBuildTasks.MSBuild(s => s
                     .SetTargetPath(Solution)
                     .SetTargets("Rebuild")
-                    .SetConfiguration(Configuration)
+                    .SetConfiguration("Release_OTEL")
                     .SetMaxCpuCount(Environment.ProcessorCount)
-                    .SetNodeReuse(IsLocalBuild);
-
-                if (enableTelemetry)
-                {
+                    .SetNodeReuse(IsLocalBuild)
                     // enables building with OTEL in XInputBridge
-                    s.SetProperty("SCPLIB_ENABLE_TELEMETRY", true);
-                }
-
-                return s;
-            });
+                    .SetProperty("SCPLIB_ENABLE_TELEMETRY", true)
+                );
+            }
         });
 
     /// Support plugins are available for:
