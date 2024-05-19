@@ -318,6 +318,8 @@ DWORD GlobalState::ProxyXInputSetState(DWORD dwUserIndex, XINPUT_VIBRATION* pVib
 			USHRT_MAX) * static_cast<float>(UCHAR_MAX);
 #pragma warning(default: 4244)
 
+		// TODO: setting default effect is missing, also can be macro'fied
+
 		switch (dwUserIndex)
 		{
 		case 0:
