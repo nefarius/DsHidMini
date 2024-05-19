@@ -26,7 +26,7 @@ Next major version is in progress! Here's an overview of what you'll get:
 
 Stay tuned!
 
-You can also [follow development progress on Discord](https://discord.nefarius.at/) or get notified when a release happens [on Mastodon](https://fosstodon.org/@Nefarius).
+You can also follow development progress [on Discord](https://discord.nefarius.at/) or get notified when a release happens [on Mastodon](https://fosstodon.org/@Nefarius).
 
 ## Repository activity
 
