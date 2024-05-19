@@ -311,10 +311,12 @@ DWORD GlobalState::ProxyXInputSetState(DWORD dwUserIndex, XINPUT_VIBRATION* pVib
 
 		ds3_output_report outputReport;
 
+#pragma warning(disable: 4244)
 		// ReSharper disable CppAssignedValueIsNeverUsed
 		outputReport.rumble.small_motor_on = pVibration->wRightMotorSpeed > 0 ? 1 : 0;
 		outputReport.rumble.large_motor_force = static_cast<float>(pVibration->wLeftMotorSpeed) / static_cast<float>(
 			USHRT_MAX) * static_cast<float>(UCHAR_MAX);
+#pragma warning(default: 4244)
 
 		switch (dwUserIndex)
 		{

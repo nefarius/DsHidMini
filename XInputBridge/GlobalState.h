@@ -83,7 +83,9 @@ public:
 	static std::optional<std::vector<std::wstring>> InstanceIdToHidPaths(const std::wstring& InstanceId);
 	static std::optional<uint8_t> GetDs3HidDeviceModeProperty(const std::wstring& Ds3InstanceId);
 
+#if defined(SCPLIB_ENABLE_TELEMETRY)
 	static nostd::shared_ptr<trace::Tracer> GetTracer();
+#endif
 
 private:
 	/** The states of each user index slot */
