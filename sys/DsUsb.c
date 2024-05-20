@@ -251,7 +251,6 @@ NTSTATUS DsUsb_PrepareHardware(WDFDEVICE Device)
 	WCHAR friendlyName[128];
 	size_t friendlyNameSize = 0;
 	UCHAR identification[64];
-	UINT64 hostAddress;
 
 	FuncEntry(TRACE_DSUSB);
 
