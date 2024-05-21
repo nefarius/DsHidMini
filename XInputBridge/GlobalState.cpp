@@ -163,6 +163,8 @@ bool GlobalState::SymlinkToUserIndex(_In_ PCWSTR Symlink, _Inout_ PDWORD UserInd
 	return true;
 }
 
+_Success_(return != NULL)
+_Must_inspect_result_
 DeviceState* GlobalState::GetNextFreeSlot(_Out_opt_ PULONG SlotIndex)
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
@@ -216,6 +218,7 @@ DeviceState* GlobalState::GetXusbByUserIndex(const DWORD UserIndex)
 	return state->Type == XI_DEVICE_TYPE_XUSB ? state : nullptr;
 }
 
+_Success_(return != NULL)
 _Must_inspect_result_
 bool GlobalState::GetConnectedDs3ByUserIndex(_In_ const DWORD UserIndex, _Out_opt_ DeviceState** Handle) const
 {

@@ -99,11 +99,17 @@ private:
 	/** Handle of the startup finished event */
 	HANDLE StartupFinishedEvent{ INVALID_HANDLE_VALUE };
 
+	_Success_(return != NULL)
+	_Must_inspect_result_
 	DeviceState* GetNextFreeSlot(_Out_opt_ PULONG SlotIndex = nullptr);
+
 	DeviceState* FindBySymbolicLink(const std::wstring& Symlink);
 	DeviceState* GetXusbByUserIndex(DWORD UserIndex);
+
+	_Success_(return != NULL)
 	_Must_inspect_result_
 	bool GetConnectedDs3ByUserIndex(_In_ DWORD UserIndex, _Out_opt_ DeviceState** Handle) const;
+
 	void EnumerateDs3Devices();
 	void EnumerateXusbDevices();
 

@@ -21,6 +21,12 @@ DWORD CALLBACK GlobalState::DeviceNotificationCallback(
 	const auto _this = static_cast<GlobalState*>(Context);
 	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
 
+	if (_this == nullptr)
+	{
+		logger->error("Missing state pointer");
+		return ERROR_INVALID_PARAMETER;
+	}
+
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
 #endif

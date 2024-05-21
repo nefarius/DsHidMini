@@ -60,6 +60,9 @@ std::optional<std::vector<std::wstring>> GlobalState::GetSymbolicLinksForDeviceI
 
 	auto szListBuffer = static_cast<PZZWSTR>(calloc(requiredNumChars, sizeof(WCHAR)));
 
+	if (szListBuffer == nullptr)
+		return std::nullopt;
+
 	absl::Cleanup freeBuffer = [szListBuffer]
 	{
 		free(szListBuffer);
@@ -104,6 +107,9 @@ std::optional<std::wstring> GlobalState::InterfaceIdToInstanceId(const std::wstr
 		return std::nullopt;
 
 	const auto instanceIdBuf = static_cast<PBYTE>(calloc(instanceIdBytes, 1));
+
+	if (instanceIdBuf == nullptr)
+		return std::nullopt;
 
 	absl::Cleanup freeBuffer = [instanceIdBuf]
 	{
@@ -208,6 +214,9 @@ std::optional<std::vector<std::wstring>> GlobalState::InstanceIdToHidPaths(const
 		return std::nullopt;
 
 	auto buffer = static_cast<PZZWSTR>(calloc(requiredNumChars, sizeof(WCHAR)));
+
+	if (buffer == nullptr)
+		return std::nullopt;
 
 	absl::Cleanup freeBuffer = [buffer]
 	{
