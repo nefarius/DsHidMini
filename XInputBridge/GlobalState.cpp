@@ -215,6 +215,7 @@ DeviceState* GlobalState::GetXusbByUserIndex(const DWORD UserIndex)
 	return state->Type == XI_DEVICE_TYPE_XUSB ? state : nullptr;
 }
 
+_Must_inspect_result_
 bool GlobalState::GetConnectedDs3ByUserIndex(const DWORD UserIndex, DeviceState** Handle) const
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)

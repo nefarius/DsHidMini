@@ -102,6 +102,7 @@ private:
 	DeviceState* GetNextFreeSlot(_Out_opt_ PULONG SlotIndex = nullptr);
 	DeviceState* FindBySymbolicLink(const std::wstring& Symlink);
 	DeviceState* GetXusbByUserIndex(DWORD UserIndex);
+	_Must_inspect_result_
 	bool GetConnectedDs3ByUserIndex(_In_ DWORD UserIndex, _Out_opt_ DeviceState** Handle) const;
 	void EnumerateDs3Devices();
 	void EnumerateXusbDevices();
@@ -130,6 +131,7 @@ private:
 		_In_ DWORD EventDataSize
 	);
 
+	_Must_inspect_result_
 	static bool SymlinkToUserIndex(_In_ PCWSTR Symlink, _Inout_ PDWORD UserIndex);
 
 	static DWORD WINAPI InitAsync(_In_ LPVOID lpParameter);
