@@ -13,7 +13,7 @@ public:
 
 #pragma region XInput API proxies
 
-	DWORD WINAPI ProxyXInputGetExtended(
+	DWORD ProxyXInputGetExtended(
 		_In_ DWORD dwUserIndex,
 		_Out_ SCP_EXTN* pState
 	);

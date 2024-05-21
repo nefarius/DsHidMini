@@ -7,12 +7,12 @@
 //
 // Invoked on device arrival or removal
 // 
-DWORD GlobalState::DeviceNotificationCallback(
-	HCMNOTIFICATION hNotify,
-	PVOID Context,
-	CM_NOTIFY_ACTION Action,
-	PCM_NOTIFY_EVENT_DATA EventData,
-	DWORD EventDataSize
+DWORD CALLBACK GlobalState::DeviceNotificationCallback(
+	_In_ HCMNOTIFICATION hNotify,
+	_In_opt_ PVOID Context,
+	_In_ CM_NOTIFY_ACTION Action,
+	_In_reads_bytes_(EventDataSize) PCM_NOTIFY_EVENT_DATA EventData,
+	_In_ DWORD EventDataSize
 )
 {
 	UNREFERENCED_PARAMETER(hNotify);
@@ -145,7 +145,7 @@ DWORD GlobalState::DeviceNotificationCallback(
 //
 // Initialization tasks on a background thread
 // 
-DWORD WINAPI GlobalState::InitAsync(LPVOID lpParameter)
+DWORD WINAPI GlobalState::InitAsync(_In_ LPVOID lpParameter)
 {
 	const auto _this = static_cast<GlobalState*>(lpParameter);
 	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);

@@ -1,7 +1,7 @@
 ﻿#include "GlobalState.h"
 
 
-DWORD GlobalState::ProxyXInputGetExtended(DWORD dwUserIndex, SCP_EXTN* pState)
+DWORD GlobalState::ProxyXInputGetExtended(_In_ DWORD dwUserIndex, _Out_ SCP_EXTN* pState)
 {
 	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
 
@@ -103,7 +103,7 @@ DWORD GlobalState::ProxyXInputGetExtended(DWORD dwUserIndex, SCP_EXTN* pState)
 	return status;
 }
 
-DWORD GlobalState::ProxyXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
+DWORD GlobalState::ProxyXInputGetState(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE* pState)
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__, {
@@ -275,7 +275,7 @@ DWORD GlobalState::ProxyXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 	return status;
 }
 
-DWORD GlobalState::ProxyXInputSetState(DWORD dwUserIndex, XINPUT_VIBRATION* pVibration)
+DWORD GlobalState::ProxyXInputSetState(_In_ DWORD dwUserIndex, _In_ XINPUT_VIBRATION* pVibration)
 {
 	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
 
@@ -359,7 +359,7 @@ DWORD GlobalState::ProxyXInputSetState(DWORD dwUserIndex, XINPUT_VIBRATION* pVib
 	return status;
 }
 
-DWORD GlobalState::ProxyXInputGetCapabilities(DWORD dwUserIndex, DWORD dwFlags, XINPUT_CAPABILITIES* pCapabilities)
+DWORD GlobalState::ProxyXInputGetCapabilities(_In_ DWORD dwUserIndex, _In_ DWORD dwFlags, _Out_ XINPUT_CAPABILITIES* pCapabilities)
 {
 	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
 
@@ -430,7 +430,7 @@ DWORD GlobalState::ProxyXInputGetCapabilities(DWORD dwUserIndex, DWORD dwFlags, 
 	return status;
 }
 
-void GlobalState::ProxyXInputEnable(BOOL enable) const
+void GlobalState::ProxyXInputEnable(_In_ BOOL enable) const
 {
 	CALL_FPN_SAFE_NO_RETURN(FpnXInputEnable, enable);
 }
@@ -451,9 +451,9 @@ DWORD GlobalState::ProxyXInputGetDSoundAudioDeviceGuids(DWORD dwUserIndex, GUID*
 	return ERROR_DEVICE_NOT_CONNECTED;
 }
 
-DWORD GlobalState::ProxyXInputGetBatteryInformation(DWORD dwUserIndex,
-                                                    BYTE devType,
-                                                    XINPUT_BATTERY_INFORMATION* pBatteryInformation)
+DWORD GlobalState::ProxyXInputGetBatteryInformation(_In_ DWORD dwUserIndex,
+                                                    _In_ BYTE devType,
+                                                    _Out_ XINPUT_BATTERY_INFORMATION* pBatteryInformation)
 {
 	AcquireSRWLockShared(&this->StatesLock);
 	absl::Cleanup lockRelease = [this]
@@ -485,7 +485,7 @@ DWORD GlobalState::ProxyXInputGetKeystroke(DWORD dwUserIndex, DWORD dwReserved, 
 	return ERROR_DEVICE_NOT_CONNECTED;
 }
 
-DWORD GlobalState::ProxyXInputGetStateEx(DWORD dwUserIndex, XINPUT_STATE* pState)
+DWORD GlobalState::ProxyXInputGetStateEx(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE* pState)
 {
 	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
 
@@ -640,7 +640,7 @@ DWORD GlobalState::ProxyXInputGetStateEx(DWORD dwUserIndex, XINPUT_STATE* pState
 	return status;
 }
 
-DWORD GlobalState::ProxyXInputWaitForGuideButton(DWORD dwUserIndex, DWORD dwFlag, LPVOID pVoid)
+DWORD GlobalState::ProxyXInputWaitForGuideButton(_In_ DWORD dwUserIndex, _In_ DWORD dwFlag, _In_ LPVOID pVoid)
 {
 	AcquireSRWLockShared(&this->StatesLock);
 	absl::Cleanup lockRelease = [this]
@@ -656,7 +656,7 @@ DWORD GlobalState::ProxyXInputWaitForGuideButton(DWORD dwUserIndex, DWORD dwFlag
 	return ERROR_DEVICE_NOT_CONNECTED;
 }
 
-DWORD GlobalState::ProxyXInputCancelGuideButtonWait(DWORD dwUserIndex)
+DWORD GlobalState::ProxyXInputCancelGuideButtonWait(_In_ DWORD dwUserIndex)
 {
 	AcquireSRWLockShared(&this->StatesLock);
 	absl::Cleanup lockRelease = [this]
@@ -672,7 +672,7 @@ DWORD GlobalState::ProxyXInputCancelGuideButtonWait(DWORD dwUserIndex)
 	return ERROR_DEVICE_NOT_CONNECTED;
 }
 
-DWORD GlobalState::ProxyXInputPowerOffController(DWORD dwUserIndex)
+DWORD GlobalState::ProxyXInputPowerOffController(_In_ DWORD dwUserIndex)
 {
 	AcquireSRWLockShared(&this->StatesLock);
 	absl::Cleanup lockRelease = [this]

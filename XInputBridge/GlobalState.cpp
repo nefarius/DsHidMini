@@ -84,7 +84,8 @@ void GlobalState::Destroy() const
 //
 // https://github.com/DJm00n/RawInputDemo/blob/master/RawInputLib/RawInputDeviceHid.cpp#L275-L339
 // 
-bool GlobalState::SymlinkToUserIndex(PCWSTR Symlink, PDWORD UserIndex)
+_Must_inspect_result_
+bool GlobalState::SymlinkToUserIndex(_In_ PCWSTR Symlink, _Inout_ PDWORD UserIndex)
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
@@ -216,7 +217,7 @@ DeviceState* GlobalState::GetXusbByUserIndex(const DWORD UserIndex)
 }
 
 _Must_inspect_result_
-bool GlobalState::GetConnectedDs3ByUserIndex(const DWORD UserIndex, DeviceState** Handle) const
+bool GlobalState::GetConnectedDs3ByUserIndex(_In_ const DWORD UserIndex, _Out_opt_ DeviceState** Handle) const
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__, {

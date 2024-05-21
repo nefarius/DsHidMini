@@ -118,7 +118,8 @@ void DeviceState::Dispose()
 	this->Type = XI_DEVICE_TYPE_NOT_CONNECTED;
 }
 
-bool DeviceState::Ds3GetPacketNumber(PDS3_RAW_INPUT_REPORT Report, DWORD* PacketNumber)
+_Must_inspect_result_
+bool DeviceState::Ds3GetPacketNumber(_In_ PDS3_RAW_INPUT_REPORT Report, _Inout_ DWORD* PacketNumber)
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scopedSpan = trace::Scope(GlobalState::GetTracer()->StartSpan(__FUNCTION__));
@@ -144,7 +145,8 @@ bool DeviceState::Ds3GetPacketNumber(PDS3_RAW_INPUT_REPORT Report, DWORD* Packet
 	return true;
 }
 
-bool DeviceState::Ds3GetDeviceHandle(hid_device** Handle) const
+_Must_inspect_result_
+bool DeviceState::Ds3GetDeviceHandle(_Inout_opt_ hid_device** Handle) const
 {
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scopedSpan = trace::Scope(GlobalState::GetTracer()->StartSpan(__FUNCTION__));
