@@ -12,6 +12,9 @@
 EXTERN_C IMAGE_DOS_HEADER __ImageBase; // NOLINT(bugprone-reserved-identifier)
 
 
+
+
+
 //
 // Initialization safe to perform in DllMain
 // 
@@ -20,28 +23,6 @@ void GlobalState::Initialize()
 	InitializeSRWLock(&StatesLock);
 
 	this->StartupFinishedEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr);
-
-	CHAR dllPath[MAX_PATH];
-
-	GetModuleFileNameA((HINSTANCE)&__ImageBase, dllPath, MAX_PATH);
-	PathRemoveFileSpecA(dllPath);
-	const auto dllDir = std::string(dllPath);
-
-	auto logger = spdlog::basic_logger_mt(
-		LOGGER_NAME,
-		dllDir + "\\" LOGGER_NAME ".log"
-	);
-
-#if _DEBUG
-	spdlog::set_level(spdlog::level::debug);
-	logger->flush_on(spdlog::level::debug);
-#else
-	logger->flush_on(spdlog::level::info);
-#endif
-
-	set_default_logger(logger);
-
-	logger->info("Library got loaded into PID {}", GetCurrentProcessId());
 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	//
@@ -68,6 +49,9 @@ void GlobalState::Initialize()
 	const std::shared_ptr loggerProvider = sdklogs::LoggerProviderFactory::Create(std::move(loggerProcessor), resource);
 
 	logs::Provider::SetLoggerProvider(loggerProvider);
+
+	const auto logger = GlobalState::GetLogger(__FUNCTION__);
+	LOG_INFO("Library got loaded into PID {}", GetCurrentProcessId());
 #endif
 
 	//
@@ -77,7 +61,7 @@ void GlobalState::Initialize()
 
 	if (hThread == nullptr)
 	{
-		logger->error("Failed to create thread");
+		LOG_ERROR("Failed to create thread");
 	}
 }
 

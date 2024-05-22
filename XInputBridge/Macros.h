@@ -37,3 +37,12 @@ DEFINE_GUID(XUSB_INTERFACE_CLASS_GUID,
 #define CALL_FPN_SAFE(fpn, ...)	((fpn)) ? (fpn)(__VA_ARGS__) : ERROR_DEVICE_NOT_CONNECTED
 #define CALL_FPN_SAFE_NO_RETURN(fpn, ...)	((fpn)) ? (fpn)(__VA_ARGS__) : void(0)
 
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+#define LOG_INFO(_body_, ...)	GlobalState::GetLogger(__FUNCTION__)->Info(fmt::format(_body_, __VA_ARGS__))
+#define LOG_WARN(_body_, ...)	GlobalState::GetLogger(__FUNCTION__)->Warn(fmt::format(_body_, __VA_ARGS__))
+#define LOG_ERROR(_body_, ...)	GlobalState::GetLogger(__FUNCTION__)->Error(fmt::format(_body_, __VA_ARGS__))
+#else
+#define LOG_INFO(_body_, ...)
+#define LOG_WARN(_body_, ...)
+#define LOG_ERROR(_body_, ...)
+#endif
