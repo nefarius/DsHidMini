@@ -40,10 +40,6 @@
 // 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 #define HAVE_ABSEIL // fixes redefinitions of absl types
-// HTTP exporter
-#include <opentelemetry/exporters/otlp/otlp_http_exporter_factory.h>
-#include <opentelemetry/exporters/otlp/otlp_http_exporter_options.h>
-
 // gRPC exporter
 #include <opentelemetry/exporters/otlp/otlp_grpc_exporter_factory.h>
 #include <opentelemetry/exporters/otlp/otlp_grpc_exporter_options.h>
@@ -61,10 +57,6 @@ namespace nostd			= opentelemetry::nostd;
 namespace sdktrace		= opentelemetry::sdk::trace;
 namespace otlp			= opentelemetry::exporter::otlp;
 namespace sdkresource	= opentelemetry::sdk::resource;
-
-// HTTP exporter
-#include <opentelemetry/exporters/otlp/otlp_http_log_record_exporter_factory.h>
-#include <opentelemetry/exporters/otlp/otlp_http_log_record_exporter_options.h>
 
 // gRPC exporter
 #include <opentelemetry/exporters/otlp/otlp_grpc_log_record_exporter_factory.h>

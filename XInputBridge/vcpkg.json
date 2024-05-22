@@ -11,7 +11,7 @@
     { "name": "fmt" },
     {
       "name": "opentelemetry-cpp",
-      "features": [ "otlp-http", "otlp-grpc" ]
+      "features": [ "otlp-grpc" ]
     }
   ]
 }
