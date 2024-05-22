@@ -3,6 +3,10 @@
 
 DWORD GlobalState::ProxyXInputGetExtended(_In_ DWORD dwUserIndex, _Out_ SCP_EXTN* pState)
 {
+	auto scopedSpan = TRACE_SCOPED_SPAN("",
+		{ "xinput.userIndex", std::to_string(dwUserIndex) }
+	);
+
 	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
 
 	AcquireSRWLockShared(&this->StatesLock);
@@ -31,12 +35,18 @@ DWORD GlobalState::ProxyXInputGetExtended(_In_ DWORD dwUserIndex, _Out_ SCP_EXTN
 		UCHAR buf[SXS_MODE_GET_FEATURE_BUFFER_LEN];
 		buf[0] = SXS_MODE_GET_FEATURE_REPORT_ID;
 
+		const auto readReportSpan = TRACE_SPAN("hid_get_feature_report");
+
 		const int res = hid_get_feature_report(state->HidDeviceHandle, buf, ARRAYSIZE(buf));
+
+		TRACE_SPAN_END(readReportSpan);
 
 		if (res == 0)
 			break;
 
 		const auto pReport = reinterpret_cast<PDS3_RAW_INPUT_REPORT>(&buf[1]);
+
+		const auto transformReportSpan = TRACE_SPAN("Report Transformation");
 
 		RtlZeroMemory(pState, sizeof(SCP_EXTN));
 
@@ -96,6 +106,8 @@ DWORD GlobalState::ProxyXInputGetExtended(_In_ DWORD dwUserIndex, _Out_ SCP_EXTN
 			pState->SCP_RX = ToAxis(pReport->RightThumbX);
 		if (IS_OUTSIDE_DZ(pReport->RightThumbY))
 			pState->SCP_RY = ToAxis(pReport->RightThumbY) * -1.0f;
+
+		TRACE_SPAN_END(transformReportSpan);
 
 		status = ERROR_SUCCESS;
 	} while (FALSE);
