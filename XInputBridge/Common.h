@@ -24,6 +24,11 @@
 #include <thread>
 
 //
+// libfmt
+// 
+#include <fmt/core.h>
+
+//
 // Logging
 // 
 #include <spdlog/logger.h>

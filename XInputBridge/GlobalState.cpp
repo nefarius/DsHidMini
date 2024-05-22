@@ -83,44 +83,17 @@ void GlobalState::Initialize()
 
 void GlobalState::Destroy() const
 {
-	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	const auto logger = GetLogger(__FUNCTION__);
 
-	logger->info("Library getting unloaded from PID {}", GetCurrentProcessId());
+	logger->Info(fmt::format("Library getting unloaded from PID {}", GetCurrentProcessId()));
+#endif
 
 	(void)CloseHandle(this->StartupFinishedEvent);
 	(void)CM_Unregister_Notification(this->Ds3NotificationHandle);
 	(void)CM_Unregister_Notification(this->XusbNotificationHandle);
 
 	(void)hid_exit();
-
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	//
-	// Clean up tracer
-	// 
-
-	nostd::shared_ptr<trace::TracerProvider> traceProvider = trace::Provider::GetTracerProvider();
-	if (traceProvider)
-	{
-		static_cast<sdktrace::TracerProvider*>(traceProvider.get())->ForceFlush();
-	}
-
-	std::shared_ptr<trace::TracerProvider> tracerNone;
-	trace::Provider::SetTracerProvider(tracerNone);
-
-	//
-	// Clean up logger
-	// 
-
-	nostd::shared_ptr<logs::LoggerProvider> logProvider =
-	logs::Provider::GetLoggerProvider();
-	if (logProvider)
-	{
-		static_cast<sdklogs::LoggerProvider*>(logProvider.get())->ForceFlush();
-	}
-
-	std::shared_ptr<logs::LoggerProvider> loggerNone;
-	logs::Provider::SetLoggerProvider(loggerNone);
-#endif
 }
 
 //

@@ -9,6 +9,7 @@
     { "name": "spdlog" },
     { "name": "abseil" },
     { "name": "winreg" },
+    { "name": "fmt" },
     {
       "name": "opentelemetry-cpp",
       "features": [ "otlp-http", "otlp-grpc" ]
