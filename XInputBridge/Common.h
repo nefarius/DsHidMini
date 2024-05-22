@@ -22,6 +22,7 @@
 #include <string>
 #include <memory>
 #include <thread>
+#include <array>
 
 //
 // libfmt
