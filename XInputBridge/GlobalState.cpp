@@ -67,11 +67,7 @@ void GlobalState::Initialize()
 
 void GlobalState::Destroy() const
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	const auto logger = GetLogger(__FUNCTION__);
-
-	logger->Info(fmt::format("Library getting unloaded from PID {}", GetCurrentProcessId()));
-#endif
+	LOG_INFO("Library getting unloaded from PID {}", GetCurrentProcessId());
 
 	(void)CloseHandle(this->StartupFinishedEvent);
 	(void)CM_Unregister_Notification(this->Ds3NotificationHandle);
