@@ -19,7 +19,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 	_Out_ SCP_EXTN* pState
 )
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN({ "xinput.userIndex", std::to_string(dwUserIndex) });
+	auto scopedSpan = TRACE_SCOPED_SPAN("", { "xinput.userIndex", std::to_string(dwUserIndex) });
 
 	return G_State.ProxyXInputGetExtended(dwUserIndex, pState);
 }
@@ -29,7 +29,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 	_Out_ XINPUT_STATE* pState
 )
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN({ "xinput.userIndex", std::to_string(dwUserIndex) });
+	auto scopedSpan = TRACE_SCOPED_SPAN("", { "xinput.userIndex", std::to_string(dwUserIndex) });
 
 	return G_State.ProxyXInputGetState(dwUserIndex, pState);
 }
@@ -39,7 +39,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
 	_In_ XINPUT_VIBRATION* pVibration
 )
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN({ "xinput.userIndex", std::to_string(dwUserIndex) });
+	auto scopedSpan = TRACE_SCOPED_SPAN("", { "xinput.userIndex", std::to_string(dwUserIndex) });
 
 	return G_State.ProxyXInputSetState(dwUserIndex, pVibration);
 }
@@ -50,7 +50,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 	_Out_ XINPUT_CAPABILITIES* pCapabilities
 )
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN({ "xinput.userIndex", std::to_string(dwUserIndex) });
+	auto scopedSpan = TRACE_SCOPED_SPAN("", { "xinput.userIndex", std::to_string(dwUserIndex) });
 
 	return G_State.ProxyXInputGetCapabilities(dwUserIndex, dwFlags, pCapabilities);
 }
@@ -59,7 +59,7 @@ XINPUTBRIDGE_API void WINAPI XInputEnable(
 	_In_ BOOL enable
 )
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN();
+	auto scopedSpan = TRACE_SCOPED_SPAN("");
 
 	G_State.ProxyXInputEnable(enable);
 }
@@ -70,7 +70,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetDSoundAudioDeviceGuids(
 	GUID* pDSoundCaptureGuid
 )
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN({ "xinput.userIndex", std::to_string(dwUserIndex) });
+	auto scopedSpan = TRACE_SCOPED_SPAN("", { "xinput.userIndex", std::to_string(dwUserIndex) });
 
 	return G_State.ProxyXInputGetDSoundAudioDeviceGuids(dwUserIndex, pDSoundRenderGuid, pDSoundCaptureGuid);
 }
@@ -81,7 +81,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetBatteryInformation(
 	_Out_ XINPUT_BATTERY_INFORMATION* pBatteryInformation
 )
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN({ "xinput.userIndex", std::to_string(dwUserIndex) });
+	auto scopedSpan = TRACE_SCOPED_SPAN("", { "xinput.userIndex", std::to_string(dwUserIndex) });
 
 	return G_State.ProxyXInputGetBatteryInformation(dwUserIndex, devType, pBatteryInformation);
 }
@@ -92,7 +92,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetKeystroke(
 	PXINPUT_KEYSTROKE pKeystroke
 )
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN({ "xinput.userIndex", std::to_string(dwUserIndex) });
+	auto scopedSpan = TRACE_SCOPED_SPAN("", { "xinput.userIndex", std::to_string(dwUserIndex) });
 
 	return G_State.ProxyXInputGetKeystroke(dwUserIndex, dwReserved, pKeystroke);
 }
@@ -102,7 +102,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
 	_Out_ XINPUT_STATE* pState
 )
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN({ "xinput.userIndex", std::to_string(dwUserIndex) });
+	auto scopedSpan = TRACE_SCOPED_SPAN("", { "xinput.userIndex", std::to_string(dwUserIndex) });
 
 	return G_State.ProxyXInputGetStateEx(dwUserIndex, pState);
 }
@@ -113,7 +113,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputWaitForGuideButton(
 	_In_ LPVOID pVoid
 )
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN({ "xinput.userIndex", std::to_string(dwUserIndex) });
+	auto scopedSpan = TRACE_SCOPED_SPAN("", { "xinput.userIndex", std::to_string(dwUserIndex) });
 
 	return G_State.ProxyXInputWaitForGuideButton(dwUserIndex, dwFlag, pVoid);
 }
@@ -122,7 +122,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputCancelGuideButtonWait(
 	_In_ DWORD dwUserIndex
 )
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN({ "xinput.userIndex", std::to_string(dwUserIndex) });
+	auto scopedSpan = TRACE_SCOPED_SPAN("", { "xinput.userIndex", std::to_string(dwUserIndex) });
 
 	return G_State.ProxyXInputCancelGuideButtonWait(dwUserIndex);
 }
@@ -131,7 +131,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputPowerOffController(
 	_In_ DWORD dwUserIndex
 )
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN({ "xinput.userIndex", std::to_string(dwUserIndex) });
+	auto scopedSpan = TRACE_SCOPED_SPAN("", { "xinput.userIndex", std::to_string(dwUserIndex) });
 
 	return G_State.ProxyXInputPowerOffController(dwUserIndex);
 }

@@ -5,7 +5,7 @@
 
 bool DeviceState::InitializeAsXusb(const std::wstring& Symlink, const DWORD UserIndex)
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN(
+	auto scopedSpan = TRACE_SCOPED_SPAN("",
 		{ "device.symlink", ConvertWideToANSI(Symlink) },
 		{ "device.userIndex", std::to_string(UserIndex) }
 	);
@@ -21,7 +21,7 @@ bool DeviceState::InitializeAsXusb(const std::wstring& Symlink, const DWORD User
 
 bool DeviceState::InitializeAsDs3(const std::wstring& Symlink)
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN(
+	auto scopedSpan = TRACE_SCOPED_SPAN("",
 		{ "device.symlink", ConvertWideToANSI(Symlink) }
 	);
 
@@ -94,7 +94,7 @@ bool DeviceState::InitializeAsDs3(const std::wstring& Symlink)
 
 void DeviceState::Dispose()
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN();
+	auto scopedSpan = TRACE_SCOPED_SPAN("");
 
 	switch (this->Type)
 	{
@@ -118,7 +118,7 @@ void DeviceState::Dispose()
 _Must_inspect_result_
 bool DeviceState::Ds3GetPacketNumber(_In_ PDS3_RAW_INPUT_REPORT Report, _Inout_ DWORD* PacketNumber)
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN();
+	auto scopedSpan = TRACE_SCOPED_SPAN("");
 
 	if (!Report || !PacketNumber)
 		return false;
@@ -143,7 +143,7 @@ bool DeviceState::Ds3GetPacketNumber(_In_ PDS3_RAW_INPUT_REPORT Report, _Inout_ 
 _Must_inspect_result_
 bool DeviceState::Ds3GetDeviceHandle(_Inout_opt_ hid_device** Handle) const
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN();
+	auto scopedSpan = TRACE_SCOPED_SPAN("");
 
 	if (this->Type != XI_DEVICE_TYPE_DS3)
 		return false;

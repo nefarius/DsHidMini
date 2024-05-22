@@ -105,7 +105,7 @@ DWORD GlobalState::ProxyXInputGetExtended(_In_ DWORD dwUserIndex, _Out_ SCP_EXTN
 
 DWORD GlobalState::ProxyXInputGetState(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE* pState)
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN(
+	auto scopedSpan = TRACE_SCOPED_SPAN("",
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
 	);
 
@@ -144,15 +144,11 @@ DWORD GlobalState::ProxyXInputGetState(_In_ DWORD dwUserIndex, _Out_ XINPUT_STAT
 		UCHAR buf[SXS_MODE_GET_FEATURE_BUFFER_LEN];
 		buf[0] = SXS_MODE_GET_FEATURE_REPORT_ID;
 
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-		const auto readReportSpan = GetTracer()->StartSpan("hid_get_feature_report");
-#endif
+		const auto readReportSpan = TRACE_SPAN("hid_get_feature_report");
 
 		const int res = hid_get_feature_report(state->HidDeviceHandle, buf, ARRAYSIZE(buf));
 
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-		readReportSpan->End();
-#endif
+		TRACE_SPAN_END(readReportSpan);
 
 		if (res <= 0)
 			break;
@@ -166,9 +162,7 @@ DWORD GlobalState::ProxyXInputGetState(_In_ DWORD dwUserIndex, _Out_ XINPUT_STAT
 		if (!state->Ds3GetPacketNumber(pReport, &pState->dwPacketNumber))
 			break;
 
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-		const auto transformReportSpan = GetTracer()->StartSpan("Report Transformation");
-#endif
+		const auto transformReportSpan = TRACE_SPAN("Report Transformation");
 
 		RtlZeroMemory(&pState->Gamepad, sizeof(pState->Gamepad));
 
@@ -263,9 +257,7 @@ DWORD GlobalState::ProxyXInputGetState(_In_ DWORD dwUserIndex, _Out_ XINPUT_STAT
 		if (IS_OUTSIDE_DZ(pReport->RightThumbY))
 			pState->Gamepad.sThumbRY = ScaleDsToXi(pReport->RightThumbY, TRUE);
 
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-		transformReportSpan->End();
-#endif
+		TRACE_SPAN_END(transformReportSpan);
 
 		status = ERROR_SUCCESS;
 	} while (FALSE);
@@ -430,11 +422,15 @@ DWORD GlobalState::ProxyXInputGetCapabilities(_In_ DWORD dwUserIndex, _In_ DWORD
 
 void GlobalState::ProxyXInputEnable(_In_ BOOL enable) const
 {
+	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
+
 	CALL_FPN_SAFE_NO_RETURN(FpnXInputEnable, enable);
 }
 
 DWORD GlobalState::ProxyXInputGetDSoundAudioDeviceGuids(DWORD dwUserIndex, GUID* pDSoundRenderGuid, GUID* pDSoundCaptureGuid)
 {
+	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
+
 	AcquireSRWLockShared(&this->StatesLock);
 	absl::Cleanup lockRelease = [this]
 	{
@@ -453,6 +449,8 @@ DWORD GlobalState::ProxyXInputGetBatteryInformation(_In_ DWORD dwUserIndex,
                                                     _In_ BYTE devType,
                                                     _Out_ XINPUT_BATTERY_INFORMATION* pBatteryInformation)
 {
+	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
+
 	AcquireSRWLockShared(&this->StatesLock);
 	absl::Cleanup lockRelease = [this]
 	{
@@ -469,6 +467,8 @@ DWORD GlobalState::ProxyXInputGetBatteryInformation(_In_ DWORD dwUserIndex,
 
 DWORD GlobalState::ProxyXInputGetKeystroke(DWORD dwUserIndex, DWORD dwReserved, PXINPUT_KEYSTROKE pKeystroke)
 {
+	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
+
 	AcquireSRWLockShared(&this->StatesLock);
 	absl::Cleanup lockRelease = [this]
 	{
@@ -640,6 +640,8 @@ DWORD GlobalState::ProxyXInputGetStateEx(_In_ DWORD dwUserIndex, _Out_ XINPUT_ST
 
 DWORD GlobalState::ProxyXInputWaitForGuideButton(_In_ DWORD dwUserIndex, _In_ DWORD dwFlag, _In_ LPVOID pVoid)
 {
+	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
+
 	AcquireSRWLockShared(&this->StatesLock);
 	absl::Cleanup lockRelease = [this]
 	{
@@ -656,6 +658,8 @@ DWORD GlobalState::ProxyXInputWaitForGuideButton(_In_ DWORD dwUserIndex, _In_ DW
 
 DWORD GlobalState::ProxyXInputCancelGuideButtonWait(_In_ DWORD dwUserIndex)
 {
+	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
+
 	AcquireSRWLockShared(&this->StatesLock);
 	absl::Cleanup lockRelease = [this]
 	{
@@ -672,6 +676,8 @@ DWORD GlobalState::ProxyXInputCancelGuideButtonWait(_In_ DWORD dwUserIndex)
 
 DWORD GlobalState::ProxyXInputPowerOffController(_In_ DWORD dwUserIndex)
 {
+	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
+
 	AcquireSRWLockShared(&this->StatesLock);
 	absl::Cleanup lockRelease = [this]
 	{

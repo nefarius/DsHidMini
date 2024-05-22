@@ -9,7 +9,7 @@
 
 SHORT GlobalState::ScaleDsToXi(UCHAR value, BOOLEAN invert)
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN();
+	auto scopedSpan = TRACE_SCOPED_SPAN("");
 
 	auto intValue = value - 0x80;
 	if (intValue == -128)
@@ -22,7 +22,7 @@ SHORT GlobalState::ScaleDsToXi(UCHAR value, BOOLEAN invert)
 
 float GlobalState::ClampAxis(float value)
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN();
+	auto scopedSpan = TRACE_SCOPED_SPAN("");
 
 	if (value > 1.0f)
 		return 1.0f;
@@ -33,14 +33,14 @@ float GlobalState::ClampAxis(float value)
 
 float GlobalState::ToAxis(UCHAR value)
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN();
+	auto scopedSpan = TRACE_SCOPED_SPAN("");
 
 	return ClampAxis((((value & 0xFF) - 0x7F) * 2) / 254.0f);
 }
 
 std::optional<std::vector<std::wstring>> GlobalState::GetSymbolicLinksForDeviceInterfaceClass(const GUID* InterfaceGuid)
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN();
+	auto scopedSpan = TRACE_SCOPED_SPAN("");
 
 	ULONG requiredNumChars = 0;
 
@@ -87,7 +87,7 @@ std::optional<std::vector<std::wstring>> GlobalState::GetSymbolicLinksForDeviceI
 
 std::optional<std::wstring> GlobalState::InterfaceIdToInstanceId(const std::wstring& Symlink)
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN({ "util.symlink", ConvertWideToANSI(Symlink) });
+	auto scopedSpan = TRACE_SCOPED_SPAN("", { "util.symlink", ConvertWideToANSI(Symlink) });
 
 	ULONG instanceIdBytes = 0;
 	DEVPROPTYPE type{ 0 };
@@ -133,7 +133,7 @@ std::optional<std::wstring> GlobalState::InterfaceIdToInstanceId(const std::wstr
 
 std::optional<std::vector<std::wstring>> GlobalState::GetDeviceChildren(const std::wstring& ParentDeviceId)
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN({ "util.parentDeviceId", ConvertWideToANSI(ParentDeviceId) });
+	auto scopedSpan = TRACE_SCOPED_SPAN("", { "util.parentDeviceId", ConvertWideToANSI(ParentDeviceId) });
 
 	DEVINST instance{ 0 };
 	DEVPROPTYPE type{ 0 };
@@ -189,7 +189,7 @@ std::optional<std::vector<std::wstring>> GlobalState::GetDeviceChildren(const st
 
 std::optional<std::vector<std::wstring>> GlobalState::InstanceIdToHidPaths(const std::wstring& InstanceId)
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN({ "util.instanceId", ConvertWideToANSI(InstanceId) });
+	auto scopedSpan = TRACE_SCOPED_SPAN("", { "util.instanceId", ConvertWideToANSI(InstanceId) });
 
 	ULONG requiredNumChars = 0;
 
@@ -236,7 +236,7 @@ std::optional<std::vector<std::wstring>> GlobalState::InstanceIdToHidPaths(const
 
 std::optional<uint8_t> GlobalState::GetDs3HidDeviceModeProperty(const std::wstring& Ds3InstanceId)
 {
-	auto scopedSpan = TRACE_SCOPED_SPAN({ "util.instanceId", ConvertWideToANSI(Ds3InstanceId) });
+	auto scopedSpan = TRACE_SCOPED_SPAN("", { "util.instanceId", ConvertWideToANSI(Ds3InstanceId) });
 
 	DEVINST instance{ 0 };
 	DEVPROPTYPE type{ 0 };

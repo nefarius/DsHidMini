@@ -26,7 +26,7 @@ DWORD CALLBACK GlobalState::DeviceNotificationCallback(
 		return ERROR_INVALID_PARAMETER;
 	}
 
-	auto scopedSpan = TRACE_SCOPED_SPAN();
+	auto scopedSpan = TRACE_SCOPED_SPAN("");
 
 	switch (Action)
 	{
@@ -180,7 +180,7 @@ DWORD WINAPI GlobalState::InitAsync(_In_ LPVOID lpParameter)
 #endif
 
 	const auto _this = static_cast<GlobalState*>(lpParameter);
-	auto scopedSpan = TRACE_SCOPED_SPAN();
+	auto scopedSpan = TRACE_SCOPED_SPAN("");
 
 	LOG_INFO("Async library startup initialized");
 
