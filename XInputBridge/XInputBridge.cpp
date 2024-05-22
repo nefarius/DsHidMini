@@ -19,11 +19,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetExtended(
 	_Out_ SCP_EXTN* pState
 )
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GlobalState::GetTracer()->StartSpan(__FUNCTION__, {
-		{ "xinput.userIndex", std::to_string(dwUserIndex) }
-		}));
-#endif
+	auto scopedSpan = TRACE_SCOPED_SPAN({ "xinput.userIndex", std::to_string(dwUserIndex) });
 
 	return G_State.ProxyXInputGetExtended(dwUserIndex, pState);
 }
@@ -33,11 +29,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetState(
 	_Out_ XINPUT_STATE* pState
 )
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GlobalState::GetTracer()->StartSpan(__FUNCTION__, {
-		{ "xinput.userIndex", std::to_string(dwUserIndex) }
-		}));
-#endif
+	auto scopedSpan = TRACE_SCOPED_SPAN({ "xinput.userIndex", std::to_string(dwUserIndex) });
 
 	return G_State.ProxyXInputGetState(dwUserIndex, pState);
 }
@@ -47,11 +39,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputSetState(
 	_In_ XINPUT_VIBRATION* pVibration
 )
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scoped_span = trace::Scope(GlobalState::GetTracer()->StartSpan(__FUNCTION__, {
-		{ "xinput.userIndex", std::to_string(dwUserIndex) }
-		}));
-#endif
+	auto scopedSpan = TRACE_SCOPED_SPAN({ "xinput.userIndex", std::to_string(dwUserIndex) });
 
 	return G_State.ProxyXInputSetState(dwUserIndex, pVibration);
 }
@@ -62,11 +50,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetCapabilities(
 	_Out_ XINPUT_CAPABILITIES* pCapabilities
 )
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GlobalState::GetTracer()->StartSpan(__FUNCTION__, {
-		{ "xinput.userIndex", std::to_string(dwUserIndex) }
-		}));
-#endif
+	auto scopedSpan = TRACE_SCOPED_SPAN({ "xinput.userIndex", std::to_string(dwUserIndex) });
 
 	return G_State.ProxyXInputGetCapabilities(dwUserIndex, dwFlags, pCapabilities);
 }
@@ -75,9 +59,7 @@ XINPUTBRIDGE_API void WINAPI XInputEnable(
 	_In_ BOOL enable
 )
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GlobalState::GetTracer()->StartSpan(__FUNCTION__));
-#endif
+	auto scopedSpan = TRACE_SCOPED_SPAN();
 
 	G_State.ProxyXInputEnable(enable);
 }
@@ -88,12 +70,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetDSoundAudioDeviceGuids(
 	GUID* pDSoundCaptureGuid
 )
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	const auto span = GlobalState::GetTracer()->StartSpan(__FUNCTION__, {
-		{ "xinput.userIndex", std::to_string(dwUserIndex) }
-		});
-	auto scopedSpan = trace::Scope(span);
-#endif
+	auto scopedSpan = TRACE_SCOPED_SPAN({ "xinput.userIndex", std::to_string(dwUserIndex) });
 
 	return G_State.ProxyXInputGetDSoundAudioDeviceGuids(dwUserIndex, pDSoundRenderGuid, pDSoundCaptureGuid);
 }
@@ -104,12 +81,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetBatteryInformation(
 	_Out_ XINPUT_BATTERY_INFORMATION* pBatteryInformation
 )
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	const auto span = GlobalState::GetTracer()->StartSpan(__FUNCTION__, {
-		{ "xinput.userIndex", std::to_string(dwUserIndex) }
-		});
-	auto scopedSpan = trace::Scope(span);
-#endif
+	auto scopedSpan = TRACE_SCOPED_SPAN({ "xinput.userIndex", std::to_string(dwUserIndex) });
 
 	return G_State.ProxyXInputGetBatteryInformation(dwUserIndex, devType, pBatteryInformation);
 }
@@ -120,12 +92,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetKeystroke(
 	PXINPUT_KEYSTROKE pKeystroke
 )
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	const auto span = GlobalState::GetTracer()->StartSpan(__FUNCTION__, {
-		{ "xinput.userIndex", std::to_string(dwUserIndex) }
-		});
-	auto scopedSpan = trace::Scope(span);
-#endif
+	auto scopedSpan = TRACE_SCOPED_SPAN({ "xinput.userIndex", std::to_string(dwUserIndex) });
 
 	return G_State.ProxyXInputGetKeystroke(dwUserIndex, dwReserved, pKeystroke);
 }
@@ -135,11 +102,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputGetStateEx(
 	_Out_ XINPUT_STATE* pState
 )
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GlobalState::GetTracer()->StartSpan(__FUNCTION__, {
-		{ "xinput.userIndex", std::to_string(dwUserIndex) }
-		}));
-#endif
+	auto scopedSpan = TRACE_SCOPED_SPAN({ "xinput.userIndex", std::to_string(dwUserIndex) });
 
 	return G_State.ProxyXInputGetStateEx(dwUserIndex, pState);
 }
@@ -150,12 +113,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputWaitForGuideButton(
 	_In_ LPVOID pVoid
 )
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	const auto span = GlobalState::GetTracer()->StartSpan(__FUNCTION__, {
-		{ "xinput.userIndex", std::to_string(dwUserIndex) }
-		});
-	auto scopedSpan = trace::Scope(span);
-#endif
+	auto scopedSpan = TRACE_SCOPED_SPAN({ "xinput.userIndex", std::to_string(dwUserIndex) });
 
 	return G_State.ProxyXInputWaitForGuideButton(dwUserIndex, dwFlag, pVoid);
 }
@@ -164,12 +122,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputCancelGuideButtonWait(
 	_In_ DWORD dwUserIndex
 )
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	const auto span = GlobalState::GetTracer()->StartSpan(__FUNCTION__, {
-		{ "xinput.userIndex", std::to_string(dwUserIndex) }
-		});
-	auto scopedSpan = trace::Scope(span);
-#endif
+	auto scopedSpan = TRACE_SCOPED_SPAN({ "xinput.userIndex", std::to_string(dwUserIndex) });
 
 	return G_State.ProxyXInputCancelGuideButtonWait(dwUserIndex);
 }
@@ -178,12 +131,7 @@ XINPUTBRIDGE_API DWORD WINAPI XInputPowerOffController(
 	_In_ DWORD dwUserIndex
 )
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	const auto span = GlobalState::GetTracer()->StartSpan(__FUNCTION__, {
-		{ "xinput.userIndex", std::to_string(dwUserIndex) }
-		});
-	auto scopedSpan = trace::Scope(span);
-#endif
+	auto scopedSpan = TRACE_SCOPED_SPAN({ "xinput.userIndex", std::to_string(dwUserIndex) });
 
 	return G_State.ProxyXInputPowerOffController(dwUserIndex);
 }

@@ -105,11 +105,9 @@ DWORD GlobalState::ProxyXInputGetExtended(_In_ DWORD dwUserIndex, _Out_ SCP_EXTN
 
 DWORD GlobalState::ProxyXInputGetState(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE* pState)
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__, {
+	auto scopedSpan = TRACE_SCOPED_SPAN(
 		{ "xinput.userIndex", std::to_string(dwUserIndex) }
-	}));
-#endif
+	);
 
 	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
 

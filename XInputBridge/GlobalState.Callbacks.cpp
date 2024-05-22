@@ -26,9 +26,7 @@ DWORD CALLBACK GlobalState::DeviceNotificationCallback(
 		return ERROR_INVALID_PARAMETER;
 	}
 
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
-#endif
+	auto scopedSpan = TRACE_SCOPED_SPAN();
 
 	switch (Action)
 	{
@@ -182,9 +180,7 @@ DWORD WINAPI GlobalState::InitAsync(_In_ LPVOID lpParameter)
 #endif
 
 	const auto _this = static_cast<GlobalState*>(lpParameter);
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
-#endif
+	auto scopedSpan = TRACE_SCOPED_SPAN();
 
 	LOG_INFO("Async library startup initialized");
 
