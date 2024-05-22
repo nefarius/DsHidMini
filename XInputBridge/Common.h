@@ -71,6 +71,5 @@ namespace sdkresource	= opentelemetry::sdk::resource;
 
 namespace sdklogs		= opentelemetry::sdk::logs;
 namespace logs			= opentelemetry::logs;
-namespace internal_log	= opentelemetry::sdk::common::internal_log;
 #endif
 
