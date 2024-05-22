@@ -43,9 +43,7 @@ void GlobalState::Destroy() const
 _Must_inspect_result_
 bool GlobalState::SymlinkToUserIndex(_In_ PCWSTR Symlink, _Inout_ PDWORD UserIndex)
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
-#endif
+	auto scopedSpan = TRACE_SCOPED_SPAN("", { "global.symlink", ConvertWideToANSI(Symlink) });
 
 	constexpr DWORD desiredAccess = (GENERIC_WRITE | GENERIC_READ);
 	constexpr DWORD shareMode = FILE_SHARE_READ | FILE_SHARE_WRITE;
@@ -123,9 +121,7 @@ _Success_(return != NULL)
 _Must_inspect_result_
 DeviceState* GlobalState::GetNextFreeSlot(_Out_opt_ PULONG SlotIndex)
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
-#endif
+	auto scopedSpan = TRACE_SCOPED_SPAN("");
 
 	const auto it = std::ranges::find_if(this->States,
 		[](const DeviceState& element)
@@ -143,9 +139,7 @@ DeviceState* GlobalState::GetNextFreeSlot(_Out_opt_ PULONG SlotIndex)
 
 DeviceState* GlobalState::FindBySymbolicLink(const std::wstring& Symlink)
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
-#endif
+	auto scopedSpan = TRACE_SCOPED_SPAN("", { "global.symlink", ConvertWideToANSI(Symlink) });
 
 	const auto narrow = ConvertWideToANSI(Symlink);
 
@@ -160,11 +154,9 @@ DeviceState* GlobalState::FindBySymbolicLink(const std::wstring& Symlink)
 
 DeviceState* GlobalState::GetXusbByUserIndex(const DWORD UserIndex)
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__, {
+	auto scopedSpan = TRACE_SCOPED_SPAN("",
 		{ "xinput.userIndex", std::to_string(UserIndex) }
-	}));
-#endif
+	);
 
 	if (UserIndex >= DS3_DEVICES_MAX)
 		return nullptr;
@@ -178,11 +170,9 @@ _Success_(return != NULL)
 _Must_inspect_result_
 bool GlobalState::GetConnectedDs3ByUserIndex(_In_ const DWORD UserIndex, _Out_opt_ DeviceState** Handle) const
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__, {
+	auto scopedSpan = TRACE_SCOPED_SPAN("",
 		{ "xinput.userIndex", std::to_string(UserIndex) }
-	}));
-#endif
+	);
 
 	if (UserIndex >= DS3_DEVICES_MAX)
 		return false;
@@ -200,9 +190,7 @@ bool GlobalState::GetConnectedDs3ByUserIndex(_In_ const DWORD UserIndex, _Out_op
 
 void GlobalState::EnumerateDs3Devices()
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
-#endif
+	auto scopedSpan = TRACE_SCOPED_SPAN("");
 
 	constexpr uint8_t DsHidMiniDeviceModeSixaxisCompatible = 0x03;
 
@@ -265,9 +253,7 @@ exit:
 
 void GlobalState::EnumerateXusbDevices()
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
-#endif
+	auto scopedSpan = TRACE_SCOPED_SPAN("");
 
 	LOG_INFO("Running XUSB enumeration");
 
