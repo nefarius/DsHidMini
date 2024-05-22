@@ -6,7 +6,6 @@
   "supports": "!(arm | uwp)",
   "dependencies": [
     { "name": "hidapi" },
-    { "name": "spdlog" },
     { "name": "abseil" },
     { "name": "winreg" },
     { "name": "fmt" },

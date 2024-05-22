@@ -2,7 +2,6 @@
 
 #include <Shlwapi.h>
 #include <hidapi/hidapi.h>
-#include <spdlog/sinks/basic_file_sink.h>
 #include <winreg/WinReg.hpp>
 
 #include "Types.h"
@@ -10,9 +9,6 @@
 
 
 EXTERN_C IMAGE_DOS_HEADER __ImageBase; // NOLINT(bugprone-reserved-identifier)
-
-
-
 
 
 //
@@ -239,25 +235,23 @@ bool GlobalState::GetConnectedDs3ByUserIndex(_In_ const DWORD UserIndex, _Out_op
 
 void GlobalState::EnumerateDs3Devices()
 {
-	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
-
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
 #endif
 
 	constexpr uint8_t DsHidMiniDeviceModeSixaxisCompatible = 0x03;
 
-	logger->info("Running DS3 enumeration");
+	LOG_INFO("Running DS3 enumeration");
 
 	const auto symlinks = GetSymbolicLinksForDeviceInterfaceClass(&GUID_DEVINTERFACE_DSHIDMINI);
 
 	if (!symlinks.has_value())
 	{
-		logger->info("No DS3 interface devices found");
+		LOG_INFO("No DS3 interface devices found");
 		goto exit;
 	}
 
-	logger->info("Found {} device(s)", symlinks.value().size());
+	LOG_INFO("Found {} device(s)", symlinks.value().size());
 
 	for (const auto& symlink : symlinks.value())
 	{
@@ -265,7 +259,7 @@ void GlobalState::EnumerateDs3Devices()
 
 		if (!instanceId.has_value())
 		{
-			logger->warn("Instance ID lookup failed for {}", ConvertWideToANSI(symlink));
+			LOG_WARN("Instance ID lookup failed for {}", ConvertWideToANSI(symlink));
 			continue;
 		}
 
@@ -273,7 +267,7 @@ void GlobalState::EnumerateDs3Devices()
 
 		if (hidDeviceMode != DsHidMiniDeviceModeSixaxisCompatible)
 		{
-			logger->warn("DS3 device {} not in SXS mode, skipping", ConvertWideToANSI(symlink));
+			LOG_WARN("DS3 device {} not in SXS mode, skipping", ConvertWideToANSI(symlink));
 			continue;
 		}
 
@@ -285,51 +279,49 @@ void GlobalState::EnumerateDs3Devices()
 				state->Dispose();
 				if (!state->InitializeAsDs3(symlink))
 				{
-					logger->error("Failed to initialize {} as a DS3 device", ConvertWideToANSI(symlink));
+					LOG_ERROR("Failed to initialize {} as a DS3 device", ConvertWideToANSI(symlink));
 				}
 				else
 				{
-					logger->info("Assigned {} to index {}", ConvertWideToANSI(symlink), slotIndex);
+					LOG_INFO("Assigned {} to index {}", ConvertWideToANSI(symlink), slotIndex);
 				}
 			}
 			else
 			{
-				logger->warn("No free slot to assign {} to", ConvertWideToANSI(symlink));
+				LOG_WARN("No free slot to assign {} to", ConvertWideToANSI(symlink));
 			}
 		}
 		ReleaseSRWLockExclusive(&this->StatesLock);
 	}
 
 exit:
-	logger->info("DS3 enumeration finished");
+	LOG_INFO("DS3 enumeration finished");
 }
 
 void GlobalState::EnumerateXusbDevices()
 {
-	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
-
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
 #endif
 
-	logger->info("Running XUSB enumeration");
+	LOG_INFO("Running XUSB enumeration");
 
 	const auto symlinks = GetSymbolicLinksForDeviceInterfaceClass(&XUSB_INTERFACE_CLASS_GUID);
 
 	if (!symlinks.has_value())
 	{
-		logger->info("No XUSB interface devices found");
+		LOG_INFO("No XUSB interface devices found");
 		goto exit;
 	}
 
-	logger->info("Found {} device(s)", symlinks.value().size());
+	LOG_INFO("Found {} device(s)", symlinks.value().size());
 
 	for (const auto& symlink : symlinks.value())
 	{
 		DWORD userIndex = INVALID_X_INPUT_USER_ID;
 		if (SymlinkToUserIndex(symlink.c_str(), &userIndex))
 		{
-			logger->info("User index: {}", userIndex);
+			LOG_INFO("User index: {}", userIndex);
 
 			AcquireSRWLockExclusive(&this->StatesLock);
 			{
@@ -339,11 +331,11 @@ void GlobalState::EnumerateXusbDevices()
 					slot->Dispose();
 					if (!slot->InitializeAsXusb(symlink, slotIndex))
 					{
-						logger->error("Failed to initialize {} as a XUSB device", ConvertWideToANSI(symlink));
+						LOG_ERROR("Failed to initialize {} as a XUSB device", ConvertWideToANSI(symlink));
 					}
 					else
 					{
-						logger->info("Assigned {} to index {}", ConvertWideToANSI(symlink), slotIndex);
+						LOG_INFO("Assigned {} to index {}", ConvertWideToANSI(symlink), slotIndex);
 					}
 				}
 			}
@@ -351,10 +343,10 @@ void GlobalState::EnumerateXusbDevices()
 		}
 		else
 		{
-			logger->error("User index lookup failed");
+			LOG_ERROR("User index lookup failed");
 		}
 	}
 
 exit:
-	logger->info("XUSB enumeration finished");
+	LOG_INFO("XUSB enumeration finished");
 }

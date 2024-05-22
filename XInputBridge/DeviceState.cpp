@@ -20,8 +20,6 @@ bool DeviceState::InitializeAsXusb(const std::wstring& Symlink, const DWORD User
 
 bool DeviceState::InitializeAsDs3(const std::wstring& Symlink)
 {
-	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
-
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scopedSpan = trace::Scope(GlobalState::GetTracer()->StartSpan(__FUNCTION__));
 #endif
@@ -35,7 +33,7 @@ bool DeviceState::InitializeAsDs3(const std::wstring& Symlink)
 
 	if (!instanceId.has_value())
 	{
-		logger->error("Failed to get Instance ID for instance {}", this->SymbolicLink);
+		LOG_ERROR("Failed to get Instance ID for instance {}", this->SymbolicLink);
 		return false;
 	}
 
@@ -46,7 +44,7 @@ bool DeviceState::InitializeAsDs3(const std::wstring& Symlink)
 	{
 		if (--retries == 0)
 		{
-			logger->error("Failed to get child devices for instance {}", this->SymbolicLink);
+			LOG_ERROR("Failed to get child devices for instance {}", this->SymbolicLink);
 			return false;
 		}
 
@@ -65,7 +63,7 @@ bool DeviceState::InitializeAsDs3(const std::wstring& Symlink)
 	{
 		if (--retries == 0)
 		{
-			logger->error("Failed to get HID instance path for instance {}", this->SymbolicLink);
+			LOG_ERROR("Failed to get HID instance path for instance {}", this->SymbolicLink);
 			return false;
 		}
 
@@ -80,7 +78,7 @@ bool DeviceState::InitializeAsDs3(const std::wstring& Symlink)
 
 	if (device == nullptr)
 	{
-		logger->error("Failed to open hid device {} with error {}",
+		LOG_ERROR("Failed to open hid device {} with error {}",
 			ConvertWideToANSI(hidSymlink),
 			ConvertWideToANSI(hid_error(nullptr))
 		);

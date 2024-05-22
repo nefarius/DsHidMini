@@ -19,11 +19,10 @@ DWORD CALLBACK GlobalState::DeviceNotificationCallback(
 	UNREFERENCED_PARAMETER(EventDataSize);
 
 	const auto _this = static_cast<GlobalState*>(Context);
-	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
 
 	if (_this == nullptr)
 	{
-		logger->error("Missing state pointer");
+		LOG_ERROR("Missing state pointer");
 		return ERROR_INVALID_PARAMETER;
 	}
 
@@ -37,12 +36,12 @@ DWORD CALLBACK GlobalState::DeviceNotificationCallback(
 		if (IsEqualGUID(GUID_DEVINTERFACE_DSHIDMINI, EventData->u.DeviceInterface.ClassGuid))
 		{
 			const auto symlink = std::wstring(EventData->u.DeviceInterface.SymbolicLink);
-			logger->info("New DS3 device arrived: {}", ConvertWideToANSI(symlink));
+			LOG_INFO("New DS3 device arrived: {}", ConvertWideToANSI(symlink));
 
 			// child device boot is not instant so we need to do 
 			// this in the background to not block this callback
 			std::thread asyncArrival{
-				[_this, logger, symlink]
+				[_this, symlink]
 				{
 					AcquireSRWLockExclusive(&_this->StatesLock);
 					{
@@ -52,11 +51,11 @@ DWORD CALLBACK GlobalState::DeviceNotificationCallback(
 							slot->Dispose();
 							if (!slot->InitializeAsDs3(symlink))
 							{
-								logger->error("Failed to initialize {} as a DS3 HID device", ConvertWideToANSI(symlink));
+								LOG_ERROR("Failed to initialize {} as a DS3 HID device", ConvertWideToANSI(symlink));
 							}
 							else
 							{
-								logger->info("Assigned {} to index {}", ConvertWideToANSI(symlink), slotIndex);
+								LOG_INFO("Assigned {} to index {}", ConvertWideToANSI(symlink), slotIndex);
 							}
 						}
 					}
@@ -71,12 +70,12 @@ DWORD CALLBACK GlobalState::DeviceNotificationCallback(
 		{
 			const auto symlink = ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink);
 
-			logger->info("New XUSB device arrived: {}", symlink);
+			LOG_INFO("New XUSB device arrived: {}", symlink);
 
 			DWORD userIndex = INVALID_X_INPUT_USER_ID;
 			if (SymlinkToUserIndex(EventData->u.DeviceInterface.SymbolicLink, &userIndex))
 			{
-				logger->info("User index: {}", userIndex);
+				LOG_INFO("User index: {}", userIndex);
 
 				AcquireSRWLockExclusive(&_this->StatesLock);
 				{
@@ -86,11 +85,11 @@ DWORD CALLBACK GlobalState::DeviceNotificationCallback(
 						slot->Dispose();
 						if (!slot->InitializeAsXusb(EventData->u.DeviceInterface.SymbolicLink, userIndex))
 						{
-							logger->error("Failed to initialize {} as a XUSB device", symlink);
+							LOG_ERROR("Failed to initialize {} as a XUSB device", symlink);
 						}
 						else
 						{
-							logger->info("Assigned {} to index {}", symlink, slotIndex);
+							LOG_INFO("Assigned {} to index {}", symlink, slotIndex);
 						}
 					}
 				}
@@ -98,7 +97,7 @@ DWORD CALLBACK GlobalState::DeviceNotificationCallback(
 			}
 			else
 			{
-				logger->error("User index lookup failed");
+				LOG_ERROR("User index lookup failed");
 			}
 		}
 		break;
@@ -106,7 +105,7 @@ DWORD CALLBACK GlobalState::DeviceNotificationCallback(
 		if (IsEqualGUID(GUID_DEVINTERFACE_DSHIDMINI, EventData->u.DeviceInterface.ClassGuid))
 		{
 			const std::string symlink = ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink);
-			logger->info("DS3 device got removed: {}", symlink);
+			LOG_INFO("DS3 device got removed: {}", symlink);
 
 			AcquireSRWLockExclusive(&_this->StatesLock);
 			{
@@ -116,7 +115,7 @@ DWORD CALLBACK GlobalState::DeviceNotificationCallback(
 				}
 				else
 				{
-					logger->warn("No state found for {}", symlink);
+					LOG_WARN("No state found for {}", symlink);
 				}
 			}
 			ReleaseSRWLockExclusive(&_this->StatesLock);
@@ -125,7 +124,7 @@ DWORD CALLBACK GlobalState::DeviceNotificationCallback(
 		if (IsEqualGUID(XUSB_INTERFACE_CLASS_GUID, EventData->u.DeviceInterface.ClassGuid))
 		{
 			const std::string symlink = ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink);
-			logger->info("XUSB device got removed: {}", symlink);
+			LOG_INFO("XUSB device got removed: {}", symlink);
 
 			AcquireSRWLockExclusive(&_this->StatesLock);
 			{
@@ -135,7 +134,7 @@ DWORD CALLBACK GlobalState::DeviceNotificationCallback(
 				}
 				else
 				{
-					logger->warn("No state found for {}", symlink);
+					LOG_WARN("No state found for {}", symlink);
 				}
 			}
 			ReleaseSRWLockExclusive(&_this->StatesLock);
@@ -154,19 +153,17 @@ DWORD CALLBACK GlobalState::DeviceNotificationCallback(
 DWORD WINAPI GlobalState::InitAsync(_In_ LPVOID lpParameter)
 {
 	const auto _this = static_cast<GlobalState*>(lpParameter);
-	const std::shared_ptr<spdlog::logger> logger = spdlog::get(LOGGER_NAME)->clone(__FUNCTION__);
-
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
 #endif
 
-	logger->info("Async library startup initialized");
+	LOG_INFO("Async library startup initialized");
 
 	CHAR systemDir[MAX_PATH] = {};
 
 	if (GetSystemDirectoryA(systemDir, MAX_PATH) == 0)
 	{
-		logger->error("GetSystemDirectoryA failed: {:#x}", GetLastError());
+		LOG_ERROR("GetSystemDirectoryA failed: {:#x}", GetLastError());
 		return GetLastError();
 	}
 
@@ -174,7 +171,7 @@ DWORD WINAPI GlobalState::InitAsync(_In_ LPVOID lpParameter)
 
 	if (PathCombineA(fullXiPath, systemDir, XI_SYSTEM_LIB_NAME) == nullptr)
 	{
-		logger->error("PathCombineA failed: {:#x}", GetLastError());
+		LOG_ERROR("PathCombineA failed: {:#x}", GetLastError());
 		return GetLastError();
 	}
 
@@ -182,7 +179,7 @@ DWORD WINAPI GlobalState::InitAsync(_In_ LPVOID lpParameter)
 
 	if (xiLib == nullptr)
 	{
-		logger->error("LoadLibraryA failed: {:#x}", GetLastError());
+		LOG_ERROR("LoadLibraryA failed: {:#x}", GetLastError());
 		return GetLastError();
 	}
 
@@ -240,7 +237,7 @@ DWORD WINAPI GlobalState::InitAsync(_In_ LPVOID lpParameter)
 
 	if (ret != CR_SUCCESS)
 	{
-		logger->error("CM_Register_Notification (DS3) failed: {:#x}", ret);
+		LOG_ERROR("CM_Register_Notification (DS3) failed: {:#x}", ret);
 	}
 
 	CM_NOTIFY_FILTER xusbFilter = {};
@@ -255,12 +252,12 @@ DWORD WINAPI GlobalState::InitAsync(_In_ LPVOID lpParameter)
 
 	if (ret != CR_SUCCESS)
 	{
-		logger->error("CM_Register_Notification (XUSB) failed: {:#x}", ret);
+		LOG_ERROR("CM_Register_Notification (XUSB) failed: {:#x}", ret);
 	}
 
 	if (const auto result = hid_init(); result != 0)
 	{
-		logger->error("hid_init failed: {}", ConvertWideToANSI(hid_error(nullptr)));
+		LOG_ERROR("hid_init failed: {}", ConvertWideToANSI(hid_error(nullptr)));
 	}
 
 	_this->EnumerateDs3Devices();

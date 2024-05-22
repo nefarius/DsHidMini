@@ -29,12 +29,6 @@
 #include <fmt/core.h>
 
 //
-// Logging
-// 
-#include <spdlog/logger.h>
-#include <spdlog/spdlog.h>
-
-//
 // Abseil
 // 
 #include <absl/cleanup/cleanup.h>
