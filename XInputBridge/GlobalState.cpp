@@ -53,7 +53,7 @@ void GlobalState::Initialize()
 	};
 
 	const auto resource = sdkresource::Resource::Create(resourceAttributes);
-	auto traceExporter = otlp::OtlpHttpExporterFactory::Create();
+	auto traceExporter = otlp::OtlpGrpcExporterFactory::Create();
 	auto traceProcessor = sdktrace::SimpleSpanProcessorFactory::Create(std::move(traceExporter));
 	const std::shared_ptr traceProvider = sdktrace::TracerProviderFactory::Create(std::move(traceProcessor), resource);
 
@@ -63,7 +63,7 @@ void GlobalState::Initialize()
 	// Set up logger
 	// 
 
-	auto loggerExporter = otlp::OtlpHttpLogRecordExporterFactory::Create();
+	auto loggerExporter = otlp::OtlpGrpcLogRecordExporterFactory::Create();
 	auto loggerProcessor = sdklogs::SimpleLogRecordProcessorFactory::Create(std::move(loggerExporter));
 	const std::shared_ptr loggerProvider = sdklogs::LoggerProviderFactory::Create(std::move(loggerProcessor), resource);
 

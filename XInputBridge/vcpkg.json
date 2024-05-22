@@ -11,7 +11,7 @@
     { "name": "winreg" },
     {
       "name": "opentelemetry-cpp",
-      "features": [ "otlp-http" ]
+      "features": [ "otlp-http", "otlp-grpc" ]
     }
   ]
 }
