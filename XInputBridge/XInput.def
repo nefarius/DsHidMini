@@ -1,4 +1,4 @@
-LIBRARY   XInput  
+LIBRARY   XInput1_3
 EXPORTS  
    XInputGetState					@2
    XInputSetState					@3

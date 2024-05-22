@@ -20,45 +20,10 @@ void GlobalState::Initialize()
 
 	this->StartupFinishedEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr);
 
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	//
-	// Set up tracing
-	// 
-
-	const auto resourceAttributes = sdkresource::ResourceAttributes{
-		{ opentelemetry::sdk::resource::SemanticConventions::kServiceName, TRACER_NAME }
-	};
-
-	const auto resource = sdkresource::Resource::Create(resourceAttributes);
-	auto traceExporter = otlp::OtlpGrpcExporterFactory::Create();
-	auto traceProcessor = sdktrace::SimpleSpanProcessorFactory::Create(std::move(traceExporter));
-	const std::shared_ptr traceProvider = sdktrace::TracerProviderFactory::Create(std::move(traceProcessor), resource);
-
-	trace::Provider::SetTracerProvider(traceProvider);
-
-	//
-	// Set up logger
-	// 
-
-	auto loggerExporter = otlp::OtlpGrpcLogRecordExporterFactory::Create();
-	auto loggerProcessor = sdklogs::SimpleLogRecordProcessorFactory::Create(std::move(loggerExporter));
-	const std::shared_ptr loggerProvider = sdklogs::LoggerProviderFactory::Create(std::move(loggerProcessor), resource);
-
-	logs::Provider::SetLoggerProvider(loggerProvider);
-
-	const auto logger = GlobalState::GetLogger(__FUNCTION__);
-	LOG_INFO("Library got loaded into PID {}", GetCurrentProcessId());
-#endif
-
 	//
 	// Call stuff that must not be done in DllMain in the background
 	// 
-	const HANDLE hThread = CreateThread(nullptr, 0, InitAsync, this, 0, nullptr);
-
-	if (hThread == nullptr)
-	{
-		LOG_ERROR("Failed to create thread");
-	}
+	(void)CreateThread(nullptr, 0, InitAsync, this, 0, nullptr);
 }
 
 void GlobalState::Destroy() const
