@@ -44,17 +44,30 @@ void GlobalState::Initialize()
 	logger->info("Library got loaded into PID {}", GetCurrentProcessId());
 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
+	//
+	// Set up tracing
+	// 
+
 	const auto resourceAttributes = sdkresource::ResourceAttributes{
 		{ opentelemetry::sdk::resource::SemanticConventions::kServiceName, TRACER_NAME }
 	};
 
 	const auto resource = sdkresource::Resource::Create(resourceAttributes);
-	auto exporter = otlp::OtlpHttpExporterFactory::Create();
-	auto processor = sdktrace::SimpleSpanProcessorFactory::Create(std::move(exporter));
-	const std::shared_ptr provider = sdktrace::TracerProviderFactory::Create(std::move(processor), resource);
+	auto traceExporter = otlp::OtlpHttpExporterFactory::Create();
+	auto traceProcessor = sdktrace::SimpleSpanProcessorFactory::Create(std::move(traceExporter));
+	const std::shared_ptr traceProvider = sdktrace::TracerProviderFactory::Create(std::move(traceProcessor), resource);
 
-	// Set the global trace provider
-	trace::Provider::SetTracerProvider(provider);
+	trace::Provider::SetTracerProvider(traceProvider);
+
+	//
+	// Set up logger
+	// 
+
+	auto loggerExporter = otlp::OtlpHttpLogRecordExporterFactory::Create();
+	auto loggerProcessor = sdklogs::SimpleLogRecordProcessorFactory::Create(std::move(loggerExporter));
+	const std::shared_ptr loggerProvider = sdklogs::LoggerProviderFactory::Create(std::move(loggerProcessor), resource);
+
+	logs::Provider::SetLoggerProvider(loggerProvider);
 #endif
 
 	//

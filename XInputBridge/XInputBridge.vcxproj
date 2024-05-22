@@ -189,7 +189,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_OTEL|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <TargetName>XInput1_3</TargetName>
+    <TargetName>XInput</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <LinkIncremental>true</LinkIncremental>
@@ -197,7 +197,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_OTEL|ARM64'">
     <LinkIncremental>true</LinkIncremental>
-    <TargetName>XInput1_3</TargetName>
+    <TargetName>XInput</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -230,7 +230,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_OTEL|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <TargetName>XInput1_3</TargetName>
+    <TargetName>XInput</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
