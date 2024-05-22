@@ -79,6 +79,35 @@ void GlobalState::Destroy() const
 	(void)CM_Unregister_Notification(this->XusbNotificationHandle);
 
 	(void)hid_exit();
+
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+	//
+	// Clean up tracer
+	// 
+
+	nostd::shared_ptr<trace::TracerProvider> traceProvider = trace::Provider::GetTracerProvider();
+	if (traceProvider)
+	{
+		static_cast<sdktrace::TracerProvider*>(traceProvider.get())->ForceFlush();
+	}
+
+	std::shared_ptr<trace::TracerProvider> tracerNone;
+	trace::Provider::SetTracerProvider(tracerNone);
+
+	//
+	// Clean up logger
+	// 
+
+	nostd::shared_ptr<logs::LoggerProvider> logProvider =
+	logs::Provider::GetLoggerProvider();
+	if (logProvider)
+	{
+		static_cast<sdklogs::LoggerProvider*>(logProvider.get())->ForceFlush();
+	}
+
+	std::shared_ptr<logs::LoggerProvider> loggerNone;
+	logs::Provider::SetLoggerProvider(loggerNone);
+#endif
 }
 
 //
