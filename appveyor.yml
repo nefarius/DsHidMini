@@ -20,7 +20,7 @@ install:
 - cmd: vcpkg integrate install
 - cmd: vcpkg update
 # manifest mode takes forever to build each commit so use global copy instead
-- cmd: vcpkg install hidapi:%PLATFORM%-windows-static spdlog:%PLATFORM%-windows-static abseil:%PLATFORM%-windows-static winreg:%PLATFORM%-windows-static opentelemetry-cpp[otlp-http]:%PLATFORM%-windows-static
+- cmd: vcpkg install hidapi:%PLATFORM%-windows-static spdlog:%PLATFORM%-windows-static abseil:%PLATFORM%-windows-static winreg:%PLATFORM%-windows-static opentelemetry-cpp[otlp-grpc]:%PLATFORM%-windows-static
 - cmd: git submodule -q update --init
 - cmd: git clone -q https://github.com/microsoft/DMF.git C:\projects\DMF 2> nul || set ERRORLEVEL=0
 - cmd: |
