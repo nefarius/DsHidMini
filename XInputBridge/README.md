@@ -102,3 +102,4 @@ This application benefits from these awesome projects ❤ (appearance in no spec
 - [OpenXInput](https://github.com/Nemirtingas/OpenXinput)
 - [Abseil C++ library](https://abseil.io/)
 - [Convenient high-level C++ wrapper around the Windows Registry API](https://github.com/GiovanniDicanio/WinReg)
+- [A modern formatting library](https://github.com/fmtlib/fmt)
