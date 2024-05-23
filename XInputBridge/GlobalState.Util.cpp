@@ -1,7 +1,7 @@
 ﻿#include "GlobalState.h"
-#include <initguid.h>
 #include <devpkey.h>
 #include <hidclass.h>
+#include "UniUtil.h"
 
 #include <winreg/WinReg.hpp>
 
@@ -9,9 +9,7 @@
 
 SHORT GlobalState::ScaleDsToXi(UCHAR value, BOOLEAN invert)
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
-#endif
+	auto scopedSpan = TRACE_SCOPED_SPAN("");
 
 	auto intValue = value - 0x80;
 	if (intValue == -128)
@@ -24,6 +22,8 @@ SHORT GlobalState::ScaleDsToXi(UCHAR value, BOOLEAN invert)
 
 float GlobalState::ClampAxis(float value)
 {
+	auto scopedSpan = TRACE_SCOPED_SPAN("");
+
 	if (value > 1.0f)
 		return 1.0f;
 	if (value < -1.0f)
@@ -33,14 +33,14 @@ float GlobalState::ClampAxis(float value)
 
 float GlobalState::ToAxis(UCHAR value)
 {
+	auto scopedSpan = TRACE_SCOPED_SPAN("");
+
 	return ClampAxis((((value & 0xFF) - 0x7F) * 2) / 254.0f);
 }
 
 std::optional<std::vector<std::wstring>> GlobalState::GetSymbolicLinksForDeviceInterfaceClass(const GUID* InterfaceGuid)
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
-#endif
+	auto scopedSpan = TRACE_SCOPED_SPAN("");
 
 	ULONG requiredNumChars = 0;
 
@@ -87,9 +87,7 @@ std::optional<std::vector<std::wstring>> GlobalState::GetSymbolicLinksForDeviceI
 
 std::optional<std::wstring> GlobalState::InterfaceIdToInstanceId(const std::wstring& Symlink)
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
-#endif
+	auto scopedSpan = TRACE_SCOPED_SPAN("", { "util.symlink", ConvertWideToANSI(Symlink) });
 
 	ULONG instanceIdBytes = 0;
 	DEVPROPTYPE type{ 0 };
@@ -135,9 +133,7 @@ std::optional<std::wstring> GlobalState::InterfaceIdToInstanceId(const std::wstr
 
 std::optional<std::vector<std::wstring>> GlobalState::GetDeviceChildren(const std::wstring& ParentDeviceId)
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
-#endif
+	auto scopedSpan = TRACE_SCOPED_SPAN("", { "util.parentDeviceId", ConvertWideToANSI(ParentDeviceId) });
 
 	DEVINST instance{ 0 };
 	DEVPROPTYPE type{ 0 };
@@ -193,9 +189,7 @@ std::optional<std::vector<std::wstring>> GlobalState::GetDeviceChildren(const st
 
 std::optional<std::vector<std::wstring>> GlobalState::InstanceIdToHidPaths(const std::wstring& InstanceId)
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
-#endif
+	auto scopedSpan = TRACE_SCOPED_SPAN("", { "util.instanceId", ConvertWideToANSI(InstanceId) });
 
 	ULONG requiredNumChars = 0;
 
@@ -242,9 +236,7 @@ std::optional<std::vector<std::wstring>> GlobalState::InstanceIdToHidPaths(const
 
 std::optional<uint8_t> GlobalState::GetDs3HidDeviceModeProperty(const std::wstring& Ds3InstanceId)
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	auto scopedSpan = trace::Scope(GetTracer()->StartSpan(__FUNCTION__));
-#endif
+	auto scopedSpan = TRACE_SCOPED_SPAN("", { "util.instanceId", ConvertWideToANSI(Ds3InstanceId) });
 
 	DEVINST instance{ 0 };
 	DEVPROPTYPE type{ 0 };
@@ -281,5 +273,11 @@ nostd::shared_ptr<trace::Tracer> GlobalState::GetTracer()
 {
 	const auto provider = trace::Provider::GetTracerProvider();
 	return provider->GetTracer(TRACER_NAME, OPENTELEMETRY_SDK_VERSION);
+}
+
+nostd::shared_ptr<logs::Logger> GlobalState::GetLogger(const std::string& name)
+{
+	const auto provider = logs::Provider::GetLoggerProvider();
+	return provider->GetLogger(name, LOGGER_NAME);
 }
 #endif

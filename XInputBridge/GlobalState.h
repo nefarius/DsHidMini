@@ -85,6 +85,7 @@ public:
 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
 	static nostd::shared_ptr<trace::Tracer> GetTracer();
+	static nostd::shared_ptr<logs::Logger> GetLogger(const std::string& name);
 #endif
 
 private:

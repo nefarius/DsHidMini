@@ -37,3 +37,24 @@ DEFINE_GUID(XUSB_INTERFACE_CLASS_GUID,
 #define CALL_FPN_SAFE(fpn, ...)	((fpn)) ? (fpn)(__VA_ARGS__) : ERROR_DEVICE_NOT_CONNECTED
 #define CALL_FPN_SAFE_NO_RETURN(fpn, ...)	((fpn)) ? (fpn)(__VA_ARGS__) : void(0)
 
+//
+// OpenTelemetry
+// 
+
+#if defined(SCPLIB_ENABLE_TELEMETRY)
+#define LOG_INFO(_body_, ...)	GlobalState::GetLogger(__FUNCTION__)->Info(std::format(_body_, __VA_ARGS__))
+#define LOG_WARN(_body_, ...)	GlobalState::GetLogger(__FUNCTION__)->Warn(std::format(_body_, __VA_ARGS__))
+#define LOG_ERROR(_body_, ...)	GlobalState::GetLogger(__FUNCTION__)->Error(std::format(_body_, __VA_ARGS__))
+
+#define TRACE_SPAN(_name_, ...)			GlobalState::GetTracer()->StartSpan(__FUNCTION__ _name_, { __VA_ARGS__ })
+#define TRACE_SPAN_END(_span_)			(_span_)->End()
+#define TRACE_SCOPED_SPAN(_name_, ...)	trace::Scope(GlobalState::GetTracer()->StartSpan(__FUNCTION__ _name_, { __VA_ARGS__ }))
+#else
+#define LOG_INFO(_body_, ...)
+#define LOG_WARN(_body_, ...)
+#define LOG_ERROR(_body_, ...)
+
+#define TRACE_SPAN(_name_, ...)			NULL
+#define TRACE_SPAN_END(_span_)			void(0)
+#define TRACE_SCOPED_SPAN(_name_, ...)	NULL
+#endif
