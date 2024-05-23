@@ -23,11 +23,7 @@
 #include <memory>
 #include <thread>
 #include <array>
-
-//
-// libfmt
-// 
-#include <fmt/core.h>
+#include <format>
 
 //
 // Abseil

@@ -42,9 +42,9 @@ DEFINE_GUID(XUSB_INTERFACE_CLASS_GUID,
 // 
 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-#define LOG_INFO(_body_, ...)	GlobalState::GetLogger(__FUNCTION__)->Info(fmt::format(_body_, __VA_ARGS__))
-#define LOG_WARN(_body_, ...)	GlobalState::GetLogger(__FUNCTION__)->Warn(fmt::format(_body_, __VA_ARGS__))
-#define LOG_ERROR(_body_, ...)	GlobalState::GetLogger(__FUNCTION__)->Error(fmt::format(_body_, __VA_ARGS__))
+#define LOG_INFO(_body_, ...)	GlobalState::GetLogger(__FUNCTION__)->Info(std::format(_body_, __VA_ARGS__))
+#define LOG_WARN(_body_, ...)	GlobalState::GetLogger(__FUNCTION__)->Warn(std::format(_body_, __VA_ARGS__))
+#define LOG_ERROR(_body_, ...)	GlobalState::GetLogger(__FUNCTION__)->Error(std::format(_body_, __VA_ARGS__))
 
 #define TRACE_SPAN(_name_, ...)			GlobalState::GetTracer()->StartSpan(__FUNCTION__ _name_, { __VA_ARGS__ })
 #define TRACE_SPAN_END(_span_)			(_span_)->End()
