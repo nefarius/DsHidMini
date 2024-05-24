@@ -338,6 +338,8 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
+
+# Misc.
 /docs/WinDbg_Log.txt
 /_DSHMC
 /DSHMC.json
@@ -348,3 +350,4 @@ healthchecksdb
 vcpkg_installed
 **/*.g.wxs
 /XInputBridge/exports
+**/*_OTEL

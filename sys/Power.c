@@ -81,7 +81,7 @@ DsHidMini_EvtDevicePrepareHardware(
 	// 
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
 	{
-		status = DsUdb_PrepareHardware(Device);
+		status = DsUsb_PrepareHardware(Device);
 
 		if (NT_SUCCESS(status))
 		{

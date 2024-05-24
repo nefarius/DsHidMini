@@ -237,7 +237,7 @@ USB_WriteInterruptOutSync(
 	return status;
 }
 
-NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
+NTSTATUS DsUsb_PrepareHardware(WDFDEVICE Device)
 {
 	NTSTATUS status = STATUS_SUCCESS;
 	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
@@ -251,7 +251,6 @@ NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
 	WCHAR friendlyName[128];
 	size_t friendlyNameSize = 0;
 	UCHAR identification[64];
-	UINT64 hostAddress;
 
 	FuncEntry(TRACE_DSUSB);
 
@@ -528,64 +527,14 @@ NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
 		//
 		// Request host BTH address
 		// 
-		if (!NT_SUCCESS(status = USB_SendControlRequest(
-			pDevCtx,
-			BmRequestDeviceToHost,
-			BmRequestClass,
-			GetReport,
-			Ds3FeatureHostAddress,
-			0,
-			controlTransferBuffer,
-			CONTROL_TRANSFER_BUFFER_LENGTH
-		)))
+		if(!NT_SUCCESS(DsUsb_Ds3RequestHostAddress(Device)))
 		{
 			TraceError(
 				TRACE_DSUSB,
-				"Requesting host address failed with %!STATUS!",
-				status
-			);
-			EventWriteFailedWithNTStatus(__FUNCTION__, L"Requesting host address", status);
-			break;
-		}
-
-		RtlCopyMemory(
-			&pDevCtx->HostAddress,
-			&controlTransferBuffer[2],
-			sizeof(BD_ADDR));
-
-		//
-		// Set host radio address property
-		// 
-
-		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_BluetoothRadio_Address);
-		propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
-		propertyData.Lcid = LOCALE_NEUTRAL;
-
-		hostAddress = (UINT64)(pDevCtx->HostAddress.Address[5]) |
-			(UINT64)(pDevCtx->HostAddress.Address[4]) << 8 |
-			(UINT64)(pDevCtx->HostAddress.Address[3]) << 16 |
-			(UINT64)(pDevCtx->HostAddress.Address[2]) << 24 |
-			(UINT64)(pDevCtx->HostAddress.Address[1]) << 32 |
-			(UINT64)(pDevCtx->HostAddress.Address[0]) << 40;
-
-		status = WdfDeviceAssignProperty(
-			Device,
-			&propertyData,
-			DEVPROP_TYPE_UINT64,
-			sizeof(UINT64),
-			&hostAddress
-		);
-
-		if (!NT_SUCCESS(status))
-		{
-			TraceError(
-				TRACE_DSUSB,
-				"Setting DEVPKEY_BluetoothRadio_Address failed with status %!STATUS!",
+				"Setting DsUsb_Ds3RequestHostAddress failed with status %!STATUS!",
 				status
 			);
 		}
-
-		status = STATUS_SUCCESS;
 
 #pragma endregion
 
@@ -621,33 +570,6 @@ NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
 #pragma endregion
 
 		//
-		// Attempt automatic pairing
-		// 
-		if (!pDevCtx->Configuration.DisableAutoPairing)
-		{
-			//
-			// Auto-pair to first found radio
-			// 
-			status = DsUsb_Ds3PairToFirstRadio(Device);
-
-			if (!NT_SUCCESS(status))
-			{
-				TraceError(
-					TRACE_DSUSB,
-					"DsUsb_Ds3PairToFirstRadio failed with status %!STATUS!",
-					status
-				);
-				EventWriteFailedWithNTStatus(__FUNCTION__, L"DsUsb_Ds3PairToFirstRadio", status);
-			}
-		}
-		else
-		{
-			TraceInformation(
-				TRACE_DSUSB,
-				"Auto-pairing disabled in device configuration");
-		}
-
-		//
 		// Send initial output report
 		// 
 		if (!NT_SUCCESS(status = USB_WriteInterruptPipeAsync(
@@ -662,41 +584,17 @@ NTSTATUS DsUdb_PrepareHardware(WDFDEVICE Device)
 
 	} while (FALSE);
 
-	// ReSharper disable once CppIncompleteSwitchStatement
-	// ReSharper disable once CppDefaultCaseNotHandledInSwitchStatement
-	switch (pDevCtx->ConnectionType)  // NOLINT(clang-diagnostic-switch)
-	{
-	case DsDeviceConnectionTypeUsb:
-
-		sprintf_s(
-			pDevCtx->DeviceAddressString,
-			ARRAYSIZE(pDevCtx->DeviceAddressString),
-			"%02X%02X%02X%02X%02X%02X",
-			pDevCtx->DeviceAddress.Address[0],
-			pDevCtx->DeviceAddress.Address[1],
-			pDevCtx->DeviceAddress.Address[2],
-			pDevCtx->DeviceAddress.Address[3],
-			pDevCtx->DeviceAddress.Address[4],
-			pDevCtx->DeviceAddress.Address[5]
-		);
-
-		break;
-	case DsDeviceConnectionTypeBth:
-
-		sprintf_s(
-			pDevCtx->DeviceAddressString,
-			ARRAYSIZE(pDevCtx->DeviceAddressString),
-			"%02X%02X%02X%02X%02X%02X",
-			pDevCtx->DeviceAddress.Address[5],
-			pDevCtx->DeviceAddress.Address[4],
-			pDevCtx->DeviceAddress.Address[3],
-			pDevCtx->DeviceAddress.Address[2],
-			pDevCtx->DeviceAddress.Address[1],
-			pDevCtx->DeviceAddress.Address[0]
-		);
-
-		break;
-	}
+    sprintf_s(
+        pDevCtx->DeviceAddressString,
+        ARRAYSIZE(pDevCtx->DeviceAddressString),
+        "%02X%02X%02X%02X%02X%02X",
+        pDevCtx->DeviceAddress.Address[0],
+        pDevCtx->DeviceAddress.Address[1],
+        pDevCtx->DeviceAddress.Address[2],
+        pDevCtx->DeviceAddress.Address[3],
+        pDevCtx->DeviceAddress.Address[4],
+        pDevCtx->DeviceAddress.Address[5]
+    );
 
 	FuncExit(TRACE_DSUSB, "status=%!STATUS!", status);
 

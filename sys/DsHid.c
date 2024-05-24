@@ -139,6 +139,9 @@ sizeof(G_VendorDefinedUSBDS4HidReportDescriptor) }  // total length of report de
 
 #pragma region DS3 HID Report Descriptor (XINPUT compatible HID device)
 
+/*
+ * Source: https://gist.github.com/DJm00n/07e1b7bb21643725e53b16f45e0e7022#file-giphidgamepaddescriptor-txt
+ */
 CONST HID_REPORT_DESCRIPTOR G_XInputHIDCompatible_HidReportDescriptor[] =
 {
 #include "HID/05_XIH_Col1_XInputHID.h"
@@ -156,59 +159,6 @@ sizeof(G_XInputHIDCompatible_HidReportDescriptor) }  // total length of report d
 
 #pragma endregion
 
-
-//
-// Checks whether the pad inputs are in default (idle) state
-// 
-BOOLEAN DS3_RAW_IS_IDLE(
-	_In_ PDS3_RAW_INPUT_REPORT Input
-)
-{
-	//
-	// Button states
-	// 
-
-	if (Input->Buttons.lButtons)
-	{
-		return FALSE;
-	}
-
-	//
-	// Axes
-	// 
-
-	if (
-		Input->LeftThumbX < DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER
-		|| Input->LeftThumbX > DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER
-		|| Input->LeftThumbY < DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER
-		|| Input->LeftThumbY > DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER
-		|| Input->RightThumbX < DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER
-		|| Input->RightThumbX > DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER
-		|| Input->RightThumbY < DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER
-		|| Input->RightThumbY > DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER
-		)
-	{
-		return FALSE;
-	}
-
-	//
-	// Sliders
-	// 
-
-	if (
-		Input->Pressure.Values.L2 > DS3_RAW_SLIDER_IDLE_THRESHOLD
-		|| Input->Pressure.Values.R2 > DS3_RAW_SLIDER_IDLE_THRESHOLD
-		)
-	{
-		return FALSE;
-	}
-
-	//
-	// If we end up here, no movement is going on
-	// 
-
-	return TRUE;
-}
 
 //
 // Applies transformations on a thumb axis pair
