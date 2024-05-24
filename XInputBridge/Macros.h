@@ -13,8 +13,6 @@
 // Constants
 // 
 
-#define DS3_VID							0x054C
-#define DS3_PID							0x0268
 #define SXS_MODE_GET_FEATURE_REPORT_ID	0xF2
 #define SXS_MODE_GET_FEATURE_BUFFER_LEN	0x40
 #define DS3_DEVICES_MAX					8
