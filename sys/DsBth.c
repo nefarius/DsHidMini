@@ -76,57 +76,9 @@ DsBth_DisconnectEventCallback(
 	FuncExitNoReturn(TRACE_DSBTH);
 }
 
-NTSTATUS DsBth_SelfManagedIoInit(WDFDEVICE Device)
-{
-	NTSTATUS status = STATUS_SUCCESS;
-	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
-
-	FuncEntry(TRACE_DSBTH);
-	
-	//
-	// Send delayed initialization packets
-	// Required for compatibility with some SIXAXIS models
-	// 
-	WdfTimerStart(
-		pDevCtx->Connection.Bth.Timers.StartupDelay,
-		WDF_REL_TIMEOUT_IN_SEC(1)
-	);
-
-	FuncExit(TRACE_DSBTH, "status=%!STATUS!", status);
-
-	return status;
-}
-
-NTSTATUS DsBth_SelfManagedIoSuspend(WDFDEVICE Device)
-{
-	NTSTATUS status = STATUS_SUCCESS;
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
-
-	FuncEntry(TRACE_DSBTH);
-
-	WdfTimerStop(pDevCtx->Connection.Bth.Timers.StartupDelay, FALSE);
-
-	DMF_DefaultTarget_StreamStop(pDevCtx->Connection.Bth.HidInterrupt.InputStreamerModule);
-	DMF_DefaultTarget_StreamStop(pDevCtx->Connection.Bth.HidControl.OutputWriterModule);
-
-	//
-	// Instruct disconnect to start PDO removal procedure
-	// 
-	if (!NT_SUCCESS(status = DsBth_SendDisconnectRequest(pDevCtx)))
-	{
-		TraceVerbose(
-			TRACE_DSBTH,
-			"DsBth_SendDisconnectRequest failed with status %!STATUS!",
-			status
-		);
-		EventWriteFailedWithNTStatus(__FUNCTION__, L"DsBth_SendDisconnectRequest", status);
-	}
-
-	FuncExit(TRACE_DSBTH, "status=%!STATUS!", status);
-
-	return status;
-}
-
+//
+// Power-up tasks on Bluetooth
+// 
 NTSTATUS DsBth_D0Entry(WDFDEVICE Device, WDF_POWER_DEVICE_STATE PreviousState)
 {
 	NTSTATUS status = STATUS_SUCCESS;
@@ -153,6 +105,63 @@ NTSTATUS DsBth_D0Entry(WDFDEVICE Device, WDF_POWER_DEVICE_STATE PreviousState)
 		WdfIoTargetStart(pDevCtx->Connection.Bth.HidControl.OutputWriterIoTarget);
 	}
 	
+	FuncExit(TRACE_DSBTH, "status=%!STATUS!", status);
+
+	return status;
+}
+
+//
+// Power-up tasks on Bluetooth
+// 
+NTSTATUS DsBth_SelfManagedIoInit(WDFDEVICE Device)
+{
+	NTSTATUS status = STATUS_SUCCESS;
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+
+	FuncEntry(TRACE_DSBTH);
+	
+	//
+	// Send delayed initialization packets
+	// Required for compatibility with some SIXAXIS models
+	// 
+	WdfTimerStart(
+		pDevCtx->Connection.Bth.Timers.StartupDelay,
+		WDF_REL_TIMEOUT_IN_SEC(1)
+	);
+
+	FuncExit(TRACE_DSBTH, "status=%!STATUS!", status);
+
+	return status;
+}
+
+//
+// Power-down tasks on Bluetooth
+// 
+NTSTATUS DsBth_SelfManagedIoSuspend(WDFDEVICE Device)
+{
+	NTSTATUS status = STATUS_SUCCESS;
+	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+
+	FuncEntry(TRACE_DSBTH);
+
+	WdfTimerStop(pDevCtx->Connection.Bth.Timers.StartupDelay, FALSE);
+
+	DMF_DefaultTarget_StreamStop(pDevCtx->Connection.Bth.HidInterrupt.InputStreamerModule);
+	DMF_DefaultTarget_StreamStop(pDevCtx->Connection.Bth.HidControl.OutputWriterModule);
+
+	//
+	// Instruct disconnect to start PDO removal procedure
+	// 
+	if (!NT_SUCCESS(status = DsBth_SendDisconnectRequest(pDevCtx)))
+	{
+		TraceVerbose(
+			TRACE_DSBTH,
+			"DsBth_SendDisconnectRequest failed with status %!STATUS!",
+			status
+		);
+		EventWriteFailedWithNTStatus(__FUNCTION__, L"DsBth_SendDisconnectRequest", status);
+	}
+
 	FuncExit(TRACE_DSBTH, "status=%!STATUS!", status);
 
 	return status;
