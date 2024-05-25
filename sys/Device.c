@@ -771,14 +771,9 @@ DsDevice_HotReloadEventCallback(
 	FuncExitNoReturn(TRACE_DEVICE);
 }
 
-/**
- * Registers an event listener to trigger refreshing runtime properties
- *
- * @author	Benjamin "Nefarius" Höglinger-Stelzer
- * @date	15.04.2021
- *
- * @param 	Context	The context.
- */
+//
+// Registers an event listener to trigger refreshing runtime properties
+// 
 void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
 {
 	CHAR programDataPath[MAX_PATH];
@@ -869,14 +864,9 @@ void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
 	FuncExitNoReturn(TRACE_DEVICE);
 }
 
-/**
- * Register event to disconnect from Bluetooth, bypassing mshidumdf.sys
- *
- * @author	Benjamin "Nefarius" Höglinger-Stelzer
- * @date	15.04.2021
- *
- * @param 	Context	The context.
- */
+//
+// Register event to disconnect from Bluetooth, bypassing mshidumdf.sys
+// 
 void DsDevice_RegisterBthDisconnectListener(PDEVICE_CONTEXT Context)
 {
 	WCHAR dcEventName[44];
@@ -957,16 +947,11 @@ void DsDevice_RegisterBthDisconnectListener(PDEVICE_CONTEXT Context)
 	FuncExitNoReturn(TRACE_DEVICE);
 }
 
-/**
- * Signals existing wireless connection with same device address to terminate. The controller
- * does not disconnect from Bluetooth on its own once connected to USB, so we signal the
- * wireless device object to disconnect itself before continuing with USB initialization.
- *
- * @author	Benjamin "Nefarius" Höglinger-Stelzer
- * @date	15.04.2021
- *
- * @param 	Context	The context.
- */
+//
+// Signals existing wireless connection with same device address to terminate. The controller
+// does not disconnect from Bluetooth on its own once connected to USB, so we signal the
+// wireless device object to disconnect itself before continuing with USB initialization.
+// 
 void DsDevice_InvokeLocalBthDisconnect(PDEVICE_CONTEXT Context)
 {
 	WCHAR deviceAddress[13];
@@ -1046,7 +1031,6 @@ DmfDeviceModulesAdd(
 	_In_ PDMFMODULE_INIT DmfModuleInit
 )
 {
-	PDEVICE_CONTEXT pDevCtx;
 	DMF_MODULE_ATTRIBUTES moduleAttributes;
 	DMF_CONFIG_DsHidMini dsHidMiniCfg;
 	DMF_CONFIG_ThreadedBufferQueue dmfBufferCfg;
@@ -1057,7 +1041,7 @@ DmfDeviceModulesAdd(
 
 	FuncEntry(TRACE_DEVICE);
 
-	pDevCtx = DeviceGetContext(Device);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 
 	//
 	// Threaded buffer queue used to serialize output report packets
