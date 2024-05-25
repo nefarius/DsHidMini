@@ -1,19 +1,3 @@
-/*++
-
-Module Name:
-
-	driver.c
-
-Abstract:
-
-	This file contains the driver entry points and callbacks.
-
-Environment:
-
-	User-mode Driver Framework 2
-
---*/
-
 #include "Driver.h"
 #include "Driver.tmh"
 
@@ -31,7 +15,7 @@ DMF_DEFAULT_DRIVERENTRY(DriverEntry,
 // 
 BOOL APIENTRY DllMain(
 	HMODULE hModule,
-	DWORD  ul_reason_for_call,
+	DWORD ul_reason_for_call,
 	LPVOID lpReserved
 )
 {
