@@ -103,15 +103,13 @@ NTSTATUS DsUsb_Ds3RequestHostAddress(WDFDEVICE Device)
 	propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
 	propertyData.Lcid = LOCALE_NEUTRAL;
 
-	status = WdfDeviceAssignProperty(
+	if (!NT_SUCCESS(status = WdfDeviceAssignProperty(
 		Device,
 		&propertyData,
 		DEVPROP_TYPE_NTSTATUS,
 		sizeof(NTSTATUS),
 		&status
-	);
-
-	if (!NT_SUCCESS(status))
+	)))
 	{
 		TraceError(
 			TRACE_DS3,
@@ -134,16 +132,14 @@ NTSTATUS DsUsb_Ds3RequestHostAddress(WDFDEVICE Device)
 		(UINT64)(pDevCtx->HostAddress.Address[2]) << 24 |
 		(UINT64)(pDevCtx->HostAddress.Address[1]) << 32 |
 		(UINT64)(pDevCtx->HostAddress.Address[0]) << 40;
-
-	status = WdfDeviceAssignProperty(
+	
+	if (!NT_SUCCESS(status = WdfDeviceAssignProperty(
 		Device,
 		&propertyData,
 		DEVPROP_TYPE_UINT64,
 		sizeof(UINT64),
 		&hostAddress
-	);
-
-	if (!NT_SUCCESS(status))
+	)))
 	{
 		TraceError(
 			TRACE_DS3,
@@ -462,16 +458,14 @@ NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 
 	//
 	// Store in property
-	// 
-	status = WdfDeviceAssignProperty(
+	// 	
+	if (!NT_SUCCESS(status = WdfDeviceAssignProperty(
 		Device,
 		&propertyData,
 		DEVPROP_TYPE_NTSTATUS,
 		sizeof(NTSTATUS),
 		&status
-	);
-
-	if (!NT_SUCCESS(status))
+	)))
 	{
 		TraceError(
 			TRACE_DS3,
