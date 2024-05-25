@@ -607,7 +607,7 @@ NTSTATUS DsUsb_PrepareHardware(WDFDEVICE Device)
 NTSTATUS DsUsb_D0Entry(WDFDEVICE Device)
 {
 	NTSTATUS status = STATUS_SUCCESS;
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 
 	FuncEntry(TRACE_DSUSB);
 
@@ -653,7 +653,7 @@ NTSTATUS DsUsb_D0Entry(WDFDEVICE Device)
 NTSTATUS DsUdb_D0Exit(WDFDEVICE Device)
 {
 	NTSTATUS status = STATUS_SUCCESS;
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 
 	FuncEntry(TRACE_DSUSB);
 
