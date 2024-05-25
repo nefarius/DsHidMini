@@ -890,7 +890,8 @@ ConfigLoadForDevice(
 	//
 	// Verify if desired new range for heavy rumbling rescale is valid and attempt to calculate rescaling constants if so
 	// 
-	DS_RUMBLE_SETTINGS* rumbSet = &Context->Configuration.RumbleSettings;
+	const DS_RUMBLE_SETTINGS* rumbSet = &Context->Configuration.RumbleSettings;
+
 	if (
 		rumbSet->AlternativeMode.MaxRange > rumbSet->AlternativeMode.MinRange
 		&& rumbSet->AlternativeMode.MinRange > 0
@@ -898,8 +899,8 @@ ConfigLoadForDevice(
 	{
 		Context->RumbleControlState.AltMode.IsEnabled = rumbSet->AlternativeMode.IsEnabled;
 
-		DOUBLE LConstA = (DOUBLE)(rumbSet->AlternativeMode.MaxRange - rumbSet->AlternativeMode.MinRange) / (254);
-		DOUBLE LConstB = rumbSet->AlternativeMode.MaxRange - LConstA * 255;
+		const DOUBLE LConstA = (DOUBLE)(rumbSet->AlternativeMode.MaxRange - rumbSet->AlternativeMode.MinRange) / (254);
+		const DOUBLE LConstB = rumbSet->AlternativeMode.MaxRange - LConstA * 255;
 
 		Context->RumbleControlState.AltMode.LightRescale.ConstA = LConstA;
 		Context->RumbleControlState.AltMode.LightRescale.ConstB = LConstB;
@@ -911,13 +912,12 @@ ConfigLoadForDevice(
 			Context->RumbleControlState.AltMode.LightRescale.ConstA,
 			Context->RumbleControlState.AltMode.LightRescale.ConstB
 		);
-
 	}
 	else
 	{
 		TraceVerbose(
 			TRACE_CONFIG,
-			"Disallowing light rumble rescalling because an invalid range was defined"
+			"Disallowing light rumble rescaling because an invalid range was defined"
 		);
 		Context->RumbleControlState.AltMode.LightRescale.IsAllowed = FALSE;
 	}
@@ -932,8 +932,8 @@ ConfigLoadForDevice(
 	{
 		Context->RumbleControlState.HeavyRescaleEnabled = rumbSet->HeavyRescaling.IsEnabled;
 
-		DOUBLE HConstA = (DOUBLE)(rumbSet->HeavyRescaling.MaxRange - rumbSet->HeavyRescaling.MinRange) / (254);
-		DOUBLE HConstB = rumbSet->HeavyRescaling.MaxRange - HConstA * 255;
+		const DOUBLE HConstA = (DOUBLE)(rumbSet->HeavyRescaling.MaxRange - rumbSet->HeavyRescaling.MinRange) / (254);
+		const DOUBLE HConstB = rumbSet->HeavyRescaling.MaxRange - HConstA * 255;
 
 		Context->RumbleControlState.HeavyRescale.ConstA = HConstA;
 		Context->RumbleControlState.HeavyRescale.ConstB = HConstB;
