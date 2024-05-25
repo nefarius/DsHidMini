@@ -244,10 +244,8 @@ USB_WriteInterruptOutSync(
 NTSTATUS DsUsb_PrepareHardware(WDFDEVICE Device)
 {
 	NTSTATUS status = STATUS_SUCCESS;
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 	WDF_USB_DEVICE_SELECT_CONFIG_PARAMS configParams;
-	UCHAR index;
-	WDFUSBPIPE pipe;
 	WDF_USB_PIPE_INFORMATION pipeInfo;
 	UCHAR controlTransferBuffer[CONTROL_TRANSFER_BUFFER_LENGTH];
 	WDF_DEVICE_PROPERTY_DATA propertyData;
@@ -378,11 +376,11 @@ NTSTATUS DsUsb_PrepareHardware(WDFDEVICE Device)
 		//
 		// Get pipe handles
 		//
-		for (index = 0; index < WdfUsbInterfaceGetNumConfiguredPipes(pDevCtx->Connection.Usb.UsbInterface); index++)
+		for (UCHAR index = 0; index < WdfUsbInterfaceGetNumConfiguredPipes(pDevCtx->Connection.Usb.UsbInterface); index++)
 		{
 			WDF_USB_PIPE_INFORMATION_INIT(&pipeInfo);
 
-			pipe = WdfUsbInterfaceGetConfiguredPipe(
+			const WDFUSBPIPE pipe = WdfUsbInterfaceGetConfiguredPipe(
 				pDevCtx->Connection.Usb.UsbInterface,
 				index, //PipeIndex,
 				&pipeInfo
@@ -443,6 +441,7 @@ NTSTATUS DsUsb_PrepareHardware(WDFDEVICE Device)
 
 		//
 		// Request device MAC address
+		// TODO: move somewhere else and continue startup on soft-fail
 		// 
 		if (!NT_SUCCESS(status = USB_SendControlRequest(
 			pDevCtx,
@@ -545,7 +544,7 @@ NTSTATUS DsUsb_PrepareHardware(WDFDEVICE Device)
 #pragma region Request Model Identification
 
 		//
-		// See https://github.com/ViGEm/DsHidMini/issues/50
+		// See https://github.com/nefarius/DsHidMini/issues/50
 		// 
 		if (NT_SUCCESS(USB_SendControlRequest(
 			pDevCtx,
