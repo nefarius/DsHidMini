@@ -6,7 +6,7 @@
 
 EVT_DMF_DEVICE_MODULES_ADD DmfDeviceModulesAdd;
 
-EVT_WDF_DEVICE_CONTEXT_CLEANUP DsHidMiniDeviceCleanup;
+EVT_WDF_DEVICE_CONTEXT_CLEANUP DsHidMini_DeviceCleanup;
 
 #pragma code_seg("PAGED")
 DMF_DEFAULT_DRIVERCLEANUP(dshidminiEvtDriverContextCleanup)
@@ -26,7 +26,6 @@ dshidminiEvtDeviceAdd(
 	PDMFDEVICE_INIT dmfDeviceInit;
 	DMF_EVENT_CALLBACKS dmfCallbacks;
 	WDF_PNPPOWER_EVENT_CALLBACKS pnpPowerCallbacks;
-	PDEVICE_CONTEXT pDevCtx;
 	WDFQUEUE queue;
 	WDF_IO_QUEUE_CONFIG queueConfig;
 	BOOLEAN ret;
@@ -79,7 +78,7 @@ dshidminiEvtDeviceAdd(
 	DMF_DmfFdoSetFilter(dmfDeviceInit);
 
 	WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_CONTEXT);
-	deviceAttributes.EvtCleanupCallback = DsHidMiniDeviceCleanup;
+	deviceAttributes.EvtCleanupCallback = DsHidMini_DeviceCleanup;
 
 	status = WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device);
 
@@ -105,7 +104,7 @@ dshidminiEvtDeviceAdd(
 			break;
 		}
 
-		pDevCtx = DeviceGetContext(device);
+		const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(device);
 
 		//
 		// Initialize context
@@ -209,7 +208,7 @@ dshidminiEvtDeviceAdd(
 // Device context clean-up
 //
 #pragma code_seg("PAGED")
-void DsHidMiniDeviceCleanup(
+void DsHidMini_DeviceCleanup(
 	WDFOBJECT Object
 )
 {
