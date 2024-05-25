@@ -2,6 +2,7 @@
 #include "Configuration.tmh"
 
 
+static
 void
 ConfigSetDefaults(
 	_Inout_ PDS_DRIVER_CONFIGURATION Config
@@ -12,7 +13,7 @@ ConfigSetDefaults(
 //
 // Translates a friendly name string into the corresponding DS_HID_DEVICE_MODE value
 // 
-static DS_HID_DEVICE_MODE HID_DEVICE_MODE_FROM_NAME(PSTR ModeName)
+static DS_HID_DEVICE_MODE HID_DEVICE_MODE_FROM_NAME(_In_ const PSTR ModeName)
 {
 	for (DS_HID_DEVICE_MODE value = 1; value < (DS_HID_DEVICE_MODE)_countof(G_HID_DEVICE_MODE_NAMES); value++)
 	{
@@ -28,7 +29,7 @@ static DS_HID_DEVICE_MODE HID_DEVICE_MODE_FROM_NAME(PSTR ModeName)
 //
 // Translates a friendly name string into the corresponding DS_DEVICE_PAIRING_MODE value
 // 
-static DS_DEVICE_PAIRING_MODE DS_DEVICE_PAIRING_MODE_FROM_NAME(PSTR ModeName)
+static DS_DEVICE_PAIRING_MODE DS_DEVICE_PAIRING_MODE_FROM_NAME(_In_ const PSTR ModeName)
 {
 	if (!_strcmpi(ModeName, G_DEVICE_PAIRING_MODE_NAMES[2]))
 	{
@@ -51,7 +52,7 @@ static DS_DEVICE_PAIRING_MODE DS_DEVICE_PAIRING_MODE_FROM_NAME(PSTR ModeName)
 //
 // Translates a friendly name string into the corresponding DS_PRESSURE_EXPOSURE_MODE value
 // 
-static DS_PRESSURE_EXPOSURE_MODE DS_PRESSURE_EXPOSURE_MODE_FROM_NAME(PSTR ModeName)
+static DS_PRESSURE_EXPOSURE_MODE DS_PRESSURE_EXPOSURE_MODE_FROM_NAME(_In_ const PSTR ModeName)
 {
 	if (!_strcmpi(ModeName, G_PRESSURE_EXPOSURE_MODE_NAMES[2]))
 	{
@@ -74,7 +75,7 @@ static DS_PRESSURE_EXPOSURE_MODE DS_PRESSURE_EXPOSURE_MODE_FROM_NAME(PSTR ModeNa
 //
 // Translates a friendly name string into the corresponding DS_DPAD_EXPOSURE_MODE value
 // 
-static DS_DPAD_EXPOSURE_MODE DS_DPAD_EXPOSURE_MODE_FROM_NAME(PSTR ModeName)
+static DS_DPAD_EXPOSURE_MODE DS_DPAD_EXPOSURE_MODE_FROM_NAME(_In_ const PSTR ModeName)
 {
 	if (!_strcmpi(ModeName, G_DPAD_EXPOSURE_MODE_NAMES[2]))
 	{
@@ -97,7 +98,7 @@ static DS_DPAD_EXPOSURE_MODE DS_DPAD_EXPOSURE_MODE_FROM_NAME(PSTR ModeName)
 //
 // Translates a friendly name string into the corresponding DS_LED_MODE value
 // 
-static DS_LED_MODE DS_LED_MODE_FROM_NAME(PSTR ModeName)
+static DS_LED_MODE DS_LED_MODE_FROM_NAME(_In_ const PSTR ModeName)
 {
 	if (!_strcmpi(ModeName, G_LED_MODE_NAMES[2]))
 	{
@@ -120,7 +121,7 @@ static DS_LED_MODE DS_LED_MODE_FROM_NAME(PSTR ModeName)
 //
 // Translates a friendly name string into the corresponding DS_LED_AUTHORITY value
 // 
-static DS_LED_AUTHORITY DS_LED_AUTHORITY_FROM_NAME(PSTR AuthorityName)
+static DS_LED_AUTHORITY DS_LED_AUTHORITY_FROM_NAME(_In_ const PSTR AuthorityName)
 {
 	if (!_strcmpi(AuthorityName, G_DS_LED_AUTHORITY_NAMES[2]))
 	{
@@ -356,7 +357,7 @@ ConfigParseLEDSettings(
 		cJSON* pPlayer = NULL;
 		for (ULONGLONG playerIndex = 0; playerIndex < _countof(playerSlotNames); playerIndex++)
 		{
-			if (pPlayer = cJSON_GetObjectItem(pCustomPatterns, playerSlotNames[playerIndex]))
+			if ((pPlayer = cJSON_GetObjectItem(pCustomPatterns, playerSlotNames[playerIndex])))
 			{
 				if ((pNode = cJSON_GetObjectItem(pPlayer, "TotalDuration")))
 				{
@@ -501,10 +502,9 @@ static void ConfigNodeParse(
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "CustomPairingAddress")))
 	{
 		char* eptr; // not used
-		long long addressAsNumber = strtoll(cJSON_GetStringValue(pNode), &eptr, 16);
+		const long long addressAsNumber = strtoll(cJSON_GetStringValue(pNode), &eptr, 16);
 		for (int i = 0; i < 6; i++)
 		{
-
 			pCfg->CustomHostAddress[5 - i] = (UCHAR)((addressAsNumber >> (8 * i)) & 0xFF);
 		}
 		TraceVerbose(
@@ -978,6 +978,7 @@ ConfigLoadForDevice(
 //
 // Set default values (if no customized configuration is available)
 // 
+static
 void
 ConfigSetDefaults(
 	_Inout_ PDS_DRIVER_CONFIGURATION Config
