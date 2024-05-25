@@ -152,6 +152,6 @@ NTSTATUS DS3_GetActiveRadioAddress(BD_ADDR* Address);
 
 NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device);
 
-NTSTATUS DsBth_Ds3Init(PDEVICE_CONTEXT Context);
+NTSTATUS DsBth_Ds3SixaxisInit(PDEVICE_CONTEXT Context);
 
 NTSTATUS DsUsb_Ds3RequestHostAddress(WDFDEVICE Device);

@@ -488,7 +488,7 @@ NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 //
 // Send magic packet over BTH
 // 
-NTSTATUS DsBth_Ds3Init(PDEVICE_CONTEXT Context)
+NTSTATUS DsBth_Ds3SixaxisInit(PDEVICE_CONTEXT Context)
 {
 	FuncEntry(TRACE_DS3);
 

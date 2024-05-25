@@ -32,6 +32,7 @@
     <ClCompile Include="Driver.c" />
     <ClCompile Include="Ds3.c" />
     <ClCompile Include="DsBth.c" />
+    <ClCompile Include="DsBth.Timers.c" />
     <ClCompile Include="DsHid.c" />
     <ClCompile Include="DsHidMiniDrv.c" />
     <ClCompile Include="DsUsb.c" />

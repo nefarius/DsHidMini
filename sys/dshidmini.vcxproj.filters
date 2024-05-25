@@ -206,6 +206,9 @@
     <ClCompile Include="Configuration.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DsBth.Timers.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="dshidmini.rc">
