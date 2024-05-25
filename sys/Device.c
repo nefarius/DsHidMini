@@ -404,7 +404,7 @@ DsDevice_InitContext(
 	WDFDEVICE Device
 )
 {
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 	NTSTATUS status = STATUS_SUCCESS;
 	WDF_OBJECT_ATTRIBUTES attributes;
 	PUCHAR outReportBuffer = NULL;
