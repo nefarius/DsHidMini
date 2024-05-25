@@ -65,10 +65,15 @@ struct BTH_DEVICE_CONTEXT
 	struct
 	{
 		//
-		// Delayed Output Report Timer
+		// Delayed startup timer
 		// 
-		WDFTIMER HidOutputReport;
-				
+		WDFTIMER StartupDelay;
+
+		//
+		// Post-delayed start timer
+		// 
+		WDFTIMER PostStartupTasks;
+
 	} Timers;
 	
 	//

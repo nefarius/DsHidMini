@@ -13,13 +13,12 @@ DsHidMini_EvtWdfDeviceSelfManagedIoInit(
 )
 {
 	NTSTATUS status = STATUS_SUCCESS;
-	PDEVICE_CONTEXT pDevCtx;
 
 	PAGED_CODE();
 
 	FuncEntry(TRACE_POWER);
 
-	pDevCtx = DeviceGetContext(Device);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
 	{
@@ -41,7 +40,7 @@ DsHidMini_EvtWdfDeviceSelfManagedIoSuspend(
 )
 {
 	NTSTATUS status = STATUS_SUCCESS;
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 
 	FuncEntry(TRACE_POWER);
 
@@ -67,14 +66,13 @@ DsHidMini_EvtDevicePrepareHardware(
 )
 {
 	NTSTATUS status = STATUS_SUCCESS;
-	PDEVICE_CONTEXT pDevCtx;
-		
+
 	UNREFERENCED_PARAMETER(ResourcesRaw);
 	UNREFERENCED_PARAMETER(ResourcesTranslated);
 
 	FuncEntry(TRACE_POWER);
 
-	pDevCtx = DeviceGetContext(Device);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 
 	//
 	// Initialize USB
@@ -102,10 +100,9 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 	_In_ WDF_POWER_DEVICE_STATE PreviousState
 )
 {
-	PDEVICE_CONTEXT pDevCtx;
 	NTSTATUS status = STATUS_SUCCESS;
 
-	pDevCtx = DeviceGetContext(Device);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 
 	FuncEntry(TRACE_POWER);
 
@@ -138,13 +135,12 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 )
 {
 	NTSTATUS status = STATUS_SUCCESS;
-	PDEVICE_CONTEXT pDevCtx;
 
 	UNREFERENCED_PARAMETER(TargetState);
 
 	FuncEntry(TRACE_POWER);
 
-	pDevCtx = DeviceGetContext(Device);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 
 	//
 	// Stop processing received output report packets

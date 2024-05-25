@@ -33,6 +33,9 @@ extern const UCHAR G_Ds3BthHidOutputReport[];
 #define DS3_BTH_SET_SMALL_RUMBLE_STRENGTH(_buf_, _str_)  ((_buf_)[4] = (_str_) > 0 ? 0x01 : 0x00)
 #define DS3_BTH_SET_LARGE_RUMBLE_STRENGTH(_buf_, _str_)  ((_buf_)[6] = (_str_))
 
+#define DS3_USB_COMMON_ENABLE		0x42, 0x0C, 0x00, 0x00
+#define DS3_BTH_SIXAXIS_ENABLE		0x53, 0xF4, 0x42, 0x03, 0x00, 0x00
+
 
 VOID DS3_SET_LED_DURATION(
 	PDEVICE_CONTEXT Context,
@@ -149,6 +152,6 @@ NTSTATUS DS3_GetActiveRadioAddress(BD_ADDR* Address);
 
 NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device);
 
-NTSTATUS DsBth_Ds3Init(PDEVICE_CONTEXT Context);
+NTSTATUS DsBth_Ds3SixaxisInit(PDEVICE_CONTEXT Context);
 
 NTSTATUS DsUsb_Ds3RequestHostAddress(WDFDEVICE Device);

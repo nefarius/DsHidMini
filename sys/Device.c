@@ -495,32 +495,59 @@ DsDevice_InitContext(
 		// 
 		DS3_BTH_SET_LED(outReportBuffer, DS3_LED_OFF);
 
-		//
-		// Output Report Delay
-		// 
+#pragma region StartupDelay
 
 		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
 		attributes.ParentObject = Device;
 
 		WDF_TIMER_CONFIG_INIT(
 			&timerCfg,
-			DsBth_EvtControlWriteTimerFunc
+			DsBth_EvtStartupDelayTimerFunc
 		);
 
 		if (!NT_SUCCESS(status = WdfTimerCreate(
 			&timerCfg,
 			&attributes,
-			&pDevCtx->Connection.Bth.Timers.HidOutputReport
+			&pDevCtx->Connection.Bth.Timers.StartupDelay
 		)))
 		{
 			TraceError(
 				TRACE_DSBTH,
-				"WdfTimerCreate (HidOutputReport) failed with status %!STATUS!",
+				"WdfTimerCreate (StartupDelay) failed with status %!STATUS!",
 				status
 			);
-			EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfTimerCreate", status);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfTimerCreate (StartupDelay)", status);
 			break;
 		}
+
+#pragma endregion
+
+#pragma region PostStartupTasks
+
+		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
+		attributes.ParentObject = Device;
+
+		WDF_TIMER_CONFIG_INIT(
+			&timerCfg,
+			DsBth_EvtPostStartupTimerFunc
+		);
+
+		if (!NT_SUCCESS(status = WdfTimerCreate(
+			&timerCfg,
+			&attributes,
+			&pDevCtx->Connection.Bth.Timers.PostStartupTasks
+		)))
+		{
+			TraceError(
+				TRACE_DSBTH,
+				"WdfTimerCreate (PostStartupTasks) failed with status %!STATUS!",
+				status
+			);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfTimerCreate (PostStartupTasks)", status);
+			break;
+		}
+
+#pragma endregion
 
 		break;
 	}
