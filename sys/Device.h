@@ -69,6 +69,9 @@ struct BTH_DEVICE_CONTEXT
 		// 
 		WDFTIMER StartupDelay;
 
+		//
+		// Post-delayed start timer
+		// 
 		WDFTIMER PostStartupTasks;
 
 	} Timers;
