@@ -55,7 +55,7 @@ DsBth_DisconnectEventCallback(
 )
 {
 	NTSTATUS status;
-	PDEVICE_CONTEXT pDevCtx = (PDEVICE_CONTEXT)lpParameter;
+	const PDEVICE_CONTEXT pDevCtx = (PDEVICE_CONTEXT)lpParameter;
 	UNREFERENCED_PARAMETER(TimerOrWaitFired);
 
 	FuncEntry(TRACE_DSBTH);
@@ -82,7 +82,7 @@ DsBth_DisconnectEventCallback(
 NTSTATUS DsBth_D0Entry(WDFDEVICE Device, WDF_POWER_DEVICE_STATE PreviousState)
 {
 	NTSTATUS status = STATUS_SUCCESS;
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 
 	FuncEntry(TRACE_DSBTH);
 
@@ -99,8 +99,6 @@ NTSTATUS DsBth_D0Entry(WDFDEVICE Device, WDF_POWER_DEVICE_STATE PreviousState)
 	}
 	else
 	{
-		// Targets are started by default.
-		//
 		WdfIoTargetStart(pDevCtx->Connection.Bth.HidInterrupt.InputStreamerIoTarget);
 		WdfIoTargetStart(pDevCtx->Connection.Bth.HidControl.OutputWriterIoTarget);
 	}
@@ -140,7 +138,7 @@ NTSTATUS DsBth_SelfManagedIoInit(WDFDEVICE Device)
 NTSTATUS DsBth_SelfManagedIoSuspend(WDFDEVICE Device)
 {
 	NTSTATUS status = STATUS_SUCCESS;
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 
 	FuncEntry(TRACE_DSBTH);
 
