@@ -170,7 +170,7 @@ NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context)
 	// "Magic packet"
 	// 
 	UCHAR hidCommandEnable[] = {
-		0x42, 0x0C, 0x00, 0x00
+		DS3_USB_COMMON_ENABLE
 	};
 
 	status = USB_SendControlRequest(
@@ -496,7 +496,7 @@ NTSTATUS DsBth_Ds3Init(PDEVICE_CONTEXT Context)
 	// "Magic packet"
 	// 
 	BYTE hidCommandEnable[] = {
-		0x53, 0xF4, 0x42, 0x03, 0x00, 0x00
+		DS3_BTH_SIXAXIS_ENABLE
 	};
 
 	NTSTATUS status;
