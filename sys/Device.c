@@ -283,15 +283,14 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 			//
 			// Get device property (returns wide hex string)
 			// 
-			status = WdfDeviceAllocAndQueryPropertyEx(
+			if (!NT_SUCCESS(status = WdfDeviceAllocAndQueryPropertyEx(
 				Device,
 				&devProp,
 				NonPagedPoolNx,
 				WDF_NO_OBJECT_ATTRIBUTES,
 				&deviceAddressMemory,
 				&propType
-			);
-			if (!NT_SUCCESS(status))
+			)))
 			{
 				TraceError(
 					TRACE_DEVICE,
@@ -305,7 +304,7 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 			//
 			// Convert hex string into UINT64
 			// 
-			UINT64 hostAddress = wcstoull(
+			const UINT64 hostAddress = wcstoull(
 				WdfMemoryGetBuffer(deviceAddressMemory, NULL),
 				L'\0',
 				16
@@ -331,16 +330,15 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 			);
 
 			WDF_DEVICE_PROPERTY_DATA_INIT(&devProp, &DEVPKEY_Bluetooth_DeviceVID);
-
-			status = WdfDeviceQueryPropertyEx(
+			
+			if (!NT_SUCCESS(status = WdfDeviceQueryPropertyEx(
 				Device,
 				&devProp,
 				sizeof(USHORT),
 				&pDevCtx->VendorId,
 				&requiredSize,
 				&propType
-			);
-			if (!NT_SUCCESS(status))
+			)))
 			{
 				TraceError(
 					TRACE_DEVICE,
@@ -355,15 +353,14 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 
 			WDF_DEVICE_PROPERTY_DATA_INIT(&devProp, &DEVPKEY_Bluetooth_DevicePID);
 
-			status = WdfDeviceQueryPropertyEx(
+			if (!NT_SUCCESS(status = WdfDeviceQueryPropertyEx(
 				Device,
 				&devProp,
 				sizeof(USHORT),
 				&pDevCtx->ProductId,
 				&requiredSize,
 				&propType
-			);
-			if (!NT_SUCCESS(status))
+			)))
 			{
 				TraceError(
 					TRACE_DEVICE,
