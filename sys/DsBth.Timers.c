@@ -110,6 +110,7 @@ DsBth_EvtPostStartupTimerFunc(
 			TRACE_DSBTH,
 			"Battery status still unknown, applying workarounds"
 		);
+		EventWriteApplyingWirelessWorkarounds();
 
 		//
 		// Send magic packet, starts input report sending
