@@ -761,7 +761,7 @@ DsDevice_HotReloadEventCallback(
 		//
 		// Changes to LED settings need to be pushed to the device
 		// 
-		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverHighPriority);
+		(void)DSHM_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverHighPriority);
 
 	} while (FALSE);
 
@@ -1050,7 +1050,7 @@ DmfDeviceModulesAdd(
 	);
 	moduleAttributes.PassiveLevel = TRUE;
 
-	dmfBufferCfg.EvtThreadedBufferQueueWork = DMF_EvtExecuteOutputPacketReceived;
+	dmfBufferCfg.EvtThreadedBufferQueueWork = DSHM_EvtExecuteOutputPacketReceived;
 	// Fixed amount of buffers, no auto-grow
 	dmfBufferCfg.BufferQueueConfig.SourceSettings.EnableLookAside = FALSE;
 	/*

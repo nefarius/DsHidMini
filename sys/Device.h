@@ -432,7 +432,7 @@ DMF_DsHidMini_Close(
 );
 
 
-EVT_DMF_ThreadedBufferQueue_Callback DMF_EvtExecuteOutputPacketReceived;
+EVT_DMF_ThreadedBufferQueue_Callback DSHM_EvtExecuteOutputPacketReceived;
 
 EVT_WDF_TIMER DSHM_OutputReportDelayTimerElapsed;
 

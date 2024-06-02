@@ -62,6 +62,6 @@ DsHidMini_WriteReport(
 
 VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Report);
 
-NTSTATUS Ds_SendOutputReport(PDEVICE_CONTEXT Context, DS_OUTPUT_REPORT_SOURCE Source);
+NTSTATUS DSHM_SendOutputReport(PDEVICE_CONTEXT Context, DS_OUTPUT_REPORT_SOURCE Source);
 
 VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength);

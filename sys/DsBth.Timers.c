@@ -51,7 +51,7 @@ DsBth_EvtStartupDelayTimerFunc(
 	DS3_SET_LARGE_RUMBLE_DURATION(pDevCtx, 0xFE);
 	DS3_SET_BOTH_RUMBLE_STRENGTH(pDevCtx, 0x00, 0x00);
 
-	if (!NT_SUCCESS(status = Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverHighPriority)))
+	if (!NT_SUCCESS(status = DSHM_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverHighPriority)))
 	{
 		TraceError(
 			TRACE_DSBTH,
