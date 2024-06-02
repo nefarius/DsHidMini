@@ -11,13 +11,13 @@ DSHM_SendOutputReport(
 	DS_OUTPUT_REPORT_SOURCE Source
 )
 {
+	FuncEntry(TRACE_DSHIDMINIDRV);
+
 	NTSTATUS status;
 	PUCHAR sourceBuffer, sendBuffer;
 	size_t sourceBufferLength;
 	PDS_OUTPUT_REPORT_CONTEXT sendContext;
-	const PDS_DRIVER_CONFIGURATION pConfig = &Context->Configuration;
-
-	FuncEntry(TRACE_DSHIDMINIDRV);
+	const PDS_DRIVER_CONFIGURATION pConfig = &Context->Configuration;	
 
 	WdfWaitLockAcquire(Context->OutputReport.Lock, NULL);
 
@@ -142,6 +142,8 @@ DSHM_EvtExecuteOutputPacketReceived(
 	_Out_ NTSTATUS* NtStatus
 )
 {
+	FuncEntry(TRACE_DSHIDMINIDRV);
+
 	ThreadedBufferQueue_BufferDisposition retval = ThreadedBufferQueue_BufferDisposition_WorkComplete;
 	NTSTATUS status = STATUS_UNSUCCESSFUL;
 	const WDFDEVICE device = DMF_ParentDeviceGet(DmfModule);
@@ -156,9 +158,7 @@ DSHM_EvtExecuteOutputPacketReceived(
 	size_t bytesWritten;
 
 	UNREFERENCED_PARAMETER(ClientWorkBufferSize);
-	UNREFERENCED_PARAMETER(NtStatus);
-
-	FuncEntry(TRACE_DSHIDMINIDRV);
+	UNREFERENCED_PARAMETER(NtStatus);	
 
 	QueryPerformanceFrequency(&freq);
 
@@ -336,14 +336,14 @@ DSHM_OutputReportDelayTimerElapsed(
 	WDFTIMER Timer
 )
 {
+	FuncEntry(TRACE_DSHIDMINIDRV);
+
 	const WDFDEVICE device = WdfTimerGetParentObject(Timer);
 	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(device);
 	const PUCHAR sourceBuffer = pDevCtx->OutputReport.Cache.PendingClientBuffer;
 	const PDS_OUTPUT_REPORT_CONTEXT pRepCtx = pDevCtx->OutputReport.Cache.PendingClientBufferContext;
 	PUCHAR targetBuffer;
-	PDS_OUTPUT_REPORT_CONTEXT targetBufferContext;
-
-	FuncEntry(TRACE_DSHIDMINIDRV);
+	PDS_OUTPUT_REPORT_CONTEXT targetBufferContext;	
 
 	//
 	// Protected region
