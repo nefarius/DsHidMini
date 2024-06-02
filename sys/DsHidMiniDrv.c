@@ -647,18 +647,14 @@ DsHidMini_SetFeature(
 	_Out_ ULONG* ReportSize
 )
 {
+	FuncEntry(TRACE_DSHIDMINIDRV);
+
 	NTSTATUS status = STATUS_SUCCESS;
 
 	UNREFERENCED_PARAMETER(Request);
 
-
-	FuncEntry(TRACE_DSHIDMINIDRV);
-
 	const DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
-
-	UNREFERENCED_PARAMETER(pModCtx);
-
-
+	
 #ifdef DSHM_FEATURE_FFB
 
 	FFB_ATTRIBUTES ffbEntry = { 0 };
@@ -768,6 +764,8 @@ DsHidMini_SetFeature(
 		break;
 	}
 
+#else
+	UNREFERENCED_PARAMETER(pModCtx);
 #endif
 
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
