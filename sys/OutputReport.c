@@ -329,7 +329,7 @@ DSHM_EvtExecuteOutputPacketReceived(
 }
 
 //
-// Callback invoked after delay timer elapsed
+// Callback invoked after cache cooldown delay timer elapsed
 // 
 void
 DSHM_OutputReportDelayTimerElapsed(
