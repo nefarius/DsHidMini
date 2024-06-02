@@ -1004,9 +1004,9 @@ ConfigSetDefaults(
 
 	Config->WirelessDisconnectButtonCombo.IsEnabled = TRUE;
 	Config->WirelessDisconnectButtonCombo.HoldTime = 1000;
-	Config->WirelessDisconnectButtonCombo.Buttons[0] = 10;
-	Config->WirelessDisconnectButtonCombo.Buttons[1] = 11;
-	Config->WirelessDisconnectButtonCombo.Buttons[2] = 16;
+	Config->WirelessDisconnectButtonCombo.Buttons[0] = DS3_BUTTON_COMBO_OFFSET_L1;
+	Config->WirelessDisconnectButtonCombo.Buttons[1] = DS3_BUTTON_COMBO_OFFSET_R1;
+	Config->WirelessDisconnectButtonCombo.Buttons[2] = DS3_BUTTON_COMBO_OFFSET_PS;
 
 	Config->ThumbSettings.DeadZoneLeft.Apply = TRUE;
 	Config->ThumbSettings.DeadZoneLeft.PolarValue = 3.0;
@@ -1027,12 +1027,12 @@ ConfigSetDefaults(
 	Config->RumbleSettings.AlternativeMode.ForcedRight.LightThreshold = 242;
 	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.IsEnabled = FALSE;
 	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.HoldTime = 1000;
-	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons[0] = 0; // Select
-	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons[1] = 0; // Select
-	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons[2] = 16; // PS
+	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons[0] = DS3_BUTTON_COMBO_OFFSET_SELECT;
+	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons[1] = DS3_BUTTON_COMBO_OFFSET_SELECT;
+	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons[2] = DS3_BUTTON_COMBO_OFFSET_PS;
 
 	Config->LEDSettings.Mode = DsLEDModeBatteryIndicatorPlayerIndex;
-	Config->LEDSettings.CustomPatterns.LEDFlags = 0x02;
+	Config->LEDSettings.CustomPatterns.LEDFlags = DS3_LED_1;
 
 	const PDS_LED pPlayerSlots[] =
 	{
