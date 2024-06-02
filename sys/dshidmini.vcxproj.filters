@@ -212,6 +212,9 @@
     <ClCompile Include="OutputReport.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Legacy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="dshidmini.rc">

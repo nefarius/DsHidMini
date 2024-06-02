@@ -396,32 +396,6 @@ DMF_DsHidMini_Close(
 
 #pragma region DMF Virtual HID Mini-specific
 
-NTSTATUS
-DsHidMini_GetInputReport(
-	_In_ DMFMODULE DmfModule,
-	_In_ WDFREQUEST Request,
-	_In_ HID_XFER_PACKET* Packet,
-	_Out_ ULONG* ReportSize
-)
-{
-	NTSTATUS status = STATUS_NOT_IMPLEMENTED;
-
-	UNREFERENCED_PARAMETER(DmfModule);
-	UNREFERENCED_PARAMETER(Request);
-	UNREFERENCED_PARAMETER(Packet);
-	UNREFERENCED_PARAMETER(ReportSize);
-
-	FuncEntry(TRACE_DSHIDMINIDRV);
-
-	//
-	// NOTE: not really used by any modern game
-	// 
-
-	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
-
-	return status;
-}
-
 //
 // Submit new HID Input Report.
 // 
@@ -441,7 +415,7 @@ DsHidMini_RetrieveNextInputReport(
 
 	const DMFMODULE dmfModuleParent = DMF_ParentModuleGet(DmfModule);
 	DMF_CONTEXT_DsHidMini* moduleContext = DMF_CONTEXT_GET(dmfModuleParent);
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
 	*Buffer = moduleContext->InputReport;
 

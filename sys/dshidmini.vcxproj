@@ -38,6 +38,7 @@
     <ClCompile Include="DsUsb.c" />
     <ClCompile Include="JSON\cJSON.c" />
     <ClCompile Include="JSON\cJSON_Utils.c" />
+    <ClCompile Include="Legacy.c" />
     <ClCompile Include="OutputReport.c" />
     <ClCompile Include="Power.c" />
   </ItemGroup>
