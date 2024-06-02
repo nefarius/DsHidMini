@@ -11,8 +11,9 @@ USB_SendControlRequest(
     _In_ BYTE Request,
     _In_ USHORT Value,
     _In_ USHORT Index,
-    _In_ PVOID Buffer,
-    _In_ ULONG BufferLength);
+    _Inout_ PVOID Buffer,
+    _In_ ULONG BufferLength
+);
 
 NTSTATUS
 DsUsbConfigContReaderForInterruptEndPoint(
@@ -26,7 +27,8 @@ NTSTATUS USB_WriteInterruptPipeAsync(
     _In_ WDFIOTARGET IoTarget,
     _In_ WDFUSBPIPE Pipe,
     _In_ PVOID Buffer,
-    _In_ size_t BufferLength);
+    _In_ size_t BufferLength
+);
 
 NTSTATUS
 USB_WriteInterruptOutSync(

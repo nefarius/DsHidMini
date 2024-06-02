@@ -13,8 +13,9 @@ USB_SendControlRequest(
 	_In_ BYTE Request,
 	_In_ USHORT Value,
 	_In_ USHORT Index,
-	_In_ PVOID Buffer,
-	_In_ ULONG BufferLength)
+	_Inout_ PVOID Buffer,
+	_In_ ULONG BufferLength
+)
 {
 	NTSTATUS status;
 	WDF_USB_CONTROL_SETUP_PACKET controlSetupPacket;
@@ -43,7 +44,8 @@ USB_SendControlRequest(
 			BmRequestToInterface,
 			Request,
 			Value,
-			Index);
+			Index
+		);
 		break;
 
 	default:
@@ -53,7 +55,8 @@ USB_SendControlRequest(
 	WDF_MEMORY_DESCRIPTOR_INIT_BUFFER(
 		&memDesc,
 		Buffer,
-		BufferLength);
+		BufferLength
+	);
 
 	if (!NT_SUCCESS(status = WdfUsbTargetDeviceSendControlTransferSynchronously(
 		Context->Connection.Usb.UsbDevice,
@@ -61,11 +64,15 @@ USB_SendControlRequest(
 		&sendOptions,
 		&controlSetupPacket,
 		&memDesc,
-		&bytesTransferred)))
+		&bytesTransferred
+	)))
 	{
-		TraceError(TRACE_DSUSB,
-			"WdfUsbTargetDeviceSendControlTransferSynchronously failed with status %!STATUS! (%d)\n",
-			status, bytesTransferred);
+		TraceError(
+			TRACE_DSUSB,
+			"WdfUsbTargetDeviceSendControlTransferSynchronously failed with status %!STATUS! (%d)",
+			status,
+			bytesTransferred
+		);
 	}
 
 	FuncExit(TRACE_DSUSB, "status=%!STATUS!", status);
