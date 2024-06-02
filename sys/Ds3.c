@@ -154,27 +154,49 @@ NTSTATUS DsUsb_Ds3RequestHostAddress(WDFDEVICE Device)
 }
 
 //
-// Sends the "magic packet" to the DS3 so it starts its interrupt endpoint.
+// Instructs the DS3 to start sending data on Interrupt IN
 // 
 NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context)
 {
-	NTSTATUS status;
-
 	FuncEntry(TRACE_DS3);
 
-	// 
-	// "Magic packet"
-	// 
 	UCHAR hidCommandEnable[] = {
 		DS3_USB_COMMON_ENABLE
 	};
 
-	status = USB_SendControlRequest(
+	const NTSTATUS status = USB_SendControlRequest(
 		Context,
 		BmRequestHostToDevice,
 		BmRequestClass,
 		SetReport,
-		Ds3FeatureStartDevice,
+		Ds3FeatureDeviceState,
+		0,
+		hidCommandEnable,
+		ARRAYSIZE(hidCommandEnable)
+	);
+
+	FuncExit(TRACE_DS3, "status=%!STATUS!", status);
+
+	return status;
+}
+
+//
+// Instructs the DS3 to stop sending data on Interrupt IN
+// 
+NTSTATUS DsUsb_Ds3Shutdown(PDEVICE_CONTEXT Context)
+{
+	FuncEntry(TRACE_DS3);
+
+	UCHAR hidCommandEnable[] = {
+		DS3_USB_COMMON_DISABLE
+	};
+
+	const NTSTATUS status = USB_SendControlRequest(
+		Context,
+		BmRequestHostToDevice,
+		BmRequestClass,
+		SetReport,
+		Ds3FeatureDeviceState,
 		0,
 		hidCommandEnable,
 		ARRAYSIZE(hidCommandEnable)

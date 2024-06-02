@@ -162,14 +162,25 @@ typedef enum
 
 typedef enum
 {
+	//
+	// Queries for device wireless MAC address
+	// 
 	Ds3FeatureDeviceAddress = 0x03F2,
-	Ds3FeatureStartDevice = 0x03F4,
+	//
+	// Instructs to start, stop and alike
+	// 
+	Ds3FeatureDeviceState = 0x03F4,
+	//
+	// Get or set remote wireless host MAC address
+	// 
 	Ds3FeatureHostAddress = 0x03F5
 } DS3_FEATURE_VALUE;
 
 #define USB_SETUP_VALUE(_type_, _id_) (USHORT)(((_type_) << 8) | (_id_))
 
 NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context);
+
+NTSTATUS DsUsb_Ds3Shutdown(PDEVICE_CONTEXT Context);
 
 NTSTATUS DsUsb_Ds3SendPairingRequest(WDFDEVICE Device, BD_ADDR NewHostAddress);
 
