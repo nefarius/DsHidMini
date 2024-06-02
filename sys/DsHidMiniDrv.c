@@ -1990,7 +1990,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	if (pDevCtx->Configuration.WirelessDisconnectButtonCombo.IsEnabled)
 	{
 		int engagedCount = 0;
-		for (int buttonIndex = 0; buttonIndex < 3; buttonIndex++)
+		for (int buttonIndex = 0; buttonIndex < (int)_countof(pDevCtx->Configuration.WirelessDisconnectButtonCombo.Buttons); buttonIndex++)
 		{
 			if ((pInReport->Buttons.lButtons >> pDevCtx->Configuration.WirelessDisconnectButtonCombo.Buttons[buttonIndex]) & 1)
 			{
@@ -1998,7 +1998,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 			}
 		}
 
-		if (engagedCount == 3)
+		if (engagedCount == _countof(pDevCtx->Configuration.WirelessDisconnectButtonCombo.Buttons))
 		{
 			TraceEvents(TRACE_LEVEL_INFORMATION,
 				TRACE_DSHIDMINIDRV,
@@ -2059,7 +2059,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	if (pDevCtx->Configuration.RumbleSettings.AlternativeMode.ToggleButtonCombo.IsEnabled)
 	{
 		int engagedCount = 0;
-		for (int buttonIndex = 0; buttonIndex < 3; buttonIndex++)
+		for (int buttonIndex = 0; buttonIndex < (int)_countof(pDevCtx->Configuration.RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons); buttonIndex++)
 		{
 			if ((pInReport->Buttons.lButtons >> pDevCtx->Configuration.RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons[buttonIndex]) & 1)
 			{
@@ -2067,7 +2067,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 			}
 		}
 
-		if (engagedCount == 3)
+		if (engagedCount == _countof(pDevCtx->Configuration.RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons))
 		{
 			TraceEvents(TRACE_LEVEL_INFORMATION,
 				TRACE_DSHIDMINIDRV,
