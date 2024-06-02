@@ -166,7 +166,10 @@ DMF_DsHidMini_ChildModulesAdd(
 
 	vHidCfg.StringSizeCbManufacturer = sizeof(DSHIDMINI_MANUFACTURER_STRING);
 	vHidCfg.StringManufacturer = DSHIDMINI_MANUFACTURER_STRING;
-	
+
+	//
+	// In this mode we wanna come as close to the Xbox One as possible
+	// 
 	if (hidDeviceMode == DsHidMiniDeviceModeXInputHIDCompatible)
 	{
 		vHidCfg.StringProduct = DSHIDMINI_XBOX_PRODUCT_STRING;
