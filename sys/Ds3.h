@@ -5,7 +5,7 @@
 
 extern const UCHAR G_Ds3UsbHidOutputReport[];
 
-#define DS3_USB_HID_OUTPUT_REPORT_SIZE		0x31
+#define DS3_USB_HID_OUTPUT_REPORT_SIZE		0x30
 
 extern const UCHAR G_Ds3BthHidOutputReport[];
 
@@ -163,6 +163,10 @@ typedef enum
 typedef enum
 {
 	//
+	// Output report over EP 0
+	// 
+	Dss3FeatureOutputReport = 0x0201,
+	//
 	// Queries for device wireless MAC address
 	// 
 	Ds3FeatureDeviceAddress = 0x03F2,
@@ -181,6 +185,8 @@ typedef enum
 NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context);
 
 NTSTATUS DsUsb_Ds3Shutdown(PDEVICE_CONTEXT Context);
+
+NTSTATUS DsUsb_Ds3IndicatorsOff(PDEVICE_CONTEXT Context);
 
 NTSTATUS DsUsb_Ds3SendPairingRequest(WDFDEVICE Device, BD_ADDR NewHostAddress);
 

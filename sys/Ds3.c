@@ -208,6 +208,32 @@ NTSTATUS DsUsb_Ds3Shutdown(PDEVICE_CONTEXT Context)
 }
 
 //
+// Shuts off LEDs, rumble etc.
+// 
+NTSTATUS DsUsb_Ds3IndicatorsOff(PDEVICE_CONTEXT Context)
+{
+	FuncEntry(TRACE_DS3);
+
+	UCHAR buffer[DS3_USB_HID_OUTPUT_REPORT_SIZE] = { 0 };
+	RtlZeroMemory(buffer, DS3_USB_HID_OUTPUT_REPORT_SIZE);
+
+	const NTSTATUS status = USB_SendControlRequest(
+		Context,
+		BmRequestHostToDevice,
+		BmRequestClass,
+		SetReport,
+		Dss3FeatureOutputReport,
+		0,
+		buffer,
+		DS3_USB_HID_OUTPUT_REPORT_SIZE
+	);
+
+	FuncExit(TRACE_DS3, "status=%!STATUS!", status);
+
+	return status;
+}
+
+//
 // Sends a pairing request to the device, stores result status in property
 // 
 NTSTATUS DsUsb_Ds3SendPairingRequest(WDFDEVICE Device, BD_ADDR NewHostAddress)
