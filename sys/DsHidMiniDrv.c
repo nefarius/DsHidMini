@@ -153,8 +153,10 @@ DMF_DsHidMini_ChildModulesAdd(
 		// continue using defaults
 	}
 
-	DMF_CONFIG_VirtualHidMini_AND_ATTRIBUTES_INIT(&vHidCfg,
-		&moduleAttributes);
+	DMF_CONFIG_VirtualHidMini_AND_ATTRIBUTES_INIT(
+		&vHidCfg,
+		&moduleAttributes
+	);
 
 	vHidCfg.GetInputReport = DsHidMini_GetInputReport;
 	vHidCfg.GetFeature = DsHidMini_GetFeature;
@@ -223,10 +225,6 @@ DMF_DsHidMini_Open(
 )
 {
 	NTSTATUS status = STATUS_SUCCESS;
-	DMF_CONTEXT_DsHidMini* moduleContext;
-	DMF_CONFIG_VirtualHidMini* pHidCfg;
-	WDFDEVICE device;
-	PDEVICE_CONTEXT pDevCtx;
 
 	UNREFERENCED_PARAMETER(DmfModule);
 
@@ -234,10 +232,10 @@ DMF_DsHidMini_Open(
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
-	moduleContext = DMF_CONTEXT_GET(DmfModule);
-	device = DMF_ParentDeviceGet(DmfModule);
-	pDevCtx = DeviceGetContext(device);
-	pHidCfg = DMF_ModuleConfigGet(moduleContext->DmfModuleVirtualHidMini);
+	const DMF_CONTEXT_DsHidMini* moduleContext = DMF_CONTEXT_GET(DmfModule);
+	const WDFDEVICE device = DMF_ParentDeviceGet(DmfModule);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(device);
+	DMF_CONFIG_VirtualHidMini* pHidCfg = DMF_ModuleConfigGet(moduleContext->DmfModuleVirtualHidMini);
 
 	//
 	// Load settings
@@ -305,8 +303,7 @@ DMF_DsHidMini_Open(
 		pHidCfg->HidReportDescriptorLength = G_XInputHIDCompatible_HidDescriptor.DescriptorList[0].wReportLength;
 
 	//
-	// Required to work around HID-API/SDL/etc. detecting it based on DS3 VID/PID pair
-	// TODO: what would happen if official MS's controller IDs are spoofed here?
+	// Required for best XUSB/XInput compatibility
 	// 
 		pHidCfg->VendorId = pDevCtx->VendorId = DS3_XINPUT_HID_VID;
 		pHidCfg->ProductId = pDevCtx->ProductId = DS3_XINPUT_HID_PID;
@@ -434,17 +431,14 @@ DsHidMini_RetrieveNextInputReport(
 )
 {
 	NTSTATUS status = STATUS_SUCCESS;
-	DMFMODULE dmfModuleParent;
-	DMF_CONTEXT_DsHidMini* moduleContext;
-	PDEVICE_CONTEXT pDevCtx;
 
 	UNREFERENCED_PARAMETER(Request);
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
-	dmfModuleParent = DMF_ParentModuleGet(DmfModule);
-	moduleContext = DMF_CONTEXT_GET(dmfModuleParent);
-	pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
+	const DMFMODULE dmfModuleParent = DMF_ParentModuleGet(DmfModule);
+	DMF_CONTEXT_DsHidMini* moduleContext = DMF_CONTEXT_GET(dmfModuleParent);
+	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 
 	*Buffer = moduleContext->InputReport;
 
@@ -683,7 +677,7 @@ DsHidMini_SetFeature(
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
-	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
+	const DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
 
 	UNREFERENCED_PARAMETER(pModCtx);
 
@@ -1347,14 +1341,11 @@ DsHidMini_WriteReport(
 // 
 void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Report)
 {
-	NTSTATUS status;
-	DMFMODULE dmfModule;
-	DMF_CONTEXT_DsHidMini* pModCtx;
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
-	dmfModule = (DMFMODULE)Context->DsHidMiniModule;
-	pModCtx = DMF_CONTEXT_GET(dmfModule);
+	const DMFMODULE dmfModule = (DMFMODULE)Context->DsHidMiniModule;
+	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(dmfModule);
 
 #pragma region HID Input Report (SDF, GPJ ID 01) processing
 
@@ -1401,7 +1392,7 @@ void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Rep
 	//
 	// Notify new Input Report is available
 	// 
-	status = DMF_VirtualHidMini_InputReportGenerate(
+	NTSTATUS status = DMF_VirtualHidMini_InputReportGenerate(
 		pModCtx->DmfModuleVirtualHidMini,
 		DsHidMini_RetrieveNextInputReport
 	);
@@ -1554,12 +1545,8 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	WDFCONTEXT Context
 )
 {
-	PDEVICE_CONTEXT pDevCtx;
-	LARGE_INTEGER freq, * t1, t2;
-	LONGLONG ms;
+	LARGE_INTEGER freq, t2;
 	DS_BATTERY_STATUS battery;
-	DMF_CONTEXT_DsHidMini* pModCtx;
-	PDS3_RAW_INPUT_REPORT pInReport;
 
 	UNREFERENCED_PARAMETER(Pipe);
 
@@ -1582,12 +1569,12 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 		return;
 	}
 
-	pDevCtx = DeviceGetContext(Context);
-	pModCtx = DMF_CONTEXT_GET((DMFMODULE)pDevCtx->DsHidMiniModule);
-	pInReport = (PDS3_RAW_INPUT_REPORT)WdfMemoryGetBuffer(Buffer, NULL);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Context);
+	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET((DMFMODULE)pDevCtx->DsHidMiniModule);
+	const PDS3_RAW_INPUT_REPORT pInReport = (PDS3_RAW_INPUT_REPORT)WdfMemoryGetBuffer(Buffer, NULL);
 
 	QueryPerformanceFrequency(&freq);
-	t1 = &pDevCtx->Connection.Usb.ChargingCycleTimestamp;
+	LARGE_INTEGER* t1 = &pDevCtx->Connection.Usb.ChargingCycleTimestamp;
 
 #ifdef DBG
 	DumpAsHex(">> USB", pInReport, (ULONG)sizeof(DS3_RAW_INPUT_REPORT));
@@ -1677,7 +1664,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 
 		QueryPerformanceCounter(&t2);
 
-		ms = (t2.QuadPart - t1->QuadPart) / (freq.QuadPart / 1000);
+		const LONGLONG ms = (t2.QuadPart - t1->QuadPart) / (freq.QuadPart / 1000);
 
 		//
 		// 1 second passed
@@ -2249,13 +2236,13 @@ DMF_EvtExecuteOutputPacketReceived(
 {
 	ThreadedBufferQueue_BufferDisposition retval = ThreadedBufferQueue_BufferDisposition_WorkComplete;
 	NTSTATUS status = STATUS_UNSUCCESSFUL;
-	WDFDEVICE device = DMF_ParentDeviceGet(DmfModule);
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(device);
-	PDS_OUTPUT_REPORT_CONTEXT pRepCtx = (PDS_OUTPUT_REPORT_CONTEXT)ClientWorkBufferContext;
-	size_t bufferSize = pRepCtx->BufferSize;
+	const WDFDEVICE device = DMF_ParentDeviceGet(DmfModule);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(device);
+	const PDS_OUTPUT_REPORT_CONTEXT pRepCtx = (PDS_OUTPUT_REPORT_CONTEXT)ClientWorkBufferContext;
+	const size_t bufferSize = pRepCtx->BufferSize;
 
 	WDF_MEMORY_DESCRIPTOR memoryDesc;
-	LARGE_INTEGER freq, * t1, * t2;
+	LARGE_INTEGER freq;
 	LONGLONG ms;
 	ULONGLONG timeout;
 	size_t bytesWritten;
@@ -2270,12 +2257,12 @@ DMF_EvtExecuteOutputPacketReceived(
 	//
 	// Last successful send timestamp
 	// 
-	t1 = &pDevCtx->OutputReport.Cache.LastSentTimestamp;
+	LARGE_INTEGER* t1 = &pDevCtx->OutputReport.Cache.LastSentTimestamp;
 
 	//
 	// Current request received timestamp
 	// 
-	t2 = &pRepCtx->ReceivedTimestamp;
+	const LARGE_INTEGER* t2 = &pRepCtx->ReceivedTimestamp;
 
 	WDF_MEMORY_DESCRIPTOR_INIT_BUFFER(
 		&memoryDesc,
@@ -2521,7 +2508,7 @@ Ds_SendOutputReport(
 	PUCHAR sourceBuffer, sendBuffer;
 	size_t sourceBufferLength;
 	PDS_OUTPUT_REPORT_CONTEXT sendContext;
-	PDS_DRIVER_CONFIGURATION pConfig = &Context->Configuration;
+	const PDS_DRIVER_CONFIGURATION pConfig = &Context->Configuration;
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
