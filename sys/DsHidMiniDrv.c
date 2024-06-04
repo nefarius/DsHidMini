@@ -7,7 +7,6 @@ PWSTR G_DsHidMini_Strings[] =
 	L"String 0" // TODO: bug in DMF module? Seems required for serial string to work
 };
 
-#define DSHIDMINI_DEVICE_STRING          L"DS3 Compatible HID Device"
 #define DSHIDMINI_MANUFACTURER_STRING    L"Nefarius Software Solutions e.U."
 #define DSHIDMINI_PRODUCT_STRING         L"DS3 Compatible HID Device"
 #define DSHIDMINI_XBOX_PRODUCT_STRING    L"Controller (Xbox One For Windows)"
