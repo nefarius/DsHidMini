@@ -19,10 +19,9 @@ PWSTR G_DsHidMini_Strings[] =
 //
 DMF_MODULE_DECLARE_CONTEXT(DsHidMini)
 
-// This macro declares the following function:
-// DMF_CONFIG_GET()
+// This module has no config
 //
-DMF_MODULE_DECLARE_CONFIG(DsHidMini)
+DMF_MODULE_DECLARE_NO_CONFIG(DsHidMini)
 
 
 //

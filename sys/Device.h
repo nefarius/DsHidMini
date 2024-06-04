@@ -366,13 +366,7 @@ typedef struct _DEVICE_CONTEXT
 //
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DEVICE_CONTEXT, DeviceGetContext)
 
-typedef struct
-{
-	ULONG Unused;
-
-} DMF_CONFIG_DsHidMini;
-
-DECLARE_DMF_MODULE(DsHidMini)
+DECLARE_DMF_MODULE_NO_CONFIG(DsHidMini)
 
 typedef struct
 {

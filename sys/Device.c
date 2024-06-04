@@ -1029,7 +1029,6 @@ DmfDeviceModulesAdd(
 )
 {
 	DMF_MODULE_ATTRIBUTES moduleAttributes;
-	DMF_CONFIG_DsHidMini dsHidMiniCfg;
 	DMF_CONFIG_ThreadedBufferQueue dmfBufferCfg;
 	DMF_CONFIG_DefaultTarget bthReaderCfg;
 	DMF_CONFIG_DefaultTarget bthWriterCfg;
@@ -1131,10 +1130,7 @@ DmfDeviceModulesAdd(
 	// Virtual HID Mini Module
 	// 
 
-	DMF_CONFIG_DsHidMini_AND_ATTRIBUTES_INIT(
-		&dsHidMiniCfg,
-		&moduleAttributes
-	);
+	DMF_DsHidMini_ATTRIBUTES_INIT(&moduleAttributes);
 
 	DMF_DmfModuleAdd(
 		DmfModuleInit,
