@@ -214,8 +214,8 @@ NTSTATUS DsUsb_Ds3IndicatorsOff(PDEVICE_CONTEXT Context)
 {
 	FuncEntry(TRACE_DS3);
 
-	UCHAR buffer[DS3_USB_HID_OUTPUT_REPORT_SIZE] = { 0 };
-	RtlZeroMemory(buffer, DS3_USB_HID_OUTPUT_REPORT_SIZE);
+	UCHAR buffer[48] = { 0 };
+	RtlZeroMemory(buffer, ARRAYSIZE(buffer));
 
 	const NTSTATUS status = USB_SendControlRequest(
 		Context,
@@ -225,7 +225,7 @@ NTSTATUS DsUsb_Ds3IndicatorsOff(PDEVICE_CONTEXT Context)
 		Dss3FeatureOutputReport,
 		0,
 		buffer,
-		DS3_USB_HID_OUTPUT_REPORT_SIZE
+		ARRAYSIZE(buffer)
 	);
 
 	FuncExit(TRACE_DS3, "status=%!STATUS!", status);
