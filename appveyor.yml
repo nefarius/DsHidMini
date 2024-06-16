@@ -16,6 +16,7 @@ configuration:
 skip_commits:
   files:
     - '**/*.md'
+    - '.vscode/*'
 install:
 - cmd: vcpkg integrate install
 - cmd: vcpkg update
