@@ -12,13 +12,7 @@ VOID FORCEINLINE REVERSE_BYTE_ARRAY(PUCHAR start, int size)
     }
 }
 
-NTSTATUS
-DsHidMini_GetInputReport(
-    _In_ DMFMODULE DmfModule,
-    _In_ WDFREQUEST Request,
-    _In_ HID_XFER_PACKET* Packet,
-    _Out_ ULONG* ReportSize
-);
+EVT_VirtualHidMini_GetInputReport DsHidMini_GetInputReport;
 
 NTSTATUS
 DsHidMini_RetrieveNextInputReport(
@@ -44,21 +38,9 @@ DsHidMini_SetFeature(
     _Out_ ULONG* ReportSize
 );
 
-NTSTATUS
-DsHidMini_SetOutputReport(
-    _In_ DMFMODULE DmfModule,
-    _In_ WDFREQUEST Request,
-    _In_ HID_XFER_PACKET* Packet,
-    _Out_ ULONG* ReportSize
-);
+EVT_VirtualHidMini_SetOutputReport DsHidMini_SetOutputReport;
 
-NTSTATUS
-DsHidMini_WriteReport(
-    _In_ DMFMODULE DmfModule,
-    _In_ WDFREQUEST Request,
-    _In_ HID_XFER_PACKET* Packet,
-    _Out_ ULONG* ReportSize
-);
+EVT_VirtualHidMini_WriteReport DsHidMini_WriteReport;
 
 VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Report);
 

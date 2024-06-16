@@ -1,5 +1,5 @@
 ﻿#include "Driver.h"
-#include "FeatureReport.tmh"
+#include "HID.FeatureReport.tmh"
 
 
 _Use_decl_annotations_
