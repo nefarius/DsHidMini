@@ -5,7 +5,7 @@
 
 extern const UCHAR G_Ds3UsbHidOutputReport[];
 
-#define DS3_USB_HID_OUTPUT_REPORT_SIZE		0x30
+#define DS3_USB_HID_OUTPUT_REPORT_SIZE		0x31
 
 extern const UCHAR G_Ds3BthHidOutputReport[];
 
