@@ -36,6 +36,7 @@
     <ClCompile Include="DsHid.c" />
     <ClCompile Include="DsHidMiniDrv.c" />
     <ClCompile Include="DsUsb.c" />
+    <ClCompile Include="FeatureReport.c" />
     <ClCompile Include="JSON\cJSON.c" />
     <ClCompile Include="JSON\cJSON_Utils.c" />
     <ClCompile Include="Legacy.c" />
@@ -57,6 +58,7 @@
     <ClInclude Include="DsHidMiniDrv.h" />
     <ClInclude Include="DsInternal.h" />
     <ClInclude Include="DsUsb.h" />
+    <ClInclude Include="FeatureReport.h" />
     <ClInclude Include="HID\01_SDF_Col1_GamePad.h" />
     <ClInclude Include="HID\02_GPJ_Col1_GamePad.h" />
     <ClInclude Include="HID\02_GPJ_Col2_Joystick.h" />

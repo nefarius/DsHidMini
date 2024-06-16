@@ -171,6 +171,9 @@
     <ClInclude Include="..\include\DsHidMini\Ds3Shared.h">
       <Filter>Header Files\Public</Filter>
     </ClInclude>
+    <ClInclude Include="FeatureReport.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Device.c">
@@ -213,6 +216,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Legacy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FeatureReport.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
