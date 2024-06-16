@@ -408,23 +408,7 @@ DMF_DsHidMini_ChildModulesAdd(
 	_In_ PDMFMODULE_INIT DmfModuleInit
 );
 
-_Function_class_(DMF_Open)
-_IRQL_requires_max_(PASSIVE_LEVEL)
-_Must_inspect_result_
-static
-NTSTATUS
-DMF_DsHidMini_Open(
-	_In_ DMFMODULE DmfModule
-);
-
-_Function_class_(DMF_Close)
-_IRQL_requires_max_(PASSIVE_LEVEL)
-static
-VOID
-DMF_DsHidMini_Close(
-	_In_ DMFMODULE DmfModule
-);
-
+DMF_Open DMF_DsHidMini_Open;
 
 EVT_DMF_ThreadedBufferQueue_Callback DSHM_EvtExecuteOutputPacketReceived;
 

@@ -53,7 +53,6 @@ DMF_DsHidMini_Create(
 		DMF_CALLBACKS_DMF_INIT(&dsHidMiniCallbacks);
 		dsHidMiniCallbacks.ChildModulesAdd = DMF_DsHidMini_ChildModulesAdd;
 		dsHidMiniCallbacks.DeviceOpen = DMF_DsHidMini_Open;
-		dsHidMiniCallbacks.DeviceClose = DMF_DsHidMini_Close;
 
 		DMF_MODULE_DESCRIPTOR_INIT_CONTEXT_TYPE(
 			dsHidMiniDesc,
@@ -104,12 +103,11 @@ DMF_DsHidMini_ChildModulesAdd(
 )
 {
 	DMF_MODULE_ATTRIBUTES moduleAttributes;
-	DMF_CONTEXT_DsHidMini* moduleContext;
+	DMF_CONTEXT_DsHidMini* pModCtx;
 	DMF_CONFIG_VirtualHidMini vHidCfg;
 #ifdef DSHM_FEATURE_FFB
 	DMF_CONFIG_HashTable hashCfg;
 #endif
-	WDFDEVICE device = NULL;
 	NTSTATUS status;
 	DS_HID_DEVICE_MODE hidDeviceMode = DsHidMiniDeviceModeXInputHIDCompatible;
 
@@ -119,8 +117,8 @@ DMF_DsHidMini_ChildModulesAdd(
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
-	device = DMF_ParentDeviceGet(DmfModule);
-	moduleContext = DMF_CONTEXT_GET(DmfModule);
+	const WDFDEVICE device = DMF_ParentDeviceGet(DmfModule);
+	pModCtx = DMF_CONTEXT_GET(DmfModule);
 
 	ULONG requiredSize = 0;
 	DEVPROPTYPE propType = DEVPROP_TYPE_EMPTY;
@@ -189,7 +187,7 @@ DMF_DsHidMini_ChildModulesAdd(
 		DmfModuleInit,
 		&moduleAttributes,
 		WDF_NO_OBJECT_ATTRIBUTES,
-		&moduleContext->DmfModuleVirtualHidMini
+		&pModCtx->DmfModuleVirtualHidMini
 	);
 
 
@@ -204,7 +202,7 @@ DMF_DsHidMini_ChildModulesAdd(
 		DmfModuleInit,
 		&moduleAttributes,
 		WDF_NO_OBJECT_ATTRIBUTES,
-		&moduleContext->DmfModuleForceFeedback
+		&pModCtx->DmfModuleForceFeedback
 	);
 #endif
 
@@ -216,10 +214,7 @@ DMF_DsHidMini_ChildModulesAdd(
 // Read/refresh configuration here after power-up
 // 
 #pragma code_seg("PAGE")
-_Function_class_(DMF_Open)
-_IRQL_requires_max_(PASSIVE_LEVEL)
-_Must_inspect_result_
-static
+_Use_decl_annotations_
 NTSTATUS
 DMF_DsHidMini_Open(
 	_In_ DMFMODULE DmfModule
@@ -368,26 +363,6 @@ exit:
 
 	return status;
 }
-#pragma code_seg()
-
-#pragma code_seg("PAGE")
-_Function_class_(DMF_Close)
-_IRQL_requires_max_(PASSIVE_LEVEL)
-static
-VOID
-DMF_DsHidMini_Close(
-	_In_ DMFMODULE DmfModule
-)
-{
-	UNREFERENCED_PARAMETER(DmfModule);
-
-	PAGED_CODE();
-
-	FuncEntry(TRACE_DSHIDMINIDRV);
-
-	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
-}
-
 #pragma code_seg()
 
 #pragma endregion
