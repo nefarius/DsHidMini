@@ -19,8 +19,8 @@ DSHM_GetFeature(
 
 	FFB_ATTRIBUTES ffbEntry = { 0 };
 
-	PPID_POOL_REPORT pPool;
-	PPID_BLOCK_LOAD_REPORT pBlockLoad;
+	PPID_POOL_REPORT pPool = NULL;
+	PPID_BLOCK_LOAD_REPORT pBlockLoad = NULL;
 
 	switch (Packet->reportId)
 	{
@@ -195,7 +195,7 @@ DSHM_SetFeature(
 
 	FFB_ATTRIBUTES ffbEntry = { 0 };
 
-	PPID_NEW_EFFECT_REPORT pNewEffect;
+	PPID_NEW_EFFECT_REPORT pNewEffect = NULL;
 
 	switch (Packet->reportId)
 	{
