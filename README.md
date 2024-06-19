@@ -1,6 +1,4 @@
-<img src="assets/FireShock.png" align="right" />
-
-# DsHidMini
+# <img src="assets/FireShock.png" align="left" />DsHidMini
 
 Virtual HID Mini-user-mode driver for Sony DualShock 3 Controllers
 
