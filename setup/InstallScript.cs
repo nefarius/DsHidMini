@@ -18,12 +18,16 @@ namespace Nefarius.DsHidMini.Setup;
 
 internal class InstallScript
 {
+    private const string ProductName = "Nefarius DsHidMini Driver";
+
     private static void Main()
     {
         // grab main app version
         Version version = Version.Parse("3.0.0"); // TODO: make configurable
 
-        ManagedProject project = new("DsHidMini",
+        Feature fullSetup = new();
+
+        ManagedProject project = new(ProductName,
             new InstallDir(@"%ProgramFiles%\Nefarius Software Solutions\DsHidMini",
                 new Dir("drivers",
                     new Files(@"..\artifacts\drivers\*.*"),
@@ -33,7 +37,13 @@ internal class InstallScript
             new ManagedAction(CustomActions.InstallDrivers, Return.check,
                 When.After,
                 Step.InstallFinalize,
-                Condition.NOT_Installed)
+                Condition.NOT_Installed),
+            // registry values
+            new RegKey(fullSetup, RegistryHive.LocalMachine,
+                $@"Software\Nefarius Software Solutions e.U.\{ProductName}",
+                new RegValue("Path", "[INSTALLDIR]") { Win64 = true },
+                new RegValue("Version", version.ToString()) { Win64 = true }
+            ) { Win64 = true }
         )
         {
             Version = version,
