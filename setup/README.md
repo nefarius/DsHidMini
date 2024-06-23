@@ -1,5 +1,7 @@
 ﻿# DsHidMini setup
 
+This project generates an MSI package containing x64 and ARM64 driver editions using [WixSharp](https://github.com/oleg-shilo/wixsharp).
+
 ## Create a production release
 
 Commands/scripts are to be run from solution root directory.
