@@ -7,8 +7,8 @@
 //
 NTSTATUS
 DSHM_SendOutputReport(
-	PDEVICE_CONTEXT Context,
-	DS_OUTPUT_REPORT_SOURCE Source
+	_In_ const PDEVICE_CONTEXT Context,
+	_In_ const DS_OUTPUT_REPORT_SOURCE Source
 )
 {
 	FuncEntry(TRACE_DSHIDMINIDRV);

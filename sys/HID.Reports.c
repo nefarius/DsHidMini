@@ -4,52 +4,6 @@
 
 _Use_decl_annotations_
 NTSTATUS
-DsHidMini_GetInputReport(
-	_In_ DMFMODULE DmfModule,
-	_In_ WDFREQUEST Request,
-	_In_ HID_XFER_PACKET* Packet,
-	_Out_ ULONG* ReportSize
-)
-{
-	UNREFERENCED_PARAMETER(DmfModule);
-	UNREFERENCED_PARAMETER(Request);
-	UNREFERENCED_PARAMETER(Packet);
-	UNREFERENCED_PARAMETER(ReportSize);
-
-	//
-	// NOTE: not really used by any modern game
-	// 
-
-	ASSERT(FALSE);
-
-	return STATUS_NOT_IMPLEMENTED;
-}
-
-_Use_decl_annotations_
-NTSTATUS
-DsHidMini_SetOutputReport(
-	_In_ DMFMODULE DmfModule,
-	_In_ WDFREQUEST Request,
-	_In_ HID_XFER_PACKET* Packet,
-	_Out_ ULONG* ReportSize
-)
-{
-	UNREFERENCED_PARAMETER(DmfModule);
-	UNREFERENCED_PARAMETER(Request);
-	UNREFERENCED_PARAMETER(Packet);
-	UNREFERENCED_PARAMETER(ReportSize);
-
-	//
-	// NOTE: not really used by any modern game
-	// 
-
-	ASSERT(FALSE);
-
-	return STATUS_NOT_IMPLEMENTED;
-}
-
-_Use_decl_annotations_
-NTSTATUS
 DSHM_WriteReport(
 	_In_ const PDEVICE_CONTEXT DeviceContext,
 	_In_ const DMF_CONTEXT_DsHidMini* ModuleContext,

@@ -87,6 +87,130 @@ DMF_DsHidMini_Create(
 }
 #pragma code_seg()
 
+//
+// Handles GET_REPORT requests
+// 
+static
+NTSTATUS
+DsHidMini_GetInputReport(
+	_In_ DMFMODULE DmfModule,
+	_In_ WDFREQUEST Request,
+	_In_ HID_XFER_PACKET* Packet,
+	_Out_ ULONG* ReportSize
+)
+{
+	UNREFERENCED_PARAMETER(DmfModule);
+	UNREFERENCED_PARAMETER(Request);
+	UNREFERENCED_PARAMETER(Packet);
+	UNREFERENCED_PARAMETER(ReportSize);
+
+	//
+	// NOTE: not really used by any modern game
+	// 
+
+	ASSERT(FALSE);
+
+	return STATUS_NOT_IMPLEMENTED;
+}
+
+//
+// Handles GET_FEATURE requests
+// 
+static
+NTSTATUS
+DsHidMini_GetFeature(
+	_In_ DMFMODULE DmfModule,
+	_In_ WDFREQUEST Request,
+	_In_ HID_XFER_PACKET* Packet,
+	_Out_ ULONG* ReportSize
+)
+{
+	FuncEntry(TRACE_DSHIDMINIDRV);
+
+	UNREFERENCED_PARAMETER(Request);
+
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
+	const DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
+
+	NTSTATUS status = DSHM_GetFeature(pDevCtx, pModCtx, Packet, ReportSize);
+
+	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
+
+	return status;
+}
+
+//
+// Handles SET_FEATURE requests
+// 
+static
+NTSTATUS
+DsHidMini_SetFeature(
+	_In_ DMFMODULE DmfModule,
+	_In_ WDFREQUEST Request,
+	_In_ HID_XFER_PACKET* Packet,
+	_Out_ ULONG* ReportSize
+)
+{
+	FuncEntry(TRACE_DSHIDMINIDRV);
+
+	UNREFERENCED_PARAMETER(Request);
+
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
+	const DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
+	
+	NTSTATUS status = DSHM_SetFeature(pDevCtx, pModCtx, Packet, ReportSize);
+
+	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
+
+	return status;
+}
+
+static
+NTSTATUS
+DsHidMini_SetOutputReport(
+	_In_ DMFMODULE DmfModule,
+	_In_ WDFREQUEST Request,
+	_In_ HID_XFER_PACKET* Packet,
+	_Out_ ULONG* ReportSize
+)
+{
+	UNREFERENCED_PARAMETER(DmfModule);
+	UNREFERENCED_PARAMETER(Request);
+	UNREFERENCED_PARAMETER(Packet);
+	UNREFERENCED_PARAMETER(ReportSize);
+
+	//
+	// NOTE: not really used by any modern game
+	// 
+
+	ASSERT(FALSE);
+
+	return STATUS_NOT_IMPLEMENTED;
+}
+
+static
+NTSTATUS
+DsHidMini_WriteReport(
+	_In_ DMFMODULE DmfModule,
+	_In_ WDFREQUEST Request,
+	_In_ HID_XFER_PACKET* Packet,
+	_Out_ ULONG* ReportSize
+)
+{
+	FuncEntry(TRACE_DSHIDMINIDRV);
+
+	UNREFERENCED_PARAMETER(Request);
+
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
+	const DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
+
+	NTSTATUS status = DSHM_WriteReport(pDevCtx, pModCtx, Packet, ReportSize);
+
+	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
+
+	return status;	
+}
+
 #pragma region DMF Initialization and clean-up
 
 //
@@ -372,6 +496,7 @@ exit:
 //
 // Submit new HID Input Report.
 // 
+_Use_decl_annotations_
 NTSTATUS
 DsHidMini_RetrieveNextInputReport(
 	_In_ DMFMODULE DmfModule,
@@ -426,81 +551,6 @@ DsHidMini_RetrieveNextInputReport(
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 
 	return status;
-}
-
-//
-// Handles GET_FEATURE requests
-// 
-_Use_decl_annotations_
-NTSTATUS
-DsHidMini_GetFeature(
-	_In_ DMFMODULE DmfModule,
-	_In_ WDFREQUEST Request,
-	_In_ HID_XFER_PACKET* Packet,
-	_Out_ ULONG* ReportSize
-)
-{
-	FuncEntry(TRACE_DSHIDMINIDRV);
-
-	UNREFERENCED_PARAMETER(Request);
-
-	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
-	const DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
-
-	NTSTATUS status = DSHM_GetFeature(pDevCtx, pModCtx, Packet, ReportSize);
-
-	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
-
-	return status;
-}
-
-//
-// Handles SET_FEATURE requests
-// 
-_Use_decl_annotations_
-NTSTATUS
-DsHidMini_SetFeature(
-	_In_ DMFMODULE DmfModule,
-	_In_ WDFREQUEST Request,
-	_In_ HID_XFER_PACKET* Packet,
-	_Out_ ULONG* ReportSize
-)
-{
-	FuncEntry(TRACE_DSHIDMINIDRV);
-
-	UNREFERENCED_PARAMETER(Request);
-
-	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
-	const DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
-	
-	NTSTATUS status = DSHM_SetFeature(pDevCtx, pModCtx, Packet, ReportSize);
-
-	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
-
-	return status;
-}
-
-_Use_decl_annotations_
-NTSTATUS
-DsHidMini_WriteReport(
-	_In_ DMFMODULE DmfModule,
-	_In_ WDFREQUEST Request,
-	_In_ HID_XFER_PACKET* Packet,
-	_Out_ ULONG* ReportSize
-)
-{
-	FuncEntry(TRACE_DSHIDMINIDRV);
-
-	UNREFERENCED_PARAMETER(Request);
-
-	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
-	const DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
-
-	NTSTATUS status = DSHM_WriteReport(pDevCtx, pModCtx, Packet, ReportSize);
-
-	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
-
-	return status;	
 }
 
 #pragma endregion
