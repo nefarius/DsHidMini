@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -22,6 +23,17 @@ internal class InstallScript
     {
         // grab main app version
         Version version = Version.Parse(BuildVariables.SetupVersion);
+        string driverPath = Path.Combine(AppContext.BaseDirectory,
+            @"..\..\..\..\artifacts\drivers\dshidmini_x64\dshidmini.dll");
+        Version driverVersion = Version.Parse(FileVersionInfo.GetVersionInfo(driverPath).FileVersion);
+
+        string filterPath = Path.Combine(AppContext.BaseDirectory,
+            @"..\..\..\..\artifacts\igfilter\nssmkig_x64\nssmkig.sys");
+        Version filterVersion = Version.Parse(FileVersionInfo.GetVersionInfo(filterPath).FileVersion);
+
+        Console.WriteLine($"Setup version: {version}");
+        Console.WriteLine($"Driver version: {driverVersion}");
+        Console.WriteLine($"Filter version: {filterVersion}");
 
         Feature fullSetup = new();
 
@@ -42,7 +54,9 @@ internal class InstallScript
             new RegKey(fullSetup, RegistryHive.LocalMachine,
                 $@"Software\Nefarius Software Solutions e.U.\{ProductName}",
                 new RegValue("Path", "[INSTALLDIR]") { Win64 = true },
-                new RegValue("Version", version.ToString()) { Win64 = true }
+                new RegValue("Version", version.ToString()) { Win64 = true },
+                new RegValue("DriverVersion", driverVersion.ToString()) { Win64 = true },
+                new RegValue("FilterVersion", filterVersion.ToString()) { Win64 = true }
             ) { Win64 = true }
         )
         {
