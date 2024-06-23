@@ -559,7 +559,12 @@ DsHidMini_RetrieveNextInputReport(
 //
 // Dispatches raw input report processing depending on HID emulation mode and other settings
 // 
-static void DSHM_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Report)
+static
+void
+DSHM_ProcessHidInputReport(
+	const PDEVICE_CONTEXT Context, 
+	const PDS3_RAW_INPUT_REPORT Report
+)
 {
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
