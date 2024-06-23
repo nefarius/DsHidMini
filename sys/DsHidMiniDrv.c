@@ -132,7 +132,7 @@ DsHidMini_GetFeature(
 	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 	const DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
 
-	NTSTATUS status = DSHM_GetFeature(pDevCtx, pModCtx, Packet, ReportSize);
+	const NTSTATUS status = DSHM_GetFeature(pDevCtx, pModCtx, Packet, ReportSize);
 
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 
@@ -158,7 +158,7 @@ DsHidMini_SetFeature(
 	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 	const DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
 	
-	NTSTATUS status = DSHM_SetFeature(pDevCtx, pModCtx, Packet, ReportSize);
+	const NTSTATUS status = DSHM_SetFeature(pDevCtx, pModCtx, Packet, ReportSize);
 
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 
@@ -204,7 +204,7 @@ DsHidMini_WriteReport(
 	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 	const DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
 
-	NTSTATUS status = DSHM_WriteReport(pDevCtx, pModCtx, Packet, ReportSize);
+	const NTSTATUS status = DSHM_WriteReport(pDevCtx, pModCtx, Packet, ReportSize);
 
 	FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
 
@@ -369,7 +369,7 @@ DMF_DsHidMini_Open(
 	pHidCfg->HidDeviceAttributes.ProductID = pDevCtx->ProductId;
 	pHidCfg->HidDeviceAttributes.VersionNumber = pDevCtx->VersionNumber;
 
-	switch (pDevCtx->Configuration.HidDeviceMode)
+	switch (pDevCtx->Configuration.HidDeviceMode)  // NOLINT(clang-diagnostic-switch-enum)
 	{
 	case DsHidMiniDeviceModeSDF:
 
