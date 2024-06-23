@@ -146,6 +146,8 @@ public static class CustomActions
 
         session.SetMode(InstallRunMode.RebootAtEnd, rebootRequired);
 
+        Process.Start("https://docs.nefarius.at/projects/DsHidMini/Experimental/Version-3-Beta/");
+
         return ActionResult.Success;
     }
 
