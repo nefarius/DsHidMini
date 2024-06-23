@@ -66,6 +66,7 @@
 					<event value="12" channel="SYSTEM" level="win:Informational" message="$(string.AlreadyPaired.EventMessage)" opcode="win:Info" symbol="AlreadyPaired" template="tid_device_address"/>
 					<event value="13" channel="SYSTEM" level="win:Informational" message="$(string.PairedSuccessfully.EventMessage)" opcode="win:Info" symbol="PairedSuccessfully" template="tid_device_address"/>
 					<event value="14" channel="SYSTEM" level="win:Informational" message="$(string.FFBNoFreeEffectBlockIndex.EventMessage)" opcode="win:Info" symbol="FFBNoFreeEffectBlockIndex" />
+					<event value="15" channel="SYSTEM" level="win:Informational" message="$(string.ApplyingWirelessWorkarounds.EventMessage)" opcode="win:Info" symbol="ApplyingWirelessWorkarounds" />
 				</events>
 			</provider>
 		</events>
@@ -87,6 +88,7 @@
 				<string id="AlreadyPaired.EventMessage" value="Device %1 already paired to this machine's host radio, skipping"/>
 				<string id="PairedSuccessfully.EventMessage" value="Device %1 paired successfully"/>
 				<string id="FFBNoFreeEffectBlockIndex.EventMessage" value="No free effect block index, can't create Force-Feedback Effect"/>
+				<string id="ApplyingWirelessWorkarounds.EventMessage" value="Battery status still unknown, applying workarounds"/>
 			</stringTable>
 		</resources>
 	</localization>

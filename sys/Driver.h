@@ -26,13 +26,14 @@
 #include "Configuration.h"
 #include "Device.h"
 
-#include "dshmguid.h"
+#include <DsHidMini/dshmguid.h>
 #include "DsInternal.h"
 #include "DsHidMiniDrv.h"
 #include "Power.h"
 #include "DsUsb.h"
 #include "Ds3.h"
 #include "DsBth.h"
+#include "HID.ReportHandlers.h"
 
 #include "Trace.h"
 
@@ -46,5 +47,7 @@ EXTERN_C_START
 DRIVER_INITIALIZE DriverEntry;
 EVT_WDF_DRIVER_DEVICE_ADD dshidminiEvtDeviceAdd;
 EVT_WDF_OBJECT_CONTEXT_CLEANUP dshidminiEvtDriverContextCleanup;
+
+VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength);
 
 EXTERN_C_END

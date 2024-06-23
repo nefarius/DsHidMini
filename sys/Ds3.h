@@ -33,6 +33,34 @@ extern const UCHAR G_Ds3BthHidOutputReport[];
 #define DS3_BTH_SET_SMALL_RUMBLE_STRENGTH(_buf_, _str_)  ((_buf_)[4] = (_str_) > 0 ? 0x01 : 0x00)
 #define DS3_BTH_SET_LARGE_RUMBLE_STRENGTH(_buf_, _str_)  ((_buf_)[6] = (_str_))
 
+#define DS3_USB_COMMON_ENABLE		0x42, 0x0C, 0x00, 0x00
+#define DS3_USB_COMMON_DISABLE		0x42, 0x0B, 0x00, 0x00
+#define DS3_BTH_SIXAXIS_ENABLE		0x53, 0xF4, 0x42, 0x03, 0x00, 0x00
+
+//
+// Possible values for button combinations
+// 
+typedef enum
+{
+	DS3_BUTTON_COMBO_OFFSET_SELECT = 0,
+	DS3_BUTTON_COMBO_OFFSET_L3 = 1,
+	DS3_BUTTON_COMBO_OFFSET_R3 = 2,
+	DS3_BUTTON_COMBO_OFFSET_START = 3,
+	DS3_BUTTON_COMBO_OFFSET_UP = 4,
+	DS3_BUTTON_COMBO_OFFSET_RIGHT = 5,
+	DS3_BUTTON_COMBO_OFFSET_DOWN = 6,
+	DS3_BUTTON_COMBO_OFFSET_LEFT = 7,
+	DS3_BUTTON_COMBO_OFFSET_L2 = 8,
+	DS3_BUTTON_COMBO_OFFSET_R2 = 9,
+	DS3_BUTTON_COMBO_OFFSET_L1 = 10,
+	DS3_BUTTON_COMBO_OFFSET_R1 = 11,
+	DS3_BUTTON_COMBO_OFFSET_TRIANGLE = 12,
+	DS3_BUTTON_COMBO_OFFSET_CIRCLE = 13,
+	DS3_BUTTON_COMBO_OFFSET_CROSS = 14,
+	DS3_BUTTON_COMBO_OFFSET_SQUARE = 15,
+	DS3_BUTTON_COMBO_OFFSET_PS = 16,
+} DS3_BUTTON_COMBO_OFFSET;
+
 
 VOID DS3_SET_LED_DURATION(
 	PDEVICE_CONTEXT Context,
@@ -134,8 +162,21 @@ typedef enum
 
 typedef enum
 {
+	//
+	// Output report over EP 0
+	// 
+	Dss3FeatureOutputReport = 0x0201,
+	//
+	// Queries for device wireless MAC address
+	// 
 	Ds3FeatureDeviceAddress = 0x03F2,
-	Ds3FeatureStartDevice = 0x03F4,
+	//
+	// Instructs to start, stop and alike
+	// 
+	Ds3FeatureDeviceState = 0x03F4,
+	//
+	// Get or set remote wireless host MAC address
+	// 
 	Ds3FeatureHostAddress = 0x03F5
 } DS3_FEATURE_VALUE;
 
@@ -143,6 +184,16 @@ typedef enum
 
 NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context);
 
-NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device);
+NTSTATUS DsUsb_Ds3Shutdown(PDEVICE_CONTEXT Context);
 
-NTSTATUS DsBth_Ds3Init(PDEVICE_CONTEXT Context);
+NTSTATUS DsUsb_Ds3IndicatorsOff(PDEVICE_CONTEXT Context);
+
+NTSTATUS DsUsb_Ds3SendPairingRequest(WDFDEVICE Device, BD_ADDR NewHostAddress);
+
+NTSTATUS DS3_GetActiveRadioAddress(BD_ADDR* Address);
+
+NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device);
+
+NTSTATUS DsBth_Ds3SixaxisInit(PDEVICE_CONTEXT Context);
+
+NTSTATUS DsUsb_Ds3RequestHostAddress(WDFDEVICE Device);

@@ -32,16 +32,24 @@
     <ClCompile Include="Driver.c" />
     <ClCompile Include="Ds3.c" />
     <ClCompile Include="DsBth.c" />
+    <ClCompile Include="DsBth.Timers.c" />
     <ClCompile Include="DsHid.c" />
     <ClCompile Include="DsHidMiniDrv.c" />
     <ClCompile Include="DsUsb.c" />
+    <ClCompile Include="HID.FeatureReport.c" />
+    <ClCompile Include="HID.Reports.c" />
+    <ClCompile Include="InputReport.c" />
     <ClCompile Include="JSON\cJSON.c" />
     <ClCompile Include="JSON\cJSON_Utils.c" />
+    <ClCompile Include="OutputReport.c" />
     <ClCompile Include="Power.c" />
+    <ClCompile Include="Util.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\DsHidMini\Ds3Shared.h" />
     <ClInclude Include="..\include\DsHidMini\Ds3Types.h" />
     <ClInclude Include="..\include\DsHidMini\ScpTypes.h" />
+    <ClInclude Include="..\include\DsHidMini\dshmguid.h" />
     <ClInclude Include="Configuration.h" />
     <ClInclude Include="Device.h" />
     <ClInclude Include="Driver.h" />
@@ -50,9 +58,9 @@
     <ClInclude Include="DsCommon.h" />
     <ClInclude Include="DsHid.h" />
     <ClInclude Include="DsHidMiniDrv.h" />
-    <ClInclude Include="dshmguid.h" />
     <ClInclude Include="DsInternal.h" />
     <ClInclude Include="DsUsb.h" />
+    <ClInclude Include="HID.ReportHandlers.h" />
     <ClInclude Include="HID\01_SDF_Col1_GamePad.h" />
     <ClInclude Include="HID\02_GPJ_Col1_GamePad.h" />
     <ClInclude Include="HID\02_GPJ_Col2_Joystick.h" />
@@ -82,7 +90,6 @@
     <ClInclude Include="Power.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Trace.h" />
-    <ClInclude Include="uthash.h" />
   </ItemGroup>
   <ItemGroup>
     <Inf Include="dshidmini.inf" />

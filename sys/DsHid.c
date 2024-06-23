@@ -161,85 +161,35 @@ sizeof(G_XInputHIDCompatible_HidReportDescriptor) }  // total length of report d
 
 
 //
-// Checks whether the pad inputs are in default (idle) state
-// 
-BOOLEAN DS3_RAW_IS_IDLE(
-	_In_ PDS3_RAW_INPUT_REPORT Input
-)
-{
-	//
-	// Button states
-	// 
-
-	if (Input->Buttons.lButtons)
-	{
-		return FALSE;
-	}
-
-	//
-	// Axes
-	// 
-
-	if (
-		Input->LeftThumbX < DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER
-		|| Input->LeftThumbX > DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER
-		|| Input->LeftThumbY < DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER
-		|| Input->LeftThumbY > DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER
-		|| Input->RightThumbX < DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER
-		|| Input->RightThumbX > DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER
-		|| Input->RightThumbY < DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER
-		|| Input->RightThumbY > DS3_RAW_AXIS_IDLE_THRESHOLD_UPPER
-		)
-	{
-		return FALSE;
-	}
-
-	//
-	// Sliders
-	// 
-
-	if (
-		Input->Pressure.Values.L2 > DS3_RAW_SLIDER_IDLE_THRESHOLD
-		|| Input->Pressure.Values.R2 > DS3_RAW_SLIDER_IDLE_THRESHOLD
-		)
-	{
-		return FALSE;
-	}
-
-	//
-	// If we end up here, no movement is going on
-	// 
-
-	return TRUE;
-}
-
-//
 // Applies transformations on a thumb axis pair
 // 
 void DS3_RAW_AXIS_TRANSFORM(
-	_In_ UCHAR InputX,
-	_In_ UCHAR InputY,
+	_In_ const UCHAR InputX,
+	_In_ const UCHAR InputY,
 	_Inout_ PUCHAR OutputX,
 	_Inout_ PUCHAR OutputY,
-	_In_ BOOLEAN ApplyDeadZone,
-	_In_ DOUBLE DeadZonePolarValue,
-	_In_ BOOLEAN FlipX,
-	_In_ BOOLEAN FlipY
+	_In_ const BOOLEAN ApplyDeadZone,
+	_In_ const DOUBLE DeadZonePolarValue,
+	_In_ const BOOLEAN FlipX,
+	_In_ const BOOLEAN FlipY
 )
 {
+	UCHAR modifiedX = InputX;
+	UCHAR modifiedY = InputY;
+
 	if (FlipX)
 	{
-		InputX = (UCHAR)abs(InputX - 0xFF);
+		modifiedX = (UCHAR)abs(InputX - 0xFF);
 	}
 	if (FlipY)
 	{
-		InputY = (UCHAR)abs(InputY - 0xFF);
+		modifiedY = (UCHAR)abs(InputY - 0xFF);
 	}
 
 	if (!ApplyDeadZone)
 	{
-		*OutputX = InputX;
-		*OutputY = InputY;
+		*OutputX = modifiedX;
+		*OutputY = modifiedY;
 		return;
 	}
 
@@ -247,8 +197,8 @@ void DS3_RAW_AXIS_TRANSFORM(
 	// 0x80 is centered, but working from 0 to positive
 	// values makes the following calculations easier
 	// 
-	const int x = abs((int)InputX - 0x80);
-	const int y = abs((int)InputY - 0x80);
+	const int x = abs((int)modifiedX - 0x80);
+	const int y = abs((int)modifiedY - 0x80);
 
 	//
 	// Calculate dead zone circle area
@@ -260,8 +210,8 @@ void DS3_RAW_AXIS_TRANSFORM(
 	// 
 	if (r > DeadZonePolarValue)
 	{
-		*OutputX = InputX;
-		*OutputY = InputY;
+		*OutputX = modifiedX;
+		*OutputY = modifiedY;
 	}
 	else
 	{
@@ -271,12 +221,12 @@ void DS3_RAW_AXIS_TRANSFORM(
 }
 
 VOID DS3_RAW_TO_GPJ_HID_INPUT_REPORT_01(
-	_In_ PDS3_RAW_INPUT_REPORT Input,
+	_In_ const PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output,
-	_In_ DS_PRESSURE_EXPOSURE_MODE PressureMode,
-	_In_ DS_DPAD_EXPOSURE_MODE DPadExposureMode,
-	_In_ PDS_THUMB_SETTINGS ThumbSettings,
-	_In_ PDS_FLIP_AXIS_SETTINGS FlipAxis
+	_In_ const DS_PRESSURE_EXPOSURE_MODE PressureMode,
+	_In_ const DS_DPAD_EXPOSURE_MODE DPadExposureMode,
+	_In_ const PDS_THUMB_SETTINGS ThumbSettings,
+	_In_ const PDS_FLIP_AXIS_SETTINGS FlipAxis
 )
 {
 	// Report ID
@@ -390,7 +340,7 @@ VOID DS3_RAW_TO_GPJ_HID_INPUT_REPORT_01(
 }
 
 VOID DS3_RAW_TO_GPJ_HID_INPUT_REPORT_02(
-	_In_ PDS3_RAW_INPUT_REPORT Input,
+	_In_ const PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output
 )
 {
@@ -411,12 +361,12 @@ VOID DS3_RAW_TO_GPJ_HID_INPUT_REPORT_02(
 }
 
 VOID DS3_RAW_TO_SDF_HID_INPUT_REPORT(
-	_In_ PDS3_RAW_INPUT_REPORT Input,
+	_In_ const PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output,
-	_In_ DS_PRESSURE_EXPOSURE_MODE PressureMode,
-	_In_ DS_DPAD_EXPOSURE_MODE DPadExposureMode,
-	_In_ PDS_THUMB_SETTINGS ThumbSettings,
-	_In_ PDS_FLIP_AXIS_SETTINGS FlipAxis
+	_In_ const DS_PRESSURE_EXPOSURE_MODE PressureMode,
+	_In_ const DS_DPAD_EXPOSURE_MODE DPadExposureMode,
+	_In_ const PDS_THUMB_SETTINGS ThumbSettings,
+	_In_ const PDS_FLIP_AXIS_SETTINGS FlipAxis
 )
 {
 	// Report ID
@@ -543,10 +493,10 @@ VOID DS3_RAW_TO_SDF_HID_INPUT_REPORT(
 }
 
 VOID DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
-	_In_ PDS3_RAW_INPUT_REPORT Input,
+	_In_ const PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output,
-	_In_ PDS_THUMB_SETTINGS ThumbSettings,
-	_In_ PDS_FLIP_AXIS_SETTINGS FlipAxis
+	_In_ const PDS_THUMB_SETTINGS ThumbSettings,
+	_In_ const PDS_FLIP_AXIS_SETTINGS FlipAxis
 )
 {
 	// Prepare D-Pad
@@ -635,7 +585,7 @@ VOID DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
 	Output[9] = (0xFF - Input->Pressure.Values.Cross);
 }
 
-UCHAR REVERSE_BITS(UCHAR x)
+UCHAR REVERSE_BITS(_In_ UCHAR x)
 {
 	x = ((x >> 1) & 0x55) | ((x << 1) & 0xaa);
 	x = ((x >> 2) & 0x33) | ((x << 2) & 0xcc);
@@ -644,11 +594,11 @@ UCHAR REVERSE_BITS(UCHAR x)
 }
 
 VOID DS3_RAW_TO_DS4WINDOWS_HID_INPUT_REPORT(
-	_In_ PDS3_RAW_INPUT_REPORT Input,
+	_In_ const PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PUCHAR Output,
-	_In_ BOOLEAN IsWired,
-	_In_ PDS_THUMB_SETTINGS ThumbSettings,
-	_In_ PDS_FLIP_AXIS_SETTINGS FlipAxis
+	_In_ const BOOLEAN IsWired,
+	_In_ const PDS_THUMB_SETTINGS ThumbSettings,
+	_In_ const PDS_FLIP_AXIS_SETTINGS FlipAxis
 )
 {
 	// Report ID
@@ -803,10 +753,10 @@ VOID DS3_RAW_TO_DS4WINDOWS_HID_INPUT_REPORT(
 }
 
 VOID DS3_RAW_TO_XINPUTHID_HID_INPUT_REPORT(
-	_In_ PDS3_RAW_INPUT_REPORT Input,
+	_In_ const PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PXINPUT_HID_INPUT_REPORT Output,
-	_In_ PDS_THUMB_SETTINGS ThumbSettings,
-	_In_ PDS_FLIP_AXIS_SETTINGS FlipAxis
+	_In_ const PDS_THUMB_SETTINGS ThumbSettings,
+	_In_ const PDS_FLIP_AXIS_SETTINGS FlipAxis
 )
 {
 	UCHAR leftThumbX = Input->LeftThumbX;

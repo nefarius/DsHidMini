@@ -1,10 +1,8 @@
-<img src="assets/FireShock.png" align="right" />
-
-# DsHidMini
-
-Virtual HID Mini-user-mode driver for Sony DualShock 3 Controllers
+# <img src="assets/FireShock.png" align="left" />DsHidMini
 
 [![Build status](https://ci.appveyor.com/api/projects/status/vmf09i95d06c8mbh/branch/master?svg=true)](https://ci.appveyor.com/project/nefarius/dshidmini/branch/master) [![GitHub All Releases](https://img.shields.io/github/downloads/nefarius/DsHidMini/total)](https://somsubhra.github.io/github-release-stats/?username=nefarius&repository=DsHidMini) ![GitHub issues](https://img.shields.io/github/issues/nefarius/DsHidMini) [![Discord](https://img.shields.io/discord/346756263763378176.svg)](https://discord.nefarius.at/) [![Website](https://img.shields.io/website-up-down-green-red/https/docs.nefarius.at.svg?label=docs.nefarius.at)](https://docs.nefarius.at/)
+
+Virtual HID Mini-user-mode driver for Sony DualShock 3 Controllers
 
 ## 🚨 What to expect with Version 3 🚨
 
@@ -26,12 +24,14 @@ Next major version is in progress! Here's an overview of what you'll get:
 
 Stay tuned!
 
+You can also follow development progress [on Discord](https://discord.nefarius.at/) or get notified when a release happens [on Mastodon](https://fosstodon.org/@Nefarius).
+
 ## Repository activity
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://ghstats.api.nefarius.systems/widgets/github/nefarius/DsHidMini/changes/latest?foregroundColour=%23C4D1DE">
-  <source media="(prefers-color-scheme: light)" srcset="https://ghstats.api.nefarius.systems/widgets/github/nefarius/DsHidMini/changes/latest">
-  <img alt="Repository activity" src="https://ghstats.api.nefarius.systems/widgets/github/nefarius/DsHidMini/changes/latest">
+  <source media="(prefers-color-scheme: dark)" srcset="https://ghstats.api.nefarius.systems/widgets/github/nefarius/DsHidMini/changes/latest?foregroundColour=%23C4D1DE&maxCommits=10">
+  <source media="(prefers-color-scheme: light)" srcset="https://ghstats.api.nefarius.systems/widgets/github/nefarius/DsHidMini/changes/latest?maxCommits=10">
+  <img alt="Repository activity" src="https://ghstats.api.nefarius.systems/widgets/github/nefarius/DsHidMini/changes/latest?maxCommits=10">
 </picture>
 
 <!--
@@ -172,6 +172,7 @@ The following awesome resources have made this project possible.
 - [HID: sony: Update device ids](https://patchwork.kernel.org/patch/9367441/)
 - [linux/drivers/hid/hid-sony.c](https://github.com/torvalds/linux/blob/master/drivers/hid/hid-sony.c)
 - [The HID Page](http://janaxelson.com/hidpage.htm)
+- [CircumSpector/Research/Sony DualShock 3](https://github.com/CircumSpector/Research/tree/master/Sony%20DualShock%203)
 
 ### DevOps
 

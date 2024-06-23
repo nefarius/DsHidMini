@@ -13,14 +13,15 @@ USB_SendControlRequest(
 	_In_ BYTE Request,
 	_In_ USHORT Value,
 	_In_ USHORT Index,
-	_In_ PVOID Buffer,
-	_In_ ULONG BufferLength)
+	_Inout_ PVOID Buffer,
+	_In_ ULONG BufferLength
+)
 {
-	NTSTATUS                        status;
-	WDF_USB_CONTROL_SETUP_PACKET    controlSetupPacket;
-	WDF_REQUEST_SEND_OPTIONS        sendOptions;
-	WDF_MEMORY_DESCRIPTOR           memDesc;
-	ULONG                           bytesTransferred;
+	NTSTATUS status;
+	WDF_USB_CONTROL_SETUP_PACKET controlSetupPacket;
+	WDF_REQUEST_SEND_OPTIONS sendOptions;
+	WDF_MEMORY_DESCRIPTOR memDesc;
+	ULONG bytesTransferred;
 
 	FuncEntry(TRACE_DSUSB);
 
@@ -37,35 +38,41 @@ USB_SendControlRequest(
 	switch (Type)
 	{
 	case BmRequestClass:
-		WDF_USB_CONTROL_SETUP_PACKET_INIT_CLASS(&controlSetupPacket,
+		WDF_USB_CONTROL_SETUP_PACKET_INIT_CLASS(
+			&controlSetupPacket,
 			Direction,
 			BmRequestToInterface,
 			Request,
 			Value,
-			Index);
+			Index
+		);
 		break;
 
 	default:
 		return STATUS_INVALID_PARAMETER;
 	}
 
-	WDF_MEMORY_DESCRIPTOR_INIT_BUFFER(&memDesc,
+	WDF_MEMORY_DESCRIPTOR_INIT_BUFFER(
+		&memDesc,
 		Buffer,
-		BufferLength);
+		BufferLength
+	);
 
-	status = WdfUsbTargetDeviceSendControlTransferSynchronously(
+	if (!NT_SUCCESS(status = WdfUsbTargetDeviceSendControlTransferSynchronously(
 		Context->Connection.Usb.UsbDevice,
 		WDF_NO_HANDLE,
 		&sendOptions,
 		&controlSetupPacket,
 		&memDesc,
-		&bytesTransferred);
-
-	if (!NT_SUCCESS(status))
+		&bytesTransferred
+	)))
 	{
-		TraceError(TRACE_DSUSB,
-			"WdfUsbTargetDeviceSendControlTransferSynchronously failed with status %!STATUS! (%d)\n",
-			status, bytesTransferred);
+		TraceError(
+			TRACE_DSUSB,
+			"WdfUsbTargetDeviceSendControlTransferSynchronously failed with status %!STATUS! (%d)",
+			status,
+			bytesTransferred
+		);
 	}
 
 	FuncExit(TRACE_DSUSB, "status=%!STATUS!", status);
@@ -83,16 +90,17 @@ DsUsbConfigContReaderForInterruptEndPoint(
 {
 	WDF_USB_CONTINUOUS_READER_CONFIG contReaderConfig;
 	NTSTATUS status;
-	PDEVICE_CONTEXT pDevCtx;
 
 	FuncEntry(TRACE_DSUSB);
 
-	pDevCtx = DeviceGetContext(Device);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 
-	WDF_USB_CONTINUOUS_READER_CONFIG_INIT(&contReaderConfig,
+	WDF_USB_CONTINUOUS_READER_CONFIG_INIT(
+		&contReaderConfig,
 		DsUsb_EvtUsbInterruptPipeReadComplete,
-		Device,    // Context
-		INTERRUPT_IN_BUFFER_LENGTH);   // TransferLength
+		Device, // Context
+		INTERRUPT_IN_BUFFER_LENGTH // TransferLength
+	);
 
 	contReaderConfig.EvtUsbTargetPipeReadersFailed = DsUsbEvtUsbInterruptReadersFailed;
 
@@ -103,12 +111,10 @@ DsUsbConfigContReaderForInterruptEndPoint(
 	// By default, framework queues two requests to the target
 	// endpoint. Driver can configure up to 10 requests with CONFIG macro.
 	//
-	status = WdfUsbTargetPipeConfigContinuousReader(
+	if (!NT_SUCCESS(status = WdfUsbTargetPipeConfigContinuousReader(
 		pDevCtx->Connection.Usb.InterruptInPipe,
 		&contReaderConfig
-	);
-
-	if (!NT_SUCCESS(status))
+	)))
 	{
 		TraceError(TRACE_DSUSB,
 			"WdfUsbTargetPipeConfigContinuousReader failed %x\n",
@@ -131,18 +137,20 @@ USB_WriteInterruptPipeAsync(
 	size_t BufferLength
 )
 {
-	NTSTATUS                        status;
-	WDFREQUEST                      request;
-	WDF_OBJECT_ATTRIBUTES           attribs;
-	WDFMEMORY                       memory;
-	PVOID                           writeBufferPointer;
+	NTSTATUS status;
+	WDFREQUEST request;
+	WDF_OBJECT_ATTRIBUTES attributes;
+	WDFMEMORY memory;
+	PVOID writeBufferPointer;
 
-	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
+	WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
 
-	status = WdfRequestCreate(&attribs,
+	if (!NT_SUCCESS(status = WdfRequestCreate(
+		&attributes,
 		IoTarget,
-		&request);
-	if (!NT_SUCCESS(status)) {
+		&request
+	)))
+	{
 		TraceError(
 			TRACE_DSUSB,
 			"WdfRequestCreate failed with status %!STATUS!",
@@ -151,16 +159,18 @@ USB_WriteInterruptPipeAsync(
 		return status;
 	}
 
-	WDF_OBJECT_ATTRIBUTES_INIT(&attribs);
-	attribs.ParentObject = request;
+	WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
+	attributes.ParentObject = request;
 
-	status = WdfMemoryCreate(&attribs,
+	if (!NT_SUCCESS(status = WdfMemoryCreate(
+		&attributes,
 		NonPagedPoolNx,
 		DS3_POOL_TAG,
 		BufferLength,
 		&memory,
-		&writeBufferPointer);
-	if (!NT_SUCCESS(status)) {
+		&writeBufferPointer
+	)))
+	{
 		TraceError(
 			TRACE_DSUSB,
 			"WdfMemoryCreate failed with status %!STATUS!",
@@ -171,13 +181,13 @@ USB_WriteInterruptPipeAsync(
 
 	RtlCopyMemory(writeBufferPointer, Buffer, BufferLength);
 
-	status = WdfUsbTargetPipeFormatRequestForWrite(
+	if (!NT_SUCCESS(status = WdfUsbTargetPipeFormatRequestForWrite(
 		Pipe,
 		request,
 		memory,
 		NULL
-	);
-	if (!NT_SUCCESS(status)) {
+	)))
+	{
 		TraceError(
 			TRACE_DSUSB,
 			"WdfUsbTargetPipeFormatRequestForWrite failed with status %!STATUS!",
@@ -199,7 +209,8 @@ USB_WriteInterruptPipeAsync(
 		status = WdfRequestGetStatus(request);
 	}
 
-	if (!NT_SUCCESS(status)) {
+	if (!NT_SUCCESS(status))
+	{
 		TraceError(
 			TRACE_DSUSB,
 			"WdfRequestSend failed with status %!STATUS!",
@@ -240,10 +251,8 @@ USB_WriteInterruptOutSync(
 NTSTATUS DsUsb_PrepareHardware(WDFDEVICE Device)
 {
 	NTSTATUS status = STATUS_SUCCESS;
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 	WDF_USB_DEVICE_SELECT_CONFIG_PARAMS configParams;
-	UCHAR index;
-	WDFUSBPIPE pipe;
 	WDF_USB_PIPE_INFORMATION pipeInfo;
 	UCHAR controlTransferBuffer[CONTROL_TRANSFER_BUFFER_LENGTH];
 	WDF_DEVICE_PROPERTY_DATA propertyData;
@@ -251,7 +260,6 @@ NTSTATUS DsUsb_PrepareHardware(WDFDEVICE Device)
 	WCHAR friendlyName[128];
 	size_t friendlyNameSize = 0;
 	UCHAR identification[64];
-	UINT64 hostAddress;
 
 	FuncEntry(TRACE_DSUSB);
 
@@ -375,11 +383,11 @@ NTSTATUS DsUsb_PrepareHardware(WDFDEVICE Device)
 		//
 		// Get pipe handles
 		//
-		for (index = 0; index < WdfUsbInterfaceGetNumConfiguredPipes(pDevCtx->Connection.Usb.UsbInterface); index++)
+		for (UCHAR index = 0; index < WdfUsbInterfaceGetNumConfiguredPipes(pDevCtx->Connection.Usb.UsbInterface); index++)
 		{
 			WDF_USB_PIPE_INFORMATION_INIT(&pipeInfo);
 
-			pipe = WdfUsbInterfaceGetConfiguredPipe(
+			const WDFUSBPIPE pipe = WdfUsbInterfaceGetConfiguredPipe(
 				pDevCtx->Connection.Usb.UsbInterface,
 				index, //PipeIndex,
 				&pipeInfo
@@ -440,6 +448,7 @@ NTSTATUS DsUsb_PrepareHardware(WDFDEVICE Device)
 
 		//
 		// Request device MAC address
+		// TODO: move somewhere else and continue startup on soft-fail
 		// 
 		if (!NT_SUCCESS(status = USB_SendControlRequest(
 			pDevCtx,
@@ -528,71 +537,21 @@ NTSTATUS DsUsb_PrepareHardware(WDFDEVICE Device)
 		//
 		// Request host BTH address
 		// 
-		if (!NT_SUCCESS(status = USB_SendControlRequest(
-			pDevCtx,
-			BmRequestDeviceToHost,
-			BmRequestClass,
-			GetReport,
-			Ds3FeatureHostAddress,
-			0,
-			controlTransferBuffer,
-			CONTROL_TRANSFER_BUFFER_LENGTH
-		)))
+		if(!NT_SUCCESS(DsUsb_Ds3RequestHostAddress(Device)))
 		{
 			TraceError(
 				TRACE_DSUSB,
-				"Requesting host address failed with %!STATUS!",
-				status
-			);
-			EventWriteFailedWithNTStatus(__FUNCTION__, L"Requesting host address", status);
-			break;
-		}
-
-		RtlCopyMemory(
-			&pDevCtx->HostAddress,
-			&controlTransferBuffer[2],
-			sizeof(BD_ADDR));
-
-		//
-		// Set host radio address property
-		// 
-
-		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_BluetoothRadio_Address);
-		propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
-		propertyData.Lcid = LOCALE_NEUTRAL;
-
-		hostAddress = (UINT64)(pDevCtx->HostAddress.Address[5]) |
-			(UINT64)(pDevCtx->HostAddress.Address[4]) << 8 |
-			(UINT64)(pDevCtx->HostAddress.Address[3]) << 16 |
-			(UINT64)(pDevCtx->HostAddress.Address[2]) << 24 |
-			(UINT64)(pDevCtx->HostAddress.Address[1]) << 32 |
-			(UINT64)(pDevCtx->HostAddress.Address[0]) << 40;
-
-		status = WdfDeviceAssignProperty(
-			Device,
-			&propertyData,
-			DEVPROP_TYPE_UINT64,
-			sizeof(UINT64),
-			&hostAddress
-		);
-
-		if (!NT_SUCCESS(status))
-		{
-			TraceError(
-				TRACE_DSUSB,
-				"Setting DEVPKEY_BluetoothRadio_Address failed with status %!STATUS!",
+				"Setting DsUsb_Ds3RequestHostAddress failed with status %!STATUS!",
 				status
 			);
 		}
-
-		status = STATUS_SUCCESS;
 
 #pragma endregion
 
 #pragma region Request Model Identification
 
 		//
-		// See https://github.com/ViGEm/DsHidMini/issues/50
+		// See https://github.com/nefarius/DsHidMini/issues/50
 		// 
 		if (NT_SUCCESS(USB_SendControlRequest(
 			pDevCtx,
@@ -619,33 +578,6 @@ NTSTATUS DsUsb_PrepareHardware(WDFDEVICE Device)
 		}
 
 #pragma endregion
-
-		//
-		// Attempt automatic pairing
-		// 
-		if (!pDevCtx->Configuration.DisableAutoPairing)
-		{
-			//
-			// Auto-pair to first found radio
-			// 
-			status = DsUsb_Ds3PairToFirstRadio(Device);
-
-			if (!NT_SUCCESS(status))
-			{
-				TraceError(
-					TRACE_DSUSB,
-					"DsUsb_Ds3PairToFirstRadio failed with status %!STATUS!",
-					status
-				);
-				EventWriteFailedWithNTStatus(__FUNCTION__, L"DsUsb_Ds3PairToFirstRadio", status);
-			}
-		}
-		else
-		{
-			TraceInformation(
-				TRACE_DSUSB,
-				"Auto-pairing disabled in device configuration");
-		}
 
 		//
 		// Send initial output report
@@ -682,7 +614,7 @@ NTSTATUS DsUsb_PrepareHardware(WDFDEVICE Device)
 NTSTATUS DsUsb_D0Entry(WDFDEVICE Device)
 {
 	NTSTATUS status = STATUS_SUCCESS;
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 
 	FuncEntry(TRACE_DSUSB);
 
@@ -728,7 +660,7 @@ NTSTATUS DsUsb_D0Entry(WDFDEVICE Device)
 NTSTATUS DsUdb_D0Exit(WDFDEVICE Device)
 {
 	NTSTATUS status = STATUS_SUCCESS;
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 
 	FuncEntry(TRACE_DSUSB);
 

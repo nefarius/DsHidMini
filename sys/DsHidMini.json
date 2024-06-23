@@ -1,7 +1,8 @@
 {
   "Global": {
     "HidDeviceMode": "DS4Windows",
-    "DisableAutoPairing": false,
+    "DevicePairingMode": "Auto",
+    "PairOnHotReload": false,
     "IsOutputRateControlEnabled": true,
     "OutputRateControlPeriodMs": 150,
     "IsOutputDeduplicatorEnabled": false,
@@ -363,7 +364,8 @@
   "Devices": {
     "44D832809FCD": {
       "HidDeviceMode": "SDF",
-      "DisableAutoPairing": false,
+      "DevicePairingMode": "Auto",
+      "PairOnHotReload": false,
       "IsOutputRateControlEnabled": true,
       "OutputRateControlPeriodMs": 150,
       "IsOutputDeduplicatorEnabled": false,
@@ -379,7 +381,8 @@
     },
     "0019C1637EA0": {
       "HidDeviceMode": "GPJ",
-      "DisableAutoPairing": false,
+      "DevicePairingMode": "Auto",
+      "PairOnHotReload": false,
       "IsOutputRateControlEnabled": true,
       "OutputRateControlPeriodMs": 150,
       "IsOutputDeduplicatorEnabled": false,

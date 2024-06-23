@@ -126,12 +126,6 @@
     <ClInclude Include="PID\PIDTypes.h">
       <Filter>Header Files\PID</Filter>
     </ClInclude>
-    <ClInclude Include="uthash.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="dshmguid.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="DsInternal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -139,6 +133,9 @@
       <Filter>Header Files\Public</Filter>
     </ClInclude>
     <ClInclude Include="..\include\DsHidMini\ScpTypes.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\DsHidMini\dshmguid.h">
       <Filter>Header Files\Public</Filter>
     </ClInclude>
     <ClInclude Include="HID\02_GPJ_Col1_GamePad.h">
@@ -166,6 +163,12 @@
       <Filter>Header Files\JSON</Filter>
     </ClInclude>
     <ClInclude Include="Configuration.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\DsHidMini\Ds3Shared.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="HID.ReportHandlers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -201,6 +204,24 @@
       <Filter>Source Files\JSON</Filter>
     </ClCompile>
     <ClCompile Include="Configuration.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DsBth.Timers.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OutputReport.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HID.FeatureReport.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HID.Reports.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="InputReport.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Util.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
