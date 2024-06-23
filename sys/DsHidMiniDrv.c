@@ -508,7 +508,7 @@ DsHidMini_WriteReport(
 #pragma region Input Report processing
 
 //
-// Process a raw input report depending on HID emulation mode
+// Dispatches raw input report processing depending on HID emulation mode and other settings
 // 
 static void DSHM_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Report)
 {
@@ -524,7 +524,7 @@ static void DSHM_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_R
 
 //
 // Called when data is available on the USB Interrupt IN pipe.
-//  
+// 
 VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	WDFUSBPIPE Pipe,
 	WDFMEMORY Buffer,
@@ -722,7 +722,9 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
 }
 
-
+//
+// Called when data is available on the Bluetooth Interrupt IN channel.
+// 
 _IRQL_requires_max_(DISPATCH_LEVEL)
 _IRQL_requires_same_
 ContinuousRequestTarget_BufferDisposition
