@@ -25,6 +25,7 @@
     <None Remove="*.wixpdb" />
     <None Remove="*.wixobj" />
     <None Remove="App.config" />
+    <None Remove="*.g.cs" />
   </ItemGroup>
 
   <ItemGroup>
