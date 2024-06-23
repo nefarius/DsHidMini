@@ -221,6 +221,9 @@
     <ClCompile Include="InputReport.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="dshidmini.rc">

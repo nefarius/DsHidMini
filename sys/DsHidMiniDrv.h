@@ -23,4 +23,3 @@ DSHM_SendOutputReport(
 	_In_ DS_OUTPUT_REPORT_SOURCE Source
 );
 
-VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength);

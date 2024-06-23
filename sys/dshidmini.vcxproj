@@ -43,6 +43,7 @@
     <ClCompile Include="JSON\cJSON_Utils.c" />
     <ClCompile Include="OutputReport.c" />
     <ClCompile Include="Power.c" />
+    <ClCompile Include="Util.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\DsHidMini\Ds3Shared.h" />
