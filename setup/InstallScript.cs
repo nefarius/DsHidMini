@@ -44,6 +44,9 @@ internal class InstallScript
         project.BuildMsi();
     }
 
+    /// <summary>
+    ///     Put uninstall logic here.
+    /// </summary>
     private static void ProjectOnAfterInstall(SetupEventArgs e)
     {
         if (e.IsUninstalling)
@@ -55,6 +58,9 @@ internal class InstallScript
 
 public static class CustomActions
 {
+    /// <summary>
+    ///     Put install logic here.
+    /// </summary>
     [CustomAction]
     public static ActionResult InstallDrivers(Session session)
     {
