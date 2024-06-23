@@ -392,7 +392,7 @@ DsHidMini_RetrieveNextInputReport(
 
 	*Buffer = moduleContext->InputReport;
 
-	switch (pDevCtx->Configuration.HidDeviceMode)
+	switch (pDevCtx->Configuration.HidDeviceMode)  // NOLINT(clang-diagnostic-switch-enum)
 	{
 	case DsHidMiniDeviceModeSDF:
 	case DsHidMiniDeviceModeGPJ:
