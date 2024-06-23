@@ -84,7 +84,7 @@ internal class InstallScript
     {
         if (e.IsUninstalling)
         {
-            CustomActions.UninstallDrivers();
+            CustomActions.UninstallDrivers(e.Session);
         }
     }
 }
@@ -98,7 +98,7 @@ public static class CustomActions
     public static ActionResult InstallDrivers(Session session)
     {
         // clean out whatever has been on the machine before
-        bool rebootRequired = UninstallDrivers();
+        bool rebootRequired = UninstallDrivers(session);
 
         DirectoryInfo installDir = new(session.Property("INSTALLDIR"));
         string driversDir = Path.Combine(installDir.FullName, "drivers");
@@ -137,7 +137,7 @@ public static class CustomActions
         return ActionResult.Success;
     }
 
-    public static bool UninstallDrivers()
+    public static bool UninstallDrivers(Session session)
     {
         List<string> allDriverPackages = DriverStore.ExistingDrivers.ToList();
 
