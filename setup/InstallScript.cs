@@ -28,12 +28,14 @@ internal class InstallScript
         Feature fullSetup = new();
 
         ManagedProject project = new(ProductName,
+            // included files
             new InstallDir(@"%ProgramFiles%\Nefarius Software Solutions\DsHidMini",
                 new Dir("drivers",
                     new Files(@"..\artifacts\drivers\*.*"),
                     new Files(@"..\artifacts\igfilter\*.*")
                 )
             ),
+            // install action
             new ManagedAction(CustomActions.InstallDrivers, Return.check,
                 When.After,
                 Step.InstallFinalize,
