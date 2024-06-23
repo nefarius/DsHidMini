@@ -7,6 +7,17 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <SetupVersion Condition="'$(SetupVersion)' == ''">3.0.0</SetupVersion>
+  </PropertyGroup>
+
+  <Target Name="GenerateBuildVariableFile" BeforeTargets="BeforeBuild">
+    <WriteLinesToFile
+        File="GeneratedBuildVariables.g.cs"
+        Lines="namespace Nefarius.DsHidMini.Setup { public static class BuildVariables { public const string SetupVersion = &quot;$(SetupVersion)&quot;%3B } }"
+        Overwrite="true" />
+  </Target>
+
   <ItemGroup>
     <None Remove="*.msi" />
     <None Remove="*.exe" />

@@ -23,7 +23,7 @@ internal class InstallScript
     private static void Main()
     {
         // grab main app version
-        Version version = Version.Parse("3.0.0"); // TODO: make configurable
+        Version version = Version.Parse(BuildVariables.SetupVersion);
 
         Feature fullSetup = new();
 

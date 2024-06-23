@@ -352,3 +352,4 @@ healthchecksdb
 /XInputBridge/exports
 **/*_OTEL
 *.msi
+**/*.g.cs
