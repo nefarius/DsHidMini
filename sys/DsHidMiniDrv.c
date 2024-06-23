@@ -403,7 +403,8 @@ DMF_DsHidMini_Open(
 	//
 	// Required to get properly detected by DS4Windows
 	// Keep in sync with here: 
-	// https://github.com/Ryochan7/DS4Windows/blob/74cdcb06e95af7681ab734bf94994488818067f2/DS4Windows/DS4Library/DS4Devices.cs#L161
+	// - https://github.com/Ryochan7/DS4Windows/blob/74cdcb06e95af7681ab734bf94994488818067f2/DS4Windows/DS4Library/DS4Devices.cs#L161
+	// - https://docs.nefarius.at/research/Virtual-VID-PID-used-by-NSS/#pid-0x0001
 	// 
 		pHidCfg->VendorId = pDevCtx->VendorId = DS3_DS4WINDOWS_HID_VID;
 		pHidCfg->ProductId = pDevCtx->ProductId = DS3_DS4WINDOWS_HID_PID;
