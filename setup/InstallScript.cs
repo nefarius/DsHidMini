@@ -3,7 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+
+using CliWrap;
 
 using Microsoft.Deployment.WindowsInstaller;
 
@@ -12,6 +16,8 @@ using Nefarius.Utilities.DeviceManagement.Drivers;
 using Nefarius.Utilities.DeviceManagement.PnP;
 
 using WixSharp;
+
+using File = WixSharp.File;
 
 namespace Nefarius.DsHidMini.Setup;
 
@@ -43,7 +49,8 @@ internal class InstallScript
                 new Dir("drivers",
                     new Files(@"..\artifacts\drivers\*.*"),
                     new Files(@"..\artifacts\igfilter\*.*")
-                )
+                ),
+                new File("nefarius_DsHidMini_Updater.exe")
             ),
             // install action
             new ManagedAction(CustomActions.InstallDrivers, Return.check,
@@ -71,6 +78,10 @@ internal class InstallScript
 
         // embed types of Nefarius.Utilities.DeviceManagement
         project.DefaultRefAssemblies.Add(typeof(Devcon).Assembly.Location);
+        project.DefaultRefAssemblies.Add(typeof(Cli).Assembly.Location);
+        project.DefaultRefAssemblies.Add(typeof(ValueTask).Assembly.Location);
+        project.DefaultRefAssemblies.Add(typeof(IAsyncDisposable).Assembly.Location);
+        project.DefaultRefAssemblies.Add(typeof(Unsafe).Assembly.Location);
         project.AfterInstall += ProjectOnAfterInstall;
 
         //project.SourceBaseDir = "<input dir path>";
@@ -146,7 +157,12 @@ public static class CustomActions
 
         session.SetMode(InstallRunMode.RebootAtEnd, rebootRequired);
 
-        Process.Start("https://docs.nefarius.at/projects/DsHidMini/Experimental/Version-3-Beta/");
+        _ = Cli.Wrap("explorer")
+            .WithArguments("https://docs.nefarius.at/projects/DsHidMini/Experimental/Version-3-Beta/")
+            .WithValidation(CommandResultValidation.None)
+            .ExecuteAsync()
+            .GetAwaiter()
+            .GetResult();
 
         return ActionResult.Success;
     }
