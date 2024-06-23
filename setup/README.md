@@ -27,3 +27,8 @@ Commands/scripts are to be run from solution root directory.
 - Make public GitHub release
 - ???
 - Profit!
+
+## 3rd party credits
+
+- [WixSharp](https://github.com/oleg-shilo/wixsharp)
+- [Nefarius.Utilities.DeviceManagement](https://github.com/nefarius/Nefarius.Utilities.DeviceManagement)
