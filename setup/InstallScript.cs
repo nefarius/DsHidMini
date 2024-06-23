@@ -1,9 +1,12 @@
-﻿using System;
+﻿global using Nefarius.DsHidMini.Setup.Util;
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 using Microsoft.Deployment.WindowsInstaller;
 
+using Nefarius.DsHidMini.Setup.Util;
 using Nefarius.Utilities.DeviceManagement.Drivers;
 using Nefarius.Utilities.DeviceManagement.PnP;
 
@@ -43,22 +46,6 @@ internal class InstallScript
             CustomActions.UninstallDrivers();
         }
     }
-}
-
-public static class StringExtensions
-{
-    public static bool Contains(this string source, string toCheck, StringComparison comp)
-    {
-        return source?.IndexOf(toCheck, comp) >= 0;
-    }
-}
-
-public static class DsHidMiniDriver
-{
-    /// <summary>
-    ///     Interface GUID common to all devices the DsHidMini driver supports.
-    /// </summary>
-    public static Guid DeviceInterfaceGuid => Guid.Parse("{399ED672-E0BD-4FB3-AB0C-4955B56FB86A}");
 }
 
 public static class CustomActions
