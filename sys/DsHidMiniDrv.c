@@ -775,8 +775,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 //
 // Called when data is available on the Bluetooth Interrupt IN channel.
 // 
-_IRQL_requires_max_(DISPATCH_LEVEL)
-_IRQL_requires_same_
+_Use_decl_annotations_
 ContinuousRequestTarget_BufferDisposition
 DsBth_HidInterruptReadContinuousRequestCompleted(
 	_In_ DMFMODULE DmfModule,
@@ -1239,8 +1238,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 
 #pragma region Output Report processing
 
-_IRQL_requires_max_(DISPATCH_LEVEL)
-_IRQL_requires_same_
+_Use_decl_annotations_
 VOID
 DsBth_HidControlWriteContinuousRequestCompleted(
 	_In_ DMFMODULE DmfModule,
