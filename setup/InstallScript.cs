@@ -46,6 +46,7 @@ internal class InstallScript
             ) { Win64 = true }
         )
         {
+            OutFileName = $"Nefarius_DsHidMini_Drivers_x64_arm64_v{version}",
             Version = version,
             Platform = Platform.x64,
             GUID = new Guid("6fe30b47-2577-43ad-9095-1861ba25889b"),
