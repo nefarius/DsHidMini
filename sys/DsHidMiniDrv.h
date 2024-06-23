@@ -22,4 +22,3 @@ DSHM_SendOutputReport(
 	_In_ PDEVICE_CONTEXT Context,
 	_In_ DS_OUTPUT_REPORT_SOURCE Source
 );
-

@@ -5,6 +5,7 @@
 //
 // Enqueues current output report buffer to get sent to device.
 //
+_Use_decl_annotations_
 NTSTATUS
 DSHM_SendOutputReport(
 	_In_ const PDEVICE_CONTEXT Context,
@@ -131,8 +132,7 @@ DSHM_SendOutputReport(
 //
 // Callback invoked when new output report packet is due to being processed
 // 
-_IRQL_requires_max_(PASSIVE_LEVEL)
-_IRQL_requires_same_
+_Use_decl_annotations_
 ThreadedBufferQueue_BufferDisposition
 DSHM_EvtExecuteOutputPacketReceived(
 	_In_ DMFMODULE DmfModule,
@@ -331,6 +331,7 @@ DSHM_EvtExecuteOutputPacketReceived(
 //
 // Callback invoked after cache cooldown delay timer elapsed
 // 
+_Use_decl_annotations_
 void
 DSHM_OutputReportDelayTimerElapsed(
 	WDFTIMER Timer
