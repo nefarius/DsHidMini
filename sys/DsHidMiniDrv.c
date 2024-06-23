@@ -510,198 +510,14 @@ DsHidMini_WriteReport(
 //
 // Process a raw input report depending on HID emulation mode
 // 
-void Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Report)
+static void DSHM_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Report)
 {
-
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
 	const DMFMODULE dmfModule = (DMFMODULE)Context->DsHidMiniModule;
 	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(dmfModule);
 
-#pragma region HID Input Report (SDF, GPJ ID 01) processing
-
-	switch (Context->Configuration.HidDeviceMode)
-	{
-	case DsHidMiniDeviceModeGPJ:
-
-		DS3_RAW_TO_GPJ_HID_INPUT_REPORT_01(
-			Report,
-			pModCtx->InputReport,
-			Context->Configuration.GPJ.PressureExposureMode,
-			Context->Configuration.GPJ.DPadExposureMode,
-			&Context->Configuration.ThumbSettings,
-			&Context->Configuration.FlipAxis
-		);
-
-#ifdef DBG
-		DumpAsHex(">> MULTI", pModCtx->InputReport, DS3_SDF_GPJ_HID_INPUT_REPORT_SIZE);
-#endif
-
-		break;
-	case DsHidMiniDeviceModeSDF:
-
-		DS3_RAW_TO_SDF_HID_INPUT_REPORT(
-			Report,
-			pModCtx->InputReport,
-			Context->Configuration.SDF.PressureExposureMode,
-			Context->Configuration.SDF.DPadExposureMode,
-			&Context->Configuration.ThumbSettings,
-			&Context->Configuration.FlipAxis
-		);
-
-	/*
-#ifdef DBG
-	DumpAsHex(">> SINGLE", moduleContext->InputReport, DS3_SPLIT_SINGLE_HID_INPUT_REPORT_SIZE);
-#endif
-	*/
-
-		break;
-	default:
-		break;
-	}
-
-	//
-	// Notify new Input Report is available
-	// 
-	NTSTATUS status = DMF_VirtualHidMini_InputReportGenerate(
-		pModCtx->DmfModuleVirtualHidMini,
-		DsHidMini_RetrieveNextInputReport
-	);
-	if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
-	{
-		TraceError(
-			TRACE_DSHIDMINIDRV,
-			"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!",
-			status
-		);
-		EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_VirtualHidMini_InputReportGenerate", status);
-	}
-
-#pragma endregion
-
-#pragma region HID Input Report (GPJ ID 02) processing
-
-	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeGPJ
-		&& (Context->Configuration.GPJ.PressureExposureMode & DsPressureExposureModeAnalogue) != 0)
-	{
-		DS3_RAW_TO_GPJ_HID_INPUT_REPORT_02(
-			Report,
-			pModCtx->InputReport
-		);
-
-		//
-		// Notify new Input Report is available
-		// 
-		status = DMF_VirtualHidMini_InputReportGenerate(
-			pModCtx->DmfModuleVirtualHidMini,
-			DsHidMini_RetrieveNextInputReport
-		);
-		if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
-		{
-			TraceError(
-				TRACE_DSHIDMINIDRV,
-				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!",
-				status
-			);
-			EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_VirtualHidMini_InputReportGenerate", status);
-		}
-	}
-
-#pragma endregion
-
-#pragma region HID Input Report (SIXAXIS compatible) processing
-
-	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
-	{
-		DS3_RAW_TO_SIXAXIS_HID_INPUT_REPORT(
-			Report,
-			pModCtx->InputReport,
-			&Context->Configuration.ThumbSettings,
-			&Context->Configuration.FlipAxis
-		);
-
-		//
-		// Notify new Input Report is available
-		// 
-		status = DMF_VirtualHidMini_InputReportGenerate(
-			pModCtx->DmfModuleVirtualHidMini,
-			DsHidMini_RetrieveNextInputReport
-		);
-		if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
-		{
-			TraceError(
-				TRACE_DSHIDMINIDRV,
-				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!",
-				status
-			);
-			EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_VirtualHidMini_InputReportGenerate", status);
-		}
-	}
-
-#pragma endregion
-
-#pragma region HID Input Report (DualShock 4 Rev1 compatible) processing
-
-	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeDS4WindowsCompatible)
-	{
-		DS3_RAW_TO_DS4WINDOWS_HID_INPUT_REPORT(
-			Report,
-			pModCtx->InputReport,
-			(Context->ConnectionType == DsDeviceConnectionTypeUsb) ? TRUE : FALSE,
-			&Context->Configuration.ThumbSettings,
-			&Context->Configuration.FlipAxis
-		);
-
-		//
-		// Notify new Input Report is available
-		// 
-		status = DMF_VirtualHidMini_InputReportGenerate(
-			pModCtx->DmfModuleVirtualHidMini,
-			DsHidMini_RetrieveNextInputReport
-		);
-		if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
-		{
-			TraceError(
-				TRACE_DSHIDMINIDRV,
-				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!",
-				status
-			);
-			EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_VirtualHidMini_InputReportGenerate", status);
-		}
-	}
-
-#pragma endregion
-
-#pragma region HID Input Report (XINPUT compatible HID device) processing
-
-	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeXInputHIDCompatible)
-	{
-		DS3_RAW_TO_XINPUTHID_HID_INPUT_REPORT(
-			Report,
-			(PXINPUT_HID_INPUT_REPORT)pModCtx->InputReport,
-			&Context->Configuration.ThumbSettings,
-			&Context->Configuration.FlipAxis
-		);
-
-		//
-		// Notify new Input Report is available
-		// 
-		status = DMF_VirtualHidMini_InputReportGenerate(
-			pModCtx->DmfModuleVirtualHidMini,
-			DsHidMini_RetrieveNextInputReport
-		);
-		if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
-		{
-			TraceError(
-				TRACE_DSHIDMINIDRV,
-				"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!",
-				status
-			);
-			EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_VirtualHidMini_InputReportGenerate", status);
-		}
-	}
-
-#pragma endregion
+	DSHM_ParseInputReport(Context, pModCtx, Report);
 
 	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
 }
@@ -901,7 +717,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 		pDevCtx->BatteryStatus = battery;
 	}
 
-	Ds_ProcessHidInputReport(pDevCtx, pInReport);
+	DSHM_ProcessHidInputReport(pDevCtx, pInReport);
 
 	FuncExitNoReturn(TRACE_DSHIDMINIDRV);
 }
@@ -1362,7 +1178,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 		pDevCtx->Connection.Bth.IdleDisconnectTimestamp.QuadPart = 0;
 	}
 
-	Ds_ProcessHidInputReport(pDevCtx, pInReport);
+	DSHM_ProcessHidInputReport(pDevCtx, pInReport);
 
 	return ContinuousRequestTarget_BufferDisposition_ContinuousRequestTargetAndContinueStreaming;
 }

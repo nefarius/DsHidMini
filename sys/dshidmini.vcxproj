@@ -38,6 +38,7 @@
     <ClCompile Include="DsUsb.c" />
     <ClCompile Include="HID.FeatureReport.c" />
     <ClCompile Include="HID.Reports.c" />
+    <ClCompile Include="InputReport.c" />
     <ClCompile Include="JSON\cJSON.c" />
     <ClCompile Include="JSON\cJSON_Utils.c" />
     <ClCompile Include="OutputReport.c" />

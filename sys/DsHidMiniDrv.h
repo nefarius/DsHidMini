@@ -42,8 +42,6 @@ EVT_VirtualHidMini_SetOutputReport DsHidMini_SetOutputReport;
 
 EVT_VirtualHidMini_WriteReport DsHidMini_WriteReport;
 
-VOID Ds_ProcessHidInputReport(PDEVICE_CONTEXT Context, PDS3_RAW_INPUT_REPORT Report);
-
 NTSTATUS DSHM_SendOutputReport(PDEVICE_CONTEXT Context, DS_OUTPUT_REPORT_SOURCE Source);
 
 VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength);

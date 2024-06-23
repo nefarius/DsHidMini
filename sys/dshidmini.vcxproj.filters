@@ -218,6 +218,9 @@
     <ClCompile Include="HID.Reports.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="InputReport.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="dshidmini.rc">
