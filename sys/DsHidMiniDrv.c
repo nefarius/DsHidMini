@@ -491,6 +491,8 @@ DsHidMini_WriteReport(
 {
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
+	UNREFERENCED_PARAMETER(Request);
+
 	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(DMF_ParentDeviceGet(DmfModule));
 	const DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(DMF_ParentModuleGet(DmfModule));
 
