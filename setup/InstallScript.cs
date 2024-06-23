@@ -20,13 +20,18 @@ internal class InstallScript
     {
         ManagedProject project = new("DsHidMini",
             new Dir(@"%ProgramFiles%\Nefarius Software Solutions\DsHidMini",
-                new File("InstallScript.cs") /* TODO: dummy demo file, remove */),
+                new Dir("drivers",
+                    new Files(@"..\artifacts\drivers\*.*"),
+                    new Files(@"..\artifacts\igfilter\*.*")
+                )
+            ),
             new ManagedAction(CustomActions.InstallDrivers, Return.check,
                 When.After,
                 Step.InstallInitialize,
                 Condition.NOT_Installed)
         );
 
+        project.Platform = Platform.x64;
         project.GUID = new Guid("6fe30b47-2577-43ad-9095-1861ba25889b");
         project.LicenceFile = "EULA.rtf";
         // embed types of Nefarius.Utilities.DeviceManagement
