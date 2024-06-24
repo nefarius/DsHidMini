@@ -33,3 +33,4 @@ Commands/scripts are to be run from solution root directory.
 - [WixSharp](https://github.com/oleg-shilo/wixsharp)
 - [Nefarius.Utilities.DeviceManagement](https://github.com/nefarius/Nefarius.Utilities.DeviceManagement)
 - [CliWrap](https://github.com/Tyrrrz/CliWrap)
+- [Nefarius' nŏvīcĭus universal software updater agent for Windows](https://github.com/nefarius/vicius)
