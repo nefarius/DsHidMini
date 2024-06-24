@@ -67,6 +67,11 @@ internal class InstallScript
                 When.After,
                 Step.InstallFinalize,
                 Condition.NOT_Installed),
+            // remove updater cleanly
+            new ManagedAction(CustomActions.DeregisterUpdater, Return.check,
+                When.Before,
+                Step.RemoveFiles,
+                Condition.Installed),
             // registry values
             new RegKey(fullSetup, RegistryHive.LocalMachine,
                 $@"Software\Nefarius Software Solutions e.U.\{ProductName}",
@@ -111,14 +116,13 @@ internal class InstallScript
     }
 
     /// <summary>
-    ///     Put uninstall logic here.
+    ///     Put uninstall logic that doesn't access packaged files in here.
     /// </summary>
     private static void ProjectOnAfterInstall(SetupEventArgs e)
     {
         if (e.IsUninstalling)
         {
             CustomActions.UninstallDrivers(e.Session);
-            CustomActions.DeregisterUpdater(e.Session);
         }
     }
 }
@@ -171,6 +175,9 @@ public static class CustomActions
         return ActionResult.Success;
     }
 
+    /// <summary>
+    ///     Open beta article in default browser.
+    /// </summary>
     [CustomAction]
     public static ActionResult OpenBetaArticle(Session session)
     {
@@ -184,6 +191,9 @@ public static class CustomActions
         return ActionResult.Success;
     }
 
+    /// <summary>
+    ///     Register the auto-updater.
+    /// </summary>
     [CustomAction]
     public static ActionResult RegisterUpdater(Session session)
     {
@@ -203,22 +213,36 @@ public static class CustomActions
         return ActionResult.Success;
     }
 
-    public static bool DeregisterUpdater(Session session)
+    /// <summary>
+    ///     De-register the auto-updater.
+    /// </summary>
+    [CustomAction]
+    public static ActionResult DeregisterUpdater(Session session)
     {
-        DirectoryInfo installDir = new(session.Property("INSTALLDIR"));
-        string updaterPath = Path.Combine(installDir.FullName, "nefarius_DsHidMini_Updater.exe");
+        try
+        {
+            DirectoryInfo installDir = new(session.Property("INSTALLDIR"));
+            string updaterPath = Path.Combine(installDir.FullName, "nefarius_DsHidMini_Updater.exe");
 
-        _ = Cli.Wrap(updaterPath)
-            .WithArguments(builder => builder
-                .Add("--uninstall")
-                .Add("--silent")
-            )
-            .WithValidation(CommandResultValidation.None)
-            .ExecuteAsync()
-            .GetAwaiter()
-            .GetResult();
+            _ = Cli.Wrap(updaterPath)
+                .WithArguments(builder => builder
+                    .Add("--uninstall")
+                    .Add("--silent")
+                )
+                .WithValidation(CommandResultValidation.None)
+                .ExecuteAsync()
+                .GetAwaiter()
+                .GetResult();
 
-        return true;
+            return ActionResult.Success;
+        }
+        catch
+        {
+            //
+            // Not failing a removal here
+            // 
+            return ActionResult.Success;
+        }
     }
 
     public static bool UninstallDrivers(Session session)
