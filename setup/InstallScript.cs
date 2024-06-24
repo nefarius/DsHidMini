@@ -52,8 +52,18 @@ internal class InstallScript
                 ),
                 new File("nefarius_DsHidMini_Updater.exe")
             ),
-            // install action
+            // install drivers
             new ManagedAction(CustomActions.InstallDrivers, Return.check,
+                When.After,
+                Step.InstallFinalize,
+                Condition.NOT_Installed),
+            // register updater
+            new ManagedAction(CustomActions.RegisterUpdater, Return.check,
+                When.After,
+                Step.InstallFinalize,
+                Condition.NOT_Installed),
+            // open beta article
+            new ManagedAction(CustomActions.OpenBetaArticle, Return.check,
                 When.After,
                 Step.InstallFinalize,
                 Condition.NOT_Installed),
@@ -108,6 +118,7 @@ internal class InstallScript
         if (e.IsUninstalling)
         {
             CustomActions.UninstallDrivers(e.Session);
+            CustomActions.DeregisterUpdater(e.Session);
         }
     }
 }
@@ -157,6 +168,12 @@ public static class CustomActions
 
         session.SetMode(InstallRunMode.RebootAtEnd, rebootRequired);
 
+        return ActionResult.Success;
+    }
+
+    [CustomAction]
+    public static ActionResult OpenBetaArticle(Session session)
+    {
         _ = Cli.Wrap("explorer")
             .WithArguments("https://docs.nefarius.at/projects/DsHidMini/Experimental/Version-3-Beta/")
             .WithValidation(CommandResultValidation.None)
@@ -165,6 +182,43 @@ public static class CustomActions
             .GetResult();
 
         return ActionResult.Success;
+    }
+
+    [CustomAction]
+    public static ActionResult RegisterUpdater(Session session)
+    {
+        DirectoryInfo installDir = new(session.Property("INSTALLDIR"));
+        string updaterPath = Path.Combine(installDir.FullName, "nefarius_DsHidMini_Updater.exe");
+
+        _ = Cli.Wrap(updaterPath)
+            .WithArguments(builder => builder
+                .Add("--install")
+                .Add("--silent")
+            )
+            .WithValidation(CommandResultValidation.None)
+            .ExecuteAsync()
+            .GetAwaiter()
+            .GetResult();
+
+        return ActionResult.Success;
+    }
+
+    public static bool DeregisterUpdater(Session session)
+    {
+        DirectoryInfo installDir = new(session.Property("INSTALLDIR"));
+        string updaterPath = Path.Combine(installDir.FullName, "nefarius_DsHidMini_Updater.exe");
+
+        _ = Cli.Wrap(updaterPath)
+            .WithArguments(builder => builder
+                .Add("--uninstall")
+                .Add("--silent")
+            )
+            .WithValidation(CommandResultValidation.None)
+            .ExecuteAsync()
+            .GetAwaiter()
+            .GetResult();
+
+        return true;
     }
 
     public static bool UninstallDrivers(Session session)
