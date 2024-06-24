@@ -16,7 +16,9 @@ configuration:
 skip_commits:
   files:
     - '**/*.md'
+    - '**/*.aip'
     - '.vscode/*'
+    - '**/*.json'
 install:
 - cmd: vcpkg integrate install
 - cmd: vcpkg update
