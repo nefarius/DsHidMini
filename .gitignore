@@ -353,3 +353,4 @@ healthchecksdb
 **/*_OTEL
 *.msi
 **/*.g.cs
+setup/*.png
