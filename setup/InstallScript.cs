@@ -43,6 +43,11 @@ internal class InstallScript
 
         Feature driversFeature = new("DsHidMini Drivers", true, false);
 
+        Feature bthPs3Feature = new("BthPS3 Wireless Drivers", false, true);
+
+        driversFeature.Add(bthPs3Feature);
+        driversFeature.Display = FeatureDisplay.expand;
+
         ManagedProject project = new(ProductName,
             // included files
             new InstallDir(@"%ProgramFiles%\Nefarius Software Solutions\DsHidMini",
@@ -54,6 +59,11 @@ internal class InstallScript
             ),
             // install drivers
             new ManagedAction(CustomActions.InstallDrivers, Return.check,
+                When.After,
+                Step.InstallFinalize,
+                Condition.NOT_Installed),
+            // install BthPS3
+            new ManagedAction(CustomActions.InstallBthPS3, Return.check,
                 When.After,
                 Step.InstallFinalize,
                 Condition.NOT_Installed),
@@ -82,6 +92,7 @@ internal class InstallScript
             ) { Win64 = true }
         )
         {
+            UI = WUI.WixUI_FeatureTree,
             OutFileName = $"Nefarius_DsHidMini_Drivers_x64_arm64_v{version}",
             Version = version,
             Platform = Platform.x64,
@@ -174,6 +185,26 @@ public static class CustomActions
         Devcon.Refresh();
 
         session.SetMode(InstallRunMode.RebootAtEnd, rebootRequired);
+
+        return ActionResult.Success;
+    }
+
+    /// <summary>
+    ///     Download and install BthPS3.
+    /// </summary>
+    [CustomAction]
+    public static ActionResult InstallBthPS3(Session session)
+    {
+        FeatureInfo bthPs3Feature =
+            session.Features.Single(f => f.Name.Contains("BthPS3", StringComparison.OrdinalIgnoreCase));
+
+        // not selected by user
+        if (bthPs3Feature.RequestState == InstallState.Unknown)
+        {
+            return ActionResult.Success;
+        }
+
+        // TODO: implement me!
 
         return ActionResult.Success;
     }
