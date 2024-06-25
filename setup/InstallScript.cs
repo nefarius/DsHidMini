@@ -215,6 +215,9 @@ public static class CustomActions
         }
 
         // TODO: implement me!
+        // We can not start another MSI-based installation while this
+        // install session is still running so schedule setup execution
+        // for after user closes? Is the transaction done at this point?
 
         return ActionResult.Success;
     }
