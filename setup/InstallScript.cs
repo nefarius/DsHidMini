@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -41,9 +42,20 @@ internal class InstallScript
         Console.WriteLine($"Driver version: {driverVersion}");
         Console.WriteLine($"Filter version: {filterVersion}");
 
-        Feature driversFeature = new("DsHidMini Drivers", true, false);
+        Feature driversFeature = new("DsHidMini Drivers", true, false)
+        {
+            Description = "Installs the Nefarius DsHidMini drivers for PS3 peripherals. " +
+                          "This is a mandatory core component and can't be de-selected."
+        };
 
-        Feature bthPs3Feature = new("BthPS3 Wireless Drivers", false, true);
+        Feature bthPs3Feature = new("BthPS3 Wireless Drivers", false, true)
+        {
+            Description =
+                "When selected, downloads and installs the latest version of the " +
+                "Nefarius BthPS3 Bluetooth Drivers for wireless connectivity. " +
+                "An active Bluetooth host radio and Internet connection is required " +
+                "for this step or the setup will fail, if selected."
+        };
 
         driversFeature.Add(bthPs3Feature);
         driversFeature.Display = FeatureDisplay.expand;
@@ -193,6 +205,7 @@ public static class CustomActions
     ///     Download and install BthPS3.
     /// </summary>
     [CustomAction]
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
     public static ActionResult InstallBthPS3(Session session)
     {
         FeatureInfo bthPs3Feature =
@@ -279,6 +292,9 @@ public static class CustomActions
         }
     }
 
+    /// <summary>
+    ///     Uninstalls and cleans all driver residue.
+    /// </summary>
     public static bool UninstallDrivers(Session session)
     {
         List<string> allDriverPackages = DriverStore.ExistingDrivers.ToList();
@@ -297,8 +313,21 @@ public static class CustomActions
             DriverStore.RemoveDriver(driverPackage);
         }
 
+        // remove conflicting drivers
+        foreach (string driverPackage in allDriverPackages.Where(p =>
+                     p.Contains("fireshock.inf", StringComparison.OrdinalIgnoreCase)))
+        {
+            DriverStore.RemoveDriver(driverPackage);
+        }
+        foreach (string driverPackage in allDriverPackages.Where(p =>
+                     p.Contains("sixaxis.inf", StringComparison.OrdinalIgnoreCase)))
+        {
+            DriverStore.RemoveDriver(driverPackage);
+        }
+
         bool rebootRequired = false;
         int instance = 0;
+        // uninstall live copies of drivers in use by connected or orphaned devices
         while (Devcon.FindByInterfaceGuid(DsHidMiniDriver.DeviceInterfaceGuid, out PnPDevice device, instance++, false))
         {
             device.Uninstall(out bool reboot);
