@@ -88,7 +88,10 @@ internal class InstallScript
             GUID = new Guid("6fe30b47-2577-43ad-9095-1861ba25889b"),
             LicenceFile = "EULA.rtf",
             WildCardDedup = Project.UniqueFileNameDedup,
-            MajorUpgradeStrategy = MajorUpgradeStrategy.Default
+            MajorUpgradeStrategy = MajorUpgradeStrategy.Default,
+            BannerImage = "DsHidMini.dialog_banner.bmp",
+            ValidateBackgroundImage = false,
+            BackgroundImage = "DsHidMini.dialog_background.bmp"
         };
 
         // embed types of Nefarius.Utilities.DeviceManagement
