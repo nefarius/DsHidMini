@@ -41,16 +41,16 @@ internal class InstallScript
         Console.WriteLine($"Driver version: {driverVersion}");
         Console.WriteLine($"Filter version: {filterVersion}");
 
-        Feature fullSetup = new();
+        Feature driversFeature = new("DsHidMini Drivers", true, false);
 
         ManagedProject project = new(ProductName,
             // included files
             new InstallDir(@"%ProgramFiles%\Nefarius Software Solutions\DsHidMini",
-                new Dir("drivers",
-                    new Files(@"..\artifacts\drivers\*.*"),
-                    new Files(@"..\artifacts\igfilter\*.*")
+                new Dir(driversFeature, "drivers",
+                    new Files(driversFeature, @"..\artifacts\drivers\*.*"),
+                    new Files(driversFeature, @"..\artifacts\igfilter\*.*")
                 ),
-                new File("nefarius_DsHidMini_Updater.exe")
+                new File(driversFeature, "nefarius_DsHidMini_Updater.exe")
             ),
             // install drivers
             new ManagedAction(CustomActions.InstallDrivers, Return.check,
@@ -73,7 +73,7 @@ internal class InstallScript
                 Step.RemoveFiles,
                 Condition.Installed),
             // registry values
-            new RegKey(fullSetup, RegistryHive.LocalMachine,
+            new RegKey(driversFeature, RegistryHive.LocalMachine,
                 $@"Software\Nefarius Software Solutions e.U.\{ProductName}",
                 new RegValue("Path", "[INSTALLDIR]") { Win64 = true },
                 new RegValue("Version", version.ToString()) { Win64 = true },
