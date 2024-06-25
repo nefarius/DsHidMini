@@ -50,11 +50,8 @@ internal class InstallScript
 
         Feature bthPs3Feature = new("BthPS3 Wireless Drivers", false, true)
         {
-            Description =
-                "When selected, downloads and installs the latest version of the " +
-                "Nefarius BthPS3 Bluetooth Drivers for wireless connectivity. " +
-                "An active Bluetooth host radio and Internet connection is required " +
-                "for this step or the setup will fail, if selected."
+            Description = "When selected, downloads and installs the latest version of the " +
+                          "Nefarius BthPS3 Bluetooth Drivers for wireless connectivity."
         };
 
         driversFeature.Add(bthPs3Feature);
@@ -319,6 +316,7 @@ public static class CustomActions
         {
             DriverStore.RemoveDriver(driverPackage);
         }
+
         foreach (string driverPackage in allDriverPackages.Where(p =>
                      p.Contains("sixaxis.inf", StringComparison.OrdinalIgnoreCase)))
         {
