@@ -310,13 +310,26 @@ public static class CustomActions
             DriverStore.RemoveDriver(driverPackage);
         }
 
-        // remove conflicting drivers
+        // 
+        // Remove conflicting drivers
+        // 
+
+        // https://docs.nefarius.at/projects/DsHidMini/How-to-Install/#scptoolkit
+        foreach (string driverPackage in allDriverPackages.Where(p =>
+                     p.Contains("ds3controller.inf", StringComparison.OrdinalIgnoreCase) ||
+                     p.Contains("ds3controller_", StringComparison.OrdinalIgnoreCase)))
+        {
+            DriverStore.RemoveDriver(driverPackage);
+        }
+
+        // https://docs.nefarius.at/projects/DsHidMini/How-to-Install/#fireshock
         foreach (string driverPackage in allDriverPackages.Where(p =>
                      p.Contains("fireshock.inf", StringComparison.OrdinalIgnoreCase)))
         {
             DriverStore.RemoveDriver(driverPackage);
         }
 
+        // https://docs.nefarius.at/projects/DsHidMini/SIXAXIS.SYS-to-DsHidMini-Guide/
         foreach (string driverPackage in allDriverPackages.Where(p =>
                      p.Contains("sixaxis.inf", StringComparison.OrdinalIgnoreCase)))
         {
