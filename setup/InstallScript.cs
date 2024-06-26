@@ -1,5 +1,6 @@
 ﻿#nullable enable
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -9,9 +10,11 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 using CliWrap;
 
@@ -136,6 +139,9 @@ internal class InstallScript
         project.DefaultRefAssemblies.Add(typeof(JsonSerializerOptions).Assembly.Location);
         project.DefaultRefAssemblies.Add(typeof(DateTimeOffsetConverter).Assembly.Location);
         project.DefaultRefAssemblies.Add(typeof(JsonStringEnumConverter).Assembly.Location);
+        project.DefaultRefAssemblies.Add(typeof(ArrayPool<>).Assembly.Location);
+        project.DefaultRefAssemblies.Add(typeof(BuffersExtensions).Assembly.Location);
+        project.DefaultRefAssemblies.Add(typeof(UrlEncoder).Assembly.Location);
 
         project.AfterInstall += ProjectOnAfterInstall;
 
@@ -268,6 +274,8 @@ public static class CustomActions
                 // TODO: implement me!
                 return ActionResult.Success;
             }
+
+            MessageBox.Show(release.Version.ToString(), release.Name);
         }
         catch (Exception ex)
         {
