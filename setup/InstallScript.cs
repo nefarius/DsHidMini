@@ -5,9 +5,12 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 using CliWrap;
 
@@ -17,10 +20,11 @@ using Nefarius.DsHidMini.Setup.Util;
 using Nefarius.Utilities.DeviceManagement.Drivers;
 using Nefarius.Utilities.DeviceManagement.PnP;
 
+using Newtonsoft.Json;
+
 using WixSharp;
 
 using File = WixSharp.File;
-using RegistryHive = WixSharp.RegistryHive;
 
 namespace Nefarius.DsHidMini.Setup;
 
@@ -124,7 +128,11 @@ internal class InstallScript
         project.DefaultRefAssemblies.Add(typeof(ValueTask).Assembly.Location);
         project.DefaultRefAssemblies.Add(typeof(IAsyncDisposable).Assembly.Location);
         project.DefaultRefAssemblies.Add(typeof(Unsafe).Assembly.Location);
-        
+        // embed types for web calls
+        project.DefaultRefAssemblies.Add(typeof(WebClient).Assembly.Location);
+        project.DefaultRefAssemblies.Add(typeof(JsonSerializer).Assembly.Location);
+        project.DefaultRefAssemblies.Add(typeof(Binder).Assembly.Location);
+
         project.AfterInstall += ProjectOnAfterInstall;
 
         //project.SourceBaseDir = "<input dir path>";
@@ -228,12 +236,23 @@ public static class CustomActions
 
         try
         {
+            ServicePointManager.Expect100Continue = true;
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
+            using WebClient client = new();
+            client.Headers.Add("X-Vicius-OS-Architecture", RuntimeInformation.OSArchitecture.ToString());
+
+            string json = client.DownloadString("https://vicius.api.nefarius.systems/api/nefarius/BthPS3/updates.json");
+            UpdateResponse? response = JsonConvert.DeserializeObject<UpdateResponse>(json);
+
+            string? downloadUrl = response.Releases.OrderByDescending(r => r.Version).First().DownloadUrl;
+            
             // TODO: implement me!
             return ActionResult.Success;
         }
         catch (Exception ex)
         {
-            session.Log("BthPS3 install failed");
+            session.Log($"BthPS3 install failed: {ex}");
         }
         finally
         {
