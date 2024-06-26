@@ -35,12 +35,10 @@ internal class InstallScript
     {
         // grab main app version
         Version version = Version.Parse(BuildVariables.SetupVersion);
-        string driverPath = Path.Combine(AppContext.BaseDirectory,
-            @"..\..\..\..\artifacts\drivers\dshidmini_x64\dshidmini.dll");
+        const string driverPath = @"..\artifacts\drivers\dshidmini_x64\dshidmini.dll";
         Version driverVersion = Version.Parse(FileVersionInfo.GetVersionInfo(driverPath).FileVersion);
 
-        string filterPath = Path.Combine(AppContext.BaseDirectory,
-            @"..\..\..\..\artifacts\igfilter\nssmkig_x64\nssmkig.sys");
+        const string filterPath = @"..\artifacts\igfilter\nssmkig_x64\nssmkig.sys";
         Version filterVersion = Version.Parse(FileVersionInfo.GetVersionInfo(filterPath).FileVersion);
 
         Console.WriteLine($"Setup version: {version}");
@@ -137,8 +135,7 @@ internal class InstallScript
         //project.SourceBaseDir = "<input dir path>";
         //project.OutDir = "<output dir path>";
 
-        project.ControlPanelInfo.ProductIcon =
-            Path.Combine(AppContext.BaseDirectory, @"..\..\..\..\assets\FireShock.ico");
+        project.ControlPanelInfo.ProductIcon = @"..\assets\FireShock.ico";
         project.ControlPanelInfo.Manufacturer = "Nefarius Software Solutions e.U.";
         project.ControlPanelInfo.HelpLink = "https://docs.nefarius.at/Community-Support/";
         project.ControlPanelInfo.UrlInfoAbout = "https://github.com/nefarius/DsHidMini";

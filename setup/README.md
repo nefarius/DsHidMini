@@ -34,3 +34,4 @@ Commands/scripts are to be run from solution root directory.
 - [Nefarius.Utilities.DeviceManagement](https://github.com/nefarius/Nefarius.Utilities.DeviceManagement)
 - [CliWrap](https://github.com/Tyrrrz/CliWrap)
 - [Nefarius' nŏvīcĭus universal software updater agent for Windows](https://github.com/nefarius/vicius)
+- [Json.NET](https://www.newtonsoft.com/json)
