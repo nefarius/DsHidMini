@@ -217,11 +217,7 @@ public static class CustomActions
     [SuppressMessage("ReSharper", "InconsistentNaming")]
     public static ActionResult InstallBthPS3(Session session)
     {
-        FeatureInfo bthPs3Feature =
-            session.Features.Single(f => f.Name.Contains("BthPS3", StringComparison.OrdinalIgnoreCase));
-
-        // not selected by user
-        if (bthPs3Feature.RequestState == InstallState.Unknown)
+        if (!session.IsFeatureEnabledPartial("BthPS3"))
         {
             return ActionResult.Success;
         }
