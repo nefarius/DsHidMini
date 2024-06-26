@@ -1,12 +1,16 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Net;
+using System.Net.Http;
+using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 using CliWrap;
@@ -16,16 +20,19 @@ using Microsoft.Deployment.WindowsInstaller;
 using Nefarius.DsHidMini.Setup.Util;
 using Nefarius.Utilities.DeviceManagement.Drivers;
 using Nefarius.Utilities.DeviceManagement.PnP;
+using Nefarius.Vicius.Abstractions.Converters;
+using Nefarius.Vicius.Abstractions.Models;
 
 using WixSharp;
 
 using File = WixSharp.File;
+using RegistryHive = WixSharp.RegistryHive;
 
 namespace Nefarius.DsHidMini.Setup;
 
 internal class InstallScript
 {
-    private const string ProductName = "Nefarius DsHidMini Driver";
+    public const string ProductName = "Nefarius DsHidMini Driver";
 
     private static void Main()
     {
@@ -123,7 +130,13 @@ internal class InstallScript
         project.DefaultRefAssemblies.Add(typeof(ValueTask).Assembly.Location);
         project.DefaultRefAssemblies.Add(typeof(IAsyncDisposable).Assembly.Location);
         project.DefaultRefAssemblies.Add(typeof(Unsafe).Assembly.Location);
-        
+        // embed types for web calls
+        project.DefaultRefAssemblies.Add(typeof(HttpClient).Assembly.Location);
+        project.DefaultRefAssemblies.Add(typeof(UpdateResponse).Assembly.Location);
+        project.DefaultRefAssemblies.Add(typeof(JsonSerializerOptions).Assembly.Location);
+        project.DefaultRefAssemblies.Add(typeof(DateTimeOffsetConverter).Assembly.Location);
+        project.DefaultRefAssemblies.Add(typeof(JsonStringEnumConverter).Assembly.Location);
+
         project.AfterInstall += ProjectOnAfterInstall;
 
         //project.SourceBaseDir = "<input dir path>";
@@ -227,9 +240,38 @@ public static class CustomActions
 
         try
         {
-            using var client = new WebClient();
+            using HttpClient client = new() { BaseAddress = new Uri("https://vicius.api.nefarius.systems/") };
 
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(InstallScript.ProductName);
+            client.DefaultRequestHeaders.Add("X-Vicius-OS-Architecture",
+                RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant());
 
+            JsonSerializerOptions opts = new()
+            {
+                // the client can handle missing fields that are optional, no need to transmit null values
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                // server supplies camelCase
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
+            // we exchange timestamps as ISO 8601 string (UTC)
+            opts.Converters.Add(new DateTimeOffsetConverter());
+            // we use the enum value names (strings) instead of numerical values
+            opts.Converters.Add(new JsonStringEnumConverter());
+
+            UpdateResponse? updates =
+                client.GetFromJsonAsync<UpdateResponse>("/api/nefarius/HidHide/updates.json", opts).Result;
+
+            UpdateRelease? release = updates?.Releases.OrderByDescending(r => r.Version).FirstOrDefault();
+
+            if (release is null)
+            {
+                // TODO: implement me!
+                return ActionResult.Success;
+            }
+        }
+        catch (Exception ex)
+        {
+            session.Log("BthPS3 install failed");
         }
         finally
         {
