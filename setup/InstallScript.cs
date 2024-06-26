@@ -10,7 +10,6 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 
 using CliWrap;
 
@@ -56,7 +55,7 @@ internal class InstallScript
 
         Feature bthPs3Feature = new("BthPS3 Wireless Drivers", false, true)
         {
-            Description = "When selected, downloads and installs the latest version of the " +
+            Description = "When selected, downloads the latest version of the " +
                           "Nefarius BthPS3 Bluetooth Drivers for wireless connectivity."
         };
 
@@ -227,13 +226,6 @@ public static class CustomActions
             return ActionResult.Success;
         }
 
-        // TODO: implement me!
-        // We can not start another MSI-based installation while this
-        // install session is still running so schedule setup execution
-        // for after user closes? Is the transaction done at this point?
-
-        string tempPath = FileSystemHelpers.GetTemporaryDirectory();
-
         try
         {
             ServicePointManager.Expect100Continue = true;
@@ -244,19 +236,22 @@ public static class CustomActions
 
             string json = client.DownloadString("https://vicius.api.nefarius.systems/api/nefarius/BthPS3/updates.json");
             UpdateResponse? response = JsonConvert.DeserializeObject<UpdateResponse>(json);
+            Release? latestRelease = response!.Releases.OrderByDescending(r => r.Version).First();
+            Uri downloadUrl = new(latestRelease.DownloadUrl);
+            session.Log($"BthPS3 download URL: {downloadUrl}");
 
-            string? downloadUrl = response.Releases.OrderByDescending(r => r.Version).First().DownloadUrl;
-            
-            // TODO: implement me!
+            _ = Cli.Wrap("explorer")
+                .WithArguments(downloadUrl.ToString())
+                .WithValidation(CommandResultValidation.None)
+                .ExecuteAsync()
+                .GetAwaiter()
+                .GetResult();
+
             return ActionResult.Success;
         }
         catch (Exception ex)
         {
-            session.Log($"BthPS3 install failed: {ex}");
-        }
-        finally
-        {
-            Directory.Delete(tempPath, true);
+            session.Log($"BthPS3 download/install failed: {ex}");
         }
 
         return ActionResult.Success;
