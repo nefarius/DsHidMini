@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -111,15 +112,18 @@ internal class InstallScript
             MajorUpgradeStrategy = MajorUpgradeStrategy.Default,
             BannerImage = "DsHidMini.dialog_banner.bmp",
             ValidateBackgroundImage = false,
-            BackgroundImage = "DsHidMini.dialog_background.bmp"
+            BackgroundImage = "DsHidMini.dialog_background.bmp",
+            CAConfigFile = "CustomActions.config"
         };
 
         // embed types of Nefarius.Utilities.DeviceManagement
         project.DefaultRefAssemblies.Add(typeof(Devcon).Assembly.Location);
+        // embed types of CliWrap
         project.DefaultRefAssemblies.Add(typeof(Cli).Assembly.Location);
         project.DefaultRefAssemblies.Add(typeof(ValueTask).Assembly.Location);
         project.DefaultRefAssemblies.Add(typeof(IAsyncDisposable).Assembly.Location);
         project.DefaultRefAssemblies.Add(typeof(Unsafe).Assembly.Location);
+        
         project.AfterInstall += ProjectOnAfterInstall;
 
         //project.SourceBaseDir = "<input dir path>";
@@ -218,6 +222,19 @@ public static class CustomActions
         // We can not start another MSI-based installation while this
         // install session is still running so schedule setup execution
         // for after user closes? Is the transaction done at this point?
+
+        string tempPath = FileSystemHelpers.GetTemporaryDirectory();
+
+        try
+        {
+            using var client = new WebClient();
+
+
+        }
+        finally
+        {
+            Directory.Delete(tempPath, true);
+        }
 
         return ActionResult.Success;
     }
