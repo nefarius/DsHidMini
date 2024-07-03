@@ -4,6 +4,23 @@ root = true
 [*]
 indent_style = space
 
+# ReSharper properties
+resharper_align_ternary = none
+resharper_blank_lines_around_function_definition = 0
+resharper_continuous_line_indent = none
+resharper_cpp_align_multiline_argument = false
+resharper_cpp_indent_statement_pars = outside
+resharper_cpp_indent_style = tab
+resharper_cpp_max_line_length = 136
+resharper_cpp_remove_blank_lines_near_braces_in_code = false
+resharper_cpp_wrap_parameters_style = chop_if_long
+resharper_new_line_before_while = false
+resharper_simple_block_style = line_break
+resharper_simple_case_statement_style = line_break
+resharper_simple_embedded_statement_style = line_break
+resharper_space_after_ptr_in_data_members = true
+resharper_space_within_initializer_braces = true
+
 # Xml files
 [*.xml]
 indent_size = 2
@@ -27,7 +44,7 @@ insert_final_newline = false
 # Organize usings
 dotnet_separate_import_directive_groups = true
 dotnet_sort_system_directives_first = true
-file_header_template = unset
+file_header_template = 
 
 # this. and Me. preferences
 dotnet_style_qualification_for_event = false:warning
@@ -387,6 +404,11 @@ dotnet_style_allow_statement_immediately_after_block_experimental = true:silent
 dotnet_style_allow_multiple_blank_lines_experimental = true:silent
 
 # Unnecessary usings
-dotnet_diagnostic.IDE0005.severity = warning
+dotnet_diagnostic.ide0005.severity = warning
 
 resharper_csharp_place_attribute_on_same_line = false
+
+[*.{c,c++,cc,cginc,compute,cp,cpp,cu,cuh,cxx,fx,fxh,h,hh,hlsl,hlsli,hlslinc,hpp,hxx,inc,inl,ino,ipp,ixx,mpp,mq4,mq5,mqh,tpp,usf,ush}]
+indent_style = tab
+indent_size = tab
+tab_width = 4

@@ -6,15 +6,27 @@
         "DUALSHOCK",
         "Eleccelerator",
         "ERRORLEVEL",
+        "EXTN",
+        "Guids",
         "hidapi",
+        "makecab",
         "minidriver",
         "mshidumdf",
+        "opentelemetry",
+        "OTEL",
+        "otlp",
+        "proxied",
         "ribbotson",
+        "SCPLIB",
         "Shibari",
         "SIXAXIS",
+        "spdlog",
+        "struct",
         "Ultralightweight",
         "vcpkg",
         "vpatch",
-        "Wiimote"
+        "Wiimote",
+        "winreg",
+        "XUSB"
     ]
 }

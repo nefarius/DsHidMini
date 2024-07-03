@@ -37,23 +37,9 @@ extern CONST HID_DESCRIPTOR G_XInputHIDCompatible_HidDescriptor;
 // 
 #define DS3_DS4WINDOWS_HID_VID					0x7331
 #define DS3_DS4WINDOWS_HID_PID					0x0001
-#define DS3_XINPUT_HID_VID						0x7331
-#define DS3_XINPUT_HID_PID						0x0002
+#define DS3_XINPUT_HID_VID						0x045E
+#define DS3_XINPUT_HID_PID						0x02FF
 
-/**
- * Checks if the controller state is "idle" (no button pressed, no axis engaged). Jitter
- * compensation is applied to avoid false-positives.
- *
- * @author	Benjamin "Nefarius" Höglinger-Stelzer
- * @date	25.02.2021
- *
- * @param 	Input	The input.
- *
- * @returns	TRUE if idle, FALSE otherwise.
- */
-BOOLEAN DS3_RAW_IS_IDLE(
-	_In_ PDS3_RAW_INPUT_REPORT Input
-);
 
 void DS3_RAW_AXIS_TRANSFORM(
 	_In_ UCHAR InputX,

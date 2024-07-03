@@ -6,9 +6,11 @@
   "supports": "!(arm | uwp)",
   "dependencies": [
     { "name": "hidapi" },
+    { "name": "abseil" },
+    { "name": "winreg" },
     {
       "name": "opentelemetry-cpp",
-      "features": [ "otlp-http" ]
+      "features": [ "otlp-grpc" ]
     }
   ]
 }

@@ -38,9 +38,9 @@ VOID DS3_SET_LED_DURATION(
 	PDEVICE_CONTEXT Context,
 	UCHAR LedIndex,
 	UCHAR TotalDuration,
-	UCHAR Interval,
-	UCHAR OffInterval,
-	UCHAR OnInterval
+	USHORT BasePortionDuration,
+	UCHAR OffPortionMultiplier,
+	UCHAR OnPortionMultiplier
 );
 
 VOID DS3_SET_LED_DURATION_DEFAULT(
@@ -101,53 +101,54 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 
 typedef enum
 {
-    // Class-Specific Requests
-    GetReport = 0x01,
-    GetIdle = 0x02,
-    GetProtocol = 0x03,
-    SetReport = 0x09,
-    SetIdle = 0x0A,
-    SetProtocol = 0x0B,
-    // Standard Requests
-    GetDescriptor = 0x06,
-    SetDescriptor = 0x07
-
+	// Class-Specific Requests
+	GetReport = 0x01,
+	GetIdle = 0x02,
+	GetProtocol = 0x03,
+	SetReport = 0x09,
+	SetIdle = 0x0A,
+	SetProtocol = 0x0B,
+	// Standard Requests
+	GetDescriptor = 0x06,
+	SetDescriptor = 0x07
 } USB_HID_REQUEST;
 
 typedef enum
 {
-    HidReportRequestTypeInput = 0x01,
-    HidReportRequestTypeOutput = 0x02,
-    HidReportRequestTypeFeature = 0x03
-
+	HidReportRequestTypeInput = 0x01,
+	HidReportRequestTypeOutput = 0x02,
+	HidReportRequestTypeFeature = 0x03
 } USB_HID_REPORT_REQUEST_TYPE;
 
 typedef enum
 {
-    HidReportRequestIdOne = 0x01
-
+	HidReportRequestIdOne = 0x01
 } USB_HID_REPORT_REQUEST_ID;
 
 typedef enum
 {
-    Hid = 0x21,
-    Report = 0x22,
-    PhysicalDescriptor = 0x23
-
+	Hid = 0x21,
+	Report = 0x22,
+	PhysicalDescriptor = 0x23
 } USB_HID_CLASS_DESCRIPTOR_TYPE;
 
 typedef enum
 {
-    Ds3FeatureDeviceAddress = 0x03F2,
-    Ds3FeatureStartDevice = 0x03F4,
-    Ds3FeatureHostAddress = 0x03F5
-
+	Ds3FeatureDeviceAddress = 0x03F2,
+	Ds3FeatureStartDevice = 0x03F4,
+	Ds3FeatureHostAddress = 0x03F5
 } DS3_FEATURE_VALUE;
 
 #define USB_SETUP_VALUE(_type_, _id_) (USHORT)(((_type_) << 8) | (_id_))
 
 NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context);
 
-NTSTATUS DsUsb_Ds3PairToFirstRadio(WDFDEVICE Device);
+NTSTATUS DsUsb_Ds3SendPairingRequest(WDFDEVICE Device, BD_ADDR NewHostAddress);
+
+NTSTATUS DS3_GetActiveRadioAddress(BD_ADDR* Address);
+
+NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device);
 
 NTSTATUS DsBth_Ds3Init(PDEVICE_CONTEXT Context);
+
+NTSTATUS DsUsb_Ds3RequestHostAddress(WDFDEVICE Device);

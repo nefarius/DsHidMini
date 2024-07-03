@@ -380,6 +380,18 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 			DsDevice_RegisterBthDisconnectListener(pDevCtx);
 
 			DsDevice_RegisterHotReloadListener(pDevCtx);
+
+            sprintf_s(
+                pDevCtx->DeviceAddressString,
+                ARRAYSIZE(pDevCtx->DeviceAddressString),
+                "%02X%02X%02X%02X%02X%02X",
+                pDevCtx->DeviceAddress.Address[5],
+                pDevCtx->DeviceAddress.Address[4],
+                pDevCtx->DeviceAddress.Address[3],
+                pDevCtx->DeviceAddress.Address[2],
+                pDevCtx->DeviceAddress.Address[1],
+                pDevCtx->DeviceAddress.Address[0]
+            );
 		}
 	} while (FALSE);
 
@@ -712,6 +724,18 @@ DsDevice_HotReloadEventCallback(
 		WdfWaitLockRelease(pDevCtx->ConfigurationDirectoryWatcherLock);
 
 		//
+		// If PairOnHotReload is enabled and not in disabled pairing mode then attempt pairing process followed by requesting currently set host address
+		//
+		if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb
+			&& pDevCtx->Configuration.PairOnHotReload
+			&& pDevCtx->Configuration.DevicePairingMode != DsDevicePairingModeDisabled)
+		{
+			WDFDEVICE wdfDev = DMF_ParentDeviceGet(pDevCtx->DsHidMiniModule);
+			DsUsb_Ds3PairToNewHost(wdfDev);
+			DsUsb_Ds3RequestHostAddress(wdfDev);
+		}
+
+		//
 		// Changes to LED settings need to be pushed to the device
 		// 
 		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverHighPriority);
@@ -764,6 +788,19 @@ void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
 			break;
 		}
 
+        //
+        // Check if file exists
+        // 
+        if (GetFileAttributesA(configPath) == INVALID_FILE_ATTRIBUTES)
+        {
+            TraceWarning(
+                TRACE_DEVICE,
+                "Configuration file %s not found, can't listen for changes",
+                configPath
+            );
+            break;
+        }
+
 		Context->ConfigurationDirectoryWatcherEvent = FindFirstChangeNotificationA(
 			configPath,
 			FALSE,
@@ -772,11 +809,13 @@ void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
 
 		if (Context->ConfigurationDirectoryWatcherEvent == NULL)
 		{
+            const DWORD error = GetLastError();
 			TraceError(
 				TRACE_DEVICE,
-				"Failed to create reload event"
+				"FindFirstChangeNotificationA failed with error %!WINERROR!",
+                error
 			);
-			EventWriteFailedWithWin32Error(__FUNCTION__, L"FindFirstChangeNotificationA", GetLastError());
+			EventWriteFailedWithWin32Error(__FUNCTION__, L"FindFirstChangeNotificationA", error);
 			break;
 		}
 
@@ -791,11 +830,13 @@ void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
 
 		if (!ret)
 		{
+            const DWORD error = GetLastError();
 			TraceError(
 				TRACE_DEVICE,
-				"Failed to register wait for reload event"
+				"RegisterWaitForSingleObject failed with error %!WINERROR!",
+                error
 			);
-			EventWriteFailedWithWin32Error(__FUNCTION__, L"RegisterWaitForSingleObject", GetLastError());
+			EventWriteFailedWithWin32Error(__FUNCTION__, L"RegisterWaitForSingleObject", error);
 		}
 	} while (FALSE);
 
@@ -924,14 +965,14 @@ void DsDevice_InvokeLocalBthDisconnect(PDEVICE_CONTEXT Context)
 	// Disconnect Bluetooth connection, if detected
 	//
 
-	swprintf_s(
-		dcEventName,
-		ARRAYSIZE(dcEventName),
-		DSHM_NAMED_EVENT_DISCONNECT,
-		deviceAddress
-	);
+    (void)swprintf_s(
+        dcEventName,
+        ARRAYSIZE(dcEventName),
+        DSHM_NAMED_EVENT_DISCONNECT,
+        deviceAddress
+    );
 
-	HANDLE dcEvent = OpenEventW(
+	const HANDLE dcEvent = OpenEventW(
 		SYNCHRONIZE | EVENT_MODIFY_STATE,
 		FALSE,
 		dcEventName
@@ -952,14 +993,17 @@ void DsDevice_InvokeLocalBthDisconnect(PDEVICE_CONTEXT Context)
 	{
 		DWORD error = GetLastError();
 
-		if (error == ERROR_NOT_FOUND)
+        // 
+        // Event not present so assume no wireless instance is present
+        // 
+		if (error == ERROR_NOT_FOUND || error == ERROR_FILE_NOT_FOUND)
 		{
 			return;
 		}
 
 		TraceError(
 			TRACE_DSUSB,
-			"GetLastError: %d",
+			"OpenEventW failed with %!WINERROR!",
 			error
 		);
 	}

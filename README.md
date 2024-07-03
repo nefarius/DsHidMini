@@ -4,7 +4,7 @@
 
 Virtual HID Mini-user-mode driver for Sony DualShock 3 Controllers
 
-[![Build status](https://ci.appveyor.com/api/projects/status/vmf09i95d06c8mbh/branch/master?svg=true)](https://ci.appveyor.com/project/nefarius/dshidmini/branch/master) [![GitHub All Releases](https://img.shields.io/github/downloads/ViGEm/DsHidMini/total)](https://somsubhra.github.io/github-release-stats/?username=ViGEm&repository=DsHidMini) ![GitHub issues](https://img.shields.io/github/issues/ViGEm/DsHidMini) [![Discord](https://img.shields.io/discord/346756263763378176.svg)](https://discord.nefarius.at/) [![Website](https://img.shields.io/website-up-down-green-red/https/docs.nefarius.at.svg?label=docs.nefarius.at)](https://docs.nefarius.at/)
+[![Build status](https://ci.appveyor.com/api/projects/status/vmf09i95d06c8mbh/branch/master?svg=true)](https://ci.appveyor.com/project/nefarius/dshidmini/branch/master) [![GitHub All Releases](https://img.shields.io/github/downloads/nefarius/DsHidMini/total)](https://somsubhra.github.io/github-release-stats/?username=nefarius&repository=DsHidMini) ![GitHub issues](https://img.shields.io/github/issues/nefarius/DsHidMini) [![Discord](https://img.shields.io/discord/346756263763378176.svg)](https://discord.nefarius.at/) [![Website](https://img.shields.io/website-up-down-green-red/https/docs.nefarius.at.svg?label=docs.nefarius.at)](https://docs.nefarius.at/)
 
 ## 🚨 What to expect with Version 3 🚨
 
@@ -21,10 +21,20 @@ Next major version is in progress! Here's an overview of what you'll get:
 - Switch DPad to individual buttons
 - Customize the Quick-Disconnect button combination
 - Configure flipping/inverting axes
-- Xbox 360 Emulation out-of-the-box
+- Proper **Xbox One Emulation** out-of-the-box
 - ...and maybe more?
 
 Stay tuned!
+
+You can also follow development progress [on Discord](https://discord.nefarius.at/) or get notified when a release happens [on Mastodon](https://fosstodon.org/@Nefarius).
+
+## Repository activity
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://ghstats.api.nefarius.systems/widgets/github/nefarius/DsHidMini/changes/latest?foregroundColour=%23C4D1DE&maxCommits=10">
+  <source media="(prefers-color-scheme: light)" srcset="https://ghstats.api.nefarius.systems/widgets/github/nefarius/DsHidMini/changes/latest?maxCommits=10">
+  <img alt="Repository activity" src="https://ghstats.api.nefarius.systems/widgets/github/nefarius/DsHidMini/changes/latest?maxCommits=10">
+</picture>
 
 <!--
 ![](https://us-central1-progress-markdown.cloudfunctions.net/progress/50)
@@ -32,11 +42,11 @@ Stay tuned!
 
 ## Summary
 
-DsHidMini is a self-contained, low footprint and feature-rich [user-mode driver](https://docs.microsoft.com/en-us/windows-hardware/drivers/wdf/overview-of-the-umdf) for Microsoft Windows 10/11. It presents the controller as a configurable variety of fully standard-compliant HID devices to the system and all games built on common APIs like [DirectInput](https://docs.microsoft.com/en-us/previous-versions/windows/desktop/ee416842(v=vs.85)), [Raw Input](https://docs.microsoft.com/en-us/windows/win32/inputdev/raw-input) and the low-level [HID API](https://docs.microsoft.com/en-us/windows-hardware/drivers/hid/introduction-to-hid-concepts). XInput-emulation further increases the support in modern games built with only Xbox controllers in mind. The driver supports both wired connections by handling USB communication and wireless connections by building upon the [BthPS3](https://github.com/ViGEm/BthPS3) driver suite. An optional .NET configuration tool is provided to alter driver behavior to fine-tune it to specific games or other use-cases.
+DsHidMini is a self-contained, low footprint and feature-rich [user-mode driver](https://docs.microsoft.com/en-us/windows-hardware/drivers/wdf/overview-of-the-umdf) for Microsoft Windows 10/11. It presents the controller as a configurable variety of fully standard-compliant HID devices to the system and all games built on common APIs like [DirectInput](https://docs.microsoft.com/en-us/previous-versions/windows/desktop/ee416842(v=vs.85)), [Raw Input](https://docs.microsoft.com/en-us/windows/win32/inputdev/raw-input) and the low-level [HID API](https://docs.microsoft.com/en-us/windows-hardware/drivers/hid/introduction-to-hid-concepts). XInput-emulation further increases the support in modern games built with only Xbox controllers in mind. The driver supports both wired connections by handling USB communication and wireless connections by building upon the [BthPS3](https://github.com/nefarius/BthPS3) driver suite. An optional .NET configuration tool is provided to alter driver behavior to fine-tune it to specific games or other use-cases.
 
 ## Features
 
-- **Bluetooth support** if used in conjunction with [BthPS3](https://github.com/ViGEm/BthPS3) (requires *at least* `v2.0.144` or newer)
+- **Bluetooth support** if used in conjunction with [BthPS3](https://github.com/nefarius/BthPS3) (requires *at least* `v2.0.144` or newer)
 - Automatically pairs the controller to Windows Bluetooth (if Bluetooth host radio is present)
 - Multiple configurable HID Report Descriptors for wide range of compatibility
   - Single Gamepad device exposing all controls including **pressure sensitive buttons**
@@ -65,7 +75,7 @@ DsHidMini is a self-contained, low footprint and feature-rich [user-mode driver]
 
 ## What's missing
 
-Check the ⚡ [**issue tracker**](https://github.com/ViGEm/DsHidMini/issues) ⚡ for work-in-progress or known bugs!
+Check the ⚡ [**issue tracker**](https://github.com/nefarius/DsHidMini/issues) ⚡ for work-in-progress or known bugs!
 
 The following features are **not** available (and most probably won't in the near future until more contributors join the party):
 
@@ -86,7 +96,7 @@ For in-progress features and bug-fixes please consult the issue tracker.
 
 ## How it works
 
-DsHidMini is a filter driver sitting below `mshidumdf.sys` and acts as a function driver for USB and Bluetooth through the [User-mode Driver Framework Reflector](https://docs.microsoft.com/en-us/windows-hardware/drivers/wdf/detailed-view-of-the-umdf-architecture), handling translation of incoming HID I/O traffic to underlying USB/Bluetooth I/O and vice versa. On USB it replaces the Windows stock drivers for the Sony hardware and presents the device as a variety of user-configurable HID devices (see documentation). On Bluetooth in conjunction with BthPS3 it replaces the need for [Shibari](https://github.com/ViGEm/Shibari) as the driver directly communicates over wireless channels and takes care of the necessary translation logic. As a user-mode driver it has limited access to the registry, therefore device-specific settings are stored and retrieved using the [Unified Device Property Model](https://docs.microsoft.com/en-us/windows-hardware/drivers/install/unified-device-property-model--windows-vista-and-later-) API. Most of the core HID heavy lifting is done by the amazing [DMF_VirtualHidMini](https://github.com/microsoft/DMF/blob/master/Dmf/Modules.Library/Dmf_VirtualHidMini.md) module which greatly reduced the need for boilerplate code and sped up development tremendously.
+DsHidMini is a filter driver sitting below `mshidumdf.sys` and acts as a function driver for USB and Bluetooth through the [User-mode Driver Framework Reflector](https://docs.microsoft.com/en-us/windows-hardware/drivers/wdf/detailed-view-of-the-umdf-architecture), handling translation of incoming HID I/O traffic to underlying USB/Bluetooth I/O and vice versa. On USB it replaces the Windows stock drivers for the Sony hardware and presents the device as a variety of user-configurable HID devices (see documentation). On Bluetooth in conjunction with BthPS3 it replaces the need for [Shibari](https://github.com/nefarius/Shibari) as the driver directly communicates over wireless channels and takes care of the necessary translation logic. As a user-mode driver it has limited access to the registry, therefore device-specific settings are stored and retrieved using the [Unified Device Property Model](https://docs.microsoft.com/en-us/windows-hardware/drivers/install/unified-device-property-model--windows-vista-and-later-) API. Most of the core HID heavy lifting is done by the amazing [DMF_VirtualHidMini](https://github.com/microsoft/DMF/blob/master/Dmf/Modules.Library/Dmf_VirtualHidMini.md) module which greatly reduced the need for boilerplate code and sped up development tremendously.
 
 ## Environment
 
@@ -164,6 +174,7 @@ The following awesome resources have made this project possible.
 - [HID: sony: Update device ids](https://patchwork.kernel.org/patch/9367441/)
 - [linux/drivers/hid/hid-sony.c](https://github.com/torvalds/linux/blob/master/drivers/hid/hid-sony.c)
 - [The HID Page](http://janaxelson.com/hidpage.htm)
+- [CircumSpector/Research/Sony DualShock 3](https://github.com/CircumSpector/Research/tree/master/Sony%20DualShock%203)
 
 ### DevOps
 
