@@ -67,7 +67,8 @@ internal class InstallScript
             new InstallDir(@"%ProgramFiles%\Nefarius Software Solutions\DsHidMini",
                 new Dir(driversFeature, "nefcon")
                 {
-                    Files = new DirFiles("*.*").GetFiles(nefconDir), Dirs = GetSubDirectories(nefconDir).ToArray()
+                    Files = new DirFiles(driversFeature, "*.*").GetFiles(nefconDir),
+                    Dirs = GetSubDirectories(driversFeature, nefconDir).ToArray()
                 },
                 new Dir(driversFeature, "drivers",
                     new Files(driversFeature, @"..\artifacts\drivers\*.*"),
@@ -167,18 +168,19 @@ internal class InstallScript
     /// <summary>
     ///     Recursively resolves all subdirectories and their containing files.
     /// </summary>
-    private static List<Dir> GetSubDirectories(string directory)
+    private static List<Dir> GetSubDirectories(Feature feature, string directory)
     {
         List<Dir> subDirectoryInfosCollection = new();
 
         foreach (string subDirectory in Directory.GetDirectories(directory))
         {
             string subDirectoryName = subDirectory.Remove(0, subDirectory.LastIndexOf('\\') + 1);
-            Dir newDir = new(subDirectoryName, new Files(subDirectory + @"\*.*")) { Name = subDirectoryName };
+            Dir newDir =
+                new(feature, subDirectoryName, new Files(feature, subDirectory + @"\*.*")) { Name = subDirectoryName };
             subDirectoryInfosCollection.Add(newDir);
 
             // Recursively traverse nested directories
-            GetSubDirectories(subDirectory);
+            GetSubDirectories(feature, subDirectory);
         }
 
         return subDirectoryInfosCollection;
