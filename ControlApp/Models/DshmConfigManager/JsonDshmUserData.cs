@@ -38,8 +38,10 @@ namespace Nefarius.DsHidMini.ControlApp.Models
                 Log.Logger.Debug($"User Data file does not exist in the specified directory. Creating new User Data.");
                 return CreateDefaultConfigurationFile<T>(fileNameWithoutExtension, userDataDir);
             }
-            
-            return JsonConvert.DeserializeObject<T>(File.ReadAllText(configPath, Encoding.UTF8));
+
+            // Handle errors on deserialization
+            var settings = new JsonSerializerSettings()  { Error = HandleDeserializationError, };
+            return JsonConvert.DeserializeObject<T>(File.ReadAllText(configPath, Encoding.UTF8), settings);
         }
 
         /// <summary>Saves the configuration. </summary>
@@ -55,6 +57,12 @@ namespace Nefarius.DsHidMini.ControlApp.Models
 
             var configPath = CreateFilePath(fileNameWithoutExtension, ConfigExtension, userDataDir);
             File.WriteAllText(configPath, JsonConvert.SerializeObject(configuration, Formatting.Indented, settings), Encoding.UTF8);
+        }
+
+        private static void HandleDeserializationError(object? sender, Newtonsoft.Json.Serialization.ErrorEventArgs errorArgs)
+        {
+            var currentError = errorArgs.ErrorContext.Error.Message;
+            errorArgs.ErrorContext.Handled = true;
         }
 
         private static string CreateFilePath(string fileNameWithoutExtension, string extension, string? userDataDir)
