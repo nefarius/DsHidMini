@@ -200,7 +200,10 @@ public static class CustomActions
 
         DirectoryInfo installDir = new(session.Property("INSTALLDIR"));
         string driversDir = Path.Combine(installDir.FullName, "drivers");
+        string nefconDir = Path.Combine(installDir.FullName, "nefcon");
         string archShortName = RuntimeInformation.OSArchitecture.ToString();
+
+        string nefconcPath = Path.Combine(nefconDir, archShortName, "nefconc.exe");
 
         string dshidminiDriverDir = Path.Combine(driversDir, $"dshidmini_{archShortName}");
         string igfilterDriverDir = Path.Combine(driversDir, $"nssmkig_{archShortName}");
@@ -208,12 +211,18 @@ public static class CustomActions
         string dshidminiInfPath = Path.Combine(dshidminiDriverDir, "dshidmini.inf");
         string igfilterInfPath = Path.Combine(igfilterDriverDir, "igfilter.inf");
 
-        if (!Devcon.Install(igfilterInfPath, out bool igfilterRebootRequired))
-        {
-            return ActionResult.Failure;
-        }
+        CommandResult? result = Cli.Wrap(nefconcPath)
+            .WithArguments(builder => builder
+                .Add("--inf-default-install")
+                .Add("--inf-path")
+                .Add(igfilterInfPath)
+            )
+            .WithValidation(CommandResultValidation.None)
+            .ExecuteAsync()
+            .GetAwaiter()
+            .GetResult();
 
-        if (igfilterRebootRequired)
+        if (result?.ExitCode == 3010)
         {
             rebootRequired = true;
         }
