@@ -41,6 +41,8 @@ internal class InstallScript
         const string filterPath = @"..\artifacts\igfilter\nssmkig_x64\nssmkig.sys";
         Version filterVersion = Version.Parse(FileVersionInfo.GetVersionInfo(filterPath).FileVersion);
 
+        const string nefconDir = @".\nefcon";
+
         Console.WriteLine($"Setup version: {version}");
         Console.WriteLine($"Driver version: {driverVersion}");
         Console.WriteLine($"Filter version: {filterVersion}");
@@ -63,6 +65,10 @@ internal class InstallScript
         ManagedProject project = new(ProductName,
             // included files
             new InstallDir(@"%ProgramFiles%\Nefarius Software Solutions\DsHidMini",
+                new Dir(driversFeature, "nefcon")
+                {
+                    Files = new DirFiles("*.*").GetFiles(nefconDir), Dirs = GetSubDirectories(nefconDir).ToArray()
+                },
                 new Dir(driversFeature, "drivers",
                     new Files(driversFeature, @"..\artifacts\drivers\*.*"),
                     new Files(driversFeature, @"..\artifacts\igfilter\*.*")
@@ -156,6 +162,26 @@ internal class InstallScript
         {
             CustomActions.UninstallDrivers(e.Session);
         }
+    }
+
+    /// <summary>
+    ///     Recursively resolves all subdirectories and their containing files.
+    /// </summary>
+    private static List<Dir> GetSubDirectories(string directory)
+    {
+        List<Dir> subDirectoryInfosCollection = new();
+
+        foreach (string subDirectory in Directory.GetDirectories(directory))
+        {
+            string subDirectoryName = subDirectory.Remove(0, subDirectory.LastIndexOf('\\') + 1);
+            Dir newDir = new(subDirectoryName, new Files(subDirectory + @"\*.*")) { Name = subDirectoryName };
+            subDirectoryInfosCollection.Add(newDir);
+
+            // Recursively traverse nested directories
+            GetSubDirectories(subDirectory);
+        }
+
+        return subDirectoryInfosCollection;
     }
 }
 
