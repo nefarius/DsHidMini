@@ -444,11 +444,18 @@ public static class CustomActions
         // uninstall live copies of drivers in use by connected or orphaned devices
         while (Devcon.FindByInterfaceGuid(DsHidMiniDriver.DeviceInterfaceGuid, out PnPDevice device, instance++, false))
         {
-            device.Uninstall(out bool reboot);
-
-            if (reboot)
+            try
             {
-                rebootRequired = true;
+                device.Uninstall(out bool reboot);
+
+                if (reboot)
+                {
+                    rebootRequired = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                session.Log($"Removal of device instance {device} failed with error {ex}");
             }
         }
 
