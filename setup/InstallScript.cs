@@ -368,14 +368,28 @@ public static class CustomActions
         foreach (string driverPackage in allDriverPackages.Where(p =>
                      p.Contains("dshidmini.inf", StringComparison.OrdinalIgnoreCase)))
         {
-            DriverStore.RemoveDriver(driverPackage);
+            try
+            {
+                DriverStore.RemoveDriver(driverPackage);
+            }
+            catch (Exception ex)
+            {
+                session.Log($"Removal of dshidmini package {driverPackage} failed with error {ex}");
+            }
         }
 
         // remove all old copies of igfilter
         foreach (string driverPackage in allDriverPackages.Where(p =>
                      p.Contains("igfilter.inf", StringComparison.OrdinalIgnoreCase)))
         {
-            DriverStore.RemoveDriver(driverPackage);
+            try
+            {
+                DriverStore.RemoveDriver(driverPackage);
+            }
+            catch (Exception ex)
+            {
+                session.Log($"Removal of igfilter package {driverPackage} failed with error {ex}");
+            }
         }
 
         // 
@@ -387,21 +401,42 @@ public static class CustomActions
                      p.Contains("ds3controller.inf", StringComparison.OrdinalIgnoreCase) ||
                      p.Contains("ds3controller_", StringComparison.OrdinalIgnoreCase)))
         {
-            DriverStore.RemoveDriver(driverPackage);
+            try
+            {
+                DriverStore.RemoveDriver(driverPackage);
+            }
+            catch (Exception ex)
+            {
+                session.Log($"Removal of SCP DS3 package {driverPackage} failed with error {ex}");
+            }
         }
 
         // https://docs.nefarius.at/projects/DsHidMini/How-to-Install/#fireshock
         foreach (string driverPackage in allDriverPackages.Where(p =>
                      p.Contains("fireshock.inf", StringComparison.OrdinalIgnoreCase)))
         {
-            DriverStore.RemoveDriver(driverPackage);
+            try
+            {
+                DriverStore.RemoveDriver(driverPackage);
+            }
+            catch (Exception ex)
+            {
+                session.Log($"Removal of fireshock package {driverPackage} failed with error {ex}");
+            }
         }
 
         // https://docs.nefarius.at/projects/DsHidMini/SIXAXIS.SYS-to-DsHidMini-Guide/
         foreach (string driverPackage in allDriverPackages.Where(p =>
                      p.Contains("sixaxis.inf", StringComparison.OrdinalIgnoreCase)))
         {
-            DriverStore.RemoveDriver(driverPackage);
+            try
+            {
+                DriverStore.RemoveDriver(driverPackage);
+            }
+            catch (Exception ex)
+            {
+                session.Log($"Removal of sixaxis package {driverPackage} failed with error {ex}");
+            }
         }
 
         bool rebootRequired = false;
