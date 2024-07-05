@@ -270,12 +270,15 @@ public static class CustomActions
             Uri downloadUrl = new(latestRelease.DownloadUrl);
             session.Log($"BthPS3 download URL: {downloadUrl}");
 
-            _ = Cli.Wrap("explorer")
+            CommandResult? result = Cli.Wrap("explorer")
                 .WithArguments(downloadUrl.ToString())
                 .WithValidation(CommandResultValidation.None)
                 .ExecuteAsync()
                 .GetAwaiter()
                 .GetResult();
+
+            session.Log(
+                $"Download URL launch {(result.IsSuccess ? "succeeded" : "failed")}, exit code: {result.ExitCode}");
 
             return ActionResult.Success;
         }
@@ -293,12 +296,15 @@ public static class CustomActions
     [CustomAction]
     public static ActionResult OpenBetaArticle(Session session)
     {
-        _ = Cli.Wrap("explorer")
+        CommandResult? result = Cli.Wrap("explorer")
             .WithArguments("https://docs.nefarius.at/projects/DsHidMini/Experimental/Version-3-Beta/")
             .WithValidation(CommandResultValidation.None)
             .ExecuteAsync()
             .GetAwaiter()
             .GetResult();
+
+        session.Log(
+            $"Beta article launch {(result.IsSuccess ? "succeeded" : "failed")}, exit code: {result.ExitCode}");
 
         return ActionResult.Success;
     }
@@ -312,7 +318,7 @@ public static class CustomActions
         DirectoryInfo installDir = new(session.Property("INSTALLDIR"));
         string updaterPath = Path.Combine(installDir.FullName, "nefarius_DsHidMini_Updater.exe");
 
-        _ = Cli.Wrap(updaterPath)
+        CommandResult? result = Cli.Wrap(updaterPath)
             .WithArguments(builder => builder
                 .Add("--install")
                 .Add("--silent")
@@ -321,6 +327,9 @@ public static class CustomActions
             .ExecuteAsync()
             .GetAwaiter()
             .GetResult();
+
+        session.Log(
+            $"Updater registration {(result.IsSuccess ? "succeeded" : "failed")}, exit code: {result.ExitCode}");
 
         return ActionResult.Success;
     }
@@ -336,7 +345,7 @@ public static class CustomActions
             DirectoryInfo installDir = new(session.Property("INSTALLDIR"));
             string updaterPath = Path.Combine(installDir.FullName, "nefarius_DsHidMini_Updater.exe");
 
-            _ = Cli.Wrap(updaterPath)
+            CommandResult? result = Cli.Wrap(updaterPath)
                 .WithArguments(builder => builder
                     .Add("--uninstall")
                     .Add("--silent")
@@ -345,6 +354,9 @@ public static class CustomActions
                 .ExecuteAsync()
                 .GetAwaiter()
                 .GetResult();
+
+            session.Log(
+                $"Updater de-registration {(result.IsSuccess ? "succeeded" : "failed")}, exit code: {result.ExitCode}");
 
             return ActionResult.Success;
         }
