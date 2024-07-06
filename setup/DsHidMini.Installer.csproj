@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <RootNamespace>Nefarius.DsHidMini.Setup</RootNamespace>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <SetupVersion Condition="'$(SetupVersion)' == ''">3.0.0</SetupVersion>
+  </PropertyGroup>
+
+  <Target Name="GenerateBuildVariableFile" BeforeTargets="BeforeBuild">
+    <WriteLinesToFile File="GeneratedBuildVariables.g.cs" Lines="namespace Nefarius.DsHidMini.Setup { public static class BuildVariables { public const string SetupVersion = &quot;$(SetupVersion)&quot;%3B } }" Overwrite="true" />
+  </Target>
+
+  <ItemGroup>
+    <None Remove="*.msi" />
+    <None Remove="*.exe" />
+    <None Remove="*.wxs" />
+    <None Remove="*.wixpdb" />
+    <None Remove="*.wixobj" />
+    <None Remove="App.config" />
+    <None Remove="*.g.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CliWrap" Version="3.6.6" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
+    <PackageReference Include="Nefarius.Utilities.DeviceManagement" Version="3.21.0" />
+    <PackageReference Include="WixSharp" Version="1.25.3" />
+    <PackageReference Include="WixSharp.bin" Version="1.25.3" />
+    <PackageReference Include="WixSharp.wix.bin" Version="3.14.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+      <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+
+</Project>

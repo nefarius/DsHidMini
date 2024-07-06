@@ -6,7 +6,7 @@
 
 EVT_DMF_DEVICE_MODULES_ADD DmfDeviceModulesAdd;
 
-EVT_WDF_DEVICE_CONTEXT_CLEANUP DsHidMiniDeviceCleanup;
+EVT_WDF_DEVICE_CONTEXT_CLEANUP DsHidMini_DeviceCleanup;
 
 #pragma code_seg("PAGED")
 DMF_DEFAULT_DRIVERCLEANUP(dshidminiEvtDriverContextCleanup)
@@ -26,7 +26,6 @@ dshidminiEvtDeviceAdd(
 	PDMFDEVICE_INIT dmfDeviceInit;
 	DMF_EVENT_CALLBACKS dmfCallbacks;
 	WDF_PNPPOWER_EVENT_CALLBACKS pnpPowerCallbacks;
-	PDEVICE_CONTEXT pDevCtx;
 	WDFQUEUE queue;
 	WDF_IO_QUEUE_CONFIG queueConfig;
 	BOOLEAN ret;
@@ -79,7 +78,7 @@ dshidminiEvtDeviceAdd(
 	DMF_DmfFdoSetFilter(dmfDeviceInit);
 
 	WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_CONTEXT);
-	deviceAttributes.EvtCleanupCallback = DsHidMiniDeviceCleanup;
+	deviceAttributes.EvtCleanupCallback = DsHidMini_DeviceCleanup;
 
 	status = WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device);
 
@@ -105,7 +104,7 @@ dshidminiEvtDeviceAdd(
 			break;
 		}
 
-		pDevCtx = DeviceGetContext(device);
+		const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(device);
 
 		//
 		// Initialize context
@@ -209,7 +208,7 @@ dshidminiEvtDeviceAdd(
 // Device context clean-up
 //
 #pragma code_seg("PAGED")
-void DsHidMiniDeviceCleanup(
+void DsHidMini_DeviceCleanup(
 	WDFOBJECT Object
 )
 {
@@ -284,15 +283,14 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 			//
 			// Get device property (returns wide hex string)
 			// 
-			status = WdfDeviceAllocAndQueryPropertyEx(
+			if (!NT_SUCCESS(status = WdfDeviceAllocAndQueryPropertyEx(
 				Device,
 				&devProp,
 				NonPagedPoolNx,
 				WDF_NO_OBJECT_ATTRIBUTES,
 				&deviceAddressMemory,
 				&propType
-			);
-			if (!NT_SUCCESS(status))
+			)))
 			{
 				TraceError(
 					TRACE_DEVICE,
@@ -306,7 +304,7 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 			//
 			// Convert hex string into UINT64
 			// 
-			UINT64 hostAddress = wcstoull(
+			const UINT64 hostAddress = wcstoull(
 				WdfMemoryGetBuffer(deviceAddressMemory, NULL),
 				L'\0',
 				16
@@ -332,16 +330,15 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 			);
 
 			WDF_DEVICE_PROPERTY_DATA_INIT(&devProp, &DEVPKEY_Bluetooth_DeviceVID);
-
-			status = WdfDeviceQueryPropertyEx(
+			
+			if (!NT_SUCCESS(status = WdfDeviceQueryPropertyEx(
 				Device,
 				&devProp,
 				sizeof(USHORT),
 				&pDevCtx->VendorId,
 				&requiredSize,
 				&propType
-			);
-			if (!NT_SUCCESS(status))
+			)))
 			{
 				TraceError(
 					TRACE_DEVICE,
@@ -356,15 +353,14 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 
 			WDF_DEVICE_PROPERTY_DATA_INIT(&devProp, &DEVPKEY_Bluetooth_DevicePID);
 
-			status = WdfDeviceQueryPropertyEx(
+			if (!NT_SUCCESS(status = WdfDeviceQueryPropertyEx(
 				Device,
 				&devProp,
 				sizeof(USHORT),
 				&pDevCtx->ProductId,
 				&requiredSize,
 				&propType
-			);
-			if (!NT_SUCCESS(status))
+			)))
 			{
 				TraceError(
 					TRACE_DEVICE,
@@ -408,7 +404,7 @@ DsDevice_InitContext(
 	WDFDEVICE Device
 )
 {
-	PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 	NTSTATUS status = STATUS_SUCCESS;
 	WDF_OBJECT_ATTRIBUTES attributes;
 	PUCHAR outReportBuffer = NULL;
@@ -495,32 +491,59 @@ DsDevice_InitContext(
 		// 
 		DS3_BTH_SET_LED(outReportBuffer, DS3_LED_OFF);
 
-		//
-		// Output Report Delay
-		// 
+#pragma region StartupDelay
 
 		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
 		attributes.ParentObject = Device;
 
 		WDF_TIMER_CONFIG_INIT(
 			&timerCfg,
-			DsBth_EvtControlWriteTimerFunc
+			DsBth_EvtStartupDelayTimerFunc
 		);
 
 		if (!NT_SUCCESS(status = WdfTimerCreate(
 			&timerCfg,
 			&attributes,
-			&pDevCtx->Connection.Bth.Timers.HidOutputReport
+			&pDevCtx->Connection.Bth.Timers.StartupDelay
 		)))
 		{
 			TraceError(
 				TRACE_DSBTH,
-				"WdfTimerCreate (HidOutputReport) failed with status %!STATUS!",
+				"WdfTimerCreate (StartupDelay) failed with status %!STATUS!",
 				status
 			);
-			EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfTimerCreate", status);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfTimerCreate (StartupDelay)", status);
 			break;
 		}
+
+#pragma endregion
+
+#pragma region PostStartupTasks
+
+		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
+		attributes.ParentObject = Device;
+
+		WDF_TIMER_CONFIG_INIT(
+			&timerCfg,
+			DsBth_EvtPostStartupTimerFunc
+		);
+
+		if (!NT_SUCCESS(status = WdfTimerCreate(
+			&timerCfg,
+			&attributes,
+			&pDevCtx->Connection.Bth.Timers.PostStartupTasks
+		)))
+		{
+			TraceError(
+				TRACE_DSBTH,
+				"WdfTimerCreate (PostStartupTasks) failed with status %!STATUS!",
+				status
+			);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfTimerCreate (PostStartupTasks)", status);
+			break;
+		}
+
+#pragma endregion
 
 		break;
 	}
@@ -738,21 +761,16 @@ DsDevice_HotReloadEventCallback(
 		//
 		// Changes to LED settings need to be pushed to the device
 		// 
-		(void)Ds_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverHighPriority);
+		(void)DSHM_SendOutputReport(pDevCtx, Ds3OutputReportSourceDriverHighPriority);
 
 	} while (FALSE);
 
 	FuncExitNoReturn(TRACE_DEVICE);
 }
 
-/**
- * Registers an event listener to trigger refreshing runtime properties
- *
- * @author	Benjamin "Nefarius" Höglinger-Stelzer
- * @date	15.04.2021
- *
- * @param 	Context	The context.
- */
+//
+// Registers an event listener to trigger refreshing runtime properties
+// 
 void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
 {
 	CHAR programDataPath[MAX_PATH];
@@ -843,14 +861,9 @@ void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
 	FuncExitNoReturn(TRACE_DEVICE);
 }
 
-/**
- * Register event to disconnect from Bluetooth, bypassing mshidumdf.sys
- *
- * @author	Benjamin "Nefarius" Höglinger-Stelzer
- * @date	15.04.2021
- *
- * @param 	Context	The context.
- */
+//
+// Register event to disconnect from Bluetooth, bypassing mshidumdf.sys
+// 
 void DsDevice_RegisterBthDisconnectListener(PDEVICE_CONTEXT Context)
 {
 	WCHAR dcEventName[44];
@@ -931,16 +944,11 @@ void DsDevice_RegisterBthDisconnectListener(PDEVICE_CONTEXT Context)
 	FuncExitNoReturn(TRACE_DEVICE);
 }
 
-/**
- * Signals existing wireless connection with same device address to terminate. The controller
- * does not disconnect from Bluetooth on its own once connected to USB, so we signal the
- * wireless device object to disconnect itself before continuing with USB initialization.
- *
- * @author	Benjamin "Nefarius" Höglinger-Stelzer
- * @date	15.04.2021
- *
- * @param 	Context	The context.
- */
+//
+// Signals existing wireless connection with same device address to terminate. The controller
+// does not disconnect from Bluetooth on its own once connected to USB, so we signal the
+// wireless device object to disconnect itself before continuing with USB initialization.
+// 
 void DsDevice_InvokeLocalBthDisconnect(PDEVICE_CONTEXT Context)
 {
 	WCHAR deviceAddress[13];
@@ -1020,9 +1028,7 @@ DmfDeviceModulesAdd(
 	_In_ PDMFMODULE_INIT DmfModuleInit
 )
 {
-	PDEVICE_CONTEXT pDevCtx;
 	DMF_MODULE_ATTRIBUTES moduleAttributes;
-	DMF_CONFIG_DsHidMini dsHidMiniCfg;
 	DMF_CONFIG_ThreadedBufferQueue dmfBufferCfg;
 	DMF_CONFIG_DefaultTarget bthReaderCfg;
 	DMF_CONFIG_DefaultTarget bthWriterCfg;
@@ -1031,7 +1037,7 @@ DmfDeviceModulesAdd(
 
 	FuncEntry(TRACE_DEVICE);
 
-	pDevCtx = DeviceGetContext(Device);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 
 	//
 	// Threaded buffer queue used to serialize output report packets
@@ -1043,7 +1049,7 @@ DmfDeviceModulesAdd(
 	);
 	moduleAttributes.PassiveLevel = TRUE;
 
-	dmfBufferCfg.EvtThreadedBufferQueueWork = DMF_EvtExecuteOutputPacketReceived;
+	dmfBufferCfg.EvtThreadedBufferQueueWork = DSHM_EvtExecuteOutputPacketReceived;
 	// Fixed amount of buffers, no auto-grow
 	dmfBufferCfg.BufferQueueConfig.SourceSettings.EnableLookAside = FALSE;
 	/*
@@ -1124,10 +1130,7 @@ DmfDeviceModulesAdd(
 	// Virtual HID Mini Module
 	// 
 
-	DMF_CONFIG_DsHidMini_AND_ATTRIBUTES_INIT(
-		&dsHidMiniCfg,
-		&moduleAttributes
-	);
+	DMF_DsHidMini_ATTRIBUTES_INIT(&moduleAttributes);
 
 	DMF_DmfModuleAdd(
 		DmfModuleInit,

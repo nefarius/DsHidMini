@@ -344,10 +344,14 @@ healthchecksdb
 /_DSHMC
 /DSHMC.json
 /DSHMC.schema.json
-/XInputBridge/vcpkg_installed/x64-windows-static
 /setup/DsHidMini Driver-SetupFiles
 /setup/DsHidMini Driver-cache
-vcpkg_installed
+/ControlApp
+**/vcpkg_installed
 **/*.g.wxs
 /XInputBridge/exports
 **/*_OTEL
+*.msi
+**/*.g.cs
+setup/*.png
+/ControlApp

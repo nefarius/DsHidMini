@@ -2,6 +2,7 @@
 #include "Configuration.tmh"
 
 
+static
 void
 ConfigSetDefaults(
 	_Inout_ PDS_DRIVER_CONFIGURATION Config
@@ -12,7 +13,7 @@ ConfigSetDefaults(
 //
 // Translates a friendly name string into the corresponding DS_HID_DEVICE_MODE value
 // 
-static DS_HID_DEVICE_MODE HID_DEVICE_MODE_FROM_NAME(PSTR ModeName)
+static DS_HID_DEVICE_MODE HID_DEVICE_MODE_FROM_NAME(_In_ const PSTR ModeName)
 {
 	for (DS_HID_DEVICE_MODE value = 1; value < (DS_HID_DEVICE_MODE)_countof(G_HID_DEVICE_MODE_NAMES); value++)
 	{
@@ -28,7 +29,7 @@ static DS_HID_DEVICE_MODE HID_DEVICE_MODE_FROM_NAME(PSTR ModeName)
 //
 // Translates a friendly name string into the corresponding DS_DEVICE_PAIRING_MODE value
 // 
-static DS_DEVICE_PAIRING_MODE DS_DEVICE_PAIRING_MODE_FROM_NAME(PSTR ModeName)
+static DS_DEVICE_PAIRING_MODE DS_DEVICE_PAIRING_MODE_FROM_NAME(_In_ const PSTR ModeName)
 {
 	if (!_strcmpi(ModeName, G_DEVICE_PAIRING_MODE_NAMES[2]))
 	{
@@ -51,7 +52,7 @@ static DS_DEVICE_PAIRING_MODE DS_DEVICE_PAIRING_MODE_FROM_NAME(PSTR ModeName)
 //
 // Translates a friendly name string into the corresponding DS_PRESSURE_EXPOSURE_MODE value
 // 
-static DS_PRESSURE_EXPOSURE_MODE DS_PRESSURE_EXPOSURE_MODE_FROM_NAME(PSTR ModeName)
+static DS_PRESSURE_EXPOSURE_MODE DS_PRESSURE_EXPOSURE_MODE_FROM_NAME(_In_ const PSTR ModeName)
 {
 	if (!_strcmpi(ModeName, G_PRESSURE_EXPOSURE_MODE_NAMES[2]))
 	{
@@ -74,7 +75,7 @@ static DS_PRESSURE_EXPOSURE_MODE DS_PRESSURE_EXPOSURE_MODE_FROM_NAME(PSTR ModeNa
 //
 // Translates a friendly name string into the corresponding DS_DPAD_EXPOSURE_MODE value
 // 
-static DS_DPAD_EXPOSURE_MODE DS_DPAD_EXPOSURE_MODE_FROM_NAME(PSTR ModeName)
+static DS_DPAD_EXPOSURE_MODE DS_DPAD_EXPOSURE_MODE_FROM_NAME(_In_ const PSTR ModeName)
 {
 	if (!_strcmpi(ModeName, G_DPAD_EXPOSURE_MODE_NAMES[2]))
 	{
@@ -97,7 +98,7 @@ static DS_DPAD_EXPOSURE_MODE DS_DPAD_EXPOSURE_MODE_FROM_NAME(PSTR ModeName)
 //
 // Translates a friendly name string into the corresponding DS_LED_MODE value
 // 
-static DS_LED_MODE DS_LED_MODE_FROM_NAME(PSTR ModeName)
+static DS_LED_MODE DS_LED_MODE_FROM_NAME(_In_ const PSTR ModeName)
 {
 	if (!_strcmpi(ModeName, G_LED_MODE_NAMES[2]))
 	{
@@ -120,7 +121,7 @@ static DS_LED_MODE DS_LED_MODE_FROM_NAME(PSTR ModeName)
 //
 // Translates a friendly name string into the corresponding DS_LED_AUTHORITY value
 // 
-static DS_LED_AUTHORITY DS_LED_AUTHORITY_FROM_NAME(PSTR AuthorityName)
+static DS_LED_AUTHORITY DS_LED_AUTHORITY_FROM_NAME(_In_ const PSTR AuthorityName)
 {
 	if (!_strcmpi(AuthorityName, G_DS_LED_AUTHORITY_NAMES[2]))
 	{
@@ -356,7 +357,7 @@ ConfigParseLEDSettings(
 		cJSON* pPlayer = NULL;
 		for (ULONGLONG playerIndex = 0; playerIndex < _countof(playerSlotNames); playerIndex++)
 		{
-			if (pPlayer = cJSON_GetObjectItem(pCustomPatterns, playerSlotNames[playerIndex]))
+			if ((pPlayer = cJSON_GetObjectItem(pCustomPatterns, playerSlotNames[playerIndex])))
 			{
 				if ((pNode = cJSON_GetObjectItem(pPlayer, "TotalDuration")))
 				{
@@ -501,10 +502,9 @@ static void ConfigNodeParse(
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "CustomPairingAddress")))
 	{
 		char* eptr; // not used
-		long long addressAsNumber = strtoll(cJSON_GetStringValue(pNode), &eptr, 16);
+		const long long addressAsNumber = strtoll(cJSON_GetStringValue(pNode), &eptr, 16);
 		for (int i = 0; i < 6; i++)
 		{
-
 			pCfg->CustomHostAddress[5 - i] = (UCHAR)((addressAsNumber >> (8 * i)) & 0xFF);
 		}
 		TraceVerbose(
@@ -890,7 +890,8 @@ ConfigLoadForDevice(
 	//
 	// Verify if desired new range for heavy rumbling rescale is valid and attempt to calculate rescaling constants if so
 	// 
-	DS_RUMBLE_SETTINGS* rumbSet = &Context->Configuration.RumbleSettings;
+	const DS_RUMBLE_SETTINGS* rumbSet = &Context->Configuration.RumbleSettings;
+
 	if (
 		rumbSet->AlternativeMode.MaxRange > rumbSet->AlternativeMode.MinRange
 		&& rumbSet->AlternativeMode.MinRange > 0
@@ -898,8 +899,8 @@ ConfigLoadForDevice(
 	{
 		Context->RumbleControlState.AltMode.IsEnabled = rumbSet->AlternativeMode.IsEnabled;
 
-		DOUBLE LConstA = (DOUBLE)(rumbSet->AlternativeMode.MaxRange - rumbSet->AlternativeMode.MinRange) / (254);
-		DOUBLE LConstB = rumbSet->AlternativeMode.MaxRange - LConstA * 255;
+		const DOUBLE LConstA = (DOUBLE)(rumbSet->AlternativeMode.MaxRange - rumbSet->AlternativeMode.MinRange) / (254);
+		const DOUBLE LConstB = rumbSet->AlternativeMode.MaxRange - LConstA * 255;
 
 		Context->RumbleControlState.AltMode.LightRescale.ConstA = LConstA;
 		Context->RumbleControlState.AltMode.LightRescale.ConstB = LConstB;
@@ -911,13 +912,12 @@ ConfigLoadForDevice(
 			Context->RumbleControlState.AltMode.LightRescale.ConstA,
 			Context->RumbleControlState.AltMode.LightRescale.ConstB
 		);
-
 	}
 	else
 	{
 		TraceVerbose(
 			TRACE_CONFIG,
-			"Disallowing light rumble rescalling because an invalid range was defined"
+			"Disallowing light rumble rescaling because an invalid range was defined"
 		);
 		Context->RumbleControlState.AltMode.LightRescale.IsAllowed = FALSE;
 	}
@@ -932,8 +932,8 @@ ConfigLoadForDevice(
 	{
 		Context->RumbleControlState.HeavyRescaleEnabled = rumbSet->HeavyRescaling.IsEnabled;
 
-		DOUBLE HConstA = (DOUBLE)(rumbSet->HeavyRescaling.MaxRange - rumbSet->HeavyRescaling.MinRange) / (254);
-		DOUBLE HConstB = rumbSet->HeavyRescaling.MaxRange - HConstA * 255;
+		const DOUBLE HConstA = (DOUBLE)(rumbSet->HeavyRescaling.MaxRange - rumbSet->HeavyRescaling.MinRange) / (254);
+		const DOUBLE HConstB = rumbSet->HeavyRescaling.MaxRange - HConstA * 255;
 
 		Context->RumbleControlState.HeavyRescale.ConstA = HConstA;
 		Context->RumbleControlState.HeavyRescale.ConstB = HConstB;
@@ -978,6 +978,7 @@ ConfigLoadForDevice(
 //
 // Set default values (if no customized configuration is available)
 // 
+static
 void
 ConfigSetDefaults(
 	_Inout_ PDS_DRIVER_CONFIGURATION Config
@@ -1003,9 +1004,9 @@ ConfigSetDefaults(
 
 	Config->WirelessDisconnectButtonCombo.IsEnabled = TRUE;
 	Config->WirelessDisconnectButtonCombo.HoldTime = 1000;
-	Config->WirelessDisconnectButtonCombo.Buttons[0] = 10;
-	Config->WirelessDisconnectButtonCombo.Buttons[1] = 11;
-	Config->WirelessDisconnectButtonCombo.Buttons[2] = 16;
+	Config->WirelessDisconnectButtonCombo.Buttons[0] = DS3_BUTTON_COMBO_OFFSET_L1;
+	Config->WirelessDisconnectButtonCombo.Buttons[1] = DS3_BUTTON_COMBO_OFFSET_R1;
+	Config->WirelessDisconnectButtonCombo.Buttons[2] = DS3_BUTTON_COMBO_OFFSET_PS;
 
 	Config->ThumbSettings.DeadZoneLeft.Apply = TRUE;
 	Config->ThumbSettings.DeadZoneLeft.PolarValue = 3.0;
@@ -1026,12 +1027,12 @@ ConfigSetDefaults(
 	Config->RumbleSettings.AlternativeMode.ForcedRight.LightThreshold = 242;
 	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.IsEnabled = FALSE;
 	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.HoldTime = 1000;
-	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons[0] = 0; // Select
-	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons[1] = 0; // Select
-	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons[2] = 16; // PS
+	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons[0] = DS3_BUTTON_COMBO_OFFSET_SELECT;
+	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons[1] = DS3_BUTTON_COMBO_OFFSET_SELECT;
+	Config->RumbleSettings.AlternativeMode.ToggleButtonCombo.Buttons[2] = DS3_BUTTON_COMBO_OFFSET_PS;
 
 	Config->LEDSettings.Mode = DsLEDModeBatteryIndicatorPlayerIndex;
-	Config->LEDSettings.CustomPatterns.LEDFlags = 0x02;
+	Config->LEDSettings.CustomPatterns.LEDFlags = DS3_LED_1;
 
 	const PDS_LED pPlayerSlots[] =
 	{

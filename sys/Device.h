@@ -65,10 +65,15 @@ struct BTH_DEVICE_CONTEXT
 	struct
 	{
 		//
-		// Delayed Output Report Timer
+		// Delayed startup timer
 		// 
-		WDFTIMER HidOutputReport;
-				
+		WDFTIMER StartupDelay;
+
+		//
+		// Post-delayed start timer
+		// 
+		WDFTIMER PostStartupTasks;
+
 	} Timers;
 	
 	//
@@ -361,13 +366,7 @@ typedef struct _DEVICE_CONTEXT
 //
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DEVICE_CONTEXT, DeviceGetContext)
 
-typedef struct
-{
-	ULONG Unused;
-
-} DMF_CONFIG_DsHidMini;
-
-DECLARE_DMF_MODULE(DsHidMini)
+DECLARE_DMF_MODULE_NO_CONFIG(DsHidMini)
 
 typedef struct
 {
@@ -409,25 +408,9 @@ DMF_DsHidMini_ChildModulesAdd(
 	_In_ PDMFMODULE_INIT DmfModuleInit
 );
 
-_Function_class_(DMF_Open)
-_IRQL_requires_max_(PASSIVE_LEVEL)
-_Must_inspect_result_
-static
-NTSTATUS
-DMF_DsHidMini_Open(
-	_In_ DMFMODULE DmfModule
-);
+DMF_Open DMF_DsHidMini_Open;
 
-_Function_class_(DMF_Close)
-_IRQL_requires_max_(PASSIVE_LEVEL)
-static
-VOID
-DMF_DsHidMini_Close(
-	_In_ DMFMODULE DmfModule
-);
-
-
-EVT_DMF_ThreadedBufferQueue_Callback DMF_EvtExecuteOutputPacketReceived;
+EVT_DMF_ThreadedBufferQueue_Callback DSHM_EvtExecuteOutputPacketReceived;
 
 EVT_WDF_TIMER DSHM_OutputReportDelayTimerElapsed;
 

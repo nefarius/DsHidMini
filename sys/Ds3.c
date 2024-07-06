@@ -103,15 +103,13 @@ NTSTATUS DsUsb_Ds3RequestHostAddress(WDFDEVICE Device)
 	propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
 	propertyData.Lcid = LOCALE_NEUTRAL;
 
-	status = WdfDeviceAssignProperty(
+	if (!NT_SUCCESS(status = WdfDeviceAssignProperty(
 		Device,
 		&propertyData,
 		DEVPROP_TYPE_NTSTATUS,
 		sizeof(NTSTATUS),
 		&status
-	);
-
-	if (!NT_SUCCESS(status))
+	)))
 	{
 		TraceError(
 			TRACE_DS3,
@@ -134,16 +132,14 @@ NTSTATUS DsUsb_Ds3RequestHostAddress(WDFDEVICE Device)
 		(UINT64)(pDevCtx->HostAddress.Address[2]) << 24 |
 		(UINT64)(pDevCtx->HostAddress.Address[1]) << 32 |
 		(UINT64)(pDevCtx->HostAddress.Address[0]) << 40;
-
-	status = WdfDeviceAssignProperty(
+	
+	if (!NT_SUCCESS(status = WdfDeviceAssignProperty(
 		Device,
 		&propertyData,
 		DEVPROP_TYPE_UINT64,
 		sizeof(UINT64),
 		&hostAddress
-	);
-
-	if (!NT_SUCCESS(status))
+	)))
 	{
 		TraceError(
 			TRACE_DS3,
@@ -158,30 +154,78 @@ NTSTATUS DsUsb_Ds3RequestHostAddress(WDFDEVICE Device)
 }
 
 //
-// Sends the "magic packet" to the DS3 so it starts its interrupt endpoint.
+// Instructs the DS3 to start sending data on Interrupt IN
 // 
 NTSTATUS DsUsb_Ds3Init(PDEVICE_CONTEXT Context)
 {
-	NTSTATUS status;
-
 	FuncEntry(TRACE_DS3);
 
-	// 
-	// "Magic packet"
-	// 
 	UCHAR hidCommandEnable[] = {
-		0x42, 0x0C, 0x00, 0x00
+		DS3_USB_COMMON_ENABLE
 	};
 
-	status = USB_SendControlRequest(
+	const NTSTATUS status = USB_SendControlRequest(
 		Context,
 		BmRequestHostToDevice,
 		BmRequestClass,
 		SetReport,
-		Ds3FeatureStartDevice,
+		Ds3FeatureDeviceState,
 		0,
 		hidCommandEnable,
 		ARRAYSIZE(hidCommandEnable)
+	);
+
+	FuncExit(TRACE_DS3, "status=%!STATUS!", status);
+
+	return status;
+}
+
+//
+// Instructs the DS3 to stop sending data on Interrupt IN
+// 
+NTSTATUS DsUsb_Ds3Shutdown(PDEVICE_CONTEXT Context)
+{
+	FuncEntry(TRACE_DS3);
+
+	UCHAR hidCommandEnable[] = {
+		DS3_USB_COMMON_DISABLE
+	};
+
+	const NTSTATUS status = USB_SendControlRequest(
+		Context,
+		BmRequestHostToDevice,
+		BmRequestClass,
+		SetReport,
+		Ds3FeatureDeviceState,
+		0,
+		hidCommandEnable,
+		ARRAYSIZE(hidCommandEnable)
+	);
+
+	FuncExit(TRACE_DS3, "status=%!STATUS!", status);
+
+	return status;
+}
+
+//
+// Shuts off LEDs, rumble etc.
+// 
+NTSTATUS DsUsb_Ds3IndicatorsOff(PDEVICE_CONTEXT Context)
+{
+	FuncEntry(TRACE_DS3);
+
+	UCHAR buffer[48] = { 0 };
+	RtlZeroMemory(buffer, ARRAYSIZE(buffer));
+
+	const NTSTATUS status = USB_SendControlRequest(
+		Context,
+		BmRequestHostToDevice,
+		BmRequestClass,
+		SetReport,
+		Dss3FeatureOutputReport,
+		0,
+		buffer,
+		ARRAYSIZE(buffer)
 	);
 
 	FuncExit(TRACE_DS3, "status=%!STATUS!", status);
@@ -462,16 +506,14 @@ NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 
 	//
 	// Store in property
-	// 
-	status = WdfDeviceAssignProperty(
+	// 	
+	if (!NT_SUCCESS(status = WdfDeviceAssignProperty(
 		Device,
 		&propertyData,
 		DEVPROP_TYPE_NTSTATUS,
 		sizeof(NTSTATUS),
 		&status
-	);
-
-	if (!NT_SUCCESS(status))
+	)))
 	{
 		TraceError(
 			TRACE_DS3,
@@ -488,7 +530,7 @@ NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 //
 // Send magic packet over BTH
 // 
-NTSTATUS DsBth_Ds3Init(PDEVICE_CONTEXT Context)
+NTSTATUS DsBth_Ds3SixaxisInit(PDEVICE_CONTEXT Context)
 {
 	FuncEntry(TRACE_DS3);
 
@@ -496,7 +538,7 @@ NTSTATUS DsBth_Ds3Init(PDEVICE_CONTEXT Context)
 	// "Magic packet"
 	// 
 	BYTE hidCommandEnable[] = {
-		0x53, 0xF4, 0x42, 0x03, 0x00, 0x00
+		DS3_BTH_SIXAXIS_ENABLE
 	};
 
 	NTSTATUS status;
