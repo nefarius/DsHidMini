@@ -57,7 +57,6 @@ artifacts:
 - path: 'bin**\*.pdb'
 - path: 'bin**\*.dll'
 - path: 'bin\*.exe'
-- path: 'bin\publish\*.exe'
 deploy:
 - provider: Environment
   name: BUILDBOT
