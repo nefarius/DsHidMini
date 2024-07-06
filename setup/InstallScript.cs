@@ -77,9 +77,9 @@ internal class InstallScript
                 new File(driversFeature, "nefarius_DsHidMini_Updater.exe")
             ),
             // install drivers
-            new ManagedAction(CustomActions.InstallDrivers, Return.check,
+            new ElevatedManagedAction(CustomActions.InstallDrivers, Return.check,
                 When.After,
-                Step.InstallFinalize,
+                Step.InstallFiles,
                 Condition.NOT_Installed),
             // install BthPS3
             new ManagedAction(CustomActions.InstallBthPS3, Return.check,
@@ -221,14 +221,23 @@ public static class CustomActions
             .ExecuteAsync()
             .GetAwaiter()
             .GetResult();
-
+        
         if (result?.ExitCode == 3010)
         {
             rebootRequired = true;
         }
 
+        if (result?.ExitCode != 0 && result?.ExitCode != 3010)
+        {
+            session.Log($"Filter installer failed with exit code: {result?.ExitCode}");
+
+            return ActionResult.Failure;
+        }
+
         if (!Devcon.Install(dshidminiInfPath, out bool dshidminiRebootRequired))
         {
+            session.Log($"Driver installation failed with win32 error: {Marshal.GetLastWin32Error()}");
+
             return ActionResult.Failure;
         }
 
@@ -239,7 +248,8 @@ public static class CustomActions
 
         Devcon.Refresh();
 
-        session.SetMode(InstallRunMode.RebootAtEnd, rebootRequired);
+        // TODO: not possible in deferred action
+        // session.SetMode(InstallRunMode.RebootAtEnd, rebootRequired);
 
         return ActionResult.Success;
     }
