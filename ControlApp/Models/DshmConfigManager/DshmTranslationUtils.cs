@@ -148,18 +148,11 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             driverFormat.DisableWirelessIdleTimeout = !x_Wireless.IsWirelessIdleDisconnectEnabled;
             driverFormat.WirelessIdleTimeoutPeriodMs = x_Wireless.WirelessIdleDisconnectTime;
 
-            if (x_Wireless.QuickDisconnectCombo.IsComboValid())
-            {
-                driverFormat.QuickDisconnectCombo.IsEnabled = x_Wireless.QuickDisconnectCombo.IsEnabled;
-                driverFormat.QuickDisconnectCombo.HoldTime = x_Wireless.QuickDisconnectCombo.HoldTime;
-                driverFormat.QuickDisconnectCombo.Button1 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_Wireless.QuickDisconnectCombo.ButtonCombo[0]];
-                driverFormat.QuickDisconnectCombo.Button2 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_Wireless.QuickDisconnectCombo.ButtonCombo[1]];
-                driverFormat.QuickDisconnectCombo.Button3 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_Wireless.QuickDisconnectCombo.ButtonCombo[2]];
-            }
-            else
-            {
-                driverFormat.QuickDisconnectCombo.IsEnabled = false;
-            }
+            driverFormat.QuickDisconnectCombo.IsEnabled = x_Wireless.QuickDisconnectCombo.IsEnabled;
+            driverFormat.QuickDisconnectCombo.HoldTime = x_Wireless.QuickDisconnectCombo.HoldTime;
+            driverFormat.QuickDisconnectCombo.Button1 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_Wireless.QuickDisconnectCombo.ButtonCombo[0]];
+            driverFormat.QuickDisconnectCombo.Button2 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_Wireless.QuickDisconnectCombo.ButtonCombo[1]];
+            driverFormat.QuickDisconnectCombo.Button3 = DshmManagerToDriverConversion.ButtonManagerToDriver[x_Wireless.QuickDisconnectCombo.ButtonCombo[2]];
 
             ////////////////////////////////////////////////////////////////////////////////
             // Sticks

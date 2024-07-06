@@ -28,13 +28,6 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
             copyCombo(comboToCopy);
         }
 
-        public bool IsComboValid()
-        {
-            if (ButtonCombo[0] != ButtonCombo[1] && ButtonCombo[0] != ButtonCombo[2] && ButtonCombo[1] != ButtonCombo[2])
-                return true;
-            else return false;
-        }
-
         public void copyCombo(ButtonsCombo comboToCopy)
         {
             IsEnabled = comboToCopy.IsEnabled;

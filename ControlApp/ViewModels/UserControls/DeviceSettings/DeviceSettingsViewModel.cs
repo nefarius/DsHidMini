@@ -112,8 +112,7 @@ public partial class ButtonComboViewModel : ObservableObject
         get => _buttonCombo.ButtonCombo[0];
         set
         {
-            if (value != _buttonCombo.ButtonCombo[1] && value != _buttonCombo.ButtonCombo[2])
-                _buttonCombo.ButtonCombo[0] = value;
+            _buttonCombo.ButtonCombo[0] = value;
             OnPropertyChanged(nameof(Button1));
         }
     }
@@ -122,8 +121,7 @@ public partial class ButtonComboViewModel : ObservableObject
         get => _buttonCombo.ButtonCombo[1];
         set
         {
-            if (value != _buttonCombo.ButtonCombo[0] && value != _buttonCombo.ButtonCombo[2])
-                _buttonCombo.ButtonCombo[1] = value;
+            _buttonCombo.ButtonCombo[1] = value;
             OnPropertyChanged(nameof(Button2));
         }
     }
@@ -132,8 +130,7 @@ public partial class ButtonComboViewModel : ObservableObject
         get => _buttonCombo.ButtonCombo[2];
         set
         {
-            if (value != _buttonCombo.ButtonCombo[0] && value != _buttonCombo.ButtonCombo[1])
-                _buttonCombo.ButtonCombo[2] = value;
+            _buttonCombo.ButtonCombo[2] = value;
             OnPropertyChanged(nameof(Button3));
         }
     }
