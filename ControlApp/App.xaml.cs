@@ -64,6 +64,15 @@ namespace Nefarius.DsHidMini.ControlApp
                 services.AddSingleton<SettingsPage>();
                 services.AddSingleton<SettingsViewModel>();
                 services.AddSingleton<Main>();
+
+                Log.Logger = new LoggerConfiguration()
+                    //.MinimumLevel.Debug()
+                    .WriteTo.File(Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                        "DsHidMini\\Log\\ControlAppLog.txt"))
+                    .CreateLogger();
+
+                services.AddSerilog(Log.Logger);
             }).Build();
 
         /// <summary>
@@ -82,11 +91,6 @@ namespace Nefarius.DsHidMini.ControlApp
         /// </summary>
         private void OnStartup(object sender, StartupEventArgs e)
         {
-            var log = new LoggerConfiguration()
-                //.MinimumLevel.Debug()
-                .WriteTo.File(@"C:\ProgramData\ControlApp\Log\ControlAppLog.txt")
-                .CreateLogger();
-            Log.Logger = log;
             Log.Logger.Information("App startup");
             _host.Start();
         }
