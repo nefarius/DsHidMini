@@ -354,4 +354,3 @@ healthchecksdb
 *.msi
 **/*.g.cs
 setup/*.png
-/ControlApp
