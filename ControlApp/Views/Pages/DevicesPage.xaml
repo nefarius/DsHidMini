@@ -1,0 +1,195 @@
+﻿<Page
+    x:Class="Nefarius.DsHidMini.ControlApp.Views.Pages.DevicesPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:helpers="clr-namespace:Nefarius.DsHidMini.ControlApp.Helpers"
+    xmlns:local="clr-namespace:Nefarius.DsHidMini.ControlApp.Views.Pages"
+    xmlns:manaenum="clr-namespace:Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:viewuserctrls="clr-namespace:Nefarius.DsHidMini.ControlApp.Views.UserControls"
+    Title="DevicesPage"
+    d:DataContext="{d:DesignInstance local:DevicesPage,
+                                     IsDesignTimeCreatable=True}"
+    d:DesignHeight="600"
+    d:DesignWidth="1000"
+    ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
+    ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    ScrollViewer.CanContentScroll="False"
+    mc:Ignorable="d">
+    <Page.Resources>
+        <Thickness x:Key="MyKey_NextLineSpacement" Bottom="10" />
+        <DataTemplate x:Key="MyKey_DeviceStatusSummary" DataType="{x:Type viewuserctrls:DeviceUserControl}" />
+    </Page.Resources>
+    <Grid VerticalAlignment="Stretch">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <DockPanel
+            Grid.Column="0"
+            Width="250"
+            MaxWidth="250"
+            VerticalAlignment="Stretch">
+            <!--  Devices page title  -->
+            <ui:TextBlock
+                HorizontalAlignment="Center"
+                DockPanel.Dock="Top"
+                FontTypography="Title"
+                Text="Devices"
+                TextWrapping="Wrap" />
+            <!--  List of connected DsHidMini devices  -->
+            <ui:ListView
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
+                DockPanel.Dock="Top"
+                ItemsSource="{Binding ViewModel.Devices}"
+                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                SelectedItem="{Binding ViewModel.SelectedDevice}">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <ui:Card Padding="5,5,5,5">
+                            <Viewbox>
+                                <Grid Width="200" ShowGridLines="False">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="20" />
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="25" />
+                                    </Grid.RowDefinitions>
+                                    <!--  Device name  -->
+                                    <Viewbox
+                                        Grid.Column="0"
+                                        Grid.ColumnSpan="2"
+                                        MaxHeight="20"
+                                        HorizontalAlignment="Left">
+                                        <ui:TextBlock Text="{Binding DisplayName}" />
+                                    </Viewbox>
+                                    <!--  HID Mode  -->
+                                    <ui:TextBlock
+                                        Grid.Row="1"
+                                        Grid.ColumnSpan="2"
+                                        FontSize="12"
+                                        Text="{Binding DeviceSettingsStatus}" />
+                                    <DockPanel Grid.Row="2" LastChildFill="False">
+
+
+                                        <DockPanel DockPanel.Dock="Right" LastChildFill="False">
+                                            <!--  Mismatched HID status  -->
+                                            <Viewbox
+                                                Margin="0,5,5,0"
+                                                DockPanel.Dock="Left"
+                                                Visibility="{Binding IsHidModeMismatched, Converter={StaticResource BoolToVis_TV_FC}}">
+                                                <ui:SymbolIcon Foreground="Yellow" Symbol="Warning24" />
+                                            </Viewbox>
+                                            <Viewbox
+                                                Margin="0,0,3,0"
+                                                VerticalAlignment="Stretch"
+                                                DockPanel.Dock="Left">
+                                                <ui:TextBlock Text="{Binding HidModeShort}" />
+                                            </Viewbox>
+                                            <!--  Battery  -->
+                                            <Viewbox DockPanel.Dock="Left">
+                                                <ui:SymbolIcon FontSize="30" Symbol="{Binding BatteryIcon}">
+                                                    <ui:SymbolIcon.LayoutTransform>
+                                                        <RotateTransform Angle="270" />
+                                                    </ui:SymbolIcon.LayoutTransform>
+                                                </ui:SymbolIcon>
+                                            </Viewbox>
+
+                                            <!--  Connection type  -->
+                                            <Viewbox Margin="0" DockPanel.Dock="Left">
+                                                <ui:SymbolIcon FontSize="30" Symbol="{Binding ConnectionTypeIcon}" />
+                                            </Viewbox>
+
+
+                                            <!--  Power cycle/Reconnect button  -->
+                                            <Viewbox Margin="0" DockPanel.Dock="Left">
+                                                <Button
+                                                    Width="50"
+                                                    Height="50"
+                                                    Padding="5"
+                                                    HorizontalAlignment="Stretch"
+                                                    VerticalAlignment="Stretch"
+                                                    HorizontalContentAlignment="Stretch"
+                                                    Command="{Binding RestartDeviceCommand}"
+                                                    FontStyle="Normal">
+                                                    <Button.Content>
+                                                        <Viewbox>
+                                                            <ui:SymbolIcon
+                                                                Margin="0"
+                                                                HorizontalAlignment="Center"
+                                                                FontSize="28"
+                                                                Foreground="White">
+                                                                <ui:SymbolIcon.Style>
+                                                                    <Style TargetType="ui:SymbolIcon">
+                                                                        <Setter Property="Symbol" Value="ArrowClockWise24" />
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding IsWireless}" Value="True">
+                                                                                <Setter Property="Symbol" Value="Power24" />
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </ui:SymbolIcon.Style>
+                                                            </ui:SymbolIcon>
+                                                        </Viewbox>
+
+                                                    </Button.Content>
+
+
+                                                </Button>
+
+                                            </Viewbox>
+
+                                        </DockPanel>
+
+                                    </DockPanel>
+
+
+                                </Grid>
+                            </Viewbox>
+                        </ui:Card>
+
+
+
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ui:ListView>
+
+            <!--  Link to troubleshooting page  -->
+            <ui:HyperlinkButton
+                Margin="10"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Bottom"
+                HorizontalContentAlignment="Left"
+                DockPanel.Dock="Bottom"
+                Icon="{ui:SymbolIcon Link24}"
+                NavigateUri="https://docs.nefarius.at/projects/DsHidMini/How-to-Install/#troubleshooting">
+                <ui:HyperlinkButton.Content>
+                    <ui:TextBlock Text="Troubleshooting page" TextWrapping="Wrap" />
+                </ui:HyperlinkButton.Content>
+            </ui:HyperlinkButton>
+
+        </DockPanel>
+
+        <!--  Selected device info and config  -->
+        <ui:Card
+            Grid.Column="1"
+            Padding="10"
+            VerticalAlignment="Stretch"
+            VerticalContentAlignment="Stretch">
+            <Grid>
+                <ContentControl Visibility="{Binding ViewModel.AnyDeviceSelected, Converter={StaticResource BoolToVis}}">
+                    <viewuserctrls:DeviceUserControl DataContext="{Binding ViewModel.SelectedDevice}" />
+                </ContentControl>
+
+
+
+            </Grid>
+
+        </ui:Card>
+
+
+    </Grid>
+</Page>

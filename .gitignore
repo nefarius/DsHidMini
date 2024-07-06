@@ -346,7 +346,6 @@ healthchecksdb
 /DSHMC.schema.json
 /setup/DsHidMini Driver-SetupFiles
 /setup/DsHidMini Driver-cache
-/ControlApp
 **/vcpkg_installed
 **/*.g.wxs
 /XInputBridge/exports
