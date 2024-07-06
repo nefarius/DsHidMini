@@ -12,6 +12,7 @@
     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
 	<RootNamespace>Nefarius.DsHidMini.ControlApp</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Version>3.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
