@@ -203,25 +203,25 @@
     <LinkIncremental>false</LinkIncremental>
     <TargetName>XInput1_3</TargetName>
     <OutDir>$(SolutionDir)bin\$(PlatformShortName)\</OutDir>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis Condition="'$(CI)'==''">true</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_OTEL|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <TargetName>XInput1_3</TargetName>
     <OutDir>$(SolutionDir)bin\$(PlatformShortName)\OTEL\</OutDir>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis Condition="'$(CI)'==''">true</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <LinkIncremental>false</LinkIncremental>
     <TargetName>XInput1_3</TargetName>
     <OutDir>$(SolutionDir)bin\$(PlatformShortName)\</OutDir>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis Condition="'$(CI)'==''">true</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_OTEL|ARM64'">
     <LinkIncremental>false</LinkIncremental>
     <TargetName>XInput1_3</TargetName>
     <OutDir>$(SolutionDir)bin\$(PlatformShortName)\OTEL\</OutDir>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis Condition="'$(CI)'==''">true</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -236,13 +236,13 @@
     <LinkIncremental>false</LinkIncremental>
     <TargetName>XInput1_3</TargetName>
     <OutDir>$(SolutionDir)bin\$(PlatformShortName)\</OutDir>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis Condition="'$(CI)'==''">true</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_OTEL|x64'">
     <LinkIncremental>false</LinkIncremental>
     <TargetName>XInput1_3</TargetName>
     <OutDir>$(SolutionDir)bin\$(PlatformShortName)\OTEL\</OutDir>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis Condition="'$(CI)'==''">true</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
     <VcpkgEnableManifest Condition="'$(CI)'!='True'">true</VcpkgEnableManifest>
