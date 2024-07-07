@@ -208,7 +208,9 @@ public static class CustomActions
         session.Log($"driversDir = {driversDir}");
         string nefconDir = Path.Combine(installDir.FullName, "nefcon");
         session.Log($"nefconDir = {nefconDir}");
-        string archShortName = RuntimeInformation.OSArchitecture.ToString();
+        string archShortName = ArchitectureInfo.IsArm64
+            ? "arm64"
+            : RuntimeInformation.OSArchitecture.ToString();
         session.Log($"archShortName = {archShortName}");
 
         string nefconcPath = Path.Combine(nefconDir, archShortName, "nefconc.exe");
@@ -288,7 +290,9 @@ public static class CustomActions
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
             using WebClient client = new();
-            client.Headers.Add("X-Vicius-OS-Architecture", RuntimeInformation.OSArchitecture.ToString());
+            client.Headers.Add("X-Vicius-OS-Architecture", ArchitectureInfo.IsArm64
+                ? "arm64"
+                : RuntimeInformation.OSArchitecture.ToString());
 
             string json = client.DownloadString("https://vicius.api.nefarius.systems/api/nefarius/BthPS3/updates.json");
             UpdateResponse? response = JsonConvert.DeserializeObject<UpdateResponse>(json);
