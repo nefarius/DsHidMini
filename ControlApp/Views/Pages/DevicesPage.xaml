@@ -165,7 +165,7 @@
                 HorizontalContentAlignment="Left"
                 DockPanel.Dock="Bottom"
                 Icon="{ui:SymbolIcon Link24}"
-                NavigateUri="https://docs.nefarius.at/projects/DsHidMini/How-to-Install/#troubleshooting">
+                NavigateUri="https://docs.nefarius.at/projects/DsHidMini/Experimental/Version-3-Beta/">
                 <ui:HyperlinkButton.Content>
                     <ui:TextBlock Text="Troubleshooting page" TextWrapping="Wrap" />
                 </ui:HyperlinkButton.Content>
