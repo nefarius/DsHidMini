@@ -1,5 +1,6 @@
 ﻿#nullable enable
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -12,6 +13,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 using CliWrap;
+using CliWrap.Buffered;
 
 using Microsoft.Deployment.WindowsInstaller;
 
@@ -132,6 +134,8 @@ internal class InstallScript
         project.DefaultRefAssemblies.Add(typeof(ValueTask).Assembly.Location);
         project.DefaultRefAssemblies.Add(typeof(IAsyncDisposable).Assembly.Location);
         project.DefaultRefAssemblies.Add(typeof(Unsafe).Assembly.Location);
+        project.DefaultRefAssemblies.Add(typeof(BuffersExtensions).Assembly.Location);
+        project.DefaultRefAssemblies.Add(typeof(ArrayPool<>).Assembly.Location);
         // embed types for web calls
         project.DefaultRefAssemblies.Add(typeof(WebClient).Assembly.Location);
         project.DefaultRefAssemblies.Add(typeof(JsonSerializer).Assembly.Location);
@@ -199,29 +203,41 @@ public static class CustomActions
         bool rebootRequired = UninstallDrivers(session);
 
         DirectoryInfo installDir = new(session.Property("INSTALLDIR"));
+        session.Log($"installDir = {installDir}");
         string driversDir = Path.Combine(installDir.FullName, "drivers");
+        session.Log($"driversDir = {driversDir}");
         string nefconDir = Path.Combine(installDir.FullName, "nefcon");
+        session.Log($"nefconDir = {nefconDir}");
         string archShortName = RuntimeInformation.OSArchitecture.ToString();
+        session.Log($"archShortName = {archShortName}");
 
         string nefconcPath = Path.Combine(nefconDir, archShortName, "nefconc.exe");
+        session.Log($"nefconcPath = {nefconcPath}");
 
         string dshidminiDriverDir = Path.Combine(driversDir, $"dshidmini_{archShortName}");
+        session.Log($"dshidminiDriverDir = {dshidminiDriverDir}");
         string igfilterDriverDir = Path.Combine(driversDir, $"nssmkig_{archShortName}");
+        session.Log($"igfilterDriverDir = {igfilterDriverDir}");
 
         string dshidminiInfPath = Path.Combine(dshidminiDriverDir, "dshidmini.inf");
+        session.Log($"dshidminiInfPath = {dshidminiInfPath}");
         string igfilterInfPath = Path.Combine(igfilterDriverDir, "igfilter.inf");
+        session.Log($"igfilterInfPath = {igfilterInfPath}");
 
-        CommandResult? result = Cli.Wrap(nefconcPath)
+        BufferedCommandResult? result = Cli.Wrap(nefconcPath)
             .WithArguments(builder => builder
                 .Add("--inf-default-install")
                 .Add("--inf-path")
                 .Add(igfilterInfPath)
             )
             .WithValidation(CommandResultValidation.None)
-            .ExecuteAsync()
+            .ExecuteBufferedAsync()
             .GetAwaiter()
             .GetResult();
-        
+
+        session.Log($"igfilter command stdout: {result.StandardOutput}");
+        session.Log($"igfilter command stderr: {result.StandardError}");
+
         if (result?.ExitCode == 3010)
         {
             rebootRequired = true;
