@@ -28,6 +28,16 @@ Commands/scripts are to be run from solution root directory.
 - ???
 - Profit!
 
+## Components
+
+### `nefarius_DsHidMini_Updater.exe`
+
+Software auto-updater. Custom build of [vicius](https://github.com/nefarius/vicius).
+
+### `nefcon\...`
+
+[Driver installation helper utility](https://github.com/nefarius/nefcon).
+
 ## 3rd party credits
 
 - [WixSharp](https://github.com/oleg-shilo/wixsharp)
