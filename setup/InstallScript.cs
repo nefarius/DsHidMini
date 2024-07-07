@@ -62,6 +62,13 @@ internal class InstallScript
                           "Nefarius BthPS3 Bluetooth Drivers for wireless connectivity."
         };
 
+        Feature donationFeature = new("Make a donation", true, true)
+        {
+            Description = "Opens the donation page after setup is finished."
+        };
+
+        // TODO: enable after Beta is over
+        //driversFeature.Add(donationFeature);
         driversFeature.Add(bthPs3Feature);
         driversFeature.Display = FeatureDisplay.expand;
 
@@ -100,6 +107,11 @@ internal class InstallScript
                 Condition.NOT_Installed),
             // open beta article
             new ManagedAction(CustomActions.OpenBetaArticle, Return.check,
+                When.After,
+                Step.InstallFinalize,
+                Condition.NOT_Installed),
+            // open donation page
+            new ManagedAction(CustomActions.OpenDonationPage, Return.check,
                 When.After,
                 Step.InstallFinalize,
                 Condition.NOT_Installed),
@@ -346,6 +358,30 @@ public static class CustomActions
 
         session.Log(
             $"Beta article launch {(result.IsSuccess ? "succeeded" : "failed")}, exit code: {result.ExitCode}");
+
+        return ActionResult.Success;
+    }
+
+    /// <summary>
+    ///     Open donations page in default browser.
+    /// </summary>
+    [CustomAction]
+    public static ActionResult OpenDonationPage(Session session)
+    {
+        if (!session.IsFeatureEnabledPartial("Donation"))
+        {
+            return ActionResult.Success;
+        }
+
+        CommandResult? result = Cli.Wrap("explorer")
+            .WithArguments("https://docs.nefarius.at/Donations/")
+            .WithValidation(CommandResultValidation.None)
+            .ExecuteAsync()
+            .GetAwaiter()
+            .GetResult();
+
+        session.Log(
+            $"Donations page launch {(result.IsSuccess ? "succeeded" : "failed")}, exit code: {result.ExitCode}");
 
         return ActionResult.Success;
     }
