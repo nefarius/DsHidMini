@@ -167,6 +167,7 @@ internal class InstallScript
         project.ControlPanelInfo.Manufacturer = "Nefarius Software Solutions e.U.";
         project.ControlPanelInfo.HelpLink = "https://docs.nefarius.at/Community-Support/";
         project.ControlPanelInfo.UrlInfoAbout = "https://github.com/nefarius/DsHidMini";
+        project.ControlPanelInfo.NoModify = true;
 
         project.MajorUpgradeStrategy.PreventDowngradingVersions.OnlyDetect = false;
 
