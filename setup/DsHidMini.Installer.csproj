@@ -16,11 +16,14 @@
   </Target>
 
   <ItemGroup>
+    <Compile Remove="Archive\**" />
+    <EmbeddedResource Remove="Archive\**" />
     <None Remove="*.msi" />
     <None Remove="*.exe" />
     <None Remove="*.wxs" />
     <None Remove="*.wixpdb" />
     <None Remove="*.wixobj" />
+    <None Remove="Archive\**" />
     <None Remove="App.config" />
     <None Remove="*.g.cs" />
   </ItemGroup>

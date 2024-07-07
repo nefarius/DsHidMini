@@ -84,6 +84,9 @@ internal class InstallScript
                 When.After,
                 Step.InstallFiles,
                 Condition.NOT_Installed),
+            // custom reboot prompt message
+            new Error("9000",
+                "You need to reboot the system to complete the installation.\n\nDo you want to reboot now?"),
             // install BthPS3
             new ManagedAction(CustomActions.InstallBthPS3, Return.check,
                 When.After,
@@ -268,8 +271,15 @@ public static class CustomActions
 
         Devcon.Refresh();
 
-        // TODO: not possible in deferred action, create workaround
-        // session.SetMode(InstallRunMode.RebootAtEnd, rebootRequired);
+        if (rebootRequired)
+        {
+            Record record = new(1);
+            record[1] = "9000";
+
+            session.Message(
+                InstallMessage.User | (InstallMessage)MessageButtons.OK | (InstallMessage)MessageIcon.Information,
+                record);
+        }
 
         return ActionResult.Success;
     }
