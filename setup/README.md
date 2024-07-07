@@ -25,6 +25,7 @@ Commands/scripts are to be run from solution root directory.
   ```   
   to build and sign an MSI with the given version
 - Make public GitHub release
+  - Create tag for setup `setup-v3.0.0`
 - ???
 - Profit!
 
