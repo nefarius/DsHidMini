@@ -19,6 +19,7 @@ using Microsoft.Deployment.WindowsInstaller;
 
 using Nefarius.DsHidMini.Setup.Util;
 using Nefarius.Utilities.DeviceManagement.Drivers;
+using Nefarius.Utilities.DeviceManagement.Exceptions;
 using Nefarius.Utilities.DeviceManagement.PnP;
 
 using Newtonsoft.Json;
@@ -245,14 +246,17 @@ public static class CustomActions
 
         if (result?.ExitCode != 0 && result?.ExitCode != 3010)
         {
-            session.Log($"Filter installer failed with exit code: {result?.ExitCode}");
+            session.Log(
+                $"Filter installer failed with exit code: {result?.ExitCode}, message: {Win32Exception.GetMessageFor(result?.ExitCode)}");
 
             return ActionResult.Failure;
         }
 
         if (!Devcon.Install(dshidminiInfPath, out bool dshidminiRebootRequired))
         {
-            session.Log($"Driver installation failed with win32 error: {Marshal.GetLastWin32Error()}");
+            int error = Marshal.GetLastWin32Error();
+            session.Log(
+                $"Driver installation failed with win32 error: {error}, message: {Win32Exception.GetMessageFor(error)}");
 
             return ActionResult.Failure;
         }
@@ -264,7 +268,7 @@ public static class CustomActions
 
         Devcon.Refresh();
 
-        // TODO: not possible in deferred action
+        // TODO: not possible in deferred action, create workaround
         // session.SetMode(InstallRunMode.RebootAtEnd, rebootRequired);
 
         return ActionResult.Success;
