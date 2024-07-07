@@ -17,6 +17,11 @@ public static class ArchitectureInfo
         }
     }
 
+    public static string PlatformShortName =>
+        IsArm64
+            ? "arm64"
+            : RuntimeInformation.OSArchitecture.ToString();
+
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern bool IsWow64Process2(
         IntPtr process,
