@@ -86,7 +86,8 @@ internal class InstallScript
                 Condition.NOT_Installed),
             // custom reboot prompt message
             new Error("9000",
-                "You need to reboot the system to complete the installation.\n\nDo you want to reboot now?"),
+                "Driver installation succeeded but a reboot is required to be fully operational. " +
+                "After the setup is finished, please reboot the system before using the software."),
             // install BthPS3
             new ManagedAction(CustomActions.InstallBthPS3, Return.check,
                 When.After,
