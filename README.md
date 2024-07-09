@@ -22,8 +22,6 @@ Next major version [**is available** for Beta-testing](https://github.com/nefari
 - Proper **Xbox One Emulation** out-of-the-box
 - ...and maybe more?
 
-Stay tuned!
-
 You can also follow development progress [on Discord](https://discord.nefarius.at/) or get notified when a release happens [on Mastodon](https://fosstodon.org/@Nefarius).
 
 ## Repository activity
