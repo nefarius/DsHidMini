@@ -1,25 +1,21 @@
-﻿using System.Net.NetworkInformation;
+﻿using System.Text.RegularExpressions;
+
 using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.Drivers;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.Enums;
-using Nefarius.DsHidMini.ControlApp.Models.Util.Web;
 using Nefarius.DsHidMini.ControlApp.Models.Util;
 using Nefarius.DsHidMini.ControlApp.Services;
-using Nefarius.DsHidMini.ControlApp.ViewModels.Pages;
-using Nefarius.DsHidMini.ControlApp.ViewModels.UserControls;
-using Nefarius.Utilities.Bluetooth;
 using Nefarius.Utilities.DeviceManagement.PnP;
 
 using Serilog;
 
 using Wpf.Ui;
 using Wpf.Ui.Controls;
-using System.Text.RegularExpressions;
 using Wpf.Ui.Extensions;
 
-namespace Nefarius.DsHidMini.ControlApp.ViewModels
+namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls
 {
     public partial class DeviceViewModel : ObservableObject
     {

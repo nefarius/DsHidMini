@@ -1,10 +1,8 @@
 ﻿using System.IO;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 using Serilog;
-using Serilog.Core;
 
 namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
 {

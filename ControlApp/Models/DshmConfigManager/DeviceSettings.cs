@@ -1,6 +1,5 @@
 ﻿using System.Text.Json.Serialization;
-using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig;
-using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.Enums;
+
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 using Button = Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums.Button;
 using LEDsMode = Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums.LEDsMode;

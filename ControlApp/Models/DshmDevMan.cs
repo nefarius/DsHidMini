@@ -1,14 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Nefarius.DsHidMini.ControlApp.Models.Drivers;
-using Nefarius.DsHidMini.ControlApp.Models.Util;
+﻿using Nefarius.DsHidMini.ControlApp.Models.Drivers;
 using Nefarius.Utilities.DeviceManagement.PnP;
 using Nefarius.Utilities.Bluetooth;
-using Nefarius.DsHidMini.ControlApp.Services;
-using Nefarius.DsHidMini.ControlApp.ViewModels;
 using Nefarius.Utilities.DeviceManagement.Extensions;
 using Serilog;
 

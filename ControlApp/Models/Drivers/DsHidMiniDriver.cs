@@ -1,7 +1,5 @@
 ﻿using System.ComponentModel;
 using Nefarius.DsHidMini.ControlApp.Helpers;
-using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
-using Nefarius.DsHidMini.ControlApp.Resources;
 using Nefarius.Utilities.DeviceManagement.PnP;
 
 namespace Nefarius.DsHidMini.ControlApp.Models.Drivers

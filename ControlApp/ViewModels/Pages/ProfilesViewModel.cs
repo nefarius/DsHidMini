@@ -1,11 +1,9 @@
-﻿using System.Diagnostics.Metrics;
-using Nefarius.DsHidMini.ControlApp.Models;
+﻿using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Services;
 
 using Serilog;
 
-using Wpf.Ui;
 using Wpf.Ui.Controls;
 
 namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
@@ -18,8 +16,8 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         private readonly DshmDevMan _dshmDevMan;
         private readonly DshmConfigManager _dshmConfigManager;
 
-        [ObservableProperty] public List<ProfileViewModel> _profilesViewModels;
-        [ObservableProperty] private ProfileViewModel? _selectedProfileVM = null;
+        [ObservableProperty] public List<UserControls.ProfileViewModel> _profilesViewModels;
+        [ObservableProperty] private UserControls.ProfileViewModel? _selectedProfileVM = null;
 
 
 
@@ -44,7 +42,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         public void UpdateProfileList()
         {
             Log.Logger.Debug("Rebuilding profiles' ViewModels.");
-            List<ProfileViewModel> newList = new();
+            List<UserControls.ProfileViewModel> newList = new();
             foreach(ProfileData prof in ProfilesDatas)
             {
                 newList.Add(new(prof, _appSnackbarMessagesService, _dshmConfigManager));
@@ -56,7 +54,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         public void UpdateGlobalProfileCheck()
         {
             Log.Logger.Debug("Updating Profiles' ViewModels 'Global' check");
-            foreach (ProfileViewModel profVM in ProfilesViewModels)
+            foreach (UserControls.ProfileViewModel profVM in ProfilesViewModels)
             {
                 profVM.IsGlobal = (profVM.ProfileData == _dshmConfigManager.GlobalProfile);
             }
@@ -81,13 +79,13 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         {
         }
 
-        partial void OnSelectedProfileVMChanged(ProfileViewModel? value)
+        partial void OnSelectedProfileVMChanged(UserControls.ProfileViewModel? value)
         {
             AnyProfileSelected = (SelectedProfileVM != null);
         }
 
         [RelayCommand]
-        private void SetprofileAsGlobal(ProfileViewModel? obj)
+        private void SetprofileAsGlobal(UserControls.ProfileViewModel? obj)
         {
             if (obj != null)
             {
@@ -109,7 +107,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         }
 
         [RelayCommand]
-        private void DeleteProfile(ProfileViewModel? obj)
+        private void DeleteProfile(UserControls.ProfileViewModel? obj)
         {
             if (obj == null) return;
             Log.Logger.Information($"Deleting profile '{obj.ProfileData.ProfileName}' ({obj.ProfileData.ProfileGuid})");

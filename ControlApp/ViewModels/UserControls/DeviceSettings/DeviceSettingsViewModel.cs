@@ -1,6 +1,4 @@
-﻿using System.Windows.Ink;
-
-using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
+﻿using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 
 namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls.DeviceSettings;
