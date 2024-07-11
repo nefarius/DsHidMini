@@ -448,7 +448,7 @@ public partial class DeviceViewModel : ObservableObject
     [RelayCommand]
     private void RestartDevice()
     {
-        bool reconnectionResult = _dshmDevMan.TryReconnectDevice(Device);
+        bool reconnectionResult = DshmDevMan.TryReconnectDevice(Device);
         Log.Logger.Information(
             $"User instructed {(IsWireless ? "wireless" : "wired")} device '{DeviceAddress}' to restart/disconnect.");
         _appSnackbarMessagesService.ShowPowerCyclingDeviceMessage(IsWireless, SecurityUtil.IsElevated,

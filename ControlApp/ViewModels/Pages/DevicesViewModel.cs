@@ -93,7 +93,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
             {
                 if (devVM.IsHidModeMismatched)
                 {
-                    if (!_dshmDevMan.TryReconnectDevice(devVM.Device)){
+                    if (!DshmDevMan.TryReconnectDevice(devVM.Device)){
                         oneOrMoreFails = true;
                     }
                 }

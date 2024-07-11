@@ -7,14 +7,10 @@ namespace Nefarius.DsHidMini.ControlApp.Models
 {
     public class DshmDevMan
     {
-        private DeviceNotificationListener _listener;
+        private DeviceNotificationListener? _listener;
         //private readonly HostRadio _hostRadio;
 
         public List<PnPDevice> Devices { get; private set; } = new();
-
-        public DshmDevMan()
-        {
-        }
 
         public bool StartListeningForDshmDevices()
         {
@@ -33,18 +29,18 @@ namespace Nefarius.DsHidMini.ControlApp.Models
         {
             Log.Logger.Information("Stopping detection of DsHidMini devices");
             Devices.Clear();
-            _listener.StopListen();
-            _listener.Dispose();
+            _listener?.StopListen();
+            _listener?.Dispose();
             _listener = null;
         }
 
-        public void OnListenerDevicesRemovedOrAdded(DeviceEventArgs e)
+        private void OnListenerDevicesRemovedOrAdded(DeviceEventArgs e)
         {
             Log.Logger.Information("DsHidMini devices added or removed. Updating device list");
             UpdateConnectedDshmDevicesList();
         }
 
-        public void UpdateConnectedDshmDevicesList()
+        private void UpdateConnectedDshmDevicesList()
         {
             Log.Logger.Debug("Rebuilding list of connected DsHidMini devices");
             Devices.Clear();
@@ -58,8 +54,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models
             ConnectedDeviceListUpdated?.Invoke(this, new());
         }
 
-
-        public bool TryReconnectDevice(PnPDevice device)
+        public static bool TryReconnectDevice(PnPDevice device)
         {
             Log.Logger.Information($"Attempting on reconnecting device of instance {device.InstanceId}");
             string? enumerator = device.GetProperty<string>(DevicePropertyKey.Device_EnumeratorName);
@@ -97,7 +92,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models
             }
         }
 
-        public event EventHandler ConnectedDeviceListUpdated;
+        public event EventHandler? ConnectedDeviceListUpdated;
 
     }
 }
