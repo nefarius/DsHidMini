@@ -32,7 +32,7 @@ public partial class MainWindowViewModel : ObservableObject
     };
 
     [ObservableProperty]
-    private bool _IsAppElevated = Main.IsAdministrator();
+    private bool _IsAppElevated = SecurityUtil.IsElevated;
 
     [ObservableProperty]
     private ObservableCollection<object> _menuItems = new()
