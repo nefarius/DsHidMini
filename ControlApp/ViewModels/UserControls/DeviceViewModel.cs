@@ -39,6 +39,7 @@ public partial class DeviceViewModel : ObservableObject
     ///     Editing allowed, changes saved only if applying settings with custom settings mode selected
     /// </summary>
     [ObservableProperty]
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
     private SettingsEditorViewModel _deviceCustomsVM = new() { AllowEditing = true };
 
     [ObservableProperty]
@@ -67,7 +68,7 @@ public partial class DeviceViewModel : ObservableObject
     private bool _isProfileSelectorVisible;
 
     [ObservableProperty]
-    public List<ProfileData> _listOfProfiles;
+    private List<ProfileData> _listOfProfiles;
 
     /// <summary>
     ///     The desired Bluetooth pairing mode for the device when plugging via cable or applying settings
@@ -80,7 +81,7 @@ public partial class DeviceViewModel : ObservableObject
     [ObservableProperty]
     private ProfileData? _selectedProfile;
 
-    private readonly DeviceData deviceUserData;
+    private readonly DeviceData _deviceUserData;
 
 
     // ------------------------------------------------------ CONSTRUCTOR
@@ -95,7 +96,7 @@ public partial class DeviceViewModel : ObservableObject
         _appSnackbarMessagesService = appSnackbarMessagesService;
         _contentDialogService = contentDialogService;
         _batteryQuery = new Timer(UpdateBatteryStatus, null, 10000, 10000);
-        deviceUserData = _dshmConfigManager.GetDeviceData(DeviceAddress);
+        _deviceUserData = _dshmConfigManager.GetDeviceData(DeviceAddress);
         // Loads correspondent controller data based on controller's MAC address 
 
 
@@ -116,7 +117,7 @@ public partial class DeviceViewModel : ObservableObject
     /// <summary>
     ///     The Hid Mode the device is expected to be based on the device's user data
     /// </summary>
-    public SettingsContext ExpectedHidMode => _dshmConfigManager.GetDeviceExpectedHidMode(deviceUserData);
+    public SettingsContext ExpectedHidMode => _dshmConfigManager.GetDeviceExpectedHidMode(_deviceUserData);
 
 
     /// <summary>
@@ -134,15 +135,12 @@ public partial class DeviceViewModel : ObservableObject
             string activeProfile = "";
             if (CurrentDeviceSettingsMode != SettingsModes.Custom)
             {
-                switch (CurrentDeviceSettingsMode)
+                activeProfile = CurrentDeviceSettingsMode switch
                 {
-                    case SettingsModes.Global:
-                        activeProfile = $"{_dshmConfigManager.GlobalProfile}";
-                        break;
-                    case SettingsModes.Profile:
-                        activeProfile = $"{SelectedProfile}";
-                        break;
-                }
+                    SettingsModes.Global => $"{_dshmConfigManager.GlobalProfile}",
+                    SettingsModes.Profile => $"{SelectedProfile}",
+                    _ => activeProfile
+                };
 
                 activeProfile = $" 🡪 {activeProfile}";
             }
@@ -384,15 +382,12 @@ public partial class DeviceViewModel : ObservableObject
         IsProfileSelectorVisible = CurrentDeviceSettingsMode != SettingsModes.Custom;
         IsProfileSelectorEnabled = CurrentDeviceSettingsMode == SettingsModes.Profile;
         IsEditorVisible = CurrentDeviceSettingsMode == SettingsModes.Custom;
-        switch (CurrentDeviceSettingsMode)
+        SelectedProfile = CurrentDeviceSettingsMode switch
         {
-            case SettingsModes.Global:
-                SelectedProfile = _dshmConfigManager.GlobalProfile;
-                break;
-            case SettingsModes.Profile:
-                SelectedProfile = _dshmConfigManager.GetProfile(deviceUserData.GuidOfProfileToUse);
-                break;
-        }
+            SettingsModes.Global => _dshmConfigManager.GlobalProfile,
+            SettingsModes.Profile => _dshmConfigManager.GetProfile(_deviceUserData.GuidOfProfileToUse),
+            _ => SelectedProfile
+        };
     }
 
     [RelayCommand]
@@ -400,12 +395,12 @@ public partial class DeviceViewModel : ObservableObject
     {
         Log.Logger.Debug($"Refreshing ViewModel of Device '{DeviceAddress}'");
         // Bluetooth
-        PairingMode = (int)deviceUserData.BluetoothPairingMode;
-        CustomPairingAddress = deviceUserData.PairingAddress;
+        PairingMode = (int)_deviceUserData.BluetoothPairingMode;
+        CustomPairingAddress = _deviceUserData.PairingAddress;
 
         // Settings and selected profile
-        CurrentDeviceSettingsMode = deviceUserData.SettingsMode;
-        DeviceCustomsVM.LoadDatasToAllGroups(deviceUserData.Settings);
+        CurrentDeviceSettingsMode = _deviceUserData.SettingsMode;
+        DeviceCustomsVM.LoadDatasToAllGroups(_deviceUserData.Settings);
         ListOfProfiles = _dshmConfigManager.GetListOfProfilesWithDefault();
 
         Log.Logger.Information(
@@ -424,7 +419,7 @@ public partial class DeviceViewModel : ObservableObject
     private void ApplyChanges()
     {
         Log.Logger.Information($"Saving and applying changes made to Device '{DeviceAddress}'");
-        deviceUserData.BluetoothPairingMode = (BluetoothPairingMode)PairingMode;
+        _deviceUserData.BluetoothPairingMode = (BluetoothPairingMode)PairingMode;
 
         string formattedCustomMacAddress = Regex.Replace(CustomPairingAddress, @"[^a-fA-F0-9]", "").ToUpper();
         if (formattedCustomMacAddress.Length > 12)
@@ -432,17 +427,17 @@ public partial class DeviceViewModel : ObservableObject
             formattedCustomMacAddress = formattedCustomMacAddress.Substring(0, 12);
         }
 
-        deviceUserData.PairingAddress = formattedCustomMacAddress;
+        _deviceUserData.PairingAddress = formattedCustomMacAddress;
 
-        deviceUserData.SettingsMode = CurrentDeviceSettingsMode;
+        _deviceUserData.SettingsMode = CurrentDeviceSettingsMode;
         if (CurrentDeviceSettingsMode == SettingsModes.Custom)
         {
-            DeviceCustomsVM.SaveAllChangesToBackingData(deviceUserData.Settings);
+            DeviceCustomsVM.SaveAllChangesToBackingData(_deviceUserData.Settings);
         }
 
         if (CurrentDeviceSettingsMode == SettingsModes.Profile)
         {
-            deviceUserData.GuidOfProfileToUse = SelectedProfile.ProfileGuid;
+            _deviceUserData.GuidOfProfileToUse = SelectedProfile.ProfileGuid;
         }
 
         _dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile();
@@ -463,19 +458,19 @@ public partial class DeviceViewModel : ObservableObject
     [RelayCommand]
     private async Task TriggerPairingOnHotReload()
     {
-        deviceUserData.BluetoothPairingMode = (BluetoothPairingMode)PairingMode;
+        _deviceUserData.BluetoothPairingMode = (BluetoothPairingMode)PairingMode;
         string formattedCustomMacAddress = Regex.Replace(CustomPairingAddress, @"[^a-fA-F0-9]", "").ToUpper();
         if (formattedCustomMacAddress.Length > 12)
         {
             formattedCustomMacAddress = formattedCustomMacAddress.Substring(0, 12);
         }
 
-        deviceUserData.PairingAddress = formattedCustomMacAddress;
+        _deviceUserData.PairingAddress = formattedCustomMacAddress;
 
-        deviceUserData.PairOnHotReload = true;
+        _deviceUserData.PairOnHotReload = true;
         _dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile();
         await ShowPairingDialog();
-        deviceUserData.PairOnHotReload = false;
+        _deviceUserData.PairOnHotReload = false;
         _dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile();
         OnPropertyChanged(nameof(HostAddress));
         OnPropertyChanged(nameof(LastPairingStatusIcon));
