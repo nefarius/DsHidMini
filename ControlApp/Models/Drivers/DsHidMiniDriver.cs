@@ -1,4 +1,6 @@
 ﻿using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
+
 using Nefarius.DsHidMini.ControlApp.Helpers;
 using Nefarius.Utilities.DeviceManagement.PnP;
 
@@ -72,6 +74,8 @@ namespace Nefarius.DsHidMini.ControlApp.Models.Drivers
     ///     HID device emulation modes.
     /// </summary>
     [TypeConverter(typeof(EnumDescriptionTypeConverter))]
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public enum DsHidDeviceMode : byte
     {
         [Description("SDF (PCSX2)")] SDF = 0x01,
