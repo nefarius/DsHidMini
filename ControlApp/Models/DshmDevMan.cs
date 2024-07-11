@@ -10,19 +10,18 @@ namespace Nefarius.DsHidMini.ControlApp.Models
         private DeviceNotificationListener? _listener;
         //private readonly HostRadio _hostRadio;
 
-        public List<PnPDevice> Devices { get; private set; } = new();
+        public List<PnPDevice> Devices { get; } = new();
 
-        public bool StartListeningForDshmDevices()
+        public void StartListeningForDshmDevices()
         {
             Log.Logger.Information("Starting detection of DsHidMini devices");
-            if (_listener != null) return false;
+            if (_listener != null) return;
             _listener = new DeviceNotificationListener();
             _listener.DeviceArrived += OnListenerDevicesRemovedOrAdded;
             _listener.DeviceRemoved += OnListenerDevicesRemovedOrAdded;
             _listener.StartListen(DsHidMiniDriver.DeviceInterfaceGuid);
 
             UpdateConnectedDshmDevicesList();
-            return true;
         }
 
         public void StopListeningForDshmDevices()
