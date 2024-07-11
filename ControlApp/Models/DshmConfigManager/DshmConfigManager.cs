@@ -79,20 +79,19 @@ public class DshmConfigManager
     /// </summary>
     private void FixDevicesWithBlankProfiles()
     {
-        foreach (DeviceData device in dshmManagerUserData.Devices)
+        foreach (var device in dshmManagerUserData.Devices.Where(device => GetProfile(device.GuidOfProfileToUse) == null))
         {
-            if (GetProfile(device.GuidOfProfileToUse) == null)
+            Log.Logger.Information(
+                $"Device {device.DeviceMac} linked to non-existing profile. Reverting link to default profile.");
+            device.GuidOfProfileToUse = ProfileData.DefaultGuid;
+            if (device.SettingsMode != SettingsModes.Profile)
             {
-                Log.Logger.Information(
-                    $"Device {device.DeviceMac} linked to non-existing profile. Reverting link to default profile.");
-                device.GuidOfProfileToUse = ProfileData.DefaultGuid;
-                if (device.SettingsMode == SettingsModes.Profile)
-                {
-                    Log.Logger.Information(
-                        $"Device {device.DeviceMac} was in Profile Settings Mode while using a non-existing profile. Setting device back to Global Settings. ");
-                    device.SettingsMode = SettingsModes.Global;
-                }
+                continue;
             }
+
+            Log.Logger.Information(
+                $"Device {device.DeviceMac} was in Profile Settings Mode while using a non-existing profile. Setting device back to Global Settings. ");
+            device.SettingsMode = SettingsModes.Global;
         }
     }
 
@@ -103,16 +102,7 @@ public class DshmConfigManager
     /// <returns>The profile data of the given GUID if it exists, null otherwise</returns>
     public ProfileData? GetProfile(Guid profileGuid)
     {
-        ProfileData profile = null;
-
-        foreach (ProfileData p in GetListOfProfilesWithDefault())
-        {
-            if (p.ProfileGuid == profileGuid)
-            {
-                profile = p;
-                break;
-            }
-        }
+        ProfileData? profile = GetListOfProfilesWithDefault().FirstOrDefault(p => p.ProfileGuid == profileGuid);
 
         if (profile == null)
         {
@@ -144,21 +134,22 @@ public class DshmConfigManager
 
         foreach (DeviceData dev in dshmManagerUserData.Devices)
         {
-            DshmDeviceData dshmDeviceData = new DshmDeviceData();
-            dshmDeviceData.DeviceAddress = dev.DeviceMac;
-
-            // Disable BT auto-pairing if in Disabled BT Pairing Mode
-            dshmDeviceData.DeviceSettings.DisableAutoPairing =
-                dev.BluetoothPairingMode == BluetoothPairingMode.Disabled ? true : false;
-
-            dshmDeviceData.DeviceSettings.DevicePairingMode =
-                DshmManagerToDriverConversion.PairingModeManagerToDriver[dev.BluetoothPairingMode];
-
-            dshmDeviceData.DeviceSettings.PairOnHotReload = dev.PairOnHotReload;
-
-            // If using custom BT Pairing Mode, set the pairing address to the desired one. Otherwise, leave it blank so DsHidMini auto-pairs to current BT host
-            dshmDeviceData.DeviceSettings.CustomPairingAddress =
-                dev.BluetoothPairingMode == BluetoothPairingMode.Custom ? dev.PairingAddress : null;
+            DshmDeviceData dshmDeviceData = new()
+            {
+                DeviceAddress = dev.DeviceMac,
+                DeviceSettings =
+                {
+                    // Disable BT auto-pairing if in Disabled BT Pairing Mode
+                    DisableAutoPairing = dev.BluetoothPairingMode == BluetoothPairingMode.Disabled ? true : false,
+                    DevicePairingMode =
+                        DshmManagerToDriverConversion.PairingModeManagerToDriver[dev.BluetoothPairingMode],
+                    PairOnHotReload = dev.PairOnHotReload,
+                    // If using custom BT Pairing Mode, set the pairing address to the desired one. Otherwise, leave it blank so DsHidMini auto-pairs to current BT host
+                    CustomPairingAddress = dev.BluetoothPairingMode == BluetoothPairingMode.Custom
+                        ? dev.PairingAddress
+                        : null
+                }
+            };
 
             switch (dev.SettingsMode)
             {
@@ -167,7 +158,7 @@ public class DshmConfigManager
                         dshmDeviceData.DeviceSettings);
                     break;
                 case SettingsModes.Profile:
-                    ProfileData devprof = GetProfile(dev.GuidOfProfileToUse);
+                    ProfileData? devprof = GetProfile(dev.GuidOfProfileToUse);
                     DshmManagerToDriverConversion.ConvertDeviceSettingsToDriverFormat(devprof.Settings,
                         dshmDeviceData.DeviceSettings);
                     break;
@@ -200,8 +191,7 @@ public class DshmConfigManager
     /// <returns>The created profile</returns>
     public ProfileData CreateProfile(string profileName)
     {
-        ProfileData newProfile = new();
-        newProfile.ProfileName = profileName;
+        ProfileData newProfile = new() { ProfileName = profileName };
         //newProfile.DiskFileName = profileName + ".json";
         dshmManagerUserData.Profiles.Add(newProfile);
         Log.Logger.Information($"Profile '{profileName}' created on DsHidMini User Data.");
@@ -233,14 +223,11 @@ public class DshmConfigManager
         {
             case SettingsModes.Custom:
                 return dev.Settings.HidMode.SettingsContext;
-                break;
             case SettingsModes.Profile:
                 return GetProfile(dev.GuidOfProfileToUse).Settings.HidMode.SettingsContext;
-                break;
             case SettingsModes.Global:
             default:
                 return GlobalProfile.Settings.HidMode.SettingsContext;
-                break;
         }
     }
 
@@ -253,17 +240,13 @@ public class DshmConfigManager
     public DeviceData GetDeviceData(string deviceMac)
     {
         Log.Logger.Information($"Getting data for device {deviceMac}.");
-        foreach (DeviceData dev in dshmManagerUserData.Devices)
+        foreach (DeviceData dev in dshmManagerUserData.Devices.Where(dev => dev.DeviceMac == deviceMac))
         {
-            if (dev.DeviceMac == deviceMac)
-            {
-                return dev;
-            }
+            return dev;
         }
 
         Log.Logger.Information($"Data for Device {deviceMac} does not exist. Creating new.");
-        DeviceData newDevice = new DeviceData(deviceMac);
-        newDevice.DeviceMac = deviceMac;
+        DeviceData newDevice = new(deviceMac) { DeviceMac = deviceMac };
         dshmManagerUserData.Devices.Add(newDevice);
         return newDevice;
     }
