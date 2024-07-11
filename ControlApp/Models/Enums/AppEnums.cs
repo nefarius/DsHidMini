@@ -1,6 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-
-namespace Nefarius.DsHidMini.ControlApp.Models.Enums;
+﻿namespace Nefarius.DsHidMini.ControlApp.Models.Enums;
 
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]

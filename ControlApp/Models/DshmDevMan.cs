@@ -2,7 +2,6 @@
 using Nefarius.Utilities.DeviceManagement.PnP;
 using Nefarius.Utilities.Bluetooth;
 using Nefarius.Utilities.DeviceManagement.Extensions;
-using Serilog;
 
 namespace Nefarius.DsHidMini.ControlApp.Models
 {

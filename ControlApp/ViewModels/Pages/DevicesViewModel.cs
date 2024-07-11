@@ -10,9 +10,6 @@ using System.Collections.ObjectModel;
 using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Services;
 using Wpf.Ui.Controls;
-
-using Serilog;
-
 using Wpf.Ui;
 using Wpf.Ui.Extensions;
 

@@ -1,6 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-
-namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
+﻿namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 
 public enum SettingsModes
 {

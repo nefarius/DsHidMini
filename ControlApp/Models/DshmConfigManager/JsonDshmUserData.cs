@@ -12,8 +12,6 @@ using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-using Serilog;
-
 namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager
 {
     /// <summary>Provides methods to load and save the application configuration. </summary>

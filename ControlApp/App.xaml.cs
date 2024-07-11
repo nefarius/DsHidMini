@@ -20,8 +20,6 @@ using Nefarius.DsHidMini.ControlApp.Views.Pages;
 using Nefarius.DsHidMini.ControlApp.Views.Windows;
 using Nefarius.Utilities.DeviceManagement.PnP;
 
-using Serilog;
-
 using Wpf.Ui;
 
 namespace Nefarius.DsHidMini.ControlApp;

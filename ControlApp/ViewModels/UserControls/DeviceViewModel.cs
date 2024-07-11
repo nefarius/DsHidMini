@@ -5,11 +5,8 @@ using Nefarius.DsHidMini.ControlApp.Models.Drivers;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.Enums;
-using Nefarius.DsHidMini.ControlApp.Models.Util;
 using Nefarius.DsHidMini.ControlApp.Services;
 using Nefarius.Utilities.DeviceManagement.PnP;
-
-using Serilog;
 
 using Wpf.Ui;
 using Wpf.Ui.Controls;

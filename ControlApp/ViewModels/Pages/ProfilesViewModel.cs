@@ -2,8 +2,6 @@
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Services;
 
-using Serilog;
-
 using Wpf.Ui.Controls;
 
 namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages

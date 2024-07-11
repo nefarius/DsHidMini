@@ -1,8 +1,6 @@
 ﻿using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Services;
 
-using Serilog;
-
 namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls;
 
 public partial class ProfileViewModel : ObservableObject

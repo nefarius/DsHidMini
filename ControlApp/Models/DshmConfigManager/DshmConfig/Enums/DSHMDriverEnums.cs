@@ -1,6 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-
-namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.Enums;
+﻿namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.Enums;
 
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 public enum HidDeviceMode
