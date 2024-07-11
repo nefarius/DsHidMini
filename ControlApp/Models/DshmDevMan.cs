@@ -57,45 +57,43 @@ namespace Nefarius.DsHidMini.ControlApp.Models
             Log.Logger.Debug($"DsHidMini devices list rebuilt. {Devices.Count} connected devices");
             ConnectedDeviceListUpdated?.Invoke(this, new());
         }
-        
+
 
         public bool TryReconnectDevice(PnPDevice device)
         {
             Log.Logger.Information($"Attempting on reconnecting device of instance {device.InstanceId}");
-            var enumerator = device.GetProperty<string>(DevicePropertyKey.Device_EnumeratorName);
-            var IsWireless = !enumerator.Equals("USB", StringComparison.InvariantCultureIgnoreCase);
-            Log.Logger.Debug($"Is Device connected wirelessly: {IsWireless}");
+            string? enumerator = device.GetProperty<string>(DevicePropertyKey.Device_EnumeratorName);
+            bool isWireless = !enumerator!.Equals("USB", StringComparison.InvariantCultureIgnoreCase);
+            Log.Logger.Debug($"Is Device connected wireless: {isWireless}");
 
-            if (IsWireless)
+            if (isWireless)
             {
                 try
                 {
                     HostRadio hostRadio = new();
-                    var deviceAddress = device.GetProperty<string>(DsHidMiniDriver.DeviceAddressProperty).ToUpper();
+                    string deviceAddress = device.GetProperty<string>(DsHidMiniDriver.DeviceAddressProperty)!.ToUpper();
                     Log.Logger.Debug($"Instructing BT host on disconnecting device of MAC {deviceAddress}");
                     hostRadio.DisconnectRemoteDevice(deviceAddress);
                     return true;
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Log.Error(ex, "Failed to disconnect wireless device.");
                     return false;
                 }
             }
-            else
+
+            try
             {
-                try
-                {
-                    var ohmy = device.ToUsbPnPDevice();
-                    Log.Logger.Debug($"Power cycling device's USB port");
-                    ohmy.CyclePort();
-                    return true;
-                }
-                catch (Exception e)
-                {
-                    Log.Logger.Error(e,$"Failed to power cycle device's USB port");
-                    return false;
-                }
+                UsbPnPDevice? usbPnPDevice = device.ToUsbPnPDevice();
+                Log.Logger.Debug("Power cycling device's USB port");
+                usbPnPDevice.CyclePort();
+                return true;
+            }
+            catch (Exception e)
+            {
+                Log.Logger.Error(e, "Failed to power cycle device's USB port");
+                return false;
             }
         }
 

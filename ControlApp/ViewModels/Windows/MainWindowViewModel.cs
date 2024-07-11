@@ -32,7 +32,7 @@ public partial class MainWindowViewModel : ObservableObject
     };
 
     [ObservableProperty]
-    private bool _IsAppElevated = SecurityUtil.IsElevated;
+    private bool _isAppElevated = SecurityUtil.IsElevated;
 
     [ObservableProperty]
     private ObservableCollection<object> _menuItems = new()
@@ -62,7 +62,7 @@ public partial class MainWindowViewModel : ObservableObject
         _appSnackbarMessagesService = appSnackbarMessagesService;
         if (IsAppElevated)
         {
-            ApplicationTitle += " [Administrador]";
+            ApplicationTitle += " [Administrator]";
         }
     }
 
