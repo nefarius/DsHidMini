@@ -9,7 +9,7 @@ public static class SecurityUtil
         get
         {
             SecurityIdentifier? securityIdentifier = WindowsIdentity.GetCurrent().Owner;
-            return !(securityIdentifier is null) && securityIdentifier
+            return securityIdentifier is not null && securityIdentifier
                 .IsWellKnown(WellKnownSidType.BuiltinAdministratorsSid);
         }
     }
