@@ -154,7 +154,10 @@
 								Style="{StaticResource MyKey_StatusSymbol}"
 								Symbol="{Binding LastPairingStatusIcon}"
 								Visibility="{Binding IsWireless, Converter={StaticResource BoolToVis_TH_FV}}" />
-							<ui:Button Margin="10,0,0,0" DockPanel.Dock="Right">
+							<ui:Button
+								Margin="10,0,0,0"
+								Command="{Binding PairingHelpButtonPressedCommand}"
+								DockPanel.Dock="Right">
 								<ui:Button.Content>
 									<ui:SymbolIcon
 										DockPanel.Dock="Right"

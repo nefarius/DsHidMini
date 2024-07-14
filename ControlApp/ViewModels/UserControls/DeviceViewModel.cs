@@ -483,6 +483,38 @@ Wait 2 or 5 seconds before hitting ok to check for results.",
                 }
             );
         }
+        [RelayCommand]
+        private async void PairingHelpButtonPressed()
+        {
+            ContentDialogResult result = await ShowPairingHelpInfoDialog();
+            if(result == ContentDialogResult.Primary)
+            {
+                // to-do: open bluetooth pairing troubleshooting page
+            }
+
+        }
+
+        private async Task<ContentDialogResult> ShowPairingHelpInfoDialog()
+        {
+            var result = await _contentDialogService.ShowSimpleDialogAsync(
+                new SimpleContentDialogCreateOptions()
+                {
+                    Title = "Bluetooth pairing info",
+                    Content = @"➤ Pairing is only possible when connected via USB.
+
+➤ NEVER TRY PAIRING A PS3 CONTROLLER VIA WINDOWS' BLUETOOTH SETTINGS MENU!! Pairing is done by the DsHidMini driver itself.
+
+➤ Pairing happens automatically when connecting via USB or when using the ""Pair now"" button, unless pairing has been set to ""Disabled"".
+
+➤ The BthPS3 driver is required to be installed and operating for Windows to allow paired controllers to connect.
+
+➤ If in ""To this PC"" mode, the PC's bluetooth adapter must be enabled and turned ON for pairing to succeed.",
+                    PrimaryButtonText = "I need more help!",
+                    CloseButtonText = "Close",
+                }
+            );
+            return result;
+        }
     }
 
 }
