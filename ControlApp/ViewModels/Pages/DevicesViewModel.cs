@@ -3,19 +3,13 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using Nefarius.DsHidMini.ControlApp.Models.Drivers;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.Utilities.DeviceManagement.PnP;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 
 using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Services;
 using Wpf.Ui.Controls;
-using Newtonsoft.Json.Linq;
-
-using Serilog;
-
 using Wpf.Ui;
 using Wpf.Ui.Extensions;
 
@@ -28,7 +22,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         /// <summary>
         ///     List of detected devices.
         /// </summary>
-        public ObservableCollection<DeviceViewModel> Devices { get; set; } = new();
+        public ObservableCollection<UserControls.DeviceViewModel> Devices { get; set; } = new();
 
         private readonly DshmDevMan _dshmDevMan;
         private readonly DshmConfigManager _dshmConfigManager;
@@ -39,7 +33,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         /// <summary>
         ///     Currently selected device, if any.
         /// </summary>
-        [ObservableProperty] private DeviceViewModel? _selectedDevice;
+        [ObservableProperty] private UserControls.DeviceViewModel? _selectedDevice;
 
         /// <summary>
         ///     Is a device currently selected.
@@ -63,7 +57,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         }
 
 
-        partial void OnSelectedDeviceChanged(DeviceViewModel? value)
+        partial void OnSelectedDeviceChanged(UserControls.DeviceViewModel? value)
         {
             AnyDeviceSelected = (value != null);
         }
@@ -71,7 +65,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         public void OnNavigatedTo()
         {
             Log.Logger.Debug("Navigating to Devices page. Refreshing dynamic properties of each connected Device ViewModel.");
-            foreach(DeviceViewModel device in Devices)
+            foreach(UserControls.DeviceViewModel device in Devices)
             {
                 device.RefreshDeviceSettings();
             }
@@ -95,11 +89,11 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         public void ReconnectAllDevices()
         {
             bool oneOrMoreFails = false;
-            foreach (DeviceViewModel devVM in Devices)
+            foreach (UserControls.DeviceViewModel devVM in Devices)
             {
                 if (devVM.IsHidModeMismatched)
                 {
-                    if (!_dshmDevMan.TryReconnectDevice(devVM.Device)){
+                    if (!DshmDevMan.TryReconnectDevice(devVM.Device)){
                         oneOrMoreFails = true;
                     }
                 }
@@ -125,7 +119,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         {
             Log.Logger.Debug("Checking for devices in non-expected Hid Mode");
             bool mismatchedRemains = false;
-            foreach (DeviceViewModel devVM in Devices)
+            foreach (UserControls.DeviceViewModel devVM in Devices)
             {
                 if (devVM.IsHidModeMismatched)
                 {
@@ -174,7 +168,7 @@ Reconnect the pending devices to make this change effective.",
                 Devices.Clear();
                 foreach (PnPDevice device in _dshmDevMan.Devices)
                 {
-                    Devices.Add(new DeviceViewModel(device, _dshmDevMan, _dshmConfigManager, _appSnackbarMessagesService, _contentDialogService));
+                    Devices.Add(new UserControls.DeviceViewModel(device, _dshmDevMan, _dshmConfigManager, _appSnackbarMessagesService, _contentDialogService));
                 }
             }));
         }

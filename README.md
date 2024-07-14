@@ -6,7 +6,7 @@ Virtual HID Mini-user-mode driver for Sony DualShock 3 Controllers
 
 ## 🚨 What to expect with Version 3 🚨
 
-Next major version is in progress! Here's an overview of what you'll get:
+Next major version [**is available** for Beta-testing](https://github.com/nefarius/DsHidMini/releases/tag/setup-v3.0.3)! Here's an overview of what you'll get:
 
 - New driver installer
 - New configuration app
@@ -21,8 +21,6 @@ Next major version is in progress! Here's an overview of what you'll get:
 - Configure flipping/inverting axes
 - Proper **Xbox One Emulation** out-of-the-box
 - ...and maybe more?
-
-Stay tuned!
 
 You can also follow development progress [on Discord](https://discord.nefarius.at/) or get notified when a release happens [on Mastodon](https://fosstodon.org/@Nefarius).
 
