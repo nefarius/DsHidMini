@@ -25,6 +25,10 @@
                 x:Key="BoolToVis_TV_FH"
                 False="Hidden"
                 True="Visible" />
+            <helpers:BooleanToVisibilityConverter
+                x:Key="BoolToVis_TH_FV"
+                False="Visible"
+                True="Hidden" />
             <ResourceDictionary.MergedDictionaries>
                 <ui:ThemesDictionary Theme="Dark" />
                 <ui:ControlsDictionary />
