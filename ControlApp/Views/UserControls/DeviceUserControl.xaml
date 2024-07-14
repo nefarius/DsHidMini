@@ -155,10 +155,15 @@
 								Symbol="{Binding LastPairingStatusIcon}" />
 							<ui:Button
 								Margin="10,0,0,0"
+								VerticalAlignment="Stretch"
 								Command="{Binding TriggerPairingOnHotReloadCommand}"
 								Content="Pair now"
 								DockPanel.Dock="Right" />
-							<ComboBox x:Name="PairingModeComboBox" SelectedIndex="{Binding PairingMode}">
+
+							<ComboBox
+								x:Name="PairingModeComboBox"
+								VerticalAlignment="Stretch"
+								SelectedIndex="{Binding PairingMode}">
 								<ComboBoxItem Content="To this PC" />
 								<ComboBoxItem Content="Custom MAC address" />
 								<ComboBoxItem Content="Disabled" />
