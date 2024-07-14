@@ -13,6 +13,7 @@
             <BitmapImage x:Key="AltRumbleModeImage" UriSource="\Resources\AltRumbleMode.png" />
             <helpers:VisibilityPerHidModeConverter x:Key="VisibilityPerHIDModeConverterKey" />
             <BooleanToVisibilityConverter x:Key="BoolToVis" />
+            <helpers:BooleanToReverseConverter x:Key="BoolInverter" />
             <helpers:BooleanToVisibilityConverter
                 x:Key="BoolToVis_TC_FV"
                 False="Visible"
