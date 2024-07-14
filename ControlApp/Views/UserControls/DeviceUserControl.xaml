@@ -171,11 +171,13 @@
 								VerticalAlignment="Stretch"
 								Command="{Binding TriggerPairingOnHotReloadCommand}"
 								Content="Pair now"
-								DockPanel.Dock="Right" />
+								DockPanel.Dock="Right"
+								IsEnabled="{Binding IsWireless, Converter={StaticResource BoolInverter}}" />
 
 							<ComboBox
 								x:Name="PairingModeComboBox"
 								VerticalAlignment="Stretch"
+								IsEnabled="{Binding IsWireless, Converter={StaticResource BoolInverter}}"
 								SelectedIndex="{Binding PairingMode}">
 								<ComboBoxItem Content="To this PC" />
 								<ComboBoxItem Content="Custom MAC address" />
@@ -184,7 +186,10 @@
 
 						</DockPanel>
 						<!--  Custom pairing address  -->
-						<DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+						<DockPanel
+							Margin="{StaticResource MyKey_NextLineSpacement}"
+							DockPanel.Dock="Top"
+							IsEnabled="{Binding IsWireless, Converter={StaticResource BoolInverter}}">
 							<DockPanel.Style>
 								<Style TargetType="DockPanel">
 									<Setter Property="Visibility" Value="Hidden" />
