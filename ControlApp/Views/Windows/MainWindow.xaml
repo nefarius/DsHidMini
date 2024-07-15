@@ -20,12 +20,6 @@
     WindowCornerPreference="Round"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
-    <ui:FluentWindow.InputBindings>
-        <!--<KeyBinding
-            Key="F"
-            Command="{Binding ElementName=AutoSuggestBox, Path=FocusCommand}"
-            Modifiers="Control" />-->
-    </ui:FluentWindow.InputBindings>
 
     <DockPanel>
         <DockPanel DockPanel.Dock="Top">
@@ -38,7 +32,6 @@
             <ui:TitleBar
                 x:Name="TitleBar"
                 Title="{Binding ViewModel.ApplicationTitle}"
-                Grid.Row="0"
                 CloseWindowByDoubleClickOnIcon="False"
                 DockPanel.Dock="Left">
                 <ui:TitleBar.Icon>
@@ -85,11 +78,6 @@
                 Grid.Row="0"
                 Grid.ColumnSpan="2" />
         </Grid>
-
-
-
-
-
 
 
     </DockPanel>

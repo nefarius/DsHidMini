@@ -3,9 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:helpers="clr-namespace:Nefarius.DsHidMini.ControlApp.Helpers"
     xmlns:local="clr-namespace:Nefarius.DsHidMini.ControlApp.Views.Pages"
-    xmlns:manaenum="clr-namespace:Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:viewuserctrls="clr-namespace:Nefarius.DsHidMini.ControlApp.Views.UserControls"
@@ -20,7 +18,6 @@
     ScrollViewer.CanContentScroll="False"
     mc:Ignorable="d">
     <Page.Resources>
-        <Thickness x:Key="MyKey_NextLineSpacement" Bottom="10" />
         <DataTemplate x:Key="MyKey_DeviceStatusSummary" DataType="{x:Type viewuserctrls:DeviceUserControl}" />
     </Page.Resources>
     <Grid VerticalAlignment="Stretch">
@@ -124,10 +121,13 @@
                                                                 Foreground="White">
                                                                 <ui:SymbolIcon.Style>
                                                                     <Style TargetType="ui:SymbolIcon">
-                                                                        <Setter Property="Symbol" Value="ArrowClockWise24" />
+                                                                        <Setter Property="Symbol"
+                                                                            Value="ArrowClockWise24" />
                                                                         <Style.Triggers>
-                                                                            <DataTrigger Binding="{Binding IsWireless}" Value="True">
-                                                                                <Setter Property="Symbol" Value="Power24" />
+                                                                            <DataTrigger Binding="{Binding IsWireless}"
+                                                                                Value="True">
+                                                                                <Setter Property="Symbol"
+                                                                                    Value="Power24" />
                                                                             </DataTrigger>
                                                                         </Style.Triggers>
                                                                     </Style>
@@ -150,7 +150,6 @@
                                 </Grid>
                             </Viewbox>
                         </ui:Card>
-
 
 
                     </DataTemplate>
@@ -180,10 +179,10 @@
             VerticalAlignment="Stretch"
             VerticalContentAlignment="Stretch">
             <Grid>
-                <ContentControl Visibility="{Binding ViewModel.AnyDeviceSelected, Converter={StaticResource BoolToVis}}">
+                <ContentControl
+                    Visibility="{Binding ViewModel.AnyDeviceSelected, Converter={StaticResource BoolToVis}}">
                     <viewuserctrls:DeviceUserControl DataContext="{Binding ViewModel.SelectedDevice}" />
                 </ContentControl>
-
 
 
             </Grid>

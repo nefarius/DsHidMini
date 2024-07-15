@@ -117,7 +117,8 @@
                     IsChecked="{Binding PreventRemappingConflictsInDS4WMode}"
                     Visibility="{Binding Path=Context, Converter={StaticResource VisibilityPerHIDModeConverterKey}, ConverterParameter=1000}" />
                 <!--  Pressure buttons mode  -->
-                <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" Visibility="{Binding Path=Context, Converter={StaticResource VisibilityPerHIDModeConverterKey}, ConverterParameter=11}">
+                <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}"
+                           Visibility="{Binding Path=Context, Converter={StaticResource VisibilityPerHIDModeConverterKey}, ConverterParameter=11}">
                     <Label
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center"
@@ -130,7 +131,8 @@
                         SelectedItem="{Binding PressureExposureMode, FallbackValue=2}" />
                 </DockPanel>
                 <!--  DPAD modes  -->
-                <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" Visibility="{Binding Path=Context, Converter={StaticResource VisibilityPerHIDModeConverterKey}, ConverterParameter=11}">
+                <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}"
+                           Visibility="{Binding Path=Context, Converter={StaticResource VisibilityPerHIDModeConverterKey}, ConverterParameter=11}">
                     <Label
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center"
@@ -171,7 +173,8 @@
                         </ComboBox>
 
                     </DockPanel>
-                    <TabControl HorizontalAlignment="Stretch" SelectedIndex="{Binding SelectedIndex, ElementName=LEDModeComboBox}">
+                    <TabControl HorizontalAlignment="Stretch"
+                                SelectedIndex="{Binding SelectedIndex, ElementName=LEDModeComboBox}">
                         <!--  Index 0: LEDs as battery - single led  -->
                         <TabItem Visibility="Collapsed" />
                         <!--  Index 1: LEDs as battery - filling bar  -->
@@ -204,7 +207,8 @@
                                     <TabItem Width="50" Header="4" />
                                 </TabControl>
                                 <!--  LED fine tuning  -->
-                                <StackPanel Margin="{StaticResource MyKey_NextLineSpacement}" DataContext="{Binding SelectedLED_VM}">
+                                <StackPanel Margin="{StaticResource MyKey_NextLineSpacement}"
+                                            DataContext="{Binding SelectedLED_VM}">
                                     <ui:ToggleSwitch
                                         Margin="{StaticResource MyKey_NextLineSpacement}"
                                         Content="Enable LED"
@@ -354,28 +358,6 @@
         </DataTemplate>
 
         <!--  Template draft  -->
-        <DataTemplate x:Key="Template_ToDo">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition />
-                    <ColumnDefinition />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition />
-                    <RowDefinition />
-                </Grid.RowDefinitions>
-                <Label
-                    Grid.Row="0"
-                    Grid.Column="0"
-                    VerticalAlignment="Center"
-                    Content="Fill 1" />
-                <Label
-                    Grid.Row="1"
-                    Grid.Column="0"
-                    VerticalAlignment="Center"
-                    Content="Fill 2" />
-            </Grid>
-        </DataTemplate>
 
         <!--  Template: sticks deadzone  -->
         <DataTemplate DataType="{x:Type deviceSettings:SticksSettingsViewModel}">
@@ -476,7 +458,8 @@
                         <Style TargetType="Image">
                             <Setter Property="Source" Value="{StaticResource NormalRumbleModeImage}" />
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsChecked, ElementName=AltModeEnabler_ToggleSwitch}" Value="True">
+                                <DataTrigger Binding="{Binding IsChecked, ElementName=AltModeEnabler_ToggleSwitch}"
+                                             Value="True">
                                     <Setter Property="Source" Value="\Resources\AltRumbleMode.png" />
                                 </DataTrigger>
                             </Style.Triggers>
@@ -489,7 +472,8 @@
                     Content="Enable alternative mode"
                     DockPanel.Dock="Top"
                     IsChecked="{Binding IsAltModeEnabled}" />
-                <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" Visibility="{Binding IsAltModeEnabled, Converter={StaticResource BoolToVis_TC_FV}}">
+                <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}"
+                           Visibility="{Binding IsAltModeEnabled, Converter={StaticResource BoolToVis_TC_FV}}">
                     <!--  Rumble motors disablers  -->
                     <ui:ToggleSwitch
                         Margin="{StaticResource MyKey_NextLineSpacement}"
@@ -502,7 +486,8 @@
                         DockPanel.Dock="Top"
                         IsChecked="{Binding IsRightMotorDisabled}" />
                 </DockPanel>
-                <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" Visibility="{Binding IsAltModeEnabled, Converter={StaticResource BoolToVis}}">
+                <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}"
+                           Visibility="{Binding IsAltModeEnabled, Converter={StaticResource BoolToVis}}">
                     <ui:ToggleSwitch
                         x:Name="AltModeCombo_ToggleSwitch"
                         Content="Enable toggling Alt Mode via button combo"
@@ -513,7 +498,8 @@
                         ContentTemplate="{StaticResource MyKey_ButtonsComboTemplate}"
                         DockPanel.Dock="Top"
                         IsEnabled="{Binding IsChecked, ElementName=AltModeCombo_ToggleSwitch}" />
-                    <DockPanel DockPanel.Dock="Top" Visibility="{Binding IsChecked, ElementName=AltModeCombo_ToggleSwitch, Converter={StaticResource BoolToVis_TV_FH}}">
+                    <DockPanel DockPanel.Dock="Top"
+                               Visibility="{Binding IsChecked, ElementName=AltModeCombo_ToggleSwitch, Converter={StaticResource BoolToVis_TV_FH}}">
                         <ui:ToggleSwitch
                             Margin="{StaticResource MyKey_NextLineSpacement}"
                             DockPanel.Dock="Top"
@@ -723,9 +709,6 @@
         </DataTemplate>
 
 
-
-
-
         <!--#endregion-->
         <Style BasedOn="{StaticResource {x:Type Label}}" TargetType="Label">
             <Setter Property="VerticalAlignment" Value="Center" />
@@ -770,15 +753,12 @@
                             Severity="Error" />
                         <ContentControl
                             Content="{Binding OutRepSettingsVM}"
-                            DockPanel.Dock="Top"
                             Style="{StaticResource SetGroupItem}" />
                         <ContentControl
                             Content="{Binding LeftMotorRescaleSettingsVM}"
-                            DockPanel.Dock="Top"
                             Style="{StaticResource SetGroupItem}" />
                         <ContentControl
                             Content="{Binding AltRumbleSettingsVM}"
-                            DockPanel.Dock="Top"
                             Style="{StaticResource SetGroupItem}" />
                     </DockPanel>
                 </ui:CardExpander.Content>

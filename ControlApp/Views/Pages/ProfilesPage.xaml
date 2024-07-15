@@ -20,10 +20,6 @@
     mc:Ignorable="d">
     <Page.Resources>
         <helpers:BooleanToReverseConverter x:Key="BooleanToReverseConverterKey" />
-        <helpers:BooleanToVisibilityConverter
-            x:Key="BoolToVisConverter_TCollapsed_FVisible"
-            False="Visible"
-            True="Collapsed" />
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
     </Page.Resources>
 
