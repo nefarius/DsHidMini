@@ -153,13 +153,33 @@
 								DockPanel.Dock="Right"
 								FontSize="{StaticResource MyKey_SymbolFontSize}"
 								Style="{StaticResource MyKey_StatusSymbol}"
-								Symbol="{Binding LastPairingStatusIcon}" />
+								Symbol="{Binding LastPairingStatusIcon}"
+								Visibility="{Binding IsWireless, Converter={StaticResource BoolToVis_TH_FV}}" />
 							<ui:Button
 								Margin="10,0,0,0"
+								Command="{Binding PairingHelpButtonPressedCommand}"
+								DockPanel.Dock="Right">
+								<ui:Button.Content>
+									<ui:SymbolIcon
+										DockPanel.Dock="Right"
+										FontSize="{StaticResource MyKey_SymbolFontSize}"
+										IsEnabled="True"
+										Symbol="QuestionCircle24" />
+								</ui:Button.Content>
+							</ui:Button>
+							<ui:Button
+								Margin="10,0,0,0"
+								VerticalAlignment="Stretch"
 								Command="{Binding TriggerPairingOnHotReloadCommand}"
 								Content="Pair now"
-								DockPanel.Dock="Right" />
-							<ComboBox x:Name="PairingModeComboBox" SelectedIndex="{Binding PairingMode}">
+								DockPanel.Dock="Right"
+								IsEnabled="{Binding IsWireless, Converter={StaticResource BoolInverter}}" />
+
+							<ComboBox
+								x:Name="PairingModeComboBox"
+								VerticalAlignment="Stretch"
+								IsEnabled="{Binding IsWireless, Converter={StaticResource BoolInverter}}"
+								SelectedIndex="{Binding PairingMode}">
 								<ComboBoxItem Content="To this PC" />
 								<ComboBoxItem Content="Custom MAC address" />
 								<ComboBoxItem Content="Disabled" />
@@ -167,7 +187,10 @@
 
 						</DockPanel>
 						<!--  Custom pairing address  -->
-						<DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+						<DockPanel
+							Margin="{StaticResource MyKey_NextLineSpacement}"
+							DockPanel.Dock="Top"
+							IsEnabled="{Binding IsWireless, Converter={StaticResource BoolInverter}}">
 							<DockPanel.Style>
 								<Style TargetType="DockPanel">
 									<Setter Property="Visibility" Value="Hidden" />
