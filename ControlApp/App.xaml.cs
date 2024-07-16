@@ -70,6 +70,12 @@ public partial class App
                 .CreateLogger();
 
             services.AddSerilog(Log.Logger);
+
+            services.AddHttpClient("Buildbot", client =>
+            {
+                client.BaseAddress = new Uri("https://buildbot.nefarius.at/");
+                client.DefaultRequestHeaders.UserAgent.ParseAdd(context.HostingEnvironment.ApplicationName);
+            });
         }).Build();
 
     /// <summary>
