@@ -4,25 +4,20 @@
 // All Rights Reserved.
 
 using Nefarius.DsHidMini.ControlApp.ViewModels.Pages;
+
 using Wpf.Ui.Controls;
 
-namespace Nefarius.DsHidMini.ControlApp.Views.Pages
+namespace Nefarius.DsHidMini.ControlApp.Views.Pages;
+
+public partial class DevicesPage : INavigableView<DevicesViewModel>
 {
-    public partial class DevicesPage : INavigableView<DevicesViewModel>
+    public DevicesPage(DevicesViewModel viewModel)
     {
-        public DevicesViewModel ViewModel { get; }
+        ViewModel = viewModel;
+        DataContext = this;
 
-        public DevicesPage(DevicesViewModel viewModel)
-        {
-            ViewModel = viewModel;
-            DataContext = this;
-
-            InitializeComponent();
-        }
-
-        private void ListView_Scroll(object sender, System.Windows.Controls.Primitives.ScrollEventArgs e)
-        {
-
-        }
+        InitializeComponent();
     }
+
+    public DevicesViewModel ViewModel { get; }
 }
