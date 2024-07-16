@@ -63,7 +63,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         
         public void OnNavigatedFrom() 
         {
-            if(SelectedProfileVM != null && SelectedProfileVM.IsEditEnabled)
+            if(SelectedProfileVM is { IsEditEnabled: true })
             {
                 Log.Logger.Information("Navigated away from Profiles page mid-edition. Canceling changes.");
                 SelectedProfileVM.CancelChanges();
@@ -83,7 +83,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages
         }
 
         [RelayCommand]
-        private void SetprofileAsGlobal(UserControls.ProfileViewModel? obj)
+        private void SetProfileAsGlobal(UserControls.ProfileViewModel? obj)
         {
             if (obj != null)
             {

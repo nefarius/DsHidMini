@@ -82,7 +82,7 @@
                     Margin="2"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"
-                    Command="{Binding ViewModel.SetprofileAsGlobalCommand}"
+                    Command="{Binding ViewModel.SetProfileAsGlobalCommand}"
                     CommandParameter="{Binding ViewModel.SelectedProfileVM}">
                     <Button.Content>
                         <ui:TextBlock Text="Set as global" />

@@ -8,31 +8,37 @@ public partial class ProfileViewModel : ObservableObject
     private readonly AppSnackbarMessagesService _appSnackbarMessagesService;
     private readonly DshmConfigManager _dshmConfigManager;
 
-    public ProfileData ProfileData { get; }
+    [ObservableProperty]
+    private bool _isGlobal;
 
-    [ObservableProperty] private string _name;
-    [ObservableProperty] private SettingsEditorViewModel _vmGroupsCont;
-    [ObservableProperty] private bool _isGlobal = false;
+    [ObservableProperty]
+    private string _name;
 
-    public bool IsEditEnabled
-    {
-        get => _vmGroupsCont.AllowEditing;
-        private set
-        {
-            Log.Logger.Information($"Edition of profile '{ProfileData.ProfileName}' ({ProfileData.ProfileGuid}) set to {value}");
-            _vmGroupsCont.AllowEditing = value;
-            this.OnPropertyChanged(nameof(IsEditEnabled));
-        }
-    }
+    [ObservableProperty]
+    private SettingsEditorViewModel _vmGroupsCont;
 
-
-    public ProfileViewModel(ProfileData data, AppSnackbarMessagesService appSnackbarMessagesService, DshmConfigManager dshmConfigManager)
+    public ProfileViewModel(ProfileData data, AppSnackbarMessagesService appSnackbarMessagesService,
+        DshmConfigManager dshmConfigManager)
     {
         _dshmConfigManager = dshmConfigManager;
         _appSnackbarMessagesService = appSnackbarMessagesService;
         ProfileData = data;
         _name = data.ProfileName;
-        _vmGroupsCont = new(data.Settings);
+        _vmGroupsCont = new SettingsEditorViewModel(data.Settings);
+    }
+
+    public ProfileData ProfileData { get; }
+
+    public bool IsEditEnabled
+    {
+        get => VmGroupsCont.AllowEditing;
+        private set
+        {
+            Log.Logger.Information(
+                $"Edition of profile '{ProfileData.ProfileName}' ({ProfileData.ProfileGuid}) set to {value}");
+            VmGroupsCont.AllowEditing = value;
+            OnPropertyChanged();
+        }
     }
 
     [RelayCommand]
@@ -43,6 +49,7 @@ public partial class ProfileViewModel : ObservableObject
             _appSnackbarMessagesService.ShowDefaultProfileEditingBlockedMessage();
             return;
         }
+
         IsEditEnabled = true;
     }
 
@@ -50,16 +57,16 @@ public partial class ProfileViewModel : ObservableObject
     public void SaveChanges()
     {
         Log.Logger.Information($"Saving changes to profile '{ProfileData.ProfileName}' ({ProfileData.ProfileGuid})");
-        if(string.IsNullOrEmpty(_name))
+        if (string.IsNullOrEmpty(Name))
         {
             Log.Logger.Debug("New profile name is null or empty. Setting name to generic one.");
             Name = "User Profile";
         }
 
-        if (ProfileData.ProfileName != _name)
+        if (ProfileData.ProfileName != Name)
         {
-            Log.Logger.Information($"Profile name changed from '{ProfileData.ProfileName}' to '{_name}'");
-            ProfileData.ProfileName = _name;
+            Log.Logger.Information($"Profile name changed from '{ProfileData.ProfileName}' to '{Name}'");
+            ProfileData.ProfileName = Name;
         }
 
         VmGroupsCont.SaveAllChangesToBackingData(ProfileData.Settings);
