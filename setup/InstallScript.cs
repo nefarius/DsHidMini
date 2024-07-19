@@ -134,7 +134,7 @@ internal class InstallScript
             OutFileName = $"Nefarius_DsHidMini_Drivers_x64_arm64_v{version}",
             Version = version,
             Platform = Platform.x64,
-            GUID = new Guid("6fe30b47-2577-43ad-9095-1861ba25889b"),
+            GUID = new Guid("25784100-B9AA-4205-8D54-CA53717F6AC5"),
             LicenceFile = "EULA.rtf",
             WildCardDedup = Project.UniqueFileNameDedup,
             MajorUpgradeStrategy = MajorUpgradeStrategy.Default,
