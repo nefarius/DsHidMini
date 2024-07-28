@@ -161,8 +161,8 @@ DWORD WINAPI GlobalState::InitAsync(_In_ LPVOID lpParameter)
 
 	const auto resource = sdkresource::Resource::Create(resourceAttributes);
 	auto traceExporter = otlp::OtlpGrpcExporterFactory::Create();
-	auto traceProcessor = sdktrace::SimpleSpanProcessorFactory::Create(std::move(traceExporter));
-	const std::shared_ptr traceProvider = sdktrace::TracerProviderFactory::Create(std::move(traceProcessor), resource);
+	std::unique_ptr<opentelemetry::sdk::trace::SpanProcessor> traceProcessor = sdktrace::SimpleSpanProcessorFactory::Create(std::move(traceExporter));
+	std::shared_ptr<trace::TracerProvider> traceProvider = sdktrace::TracerProviderFactory::Create(std::move(traceProcessor), resource);
 
 	trace::Provider::SetTracerProvider(traceProvider);
 
@@ -172,7 +172,7 @@ DWORD WINAPI GlobalState::InitAsync(_In_ LPVOID lpParameter)
 
 	auto loggerExporter = otlp::OtlpGrpcLogRecordExporterFactory::Create();
 	auto loggerProcessor = sdklogs::SimpleLogRecordProcessorFactory::Create(std::move(loggerExporter));
-	const std::shared_ptr loggerProvider = sdklogs::LoggerProviderFactory::Create(std::move(loggerProcessor), resource);
+	std::shared_ptr<logs::LoggerProvider> loggerProvider = sdklogs::LoggerProviderFactory::Create(std::move(loggerProcessor), resource);
 
 	logs::Provider::SetLoggerProvider(loggerProvider);
 
