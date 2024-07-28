@@ -81,7 +81,6 @@
                     ClearButtonEnabled="False"
                     Maximum="5"
                     Minimum="{Binding MinHoldTime}"
-                    Text="{Binding HoldTime}"
                     Value="{Binding HoldTime}" />
             </DockPanel>
         </DataTemplate>
