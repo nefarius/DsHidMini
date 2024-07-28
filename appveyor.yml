@@ -44,9 +44,9 @@ before_build:
 - cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\sys\dshidmini.vcxproj" --vcxproj.inf-time-stamp
 - cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\sys\dshidmini.rc" --resource.file-version --resource.product-version
 - cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\XInputBridge\XInputBridge.rc" --resource.file-version --resource.product-version
+- cmd: dotnet restore .\ControlApp\
 build_script:
 - cmd: .\build.cmd
-- cmd: if %PLATFORM%==x64 dotnet restore .\ControlApp\
 - cmd: if %PLATFORM%==x64 dotnet publish /p:PublishProfile=Properties\PublishProfiles\release-win-x64.pubxml .\ControlApp\
 after_build:
 - cmd: if not %PLATFORM%==x86 makecab.exe /f .\DsHidMini_%PLATFORM%.ddf
