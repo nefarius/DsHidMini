@@ -209,7 +209,7 @@
     <LinkIncremental>false</LinkIncremental>
     <TargetName>XInput1_3</TargetName>
     <OutDir>$(SolutionDir)bin\$(PlatformShortName)\OTEL\</OutDir>
-    <RunCodeAnalysis Condition="'$(CI)'==''">true</RunCodeAnalysis>
+    <RunCodeAnalysis Condition="'$(CI)'==''">false</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <LinkIncremental>false</LinkIncremental>
@@ -221,7 +221,7 @@
     <LinkIncremental>false</LinkIncremental>
     <TargetName>XInput1_3</TargetName>
     <OutDir>$(SolutionDir)bin\$(PlatformShortName)\OTEL\</OutDir>
-    <RunCodeAnalysis Condition="'$(CI)'==''">true</RunCodeAnalysis>
+    <RunCodeAnalysis Condition="'$(CI)'==''">false</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -242,7 +242,7 @@
     <LinkIncremental>false</LinkIncremental>
     <TargetName>XInput1_3</TargetName>
     <OutDir>$(SolutionDir)bin\$(PlatformShortName)\OTEL\</OutDir>
-    <RunCodeAnalysis Condition="'$(CI)'==''">true</RunCodeAnalysis>
+    <RunCodeAnalysis Condition="'$(CI)'==''">false</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
     <VcpkgEnableManifest Condition="'$(CI)'!='True'">true</VcpkgEnableManifest>

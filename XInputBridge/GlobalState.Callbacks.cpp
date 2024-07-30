@@ -155,29 +155,32 @@ DWORD WINAPI GlobalState::InitAsync(_In_ LPVOID lpParameter)
 	// Set up tracing
 	// 
 
-	const auto resourceAttributes = opentelemetry::sdk::resource::ResourceAttributes{
+	opentelemetry::sdk::resource::ResourceAttributes resourceAttributes = opentelemetry::sdk::resource::ResourceAttributes{
 		{ opentelemetry::sdk::resource::SemanticConventions::kServiceName, TRACER_NAME }
 	};
 
-	const auto resource = opentelemetry::sdk::resource::Resource::Create(resourceAttributes);
-	auto traceExporter = otlp::OtlpGrpcExporterFactory::Create();
-	std::unique_ptr<opentelemetry::sdk::trace::SpanProcessor> traceProcessor = opentelemetry::sdk::trace::SimpleSpanProcessorFactory::Create(
+	opentelemetry::sdk::resource::Resource resource = opentelemetry::sdk::resource::Resource::Create(resourceAttributes);
+	std::unique_ptr<trace_sdk::SpanExporter> traceExporter = otlp::OtlpGrpcExporterFactory::Create();
+	std::unique_ptr<trace_sdk::SpanProcessor> traceProcessor = trace_sdk::SimpleSpanProcessorFactory::Create(
 		std::move(traceExporter));
-	std::shared_ptr<opentelemetry::sdk::trace::TracerProvider> traceProvider = opentelemetry::sdk::trace::TracerProviderFactory::Create(
+	std::shared_ptr<trace_sdk::TracerProvider> traceProvider = trace_sdk::TracerProviderFactory::Create(
 		std::move(traceProcessor), resource);
 
-	//trace::Provider::SetTracerProvider(traceProvider);
+	std::shared_ptr<trace::TracerProvider> api_provider = traceProvider;
+	trace::Provider::SetTracerProvider(api_provider);
 
 	//
 	// Set up logger
 	// 
 
+	/*
 	auto loggerExporter = otlp::OtlpGrpcLogRecordExporterFactory::Create();
 	auto loggerProcessor = logs_sdk::SimpleLogRecordProcessorFactory::Create(std::move(loggerExporter));
 	std::shared_ptr<opentelemetry::sdk::logs::LoggerProvider> loggerProvider = logs_sdk::LoggerProviderFactory::Create(
 		std::move(loggerProcessor), resource);
 
-	//logs::Provider::SetLoggerProvider(loggerProvider);
+	logs::Provider::SetLoggerProvider(loggerProvider);
+	*/
 
 	LOG_INFO("Library got loaded into PID {}", GetCurrentProcessId());
 #endif
