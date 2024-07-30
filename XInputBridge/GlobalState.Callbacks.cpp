@@ -155,26 +155,29 @@ DWORD WINAPI GlobalState::InitAsync(_In_ LPVOID lpParameter)
 	// Set up tracing
 	// 
 
-	const auto resourceAttributes = sdkresource::ResourceAttributes{
+	const auto resourceAttributes = opentelemetry::sdk::resource::ResourceAttributes{
 		{ opentelemetry::sdk::resource::SemanticConventions::kServiceName, TRACER_NAME }
 	};
 
-	const auto resource = sdkresource::Resource::Create(resourceAttributes);
+	const auto resource = opentelemetry::sdk::resource::Resource::Create(resourceAttributes);
 	auto traceExporter = otlp::OtlpGrpcExporterFactory::Create();
-	std::unique_ptr<opentelemetry::sdk::trace::SpanProcessor> traceProcessor = sdktrace::SimpleSpanProcessorFactory::Create(std::move(traceExporter));
-	std::shared_ptr<trace::TracerProvider> traceProvider = sdktrace::TracerProviderFactory::Create(std::move(traceProcessor), resource);
+	std::unique_ptr<opentelemetry::sdk::trace::SpanProcessor> traceProcessor = opentelemetry::sdk::trace::SimpleSpanProcessorFactory::Create(
+		std::move(traceExporter));
+	std::shared_ptr<opentelemetry::sdk::trace::TracerProvider> traceProvider = opentelemetry::sdk::trace::TracerProviderFactory::Create(
+		std::move(traceProcessor), resource);
 
-	trace::Provider::SetTracerProvider(traceProvider);
+	//trace::Provider::SetTracerProvider(traceProvider);
 
 	//
 	// Set up logger
 	// 
 
 	auto loggerExporter = otlp::OtlpGrpcLogRecordExporterFactory::Create();
-	auto loggerProcessor = sdklogs::SimpleLogRecordProcessorFactory::Create(std::move(loggerExporter));
-	std::shared_ptr<logs::LoggerProvider> loggerProvider = sdklogs::LoggerProviderFactory::Create(std::move(loggerProcessor), resource);
+	auto loggerProcessor = logs_sdk::SimpleLogRecordProcessorFactory::Create(std::move(loggerExporter));
+	std::shared_ptr<opentelemetry::sdk::logs::LoggerProvider> loggerProvider = logs_sdk::LoggerProviderFactory::Create(
+		std::move(loggerProcessor), resource);
 
-	logs::Provider::SetLoggerProvider(loggerProvider);
+	//logs::Provider::SetLoggerProvider(loggerProvider);
 
 	LOG_INFO("Library got loaded into PID {}", GetCurrentProcessId());
 #endif

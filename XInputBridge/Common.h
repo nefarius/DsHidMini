@@ -46,13 +46,7 @@
 #include <opentelemetry/sdk/resource/resource.h>
 #include <opentelemetry/sdk/resource/semantic_conventions.h>
 #include <opentelemetry/trace/provider.h>
-#include <opentelemetry/sdk/trace/tracer_provider.h>
-
-namespace trace			= opentelemetry::trace;
-namespace nostd			= opentelemetry::nostd;
-namespace sdktrace		= opentelemetry::sdk::trace;
-namespace otlp			= opentelemetry::exporter::otlp;
-namespace sdkresource	= opentelemetry::sdk::resource;
+#include <opentelemetry/trace/tracer_provider.h>
 
 // gRPC exporter
 #include <opentelemetry/exporters/otlp/otlp_grpc_log_record_exporter_factory.h>
@@ -65,7 +59,11 @@ namespace sdkresource	= opentelemetry::sdk::resource;
 #include <opentelemetry/sdk/logs/processor.h>
 #include <opentelemetry/sdk/logs/simple_log_record_processor_factory.h>
 
-namespace sdklogs		= opentelemetry::sdk::logs;
-namespace logs			= opentelemetry::logs;
+namespace trace     = opentelemetry::trace;
+namespace nostd     = opentelemetry::nostd;
+namespace otlp      = opentelemetry::exporter::otlp;
+namespace logs_sdk  = opentelemetry::sdk::logs;
+namespace logs      = opentelemetry::logs;
+namespace trace_sdk = opentelemetry::sdk::trace;
 #endif
 
