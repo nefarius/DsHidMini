@@ -245,7 +245,7 @@
     <RunCodeAnalysis Condition="'$(CI)'==''">false</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
-    <VcpkgEnableManifest Condition="'$(CI)'!='True'">true</VcpkgEnableManifest>
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_OTEL|x64'" Label="Vcpkg">

@@ -21,12 +21,6 @@ skip_commits:
     - '**/*.json'
     - 'setup/*'
 install:
-#- cmd: vcpkg integrate install
-#- cmd: vcpkg update
-# workaround for "CMake Error: Not a file: C:\tools\vcpkg\buildtrees\0.vcpkg_dep_info.cmake"
-- ps: Start-Sleep -Seconds (Get-Random -Minimum 1 -Maximum 6)
-# manifest mode takes forever to build each commit so use global copy instead
-- cmd: vcpkg install hidapi:%PLATFORM%-windows-static spdlog:%PLATFORM%-windows-static abseil:%PLATFORM%-windows-static winreg:%PLATFORM%-windows-static opentelemetry-cpp[otlp-grpc]:%PLATFORM%-windows-static
 - cmd: git submodule -q update --init
 - cmd: git clone -q https://github.com/microsoft/DMF.git C:\projects\DMF 2> nul || set ERRORLEVEL=0
 - cmd: |
