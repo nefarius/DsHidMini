@@ -155,32 +155,26 @@ DWORD WINAPI GlobalState::InitAsync(_In_ LPVOID lpParameter)
 	// Set up tracing
 	// 
 
-	opentelemetry::sdk::resource::ResourceAttributes resourceAttributes = opentelemetry::sdk::resource::ResourceAttributes{
+	const auto resourceAttributes = sdkresource::ResourceAttributes{
 		{ opentelemetry::sdk::resource::SemanticConventions::kServiceName, TRACER_NAME }
 	};
 
-	opentelemetry::sdk::resource::Resource resource = opentelemetry::sdk::resource::Resource::Create(resourceAttributes);
-	std::unique_ptr<trace_sdk::SpanExporter> traceExporter = otlp::OtlpGrpcExporterFactory::Create();
-	std::unique_ptr<trace_sdk::SpanProcessor> traceProcessor = trace_sdk::SimpleSpanProcessorFactory::Create(
-		std::move(traceExporter));
-	std::shared_ptr<trace_sdk::TracerProvider> traceProvider = trace_sdk::TracerProviderFactory::Create(
-		std::move(traceProcessor), resource);
+	const auto resource = sdkresource::Resource::Create(resourceAttributes);
+	auto traceExporter = otlp::OtlpGrpcExporterFactory::Create();
+	std::unique_ptr<opentelemetry::sdk::trace::SpanProcessor> traceProcessor = sdktrace::SimpleSpanProcessorFactory::Create(std::move(traceExporter));
+	std::shared_ptr<trace::TracerProvider> traceProvider = sdktrace::TracerProviderFactory::Create(std::move(traceProcessor), resource);
 
-	std::shared_ptr<trace::TracerProvider> api_provider = traceProvider;
-	trace::Provider::SetTracerProvider(api_provider);
+	trace::Provider::SetTracerProvider(traceProvider);
 
 	//
 	// Set up logger
 	// 
 
-	/*
 	auto loggerExporter = otlp::OtlpGrpcLogRecordExporterFactory::Create();
-	auto loggerProcessor = logs_sdk::SimpleLogRecordProcessorFactory::Create(std::move(loggerExporter));
-	std::shared_ptr<opentelemetry::sdk::logs::LoggerProvider> loggerProvider = logs_sdk::LoggerProviderFactory::Create(
-		std::move(loggerProcessor), resource);
+	auto loggerProcessor = sdklogs::SimpleLogRecordProcessorFactory::Create(std::move(loggerExporter));
+	std::shared_ptr<logs::LoggerProvider> loggerProvider = sdklogs::LoggerProviderFactory::Create(std::move(loggerProcessor), resource);
 
 	logs::Provider::SetLoggerProvider(loggerProvider);
-	*/
 
 	LOG_INFO("Library got loaded into PID {}", GetCurrentProcessId());
 #endif

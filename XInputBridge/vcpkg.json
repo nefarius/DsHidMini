@@ -10,8 +10,14 @@
     { "name": "winreg" },
     {
       "name": "opentelemetry-cpp",
-      "version": "1.14.2",
       "features": [ "otlp-grpc" ]
+    }
+  ],
+  "builtin-baseline": "5ba79678e9fc832657a3848b6993be9d5106bf5d",
+  "overrides": [
+    {
+      "name": "opentelemetry-cpp",
+      "version": "1.14.2"
     }
   ]
 }
