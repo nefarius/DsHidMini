@@ -267,17 +267,3 @@ std::optional<uint8_t> GlobalState::GetDs3HidDeviceModeProperty(const std::wstri
 
 	return hidDeviceMode;
 }
-
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-nostd::shared_ptr<trace::Tracer> GlobalState::GetTracer()
-{
-	const auto provider = trace::Provider::GetTracerProvider();
-	return provider->GetTracer(TRACER_NAME, OPENTELEMETRY_SDK_VERSION);
-}
-
-nostd::shared_ptr<logs::Logger> GlobalState::GetLogger(const std::string& name)
-{
-	const auto provider = logs::Provider::GetLoggerProvider();
-	return provider->GetLogger(name, LOGGER_NAME);
-}
-#endif
