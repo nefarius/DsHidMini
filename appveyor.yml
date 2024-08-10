@@ -11,10 +11,6 @@ platform:
 - x64
 - ARM64
 - x86
-matrix:
-  - platform: x64
-  - platform: ARM64
-  - platform: x86
 configuration:
 - Release
 skip_commits:
