@@ -15,10 +15,11 @@
         <Version>3.0.0</Version>
         <Authors>Kanuan, Nefarius</Authors>
         <Copyright>Copyright (c) 2024 Nefarius Software Solutions e.U.</Copyright>
+        <Configurations>Debug;Release</Configurations>
     </PropertyGroup>
 
     <ItemGroup>
-        <Content Include="wpfui-icon.ico"/>
+        <Content Include="wpfui-icon.ico" />
     </ItemGroup>
 
     <ItemGroup>
@@ -27,27 +28,27 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Nefarius.Utilities.Bluetooth" Version="1.4.8"/>
-        <PackageReference Include="Nefarius.Utilities.DeviceManagement" Version="3.22.0"/>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
-        <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0"/>
-        <PackageReference Include="Serilog.Sinks.File" Version="6.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0"/>
-        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2"/>
-        <PackageReference Include="WPF-UI" Version="3.0.4"/>
+        <PackageReference Include="Nefarius.Utilities.Bluetooth" Version="1.4.8" />
+        <PackageReference Include="Nefarius.Utilities.DeviceManagement" Version="3.22.0" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
+        <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+        <PackageReference Include="WPF-UI" Version="3.0.4" />
     </ItemGroup>
 
     <ItemGroup>
-        <None Remove="Assets\wpfui-icon-256.png"/>
-        <None Remove="Assets\wpfui-icon-1024.png"/>
-        <None Remove="Resources\AltRumbleMode.png"/>
-        <None Remove="Resources\NormalRumbleMode.png"/>
+        <None Remove="Assets\wpfui-icon-256.png" />
+        <None Remove="Assets\wpfui-icon-1024.png" />
+        <None Remove="Resources\AltRumbleMode.png" />
+        <None Remove="Resources\NormalRumbleMode.png" />
     </ItemGroup>
     <ItemGroup>
-        <Resource Include="Assets\wpfui-icon-256.png"/>
-        <Resource Include="Assets\wpfui-icon-1024.png"/>
-        <Resource Include="Resources\AltRumbleMode.png"/>
-        <Resource Include="Resources\NormalRumbleMode.png"/>
+        <Resource Include="Assets\wpfui-icon-256.png" />
+        <Resource Include="Assets\wpfui-icon-1024.png" />
+        <Resource Include="Resources\AltRumbleMode.png" />
+        <Resource Include="Resources\NormalRumbleMode.png" />
     </ItemGroup>
 
     <ItemGroup>
