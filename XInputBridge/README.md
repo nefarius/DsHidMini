@@ -86,20 +86,6 @@ Gets proxied to `C:\Windows\System32\XInput1_3.dll`.
 
 Gets proxied to `C:\Windows\System32\XInput1_3.dll`.
 
-## OpenTelemetry
-
-The library can be built with `/D SCPLIB_ENABLE_TELEMETRY` which will pull in the [OpenTelemetry C++ Client](https://github.com/open-telemetry/opentelemetry-cpp) and register an [OTLP](https://opentelemetry.io/docs/specs/otlp/) exporter you can use in conjunction with e.g. [Jaeger Tracing](https://www.jaegertracing.io/) to visualize performance metrics. OTEL support isn't enabled by default as it inflates resulting binary size and most users will never need this functionality.
-
-### OTEL-enabled binaries
-
-If you need logging and tracing to hunt down errors or performance bottle-necks you can use an OTEL-enabled copy instead. It comes with all necessary prerequisites compiled in and therefore is like 20-50 times larger than the normal build.
-
-The DLL architecture has to match your game/emulator or it will result in errors.
-
-- [x64 (64-Bit Intel/AMD)](https://buildbot.nefarius.at/builds/DsHidMini/latest/bin/x64/OTEL/XInput1_3.dll) (most used)
-- [x86 (32-Bit Intel/AMD)](https://buildbot.nefarius.at/builds/DsHidMini/latest/bin/x86/OTEL/XInput1_3.dll)
-- [ARM64 (64-Bit ARM)](https://buildbot.nefarius.at/builds/DsHidMini/latest/bin/arm64/OTEL/XInput1_3.dll)
-
 ## Sources & 3rd party credits
 
 This application benefits from these awesome projects ❤ (appearance in no special order):

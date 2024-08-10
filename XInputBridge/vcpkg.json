@@ -7,10 +7,6 @@
   "dependencies": [
     { "name": "hidapi" },
     { "name": "abseil" },
-    { "name": "winreg" },
-    {
-      "name": "opentelemetry-cpp",
-      "features": [ "otlp-grpc" ]
-    }
+    { "name": "winreg" }
   ]
 }

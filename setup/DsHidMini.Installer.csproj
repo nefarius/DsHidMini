@@ -5,6 +5,7 @@
     <TargetFramework>net48</TargetFramework>
     <RootNamespace>Nefarius.DsHidMini.Setup</RootNamespace>
     <LangVersion>latest</LangVersion>
+    <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
   <PropertyGroup>
     <SetupVersion Condition="'$(SetupVersion)' == ''">3.0.0</SetupVersion>
