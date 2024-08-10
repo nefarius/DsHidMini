@@ -249,15 +249,24 @@
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug_OTEL|ARM64'" />
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release_OTEL|ARM64'">
-    <VcpkgAdditionalInstallOptions>--vcpkg-root "C:\tools\vcpkg-dshidmini\"</VcpkgAdditionalInstallOptions>
+    <VcpkgInstalledDir Condition="'$(CI)'=='True'">C:\tools\vcpkg-dshidmini\installed</VcpkgInstalledDir>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug_OTEL|Win32'" />
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release_OTEL|Win32'">
-    <VcpkgAdditionalInstallOptions>--vcpkg-root "C:\tools\vcpkg-dshidmini\"</VcpkgAdditionalInstallOptions>
+    <VcpkgInstalledDir Condition="'$(CI)'=='True'">C:\tools\vcpkg-dshidmini\installed</VcpkgInstalledDir>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug_OTEL|x64'" />
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release_OTEL|x64'">
-    <VcpkgAdditionalInstallOptions>--vcpkg-root "C:\tools\vcpkg-dshidmini\"</VcpkgAdditionalInstallOptions>
+    <VcpkgInstalledDir Condition="'$(CI)'=='True'">C:\tools\vcpkg-dshidmini\installed</VcpkgInstalledDir>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <VcpkgInstalledDir Condition="'$(CI)'=='True'">C:\tools\vcpkg-dshidmini\installed</VcpkgInstalledDir>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <VcpkgInstalledDir Condition="'$(CI)'=='True'">C:\tools\vcpkg-dshidmini\installed</VcpkgInstalledDir>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <VcpkgInstalledDir Condition="'$(CI)'=='True'">C:\tools\vcpkg-dshidmini\installed</VcpkgInstalledDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
