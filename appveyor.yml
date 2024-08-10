@@ -7,7 +7,6 @@ environment:
   DOMITO_INC_PATH: C:\projects\Domito\include
   DOMITO_LIB_PATH: C:\projects\Domito\lib
   SCPLIB_ENABLE_TELEMETRY: "true"
-  VCPKG_ROOT: C:\tools\vcpkg-dshidmini
 platform:
 - x64
 - ARM64
