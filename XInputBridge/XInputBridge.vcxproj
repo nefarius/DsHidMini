@@ -248,7 +248,15 @@
     <VcpkgEnableManifest Condition="'$(CI)'!='True'">true</VcpkgEnableManifest>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_OTEL|x64'" Label="Vcpkg" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_OTEL|x64'" Label="Vcpkg">
+    <VcpkgInstalledDir Condition="'$(CI)'!=''">C:\tools\vcpkg-dshidmini</VcpkgInstalledDir>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug_OTEL|ARM64'">
+    <VcpkgInstalledDir Condition="'$(CI)'!=''">C:\tools\vcpkg-dshidmini</VcpkgInstalledDir>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release_OTEL|ARM64'">
+    <VcpkgInstalledDir Condition="'$(CI)'!=''">C:\tools\vcpkg-dshidmini</VcpkgInstalledDir>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
