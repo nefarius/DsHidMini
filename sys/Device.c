@@ -37,9 +37,6 @@ dshidminiEvtDeviceAdd(
 
 	FuncEntry(TRACE_DEVICE);
 
-	// TODO: test code, remove!
-	InitIPC();
-
 	dmfDeviceInit = DMF_DmfDeviceInitAllocate(DeviceInit);
 
 	WDF_PNPPOWER_EVENT_CALLBACKS_INIT(&pnpPowerCallbacks);

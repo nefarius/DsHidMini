@@ -2,26 +2,25 @@
 #include "IPC.tmh"
 
 
-void InitIPC()
+NTSTATUS InitIPC(void)
 {
-	HANDLE hMapFile;
-	LPCTSTR pBuf;
-	HANDLE hEvent;
+	const WDFDRIVER driver = WdfGetDriver();
+	const PDSHM_DRIVER_CONTEXT context = DriverGetContext(driver);
 
-	PSECURITY_DESCRIPTOR pSD = (PSECURITY_DESCRIPTOR)malloc(SECURITY_DESCRIPTOR_MIN_LENGTH);
+	SECURITY_DESCRIPTOR sd = { 0 };
 
-	if (!InitializeSecurityDescriptor(pSD, SECURITY_DESCRIPTOR_REVISION))
+	if (!InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION))
 	{
 		TraceError(
 			TRACE_IPC,
 			"InitializeSecurityDescriptor failed with error: %lu\n", GetLastError());
-		return;
+		return NTSTATUS_FROM_WIN32(GetLastError());
 	}
 
-	SECURITY_ATTRIBUTES sa;
+	SECURITY_ATTRIBUTES sa = { 0 };
 	sa.nLength = sizeof(sa);
 	sa.bInheritHandle = TRUE;
-	sa.lpSecurityDescriptor = pSD;
+	sa.lpSecurityDescriptor = &sd;
 
 	CHAR* szSD = "D:" // Discretionary ACL
 	"(D;OICI;GA;;;BG)" // Deny access to Built-in Guests
@@ -39,34 +38,41 @@ void InitIPC()
 		TraceError(
 			TRACE_IPC,
 			"ConvertStringSecurityDescriptorToSecurityDescriptor failed with error: %lu\n", GetLastError());
-		return;
+		return NTSTATUS_FROM_WIN32(GetLastError());
 	}
 
 	// Create a named event for signaling
-	hEvent = CreateEventA(&sa, FALSE, FALSE, DSHM_IPC_EVENT_NAME);
-	if (hEvent == NULL)
+	HANDLE hReadEvent = CreateEventA(&sa, FALSE, FALSE, DSHM_IPC_READ_EVENT_NAME);
+	if (hReadEvent == NULL)
 	{
-		hEvent = OpenEventA(EVENT_MODIFY_STATE | SYNCHRONIZE, FALSE, DSHM_IPC_EVENT_NAME);
+		TraceError(
+			TRACE_IPC,
+			"Could not create event (%!WINERROR!).",
+			GetLastError()
+		);
+		return NTSTATUS_FROM_WIN32(GetLastError());
+	}
 
-		if (hEvent == NULL)
-		{
-			TraceError(
-				TRACE_IPC,
-				"Could not create or open event (%!WINERROR!).",
-				GetLastError()
-			);
-			return;
-		}
-	}	
+	HANDLE hWriteEvent = CreateEventA(&sa, FALSE, FALSE, DSHM_IPC_WRITE_EVENT_NAME);
+	if (hWriteEvent == NULL)
+	{
+		TraceError(
+			TRACE_IPC,
+			"Could not create event (%!WINERROR!).",
+			GetLastError()
+		);
+		return NTSTATUS_FROM_WIN32(GetLastError());
+	}
 
 	// Create a memory-mapped file
-	hMapFile = CreateFileMappingA(
+	HANDLE hMapFile = CreateFileMappingA(
 		INVALID_HANDLE_VALUE, // use paging file
 		&sa, // default security
 		PAGE_READWRITE, // read/write access
 		0, // maximum object size (high-order DWORD)
 		DSHM_IPC_BUFFER_SIZE, // maximum object size (low-order DWORD)
-		DSHM_IPC_FILE_MAP_NAME); // name of mapping object
+		DSHM_IPC_FILE_MAP_NAME // name of mapping object
+	);
 
 	if (hMapFile == NULL)
 	{
@@ -75,15 +81,17 @@ void InitIPC()
 			"Could not create file mapping object (%!WINERROR!).",
 			GetLastError()
 		);
-		return;
+		return NTSTATUS_FROM_WIN32(GetLastError());
 	}
 
 	// Map a view of the file in the calling process's address space
-	pBuf = (LPTSTR)MapViewOfFile(hMapFile, // handle to map object
+	PUCHAR pBuf = MapViewOfFile(
+		hMapFile, // handle to map object
 		FILE_MAP_ALL_ACCESS, // read/write permission
 		0,
 		0,
-		DSHM_IPC_BUFFER_SIZE);
+		DSHM_IPC_BUFFER_SIZE
+	);
 
 	if (pBuf == NULL)
 	{
@@ -92,26 +100,31 @@ void InitIPC()
 			"Could not map view of file (%!WINERROR!).", GetLastError()
 		);
 		CloseHandle(hMapFile);
-		return;
+		return NTSTATUS_FROM_WIN32(GetLastError());
 	}
 
-#pragma warning(disable: 4996)
-	// Write to the memory-mapped file
-	sprintf((char*)pBuf, "Hello from the C program!");
-	TraceInformation(
-		TRACE_IPC,
-		"IPC message success!"
-	);
-#pragma warning(default: 4996)
+	context->IPC.MapFile = hMapFile;
+	context->IPC.ReadEvent = hReadEvent;
+	context->IPC.WriteEvent = hWriteEvent;
+	context->IPC.SharedMemory = (PUCHAR)pBuf;
 
-	// Signal the event to notify the other process
-	SetEvent(hEvent);
+	return STATUS_SUCCESS;
+}
 
-	Sleep(200);
+void DestroyIPC(void)
+{
+	const WDFDRIVER driver = WdfGetDriver();
+	const PDSHM_DRIVER_CONTEXT context = DriverGetContext(driver);
 
-	// Clean up
-	UnmapViewOfFile(pBuf);
-	CloseHandle(hMapFile);
-	CloseHandle(hEvent);
-	free(pSD);
+	if (context->IPC.SharedMemory)
+		UnmapViewOfFile(context->IPC.SharedMemory);
+
+	if (context->IPC.MapFile)
+		CloseHandle(context->IPC.MapFile);
+
+	if (context->IPC.ReadEvent)
+		CloseHandle(context->IPC.ReadEvent);
+
+	if (context->IPC.WriteEvent)
+		CloseHandle(context->IPC.WriteEvent);
 }

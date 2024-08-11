@@ -41,6 +41,26 @@
 
 EXTERN_C_START
 
+typedef struct _DSHM_DRIVER_CONTEXT
+{
+	struct
+	{
+		HANDLE MapFile;
+
+		HANDLE ReadEvent;
+
+		HANDLE WriteEvent;
+
+		PUCHAR SharedMemory;
+
+		size_t SharedMemorySize;
+
+	} IPC;
+	
+} DSHM_DRIVER_CONTEXT, *PDSHM_DRIVER_CONTEXT;
+
+WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DSHM_DRIVER_CONTEXT, DriverGetContext)
+
 //
 // WDFDRIVER Events
 //
