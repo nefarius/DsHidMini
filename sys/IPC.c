@@ -111,6 +111,7 @@ NTSTATUS InitIPC(void)
 	context->IPC.ReadEvent = hReadEvent;
 	context->IPC.WriteEvent = hWriteEvent;
 	context->IPC.SharedMemory = pBuf;
+	context->IPC.SharedMemorySize = DSHM_IPC_BUFFER_SIZE;
 
 	return STATUS_SUCCESS;
 
