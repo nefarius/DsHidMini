@@ -7,6 +7,11 @@ NTSTATUS InitIPC(void)
 	const WDFDRIVER driver = WdfGetDriver();
 	const PDSHM_DRIVER_CONTEXT context = DriverGetContext(driver);
 
+	PUCHAR pBuf = NULL;
+	HANDLE hReadEvent = NULL;
+	HANDLE hWriteEvent = NULL;
+	HANDLE hMapFile = NULL;
+
 	SECURITY_DESCRIPTOR sd = { 0 };
 
 	if (!InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION))
@@ -14,7 +19,7 @@ NTSTATUS InitIPC(void)
 		TraceError(
 			TRACE_IPC,
 			"InitializeSecurityDescriptor failed with error: %!WINERROR!", GetLastError());
-		return NTSTATUS_FROM_WIN32(GetLastError());
+		goto exitFailure;
 	}
 
 	SECURITY_ATTRIBUTES sa = { 0 };
@@ -38,11 +43,11 @@ NTSTATUS InitIPC(void)
 		TraceError(
 			TRACE_IPC,
 			"ConvertStringSecurityDescriptorToSecurityDescriptor failed with error: %!WINERROR!", GetLastError());
-		return NTSTATUS_FROM_WIN32(GetLastError());
+		goto exitFailure;
 	}
 
 	// Create a named event for signaling
-	HANDLE hReadEvent = CreateEventA(&sa, FALSE, FALSE, DSHM_IPC_READ_EVENT_NAME);
+	hReadEvent = CreateEventA(&sa, FALSE, FALSE, DSHM_IPC_READ_EVENT_NAME);
 	if (hReadEvent == NULL)
 	{
 		TraceError(
@@ -50,10 +55,10 @@ NTSTATUS InitIPC(void)
 			"Could not create event (%!WINERROR!).",
 			GetLastError()
 		);
-		return NTSTATUS_FROM_WIN32(GetLastError());
+		goto exitFailure;
 	}
 
-	HANDLE hWriteEvent = CreateEventA(&sa, FALSE, FALSE, DSHM_IPC_WRITE_EVENT_NAME);
+	hWriteEvent = CreateEventA(&sa, FALSE, FALSE, DSHM_IPC_WRITE_EVENT_NAME);
 	if (hWriteEvent == NULL)
 	{
 		TraceError(
@@ -61,11 +66,11 @@ NTSTATUS InitIPC(void)
 			"Could not create event (%!WINERROR!).",
 			GetLastError()
 		);
-		return NTSTATUS_FROM_WIN32(GetLastError());
+		goto exitFailure;
 	}
 
 	// Create a memory-mapped file
-	HANDLE hMapFile = CreateFileMappingA(
+	hMapFile = CreateFileMappingA(
 		INVALID_HANDLE_VALUE, // use paging file
 		&sa, // default security
 		PAGE_READWRITE, // read/write access
@@ -81,11 +86,11 @@ NTSTATUS InitIPC(void)
 			"Could not create file mapping object (%!WINERROR!).",
 			GetLastError()
 		);
-		return NTSTATUS_FROM_WIN32(GetLastError());
+		goto exitFailure;
 	}
 
 	// Map a view of the file in the calling process's address space
-	PUCHAR pBuf = MapViewOfFile(
+	pBuf = MapViewOfFile(
 		hMapFile, // handle to map object
 		FILE_MAP_ALL_ACCESS, // read/write permission
 		0,
@@ -99,16 +104,30 @@ NTSTATUS InitIPC(void)
 			TRACE_IPC,
 			"Could not map view of file (%!WINERROR!).", GetLastError()
 		);
-		CloseHandle(hMapFile);
-		return NTSTATUS_FROM_WIN32(GetLastError());
+		goto exitFailure;
 	}
 
 	context->IPC.MapFile = hMapFile;
 	context->IPC.ReadEvent = hReadEvent;
 	context->IPC.WriteEvent = hWriteEvent;
-	context->IPC.SharedMemory = (PUCHAR)pBuf;
+	context->IPC.SharedMemory = pBuf;
 
 	return STATUS_SUCCESS;
+
+exitFailure:
+	if (pBuf)
+		UnmapViewOfFile(pBuf);
+
+	if (hReadEvent)
+		CloseHandle(hReadEvent);
+
+	if (hWriteEvent)
+		CloseHandle(hWriteEvent);
+
+	if (hMapFile)
+		CloseHandle(hMapFile);
+
+	return NTSTATUS_FROM_WIN32(GetLastError());
 }
 
 void DestroyIPC(void)

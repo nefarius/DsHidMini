@@ -43,16 +43,34 @@ EXTERN_C_START
 
 typedef struct _DSHM_DRIVER_CONTEXT
 {
+	//
+	// IPC-specific fields
+	// 
 	struct
 	{
+		//
+		// Handle of the memory-mapped file
+		// 
 		HANDLE MapFile;
 
+		//
+		// Read ready event handle
+		// 
 		HANDLE ReadEvent;
 
+		//
+		// Write ready event handle
+		// 
 		HANDLE WriteEvent;
 
+		//
+		// Pointer to shared memory buffer
+		// 
 		PUCHAR SharedMemory;
 
+		//
+		// Total size of shared memory region
+		// 
 		size_t SharedMemorySize;
 
 	} IPC;
