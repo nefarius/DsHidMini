@@ -63,8 +63,6 @@ DriverEntry(
 #pragma code_seg("PAGED")
 void dshidminiEvtDriverContextCleanup(WDFOBJECT DriverObject)
 {
-	UNREFERENCED_PARAMETER(DriverObject);
-
 	DestroyIPC();
 
 	WPP_CLEANUP( WdfDriverWdmGetDriverObject( (WDFDRIVER) DriverObject) );
