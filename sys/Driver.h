@@ -34,6 +34,7 @@
 #include "Ds3.h"
 #include "DsBth.h"
 #include "HID.ReportHandlers.h"
+#include "IPC.h"
 
 #include "Trace.h"
 
