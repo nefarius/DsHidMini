@@ -13,7 +13,7 @@ NTSTATUS InitIPC(void)
 	{
 		TraceError(
 			TRACE_IPC,
-			"InitializeSecurityDescriptor failed with error: %lu\n", GetLastError());
+			"InitializeSecurityDescriptor failed with error: %!WINERROR!", GetLastError());
 		return NTSTATUS_FROM_WIN32(GetLastError());
 	}
 
@@ -37,7 +37,7 @@ NTSTATUS InitIPC(void)
 	{
 		TraceError(
 			TRACE_IPC,
-			"ConvertStringSecurityDescriptorToSecurityDescriptor failed with error: %lu\n", GetLastError());
+			"ConvertStringSecurityDescriptorToSecurityDescriptor failed with error: %!WINERROR!", GetLastError());
 		return NTSTATUS_FROM_WIN32(GetLastError());
 	}
 

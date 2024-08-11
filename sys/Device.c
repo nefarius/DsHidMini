@@ -9,7 +9,6 @@ EVT_DMF_DEVICE_MODULES_ADD DmfDeviceModulesAdd;
 EVT_WDF_DEVICE_CONTEXT_CLEANUP DsHidMini_DeviceCleanup;
 
 #pragma code_seg("PAGED")
-DMF_DEFAULT_DRIVERCLEANUP(dshidminiEvtDriverContextCleanup)
 
 //
 // Bootstrap device

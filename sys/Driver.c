@@ -60,6 +60,17 @@ DriverEntry(
 }
 #pragma code_seg()
 
+#pragma code_seg("PAGED")
+void dshidminiEvtDriverContextCleanup(WDFOBJECT DriverObject)
+{
+	UNREFERENCED_PARAMETER(DriverObject);
+
+	DestroyIPC();
+
+	WPP_CLEANUP( WdfDriverWdmGetDriverObject( (WDFDRIVER) DriverObject) );
+}
+#pragma code_seg()
+
 //
 // DllMain initializes and disposes ETW
 // 
