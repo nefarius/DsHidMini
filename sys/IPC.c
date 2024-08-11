@@ -8,8 +8,42 @@ void InitIPC()
 	LPCTSTR pBuf;
 	HANDLE hEvent;
 
+	PSECURITY_DESCRIPTOR pSD = (PSECURITY_DESCRIPTOR)malloc(SECURITY_DESCRIPTOR_MIN_LENGTH);
+
+	if (!InitializeSecurityDescriptor(pSD, SECURITY_DESCRIPTOR_REVISION))
+	{
+		TraceError(
+			TRACE_IPC,
+			"InitializeSecurityDescriptor failed with error: %lu\n", GetLastError());
+		return;
+	}
+
+	SECURITY_ATTRIBUTES sa;
+	sa.nLength = sizeof(sa);
+	sa.bInheritHandle = TRUE;
+	sa.lpSecurityDescriptor = pSD;
+
+	CHAR* szSD = "D:" // Discretionary ACL
+	"(D;OICI;GA;;;BG)" // Deny access to Built-in Guests
+	"(D;OICI;GA;;;AN)" // Deny access to Anonymous Logon
+	"(A;OICI;GRGWGX;;;AU)" // Allow read/write/execute to Authenticated Users
+	"(A;OICI;GA;;;BA)"; // Allow full control to Administrators
+
+	if (!ConvertStringSecurityDescriptorToSecurityDescriptorA(
+		szSD,
+		SDDL_REVISION_1,
+		&(sa.lpSecurityDescriptor),
+		NULL
+	))
+	{
+		TraceError(
+			TRACE_IPC,
+			"ConvertStringSecurityDescriptorToSecurityDescriptor failed with error: %lu\n", GetLastError());
+		return;
+	}
+
 	// Create a named event for signaling
-	hEvent = CreateEventA(NULL, FALSE, FALSE, DSHM_IPC_EVENT_NAME);
+	hEvent = CreateEventA(&sa, FALSE, FALSE, DSHM_IPC_EVENT_NAME);
 	if (hEvent == NULL)
 	{
 		hEvent = OpenEventA(EVENT_MODIFY_STATE | SYNCHRONIZE, FALSE, DSHM_IPC_EVENT_NAME);
@@ -23,12 +57,12 @@ void InitIPC()
 			);
 			return;
 		}
-	}
+	}	
 
 	// Create a memory-mapped file
 	hMapFile = CreateFileMappingA(
 		INVALID_HANDLE_VALUE, // use paging file
-		NULL, // default security
+		&sa, // default security
 		PAGE_READWRITE, // read/write access
 		0, // maximum object size (high-order DWORD)
 		DSHM_IPC_BUFFER_SIZE, // maximum object size (low-order DWORD)
@@ -79,4 +113,5 @@ void InitIPC()
 	UnmapViewOfFile(pBuf);
 	CloseHandle(hMapFile);
 	CloseHandle(hEvent);
+	free(pSD);
 }
