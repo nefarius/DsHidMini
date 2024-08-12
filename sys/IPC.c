@@ -298,6 +298,17 @@ static DWORD WINAPI ClientDispatchProc(
 		// 
 		if (waitResult == WAIT_OBJECT_0 + 1)
 		{
+			//
+			// Each valid message is expected to be prefixed with this header
+			// 
+			PDSHM_IPC_MSG_HEADER header = (PDSHM_IPC_MSG_HEADER)context->IPC.SharedMemory;
+
+			TraceInformation(
+				TRACE_IPC,
+				"Got message type %d for target %d and command %d",
+				header->Type, header->Target, header->Command.Device
+			);
+
 			// TODO: implement me!
 		}
 
