@@ -25,7 +25,9 @@ NTSTATUS InitIPC(void)
 	{
 		TraceError(
 			TRACE_IPC,
-			"InitializeSecurityDescriptor failed with error: %!WINERROR!", GetLastError());
+			"InitializeSecurityDescriptor failed with error: %!WINERROR!",
+			GetLastError()
+		);
 		goto exitFailure;
 	}
 
@@ -49,7 +51,9 @@ NTSTATUS InitIPC(void)
 	{
 		TraceError(
 			TRACE_IPC,
-			"ConvertStringSecurityDescriptorToSecurityDescriptor failed with error: %!WINERROR!", GetLastError());
+			"ConvertStringSecurityDescriptorToSecurityDescriptor failed with error: %!WINERROR!",
+			GetLastError()
+		);
 		goto exitFailure;
 	}
 
@@ -131,7 +135,8 @@ NTSTATUS InitIPC(void)
 	{
 		TraceError(
 			TRACE_IPC,
-			"Could not map view of file (%!WINERROR!).", GetLastError()
+			"Could not map view of file (%!WINERROR!).",
+			GetLastError()
 		);
 		goto exitFailure;
 	}
