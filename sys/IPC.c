@@ -8,6 +8,8 @@ static DWORD WINAPI ClientDispatchProc(
 
 NTSTATUS InitIPC(void)
 {
+	FuncEntry(TRACE_IPC);
+
 	const WDFDRIVER driver = WdfGetDriver();
 	const PDSHM_DRIVER_CONTEXT context = DriverGetContext(driver);
 
@@ -173,6 +175,8 @@ NTSTATUS InitIPC(void)
 
 	context->IPC.DispatchThread = hThread;
 
+	FuncExitNoReturn(TRACE_IPC);
+
 	return STATUS_SUCCESS;
 
 exitFailure:
@@ -197,7 +201,11 @@ exitFailure:
 	if (hThreadTermination)
 		CloseHandle(hThreadTermination);
 
-	return NTSTATUS_FROM_WIN32(GetLastError());
+	const NTSTATUS status = NTSTATUS_FROM_WIN32(GetLastError());
+
+	FuncExit(TRACE_IPC, "status=%!STATUS!", status);
+
+	return status;
 }
 
 void DestroyIPC(void)
