@@ -205,6 +205,8 @@ void DestroyIPC(void)
 	const WDFDRIVER driver = WdfGetDriver();
 	const PDSHM_DRIVER_CONTEXT context = DriverGetContext(driver);
 
+	FuncEntry(TRACE_IPC);
+
 	//
 	// Thread running; signal termination, wait on exit, free resources
 	// 
@@ -230,6 +232,8 @@ void DestroyIPC(void)
 
 	if (context->IPC.ConnectMutex)
 		CloseHandle(context->IPC.ConnectMutex);
+
+	FuncExitNoReturn(TRACE_IPC);
 }
 
 //
@@ -239,9 +243,59 @@ static DWORD WINAPI ClientDispatchProc(
 	_In_ LPVOID lpParameter
 )
 {
+	FuncEntry(TRACE_IPC);
+
 	const PDSHM_DRIVER_CONTEXT context = lpParameter;
 
-	UNREFERENCED_PARAMETER(context);
+	const HANDLE waits[] = {
+		// driver shutdown signals thread termination
+		context->IPC.DispatchThreadTermination,
+		// read is signaled when an outside app has finished writing
+		context->IPC.ReadEvent
+	};
+
+	do
+	{
+		DWORD waitResult = WaitForMultipleObjects(ARRAYSIZE(waits), waits, FALSE, 1000);
+
+		//
+		// Retry indefinitely until an event is signaled
+		// 
+		if (waitResult == WAIT_TIMEOUT)
+			continue;
+
+		//
+		// Unexpected result
+		// 
+		if (waitResult == WAIT_FAILED)
+		{
+			TraceError(
+				TRACE_IPC,
+				"Wait failed with error %!WINERROR!",
+				GetLastError()
+			);
+			break;
+		}
+
+		//
+		// Thread termination signaled, exiting
+		// 
+		if (waitResult == WAIT_OBJECT_0)
+		{
+			break;
+		}
+
+		//
+		// New data is available in the shared region
+		// 
+		if (waitResult == WAIT_OBJECT_0 + 1)
+		{
+			// TODO: implement me!
+		}
+
+	} while (TRUE);
+
+	FuncExitNoReturn(TRACE_IPC);
 
 	return ERROR_SUCCESS;
 }
