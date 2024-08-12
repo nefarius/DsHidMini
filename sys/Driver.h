@@ -54,6 +54,11 @@ typedef struct _DSHM_DRIVER_CONTEXT
 		HANDLE MapFile;
 
 		//
+		// Mutex handle to sync a connected client application
+		// 
+		HANDLE ConnectMutex;
+
+		//
 		// Read ready event handle
 		// 
 		HANDLE ReadEvent;

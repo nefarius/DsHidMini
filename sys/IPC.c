@@ -11,6 +11,7 @@ NTSTATUS InitIPC(void)
 	HANDLE hReadEvent = NULL;
 	HANDLE hWriteEvent = NULL;
 	HANDLE hMapFile = NULL;
+	HANDLE hMutex = NULL;
 
 	SECURITY_DESCRIPTOR sd = { 0 };
 
@@ -36,13 +37,24 @@ NTSTATUS InitIPC(void)
 	if (!ConvertStringSecurityDescriptorToSecurityDescriptorA(
 		szSD,
 		SDDL_REVISION_1,
-		&(sa.lpSecurityDescriptor),
+		&sa.lpSecurityDescriptor,
 		NULL
 	))
 	{
 		TraceError(
 			TRACE_IPC,
 			"ConvertStringSecurityDescriptorToSecurityDescriptor failed with error: %!WINERROR!", GetLastError());
+		goto exitFailure;
+	}
+
+	hMutex = CreateMutexA(&sa, FALSE, DSHM_IPC_MUTEX_NAME);
+	if (hMutex == NULL)
+	{
+		TraceError(
+			TRACE_IPC,
+			"Could not create mutex (%!WINERROR!).",
+			GetLastError()
+		);
 		goto exitFailure;
 	}
 
@@ -108,6 +120,7 @@ NTSTATUS InitIPC(void)
 	}
 
 	context->IPC.MapFile = hMapFile;
+	context->IPC.ConnectMutex = hMutex;
 	context->IPC.ReadEvent = hReadEvent;
 	context->IPC.WriteEvent = hWriteEvent;
 	context->IPC.SharedMemory = pBuf;
@@ -128,6 +141,9 @@ exitFailure:
 	if (hMapFile)
 		CloseHandle(hMapFile);
 
+	if (hMutex)
+		CloseHandle(hMutex);
+
 	return NTSTATUS_FROM_WIN32(GetLastError());
 }
 
@@ -147,4 +163,7 @@ void DestroyIPC(void)
 
 	if (context->IPC.WriteEvent)
 		CloseHandle(context->IPC.WriteEvent);
+
+	if (context->IPC.ConnectMutex)
+		CloseHandle(context->IPC.ConnectMutex);
 }
