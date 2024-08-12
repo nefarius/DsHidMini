@@ -2,6 +2,10 @@
 #include "IPC.tmh"
 
 
+static DWORD WINAPI ClientDispatchProc(
+	_In_ LPVOID lpParameter
+);
+
 NTSTATUS InitIPC(void)
 {
 	const WDFDRIVER driver = WdfGetDriver();
@@ -12,6 +16,8 @@ NTSTATUS InitIPC(void)
 	HANDLE hWriteEvent = NULL;
 	HANDLE hMapFile = NULL;
 	HANDLE hMutex = NULL;
+	HANDLE hThread = NULL;
+	HANDLE hThreadTermination = NULL;
 
 	SECURITY_DESCRIPTOR sd = { 0 };
 
@@ -81,6 +87,17 @@ NTSTATUS InitIPC(void)
 		goto exitFailure;
 	}
 
+	hThreadTermination = CreateEventA(&sa, FALSE, FALSE, NULL);
+	if (hThreadTermination == NULL)
+	{
+		TraceError(
+			TRACE_IPC,
+			"Could not create event (%!WINERROR!).",
+			GetLastError()
+		);
+		goto exitFailure;
+	}
+
 	// Create a memory-mapped file
 	hMapFile = CreateFileMappingA(
 		INVALID_HANDLE_VALUE, // use paging file
@@ -119,12 +136,37 @@ NTSTATUS InitIPC(void)
 		goto exitFailure;
 	}
 
+	context->IPC.DispatchThreadTermination = hThreadTermination;
 	context->IPC.MapFile = hMapFile;
 	context->IPC.ConnectMutex = hMutex;
 	context->IPC.ReadEvent = hReadEvent;
 	context->IPC.WriteEvent = hWriteEvent;
 	context->IPC.SharedMemory = pBuf;
 	context->IPC.SharedMemorySize = DSHM_IPC_BUFFER_SIZE;
+
+	// 
+	// Start thread now that context is initialized at its minimum
+	// 
+	hThread = CreateThread(
+		NULL,
+		0,
+		ClientDispatchProc,
+		context,
+		0,
+		NULL
+	);
+
+	if (hThread == NULL)
+	{
+		TraceError(
+			TRACE_IPC,
+			"Could not create dispatch thread (%!WINERROR!).",
+			GetLastError()
+		);
+		goto exitFailure;
+	}
+
+	context->IPC.DispatchThread = hThread;
 
 	return STATUS_SUCCESS;
 
@@ -144,6 +186,12 @@ exitFailure:
 	if (hMutex)
 		CloseHandle(hMutex);
 
+	if (hThread)
+		CloseHandle(hThread);
+
+	if (hThreadTermination)
+		CloseHandle(hThreadTermination);
+
 	return NTSTATUS_FROM_WIN32(GetLastError());
 }
 
@@ -151,6 +199,17 @@ void DestroyIPC(void)
 {
 	const WDFDRIVER driver = WdfGetDriver();
 	const PDSHM_DRIVER_CONTEXT context = DriverGetContext(driver);
+
+	//
+	// Thread running; signal termination, wait on exit, free resources
+	// 
+	if (context->IPC.DispatchThread && context->IPC.DispatchThreadTermination)
+	{
+		SetEvent(context->IPC.DispatchThreadTermination);
+		WaitForSingleObject(context->IPC.DispatchThread, 500);
+		CloseHandle(context->IPC.DispatchThread);
+		CloseHandle(context->IPC.DispatchThreadTermination);
+	}
 
 	if (context->IPC.SharedMemory)
 		UnmapViewOfFile(context->IPC.SharedMemory);
@@ -166,4 +225,18 @@ void DestroyIPC(void)
 
 	if (context->IPC.ConnectMutex)
 		CloseHandle(context->IPC.ConnectMutex);
+}
+
+//
+// Listens for client connection and processes data exchange
+// 
+static DWORD WINAPI ClientDispatchProc(
+	_In_ LPVOID lpParameter
+)
+{
+	const PDSHM_DRIVER_CONTEXT context = lpParameter;
+
+	UNREFERENCED_PARAMETER(context);
+
+	return ERROR_SUCCESS;
 }

@@ -69,6 +69,16 @@ typedef struct _DSHM_DRIVER_CONTEXT
 		HANDLE WriteEvent;
 
 		//
+		// Dispatch thread handle
+		// 
+		HANDLE DispatchThread;
+
+		//
+		// Thread termination event
+		// 
+		HANDLE DispatchThreadTermination;
+
+		//
 		// Pointer to shared memory buffer
 		// 
 		PUCHAR SharedMemory;
