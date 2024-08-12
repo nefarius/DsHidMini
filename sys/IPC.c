@@ -210,10 +210,10 @@ exitFailure:
 
 void DestroyIPC(void)
 {
-	const WDFDRIVER driver = WdfGetDriver();
-	const PDSHM_DRIVER_CONTEXT context = DriverGetContext(driver);
-
 	FuncEntry(TRACE_IPC);
+
+	const WDFDRIVER driver = WdfGetDriver();
+	const PDSHM_DRIVER_CONTEXT context = DriverGetContext(driver);	
 
 	//
 	// Thread running; signal termination, wait on exit, free resources
