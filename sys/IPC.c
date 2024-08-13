@@ -244,6 +244,19 @@ void DestroyIPC(void)
 	FuncExitNoReturn(TRACE_IPC);
 }
 
+static NTSTATUS DSHM_IPC_DispatchMessage(PDSHM_IPC_MSG_HEADER Message)
+{
+	FuncEntry(TRACE_IPC);
+
+	NTSTATUS status = STATUS_NOT_IMPLEMENTED;
+
+	UNREFERENCED_PARAMETER(Message);
+
+	FuncExit(TRACE_IPC, "status=%!STATUS!", status);
+
+	return status;
+}
+
 //
 // Listens for client connection and processes data exchange
 // 
@@ -308,6 +321,8 @@ static DWORD WINAPI ClientDispatchProc(
 				"Got message type %d for target %d and command %d",
 				header->Type, header->Target, header->Command.Device
 			);
+
+			DSHM_IPC_DispatchMessage(header);
 
 			// TODO: implement me!
 		}
