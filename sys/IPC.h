@@ -132,6 +132,28 @@ EVT_DSHM_IPC_DispatchDeviceMessage(
 
 typedef EVT_DSHM_IPC_DispatchDeviceMessage *PFN_DSHM_IPC_DispatchDeviceMessage;
 
+#define DSHM_IPC_SIGNAL_WRITE_DONE(_ctx_) \
+	SetEvent((_ctx_)->IPC.WriteEvent)
+
+#define DSHM_IPC_MSG_IS_PING(_msg_) \
+	((_msg_)->Type == DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE \
+	&& (_msg_)->Target == DSHM_IPC_MSG_TARGET_DRIVER \
+	&& (_msg_)->Command.Driver == DSHM_IPC_MSG_CMD_DRIVER_PING)
+
+VOID
+FORCEINLINE
+DSHM_IPC_MSG_PING_RESPONSE_INIT(
+	_Inout_ PDSHM_IPC_MSG_HEADER Message
+)
+{
+	RtlZeroMemory(Message, sizeof(DSHM_IPC_MSG_HEADER));
+
+	Message->Type = DSHM_IPC_MSG_TYPE_RESPONSE_ONLY;
+	Message->Target = DSHM_IPC_MSG_TARGET_CLIENT;
+	Message->Command.Driver = DSHM_IPC_MSG_CMD_DRIVER_PING;
+	Message->Size = sizeof(DSHM_IPC_MSG_HEADER); // no payload
+}
+
 
 NTSTATUS InitIPC(void);
 

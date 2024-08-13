@@ -213,7 +213,7 @@ void DestroyIPC(void)
 	FuncEntry(TRACE_IPC);
 
 	const WDFDRIVER driver = WdfGetDriver();
-	const PDSHM_DRIVER_CONTEXT context = DriverGetContext(driver);	
+	const PDSHM_DRIVER_CONTEXT context = DriverGetContext(driver);
 
 	//
 	// Thread running; signal termination, wait on exit, free resources
@@ -244,13 +244,34 @@ void DestroyIPC(void)
 	FuncExitNoReturn(TRACE_IPC);
 }
 
-static NTSTATUS DSHM_IPC_DispatchIncomingMessage(PDSHM_IPC_MSG_HEADER Message)
+static NTSTATUS DSHM_IPC_DispatchIncomingMessage(
+	_In_ const PDSHM_DRIVER_CONTEXT Context,
+	_In_ const PDSHM_IPC_MSG_HEADER Message
+)
 {
 	FuncEntry(TRACE_IPC);
 
 	NTSTATUS status = STATUS_NOT_IMPLEMENTED;
 
-	UNREFERENCED_PARAMETER(Message);
+	//
+	// Sanity check
+	// 
+	if (Message->Size < sizeof(DSHM_IPC_MSG_HEADER))
+	{
+		return STATUS_INVALID_USER_BUFFER;
+	}
+
+	//
+	// Incoming PING message
+	// 
+	if (DSHM_IPC_MSG_IS_PING(Message))
+	{
+		const PDSHM_IPC_MSG_HEADER header = (PDSHM_IPC_MSG_HEADER)Context->IPC.SharedMemory;
+
+		DSHM_IPC_MSG_PING_RESPONSE_INIT(header);
+
+		DSHM_IPC_SIGNAL_WRITE_DONE(Context);
+	}
 
 	FuncExit(TRACE_IPC, "status=%!STATUS!", status);
 
@@ -314,7 +335,7 @@ static DWORD WINAPI ClientDispatchProc(
 			//
 			// Each valid message is expected to be prefixed with this header
 			// 
-			PDSHM_IPC_MSG_HEADER header = (PDSHM_IPC_MSG_HEADER)context->IPC.SharedMemory;
+			const PDSHM_IPC_MSG_HEADER header = (PDSHM_IPC_MSG_HEADER)context->IPC.SharedMemory;
 
 			TraceInformation(
 				TRACE_IPC,
@@ -322,7 +343,7 @@ static DWORD WINAPI ClientDispatchProc(
 				header->Type, header->Target, header->Command.Device
 			);
 
-			DSHM_IPC_DispatchIncomingMessage(header);
+			DSHM_IPC_DispatchIncomingMessage(context, header);
 
 			// TODO: implement me!
 		}
