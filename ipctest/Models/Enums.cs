@@ -17,7 +17,10 @@ public enum DSHM_IPC_MSG_TYPE : UInt32
     DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE,
 
     // Client requested data, there is nothing to read for the driver
-    DSHM_IPC_MSG_TYPE_RESPONSE_ONLY
+    DSHM_IPC_MSG_TYPE_RESPONSE_ONLY,
+
+    // Driver-to-client response to a previous DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE
+    DSHM_IPC_MSG_TYPE_REQUEST_REPLY
 }
 
 // Describes the message receiver

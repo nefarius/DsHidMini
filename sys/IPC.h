@@ -28,6 +28,10 @@ typedef enum
 	// Client requested data, there is nothing to read for the driver
 	// 
 	DSHM_IPC_MSG_TYPE_RESPONSE_ONLY,
+	//
+	// Driver-to-client response to a previous DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE
+	// 
+	DSHM_IPC_MSG_TYPE_REQUEST_REPLY
 } DSHM_IPC_MSG_TYPE;
 
 //
@@ -148,7 +152,7 @@ DSHM_IPC_MSG_PING_RESPONSE_INIT(
 {
 	RtlZeroMemory(Message, sizeof(DSHM_IPC_MSG_HEADER));
 
-	Message->Type = DSHM_IPC_MSG_TYPE_RESPONSE_ONLY;
+	Message->Type = DSHM_IPC_MSG_TYPE_REQUEST_REPLY;
 	Message->Target = DSHM_IPC_MSG_TARGET_CLIENT;
 	Message->Command.Driver = DSHM_IPC_MSG_CMD_DRIVER_PING;
 	Message->Size = sizeof(DSHM_IPC_MSG_HEADER); // no payload

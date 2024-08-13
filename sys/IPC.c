@@ -266,6 +266,11 @@ static NTSTATUS DSHM_IPC_DispatchIncomingMessage(
 	// 
 	if (DSHM_IPC_MSG_IS_PING(Message))
 	{
+		TraceVerbose(
+			TRACE_IPC,
+			"IPC: PING message received"
+		);
+
 		const PDSHM_IPC_MSG_HEADER header = (PDSHM_IPC_MSG_HEADER)Context->IPC.SharedMemory;
 
 		DSHM_IPC_MSG_PING_RESPONSE_INIT(header);
