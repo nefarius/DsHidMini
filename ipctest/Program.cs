@@ -10,5 +10,5 @@ if (!DsHidMiniInterop.IsAvailable)
 
 using var ipc = new DsHidMiniInterop();
 
-
+ipc.SendPing();
 

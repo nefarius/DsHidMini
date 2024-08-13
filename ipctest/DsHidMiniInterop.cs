@@ -65,15 +65,27 @@ public class DsHidMiniInterop : IDisposable
 
             DSHM_IPC_MSG_HEADER* message = (DSHM_IPC_MSG_HEADER*)buffer;
 
-            // TODO: implement me
+            message->Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
+            message->Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DRIVER;
+            message->Command.Driver = DSHM_IPC_MSG_CMD_DRIVER.DSHM_IPC_MSG_CMD_DRIVER_PING;
+            message->TargetIndex = 0;
+            message->Size = (uint)Marshal.SizeOf<DSHM_IPC_MSG_HEADER>();
 
-            
+            Console.WriteLine(
+                SendAndWait(TimeSpan.FromSeconds(1))
+                    ? $"Got reply - Type: {message->Type}, Target: {message->Target}, Command: {message->Command.Driver}"
+                    : "!!! Failed to receive reply");
         }
         finally
         {
             _accessor.SafeMemoryMappedViewHandle.ReleasePointer();
-            SignalWriteFinished();
         }
+    }
+
+    private bool SendAndWait(TimeSpan timeout)
+    {
+        SignalWriteFinished();
+        return _writeEvent.WaitOne(timeout);
     }
 
     private void SignalReadFinished()

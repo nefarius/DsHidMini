@@ -276,6 +276,8 @@ static NTSTATUS DSHM_IPC_DispatchIncomingMessage(
 		DSHM_IPC_MSG_PING_RESPONSE_INIT(header);
 
 		DSHM_IPC_SIGNAL_WRITE_DONE(Context);
+
+		status = STATUS_SUCCESS;
 	}
 
 	FuncExit(TRACE_IPC, "status=%!STATUS!", status);
