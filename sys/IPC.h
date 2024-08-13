@@ -110,6 +110,18 @@ typedef struct _DSHM_IPC_MSG_HEADER
 	UINT32 Size;
 } DSHM_IPC_MSG_HEADER, * PDSHM_IPC_MSG_HEADER;
 
+typedef
+_Function_class_(EVT_DSHM_IPC_DispatchDeviceMessage)
+_IRQL_requires_same_
+_IRQL_requires_max_(PASSIVE_LEVEL)
+VOID
+EVT_DSHM_IPC_DispatchDeviceMessage(
+	_In_ PDEVICE_CONTEXT DeviceContext,
+	_In_ PDSHM_IPC_MSG_HEADER MessageHeader
+);
+
+typedef EVT_DSHM_IPC_DispatchDeviceMessage *PFN_DSHM_IPC_DispatchDeviceMessage;
+
 
 NTSTATUS InitIPC(void);
 

@@ -41,6 +41,11 @@
 
 EXTERN_C_START
 
+//
+// Artificial limit to make memory management easier (should be enough ;)
+// 
+#define DSHM_MAX_DEVICES	USHORT_MAX
+
 typedef struct _DSHM_DRIVER_CONTEXT
 {
 	//
@@ -88,9 +93,15 @@ typedef struct _DSHM_DRIVER_CONTEXT
 		// 
 		size_t SharedMemorySize;
 
+		//
+		// Message dispatcher callback handlers
+		// 
+		struct
+		{
+			PFN_DSHM_IPC_DispatchDeviceMessage Callbacks[DSHM_MAX_DEVICES];
+		} DeviceDispatchers;
 	} IPC;
-	
-} DSHM_DRIVER_CONTEXT, *PDSHM_DRIVER_CONTEXT;
+} DSHM_DRIVER_CONTEXT, * PDSHM_DRIVER_CONTEXT;
 
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DSHM_DRIVER_CONTEXT, DriverGetContext)
 
