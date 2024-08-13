@@ -21,6 +21,8 @@ public sealed class DsHidMiniInterop : IDisposable
     private readonly MemoryMappedFile _mappedFile;
     private readonly MemoryMappedViewAccessor _accessor;
 
+    private readonly object _lock = new();
+
     /// <summary>
     ///     Creates a new <see cref="DsHidMiniInterop"/> instance by connecting to the driver IPC mechanism.
     /// </summary>
@@ -59,6 +61,11 @@ public sealed class DsHidMiniInterop : IDisposable
     /// <exception cref="DsHidMiniInteropUnexpectedReplyException"></exception>
     public unsafe void SendPing()
     {
+        if (!Monitor.TryEnter(_lock))
+        {
+            throw new DsHidMiniInteropConcurrencyException();
+        }
+
         byte* buffer = null;
 
         try
@@ -95,6 +102,7 @@ public sealed class DsHidMiniInterop : IDisposable
         finally
         {
             _accessor.SafeMemoryMappedViewHandle.ReleasePointer();
+            Monitor.Exit(_lock);
         }
     }
 

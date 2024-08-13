@@ -36,5 +36,13 @@ public sealed class DsHidMiniInteropUnexpectedReplyException : Exception
     }
 
     public override unsafe string Message =>
-        $"Type: {_header->Type}, Target: {_header->Target}, Command: {_header->Command.Driver}, TargetIndex: {_header->TargetIndex}, Size: {_header->Size}";
+        $"{base.Message}, Type: {_header->Type}, Target: {_header->Target}, Command: {_header->Command.Driver}, TargetIndex: {_header->TargetIndex}, Size: {_header->Size}";
+}
+
+public sealed class DsHidMiniInteropConcurrencyException : Exception
+{
+    internal DsHidMiniInteropConcurrencyException() : base(
+        "Multiple threads tried to invoke IPC methods at the same time, which is not supported.")
+    {
+    }
 }
