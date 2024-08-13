@@ -20,6 +20,11 @@ public sealed class DsHidMiniInterop : IDisposable
     private readonly MemoryMappedFile _mappedFile;
     private readonly MemoryMappedViewAccessor _accessor;
 
+    /// <summary>
+    ///     Creates a new <see cref="DsHidMiniInterop"/> instance by connecting to the driver IPC mechanism.
+    /// </summary>
+    /// <exception cref="DsHidMiniInteropExclusiveAccessException"></exception>
+    /// <exception cref="DsHidMiniInteropUnavailableException"></exception>
     public DsHidMiniInterop()
     {
         try
@@ -46,6 +51,11 @@ public sealed class DsHidMiniInterop : IDisposable
         _accessor = _mappedFile.CreateViewAccessor(0, BufferSize);
     }
 
+    /// <summary>
+    ///     Send a PING to the driver and awaits the reply.
+    /// </summary>
+    /// <exception cref="DsHidMiniInteropReplyTimeoutException"></exception>
+    /// <exception cref="DsHidMiniInteropUnexpectedReplyException"></exception>
     public unsafe void SendPing()
     {
         byte* buffer = null;
@@ -118,6 +128,9 @@ public sealed class DsHidMiniInterop : IDisposable
         _readEvent.Set();
     }
 
+    /// <summary>
+    ///     Gets whether driver IPC is available.
+    /// </summary>
     public static bool IsAvailable
     {
         get
