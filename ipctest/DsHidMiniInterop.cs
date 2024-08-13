@@ -15,7 +15,7 @@ public sealed class DsHidMiniInteropUnavailableException : Exception
     internal DsHidMiniInteropUnavailableException() : base("") { }
 }
 
-public class DsHidMiniInterop : IDisposable
+public sealed class DsHidMiniInterop : IDisposable
 {
     private const string FileMapName = "Global\\DsHidMiniSharedMemory";
     private const string ReadEventName = "Global\\DsHidMiniReadEvent";
@@ -72,7 +72,7 @@ public class DsHidMiniInterop : IDisposable
             message->Size = (uint)Marshal.SizeOf<DSHM_IPC_MSG_HEADER>();
 
             Console.WriteLine(
-                SendAndWait(TimeSpan.FromSeconds(1))
+                SendAndWait()
                     ? $"Got reply - Type: {message->Type}, Target: {message->Target}, Command: {message->Command.Driver}"
                     : "!!! Failed to receive reply");
         }
@@ -82,6 +82,21 @@ public class DsHidMiniInterop : IDisposable
         }
     }
 
+    /// <summary>
+    ///     Signal the driver that we are done modifying the shared region and are now awaiting an update from the driver.
+    /// </summary>
+    /// <param name="timeoutMs">Timeout to wait for a reply. Defaults to 500ms.</param>
+    /// <returns>TRUE if we got a reply in time, FALSE otherwise.</returns>
+    private bool SendAndWait(int timeoutMs = 500)
+    {
+        return SendAndWait(TimeSpan.FromMilliseconds(timeoutMs));
+    }
+
+    /// <summary>
+    ///     Signal the driver that we are done modifying the shared region and are now awaiting an update from the driver.
+    /// </summary>
+    /// <param name="timeout">Timeout to wait for a reply.</param>
+    /// <returns>TRUE if we got a reply in time, FALSE otherwise.</returns>
     private bool SendAndWait(TimeSpan timeout)
     {
         SignalWriteFinished();
