@@ -98,12 +98,14 @@ typedef struct _DSHM_IPC_MSG_HEADER
 	} Command;
 
 	//
-	// One-based index of which device is this message for (0 if driver is targeted)
+	// One-based index of which device is this message for
+	//   Set to 0 if driver is targeted
 	// 
 	UINT32 TargetIndex;
 
 	//
 	// The size of the entire message (header + payload) in bytes
+	//   A size of 0 is invalid
 	// 
 	UINT32 Size;
 } DSHM_IPC_MSG_HEADER, * PDSHM_IPC_MSG_HEADER;
