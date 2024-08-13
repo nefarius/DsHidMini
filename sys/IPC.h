@@ -47,6 +47,10 @@ typedef enum
 	// The message is targeted at a device
 	// 
 	DSHM_IPC_MSG_TARGET_DEVICE,
+	//
+	// The message is targeted at the client/caller/app
+	// 
+	DSHM_IPC_MSG_TARGET_CLIENT
 } DSHM_IPC_MSG_TARGET;
 
 //
@@ -58,6 +62,10 @@ typedef enum
 	// Invalid/reserved, do not use
 	// 
 	DSHM_IPC_MSG_CMD_DRIVER_INVALID = 0,
+	//
+	// Message without payload, useful to check for functionality
+	// 
+	DSHM_IPC_MSG_CMD_DRIVER_PING
 } DSHM_IPC_MSG_CMD_DRIVER;
 
 //
@@ -75,6 +83,7 @@ typedef enum
 	DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO
 } DSHM_IPC_MSG_CMD_DEVICE;
 
+#include <pshpack1.h>
 typedef struct _DSHM_IPC_MSG_HEADER
 {
 	//
@@ -109,6 +118,7 @@ typedef struct _DSHM_IPC_MSG_HEADER
 	// 
 	UINT32 Size;
 } DSHM_IPC_MSG_HEADER, * PDSHM_IPC_MSG_HEADER;
+#include <poppack.h>
 
 typedef
 _Function_class_(EVT_DSHM_IPC_DispatchDeviceMessage)

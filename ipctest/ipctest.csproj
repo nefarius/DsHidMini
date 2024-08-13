@@ -6,6 +6,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>Nefarius.DsHidMini.IPC</RootNamespace>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
 </Project>

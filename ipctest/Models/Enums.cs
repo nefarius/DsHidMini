@@ -32,7 +32,10 @@ public enum DSHM_IPC_MSG_TARGET : UInt32
     DSHM_IPC_MSG_TARGET_DRIVER,
 
     // The message is targeted at a device
-    DSHM_IPC_MSG_TARGET_DEVICE
+    DSHM_IPC_MSG_TARGET_DEVICE,
+
+    // The message is targeted at the client/caller/app
+    DSHM_IPC_MSG_TARGET_CLIENT
 }
 
 // Describes a per-driver command
@@ -41,7 +44,10 @@ public enum DSHM_IPC_MSG_TARGET : UInt32
 public enum DSHM_IPC_MSG_CMD_DRIVER : UInt32
 {
     // Invalid/reserved, do not use
-    DSHM_IPC_MSG_CMD_DRIVER_INVALID = 0
+    DSHM_IPC_MSG_CMD_DRIVER_INVALID = 0,
+
+    // Message without payload, useful to check for functionality
+    DSHM_IPC_MSG_CMD_DRIVER_PING
 }
 
 // Describes a per-device command

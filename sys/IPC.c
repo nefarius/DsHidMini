@@ -244,7 +244,7 @@ void DestroyIPC(void)
 	FuncExitNoReturn(TRACE_IPC);
 }
 
-static NTSTATUS DSHM_IPC_DispatchMessage(PDSHM_IPC_MSG_HEADER Message)
+static NTSTATUS DSHM_IPC_DispatchIncomingMessage(PDSHM_IPC_MSG_HEADER Message)
 {
 	FuncEntry(TRACE_IPC);
 
@@ -322,7 +322,7 @@ static DWORD WINAPI ClientDispatchProc(
 				header->Type, header->Target, header->Command.Device
 			);
 
-			DSHM_IPC_DispatchMessage(header);
+			DSHM_IPC_DispatchIncomingMessage(header);
 
 			// TODO: implement me!
 		}

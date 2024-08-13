@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace Nefarius.DsHidMini.IPC.Models;
 
-[StructLayout(LayoutKind.Explicit)]
+[StructLayout(LayoutKind.Explicit, Pack = 1)]
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 public struct DSHM_IPC_MSG_COMMAND
 {
@@ -14,6 +14,7 @@ public struct DSHM_IPC_MSG_COMMAND
     public DSHM_IPC_MSG_CMD_DEVICE Device;
 }
 
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
 public struct DSHM_IPC_MSG_HEADER
