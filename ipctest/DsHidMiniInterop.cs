@@ -1,26 +1,17 @@
 ﻿using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
 
+using Nefarius.DsHidMini.IPC.Exceptions;
 using Nefarius.DsHidMini.IPC.Models;
 
 namespace Nefarius.DsHidMini.IPC;
-
-public sealed class DsHidMiniInteropExclusiveAccessException : Exception
-{
-    internal DsHidMiniInteropExclusiveAccessException() : base("") { }
-}
-
-public sealed class DsHidMiniInteropUnavailableException : Exception
-{
-    internal DsHidMiniInteropUnavailableException() : base("") { }
-}
 
 public sealed class DsHidMiniInterop : IDisposable
 {
     private const string FileMapName = "Global\\DsHidMiniSharedMemory";
     private const string ReadEventName = "Global\\DsHidMiniReadEvent";
     private const string WriteEventName = "Global\\DsHidMiniWriteEvent";
-    private const int BufferSize = 4096;
+    private const int BufferSize = 4096; // 4KB, keep in sync with driver
     private const string MutexName = "Global\\DsHidMiniMutex";
 
     private readonly Mutex _connectionMutex;
