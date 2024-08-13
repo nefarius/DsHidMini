@@ -1,4 +1,5 @@
-﻿using System.IO.MemoryMappedFiles;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
 
 using Nefarius.DsHidMini.IPC.Exceptions;
@@ -118,11 +119,13 @@ public sealed class DsHidMiniInterop : IDisposable
         return _writeEvent.WaitOne(timeout);
     }
 
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private void SignalReadFinished()
     {
         _writeEvent.Set();
     }
 
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private void SignalWriteFinished()
     {
         _readEvent.Set();
