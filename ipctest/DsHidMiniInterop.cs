@@ -66,10 +66,9 @@ public sealed class DsHidMiniInterop : IDisposable
             throw new DsHidMiniInteropConcurrencyException();
         }
 
-        byte* buffer = null;
-
         try
         {
+            byte* buffer = null;
             _accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref buffer);
 
             DSHM_IPC_MSG_HEADER* message = (DSHM_IPC_MSG_HEADER*)buffer;
