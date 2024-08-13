@@ -1,4 +1,6 @@
-﻿namespace Nefarius.DsHidMini.IPC.Exceptions;
+﻿using Nefarius.DsHidMini.IPC.Models;
+
+namespace Nefarius.DsHidMini.IPC.Exceptions;
 
 public sealed class DsHidMiniInteropExclusiveAccessException : Exception
 {
@@ -25,7 +27,14 @@ public sealed class DsHidMiniInteropReplyTimeoutException : Exception
 
 public sealed class DsHidMiniInteropUnexpectedReplyException : Exception
 {
-    internal DsHidMiniInteropUnexpectedReplyException() : base("A request reply was malformed.")
+    private readonly unsafe DSHM_IPC_MSG_HEADER* _header;
+
+    internal unsafe DsHidMiniInteropUnexpectedReplyException(DSHM_IPC_MSG_HEADER* header) : base(
+        "A request reply was malformed.")
     {
+        _header = header;
     }
+
+    public override unsafe string Message =>
+        $"Type: {_header->Type}, Target: {_header->Target}, Command: {_header->Command.Driver}, TargetIndex: {_header->TargetIndex}, Size: {_header->Size}";
 }

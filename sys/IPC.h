@@ -157,7 +157,7 @@ DSHM_IPC_MSG_PING_RESPONSE_INIT(
 	Message->Type = DSHM_IPC_MSG_TYPE_REQUEST_REPLY;
 	Message->Target = DSHM_IPC_MSG_TARGET_CLIENT;
 	Message->Command.Driver = DSHM_IPC_MSG_CMD_DRIVER_PING;
-	Message->Target = 0;
+	Message->TargetIndex = 0;
 	Message->Size = sizeof(DSHM_IPC_MSG_HEADER); // no payload
 }
 

@@ -79,7 +79,7 @@ public sealed class DsHidMiniInterop : IDisposable
                 return;
             }
 
-            throw new DsHidMiniInteropUnexpectedReplyException();
+            throw new DsHidMiniInteropUnexpectedReplyException(message);
         }
         finally
         {
@@ -92,7 +92,7 @@ public sealed class DsHidMiniInterop : IDisposable
     /// </summary>
     /// <param name="timeoutMs">Timeout to wait for a reply. Defaults to 500ms.</param>
     /// <returns>TRUE if we got a reply in time, FALSE otherwise.</returns>
-    private bool SendAndWait(int timeoutMs = 500)
+    private bool SendAndWait(int timeoutMs = 1000)
     {
         return SendAndWait(TimeSpan.FromMilliseconds(timeoutMs));
     }
