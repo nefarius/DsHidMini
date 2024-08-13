@@ -62,10 +62,24 @@ public sealed class DsHidMiniInterop : IDisposable
             message->TargetIndex = 0;
             message->Size = (uint)Marshal.SizeOf<DSHM_IPC_MSG_HEADER>();
 
-            Console.WriteLine(
-                SendAndWait()
-                    ? $"Got reply - Type: {message->Type}, Target: {message->Target}, Command: {message->Command.Driver}"
-                    : "!!! Failed to receive reply");
+            if (!SendAndWait())
+            {
+                throw new DsHidMiniInteropReplyTimeoutException();
+            }
+
+            //
+            // Plausibility check
+            // 
+            if (message->Type == DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_REPLY
+                && message->Target == DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_CLIENT
+                && message->Command.Driver == DSHM_IPC_MSG_CMD_DRIVER.DSHM_IPC_MSG_CMD_DRIVER_PING
+                && message->Target == 0
+                && message->Size == Marshal.SizeOf<DSHM_IPC_MSG_HEADER>())
+            {
+                return;
+            }
+
+            throw new DsHidMiniInteropUnexpectedReplyException();
         }
         finally
         {

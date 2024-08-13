@@ -15,3 +15,17 @@ public sealed class DsHidMiniInteropUnavailableException : Exception
     {
     }
 }
+
+public sealed class DsHidMiniInteropReplyTimeoutException : Exception
+{
+    internal DsHidMiniInteropReplyTimeoutException() : base("Operation timed out while waiting for a request reply.")
+    {
+    }
+}
+
+public sealed class DsHidMiniInteropUnexpectedReplyException : Exception
+{
+    internal DsHidMiniInteropUnexpectedReplyException() : base("A request reply was malformed.")
+    {
+    }
+}

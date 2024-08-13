@@ -142,7 +142,9 @@ typedef EVT_DSHM_IPC_DispatchDeviceMessage *PFN_DSHM_IPC_DispatchDeviceMessage;
 #define DSHM_IPC_MSG_IS_PING(_msg_) \
 	((_msg_)->Type == DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE \
 	&& (_msg_)->Target == DSHM_IPC_MSG_TARGET_DRIVER \
-	&& (_msg_)->Command.Driver == DSHM_IPC_MSG_CMD_DRIVER_PING)
+	&& (_msg_)->Command.Driver == DSHM_IPC_MSG_CMD_DRIVER_PING \
+	&& (_msg_)->TargetIndex == 0 \
+	&& (_msg_)->Size == sizeof(DSHM_IPC_MSG_HEADER))
 
 VOID
 FORCEINLINE
@@ -155,6 +157,7 @@ DSHM_IPC_MSG_PING_RESPONSE_INIT(
 	Message->Type = DSHM_IPC_MSG_TYPE_REQUEST_REPLY;
 	Message->Target = DSHM_IPC_MSG_TARGET_CLIENT;
 	Message->Command.Driver = DSHM_IPC_MSG_CMD_DRIVER_PING;
+	Message->Target = 0;
 	Message->Size = sizeof(DSHM_IPC_MSG_HEADER); // no payload
 }
 
