@@ -12,16 +12,14 @@ DSHM_EvtDispatchDeviceMessage(
 	_In_ PDSHM_IPC_MSG_HEADER MessageHeader
 )
 {
-	FuncEntry(TRACE_DEVICE);
-
-	UNREFERENCED_PARAMETER(DeviceContext);
+	FuncEntry(TRACE_IPC);
 
 	if (MessageHeader->Command.Device == DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO)
 	{
 		const PDSHM_IPC_MSG_PAIR_TO_REQUEST request = (PDSHM_IPC_MSG_PAIR_TO_REQUEST)MessageHeader;
 
 		TraceVerbose(
-			TRACE_DEVICE,
+			TRACE_IPC,
 			"Received pairing request, new host address: %02X:%02X:%02X:%02X:%02X:%02X",
 			request->Address.Address[0],
 			request->Address.Address[1],
@@ -31,18 +29,29 @@ DSHM_EvtDispatchDeviceMessage(
 			request->Address.Address[5]
 		);
 
-		// TODO: implement me!
+		const WDFDEVICE device = WdfObjectContextGetObject(DeviceContext);
+
+		NTSTATUS pairingStatus = DsUsb_Ds3PairToNewHost(device);
+		NTSTATUS fetchingStatus = STATUS_UNSUCCESSFUL;
+		if (!NT_SUCCESS(fetchingStatus = DsUsb_Ds3RequestHostAddress(device)))
+		{
+			TraceError(
+				TRACE_IPC,
+				"DsUsb_Ds3RequestHostAddress failed with status %!STATUS!",
+				fetchingStatus
+			);
+		}
 
 		DSHM_IPC_MSG_PAIR_TO_RESPONSE_INIT(
 			(PDSHM_IPC_MSG_PAIR_TO_REPLY)MessageHeader,
 			MessageHeader->TargetIndex,
-			STATUS_NOT_IMPLEMENTED
+			pairingStatus
 		);
 	}
 
 	// TODO: implement me!
 
-	FuncExitNoReturn(TRACE_DEVICE);
+	FuncExitNoReturn(TRACE_IPC);
 
 	return STATUS_SUCCESS;
 }

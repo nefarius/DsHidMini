@@ -500,28 +500,6 @@ NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 
 	} while (FALSE);
 
-	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RO_LastPairingStatus);
-	propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
-	propertyData.Lcid = LOCALE_NEUTRAL;
-
-	//
-	// Store in property
-	// 	
-	if (!NT_SUCCESS(status = WdfDeviceAssignProperty(
-		Device,
-		&propertyData,
-		DEVPROP_TYPE_NTSTATUS,
-		sizeof(NTSTATUS),
-		&status
-	)))
-	{
-		TraceError(
-			TRACE_DS3,
-			"Setting DEVPKEY_DsHidMini_RO_LastPairingStatus failed with status %!STATUS!",
-			status
-		);
-	}
-
 	FuncExit(TRACE_DS3, "status=%!STATUS!", status);
 
 	return status;
