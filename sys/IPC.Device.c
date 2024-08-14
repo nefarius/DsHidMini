@@ -15,7 +15,6 @@ DSHM_EvtDispatchDeviceMessage(
 	FuncEntry(TRACE_DEVICE);
 
 	UNREFERENCED_PARAMETER(DeviceContext);
-	UNREFERENCED_PARAMETER(MessageHeader);
 
 	if (MessageHeader->Command.Device == DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO)
 	{
