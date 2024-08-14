@@ -41,6 +41,7 @@ before_build:
 - cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\sys\dshidmini.rc" --resource.file-version --resource.product-version
 - cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\XInputBridge\XInputBridge.rc" --resource.file-version --resource.product-version
 - cmd: dotnet restore .\ControlApp\
+- cmd: dotnet restore .\ipctest\
 build_script:
 - cmd: .\build.cmd
 - cmd: if %PLATFORM%==x64 dotnet publish /p:PublishProfile=Properties\PublishProfiles\release-win-x64.pubxml .\ControlApp\
