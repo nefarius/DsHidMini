@@ -108,6 +108,16 @@ public sealed class DsHidMiniInterop : IDisposable
         }
     }
 
+    /// <summary>
+    ///     Writes a new host address to the given device.
+    /// </summary>
+    /// <remarks>This is synonymous with "pairing" to a new Bluetooth host.</remarks>
+    /// <param name="deviceIndex">The one-based device index.</param>
+    /// <param name="hostAddress">The new host address.</param>
+    /// <returns>The NTSTATUS value of the pairing result.</returns>
+    /// <exception cref="DsHidMiniInteropConcurrencyException"></exception>
+    /// <exception cref="DsHidMiniInteropReplyTimeoutException"></exception>
+    /// <exception cref="DsHidMiniInteropUnexpectedReplyException"></exception>
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public unsafe UInt32 SetHostAddress(int deviceIndex, PhysicalAddress hostAddress)
     {
