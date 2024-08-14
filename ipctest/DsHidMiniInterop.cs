@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.IO.MemoryMappedFiles;
 using System.Net.NetworkInformation;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 using Nefarius.DsHidMini.IPC.Exceptions;
