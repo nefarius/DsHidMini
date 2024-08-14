@@ -57,6 +57,18 @@ DSHM_EvtDispatchDeviceMessage(
 
 		status = STATUS_SUCCESS;
 	}
+	else if (MessageHeader->Command.Device == DSHM_IPC_MSG_CMD_DEVICE_SET_PLAYER_INDEX)
+	{
+		// TODO: implement me!
+
+		DSHM_IPC_MSG_SET_PLAYER_INDEX_RESPONSE_INIT(
+			(PDSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY)MessageHeader,
+			MessageHeader->TargetIndex,
+			STATUS_NOT_IMPLEMENTED
+		);
+
+		status = STATUS_SUCCESS;
+	}
 
 	FuncExit(TRACE_IPC, "status=%!STATUS!", status);
 

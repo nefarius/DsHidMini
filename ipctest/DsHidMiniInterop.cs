@@ -177,6 +177,75 @@ public sealed class DsHidMiniInterop : IDisposable
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="deviceIndex">The one-based device index.</param>
+    /// <param name="playerIndex">The player index to set to. Valid values include 1 to 7.</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
+    /// <exception cref="DsHidMiniInteropConcurrencyException"></exception>
+    /// <exception cref="DsHidMiniInteropReplyTimeoutException"></exception>
+    /// <exception cref="DsHidMiniInteropUnexpectedReplyException"></exception>
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
+    public unsafe UInt32 SetPlayerIndex(int deviceIndex, byte playerIndex)
+    {
+        ValidateDeviceIndex(deviceIndex);
+
+        if (playerIndex is < 1 or > 7)
+        {
+            throw new ArgumentOutOfRangeException(nameof(playerIndex),
+                "Player index must be between (including) 1 and 7.");
+        }
+
+        if (!Monitor.TryEnter(_lock))
+        {
+            throw new DsHidMiniInteropConcurrencyException();
+        }
+
+        try
+        {
+            byte* buffer = null;
+            _accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref buffer);
+
+            DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST* request = (DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST*)buffer;
+
+            request->Header.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
+            request->Header.Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DEVICE;
+            request->Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_SET_PLAYER_INDEX;
+            request->Header.TargetIndex = (uint)deviceIndex;
+            request->Header.Size = (uint)Marshal.SizeOf<DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST>();
+
+            request->PlayerIndex = playerIndex;
+
+            if (!SendAndWait())
+            {
+                throw new DsHidMiniInteropReplyTimeoutException();
+            }
+
+            DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY* reply = (DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY*)buffer;
+
+            //
+            // Plausibility check
+            // 
+            if (reply->Header.Type == DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_REPLY
+                && reply->Header.Target == DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_CLIENT
+                && reply->Header.Command.Device == DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_SET_PLAYER_INDEX
+                && reply->Header.TargetIndex == deviceIndex
+                && reply->Header.Size == Marshal.SizeOf<DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY>())
+            {
+                return reply->NtStatus;
+            }
+
+            throw new DsHidMiniInteropUnexpectedReplyException(&reply->Header);
+        }
+        finally
+        {
+            _accessor.SafeMemoryMappedViewHandle.ReleasePointer();
+            Monitor.Exit(_lock);
+        }
+    }
+
     private static void ValidateDeviceIndex(int deviceIndex)
     {
         if (deviceIndex is <= 0 or > byte.MaxValue)

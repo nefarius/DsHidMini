@@ -144,6 +144,22 @@ typedef struct _DSHM_IPC_MSG_PAIR_TO_REPLY
 	NTSTATUS ReadStatus;
 	
 } DSHM_IPC_MSG_PAIR_TO_REPLY, *PDSHM_IPC_MSG_PAIR_TO_REPLY;
+
+typedef struct _DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST
+{
+	DSHM_IPC_MSG_HEADER Header;
+
+	BYTE PlayerIndex;
+	
+} DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST, *PDSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST;
+
+typedef struct _DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY
+{
+	DSHM_IPC_MSG_HEADER Header;
+
+	NTSTATUS NtStatus;
+	
+} DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY, *PDSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY;
 #include <poppack.h>
 
 typedef
@@ -215,6 +231,26 @@ DSHM_IPC_MSG_PAIR_TO_RESPONSE_INIT(
 
 	Message->WriteStatus = WriteStatus;
 	Message->ReadStatus = ReadStatus;
+}
+
+VOID
+FORCEINLINE
+DSHM_IPC_MSG_SET_PLAYER_INDEX_RESPONSE_INIT(
+	_Inout_ PDSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY Message,
+	_In_ UINT32 DeviceIndex,
+	_In_ NTSTATUS Status
+)
+{
+	const size_t size = sizeof(DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY);
+	RtlZeroMemory(Message, size);
+
+	Message->Header.Type = DSHM_IPC_MSG_TYPE_REQUEST_REPLY;
+	Message->Header.Target = DSHM_IPC_MSG_TARGET_CLIENT;
+	Message->Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO;
+	Message->Header.TargetIndex = DeviceIndex;
+	Message->Header.Size = size;
+
+	Message->NtStatus = Status;
 }
 
 

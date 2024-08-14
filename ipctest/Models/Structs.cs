@@ -59,6 +59,28 @@ internal struct DSHM_IPC_MSG_PAIR_TO_REPLY
     public UInt32 ReadStatus;
 }
 
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+internal struct DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST
+{
+    public DSHM_IPC_MSG_HEADER Header;
+
+    public byte PlayerIndex;
+}
+
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+internal struct DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY
+{
+    public DSHM_IPC_MSG_HEADER Header;
+
+    public UInt32 NtStatus;
+}
+
+#region Public
+
 public struct SetHostResult
 {
     /// <summary>
@@ -76,3 +98,5 @@ public struct SetHostResult
         return $"Pairing result: 0x{WriteStatus:X}, query result: 0x{ReadStatus:X}";
     }
 }
+
+#endregion
