@@ -84,7 +84,11 @@ typedef enum
 	//
 	// Pair a given device to a new host
 	// 
-	DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO
+	DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO,
+	//
+	// Requests a player index update (switch player LED etc.)
+	// 
+	DSHM_IPC_MSG_CMD_DEVICE_SET_PLAYER_INDEX,
 } DSHM_IPC_MSG_CMD_DEVICE;
 
 #include <pshpack1.h>

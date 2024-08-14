@@ -62,5 +62,8 @@ internal enum DSHM_IPC_MSG_CMD_DEVICE : UInt32
     DSHM_IPC_MSG_CMD_DEVICE_INVALID = 0,
 
     // Pair a given device to a new host
-    DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO
+    DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO,
+    
+    // Requests a player index update (switch player LED etc.)
+    DSHM_IPC_MSG_CMD_DEVICE_SET_PLAYER_INDEX,
 }
