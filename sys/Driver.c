@@ -10,7 +10,6 @@ DriverEntry(
 )
 {
 	WDF_DRIVER_CONFIG config;
-	NTSTATUS status;
 	WDF_OBJECT_ATTRIBUTES attributes;
 
 	//
@@ -32,12 +31,14 @@ DriverEntry(
 		dshidminiEvtDeviceAdd
 	);
 
-	status = WdfDriverCreate(
+	WDFDRIVER driver = NULL;
+
+	NTSTATUS status = WdfDriverCreate(
 		DriverObject,
 		RegistryPath,
 		&attributes,
 		&config,
-		WDF_NO_HANDLE
+		&driver
 	);
 
 	if (!NT_SUCCESS(status))
@@ -54,6 +55,15 @@ DriverEntry(
 		return status;
 	}
 
+	const PDSHM_DRIVER_CONTEXT context = DriverGetContext(driver);
+
+	if (!NT_SUCCESS(status = WdfWaitLockCreate(WDF_NO_OBJECT_ATTRIBUTES, &context->SlotsLock)))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR, TRACE_DRIVER, "WdfWaitLockCreate failed with status %!STATUS!", status);
+		WPP_CLEANUP(DriverObject);
+		return status;
+	}
+
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Exit");
 
 	return status;
@@ -65,7 +75,7 @@ void dshidminiEvtDriverContextCleanup(WDFOBJECT DriverObject)
 {
 	DestroyIPC();
 
-	WPP_CLEANUP( WdfDriverWdmGetDriverObject( (WDFDRIVER) DriverObject) );
+	WPP_CLEANUP(WdfDriverWdmGetDriverObject( (WDFDRIVER) DriverObject));
 }
 #pragma code_seg()
 

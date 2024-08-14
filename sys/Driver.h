@@ -44,7 +44,7 @@ EXTERN_C_START
 //
 // Artificial limit to make memory management easier (should be enough ;)
 // 
-#define DSHM_MAX_DEVICES	USHORT_MAX
+#define DSHM_MAX_DEVICES	UCHAR_MAX
 
 typedef struct _DSHM_DRIVER_CONTEXT
 {
@@ -101,9 +101,49 @@ typedef struct _DSHM_DRIVER_CONTEXT
 			PFN_DSHM_IPC_DispatchDeviceMessage Callbacks[DSHM_MAX_DEVICES];
 		} DeviceDispatchers;
 	} IPC;
+
+	LONG Slots[8]; // 256 usable bits
+
+	WDFWAITLOCK SlotsLock;
 } DSHM_DRIVER_CONTEXT, * PDSHM_DRIVER_CONTEXT;
 
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DSHM_DRIVER_CONTEXT, DriverGetContext)
+
+LONG
+FORCEINLINE
+SET_SLOT(
+	PDSHM_DRIVER_CONTEXT Context,
+	UINT32 SlotIndex
+)
+{
+	const UINT32 bits = sizeof(Context->Slots);
+
+	return InterlockedOr(&Context->Slots[SlotIndex / bits], 1 << (SlotIndex % bits));
+}
+
+BOOLEAN
+FORCEINLINE
+TEST_SLOT(
+	PDSHM_DRIVER_CONTEXT Context,
+	UINT32 SlotIndex
+)
+{
+	const UINT32 bits = sizeof(Context->Slots);
+
+	return (BOOLEAN)(Context->Slots[SlotIndex / bits] & (1 << (SlotIndex % bits)));
+}
+
+LONG
+FORCEINLINE
+CLEAR_SLOT(
+	PDSHM_DRIVER_CONTEXT Context,
+	UINT32 SlotIndex
+)
+{
+	const UINT32 bits = sizeof(Context->Slots);
+
+	return InterlockedAnd(&Context->Slots[SlotIndex / bits], ~(1 << (SlotIndex % bits)));
+}
 
 //
 // WDFDRIVER Events
