@@ -27,7 +27,7 @@ install:
     cd "C:\projects\DMF"
     git pull > NUL
     cd %appveyor_build_folder%
--cmd: mklink /D "%APPVEYOR_BUILD_FOLDER%\XInputBridge\vcpkg_installed" "C:\tools\build-cache\dshidmini\XInputBridge\vcpkg_installed\%PLATFORM%"
+- cmd: mklink /D "%APPVEYOR_BUILD_FOLDER%\XInputBridge\vcpkg_installed" "C:\tools\build-cache\dshidmini\XInputBridge\vcpkg_installed\%PLATFORM%"
 dotnet_csproj:
   patch: true
   file: '**\*.csproj'
