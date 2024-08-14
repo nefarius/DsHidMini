@@ -230,6 +230,9 @@
     <ClCompile Include="IPC.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="IPC.Device.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="dshidmini.rc">
