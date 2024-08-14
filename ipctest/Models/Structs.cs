@@ -54,5 +54,19 @@ public struct DSHM_IPC_MSG_PAIR_TO_REPLY
 {
     public DSHM_IPC_MSG_HEADER Header;
 
-    public UInt32 Status;
+    public UInt32 WriteStatus;
+    
+    public UInt32 ReadStatus;
+}
+
+public struct SetHostResult
+{
+    public UInt32 WriteStatus;
+    
+    public UInt32 ReadStatus;
+
+    public override string ToString()
+    {
+        return $"Pairing result: 0x{WriteStatus:X}, query result: 0x{ReadStatus:X}";
+    }
 }

@@ -29,23 +29,28 @@ DSHM_EvtDispatchDeviceMessage(
 			request->Address.Address[5]
 		);
 
+		// TODO: this changes state for runtime settings, improve
+		DeviceContext->Configuration.DevicePairingMode = DsDevicePairingModeCustom;
+		RtlCopyMemory(&DeviceContext->Configuration.CustomHostAddress, &request->Address, sizeof(BD_ADDR));
+
 		const WDFDEVICE device = WdfObjectContextGetObject(DeviceContext);
 
-		NTSTATUS pairingStatus = DsUsb_Ds3PairToNewHost(device);
-		NTSTATUS fetchingStatus = STATUS_UNSUCCESSFUL;
-		if (!NT_SUCCESS(fetchingStatus = DsUsb_Ds3RequestHostAddress(device)))
+		NTSTATUS writeStatus = DsUsb_Ds3PairToNewHost(device);
+		NTSTATUS readStatus = STATUS_UNSUCCESSFUL;
+		if (!NT_SUCCESS(readStatus = DsUsb_Ds3RequestHostAddress(device)))
 		{
 			TraceError(
 				TRACE_IPC,
 				"DsUsb_Ds3RequestHostAddress failed with status %!STATUS!",
-				fetchingStatus
+				readStatus
 			);
 		}
 
 		DSHM_IPC_MSG_PAIR_TO_RESPONSE_INIT(
 			(PDSHM_IPC_MSG_PAIR_TO_REPLY)MessageHeader,
 			MessageHeader->TargetIndex,
-			pairingStatus
+			writeStatus,
+			readStatus
 		);
 	}
 
@@ -55,4 +60,3 @@ DSHM_EvtDispatchDeviceMessage(
 
 	return STATUS_SUCCESS;
 }
-

@@ -135,7 +135,9 @@ typedef struct _DSHM_IPC_MSG_PAIR_TO_REPLY
 {
 	DSHM_IPC_MSG_HEADER Header;
 
-	NTSTATUS Status;
+	NTSTATUS WriteStatus;
+
+	NTSTATUS ReadStatus;
 	
 } DSHM_IPC_MSG_PAIR_TO_REPLY, *PDSHM_IPC_MSG_PAIR_TO_REPLY;
 #include <poppack.h>
@@ -190,7 +192,8 @@ FORCEINLINE
 DSHM_IPC_MSG_PAIR_TO_RESPONSE_INIT(
 	_Inout_ PDSHM_IPC_MSG_PAIR_TO_REPLY Message,
 	_In_ UINT32 DeviceIndex,
-	_In_ NTSTATUS Status
+	_In_ NTSTATUS WriteStatus,
+	_In_ NTSTATUS ReadStatus
 )
 {
 	const size_t size = sizeof(DSHM_IPC_MSG_PAIR_TO_REPLY);
@@ -202,7 +205,8 @@ DSHM_IPC_MSG_PAIR_TO_RESPONSE_INIT(
 	Message->Header.TargetIndex = DeviceIndex;
 	Message->Header.Size = size;
 
-	Message->Status = Status;
+	Message->WriteStatus = WriteStatus;
+	Message->ReadStatus = ReadStatus;
 }
 
 

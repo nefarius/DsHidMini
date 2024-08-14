@@ -111,15 +111,15 @@ public sealed class DsHidMiniInterop : IDisposable
     /// <summary>
     ///     Writes a new host address to the given device.
     /// </summary>
+    /// <returns>A <see cref="SetHostResult"/>.</returns>
     /// <remarks>This is synonymous with "pairing" to a new Bluetooth host.</remarks>
     /// <param name="deviceIndex">The one-based device index.</param>
     /// <param name="hostAddress">The new host address.</param>
-    /// <returns>The NTSTATUS value of the pairing result.</returns>
     /// <exception cref="DsHidMiniInteropConcurrencyException"></exception>
     /// <exception cref="DsHidMiniInteropReplyTimeoutException"></exception>
     /// <exception cref="DsHidMiniInteropUnexpectedReplyException"></exception>
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
-    public unsafe UInt32 SetHostAddress(int deviceIndex, PhysicalAddress hostAddress)
+    public unsafe SetHostResult SetHostAddress(int deviceIndex, PhysicalAddress hostAddress)
     {
         if (!Monitor.TryEnter(_lock))
         {
@@ -163,7 +163,7 @@ public sealed class DsHidMiniInterop : IDisposable
                 && reply->Header.TargetIndex == deviceIndex
                 && reply->Header.Size == Marshal.SizeOf<DSHM_IPC_MSG_PAIR_TO_REPLY>())
             {
-                return reply->Status;
+                return new SetHostResult() { WriteStatus = reply->WriteStatus, ReadStatus = reply->ReadStatus };
             }
 
             throw new DsHidMiniInteropUnexpectedReplyException(&reply->Header);
