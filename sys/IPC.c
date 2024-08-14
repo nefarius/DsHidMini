@@ -381,8 +381,16 @@ static DWORD WINAPI ClientDispatchProc(
 				header->Type, header->Target, header->Command.Device
 			);
 
-			// TODO: do something with the return value
-			DSHM_IPC_DispatchIncomingMessage(context, header);
+			NTSTATUS status = DSHM_IPC_DispatchIncomingMessage(context, header);
+
+			if (!NT_SUCCESS(status))
+			{
+				TraceError(
+					TRACE_IPC,
+					"DSHM_IPC_DispatchIncomingMessage reported non-success status %!STATUS!",
+					status
+				);
+			}
 		}
 
 	} while (TRUE);
