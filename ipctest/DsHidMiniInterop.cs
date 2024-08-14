@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.IO.MemoryMappedFiles;
+using System.Net.NetworkInformation;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 using Nefarius.DsHidMini.IPC.Exceptions;
@@ -59,6 +61,7 @@ public sealed class DsHidMiniInterop : IDisposable
     /// </summary>
     /// <exception cref="DsHidMiniInteropReplyTimeoutException"></exception>
     /// <exception cref="DsHidMiniInteropUnexpectedReplyException"></exception>
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public unsafe void SendPing()
     {
         if (!Monitor.TryEnter(_lock))
@@ -97,6 +100,63 @@ public sealed class DsHidMiniInterop : IDisposable
             }
 
             throw new DsHidMiniInteropUnexpectedReplyException(message);
+        }
+        finally
+        {
+            _accessor.SafeMemoryMappedViewHandle.ReleasePointer();
+            Monitor.Exit(_lock);
+        }
+    }
+
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
+    public unsafe UInt32 SetHostAddress(int deviceIndex, PhysicalAddress hostAddress)
+    {
+        if (!Monitor.TryEnter(_lock))
+        {
+            throw new DsHidMiniInteropConcurrencyException();
+        }
+
+        try
+        {
+            byte* buffer = null;
+            _accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref buffer);
+
+            DSHM_IPC_MSG_PAIR_TO_REQUEST* request = (DSHM_IPC_MSG_PAIR_TO_REQUEST*)buffer;
+
+            request->Header.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
+            request->Header.Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DEVICE;
+            request->Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO;
+            request->Header.TargetIndex = (uint)deviceIndex;
+            request->Header.Size = (uint)Marshal.SizeOf<DSHM_IPC_MSG_PAIR_TO_REQUEST>();
+
+            fixed (byte* source = hostAddress.GetAddressBytes())
+            {
+                if (source is not null)
+                {
+                    Buffer.MemoryCopy(source, request->Address, 6, 6);
+                }
+            }
+
+            if (!SendAndWait())
+            {
+                throw new DsHidMiniInteropReplyTimeoutException();
+            }
+
+            DSHM_IPC_MSG_PAIR_TO_REPLY* reply = (DSHM_IPC_MSG_PAIR_TO_REPLY*)buffer;
+
+            //
+            // Plausibility check
+            // 
+            if (reply->Header.Type == DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_REPLY
+                && reply->Header.Target == DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_CLIENT
+                && reply->Header.Command.Device == DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO
+                && reply->Header.TargetIndex == deviceIndex
+                && reply->Header.Size == Marshal.SizeOf<DSHM_IPC_MSG_PAIR_TO_REPLY>())
+            {
+                return reply->Status;
+            }
+
+            throw new DsHidMiniInteropUnexpectedReplyException(&reply->Header);
         }
         finally
         {

@@ -285,13 +285,13 @@ static NTSTATUS DSHM_IPC_DispatchIncomingMessage(
 	// 
 	if (DSHM_IPC_MSG_IS_FOR_DEVICE(Message))
 	{
+		BOOLEAN expectsReply = Message->Type == DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE || Message->Type == DSHM_IPC_MSG_TYPE_RESPONSE_ONLY;
 		PDEVICE_CONTEXT deviceContext = Context->IPC.DeviceDispatchers.Contexts[Message->TargetIndex];
 		PFN_DSHM_IPC_DispatchDeviceMessage callback = Context->IPC.DeviceDispatchers.Callbacks[Message->TargetIndex];
 
 		if (callback && deviceContext)
 		{
-			// TODO: interpret return value
-			callback(deviceContext, Message);
+			status = callback(deviceContext, Message);
 		}
 		else
 		{
@@ -300,6 +300,11 @@ static NTSTATUS DSHM_IPC_DispatchIncomingMessage(
 				"Device with index %d has no valid callback or context assigned",
 				Message->TargetIndex
 			);
+		}
+
+		if (expectsReply)
+		{
+			DSHM_IPC_SIGNAL_WRITE_DONE(Context);
 		}
 	}
 

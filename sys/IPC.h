@@ -122,6 +122,22 @@ typedef struct _DSHM_IPC_MSG_HEADER
 	// 
 	UINT32 Size;
 } DSHM_IPC_MSG_HEADER, * PDSHM_IPC_MSG_HEADER;
+
+typedef struct _DSHM_IPC_MSG_PAIR_TO_REQUEST
+{
+	DSHM_IPC_MSG_HEADER Header;
+
+	BD_ADDR Address;
+	
+} DSHM_IPC_MSG_PAIR_TO_REQUEST, *PDSHM_IPC_MSG_PAIR_TO_REQUEST;
+
+typedef struct _DSHM_IPC_MSG_PAIR_TO_REPLY
+{
+	DSHM_IPC_MSG_HEADER Header;
+
+	NTSTATUS Status;
+	
+} DSHM_IPC_MSG_PAIR_TO_REPLY, *PDSHM_IPC_MSG_PAIR_TO_REPLY;
 #include <poppack.h>
 
 typedef
@@ -167,6 +183,26 @@ DSHM_IPC_MSG_PING_RESPONSE_INIT(
 	Message->Command.Driver = DSHM_IPC_MSG_CMD_DRIVER_PING;
 	Message->TargetIndex = 0;
 	Message->Size = sizeof(DSHM_IPC_MSG_HEADER); // no payload
+}
+
+VOID
+FORCEINLINE
+DSHM_IPC_MSG_PAIR_TO_RESPONSE_INIT(
+	_Inout_ PDSHM_IPC_MSG_PAIR_TO_REPLY Message,
+	_In_ UINT32 DeviceIndex,
+	_In_ NTSTATUS Status
+)
+{
+	const size_t size = sizeof(DSHM_IPC_MSG_PAIR_TO_REPLY);
+	RtlZeroMemory(Message, size);
+
+	Message->Header.Type = DSHM_IPC_MSG_TYPE_REQUEST_REPLY;
+	Message->Header.Target = DSHM_IPC_MSG_TARGET_CLIENT;
+	Message->Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO;
+	Message->Header.TargetIndex = DeviceIndex;
+	Message->Header.Size = size;
+
+	Message->Status = Status;
 }
 
 

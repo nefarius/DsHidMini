@@ -36,3 +36,23 @@ public struct DSHM_IPC_MSG_HEADER
     // A size of 0 is invalid
     public uint Size;
 }
+
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+public unsafe struct DSHM_IPC_MSG_PAIR_TO_REQUEST
+{
+    public DSHM_IPC_MSG_HEADER Header;
+
+    public fixed byte Address[6];
+}
+
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+public struct DSHM_IPC_MSG_PAIR_TO_REPLY
+{
+    public DSHM_IPC_MSG_HEADER Header;
+
+    public UInt32 Status;
+}

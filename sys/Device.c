@@ -1246,6 +1246,22 @@ DSHM_EvtDispatchDeviceMessage(
 	UNREFERENCED_PARAMETER(DeviceContext);
 	UNREFERENCED_PARAMETER(MessageHeader);
 
+	if (MessageHeader->Command.Device == DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO)
+	{
+		TraceInformation(
+			TRACE_DEVICE,
+			"Received pairing request"
+		);
+
+		// TODO: implement me!
+
+		DSHM_IPC_MSG_PAIR_TO_RESPONSE_INIT(
+			(PDSHM_IPC_MSG_PAIR_TO_REPLY)MessageHeader,
+			MessageHeader->TargetIndex,
+			STATUS_NOT_IMPLEMENTED
+		);
+	}
+
 	// TODO: implement me!
 
 	FuncExitNoReturn(TRACE_DEVICE);

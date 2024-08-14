@@ -1,5 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
+using System.Net.NetworkInformation;
+
 using Nefarius.DsHidMini.IPC;
 
 if (!DsHidMiniInterop.IsAvailable)
@@ -10,5 +12,5 @@ if (!DsHidMiniInterop.IsAvailable)
 
 using var ipc = new DsHidMiniInterop();
 
-ipc.SendPing();
-
+//ipc.SendPing();
+Console.WriteLine(ipc.SetHostAddress(1, PhysicalAddress.Parse("C0:13:37:DE:AD:BE")));
