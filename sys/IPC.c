@@ -285,9 +285,9 @@ static NTSTATUS DSHM_IPC_DispatchIncomingMessage(
 	// 
 	if (DSHM_IPC_MSG_IS_FOR_DEVICE(Message))
 	{
-		BOOLEAN expectsReply = Message->Type == DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE || Message->Type == DSHM_IPC_MSG_TYPE_RESPONSE_ONLY;
-		PDEVICE_CONTEXT deviceContext = Context->IPC.DeviceDispatchers.Contexts[Message->TargetIndex];
-		PFN_DSHM_IPC_DispatchDeviceMessage callback = Context->IPC.DeviceDispatchers.Callbacks[Message->TargetIndex];
+		const BOOLEAN expectsReply = Message->Type == DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE || Message->Type == DSHM_IPC_MSG_TYPE_RESPONSE_ONLY;
+		const PDEVICE_CONTEXT deviceContext = Context->IPC.DeviceDispatchers.Contexts[Message->TargetIndex];
+		const PFN_DSHM_IPC_DispatchDeviceMessage callback = Context->IPC.DeviceDispatchers.Callbacks[Message->TargetIndex];
 
 		//
 		// Proxy the message dispatching to the targeted device instance
