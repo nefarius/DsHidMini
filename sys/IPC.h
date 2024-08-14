@@ -157,6 +157,10 @@ typedef EVT_DSHM_IPC_DispatchDeviceMessage *PFN_DSHM_IPC_DispatchDeviceMessage;
 #define DSHM_IPC_SIGNAL_WRITE_DONE(_ctx_) \
 	SetEvent((_ctx_)->IPC.WriteEvent)
 
+#define DSHM_IPC_MSG_EXPECTS_REPLY(_msg_) \
+	((_msg_)->Type == DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE \
+		|| (_msg_)->Type == DSHM_IPC_MSG_TYPE_RESPONSE_ONLY)
+
 #define DSHM_IPC_MSG_IS_PING(_msg_) \
 	((_msg_)->Type == DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE \
 	&& (_msg_)->Target == DSHM_IPC_MSG_TARGET_DRIVER \
