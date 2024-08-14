@@ -13,4 +13,4 @@ if (!DsHidMiniInterop.IsAvailable)
 using var ipc = new DsHidMiniInterop();
 
 //ipc.SendPing();
-Console.WriteLine(ipc.SetHostAddress(1, PhysicalAddress.Parse("C0:13:37:DE:AD:BE")));
+Console.WriteLine($"0x{ipc.SetHostAddress(1, PhysicalAddress.Parse("C0:13:37:DE:AD:BE")):X}");

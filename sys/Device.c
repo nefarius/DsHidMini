@@ -1248,9 +1248,17 @@ DSHM_EvtDispatchDeviceMessage(
 
 	if (MessageHeader->Command.Device == DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO)
 	{
-		TraceInformation(
+		const PDSHM_IPC_MSG_PAIR_TO_REQUEST request = (PDSHM_IPC_MSG_PAIR_TO_REQUEST)MessageHeader;
+
+		TraceVerbose(
 			TRACE_DEVICE,
-			"Received pairing request"
+			"Received pairing request, new host address: %02X:%02X:%02X:%02X:%02X:%02X",
+			request->Address.Address[0],
+			request->Address.Address[1],
+			request->Address.Address[2],
+			request->Address.Address[3],
+			request->Address.Address[4],
+			request->Address.Address[5]
 		);
 
 		// TODO: implement me!
