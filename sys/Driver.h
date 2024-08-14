@@ -102,8 +102,14 @@ typedef struct _DSHM_DRIVER_CONTEXT
 		} DeviceDispatchers;
 	} IPC;
 
+	//
+	// Index slots to associate connected devices in IPC
+	// 
 	LONG Slots[8]; // 256 usable bits
 
+	//
+	// Lock protecting access to Slots
+	// 
 	WDFWAITLOCK SlotsLock;
 } DSHM_DRIVER_CONTEXT, * PDSHM_DRIVER_CONTEXT;
 

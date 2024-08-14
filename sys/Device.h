@@ -357,6 +357,8 @@ typedef struct _DEVICE_CONTEXT
 
 	} RumbleControlState;
 
+	UINT32 SlotIndex;
+
 } DEVICE_CONTEXT, * PDEVICE_CONTEXT;
 
 //

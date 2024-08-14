@@ -215,6 +215,17 @@ void DsHidMini_DeviceCleanup(
 
 	PAGED_CODE();
 
+	const WDFDEVICE device = Object;
+	const PDEVICE_CONTEXT deviceContext = DeviceGetContext(device);
+	const WDFDRIVER driver = WdfGetDriver();
+	const PDSHM_DRIVER_CONTEXT driverContext = DriverGetContext(driver);
+
+	WdfWaitLockAcquire(driverContext->SlotsLock, NULL);
+	{
+		CLEAR_SLOT(driverContext, deviceContext->SlotIndex);
+	}
+	WdfWaitLockRelease(driverContext->SlotsLock);
+
 	EventWriteUnloadEvent(Object);
 
 	FuncExitNoReturn(TRACE_DEVICE);
@@ -404,12 +415,45 @@ DsDevice_InitContext(
 )
 {
 	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
-	NTSTATUS status = STATUS_SUCCESS;
+	const PDSHM_DRIVER_CONTEXT pDrvCtx = DriverGetContext(WdfGetDriver());
+	NTSTATUS status = STATUS_INSUFFICIENT_RESOURCES;
 	WDF_OBJECT_ATTRIBUTES attributes;
 	PUCHAR outReportBuffer = NULL;
 	WDF_TIMER_CONFIG timerCfg;
 
 	FuncEntry(TRACE_DEVICE);
+
+	WdfWaitLockAcquire(pDrvCtx->SlotsLock, NULL);
+	{
+		//
+		// Get next free slot
+		// 
+		for (UINT32 slotIndex = 1; slotIndex <= DSHM_MAX_DEVICES; slotIndex++)
+		{
+			if (!TEST_SLOT(pDrvCtx, slotIndex))
+			{
+				SET_SLOT(pDrvCtx, slotIndex);
+				status = STATUS_SUCCESS;
+
+				TraceVerbose(
+					TRACE_DEVICE,
+					"Claimed device slot: %d",
+					slotIndex
+				);
+
+				pDevCtx->SlotIndex = slotIndex;
+				break;
+			}
+		}
+	}
+	WdfWaitLockRelease(pDrvCtx->SlotsLock);
+
+	if (!NT_SUCCESS(status))
+	{
+		FuncExit(TRACE_DEVICE, "status=%!STATUS!", status);
+
+		return status;
+	}
 
 	switch (pDevCtx->ConnectionType)
 	{
