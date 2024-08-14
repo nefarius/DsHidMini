@@ -46,3 +46,11 @@ public sealed class DsHidMiniInteropConcurrencyException : Exception
     {
     }
 }
+
+public sealed class DsHidMiniInteropInvalidDeviceIndexException : Exception
+{
+    internal DsHidMiniInteropInvalidDeviceIndexException(int deviceIndex) : base(
+        $"The provided device index {deviceIndex} was out of range; allowed values must remain between (including) 1 and 255.")
+    {
+    }
+}

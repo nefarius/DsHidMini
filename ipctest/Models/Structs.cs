@@ -5,7 +5,7 @@ namespace Nefarius.DsHidMini.IPC.Models;
 
 [StructLayout(LayoutKind.Explicit, Pack = 1)]
 [SuppressMessage("ReSharper", "InconsistentNaming")]
-public struct DSHM_IPC_MSG_COMMAND
+internal struct DSHM_IPC_MSG_COMMAND
 {
     [FieldOffset(0)]
     public DSHM_IPC_MSG_CMD_DRIVER Driver;
@@ -17,7 +17,7 @@ public struct DSHM_IPC_MSG_COMMAND
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
-public struct DSHM_IPC_MSG_HEADER
+internal struct DSHM_IPC_MSG_HEADER
 {
     // What request-behavior is expected (request, request-reply, ...)
     public DSHM_IPC_MSG_TYPE Type;
@@ -40,7 +40,7 @@ public struct DSHM_IPC_MSG_HEADER
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
-public unsafe struct DSHM_IPC_MSG_PAIR_TO_REQUEST
+internal unsafe struct DSHM_IPC_MSG_PAIR_TO_REQUEST
 {
     public DSHM_IPC_MSG_HEADER Header;
 
@@ -50,7 +50,7 @@ public unsafe struct DSHM_IPC_MSG_PAIR_TO_REQUEST
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
-public struct DSHM_IPC_MSG_PAIR_TO_REPLY
+internal struct DSHM_IPC_MSG_PAIR_TO_REPLY
 {
     public DSHM_IPC_MSG_HEADER Header;
 

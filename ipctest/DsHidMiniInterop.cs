@@ -115,12 +115,15 @@ public sealed class DsHidMiniInterop : IDisposable
     /// <remarks>This is synonymous with "pairing" to a new Bluetooth host.</remarks>
     /// <param name="deviceIndex">The one-based device index.</param>
     /// <param name="hostAddress">The new host address.</param>
+    /// <exception cref="DsHidMiniInteropInvalidDeviceIndexException"></exception>
     /// <exception cref="DsHidMiniInteropConcurrencyException"></exception>
     /// <exception cref="DsHidMiniInteropReplyTimeoutException"></exception>
     /// <exception cref="DsHidMiniInteropUnexpectedReplyException"></exception>
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public unsafe SetHostResult SetHostAddress(int deviceIndex, PhysicalAddress hostAddress)
     {
+        ValidateDeviceIndex(deviceIndex);
+
         if (!Monitor.TryEnter(_lock))
         {
             throw new DsHidMiniInteropConcurrencyException();
@@ -172,6 +175,14 @@ public sealed class DsHidMiniInterop : IDisposable
         {
             _accessor.SafeMemoryMappedViewHandle.ReleasePointer();
             Monitor.Exit(_lock);
+        }
+    }
+
+    private static void ValidateDeviceIndex(int deviceIndex)
+    {
+        if (deviceIndex is <= 0 or > byte.MaxValue)
+        {
+            throw new DsHidMiniInteropInvalidDeviceIndexException(deviceIndex);
         }
     }
 

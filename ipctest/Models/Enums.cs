@@ -5,7 +5,7 @@ namespace Nefarius.DsHidMini.IPC.Models;
 // Describes the type of IPC message response behavior
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
-public enum DSHM_IPC_MSG_TYPE : UInt32
+internal enum DSHM_IPC_MSG_TYPE : UInt32
 {
     // Invalid/reserved, do not use
     DSHM_IPC_MSG_TYPE_INVALID = 0,
@@ -26,7 +26,7 @@ public enum DSHM_IPC_MSG_TYPE : UInt32
 // Describes the message receiver
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
-public enum DSHM_IPC_MSG_TARGET : UInt32
+internal enum DSHM_IPC_MSG_TARGET : UInt32
 {
     // Invalid/reserved, do not use
     DSHM_IPC_MSG_TARGET_INVALID = 0,
@@ -44,7 +44,7 @@ public enum DSHM_IPC_MSG_TARGET : UInt32
 // Describes a per-driver command
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
-public enum DSHM_IPC_MSG_CMD_DRIVER : UInt32
+internal enum DSHM_IPC_MSG_CMD_DRIVER : UInt32
 {
     // Invalid/reserved, do not use
     DSHM_IPC_MSG_CMD_DRIVER_INVALID = 0,
@@ -56,7 +56,7 @@ public enum DSHM_IPC_MSG_CMD_DRIVER : UInt32
 // Describes a per-device command
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
-public enum DSHM_IPC_MSG_CMD_DEVICE : UInt32
+internal enum DSHM_IPC_MSG_CMD_DEVICE : UInt32
 {
     // Invalid/reserved, do not use
     DSHM_IPC_MSG_CMD_DEVICE_INVALID = 0,
