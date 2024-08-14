@@ -289,6 +289,9 @@ static NTSTATUS DSHM_IPC_DispatchIncomingMessage(
 		PDEVICE_CONTEXT deviceContext = Context->IPC.DeviceDispatchers.Contexts[Message->TargetIndex];
 		PFN_DSHM_IPC_DispatchDeviceMessage callback = Context->IPC.DeviceDispatchers.Callbacks[Message->TargetIndex];
 
+		//
+		// Proxy the message dispatching to the targeted device instance
+		// 
 		if (callback && deviceContext)
 		{
 			status = callback(deviceContext, Message);
