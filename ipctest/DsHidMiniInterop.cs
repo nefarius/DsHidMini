@@ -163,6 +163,9 @@ public sealed class DsHidMiniInterop : IDisposable
         _accessor.Dispose();
         _mappedFile.Dispose();
 
+        _readEvent.Dispose();
+        _writeEvent.Dispose();
+
         _connectionMutex.ReleaseMutex();
         _connectionMutex.Dispose();
     }
