@@ -378,9 +378,8 @@ static DWORD WINAPI ClientDispatchProc(
 				header->Type, header->Target, header->Command.Device
 			);
 
+			// TODO: do something with the return value
 			DSHM_IPC_DispatchIncomingMessage(context, header);
-
-			// TODO: implement me!
 		}
 
 	} while (TRUE);

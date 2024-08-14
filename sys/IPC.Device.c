@@ -14,6 +14,8 @@ DSHM_EvtDispatchDeviceMessage(
 {
 	FuncEntry(TRACE_IPC);
 
+	NTSTATUS status = STATUS_NOT_IMPLEMENTED;
+
 	if (MessageHeader->Command.Device == DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO)
 	{
 		const PDSHM_IPC_MSG_PAIR_TO_REQUEST request = (PDSHM_IPC_MSG_PAIR_TO_REQUEST)MessageHeader;
@@ -52,11 +54,11 @@ DSHM_EvtDispatchDeviceMessage(
 			writeStatus,
 			readStatus
 		);
+
+		status = STATUS_SUCCESS;
 	}
 
-	// TODO: implement me!
+	FuncExit(TRACE_IPC, "status=%!STATUS!", status);
 
-	FuncExitNoReturn(TRACE_IPC);
-
-	return STATUS_SUCCESS;
+	return status;
 }
