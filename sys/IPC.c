@@ -280,6 +280,29 @@ static NTSTATUS DSHM_IPC_DispatchIncomingMessage(
 		status = STATUS_SUCCESS;
 	}
 
+	//
+	// Message is for a device instance
+	// 
+	if (DSHM_IPC_MSG_IS_FOR_DEVICE(Message))
+	{
+		PDEVICE_CONTEXT deviceContext = Context->IPC.DeviceDispatchers.Contexts[Message->TargetIndex];
+		PFN_DSHM_IPC_DispatchDeviceMessage callback = Context->IPC.DeviceDispatchers.Callbacks[Message->TargetIndex];
+
+		if (callback && deviceContext)
+		{
+			// TODO: interpret return value
+			callback(deviceContext, Message);
+		}
+		else
+		{
+			TraceWarning(
+				TRACE_IPC,
+				"Device with index %d has no valid callback or context assigned",
+				Message->TargetIndex
+			);
+		}
+	}
+
 	FuncExit(TRACE_IPC, "status=%!STATUS!", status);
 
 	return status;

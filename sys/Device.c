@@ -223,6 +223,8 @@ void DsHidMini_DeviceCleanup(
 	WdfWaitLockAcquire(driverContext->SlotsLock, NULL);
 	{
 		CLEAR_SLOT(driverContext, deviceContext->SlotIndex);
+		driverContext->IPC.DeviceDispatchers.Callbacks[deviceContext->SlotIndex] = NULL;
+		driverContext->IPC.DeviceDispatchers.Contexts[deviceContext->SlotIndex] = NULL;
 	}
 	WdfWaitLockRelease(driverContext->SlotsLock);
 
@@ -442,6 +444,8 @@ DsDevice_InitContext(
 				);
 
 				pDevCtx->SlotIndex = slotIndex;
+				pDrvCtx->IPC.DeviceDispatchers.Callbacks[slotIndex] = DSHM_EvtDispatchDeviceMessage;
+				pDrvCtx->IPC.DeviceDispatchers.Contexts[slotIndex] = pDevCtx;
 				break;
 			}
 		}
@@ -455,6 +459,8 @@ DsDevice_InitContext(
 		return status;
 	}
 
+	// ReSharper disable once CppIncompleteSwitchStatement
+	// ReSharper disable once CppDefaultCaseNotHandledInSwitchStatement
 	switch (pDevCtx->ConnectionType)
 	{
 	case DsDeviceConnectionTypeUsb:
@@ -1224,3 +1230,25 @@ void DSHM_EvtWdfIoQueueIoDeviceControl(
 }
 
 #pragma endregion
+
+//
+// Processes incoming IPC messages targeted to this device instance
+// 
+_Use_decl_annotations_
+NTSTATUS
+DSHM_EvtDispatchDeviceMessage(
+	_In_ PDEVICE_CONTEXT DeviceContext,
+	_In_ PDSHM_IPC_MSG_HEADER MessageHeader
+)
+{
+	FuncEntry(TRACE_DEVICE);
+
+	UNREFERENCED_PARAMETER(DeviceContext);
+	UNREFERENCED_PARAMETER(MessageHeader);
+
+	// TODO: implement me!
+
+	FuncExitNoReturn(TRACE_DEVICE);
+
+	return STATUS_SUCCESS;
+}

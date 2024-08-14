@@ -418,6 +418,8 @@ EVT_WDF_TIMER DSHM_OutputReportDelayTimerElapsed;
 
 EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL DSHM_EvtWdfIoQueueIoDeviceControl;
 
+EVT_DSHM_IPC_DispatchDeviceMessage DSHM_EvtDispatchDeviceMessage;
+
 NTSTATUS
 DsDevice_ReadProperties(
 	WDFDEVICE Device

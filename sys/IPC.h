@@ -128,7 +128,7 @@ typedef
 _Function_class_(EVT_DSHM_IPC_DispatchDeviceMessage)
 _IRQL_requires_same_
 _IRQL_requires_max_(PASSIVE_LEVEL)
-VOID
+NTSTATUS
 EVT_DSHM_IPC_DispatchDeviceMessage(
 	_In_ PDEVICE_CONTEXT DeviceContext,
 	_In_ PDSHM_IPC_MSG_HEADER MessageHeader
@@ -145,6 +145,14 @@ typedef EVT_DSHM_IPC_DispatchDeviceMessage *PFN_DSHM_IPC_DispatchDeviceMessage;
 	&& (_msg_)->Command.Driver == DSHM_IPC_MSG_CMD_DRIVER_PING \
 	&& (_msg_)->TargetIndex == 0 \
 	&& (_msg_)->Size == sizeof(DSHM_IPC_MSG_HEADER))
+
+#define DSHM_IPC_MSG_IS_FOR_DEVICE(_msg_) \
+	((_msg_)->Type != DSHM_IPC_MSG_TYPE_INVALID \
+	&& (_msg_)->Target == DSHM_IPC_MSG_TARGET_DEVICE \
+	&& (_msg_)->Command.Device != DSHM_IPC_MSG_CMD_DEVICE_INVALID \
+	&& (_msg_)->TargetIndex > 0 \
+	&& (_msg_)->TargetIndex < DSHM_MAX_DEVICES \
+	&& (_msg_)->Size >= sizeof(DSHM_IPC_MSG_HEADER))
 
 VOID
 FORCEINLINE

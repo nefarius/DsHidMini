@@ -23,7 +23,14 @@
 #ifdef DSHM_FEATURE_FFB
 #include "PID/PIDTypes.h"
 #endif
+
+//
+// Artificial limit to make memory management easier (should be enough ;)
+// 
+#define DSHM_MAX_DEVICES	UCHAR_MAX
+
 #include "Configuration.h"
+#include "IPC.h"
 #include "Device.h"
 
 #include <DsHidMini/dshmguid.h>
@@ -34,17 +41,11 @@
 #include "Ds3.h"
 #include "DsBth.h"
 #include "HID.ReportHandlers.h"
-#include "IPC.h"
 
 #include "Trace.h"
 
 
 EXTERN_C_START
-
-//
-// Artificial limit to make memory management easier (should be enough ;)
-// 
-#define DSHM_MAX_DEVICES	UCHAR_MAX
 
 typedef struct _DSHM_DRIVER_CONTEXT
 {
@@ -99,6 +100,8 @@ typedef struct _DSHM_DRIVER_CONTEXT
 		struct
 		{
 			PFN_DSHM_IPC_DispatchDeviceMessage Callbacks[DSHM_MAX_DEVICES];
+
+			PDEVICE_CONTEXT Contexts[DSHM_MAX_DEVICES];
 		} DeviceDispatchers;
 	} IPC;
 
