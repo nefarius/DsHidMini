@@ -61,8 +61,14 @@ public struct DSHM_IPC_MSG_PAIR_TO_REPLY
 
 public struct SetHostResult
 {
+    /// <summary>
+    ///     The NTSTATUS value of the "pairing" or address overwrite action.
+    /// </summary>
     public UInt32 WriteStatus;
     
+    /// <summary>
+    ///     The NTSTATUS value of the address read/query action to verify the new address.
+    /// </summary>
     public UInt32 ReadStatus;
 
     public override string ToString()
