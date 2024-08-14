@@ -411,7 +411,6 @@ NTSTATUS DS3_GetActiveRadioAddress(BD_ADDR* Address)
 NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 {
 	NTSTATUS status = STATUS_UNSUCCESSFUL;
-	WDF_DEVICE_PROPERTY_DATA propertyData;
 	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 	BD_ADDR newHostAddress = { 0 };
 

@@ -220,7 +220,7 @@ DSHM_IPC_MSG_PAIR_TO_RESPONSE_INIT(
 	_In_ NTSTATUS ReadStatus
 )
 {
-	const size_t size = sizeof(DSHM_IPC_MSG_PAIR_TO_REPLY);
+	const UINT32 size = sizeof(DSHM_IPC_MSG_PAIR_TO_REPLY);
 	RtlZeroMemory(Message, size);
 
 	Message->Header.Type = DSHM_IPC_MSG_TYPE_REQUEST_REPLY;
@@ -241,7 +241,7 @@ DSHM_IPC_MSG_SET_PLAYER_INDEX_RESPONSE_INIT(
 	_In_ NTSTATUS Status
 )
 {
-	const size_t size = sizeof(DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY);
+	const UINT32 size = sizeof(DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY);
 	RtlZeroMemory(Message, size);
 
 	Message->Header.Type = DSHM_IPC_MSG_TYPE_REQUEST_REPLY;
