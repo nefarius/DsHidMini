@@ -13,6 +13,10 @@ NTSTATUS InitIPC(void)
 	const WDFDRIVER driver = WdfGetDriver();
 	const PDSHM_DRIVER_CONTEXT context = DriverGetContext(driver);
 
+	SYSTEM_INFO sysInfo;
+    GetSystemInfo(&sysInfo);
+    DWORD pageSize = sysInfo.dwAllocationGranularity; // Usually 4096 bytes (4KB)
+
 	PUCHAR pCmdBuf = NULL;
 	PUCHAR pHIDBuf = NULL;
 	HANDLE hReadEvent = NULL;
@@ -144,12 +148,16 @@ NTSTATUS InitIPC(void)
 		goto exitFailure;
 	}
 
+	// Calculate the nearest page-aligned offset for the HID region
+    DWORD alignedOffset = (DSHM_IPC_CMD_REGION_SIZE / pageSize) * pageSize; // Page-aligned offset
+    DWORD offsetWithinPage = DSHM_IPC_CMD_REGION_SIZE % pageSize;           // Offset within the mapped page
+
 	pHIDBuf = MapViewOfFile(
 		hMapFile, // handle to map object
 		FILE_MAP_ALL_ACCESS, // read/write permission
 		0,
-		DSHM_IPC_CMD_REGION_SIZE,
-		DSHM_IPC_HID_REGION_SIZE
+		alignedOffset,
+		DSHM_IPC_HID_REGION_SIZE + offsetWithinPage
 	);
 
 	if (pHIDBuf == NULL)

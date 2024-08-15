@@ -1,9 +1,9 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using System.Diagnostics;
-using System.Net.NetworkInformation;
 
 using Nefarius.DsHidMini.IPC;
+using Nefarius.DsHidMini.IPC.Models.Public;
 
 if (!DsHidMiniInterop.IsAvailable)
 {
@@ -13,6 +13,7 @@ if (!DsHidMiniInterop.IsAvailable)
 
 using DsHidMiniInterop ipc = new();
 
+/*
 // Create a Stopwatch instance to track time
 Stopwatch stopwatch = new();
 
@@ -38,5 +39,24 @@ stopwatch.Stop();
 // Output the number of executions in one second
 Console.WriteLine($"Executed {executionCount} PINGs in one second.");
 
-Console.WriteLine(ipc.SetHostAddress(1, PhysicalAddress.Parse("C0:13:37:DE:AD:BE")));
+//Console.WriteLine(ipc.SetHostAddress(1, PhysicalAddress.Parse("C0:13:37:DE:AD:BE")));
+*/
+do
+{
+    while (!Console.KeyAvailable)
+    {
+        Ds3RawInputReport? report = ipc.GetRawInputReport(1);
 
+        if (report is not null)
+        {
+            if (report.Value.Buttons.Cross)
+            {
+                Console.Write("Cross was pressed\r");
+            }
+            else
+            {
+                Console.Write("Idle                \r");
+            }
+        }
+    }
+} while (Console.ReadKey(true).Key != ConsoleKey.Escape);

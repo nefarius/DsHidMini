@@ -31,7 +31,7 @@ DSHM_ParseInputReport(
 	const PUCHAR pHIDBuffer = pDrvCtx->IPC.SharedRegions.HID.Buffer + offset;
 
 	// prefix each report with associated device index
-	pHIDBuffer[0] = DeviceContext->SlotIndex;
+	*((PUINT32)pHIDBuffer) = DeviceContext->SlotIndex;
 	// skip index and copy unmodified raw report to the section
 	RtlCopyMemory(pHIDBuffer + sizeof(UINT32), Report, sizeof(DS3_RAW_INPUT_REPORT));
 

@@ -52,7 +52,12 @@ public sealed class DsHidMiniInterop : IDisposable
         {
             _mappedFile = MemoryMappedFile.OpenExisting(FileMapName);
             _cmdAccessor = _mappedFile.CreateViewAccessor(0, CommandRegionSizeSize);
-            _hidAccessor = _mappedFile.CreateViewAccessor(CommandRegionSizeSize, HidRegionSizeSize);
+
+            int pageSize = Environment.SystemPageSize;
+            int alignedOffset = CommandRegionSizeSize / pageSize * pageSize;
+            int offsetWithinPage = CommandRegionSizeSize % pageSize;
+
+            _hidAccessor = _mappedFile.CreateViewAccessor(alignedOffset, HidRegionSizeSize + offsetWithinPage);
         }
         catch (FileNotFoundException)
         {
@@ -91,7 +96,6 @@ public sealed class DsHidMiniInterop : IDisposable
         _readEvent.Dispose();
         _writeEvent.Dispose();
 
-        _commandMutex.ReleaseMutex();
         _commandMutex.Dispose();
     }
 
