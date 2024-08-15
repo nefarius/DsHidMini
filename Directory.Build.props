@@ -1,0 +1,19 @@
+<Project>
+
+    <PropertyGroup>
+        <!-- Copyright information -->
+        <Authors>Kanuan, Benjamin Höglinger-Stelzer</Authors>
+        <Copyright>Copyright © Nefarius Software Solutions e.U. 2022-2024</Copyright>
+
+        <!-- Common solution settings -->
+        <OutputPath>$(SolutionDir)bin\</OutputPath>
+        <LangVersion>latest</LangVersion>
+
+        <!-- Docs and symbols generation -->
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    </PropertyGroup>
+</Project>

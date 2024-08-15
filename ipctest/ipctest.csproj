@@ -7,6 +7,11 @@
         <Nullable>enable</Nullable>
         <RootNamespace>Nefarius.DsHidMini.IPC</RootNamespace>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <IsPackable>false</IsPackable>
     </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\SDK\Nefarius.DsHidMini.IPC\Nefarius.DsHidMini.IPC.csproj" />
+    </ItemGroup>
 
 </Project>

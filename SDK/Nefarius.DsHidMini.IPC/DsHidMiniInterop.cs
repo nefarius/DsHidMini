@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 
 using Nefarius.DsHidMini.IPC.Exceptions;
 using Nefarius.DsHidMini.IPC.Models;
+using Nefarius.DsHidMini.IPC.Models.Public;
 
 namespace Nefarius.DsHidMini.IPC;
 
@@ -290,6 +291,7 @@ public sealed class DsHidMiniInterop : IDisposable
     /// <summary>
     ///     Gets whether driver IPC is available.
     /// </summary>
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public static bool IsAvailable
     {
         get
