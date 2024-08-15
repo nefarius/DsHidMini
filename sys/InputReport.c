@@ -2,6 +2,9 @@
 #include "InputReport.tmh"
 
 
+//
+// Protocol-agnostic function that transforms the raw input report to HID-mode-compatible ones
+// 
 _Use_decl_annotations_
 void
 DSHM_ParseInputReport(
@@ -11,6 +14,28 @@ DSHM_ParseInputReport(
 )
 {
 	FuncEntry(TRACE_DSHIDMINIDRV);
+
+#pragma region IPC Copy
+
+	const WDFDRIVER driver = WdfGetDriver();
+	const PDSHM_DRIVER_CONTEXT pDrvCtx = DriverGetContext(driver);
+	/*
+	 * Offset calculation puts each devices' input report copy 
+     * in their respective position in the memory region, like:
+     *   1st device: ((4 + 49) * (1 - 1)) = 0
+     *   2nd device: ((4 + 49) * (2 - 1)) = 53
+     *   3rd device: ((4 + 49) * (3 - 1)) = 106
+     * and so on
+	 */
+	const size_t offset = ((sizeof(UINT32) + sizeof(DS3_RAW_INPUT_REPORT)) * (DeviceContext->SlotIndex - 1));
+	const PUCHAR pHIDBuffer = pDrvCtx->IPC.SharedRegions.HID.Buffer + offset;
+
+	// prefix each report with associated device index
+	pHIDBuffer[0] = DeviceContext->SlotIndex;
+	// skip index and copy unmodified raw report to the section
+	RtlCopyMemory(pHIDBuffer + sizeof(UINT32), Report, sizeof(DS3_RAW_INPUT_REPORT));
+
+#pragma endregion
 
 #pragma region HID Input Report (SDF, GPJ ID 01) processing
 
