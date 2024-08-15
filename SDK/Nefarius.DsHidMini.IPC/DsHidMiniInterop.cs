@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.IO.MemoryMappedFiles;
 using System.Net.NetworkInformation;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 using Nefarius.DsHidMini.IPC.Exceptions;
@@ -195,6 +196,11 @@ public sealed class DsHidMiniInterop : IDisposable
                 if (source is not null)
                 {
                     Buffer.MemoryCopy(source, request->Address, 6, 6);
+                }
+                else
+                {
+                    // there might be previous values there we need to zero out
+                    Unsafe.InitBlockUnaligned(request->Address, 0, 6);
                 }
             }
 
