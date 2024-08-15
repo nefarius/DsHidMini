@@ -39,3 +39,4 @@ stopwatch.Stop();
 Console.WriteLine($"Executed {executionCount} PINGs in one second.");
 
 Console.WriteLine(ipc.SetHostAddress(1, PhysicalAddress.Parse("C0:13:37:DE:AD:BE")));
+

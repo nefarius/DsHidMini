@@ -291,6 +291,43 @@ public sealed class DsHidMiniInterop : IDisposable
     }
 
     /// <summary>
+    ///     Attempts to read the <see cref="Ds3RawInputReport" /> from a given device instance.
+    /// </summary>
+    /// <param name="deviceIndex">The one-based device index.</param>
+    /// <returns>The <see cref="Ds3RawInputReport" /> or null if the given <paramref name="deviceIndex" /> is not occupied.</returns>
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
+    public unsafe Ds3RawInputReport? GetRawInputReport(int deviceIndex)
+    {
+        ValidateDeviceIndex(deviceIndex);
+
+        try
+        {
+            byte* buffer = null;
+            _hidAccessor.SafeMemoryMappedViewHandle.AcquirePointer(ref buffer);
+
+            int offset = (Marshal.SizeOf<UInt32>() + Marshal.SizeOf<Ds3RawInputReport>()) * (deviceIndex - 1);
+
+            uint index = Unsafe.Read<UInt32>(buffer + offset);
+
+            if (index == 0)
+            {
+                return null;
+            }
+
+            if (index != deviceIndex)
+            {
+                return null;
+            }
+
+            return Unsafe.AsRef<Ds3RawInputReport>(buffer + offset + Marshal.SizeOf<UInt32>());
+        }
+        finally
+        {
+            _hidAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
+        }
+    }
+
+    /// <summary>
     ///     Ensures the target device index is in a valid range.
     /// </summary>
     private static void ValidateDeviceIndex(int deviceIndex)
