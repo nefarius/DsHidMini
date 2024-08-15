@@ -76,23 +76,6 @@ class Build : NukeBuild
                 .SetMaxCpuCount(Environment.ProcessorCount)
                 .SetNodeReuse(IsLocalBuild)
             );
-
-            bool enableTelemetry =
-                bool.TryParse(Environment.GetEnvironmentVariable("SCPLIB_ENABLE_TELEMETRY"), out bool isSet) && isSet;
-
-            if (enableTelemetry)
-            {
-                // OTEL build
-                MSBuildTasks.MSBuild(s => s
-                    .SetTargetPath(Solution)
-                    .SetTargets("Rebuild")
-                    .SetConfiguration("Release_OTEL")
-                    .SetMaxCpuCount(Environment.ProcessorCount)
-                    .SetNodeReuse(IsLocalBuild)
-                    // enables building with OTEL in XInputBridge
-                    .SetProperty("SCPLIB_ENABLE_TELEMETRY", true)
-                );
-            }
         });
 
     /// Support plugins are available for:
