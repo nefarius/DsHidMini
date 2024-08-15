@@ -17,19 +17,23 @@ public sealed class DsHidMiniInterop : IDisposable
     private const string FileMapName = "Global\\DsHidMiniSharedMemory";
     private const string ReadEventName = "Global\\DsHidMiniReadEvent";
     private const string WriteEventName = "Global\\DsHidMiniWriteEvent";
-    private const int BufferSize = 4096; // 4KB, keep in sync with driver
+    internal const int BufferSize = 4096; // 4KB, keep in sync with driver
+    internal const int CommandRegionSizeSize = 1024;
+    internal const int HidRegionSizeSize = 1024;
     private const string MutexName = "Global\\DsHidMiniMutex";
+    private readonly MemoryMappedViewAccessor _cmdAccessor;
 
     private readonly Mutex _connectionMutex;
-    private readonly EventWaitHandle _readEvent;
-    private readonly EventWaitHandle _writeEvent;
-    private readonly MemoryMappedFile _mappedFile;
-    private readonly MemoryMappedViewAccessor _accessor;
+    // TODO: move to its own class!
+    private readonly MemoryMappedViewAccessor _hidAccessor;
 
     private readonly object _lock = new();
+    private readonly MemoryMappedFile _mappedFile;
+    private readonly EventWaitHandle _readEvent;
+    private readonly EventWaitHandle _writeEvent;
 
     /// <summary>
-    ///     Creates a new <see cref="DsHidMiniInterop"/> instance by connecting to the driver IPC mechanism.
+    ///     Creates a new <see cref="DsHidMiniInterop" /> instance by connecting to the driver IPC mechanism.
     /// </summary>
     /// <exception cref="DsHidMiniInteropExclusiveAccessException"></exception>
     /// <exception cref="DsHidMiniInteropUnavailableException"></exception>
@@ -55,8 +59,51 @@ public sealed class DsHidMiniInterop : IDisposable
             throw new DsHidMiniInteropUnavailableException();
         }
 
-        _mappedFile = MemoryMappedFile.OpenExisting(FileMapName);
-        _accessor = _mappedFile.CreateViewAccessor(0, BufferSize);
+        try
+        {
+            _mappedFile = MemoryMappedFile.OpenExisting(FileMapName);
+            _cmdAccessor = _mappedFile.CreateViewAccessor(0, CommandRegionSizeSize);
+            _hidAccessor = _mappedFile.CreateViewAccessor(CommandRegionSizeSize, HidRegionSizeSize);
+        }
+        catch (FileNotFoundException)
+        {
+            throw new DsHidMiniInteropUnavailableException();
+        }
+    }
+
+    /// <summary>
+    ///     Gets whether driver IPC is available.
+    /// </summary>
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
+    public static bool IsAvailable
+    {
+        get
+        {
+            try
+            {
+                using Mutex mutex = Mutex.OpenExisting(MutexName);
+
+                return true;
+            }
+            catch (WaitHandleCannotBeOpenedException)
+            {
+                return false;
+            }
+        }
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        _cmdAccessor.Dispose();
+        _hidAccessor.Dispose();
+        _mappedFile.Dispose();
+
+        _readEvent.Dispose();
+        _writeEvent.Dispose();
+
+        _connectionMutex.ReleaseMutex();
+        _connectionMutex.Dispose();
     }
 
     /// <summary>
@@ -75,7 +122,7 @@ public sealed class DsHidMiniInterop : IDisposable
         try
         {
             byte* buffer = null;
-            _accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref buffer);
+            _cmdAccessor.SafeMemoryMappedViewHandle.AcquirePointer(ref buffer);
 
             DSHM_IPC_MSG_HEADER* message = (DSHM_IPC_MSG_HEADER*)buffer;
 
@@ -106,7 +153,7 @@ public sealed class DsHidMiniInterop : IDisposable
         }
         finally
         {
-            _accessor.SafeMemoryMappedViewHandle.ReleasePointer();
+            _cmdAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
             Monitor.Exit(_lock);
         }
     }
@@ -114,7 +161,7 @@ public sealed class DsHidMiniInterop : IDisposable
     /// <summary>
     ///     Writes a new host address to the given device.
     /// </summary>
-    /// <returns>A <see cref="SetHostResult"/>.</returns>
+    /// <returns>A <see cref="SetHostResult" />.</returns>
     /// <remarks>This is synonymous with "pairing" to a new Bluetooth host.</remarks>
     /// <param name="deviceIndex">The one-based device index.</param>
     /// <param name="hostAddress">The new host address.</param>
@@ -135,7 +182,7 @@ public sealed class DsHidMiniInterop : IDisposable
         try
         {
             byte* buffer = null;
-            _accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref buffer);
+            _cmdAccessor.SafeMemoryMappedViewHandle.AcquirePointer(ref buffer);
 
             DSHM_IPC_MSG_PAIR_TO_REQUEST* request = (DSHM_IPC_MSG_PAIR_TO_REQUEST*)buffer;
 
@@ -169,20 +216,19 @@ public sealed class DsHidMiniInterop : IDisposable
                 && reply->Header.TargetIndex == deviceIndex
                 && reply->Header.Size == Marshal.SizeOf<DSHM_IPC_MSG_PAIR_TO_REPLY>())
             {
-                return new SetHostResult() { WriteStatus = reply->WriteStatus, ReadStatus = reply->ReadStatus };
+                return new SetHostResult { WriteStatus = reply->WriteStatus, ReadStatus = reply->ReadStatus };
             }
 
             throw new DsHidMiniInteropUnexpectedReplyException(&reply->Header);
         }
         finally
         {
-            _accessor.SafeMemoryMappedViewHandle.ReleasePointer();
+            _cmdAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
             Monitor.Exit(_lock);
         }
     }
 
     /// <summary>
-    /// 
     /// </summary>
     /// <param name="deviceIndex">The one-based device index.</param>
     /// <param name="playerIndex">The player index to set to. Valid values include 1 to 7.</param>
@@ -210,7 +256,7 @@ public sealed class DsHidMiniInterop : IDisposable
         try
         {
             byte* buffer = null;
-            _accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref buffer);
+            _cmdAccessor.SafeMemoryMappedViewHandle.AcquirePointer(ref buffer);
 
             DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST* request = (DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST*)buffer;
 
@@ -245,11 +291,14 @@ public sealed class DsHidMiniInterop : IDisposable
         }
         finally
         {
-            _accessor.SafeMemoryMappedViewHandle.ReleasePointer();
+            _cmdAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
             Monitor.Exit(_lock);
         }
     }
 
+    /// <summary>
+    ///     Ensures the target device index is in a valid range.
+    /// </summary>
     private static void ValidateDeviceIndex(int deviceIndex)
     {
         if (deviceIndex is <= 0 or > byte.MaxValue)
@@ -289,38 +338,5 @@ public sealed class DsHidMiniInterop : IDisposable
     private void SignalWriteFinished()
     {
         _readEvent.Set();
-    }
-
-    /// <summary>
-    ///     Gets whether driver IPC is available.
-    /// </summary>
-    [SuppressMessage("ReSharper", "UnusedMember.Global")]
-    public static bool IsAvailable
-    {
-        get
-        {
-            try
-            {
-                using Mutex mutex = Mutex.OpenExisting(MutexName);
-
-                return true;
-            }
-            catch (WaitHandleCannotBeOpenedException)
-            {
-                return false;
-            }
-        }
-    }
-
-    public void Dispose()
-    {
-        _accessor.Dispose();
-        _mappedFile.Dispose();
-
-        _readEvent.Dispose();
-        _writeEvent.Dispose();
-
-        _connectionMutex.ReleaseMutex();
-        _connectionMutex.Dispose();
     }
 }

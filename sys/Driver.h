@@ -85,14 +85,41 @@ typedef struct _DSHM_DRIVER_CONTEXT
 		HANDLE DispatchThreadTermination;
 
 		//
-		// Pointer to shared memory buffer
+		// Shared memory regions details
 		// 
-		PUCHAR SharedMemory;
+		struct
+		{
+			//
+			// Low frequency, low lifetime command exchange region
+			// 
+			struct
+			{
+				//
+				// Pointer to shared memory buffer
+				// 
+				PUCHAR Buffer;
 
-		//
-		// Total size of shared memory region
-		// 
-		size_t SharedMemorySize;
+				//
+				// Total size of shared memory region
+				// 
+				size_t BufferSize;
+			} Commands;
+
+			//
+			// High-frequency, high throughput read-only region
+			struct
+			{
+				//
+				// Pointer to shared memory buffer
+				// 
+				PUCHAR Buffer;
+
+				//
+				// Total size of shared memory region
+				// 
+				size_t BufferSize;
+			} HID;
+		} SharedRegions;
 
 		//
 		// Message dispatcher callback handlers

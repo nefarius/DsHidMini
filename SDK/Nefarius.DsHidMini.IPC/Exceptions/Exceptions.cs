@@ -2,6 +2,9 @@
 
 namespace Nefarius.DsHidMini.IPC.Exceptions;
 
+/// <summary>
+///     Another client is already connected to the driver, can't continue initialization.
+/// </summary>
 public sealed class DsHidMiniInteropExclusiveAccessException : Exception
 {
     internal DsHidMiniInteropExclusiveAccessException() : base(
@@ -10,6 +13,9 @@ public sealed class DsHidMiniInteropExclusiveAccessException : Exception
     }
 }
 
+/// <summary>
+///     Driver IPC unavailable, make sure that at least one compatible controller is connected and operational.
+/// </summary>
 public sealed class DsHidMiniInteropUnavailableException : Exception
 {
     internal DsHidMiniInteropUnavailableException() : base(
@@ -18,6 +24,9 @@ public sealed class DsHidMiniInteropUnavailableException : Exception
     }
 }
 
+/// <summary>
+///     Operation timed out while waiting for a request reply.
+/// </summary>
 public sealed class DsHidMiniInteropReplyTimeoutException : Exception
 {
     internal DsHidMiniInteropReplyTimeoutException() : base("Operation timed out while waiting for a request reply.")
@@ -25,6 +34,9 @@ public sealed class DsHidMiniInteropReplyTimeoutException : Exception
     }
 }
 
+/// <summary>
+///     A request reply was malformed.
+/// </summary>
 public sealed class DsHidMiniInteropUnexpectedReplyException : Exception
 {
     private readonly unsafe DSHM_IPC_MSG_HEADER* _header;
@@ -35,10 +47,14 @@ public sealed class DsHidMiniInteropUnexpectedReplyException : Exception
         _header = header;
     }
 
+    /// <inheritdoc />
     public override unsafe string Message =>
         $"{base.Message}, Type: {_header->Type}, Target: {_header->Target}, Command: {_header->Command.Driver}, TargetIndex: {_header->TargetIndex}, Size: {_header->Size}";
 }
 
+/// <summary>
+///     Multiple threads tried to invoke IPC methods at the same time, which is not supported.
+/// </summary>
 public sealed class DsHidMiniInteropConcurrencyException : Exception
 {
     internal DsHidMiniInteropConcurrencyException() : base(
@@ -47,6 +63,9 @@ public sealed class DsHidMiniInteropConcurrencyException : Exception
     }
 }
 
+/// <summary>
+///     The provided device index was out of range; allowed values must remain between (including) 1 and 255.
+/// </summary>
 public sealed class DsHidMiniInteropInvalidDeviceIndexException : Exception
 {
     internal DsHidMiniInteropInvalidDeviceIndexException(int deviceIndex) : base(

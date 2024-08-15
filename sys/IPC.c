@@ -2,7 +2,7 @@
 #include "IPC.tmh"
 
 
-static DWORD WINAPI ClientDispatchProc(
+static DWORD WINAPI DSHM_IPC_ClientDispatchProc(
 	_In_ LPVOID lpParameter
 );
 
@@ -14,6 +14,7 @@ NTSTATUS InitIPC(void)
 	const PDSHM_DRIVER_CONTEXT context = DriverGetContext(driver);
 
 	PUCHAR pCmdBuf = NULL;
+	PUCHAR pHIDBuf = NULL;
 	HANDLE hReadEvent = NULL;
 	HANDLE hWriteEvent = NULL;
 	HANDLE hMapFile = NULL;
@@ -130,14 +131,32 @@ NTSTATUS InitIPC(void)
 		FILE_MAP_ALL_ACCESS, // read/write permission
 		0,
 		0,
-		DSHM_IPC_BUFFER_SIZE
+		DSHM_IPC_CMD_REGION_SIZE
 	);
 
 	if (pCmdBuf == NULL)
 	{
 		TraceError(
 			TRACE_IPC,
-			"Could not map view of file (%!WINERROR!).",
+			"Could not map view of file CMD REGION (%!WINERROR!).",
+			GetLastError()
+		);
+		goto exitFailure;
+	}
+
+	pHIDBuf = MapViewOfFile(
+		hMapFile, // handle to map object
+		FILE_MAP_ALL_ACCESS, // read/write permission
+		0,
+		DSHM_IPC_CMD_REGION_SIZE,
+		DSHM_IPC_HID_REGION_SIZE
+	);
+
+	if (pHIDBuf == NULL)
+	{
+		TraceError(
+			TRACE_IPC,
+			"Could not map view of file HID REGION (%!WINERROR!).",
 			GetLastError()
 		);
 		goto exitFailure;
@@ -148,16 +167,20 @@ NTSTATUS InitIPC(void)
 	context->IPC.ConnectMutex = hMutex;
 	context->IPC.ReadEvent = hReadEvent;
 	context->IPC.WriteEvent = hWriteEvent;
-	context->IPC.SharedMemory = pCmdBuf;
-	context->IPC.SharedMemorySize = DSHM_IPC_BUFFER_SIZE;
+
+	context->IPC.SharedRegions.Commands.Buffer = pCmdBuf;
+	context->IPC.SharedRegions.Commands.BufferSize = DSHM_IPC_CMD_REGION_SIZE;
+
+	context->IPC.SharedRegions.HID.Buffer = pHIDBuf;
+	context->IPC.SharedRegions.HID.BufferSize = DSHM_IPC_HID_REGION_SIZE;
 
 	// 
-	// Start thread now that context is initialized at its minimum
+	// Start thread now that context is initialized at its minimum requirement
 	// 
 	hThread = CreateThread(
 		NULL,
 		0,
-		ClientDispatchProc,
+		DSHM_IPC_ClientDispatchProc,
 		context,
 		0,
 		NULL
@@ -182,6 +205,9 @@ NTSTATUS InitIPC(void)
 exitFailure:
 	if (pCmdBuf)
 		UnmapViewOfFile(pCmdBuf);
+
+	if (pHIDBuf)
+		UnmapViewOfFile(pHIDBuf);
 
 	if (hReadEvent)
 		CloseHandle(hReadEvent);
@@ -226,8 +252,11 @@ void DestroyIPC(void)
 		CloseHandle(context->IPC.DispatchThreadTermination);
 	}
 
-	if (context->IPC.SharedMemory)
-		UnmapViewOfFile(context->IPC.SharedMemory);
+	if (context->IPC.SharedRegions.Commands.Buffer)
+		UnmapViewOfFile(context->IPC.SharedRegions.Commands.Buffer);
+
+	if (context->IPC.SharedRegions.HID.Buffer)
+		UnmapViewOfFile(context->IPC.SharedRegions.HID.Buffer);
 
 	if (context->IPC.MapFile)
 		CloseHandle(context->IPC.MapFile);
@@ -244,7 +273,7 @@ void DestroyIPC(void)
 	FuncExitNoReturn(TRACE_IPC);
 }
 
-static NTSTATUS DSHM_IPC_DispatchIncomingMessage(
+static NTSTATUS DSHM_IPC_DispatchIncomingCommandMessage(
 	_In_ const PDSHM_DRIVER_CONTEXT Context,
 	_In_ const PDSHM_IPC_MSG_HEADER Message
 )
@@ -262,6 +291,14 @@ static NTSTATUS DSHM_IPC_DispatchIncomingMessage(
 	}
 
 	//
+	// Message outside of region bounds
+	// 
+	if (Message->Size > Context->IPC.SharedRegions.Commands.BufferSize)
+	{
+		return STATUS_BUFFER_OVERFLOW;
+	}
+
+	//
 	// Incoming PING message
 	// 
 	if (DSHM_IPC_MSG_IS_PING(Message))
@@ -271,7 +308,7 @@ static NTSTATUS DSHM_IPC_DispatchIncomingMessage(
 			"IPC: PING message received"
 		);
 
-		const PDSHM_IPC_MSG_HEADER header = (PDSHM_IPC_MSG_HEADER)Context->IPC.SharedMemory;
+		const PDSHM_IPC_MSG_HEADER header = (PDSHM_IPC_MSG_HEADER)Context->IPC.SharedRegions.Commands.Buffer;
 
 		DSHM_IPC_MSG_PING_RESPONSE_INIT(header);
 
@@ -319,7 +356,7 @@ static NTSTATUS DSHM_IPC_DispatchIncomingMessage(
 //
 // Listens for client connection and processes data exchange
 // 
-static DWORD WINAPI ClientDispatchProc(
+static DWORD WINAPI DSHM_IPC_ClientDispatchProc(
 	_In_ LPVOID lpParameter
 )
 {
@@ -373,7 +410,7 @@ static DWORD WINAPI ClientDispatchProc(
 			//
 			// Each valid message is expected to be prefixed with this header
 			// 
-			const PDSHM_IPC_MSG_HEADER header = (PDSHM_IPC_MSG_HEADER)context->IPC.SharedMemory;
+			const PDSHM_IPC_MSG_HEADER header = (PDSHM_IPC_MSG_HEADER)context->IPC.SharedRegions.Commands.Buffer;
 
 			TraceInformation(
 				TRACE_IPC,
@@ -381,13 +418,13 @@ static DWORD WINAPI ClientDispatchProc(
 				header->Type, header->Target, header->Command.Device
 			);
 
-			NTSTATUS status = DSHM_IPC_DispatchIncomingMessage(context, header);
+			NTSTATUS status = DSHM_IPC_DispatchIncomingCommandMessage(context, header);
 
 			if (!NT_SUCCESS(status))
 			{
 				TraceError(
 					TRACE_IPC,
-					"DSHM_IPC_DispatchIncomingMessage reported non-success status %!STATUS!",
+					"DSHM_IPC_DispatchIncomingCommandMessage reported non-success status %!STATUS!",
 					status
 				);
 			}
