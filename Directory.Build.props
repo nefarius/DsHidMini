@@ -6,7 +6,7 @@
         <Copyright>Copyright © Nefarius Software Solutions e.U. 2022-2024</Copyright>
 
         <!-- Common solution settings -->
-        <OutputPath>$(SolutionDir)bin\</OutputPath>
+        <!--<OutputPath>$(SolutionDir)bin\</OutputPath>-->
         <LangVersion>latest</LangVersion>
 
         <!-- Docs and symbols generation -->
