@@ -359,6 +359,11 @@ typedef struct _DEVICE_CONTEXT
 
 	UINT32 SlotIndex;
 
+	struct
+	{
+		HANDLE InputReportWaitHandle;
+	} IPC;
+
 } DEVICE_CONTEXT, * PDEVICE_CONTEXT;
 
 //

@@ -81,7 +81,7 @@ NTSTATUS InitIPC(void)
 	{
 		TraceError(
 			TRACE_IPC,
-			"Could not create event (%!WINERROR!).",
+			"Could not create READ event (%!WINERROR!).",
 			GetLastError()
 		);
 		goto exitFailure;
@@ -92,7 +92,7 @@ NTSTATUS InitIPC(void)
 	{
 		TraceError(
 			TRACE_IPC,
-			"Could not create event (%!WINERROR!).",
+			"Could not create WRITE event (%!WINERROR!).",
 			GetLastError()
 		);
 		goto exitFailure;

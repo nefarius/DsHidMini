@@ -45,7 +45,7 @@ do
 {
     while (!Console.KeyAvailable)
     {
-        Ds3RawInputReport? report = ipc.GetRawInputReport(1);
+        Ds3RawInputReport? report = ipc.GetRawInputReport(1, TimeSpan.FromSeconds(5));
 
         if (report is not null)
         {

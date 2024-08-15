@@ -1,6 +1,16 @@
 #include "Driver.h"
 #include "InputReport.tmh"
 
+#include <pshpack1.h>
+typedef struct _IPC_HID_INPUT_REPORT_MESSAGE
+{
+	HANDLE WaitEvent;
+
+	UINT32 SlotIndex;
+
+	DS3_RAW_INPUT_REPORT InputReport;
+} IPC_HID_INPUT_REPORT_MESSAGE, *PIPC_HID_INPUT_REPORT_MESSAGE;
+#include <poppack.h>
 
 //
 // Protocol-agnostic function that transforms the raw input report to HID-mode-compatible ones
@@ -22,18 +32,23 @@ DSHM_ParseInputReport(
 	/*
 	 * Offset calculation puts each devices' input report copy 
      * in their respective position in the memory region, like:
-     *   1st device: ((4 + 49) * (1 - 1)) = 0
-     *   2nd device: ((4 + 49) * (2 - 1)) = 53
-     *   3rd device: ((4 + 49) * (3 - 1)) = 106
+     *   1st device: ((8 + 4 + 49) * (1 - 1)) = 0
+     *   2nd device: ((8 + 4 + 49) * (2 - 1)) = 61
+     *   3rd device: ((8 + 4 + 49) * (3 - 1)) = 122
      * and so on
 	 */
-	const size_t offset = ((sizeof(UINT32) + sizeof(DS3_RAW_INPUT_REPORT)) * (DeviceContext->SlotIndex - 1));
-	const PUCHAR pHIDBuffer = pDrvCtx->IPC.SharedRegions.HID.Buffer + offset;
+	const size_t offset = (sizeof(IPC_HID_INPUT_REPORT_MESSAGE) * (DeviceContext->SlotIndex - 1));
+	const PIPC_HID_INPUT_REPORT_MESSAGE pHIDBuffer = (PIPC_HID_INPUT_REPORT_MESSAGE)(pDrvCtx->IPC.SharedRegions.HID.Buffer + offset);
 
+	// shared event to make a client reader awaitable
+	pHIDBuffer->WaitEvent = DeviceContext->IPC.InputReportWaitHandle;
 	// prefix each report with associated device index
-	*((PUINT32)pHIDBuffer) = DeviceContext->SlotIndex;
+	pHIDBuffer->SlotIndex = DeviceContext->SlotIndex;
 	// skip index and copy unmodified raw report to the section
-	RtlCopyMemory(pHIDBuffer + sizeof(UINT32), Report, sizeof(DS3_RAW_INPUT_REPORT));
+	RtlCopyMemory(&pHIDBuffer->InputReport, Report, sizeof(DS3_RAW_INPUT_REPORT));
+
+	// signal any reader that there is new data available
+	SetEvent(DeviceContext->IPC.InputReportWaitHandle);
 
 #pragma endregion
 

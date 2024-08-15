@@ -694,6 +694,63 @@ DsDevice_InitContext(
 			break;
 		}
 
+#pragma region IPC
+
+		SECURITY_DESCRIPTOR sd = { 0 };
+
+		if (!InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION))
+		{
+			TraceError(
+				TRACE_IPC,
+				"InitializeSecurityDescriptor failed with error: %!WINERROR!",
+				GetLastError()
+			);
+			EventWriteFailedWithWin32Error(__FUNCTION__, L"InitializeSecurityDescriptor", GetLastError());
+			break;
+		}
+
+		SECURITY_ATTRIBUTES sa = { 0 };
+		sa.nLength = sizeof(sa);
+		sa.bInheritHandle = TRUE;
+		sa.lpSecurityDescriptor = &sd;
+
+		CHAR* szSD = "D:" // Discretionary ACL
+		"(D;OICI;GA;;;BG)" // Deny access to Built-in Guests
+		"(D;OICI;GA;;;AN)" // Deny access to Anonymous Logon
+		"(A;OICI;GRGWGX;;;AU)" // Allow read/write/execute to Authenticated Users
+		"(A;OICI;GA;;;BA)"; // Allow full control to Administrators
+
+		if (!ConvertStringSecurityDescriptorToSecurityDescriptorA(
+			szSD,
+			SDDL_REVISION_1,
+			&sa.lpSecurityDescriptor,
+			NULL
+		))
+		{
+			TraceError(
+				TRACE_IPC,
+				"ConvertStringSecurityDescriptorToSecurityDescriptor failed with error: %!WINERROR!",
+				GetLastError()
+			);
+			EventWriteFailedWithWin32Error(__FUNCTION__, L"ConvertStringSecurityDescriptorToSecurityDescriptor", GetLastError());
+			break;
+		}
+
+		pDevCtx->IPC.InputReportWaitHandle = CreateEventA(&sa, FALSE, FALSE, NULL);
+
+		if (pDevCtx->IPC.InputReportWaitHandle == NULL)
+		{
+			TraceError(
+				TRACE_IPC,
+				"CreateEventA failed with error: %!WINERROR!",
+				GetLastError()
+			);
+			EventWriteFailedWithWin32Error(__FUNCTION__, L"CreateEventA", GetLastError());
+			break;
+		}
+
+#pragma endregion
+
 	} while (FALSE);
 
 	FuncExit(TRACE_DEVICE, "status=%!STATUS!", status);

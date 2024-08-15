@@ -1,6 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
+using Nefarius.DsHidMini.IPC.Models.Public;
+
 namespace Nefarius.DsHidMini.IPC.Models;
 
 [StructLayout(LayoutKind.Explicit, Pack = 1)]
@@ -77,4 +79,15 @@ internal struct DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY
     public DSHM_IPC_MSG_HEADER Header;
 
     public UInt32 NtStatus;
+}
+
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+internal struct IPC_HID_INPUT_REPORT_MESSAGE
+{
+    public IntPtr WaitEvent;
+    
+    public uint SlotIndex;
+
+    public Ds3RawInputReport InputReport;
 }

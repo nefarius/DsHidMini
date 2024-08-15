@@ -4,6 +4,8 @@ using System.Net.NetworkInformation;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
+using Microsoft.Win32.SafeHandles;
+
 using Nefarius.DsHidMini.IPC.Exceptions;
 using Nefarius.DsHidMini.IPC.Models;
 using Nefarius.DsHidMini.IPC.Models.Public;
@@ -297,11 +299,11 @@ public sealed class DsHidMiniInterop : IDisposable
     /// <summary>
     ///     Attempts to read the <see cref="Ds3RawInputReport" /> from a given device instance.
     /// </summary>
-    /// <remarks>This method returns the last submitted input report copy and does not block.</remarks>
     /// <param name="deviceIndex">The one-based device index.</param>
+    /// <param name="timeout">Optional timeout to wait for a report update to arrive. Default invocation returns immediately.</param>
     /// <returns>The <see cref="Ds3RawInputReport" /> or null if the given <paramref name="deviceIndex" /> is not occupied.</returns>
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
-    public unsafe Ds3RawInputReport? GetRawInputReport(int deviceIndex)
+    public unsafe Ds3RawInputReport? GetRawInputReport(int deviceIndex, TimeSpan? timeout = null)
     {
         ValidateDeviceIndex(deviceIndex);
 
@@ -310,21 +312,29 @@ public sealed class DsHidMiniInterop : IDisposable
             byte* buffer = null;
             _hidAccessor.SafeMemoryMappedViewHandle.AcquirePointer(ref buffer);
 
-            int offset = (Marshal.SizeOf<UInt32>() + Marshal.SizeOf<Ds3RawInputReport>()) * (deviceIndex - 1);
+            IPC_HID_INPUT_REPORT_MESSAGE* message = (IPC_HID_INPUT_REPORT_MESSAGE*)buffer;
 
-            uint index = Unsafe.Read<UInt32>(buffer + offset);
+            if (timeout.HasValue)
+            {
+                SafeWaitHandle waitHandle = new(message->WaitEvent, false);
 
-            if (index == 0)
+                using EventWaitHandle eventWaitHandle = new(false, EventResetMode.AutoReset);
+                eventWaitHandle.SafeWaitHandle = waitHandle;
+
+                eventWaitHandle.WaitOne(timeout.Value);
+            }
+
+            if (message->SlotIndex == 0)
             {
                 return null;
             }
 
-            if (index != deviceIndex)
+            if (message->SlotIndex != deviceIndex)
             {
                 return null;
             }
 
-            return Unsafe.AsRef<Ds3RawInputReport>(buffer + offset + Marshal.SizeOf<UInt32>());
+            return message->InputReport;
         }
         finally
         {
