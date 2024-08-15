@@ -335,12 +335,14 @@ public sealed class DsHidMiniInterop : IDisposable
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private void SignalReadFinished()
     {
+        // we are done reading from the region, driver can now write
         _writeEvent.Set();
     }
 
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private void SignalWriteFinished()
     {
+        // we are done writing to the region, driver can now read
         _readEvent.Set();
     }
 }
