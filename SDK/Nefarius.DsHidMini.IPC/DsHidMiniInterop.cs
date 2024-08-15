@@ -23,11 +23,9 @@ public sealed class DsHidMiniInterop : IDisposable
     private const string MutexName = "Global\\DsHidMiniMutex";
     private readonly MemoryMappedViewAccessor _cmdAccessor;
 
-    private readonly Mutex _connectionMutex;
-    // TODO: move to its own class!
+    private readonly Mutex _commandMutex;
     private readonly MemoryMappedViewAccessor _hidAccessor;
 
-    private readonly object _lock = new();
     private readonly MemoryMappedFile _mappedFile;
     private readonly EventWaitHandle _readEvent;
     private readonly EventWaitHandle _writeEvent;
@@ -41,12 +39,12 @@ public sealed class DsHidMiniInterop : IDisposable
     {
         try
         {
-            _connectionMutex = Mutex.OpenExisting(MutexName);
+            _commandMutex = Mutex.OpenExisting(MutexName);
 
             //
             // Mutex already claimed by someone else, can't continue
             // 
-            if (!_connectionMutex.WaitOne(0))
+            if (!_commandMutex.WaitOne(0))
             {
                 throw new DsHidMiniInteropExclusiveAccessException();
             }
@@ -102,8 +100,8 @@ public sealed class DsHidMiniInterop : IDisposable
         _readEvent.Dispose();
         _writeEvent.Dispose();
 
-        _connectionMutex.ReleaseMutex();
-        _connectionMutex.Dispose();
+        _commandMutex.ReleaseMutex();
+        _commandMutex.Dispose();
     }
 
     /// <summary>
@@ -114,7 +112,7 @@ public sealed class DsHidMiniInterop : IDisposable
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public unsafe void SendPing()
     {
-        if (!Monitor.TryEnter(_lock))
+        if (!_commandMutex.WaitOne(0))
         {
             throw new DsHidMiniInteropConcurrencyException();
         }
@@ -154,7 +152,7 @@ public sealed class DsHidMiniInterop : IDisposable
         finally
         {
             _cmdAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
-            Monitor.Exit(_lock);
+            _commandMutex.ReleaseMutex();
         }
     }
 
@@ -174,7 +172,7 @@ public sealed class DsHidMiniInterop : IDisposable
     {
         ValidateDeviceIndex(deviceIndex);
 
-        if (!Monitor.TryEnter(_lock))
+        if (!_commandMutex.WaitOne(0))
         {
             throw new DsHidMiniInteropConcurrencyException();
         }
@@ -224,7 +222,7 @@ public sealed class DsHidMiniInterop : IDisposable
         finally
         {
             _cmdAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
-            Monitor.Exit(_lock);
+            _commandMutex.ReleaseMutex();
         }
     }
 
@@ -248,7 +246,7 @@ public sealed class DsHidMiniInterop : IDisposable
                 "Player index must be between (including) 1 and 7.");
         }
 
-        if (!Monitor.TryEnter(_lock))
+        if (!_commandMutex.WaitOne(0))
         {
             throw new DsHidMiniInteropConcurrencyException();
         }
@@ -292,7 +290,7 @@ public sealed class DsHidMiniInterop : IDisposable
         finally
         {
             _cmdAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
-            Monitor.Exit(_lock);
+            _commandMutex.ReleaseMutex();
         }
     }
 
