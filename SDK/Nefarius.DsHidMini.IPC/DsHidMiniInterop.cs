@@ -297,6 +297,7 @@ public sealed class DsHidMiniInterop : IDisposable
     /// <summary>
     ///     Attempts to read the <see cref="Ds3RawInputReport" /> from a given device instance.
     /// </summary>
+    /// <remarks>This method returns the last submitted input report copy and does not block.</remarks>
     /// <param name="deviceIndex">The one-based device index.</param>
     /// <returns>The <see cref="Ds3RawInputReport" /> or null if the given <paramref name="deviceIndex" /> is not occupied.</returns>
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
