@@ -13,7 +13,7 @@ NTSTATUS InitIPC(void)
 	const WDFDRIVER driver = WdfGetDriver();
 	const PDSHM_DRIVER_CONTEXT context = DriverGetContext(driver);
 
-	PUCHAR pBuf = NULL;
+	PUCHAR pCmdBuf = NULL;
 	HANDLE hReadEvent = NULL;
 	HANDLE hWriteEvent = NULL;
 	HANDLE hMapFile = NULL;
@@ -125,7 +125,7 @@ NTSTATUS InitIPC(void)
 	}
 
 	// Map a view of the file in the calling process's address space
-	pBuf = MapViewOfFile(
+	pCmdBuf = MapViewOfFile(
 		hMapFile, // handle to map object
 		FILE_MAP_ALL_ACCESS, // read/write permission
 		0,
@@ -133,7 +133,7 @@ NTSTATUS InitIPC(void)
 		DSHM_IPC_BUFFER_SIZE
 	);
 
-	if (pBuf == NULL)
+	if (pCmdBuf == NULL)
 	{
 		TraceError(
 			TRACE_IPC,
@@ -148,7 +148,7 @@ NTSTATUS InitIPC(void)
 	context->IPC.ConnectMutex = hMutex;
 	context->IPC.ReadEvent = hReadEvent;
 	context->IPC.WriteEvent = hWriteEvent;
-	context->IPC.SharedMemory = pBuf;
+	context->IPC.SharedMemory = pCmdBuf;
 	context->IPC.SharedMemorySize = DSHM_IPC_BUFFER_SIZE;
 
 	// 
@@ -180,8 +180,8 @@ NTSTATUS InitIPC(void)
 	return STATUS_SUCCESS;
 
 exitFailure:
-	if (pBuf)
-		UnmapViewOfFile(pBuf);
+	if (pCmdBuf)
+		UnmapViewOfFile(pCmdBuf);
 
 	if (hReadEvent)
 		CloseHandle(hReadEvent);
