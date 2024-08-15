@@ -40,15 +40,6 @@ public sealed class DsHidMiniInterop : IDisposable
         try
         {
             _commandMutex = Mutex.OpenExisting(MutexName);
-
-            //
-            // Mutex already claimed by someone else, can't continue
-            // 
-            if (!_commandMutex.WaitOne(0))
-            {
-                throw new DsHidMiniInteropExclusiveAccessException();
-            }
-
             _readEvent = EventWaitHandle.OpenExisting(ReadEventName);
             _writeEvent = EventWaitHandle.OpenExisting(WriteEventName);
         }
