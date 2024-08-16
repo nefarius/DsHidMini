@@ -15,12 +15,12 @@ using DsHidMiniInterop ipc = new();
 
 Ds3RawInputReport report = new();
 
+Stopwatch stopwatch = new();
+
 do
 {
     while (!Console.KeyAvailable)
     {
-        Stopwatch stopwatch = new();
-
         int executionCount = 0;
 
         stopwatch.Restart();
