@@ -8,8 +8,6 @@
 
 - [DsHidMiniInteropConcurrencyException](./nefarius.dshidmini.ipc.exceptions.dshidminiinteropconcurrencyexception.md)
 
-- [DsHidMiniInteropExclusiveAccessException](./nefarius.dshidmini.ipc.exceptions.dshidminiinteropexclusiveaccessexception.md)
-
 - [DsHidMiniInteropInvalidDeviceIndexException](./nefarius.dshidmini.ipc.exceptions.dshidminiinteropinvaliddeviceindexexception.md)
 
 - [DsHidMiniInteropReplyTimeoutException](./nefarius.dshidmini.ipc.exceptions.dshidminiinteropreplytimeoutexception.md)

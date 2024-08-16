@@ -3,17 +3,6 @@
 namespace Nefarius.DsHidMini.IPC.Exceptions;
 
 /// <summary>
-///     Another client is already connected to the driver, can't continue initialization.
-/// </summary>
-public sealed class DsHidMiniInteropExclusiveAccessException : Exception
-{
-    internal DsHidMiniInteropExclusiveAccessException() : base(
-        "Another client is already connected to the driver, can't continue initialization.")
-    {
-    }
-}
-
-/// <summary>
 ///     Driver IPC unavailable, make sure that at least one compatible controller is connected and operational.
 /// </summary>
 public sealed class DsHidMiniInteropUnavailableException : Exception
