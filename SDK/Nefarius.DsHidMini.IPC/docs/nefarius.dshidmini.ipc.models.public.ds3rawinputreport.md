@@ -32,11 +32,15 @@ public ushort AccelerometerZ;
 
 ### <a id="fields-batterystatus"/>**BatteryStatus**
 
+Battery charge status.
+
 ```csharp
 public byte BatteryStatus;
 ```
 
 ### <a id="fields-buttons"/>**Buttons**
+
+The individual controller buttons.
 
 ```csharp
 public ButtonUnion Buttons;
@@ -50,17 +54,31 @@ public ushort Gyroscope;
 
 ### <a id="fields-leftthumbx"/>**LeftThumbX**
 
+Left Thumb X-axis.
+
 ```csharp
 public byte LeftThumbX;
 ```
 
+**Remarks:**
+
+0x00 = left/bottom, 0x80 = centered, 0xFF = right/top
+
 ### <a id="fields-leftthumby"/>**LeftThumbY**
+
+Left Thumb Y-axis.
 
 ```csharp
 public byte LeftThumbY;
 ```
 
+**Remarks:**
+
+0x00 = left/bottom, 0x80 = centered, 0xFF = right/top
+
 ### <a id="fields-pressure"/>**Pressure**
+
+Pressure button values.
 
 ```csharp
 public PressureUnion Pressure;
@@ -68,42 +86,32 @@ public PressureUnion Pressure;
 
 ### <a id="fields-reportid"/>**ReportId**
 
+Report ID (always 1).
+
 ```csharp
 public byte ReportId;
 ```
 
-### <a id="fields-reserved0"/>**Reserved0**
-
-```csharp
-public byte Reserved0;
-```
-
-### <a id="fields-reserved1"/>**Reserved1**
-
-```csharp
-public <Reserved1>e__FixedBuffer Reserved1;
-```
-
-### <a id="fields-reserved2"/>**Reserved2**
-
-```csharp
-public <Reserved2>e__FixedBuffer Reserved2;
-```
-
-### <a id="fields-reserved3"/>**Reserved3**
-
-```csharp
-public <Reserved3>e__FixedBuffer Reserved3;
-```
-
 ### <a id="fields-rightthumbx"/>**RightThumbX**
+
+Right Thumb X-axis.
 
 ```csharp
 public byte RightThumbX;
 ```
 
+**Remarks:**
+
+0x00 = left/bottom, 0x80 = centered, 0xFF = right/top
+
 ### <a id="fields-rightthumby"/>**RightThumbY**
+
+Right Thumb Y-axis.
 
 ```csharp
 public byte RightThumbY;
 ```
+
+**Remarks:**
+
+0x00 = left/bottom, 0x80 = centered, 0xFF = right/top
