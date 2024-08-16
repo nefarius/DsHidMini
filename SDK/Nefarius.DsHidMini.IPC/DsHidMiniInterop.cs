@@ -84,11 +84,11 @@ public sealed class DsHidMiniInterop : IDisposable
         {
             try
             {
-                using Mutex mutex = Mutex.OpenExisting(MutexName);
+                using MemoryMappedFile mmf = MemoryMappedFile.OpenExisting(FileMapName);
 
                 return true;
             }
-            catch (WaitHandleCannotBeOpenedException)
+            catch (FileNotFoundException)
             {
                 return false;
             }
@@ -307,6 +307,13 @@ public sealed class DsHidMiniInterop : IDisposable
     /// <summary>
     ///     Attempts to read the <see cref="Ds3RawInputReport" /> from a given device instance.
     /// </summary>
+    /// <remarks>
+    ///     If <paramref name="timeout" /> is null, this method returns the last known input report copy immediately. If
+    ///     you use this call in a busy loop, you should set a timeout so this call becomes event-based, meaning the call will
+    ///     only return when the driver signaled that new data is available, otherwise you will just burn through CPU for no
+    ///     good reason. A new input report is typically available each average 5 milliseconds, depending on the connection
+    ///     (wired or wireless) so a timeout of 20 milliseconds should be a good recommendation.
+    /// </remarks>
     /// <param name="deviceIndex">The one-based device index.</param>
     /// <param name="timeout">Optional timeout to wait for a report update to arrive. Default invocation returns immediately.</param>
     /// <returns>The <see cref="Ds3RawInputReport" /> or null if the given <paramref name="deviceIndex" /> is not occupied.</returns>
