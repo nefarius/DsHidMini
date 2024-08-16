@@ -23,21 +23,12 @@ public unsafe struct Ds3RawInputReport
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public struct ButtonUnion
     {
-        /// <summary>
-        ///     A 32-Bit representation of the buttons.
-        /// </summary>
         [FieldOffset(0)]
         internal uint lButtons;
 
-        /// <summary>
-        ///     4 times 8-Bit representation of the buttons.
-        /// </summary>
         [FieldOffset(0)]
         internal fixed byte bButtons[4];
 
-        /// <summary>
-        ///     A 16-Bit representation of the buttons.
-        /// </summary>
         [FieldOffset(0)]
         internal ushort packedButtons;
 
