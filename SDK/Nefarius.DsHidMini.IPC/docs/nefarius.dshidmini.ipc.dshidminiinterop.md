@@ -2,7 +2,7 @@
 
 Namespace: Nefarius.DsHidMini.IPC
 
-Connects to the drivers shared memory region and keeps it locked to a single instance until disposed.
+Connects to the drivers shared memory region and offers utility methods for data exchange.
 
 ```csharp
 public sealed class DsHidMiniInterop : System.IDisposable

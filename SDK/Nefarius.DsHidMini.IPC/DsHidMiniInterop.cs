@@ -18,7 +18,7 @@ using Nefarius.DsHidMini.IPC.Models.Public;
 namespace Nefarius.DsHidMini.IPC;
 
 /// <summary>
-///     Connects to the drivers shared memory region and keeps it locked to a single instance until disposed.
+///     Connects to the drivers shared memory region and offers utility methods for data exchange.
 /// </summary>
 public sealed class DsHidMiniInterop : IDisposable
 {
