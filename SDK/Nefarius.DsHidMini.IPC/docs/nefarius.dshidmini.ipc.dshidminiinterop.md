@@ -50,12 +50,12 @@ No driver instance is available. Make sure that at least one
 public void Dispose()
 ```
 
-### <a id="methods-getrawinputreport"/>**GetRawInputReport(Int32, Nullable&lt;TimeSpan&gt;)**
+### <a id="methods-getrawinputreport"/>**GetRawInputReport(Int32, ref Ds3RawInputReport, Nullable&lt;TimeSpan&gt;)**
 
 Attempts to read the [Ds3RawInputReport](./nefarius.dshidmini.ipc.models.public.ds3rawinputreport.md) from a given device instance.
 
 ```csharp
-public Nullable<Ds3RawInputReport> GetRawInputReport(int deviceIndex, Nullable<TimeSpan> timeout)
+public bool GetRawInputReport(int deviceIndex, ref Ds3RawInputReport report, Nullable<TimeSpan> timeout)
 ```
 
 #### Parameters
@@ -63,12 +63,16 @@ public Nullable<Ds3RawInputReport> GetRawInputReport(int deviceIndex, Nullable<T
 `deviceIndex` [Int32](https://docs.microsoft.com/en-us/dotnet/api/system.int32)<br>
 The one-based device index.
 
+`report` [Ds3RawInputReport&](./nefarius.dshidmini.ipc.models.public.ds3rawinputreport&.md)<br>
+The [Ds3RawInputReport](./nefarius.dshidmini.ipc.models.public.ds3rawinputreport.md) to populate.
+
 `timeout` [Nullable&lt;TimeSpan&gt;](https://docs.microsoft.com/en-us/dotnet/api/system.nullable-1)<br>
 Optional timeout to wait for a report update to arrive. Default invocation returns immediately.
 
 #### Returns
 
-The [Ds3RawInputReport](./nefarius.dshidmini.ipc.models.public.ds3rawinputreport.md) or null if the given `deviceIndex` is not occupied.
+TRUE if `report` got filled in or FALSE if the given `deviceIndex` is not
+ occupied or a transfer error occurred.
 
 **Remarks:**
 

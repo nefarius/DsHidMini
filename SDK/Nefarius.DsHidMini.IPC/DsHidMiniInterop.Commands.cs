@@ -224,10 +224,14 @@ public partial class DsHidMiniInterop
     ///     (wired or wireless) so a timeout of 20 milliseconds should be a good recommendation.
     /// </remarks>
     /// <param name="deviceIndex">The one-based device index.</param>
+    /// <param name="report">The <see cref="Ds3RawInputReport" /> to populate.</param>
     /// <param name="timeout">Optional timeout to wait for a report update to arrive. Default invocation returns immediately.</param>
-    /// <returns>The <see cref="Ds3RawInputReport" /> or null if the given <paramref name="deviceIndex" /> is not occupied.</returns>
+    /// <returns>
+    ///     TRUE if <paramref name="report" /> got filled in or FALSE if the given <paramref name="deviceIndex" /> is not
+    ///     occupied or a transfer error occurred.
+    /// </returns>
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
-    public unsafe Ds3RawInputReport? GetRawInputReport(int deviceIndex, TimeSpan? timeout = null)
+    public unsafe bool GetRawInputReport(int deviceIndex, ref Ds3RawInputReport report, TimeSpan? timeout = null)
     {
         ValidateDeviceIndex(deviceIndex);
 
@@ -250,7 +254,7 @@ public partial class DsHidMiniInterop
             // 
             if (message->SlotIndex == 0)
             {
-                return null;
+                return false;
             }
 
             //
@@ -258,10 +262,12 @@ public partial class DsHidMiniInterop
             // 
             if (message->SlotIndex != deviceIndex)
             {
-                return null;
+                return false;
             }
 
-            return message->InputReport;
+            report = message->InputReport;
+
+            return true;
         }
         finally
         {
