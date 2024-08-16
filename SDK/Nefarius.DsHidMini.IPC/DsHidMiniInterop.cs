@@ -22,8 +22,8 @@ public sealed partial class DsHidMiniInterop : IDisposable
     private const string FileMapName = "Global\\DsHidMiniSharedMemory";
     private const string ReadEventName = "Global\\DsHidMiniReadEvent";
     private const string WriteEventName = "Global\\DsHidMiniWriteEvent";
-    internal const int CommandRegionSizeSize = 1024;
-    internal const int HidRegionSizeSize = 1024;
+    internal const int CommandRegionSizeSize = 1024; // keep in sync with driver
+    internal const int HidRegionSizeSize = 1024; // keep in sync with driver
     private const string MutexName = "Global\\DsHidMiniCommandMutex";
     private readonly MemoryMappedViewAccessor _cmdAccessor;
 
