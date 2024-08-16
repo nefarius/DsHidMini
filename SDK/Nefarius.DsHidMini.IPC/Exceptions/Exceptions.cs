@@ -39,7 +39,9 @@ public sealed class DsHidMiniInteropReplyTimeoutException : Exception
 /// </summary>
 public sealed class DsHidMiniInteropUnexpectedReplyException : Exception
 {
-    private readonly unsafe DSHM_IPC_MSG_HEADER* _header;
+    private readonly unsafe DSHM_IPC_MSG_HEADER* _header = null;
+
+    internal DsHidMiniInteropUnexpectedReplyException() { }
 
     internal unsafe DsHidMiniInteropUnexpectedReplyException(DSHM_IPC_MSG_HEADER* header) : base(
         "A request reply was malformed.")
@@ -49,7 +51,9 @@ public sealed class DsHidMiniInteropUnexpectedReplyException : Exception
 
     /// <inheritdoc />
     public override unsafe string Message =>
-        $"{base.Message}, Type: {_header->Type}, Target: {_header->Target}, Command: {_header->Command.Driver}, TargetIndex: {_header->TargetIndex}, Size: {_header->Size}";
+        _header is not null
+            ? $"{base.Message}, Type: {_header->Type}, Target: {_header->Target}, Command: {_header->Command.Driver}, TargetIndex: {_header->TargetIndex}, Size: {_header->Size}"
+            : base.Message;
 }
 
 /// <summary>

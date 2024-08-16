@@ -228,8 +228,9 @@ public partial class DsHidMiniInterop
     /// <param name="timeout">Optional timeout to wait for a report update to arrive. Default invocation returns immediately.</param>
     /// <returns>
     ///     TRUE if <paramref name="report" /> got filled in or FALSE if the given <paramref name="deviceIndex" /> is not
-    ///     occupied or a transfer error occurred.
+    ///     occupied.
     /// </returns>
+    /// <exception cref="DsHidMiniInteropUnexpectedReplyException">The driver returned unexpected or malformed data.</exception>
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public unsafe bool GetRawInputReport(int deviceIndex, ref Ds3RawInputReport report, TimeSpan? timeout = null)
     {
@@ -262,7 +263,7 @@ public partial class DsHidMiniInterop
             // 
             if (message->SlotIndex != deviceIndex)
             {
-                return false;
+                throw new DsHidMiniInteropUnexpectedReplyException();
             }
 
             report = message->InputReport;

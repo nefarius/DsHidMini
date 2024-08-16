@@ -72,7 +72,12 @@ Optional timeout to wait for a report update to arrive. Default invocation retur
 #### Returns
 
 TRUE if `report` got filled in or FALSE if the given `deviceIndex` is not
- occupied or a transfer error occurred.
+ occupied.
+
+#### Exceptions
+
+[DsHidMiniInteropUnexpectedReplyException](./nefarius.dshidmini.ipc.exceptions.dshidminiinteropunexpectedreplyexception.md)<br>
+The driver returned unexpected or malformed data.
 
 **Remarks:**
 
