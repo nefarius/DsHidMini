@@ -91,6 +91,10 @@ typedef enum
 	// Requests a player index update (switch player LED etc.)
 	// 
 	DSHM_IPC_MSG_CMD_DEVICE_SET_PLAYER_INDEX,
+	//
+	// Requests a wait handle for input report state changes
+	// 
+	DSHM_IPC_MSG_CMD_DEVICE_GET_HID_WAIT_HANDLE,
 } DSHM_IPC_MSG_CMD_DEVICE;
 
 #include <pshpack1.h>
@@ -162,6 +166,16 @@ typedef struct _DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY
 	NTSTATUS NtStatus;
 	
 } DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY, *PDSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY;
+
+typedef struct _DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE
+{
+	DSHM_IPC_MSG_HEADER Header;
+
+	DWORD ProcessId;
+
+	HANDLE WaitHandle;
+	
+} DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE, *PDSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE;
 #include <poppack.h>
 
 typedef
@@ -253,6 +267,28 @@ DSHM_IPC_MSG_SET_PLAYER_INDEX_RESPONSE_INIT(
 	Message->Header.Size = size;
 
 	Message->NtStatus = Status;
+}
+
+VOID
+FORCEINLINE
+DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE_INIT(
+	_Inout_ PDSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE Message,
+	_In_ UINT32 DeviceIndex,
+	_In_ DWORD ProcessId,
+	_In_opt_ HANDLE WaitHandle
+)
+{
+	const UINT32 size = sizeof(DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE);
+	RtlZeroMemory(Message, size);
+
+	Message->Header.Type = DSHM_IPC_MSG_TYPE_RESPONSE_ONLY;
+	Message->Header.Target = DSHM_IPC_MSG_TARGET_CLIENT;
+	Message->Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE_GET_HID_WAIT_HANDLE;
+	Message->Header.TargetIndex = DeviceIndex;
+	Message->Header.Size = size;
+
+	Message->ProcessId = ProcessId;
+	Message->WaitHandle = WaitHandle;
 }
 
 

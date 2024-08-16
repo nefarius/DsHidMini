@@ -4,8 +4,6 @@
 #include <pshpack1.h>
 typedef struct _IPC_HID_INPUT_REPORT_MESSAGE
 {
-	HANDLE WaitEvent;
-
 	UINT32 SlotIndex;
 
 	DS3_RAW_INPUT_REPORT InputReport;
@@ -32,16 +30,14 @@ DSHM_ParseInputReport(
 	/*
 	 * Offset calculation puts each devices' input report copy 
      * in their respective position in the memory region, like:
-     *   1st device: ((8 + 4 + 49) * (1 - 1)) = 0
-     *   2nd device: ((8 + 4 + 49) * (2 - 1)) = 61
-     *   3rd device: ((8 + 4 + 49) * (3 - 1)) = 122
+     *   1st device: ((4 + 49) * (1 - 1)) = 0
+     *   2nd device: ((4 + 49) * (2 - 1)) = 53
+     *   3rd device: ((4 + 49) * (3 - 1)) = 106
      * and so on
 	 */
 	const size_t offset = (sizeof(IPC_HID_INPUT_REPORT_MESSAGE) * (DeviceContext->SlotIndex - 1));
 	const PIPC_HID_INPUT_REPORT_MESSAGE pHIDBuffer = (PIPC_HID_INPUT_REPORT_MESSAGE)(pDrvCtx->IPC.SharedRegions.HID.Buffer + offset);
 
-	// shared event to make a client reader awaitable
-	pHIDBuffer->WaitEvent = DeviceContext->IPC.InputReportWaitHandle;
 	// prefix each report with associated device index
 	pHIDBuffer->SlotIndex = DeviceContext->SlotIndex;
 	// skip index and copy unmodified raw report to the section

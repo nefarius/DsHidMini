@@ -1,8 +1,13 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.IO.MemoryMappedFiles;
 using System.Net.NetworkInformation;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+
+using Windows.Win32;
+using Windows.Win32.Foundation;
+using Windows.Win32.System.Threading;
 
 using Microsoft.Win32.SafeHandles;
 
@@ -31,6 +36,8 @@ public sealed class DsHidMiniInterop : IDisposable
     private readonly MemoryMappedFile _mappedFile;
     private readonly EventWaitHandle _readEvent;
     private readonly EventWaitHandle _writeEvent;
+
+    private EventWaitHandle? _inputReportEvent;
 
     /// <summary>
     ///     Creates a new <see cref="DsHidMiniInterop" /> instance by connecting to the driver IPC mechanism.
@@ -97,6 +104,7 @@ public sealed class DsHidMiniInterop : IDisposable
 
         _readEvent.Dispose();
         _writeEvent.Dispose();
+        _inputReportEvent?.Dispose();
 
         _commandMutex.Dispose();
     }
@@ -316,12 +324,9 @@ public sealed class DsHidMiniInterop : IDisposable
 
             if (timeout.HasValue)
             {
-                SafeWaitHandle waitHandle = new(message->WaitEvent, false);
+                _inputReportEvent ??= GetHidReportWaitHandle(deviceIndex);
 
-                using EventWaitHandle eventWaitHandle = new(false, EventResetMode.AutoReset);
-                eventWaitHandle.SafeWaitHandle = waitHandle;
-
-                eventWaitHandle.WaitOne(timeout.Value);
+                _inputReportEvent.WaitOne(timeout.Value);
             }
 
             if (message->SlotIndex == 0)
@@ -341,6 +346,99 @@ public sealed class DsHidMiniInterop : IDisposable
             _hidAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
         }
     }
+
+    /// <summary>
+    ///     Gets the input report wait handle from the driver and duplicates it into the current process.
+    /// </summary>
+    private unsafe EventWaitHandle GetHidReportWaitHandle(int deviceIndex)
+    {
+        ValidateDeviceIndex(deviceIndex);
+
+        if (!_commandMutex.WaitOne(0))
+        {
+            throw new DsHidMiniInteropConcurrencyException();
+        }
+
+        try
+        {
+            byte* buffer = null;
+            _cmdAccessor.SafeMemoryMappedViewHandle.AcquirePointer(ref buffer);
+
+            DSHM_IPC_MSG_HEADER* request = (DSHM_IPC_MSG_HEADER*)buffer;
+
+            request->Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_RESPONSE_ONLY;
+            request->Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DEVICE;
+            request->Command.Device = DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_GET_HID_WAIT_HANDLE;
+            request->TargetIndex = (uint)deviceIndex;
+            request->Size = (uint)Marshal.SizeOf<DSHM_IPC_MSG_HEADER>();
+
+            if (!SendAndWait())
+            {
+                throw new DsHidMiniInteropReplyTimeoutException();
+            }
+
+            DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE* reply = (DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE*)buffer;
+
+            //
+            // Plausibility check
+            // 
+            if (reply->Header.Type == DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_RESPONSE_ONLY
+                && reply->Header.Target == DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_CLIENT
+                && reply->Header.Command.Device == DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_GET_HID_WAIT_HANDLE
+                && reply->Header.TargetIndex == deviceIndex
+                && reply->Header.Size == Marshal.SizeOf<DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE>())
+            {
+                HANDLE driverProcess = PInvoke.OpenProcess(
+                    PROCESS_ACCESS_RIGHTS.PROCESS_DUP_HANDLE,
+                    new BOOL(false),
+                    reply->ProcessId
+                );
+
+                try
+                {
+                    if (driverProcess.IsNull)
+                    {
+                        throw new Win32Exception(Marshal.GetLastWin32Error(), "OpenProcess call failed.");
+                    }
+
+                    HANDLE dupHandle;
+
+                    if (!PInvoke.DuplicateHandle(
+                            driverProcess,
+                            new HANDLE(reply->WaitHandle),
+                            PInvoke.GetCurrentProcess(),
+                            &dupHandle,
+                            0,
+                            new BOOL(false),
+                            DUPLICATE_HANDLE_OPTIONS.DUPLICATE_SAME_ACCESS
+                        ))
+                    {
+                        throw new Win32Exception(Marshal.GetLastWin32Error(), "DuplicateHandle call failed.");
+                    }
+
+                    return new EventWaitHandle(false, EventResetMode.AutoReset)
+                    {
+                        SafeWaitHandle = new SafeWaitHandle(dupHandle, true)
+                    };
+                }
+                finally
+                {
+                    if (!driverProcess.IsNull)
+                    {
+                        PInvoke.CloseHandle(driverProcess);
+                    }
+                }
+            }
+
+            throw new DsHidMiniInteropUnexpectedReplyException(&reply->Header);
+        }
+        finally
+        {
+            _cmdAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
+            _commandMutex.ReleaseMutex();
+        }
+    }
+
 
     /// <summary>
     ///     Ensures the target device index is in a valid range.

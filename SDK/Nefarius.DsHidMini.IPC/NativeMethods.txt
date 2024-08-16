@@ -1,0 +1,4 @@
+﻿OpenProcess
+DuplicateHandle
+GetCurrentProcess
+DUPLICATE_HANDLE_OPTIONS

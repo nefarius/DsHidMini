@@ -81,13 +81,22 @@ internal struct DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY
     public UInt32 NtStatus;
 }
 
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[StructLayout(LayoutKind.Sequential)]
+internal struct DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE
+{
+    public DSHM_IPC_MSG_HEADER Header;
+
+    public UInt32 ProcessId;
+
+    public IntPtr WaitHandle;  // HANDLE is typically represented as IntPtr in C#
+}
+
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 internal struct IPC_HID_INPUT_REPORT_MESSAGE
 {
-    public IntPtr WaitEvent;
-    
-    public uint SlotIndex;
+    public UInt32 SlotIndex;
 
     public Ds3RawInputReport InputReport;
 }

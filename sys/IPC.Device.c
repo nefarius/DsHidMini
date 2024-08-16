@@ -69,6 +69,17 @@ DSHM_EvtDispatchDeviceMessage(
 
 		status = STATUS_SUCCESS;
 	}
+	else if (MessageHeader->Command.Device == DSHM_IPC_MSG_CMD_DEVICE_GET_HID_WAIT_HANDLE)
+	{
+		DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE_INIT(
+			(PDSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE)MessageHeader,
+			MessageHeader->TargetIndex,
+			GetCurrentProcessId(),
+			DeviceContext->IPC.InputReportWaitHandle
+		);
+
+		status = STATUS_SUCCESS;
+	}
 
 	FuncExit(TRACE_IPC, "status=%!STATUS!", status);
 

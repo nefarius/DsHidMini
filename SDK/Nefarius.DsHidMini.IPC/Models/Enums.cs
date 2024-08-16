@@ -66,4 +66,7 @@ internal enum DSHM_IPC_MSG_CMD_DEVICE : UInt32
     
     // Requests a player index update (switch player LED etc.)
     DSHM_IPC_MSG_CMD_DEVICE_SET_PLAYER_INDEX,
+    
+    // Requests a wait handle for input report state changes
+    DSHM_IPC_MSG_CMD_DEVICE_GET_HID_WAIT_HANDLE,
 }
