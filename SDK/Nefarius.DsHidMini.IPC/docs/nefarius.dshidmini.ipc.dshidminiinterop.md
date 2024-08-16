@@ -37,9 +37,9 @@ public DsHidMiniInterop()
 
 #### Exceptions
 
-[DsHidMiniInteropExclusiveAccessException](./nefarius.dshidmini.ipc.exceptions.dshidminiinteropexclusiveaccessexception.md)<br>
-
 [DsHidMiniInteropUnavailableException](./nefarius.dshidmini.ipc.exceptions.dshidminiinteropunavailableexception.md)<br>
+No driver instance is available. Make sure that at least one
+ device is connected and that the driver is installed and working properly.
 
 ## Methods
 
@@ -67,11 +67,11 @@ Optional timeout to wait for a report update to arrive. Default invocation retur
 
 #### Returns
 
-The [Ds3RawInputReport](./nefarius.dshidmini.ipc.models.public.ds3rawinputreport.md) or null if the given  is not occupied.
+The [Ds3RawInputReport](./nefarius.dshidmini.ipc.models.public.ds3rawinputreport.md) or null if the given `deviceIndex` is not occupied.
 
 **Remarks:**
 
-If  is null, this method returns the last known input report copy immediately. If
+If `timeout` is null, this method returns the last known input report copy immediately. If
  you use this call in a busy loop, you should set a timeout so this call becomes event-based, meaning the call will
  only return when the driver signaled that new data is available, otherwise you will just burn through CPU for no
  good reason. A new input report is typically available each average 5 milliseconds, depending on the connection
@@ -88,8 +88,10 @@ public void SendPing()
 #### Exceptions
 
 [DsHidMiniInteropReplyTimeoutException](./nefarius.dshidmini.ipc.exceptions.dshidminiinteropreplytimeoutexception.md)<br>
+The driver didn't respond within an expected period.
 
 [DsHidMiniInteropUnexpectedReplyException](./nefarius.dshidmini.ipc.exceptions.dshidminiinteropunexpectedreplyexception.md)<br>
+The driver returned unexpected or malformed data.
 
 ### <a id="methods-sethostaddress"/>**SetHostAddress(Int32, PhysicalAddress)**
 
@@ -109,17 +111,22 @@ The new host address.
 
 #### Returns
 
-A [SetHostResult](./nefarius.dshidmini.ipc.models.public.sethostresult.md).
+A [SetHostResult](./nefarius.dshidmini.ipc.models.public.sethostresult.md) containing success (or error) details.
 
 #### Exceptions
 
 [DsHidMiniInteropInvalidDeviceIndexException](./nefarius.dshidmini.ipc.exceptions.dshidminiinteropinvaliddeviceindexexception.md)<br>
+The `deviceIndex` was outside a valid
+ range.
 
 [DsHidMiniInteropConcurrencyException](./nefarius.dshidmini.ipc.exceptions.dshidminiinteropconcurrencyexception.md)<br>
+A different thread is currently performing a data exchange.
 
 [DsHidMiniInteropReplyTimeoutException](./nefarius.dshidmini.ipc.exceptions.dshidminiinteropreplytimeoutexception.md)<br>
+The driver didn't respond within an expected period.
 
 [DsHidMiniInteropUnexpectedReplyException](./nefarius.dshidmini.ipc.exceptions.dshidminiinteropunexpectedreplyexception.md)<br>
+The driver returned unexpected or malformed data.
 
 **Remarks:**
 
@@ -127,7 +134,7 @@ This is synonymous with "pairing" to a new Bluetooth host.
 
 ### <a id="methods-setplayerindex"/>**SetPlayerIndex(Int32, Byte)**
 
-
+Overwrites the player slot indicator (player LEDs) of the given device.
 
 ```csharp
 public uint SetPlayerIndex(int deviceIndex, byte playerIndex)
@@ -148,9 +155,14 @@ The player index to set to. Valid values include 1 to 7.
 #### Exceptions
 
 [ArgumentOutOfRangeException](https://docs.microsoft.com/en-us/dotnet/api/system.argumentoutofrangeexception)<br>
+The `deviceIndex` or `playerIndex`
+ were out of range.
 
 [DsHidMiniInteropConcurrencyException](./nefarius.dshidmini.ipc.exceptions.dshidminiinteropconcurrencyexception.md)<br>
+A different thread is currently performing a data exchange.
 
 [DsHidMiniInteropReplyTimeoutException](./nefarius.dshidmini.ipc.exceptions.dshidminiinteropreplytimeoutexception.md)<br>
+The driver didn't respond within an expected period.
 
 [DsHidMiniInteropUnexpectedReplyException](./nefarius.dshidmini.ipc.exceptions.dshidminiinteropunexpectedreplyexception.md)<br>
+The driver returned unexpected or malformed data.
