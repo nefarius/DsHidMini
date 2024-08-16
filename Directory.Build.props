@@ -10,7 +10,7 @@
     <LangVersion>latest</LangVersion>
 
     <!-- Suppress warnings if CI environment variable is set to true -->
-    <NoWarn Condition="'$(CI)' == 'True'">$(NoWarn);1591;8618;8601</NoWarn>
+    <NoWarn Condition="'$(CI)' == 'True'">$(NoWarn),1591,8618,8601,8602,1587</NoWarn>
 
     <!-- Docs and symbols generation -->
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
