@@ -108,7 +108,6 @@ public sealed partial class DsHidMiniInterop : IDisposable
         _commandMutex.Dispose();
     }
 
-
     /// <summary>
     ///     Gets the input report wait handle from the driver and duplicates it into the current process.
     /// </summary>
@@ -200,8 +199,7 @@ public sealed partial class DsHidMiniInterop : IDisposable
             _commandMutex.ReleaseMutex();
         }
     }
-
-
+    
     /// <summary>
     ///     Ensures the target device index is in a valid range.
     /// </summary>
