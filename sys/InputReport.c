@@ -1,14 +1,6 @@
 #include "Driver.h"
 #include "InputReport.tmh"
 
-#include <pshpack1.h>
-typedef struct _IPC_HID_INPUT_REPORT_MESSAGE
-{
-	UINT32 SlotIndex;
-
-	DS3_RAW_INPUT_REPORT InputReport;
-} IPC_HID_INPUT_REPORT_MESSAGE, *PIPC_HID_INPUT_REPORT_MESSAGE;
-#include <poppack.h>
 
 //
 // Protocol-agnostic function that transforms the raw input report to HID-mode-compatible ones

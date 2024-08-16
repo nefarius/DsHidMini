@@ -366,6 +366,24 @@ typedef struct _DEVICE_CONTEXT
 
 } DEVICE_CONTEXT, * PDEVICE_CONTEXT;
 
+#include <pshpack1.h>
+//
+// Describes a raw input report packet shared via IPC
+// 
+typedef struct _IPC_HID_INPUT_REPORT_MESSAGE
+{
+	//
+	// One-based device index
+	// 
+	UINT32 SlotIndex;
+
+	//
+	// Input report copy
+	// 
+	DS3_RAW_INPUT_REPORT InputReport;
+} IPC_HID_INPUT_REPORT_MESSAGE, *PIPC_HID_INPUT_REPORT_MESSAGE;
+#include <poppack.h>
+
 //
 // This macro will generate an inline function called DeviceGetContext
 // which will be used to get a pointer to the device context memory

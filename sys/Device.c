@@ -228,6 +228,12 @@ void DsHidMini_DeviceCleanup(
 	}
 	WdfWaitLockRelease(driverContext->SlotsLock);
 
+	const size_t offset = (sizeof(IPC_HID_INPUT_REPORT_MESSAGE) * (deviceContext->SlotIndex - 1));
+	const PUCHAR pHIDBuffer = (driverContext->IPC.SharedRegions.HID.Buffer + offset);
+
+	// zero out the slot so potential readers get notified we're gone
+	RtlZeroMemory(pHIDBuffer, sizeof(IPC_HID_INPUT_REPORT_MESSAGE));
+
 	EventWriteUnloadEvent(Object);
 
 	FuncExitNoReturn(TRACE_DEVICE);
