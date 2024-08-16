@@ -30,10 +30,9 @@ public sealed class DsHidMiniInteropUnexpectedReplyException : Exception
 {
     private readonly unsafe DSHM_IPC_MSG_HEADER* _header = null;
 
-    internal DsHidMiniInteropUnexpectedReplyException() { }
+    internal DsHidMiniInteropUnexpectedReplyException() : base("A request reply was malformed.") { }
 
-    internal unsafe DsHidMiniInteropUnexpectedReplyException(DSHM_IPC_MSG_HEADER* header) : base(
-        "A request reply was malformed.")
+    internal unsafe DsHidMiniInteropUnexpectedReplyException(DSHM_IPC_MSG_HEADER* header) : this()
     {
         _header = header;
     }
