@@ -41,7 +41,8 @@ public sealed partial class DsHidMiniInterop : IDisposable
     /// </summary>
     /// <exception cref="DsHidMiniInteropUnavailableException">
     ///     No driver instance is available. Make sure that at least one
-    ///     device is connected and that the driver is installed and working properly.
+    ///     device is connected and that the driver is installed and working properly. Call <see cref="IsAvailable" /> prior to
+    ///     avoid this exception.
     /// </exception>
     public DsHidMiniInterop()
     {
@@ -199,7 +200,7 @@ public sealed partial class DsHidMiniInterop : IDisposable
             _commandMutex.ReleaseMutex();
         }
     }
-    
+
     /// <summary>
     ///     Ensures the target device index is in a valid range.
     /// </summary>

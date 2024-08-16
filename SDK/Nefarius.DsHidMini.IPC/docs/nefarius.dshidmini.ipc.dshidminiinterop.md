@@ -39,7 +39,8 @@ public DsHidMiniInterop()
 
 [DsHidMiniInteropUnavailableException](./nefarius.dshidmini.ipc.exceptions.dshidminiinteropunavailableexception.md)<br>
 No driver instance is available. Make sure that at least one
- device is connected and that the driver is installed and working properly.
+ device is connected and that the driver is installed and working properly. Call [DsHidMiniInterop.IsAvailable](./nefarius.dshidmini.ipc.dshidminiinterop.md#isavailable) prior to
+ avoid this exception.
 
 ## Methods
 
