@@ -251,7 +251,7 @@ public partial class DsHidMiniInterop
             }
 
             //
-            // Device got disconnected
+            // Device is/got disconnected
             // 
             if (message->SlotIndex == 0)
             {
