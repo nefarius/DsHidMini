@@ -245,11 +245,17 @@ public partial class DsHidMiniInterop
                 _inputReportEvent.WaitOne(timeout.Value);
             }
 
+            //
+            // Device got disconnected
+            // 
             if (message->SlotIndex == 0)
             {
                 return null;
             }
 
+            //
+            // Something went wrong in transit
+            // 
             if (message->SlotIndex != deviceIndex)
             {
                 return null;
