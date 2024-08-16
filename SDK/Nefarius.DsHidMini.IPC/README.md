@@ -1,6 +1,8 @@
 ﻿# <img src="../../assets/FireShock.png" align="left" />Nefarius.DsHidMini.IPC
 
 ![Requirements](https://img.shields.io/badge/Requires-.NET%208.0-blue.svg)
+[![NuGet Version](https://img.shields.io/nuget/v/Nefarius.DsHidMini.IPC)](https://www.nuget.org/packages/Nefarius.DsHidMini.IPC/)
+[![NuGet](https://img.shields.io/nuget/dt/Nefarius.DsHidMini.IPC)](https://www.nuget.org/packages/Nefarius.DsHidMini.IPC/)
 
 Interop SDK for DsHidMini IPC mechanism.
 
