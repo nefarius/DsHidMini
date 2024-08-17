@@ -143,6 +143,9 @@ public sealed partial class DsHidMiniInterop : IDisposable
             _connectedDevices.Add(instanceIndex, device);
         }
 
+        //
+        // We need to let go of all shared resources or the driver won't be able to re-create the named objects
+        // 
         if (_connectedDevices.Count == 0)
         {
             Dispose();
@@ -154,6 +157,8 @@ public sealed partial class DsHidMiniInterop : IDisposable
         PnPDevice? device = PnPDevice.GetDeviceByInterfaceId(obj.SymLink, DeviceLocationFlags.Phantom);
 
         KeyValuePair<int, PnPDevice> item = _connectedDevices.Single(kvp => kvp.Value.Equals(device));
+
+        // TODO: react to removal
 
         RefreshDevices();
     }
