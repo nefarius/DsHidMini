@@ -98,5 +98,5 @@ internal struct IPC_HID_INPUT_REPORT_MESSAGE
 {
     public UInt32 SlotIndex;
 
-    public Ds3RawInputReport InputReport;
+    public DS3_RAW_INPUT_REPORT InputReport;
 }

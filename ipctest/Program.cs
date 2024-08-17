@@ -16,7 +16,7 @@ if (!DsHidMiniInterop.IsAvailable)
 using DsHidMiniInterop ipc = new();
 
 #if INPUT_TEST
-Ds3RawInputReport report = new();
+DS3_RAW_INPUT_REPORT report = new();
 #endif
 
 Stopwatch stopwatch = new();

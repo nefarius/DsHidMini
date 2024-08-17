@@ -7,7 +7,8 @@ namespace Nefarius.DsHidMini.IPC.Models.Public;
 ///     Raw input report as it is sent by the SIXAXIS/DualShock 3.
 /// </summary>
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public unsafe struct Ds3RawInputReport
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+public unsafe struct DS3_RAW_INPUT_REPORT
 {
     /// <summary>
     ///     Report ID (always 1).

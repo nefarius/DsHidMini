@@ -13,7 +13,7 @@ namespace Nefarius.DsHidMini.IPC;
 public partial class DsHidMiniInterop
 {
     /// <summary>
-    ///     Attempts to read the <see cref="Ds3RawInputReport" /> from a given device instance.
+    ///     Attempts to read the <see cref="DS3_RAW_INPUT_REPORT" /> from a given device instance.
     /// </summary>
     /// <remarks>
     ///     If <paramref name="timeout" /> is null, this method returns the last known input report copy immediately. If
@@ -23,7 +23,7 @@ public partial class DsHidMiniInterop
     ///     (wired or wireless) so a timeout of 20 milliseconds should be a good recommendation.
     /// </remarks>
     /// <param name="deviceIndex">The one-based device index.</param>
-    /// <param name="report">The <see cref="Ds3RawInputReport" /> to populate.</param>
+    /// <param name="report">The <see cref="DS3_RAW_INPUT_REPORT" /> to populate.</param>
     /// <param name="timeout">Optional timeout to wait for a report update to arrive. Default invocation returns immediately.</param>
     /// <exception cref="DsHidMiniInteropAccessDeniedException">
     ///     Driver process interaction failed due to missing permissions;
@@ -43,7 +43,7 @@ public partial class DsHidMiniInterop
     ///     occupied.
     /// </returns>
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
-    public unsafe bool GetRawInputReport(int deviceIndex, ref Ds3RawInputReport report, TimeSpan? timeout = null)
+    public unsafe bool GetRawInputReport(int deviceIndex, ref DS3_RAW_INPUT_REPORT report, TimeSpan? timeout = null)
     {
         if (_hidView is null)
         {
