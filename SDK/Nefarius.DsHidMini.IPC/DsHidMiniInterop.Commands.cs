@@ -59,6 +59,14 @@ public partial class DsHidMiniInterop
             return false;
         }
 
+        //
+        // Index mismatch is not supposed to happen
+        // 
+        if (message.SlotIndex != deviceIndex)
+        {
+            throw new DsHidMiniInteropUnexpectedReplyException();
+        }
+
         report = message.InputReport;
 
         return true;
