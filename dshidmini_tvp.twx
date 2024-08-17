@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TraceView>
+  <Project>
+    <Session Name="TraceView_0DBEBFDD" Guid="4453544E-5C7E-11EF-9555-F394E16D16D7" Mode="Realtime" Active="true">
+      <Providers>
+        <Provider Name="DsHidMiniTraceGuid" Guid="A56A946C-AC5C-4E2F-9179-6821272856C6" Enabled="true" Flags="0xFFFFFFFF" Level="255"/>
+      </Providers>
+      <PdbFiles>
+        <string><![CDATA[D:\Development\GitHub\dshidmini\artifacts\bin\x64\dshidmini.pdb]]></string>
+      </PdbFiles>
+    </Session>
+    <Filters>
+      <Filter1>
+        <Rules>
+          <Rule Enabled="true" Column="ProviderName" Relation="Is" Value="DmfUFramework" Action="Exclude"/>
+          <Rule Enabled="true" Column="ProviderName" Relation="Is" Value="DmfUModules.Library" Action="Exclude"/>
+          <Rule Enabled="true" Column="FunctionName" Relation="Is" Value="DsHidMini_RetrieveNextInputReport" Action="Exclude"/>
+          <Rule Enabled="true" Column="FunctionName" Relation="Is" Value="DSHM_ParseInputReport" Action="Exclude"/>
+          <Rule Enabled="true" Column="FunctionName" Relation="Is" Value="DsUsb_EvtUsbInterruptPipeReadComplete" Action="Exclude"/>
+          <Rule Enabled="true" Column="FunctionName" Relation="Is" Value="DSHM_ProcessHidInputReport" Action="Exclude"/>
+          <Rule Enabled="true" Column="FunctionName" Relation="Is" Value="DSHM_EvtExecuteOutputPacketReceived" Action="Exclude"/>
+          <Rule Enabled="true" Column="FunctionName" Relation="Is" Value="DSHM_SendOutputReport" Action="Exclude"/>
+          <Rule Enabled="true" Column="FunctionName" Relation="Is" Value="USB_WriteInterruptOutSync" Action="Exclude"/>
+          <Rule Enabled="true" Column="FunctionName" Relation="Is" Value="DSHM_WriteReport" Action="Exclude"/>
+          <Rule Enabled="true" Column="FunctionName" Relation="Is" Value="DsHidMini_WriteReport" Action="Exclude"/>
+        </Rules>
+      </Filter1>
+    </Filters>
+  </Project>
+</TraceView>

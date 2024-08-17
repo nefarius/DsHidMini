@@ -28,10 +28,7 @@ public partial class DsHidMiniInterop
             throw new DsHidMiniInteropUnavailableException();
         }
 
-        if (!_commandMutex.WaitOne(0))
-        {
-            throw new DsHidMiniInteropConcurrencyException();
-        }
+        AcquireCommandLock();
 
         try
         {
@@ -100,10 +97,7 @@ public partial class DsHidMiniInterop
 
         ValidateDeviceIndex(deviceIndex);
 
-        if (!_commandMutex.WaitOne(0))
-        {
-            throw new DsHidMiniInteropConcurrencyException();
-        }
+        AcquireCommandLock();
 
         try
         {
@@ -192,10 +186,7 @@ public partial class DsHidMiniInterop
                 "Player index must be between (including) 1 and 7.");
         }
 
-        if (!_commandMutex.WaitOne(0))
-        {
-            throw new DsHidMiniInteropConcurrencyException();
-        }
+        AcquireCommandLock();
 
         try
         {
@@ -261,7 +252,6 @@ public partial class DsHidMiniInterop
     ///     TRUE if <paramref name="report" /> got filled in or FALSE if the given <paramref name="deviceIndex" /> is not
     ///     occupied.
     /// </returns>
-    /// <exception cref="DsHidMiniInteropUnexpectedReplyException">The driver returned unexpected or malformed data.</exception>
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public unsafe bool GetRawInputReport(int deviceIndex, ref Ds3RawInputReport report, TimeSpan? timeout = null)
     {
@@ -292,14 +282,6 @@ public partial class DsHidMiniInterop
             if (message->SlotIndex == 0)
             {
                 return false;
-            }
-
-            //
-            // Something went wrong in transit
-            // 
-            if (message->SlotIndex != deviceIndex)
-            {
-                throw new DsHidMiniInteropUnexpectedReplyException();
             }
 
             report = message->InputReport;

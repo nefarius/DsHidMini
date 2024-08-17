@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO.MemoryMappedFiles;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 using Windows.Win32;
@@ -194,15 +195,14 @@ public sealed partial class DsHidMiniInterop : IDisposable
 
         ValidateDeviceIndex(deviceIndex);
 
-        if (!_commandMutex.WaitOne(0))
-        {
-            throw new DsHidMiniInteropConcurrencyException();
-        }
+        AcquireCommandLock();
 
         try
         {
             byte* buffer = null;
             _cmdAccessor.SafeMemoryMappedViewHandle.AcquirePointer(ref buffer);
+
+            Unsafe.InitBlock(buffer, 0, CommandRegionSizeSize);
 
             DSHM_IPC_MSG_HEADER* request = (DSHM_IPC_MSG_HEADER*)buffer;
 
@@ -277,6 +277,23 @@ public sealed partial class DsHidMiniInterop : IDisposable
             _cmdAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
             _commandMutex.ReleaseMutex();
         }
+    }
+
+    private void AcquireCommandLock()
+    {
+        if (_commandMutex is null)
+        {
+            throw new DsHidMiniInteropUnavailableException();
+        }
+
+        try
+        {
+            if (!_commandMutex.WaitOne(0))
+            {
+                throw new DsHidMiniInteropConcurrencyException();
+            }
+        }
+        catch (AbandonedMutexException) { }
     }
 
     /// <summary>
