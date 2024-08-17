@@ -12,6 +12,59 @@ namespace Nefarius.DsHidMini.IPC;
 public partial class DsHidMiniInterop
 {
     /// <summary>
+    ///     Attempts to read the <see cref="Ds3RawInputReport" /> from a given device instance.
+    /// </summary>
+    /// <remarks>
+    ///     If <paramref name="timeout" /> is null, this method returns the last known input report copy immediately. If
+    ///     you use this call in a busy loop, you should set a timeout so this call becomes event-based, meaning the call will
+    ///     only return when the driver signaled that new data is available, otherwise you will just burn through CPU for no
+    ///     good reason. A new input report is typically available each average 5 milliseconds, depending on the connection
+    ///     (wired or wireless) so a timeout of 20 milliseconds should be a good recommendation.
+    /// </remarks>
+    /// <param name="deviceIndex">The one-based device index.</param>
+    /// <param name="report">The <see cref="Ds3RawInputReport" /> to populate.</param>
+    /// <param name="timeout">Optional timeout to wait for a report update to arrive. Default invocation returns immediately.</param>
+    /// <exception cref="DsHidMiniInteropUnavailableException">
+    ///     Driver IPC unavailable, make sure that at least one compatible
+    ///     controller is connected and operational.
+    /// </exception>
+    /// <returns>
+    ///     TRUE if <paramref name="report" /> got filled in or FALSE if the given <paramref name="deviceIndex" /> is not
+    ///     occupied.
+    /// </returns>
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
+    public unsafe bool GetRawInputReport(int deviceIndex, ref Ds3RawInputReport report, TimeSpan? timeout = null)
+    {
+        if (_hidView is null)
+        {
+            throw new DsHidMiniInteropUnavailableException();
+        }
+
+        ValidateDeviceIndex(deviceIndex);
+
+        IPC_HID_INPUT_REPORT_MESSAGE* message = (IPC_HID_INPUT_REPORT_MESSAGE*)_hidView;
+
+        if (timeout.HasValue)
+        {
+            _inputReportEvent ??= GetHidReportWaitHandle(deviceIndex);
+
+            _inputReportEvent.WaitOne(timeout.Value);
+        }
+
+        //
+        // Device is/got disconnected
+        // 
+        if (message->SlotIndex == 0)
+        {
+            return false;
+        }
+
+        report = message->InputReport;
+
+        return true;
+    }
+
+    /// <summary>
     ///     Send a PING to the driver and awaits the reply.
     /// </summary>
     /// <exception cref="DsHidMiniInteropUnavailableException">
@@ -23,7 +76,7 @@ public partial class DsHidMiniInterop
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public unsafe void SendPing()
     {
-        if (_commandMutex is null || _cmdAccessor is null)
+        if (_commandMutex is null || _cmdView is null)
         {
             throw new DsHidMiniInteropUnavailableException();
         }
@@ -32,10 +85,7 @@ public partial class DsHidMiniInterop
 
         try
         {
-            byte* buffer = null;
-            _cmdAccessor.SafeMemoryMappedViewHandle.AcquirePointer(ref buffer);
-
-            DSHM_IPC_MSG_HEADER* message = (DSHM_IPC_MSG_HEADER*)buffer;
+            DSHM_IPC_MSG_HEADER* message = (DSHM_IPC_MSG_HEADER*)_cmdView;
 
             message->Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
             message->Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DRIVER;
@@ -64,7 +114,6 @@ public partial class DsHidMiniInterop
         }
         finally
         {
-            _cmdAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
             _commandMutex.ReleaseMutex();
         }
     }
@@ -90,7 +139,7 @@ public partial class DsHidMiniInterop
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public unsafe SetHostResult SetHostAddress(int deviceIndex, PhysicalAddress hostAddress)
     {
-        if (_commandMutex is null || _cmdAccessor is null)
+        if (_commandMutex is null || _cmdView is null)
         {
             throw new DsHidMiniInteropUnavailableException();
         }
@@ -101,10 +150,7 @@ public partial class DsHidMiniInterop
 
         try
         {
-            byte* buffer = null;
-            _cmdAccessor.SafeMemoryMappedViewHandle.AcquirePointer(ref buffer);
-
-            DSHM_IPC_MSG_PAIR_TO_REQUEST* request = (DSHM_IPC_MSG_PAIR_TO_REQUEST*)buffer;
+            DSHM_IPC_MSG_PAIR_TO_REQUEST* request = (DSHM_IPC_MSG_PAIR_TO_REQUEST*)_cmdView;
 
             request->Header.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
             request->Header.Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DEVICE;
@@ -130,7 +176,7 @@ public partial class DsHidMiniInterop
                 throw new DsHidMiniInteropReplyTimeoutException();
             }
 
-            DSHM_IPC_MSG_PAIR_TO_REPLY* reply = (DSHM_IPC_MSG_PAIR_TO_REPLY*)buffer;
+            DSHM_IPC_MSG_PAIR_TO_REPLY* reply = (DSHM_IPC_MSG_PAIR_TO_REPLY*)_cmdView;
 
             //
             // Plausibility check
@@ -148,7 +194,6 @@ public partial class DsHidMiniInterop
         }
         finally
         {
-            _cmdAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
             _commandMutex.ReleaseMutex();
         }
     }
@@ -173,7 +218,7 @@ public partial class DsHidMiniInterop
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public unsafe UInt32 SetPlayerIndex(int deviceIndex, byte playerIndex)
     {
-        if (_commandMutex is null || _cmdAccessor is null)
+        if (_commandMutex is null || _cmdView is null)
         {
             throw new DsHidMiniInteropUnavailableException();
         }
@@ -190,10 +235,7 @@ public partial class DsHidMiniInterop
 
         try
         {
-            byte* buffer = null;
-            _cmdAccessor.SafeMemoryMappedViewHandle.AcquirePointer(ref buffer);
-
-            DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST* request = (DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST*)buffer;
+            DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST* request = (DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST*)_cmdView;
 
             request->Header.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
             request->Header.Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DEVICE;
@@ -208,7 +250,7 @@ public partial class DsHidMiniInterop
                 throw new DsHidMiniInteropReplyTimeoutException();
             }
 
-            DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY* reply = (DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY*)buffer;
+            DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY* reply = (DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY*)_cmdView;
 
             //
             // Plausibility check
@@ -226,71 +268,7 @@ public partial class DsHidMiniInterop
         }
         finally
         {
-            _cmdAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
             _commandMutex.ReleaseMutex();
-        }
-    }
-
-    /// <summary>
-    ///     Attempts to read the <see cref="Ds3RawInputReport" /> from a given device instance.
-    /// </summary>
-    /// <remarks>
-    ///     If <paramref name="timeout" /> is null, this method returns the last known input report copy immediately. If
-    ///     you use this call in a busy loop, you should set a timeout so this call becomes event-based, meaning the call will
-    ///     only return when the driver signaled that new data is available, otherwise you will just burn through CPU for no
-    ///     good reason. A new input report is typically available each average 5 milliseconds, depending on the connection
-    ///     (wired or wireless) so a timeout of 20 milliseconds should be a good recommendation.
-    /// </remarks>
-    /// <param name="deviceIndex">The one-based device index.</param>
-    /// <param name="report">The <see cref="Ds3RawInputReport" /> to populate.</param>
-    /// <param name="timeout">Optional timeout to wait for a report update to arrive. Default invocation returns immediately.</param>
-    /// <exception cref="DsHidMiniInteropUnavailableException">
-    ///     Driver IPC unavailable, make sure that at least one compatible
-    ///     controller is connected and operational.
-    /// </exception>
-    /// <returns>
-    ///     TRUE if <paramref name="report" /> got filled in or FALSE if the given <paramref name="deviceIndex" /> is not
-    ///     occupied.
-    /// </returns>
-    [SuppressMessage("ReSharper", "UnusedMember.Global")]
-    public unsafe bool GetRawInputReport(int deviceIndex, ref Ds3RawInputReport report, TimeSpan? timeout = null)
-    {
-        if (_hidAccessor is null)
-        {
-            throw new DsHidMiniInteropUnavailableException();
-        }
-
-        ValidateDeviceIndex(deviceIndex);
-
-        try
-        {
-            byte* buffer = null;
-            _hidAccessor.SafeMemoryMappedViewHandle.AcquirePointer(ref buffer);
-
-            IPC_HID_INPUT_REPORT_MESSAGE* message = (IPC_HID_INPUT_REPORT_MESSAGE*)buffer;
-
-            if (timeout.HasValue)
-            {
-                _inputReportEvent ??= GetHidReportWaitHandle(deviceIndex);
-
-                _inputReportEvent.WaitOne(timeout.Value);
-            }
-
-            //
-            // Device is/got disconnected
-            // 
-            if (message->SlotIndex == 0)
-            {
-                return false;
-            }
-
-            report = message->InputReport;
-
-            return true;
-        }
-        finally
-        {
-            _hidAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
         }
     }
 }

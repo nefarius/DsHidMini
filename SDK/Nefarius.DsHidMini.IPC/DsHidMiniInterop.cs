@@ -1,10 +1,12 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO.MemoryMappedFiles;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 using Windows.Win32;
 using Windows.Win32.Foundation;
+using Windows.Win32.System.Memory;
 using Windows.Win32.System.Threading;
 
 using Microsoft.Win32.SafeHandles;
@@ -12,7 +14,6 @@ using Microsoft.Win32.SafeHandles;
 using Nefarius.DsHidMini.IPC.Exceptions;
 using Nefarius.DsHidMini.IPC.Models;
 using Nefarius.DsHidMini.IPC.Models.Drivers;
-using Nefarius.DsHidMini.IPC.Util;
 using Nefarius.Utilities.DeviceManagement.PnP;
 
 namespace Nefarius.DsHidMini.IPC;
@@ -31,14 +32,15 @@ public sealed partial class DsHidMiniInterop : IDisposable
 
     private readonly Dictionary<int, PnPDevice> _connectedDevices = new();
     private readonly DeviceNotificationListener _deviceListener = new();
-    private MemoryMappedViewAccessor? _cmdAccessor;
+    private MEMORY_MAPPED_VIEW_ADDRESS? _cmdView;
 
     private Mutex? _commandMutex;
-    private MemoryMappedViewAccessor? _hidAccessor;
+
+    private SafeFileHandle? _fileMapping;
+    private MEMORY_MAPPED_VIEW_ADDRESS? _hidView;
 
     private EventWaitHandle? _inputReportEvent;
 
-    private MemoryMappedFile? _mappedFile;
     private EventWaitHandle? _readEvent;
     private EventWaitHandle? _writeEvent;
 
@@ -84,9 +86,17 @@ public sealed partial class DsHidMiniInterop : IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
-        _cmdAccessor?.Dispose();
-        _hidAccessor?.Dispose();
-        _mappedFile?.Dispose();
+        if (_cmdView.HasValue)
+        {
+            PInvoke.UnmapViewOfFile(_cmdView.Value);
+        }
+
+        if (_hidView.HasValue)
+        {
+            PInvoke.UnmapViewOfFile(_hidView.Value);
+        }
+
+        _fileMapping?.Dispose();
 
         _readEvent?.Dispose();
         _writeEvent?.Dispose();
@@ -118,14 +128,31 @@ public sealed partial class DsHidMiniInterop : IDisposable
 
         try
         {
-            _mappedFile = MemoryMappedFile.OpenExisting(FileMapName);
-            _cmdAccessor = _mappedFile.CreateViewAccessor(0, CommandRegionSizeSize);
+            _fileMapping = PInvoke.OpenFileMapping(
+                (uint)(FILE_MAP.FILE_MAP_READ | FILE_MAP.FILE_MAP_WRITE),
+                new BOOL(false),
+                FileMapName
+            );
+
+            _cmdView = PInvoke.MapViewOfFile(
+                _fileMapping,
+                FILE_MAP.FILE_MAP_READ | FILE_MAP.FILE_MAP_WRITE,
+                0,
+                0,
+                CommandRegionSizeSize
+            );
 
             int pageSize = Environment.SystemPageSize;
             int alignedOffset = CommandRegionSizeSize / pageSize * pageSize;
             int offsetWithinPage = CommandRegionSizeSize % pageSize;
 
-            _hidAccessor = _mappedFile.CreateViewAccessor(alignedOffset, HidRegionSizeSize + offsetWithinPage);
+            _hidView = PInvoke.MapViewOfFile(
+                _fileMapping,
+                FILE_MAP.FILE_MAP_READ,
+                0,
+                (uint)alignedOffset,
+                (uint)(HidRegionSizeSize + offsetWithinPage)
+            );
         }
         catch (FileNotFoundException)
         {
@@ -188,7 +215,7 @@ public sealed partial class DsHidMiniInterop : IDisposable
     /// </exception>
     private unsafe EventWaitHandle GetHidReportWaitHandle(int deviceIndex)
     {
-        if (_commandMutex is null || _cmdAccessor is null)
+        if (_commandMutex is null || _cmdView is null)
         {
             throw new DsHidMiniInteropUnavailableException();
         }
@@ -199,9 +226,7 @@ public sealed partial class DsHidMiniInterop : IDisposable
 
         try
         {
-            using Overlay overlay = new(_cmdAccessor);
-
-            ref DSHM_IPC_MSG_HEADER request = ref overlay.As<DSHM_IPC_MSG_HEADER>();
+            ref DSHM_IPC_MSG_HEADER request = ref Unsafe.AsRef<DSHM_IPC_MSG_HEADER>(_cmdView);
 
             request.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_RESPONSE_ONLY;
             request.Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DEVICE;
@@ -215,7 +240,7 @@ public sealed partial class DsHidMiniInterop : IDisposable
             }
 
             ref DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE reply =
-                ref overlay.As<DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE>();
+                ref Unsafe.AsRef<DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE>(_cmdView);
 
             //
             // Plausibility check

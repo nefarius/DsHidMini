@@ -2,3 +2,7 @@
 DuplicateHandle
 GetCurrentProcess
 DUPLICATE_HANDLE_OPTIONS
+OpenFileMapping
+MapViewOfFile
+UnmapViewOfFile
+FILE_MAP
