@@ -26,8 +26,8 @@ public sealed partial class DsHidMiniInterop : IDisposable
     private const string FileMapName = "Global\\DsHidMiniSharedMemory";
     private const string ReadEventName = "Global\\DsHidMiniReadEvent";
     private const string WriteEventName = "Global\\DsHidMiniWriteEvent";
-    internal const int CommandRegionSizeSize = 1024; // keep in sync with driver
-    internal const int HidRegionSizeSize = 1024; // keep in sync with driver
+    internal int CommandRegionSizeSize = Environment.SystemPageSize; // keep in sync with driver
+    internal int HidRegionSizeSize = Environment.SystemPageSize; // keep in sync with driver
     private const string MutexName = "Global\\DsHidMiniCommandMutex";
 
     private readonly Dictionary<int, PnPDevice> _connectedDevices = new();
@@ -139,7 +139,7 @@ public sealed partial class DsHidMiniInterop : IDisposable
                 FILE_MAP.FILE_MAP_READ | FILE_MAP.FILE_MAP_WRITE,
                 0,
                 0,
-                CommandRegionSizeSize
+                (nuint)CommandRegionSizeSize
             );
 
             int pageSize = Environment.SystemPageSize;
