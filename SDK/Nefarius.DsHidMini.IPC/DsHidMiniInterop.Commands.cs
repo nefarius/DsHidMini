@@ -42,7 +42,7 @@ public partial class DsHidMiniInterop
 
         ValidateDeviceIndex(deviceIndex);
 
-        IPC_HID_INPUT_REPORT_MESSAGE* message = (IPC_HID_INPUT_REPORT_MESSAGE*)_hidView;
+        ref IPC_HID_INPUT_REPORT_MESSAGE message = ref Unsafe.AsRef<IPC_HID_INPUT_REPORT_MESSAGE>(_hidView);
 
         if (timeout.HasValue)
         {
@@ -54,12 +54,12 @@ public partial class DsHidMiniInterop
         //
         // Device is/got disconnected
         // 
-        if (message->SlotIndex == 0)
+        if (message.SlotIndex == 0)
         {
             return false;
         }
 
-        report = message->InputReport;
+        report = message.InputReport;
 
         return true;
     }
@@ -85,32 +85,36 @@ public partial class DsHidMiniInterop
 
         try
         {
-            DSHM_IPC_MSG_HEADER* message = (DSHM_IPC_MSG_HEADER*)_cmdView;
+            ref DSHM_IPC_MSG_HEADER message = ref Unsafe.AsRef<DSHM_IPC_MSG_HEADER>(_cmdView);
 
-            message->Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
-            message->Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DRIVER;
-            message->Command.Driver = DSHM_IPC_MSG_CMD_DRIVER.DSHM_IPC_MSG_CMD_DRIVER_PING;
-            message->TargetIndex = 0;
-            message->Size = (uint)Marshal.SizeOf<DSHM_IPC_MSG_HEADER>();
+            message.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
+            message.Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DRIVER;
+            message.Command.Driver = DSHM_IPC_MSG_CMD_DRIVER.DSHM_IPC_MSG_CMD_DRIVER_PING;
+            message.TargetIndex = 0;
+            message.Size = (uint)Marshal.SizeOf<DSHM_IPC_MSG_HEADER>();
 
             if (!SendAndWait())
             {
                 throw new DsHidMiniInteropReplyTimeoutException();
             }
 
+            ref DSHM_IPC_MSG_HEADER reply = ref Unsafe.AsRef<DSHM_IPC_MSG_HEADER>(_cmdView);
+
             //
             // Plausibility check
             // 
-            if (message->Type == DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_REPLY
-                && message->Target == DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_CLIENT
-                && message->Command.Driver == DSHM_IPC_MSG_CMD_DRIVER.DSHM_IPC_MSG_CMD_DRIVER_PING
-                && message->TargetIndex == 0
-                && message->Size == Marshal.SizeOf<DSHM_IPC_MSG_HEADER>())
+            if (reply is
+                {
+                    Type: DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_REPLY,
+                    Target: DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_CLIENT,
+                    Command.Driver: DSHM_IPC_MSG_CMD_DRIVER.DSHM_IPC_MSG_CMD_DRIVER_PING, TargetIndex: 0
+                }
+                && reply.Size == Marshal.SizeOf<DSHM_IPC_MSG_HEADER>())
             {
                 return;
             }
 
-            throw new DsHidMiniInteropUnexpectedReplyException(message);
+            throw new DsHidMiniInteropUnexpectedReplyException();
         }
         finally
         {
@@ -150,24 +154,25 @@ public partial class DsHidMiniInterop
 
         try
         {
-            DSHM_IPC_MSG_PAIR_TO_REQUEST* request = (DSHM_IPC_MSG_PAIR_TO_REQUEST*)_cmdView;
+            ref DSHM_IPC_MSG_PAIR_TO_REQUEST request = ref Unsafe.AsRef<DSHM_IPC_MSG_PAIR_TO_REQUEST>(_cmdView);
 
-            request->Header.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
-            request->Header.Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DEVICE;
-            request->Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO;
-            request->Header.TargetIndex = (uint)deviceIndex;
-            request->Header.Size = (uint)Marshal.SizeOf<DSHM_IPC_MSG_PAIR_TO_REQUEST>();
+            request.Header.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
+            request.Header.Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DEVICE;
+            request.Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO;
+            request.Header.TargetIndex = (uint)deviceIndex;
+            request.Header.Size = (uint)Marshal.SizeOf<DSHM_IPC_MSG_PAIR_TO_REQUEST>();
 
             fixed (byte* source = hostAddress.GetAddressBytes())
+            fixed (byte* address = request.Address)
             {
                 if (source is not null)
                 {
-                    Buffer.MemoryCopy(source, request->Address, 6, 6);
+                    Buffer.MemoryCopy(source, address, 6, 6);
                 }
                 else
                 {
                     // there might be previous values there we need to zero out
-                    Unsafe.InitBlockUnaligned(request->Address, 0, 6);
+                    Unsafe.InitBlockUnaligned(address, 0, 6);
                 }
             }
 
@@ -176,21 +181,24 @@ public partial class DsHidMiniInterop
                 throw new DsHidMiniInteropReplyTimeoutException();
             }
 
-            DSHM_IPC_MSG_PAIR_TO_REPLY* reply = (DSHM_IPC_MSG_PAIR_TO_REPLY*)_cmdView;
+            ref DSHM_IPC_MSG_PAIR_TO_REPLY reply = ref Unsafe.AsRef<DSHM_IPC_MSG_PAIR_TO_REPLY>(_cmdView);
 
             //
             // Plausibility check
             // 
-            if (reply->Header.Type == DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_REPLY
-                && reply->Header.Target == DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_CLIENT
-                && reply->Header.Command.Device == DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO
-                && reply->Header.TargetIndex == deviceIndex
-                && reply->Header.Size == Marshal.SizeOf<DSHM_IPC_MSG_PAIR_TO_REPLY>())
+            if (reply.Header.Type == DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_REPLY
+                && reply.Header is
+                {
+                    Target: DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_CLIENT,
+                    Command.Device: DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO
+                }
+                && reply.Header.TargetIndex == deviceIndex
+                && reply.Header.Size == Marshal.SizeOf<DSHM_IPC_MSG_PAIR_TO_REPLY>())
             {
-                return new SetHostResult { WriteStatus = reply->WriteStatus, ReadStatus = reply->ReadStatus };
+                return new SetHostResult { WriteStatus = reply.WriteStatus, ReadStatus = reply.ReadStatus };
             }
 
-            throw new DsHidMiniInteropUnexpectedReplyException(&reply->Header);
+            throw new DsHidMiniInteropUnexpectedReplyException();
         }
         finally
         {
@@ -235,36 +243,41 @@ public partial class DsHidMiniInterop
 
         try
         {
-            DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST* request = (DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST*)_cmdView;
+            ref DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST request =
+                ref Unsafe.AsRef<DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST>(_cmdView);
 
-            request->Header.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
-            request->Header.Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DEVICE;
-            request->Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_SET_PLAYER_INDEX;
-            request->Header.TargetIndex = (uint)deviceIndex;
-            request->Header.Size = (uint)Marshal.SizeOf<DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST>();
+            request.Header.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
+            request.Header.Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DEVICE;
+            request.Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_SET_PLAYER_INDEX;
+            request.Header.TargetIndex = (uint)deviceIndex;
+            request.Header.Size = (uint)Marshal.SizeOf<DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST>();
 
-            request->PlayerIndex = playerIndex;
+            request.PlayerIndex = playerIndex;
 
             if (!SendAndWait())
             {
                 throw new DsHidMiniInteropReplyTimeoutException();
             }
 
-            DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY* reply = (DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY*)_cmdView;
+            ref DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY reply =
+                ref Unsafe.AsRef<DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY>(_cmdView);
 
             //
             // Plausibility check
             // 
-            if (reply->Header.Type == DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_REPLY
-                && reply->Header.Target == DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_CLIENT
-                && reply->Header.Command.Device == DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_SET_PLAYER_INDEX
-                && reply->Header.TargetIndex == deviceIndex
-                && reply->Header.Size == Marshal.SizeOf<DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY>())
+            if (reply.Header is
+                {
+                    Type: DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_REPLY,
+                    Target: DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_CLIENT,
+                    Command.Device: DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_SET_PLAYER_INDEX
+                }
+                && reply.Header.TargetIndex == deviceIndex
+                && reply.Header.Size == Marshal.SizeOf<DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY>())
             {
-                return reply->NtStatus;
+                return reply.NtStatus;
             }
 
-            throw new DsHidMiniInteropUnexpectedReplyException(&reply->Header);
+            throw new DsHidMiniInteropUnexpectedReplyException();
         }
         finally
         {
