@@ -307,7 +307,7 @@ public sealed partial class DsHidMiniInterop : IDisposable
                 }
             }
 
-            throw new DsHidMiniInteropUnexpectedReplyException();
+            throw new DsHidMiniInteropUnexpectedReplyException(ref reply.Header);
         }
         finally
         {

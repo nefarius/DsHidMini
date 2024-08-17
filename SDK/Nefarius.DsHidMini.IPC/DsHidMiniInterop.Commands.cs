@@ -122,7 +122,7 @@ public partial class DsHidMiniInterop
                 return;
             }
 
-            throw new DsHidMiniInteropUnexpectedReplyException();
+            throw new DsHidMiniInteropUnexpectedReplyException(ref reply);
         }
         finally
         {
@@ -206,7 +206,7 @@ public partial class DsHidMiniInterop
                 return new SetHostResult { WriteStatus = reply.WriteStatus, ReadStatus = reply.ReadStatus };
             }
 
-            throw new DsHidMiniInteropUnexpectedReplyException();
+            throw new DsHidMiniInteropUnexpectedReplyException(ref reply.Header);
         }
         finally
         {
@@ -285,7 +285,7 @@ public partial class DsHidMiniInterop
                 return reply.NtStatus;
             }
 
-            throw new DsHidMiniInteropUnexpectedReplyException();
+            throw new DsHidMiniInteropUnexpectedReplyException(ref reply.Header);
         }
         finally
         {
