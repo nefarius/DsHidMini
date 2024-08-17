@@ -5,7 +5,7 @@ using Nefarius.DsHidMini.IPC.Models.Public;
 
 namespace Nefarius.DsHidMini.IPC.Models;
 
-[StructLayout(LayoutKind.Explicit, Pack = 1)]
+[StructLayout(LayoutKind.Explicit)]
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 internal struct DSHM_IPC_MSG_COMMAND
 {
@@ -16,7 +16,7 @@ internal struct DSHM_IPC_MSG_COMMAND
     public DSHM_IPC_MSG_CMD_DEVICE Device;
 }
 
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
+[StructLayout(LayoutKind.Sequential)]
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
 internal struct DSHM_IPC_MSG_HEADER
@@ -39,7 +39,7 @@ internal struct DSHM_IPC_MSG_HEADER
     public uint Size;
 }
 
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
+[StructLayout(LayoutKind.Sequential)]
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
 internal unsafe struct DSHM_IPC_MSG_PAIR_TO_REQUEST
@@ -49,7 +49,7 @@ internal unsafe struct DSHM_IPC_MSG_PAIR_TO_REQUEST
     public fixed byte Address[6];
 }
 
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
+[StructLayout(LayoutKind.Sequential)]
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
 internal struct DSHM_IPC_MSG_PAIR_TO_REPLY
@@ -61,7 +61,7 @@ internal struct DSHM_IPC_MSG_PAIR_TO_REPLY
     public UInt32 ReadStatus;
 }
 
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
+[StructLayout(LayoutKind.Sequential)]
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
 internal struct DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST
@@ -71,7 +71,7 @@ internal struct DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST
     public byte PlayerIndex;
 }
 
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
+[StructLayout(LayoutKind.Sequential)]
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
 internal struct DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY
@@ -92,7 +92,7 @@ internal struct DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE
     public IntPtr WaitHandle;  // HANDLE is typically represented as IntPtr in C#
 }
 
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
+[StructLayout(LayoutKind.Sequential)]
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 internal struct IPC_HID_INPUT_REPORT_MESSAGE
 {

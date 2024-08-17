@@ -97,7 +97,6 @@ typedef enum
 	DSHM_IPC_MSG_CMD_DEVICE_GET_HID_WAIT_HANDLE,
 } DSHM_IPC_MSG_CMD_DEVICE;
 
-#include <pshpack1.h>
 typedef struct _DSHM_IPC_MSG_HEADER
 {
 	//
@@ -176,7 +175,6 @@ typedef struct _DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE
 	HANDLE WaitHandle;
 	
 } DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE, *PDSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE;
-#include <poppack.h>
 
 typedef
 _Function_class_(EVT_DSHM_IPC_DispatchDeviceMessage)
