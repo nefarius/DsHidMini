@@ -6,3 +6,4 @@ OpenFileMapping
 MapViewOfFile
 UnmapViewOfFile
 FILE_MAP
+GetSystemInfo

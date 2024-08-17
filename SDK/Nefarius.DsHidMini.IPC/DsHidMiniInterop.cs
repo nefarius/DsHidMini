@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.System.Memory;
+using Windows.Win32.System.SystemInformation;
 using Windows.Win32.System.Threading;
 
 using Microsoft.Win32.SafeHandles;
@@ -26,8 +27,6 @@ public sealed partial class DsHidMiniInterop : IDisposable
     private const string FileMapName = "Global\\DsHidMiniSharedMemory";
     private const string ReadEventName = "Global\\DsHidMiniReadEvent";
     private const string WriteEventName = "Global\\DsHidMiniWriteEvent";
-    internal int CommandRegionSizeSize = Environment.SystemPageSize; // keep in sync with driver
-    internal int HidRegionSizeSize = Environment.SystemPageSize; // keep in sync with driver
     private const string MutexName = "Global\\DsHidMiniCommandMutex";
 
     private readonly Dictionary<int, PnPDevice> _connectedDevices = new();
@@ -115,6 +114,8 @@ public sealed partial class DsHidMiniInterop : IDisposable
     /// </exception>
     public void Reconnect()
     {
+        PInvoke.GetSystemInfo(out SYSTEM_INFO systemInfo);
+
         try
         {
             _commandMutex = Mutex.OpenExisting(MutexName);
@@ -139,20 +140,30 @@ public sealed partial class DsHidMiniInterop : IDisposable
                 FILE_MAP.FILE_MAP_READ | FILE_MAP.FILE_MAP_WRITE,
                 0,
                 0,
-                (nuint)CommandRegionSizeSize
+                systemInfo.dwAllocationGranularity
             );
 
-            int pageSize = Environment.SystemPageSize;
-            int alignedOffset = CommandRegionSizeSize / pageSize * pageSize;
-            int offsetWithinPage = CommandRegionSizeSize % pageSize;
+            if (_cmdView.Value == 0)
+            {
+                throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to access command view");
+            }
+
+            uint pageSize = systemInfo.dwAllocationGranularity;
+            long alignedOffset = systemInfo.dwAllocationGranularity / pageSize * pageSize;
+            long offsetWithinPage = systemInfo.dwAllocationGranularity % pageSize;
 
             _hidView = PInvoke.MapViewOfFile(
                 _fileMapping,
                 FILE_MAP.FILE_MAP_READ,
                 0,
                 (uint)alignedOffset,
-                (uint)(HidRegionSizeSize + offsetWithinPage)
+                (uint)(systemInfo.dwAllocationGranularity + offsetWithinPage)
             );
+
+            if (_hidView.Value == 0)
+            {
+                throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to access HID view");
+            }
         }
         catch (FileNotFoundException)
         {

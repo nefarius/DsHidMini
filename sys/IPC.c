@@ -21,6 +21,12 @@ NTSTATUS InitIPC(void)
 	DWORD hidRegionSize = pageSize;
 	DWORD totalRegionSize = cmdRegionSize + hidRegionSize;
 
+	TraceVerbose(
+		TRACE_IPC,
+		"pageSize = %d, cmdRegionSize = %d, hidRegionSize = %d, totalRegionSize = %d",
+		pageSize, cmdRegionSize, hidRegionSize, totalRegionSize
+	);
+
 	PUCHAR pCmdBuf = NULL;
 	PUCHAR pHIDBuf = NULL;
 	HANDLE hReadEvent = NULL;
