@@ -137,7 +137,7 @@ public enum DsHidDeviceMode : byte
     /// <summary>
     ///     Single Device with Force Feedback mode.
     /// </summary>
-    [Description("SDF (PCSX2)")]
+    [Description("SDF (PCSX2 Non-Qt-Edition)")]
     SDF = 0x01,
 
     /// <summary>
@@ -149,7 +149,7 @@ public enum DsHidDeviceMode : byte
     /// <summary>
     ///     SIXAXIS.SYS mode.
     /// </summary>
-    [Description("SXS (Steam, RPCS3)")]
+    [Description("SXS (Steam, RPCS3, PCSX2 Qt-Edition)")]
     SXS = 0x03,
 
     /// <summary>
@@ -161,6 +161,6 @@ public enum DsHidDeviceMode : byte
     /// <summary>
     ///     Xbox One Controller mode.
     /// </summary>
-    [Description("XInput")]
+    [Description("XInput (Xbox One)")]
     XInput = 0x05
 }
