@@ -14,11 +14,20 @@ public partial class DsHidMiniInterop
     /// <summary>
     ///     Send a PING to the driver and awaits the reply.
     /// </summary>
+    /// <exception cref="DsHidMiniInteropUnavailableException">
+    ///     Driver IPC unavailable, make sure that at least one compatible
+    ///     controller is connected and operational.
+    /// </exception>
     /// <exception cref="DsHidMiniInteropReplyTimeoutException">The driver didn't respond within an expected period.</exception>
     /// <exception cref="DsHidMiniInteropUnexpectedReplyException">The driver returned unexpected or malformed data.</exception>
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public unsafe void SendPing()
     {
+        if (_commandMutex is null || _cmdAccessor is null)
+        {
+            throw new DsHidMiniInteropUnavailableException();
+        }
+
         if (!_commandMutex.WaitOne(0))
         {
             throw new DsHidMiniInteropConcurrencyException();
@@ -66,6 +75,10 @@ public partial class DsHidMiniInterop
     /// <summary>
     ///     Writes a new host address to the given device.
     /// </summary>
+    /// <exception cref="DsHidMiniInteropUnavailableException">
+    ///     Driver IPC unavailable, make sure that at least one compatible
+    ///     controller is connected and operational.
+    /// </exception>
     /// <returns>A <see cref="SetHostResult" /> containing success (or error) details.</returns>
     /// <remarks>This is synonymous with "pairing" to a new Bluetooth host.</remarks>
     /// <param name="deviceIndex">The one-based device index.</param>
@@ -80,6 +93,11 @@ public partial class DsHidMiniInterop
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public unsafe SetHostResult SetHostAddress(int deviceIndex, PhysicalAddress hostAddress)
     {
+        if (_commandMutex is null || _cmdAccessor is null)
+        {
+            throw new DsHidMiniInteropUnavailableException();
+        }
+
         ValidateDeviceIndex(deviceIndex);
 
         if (!_commandMutex.WaitOne(0))
@@ -146,6 +164,10 @@ public partial class DsHidMiniInterop
     /// </summary>
     /// <param name="deviceIndex">The one-based device index.</param>
     /// <param name="playerIndex">The player index to set to. Valid values include 1 to 7.</param>
+    /// <exception cref="DsHidMiniInteropUnavailableException">
+    ///     Driver IPC unavailable, make sure that at least one compatible
+    ///     controller is connected and operational.
+    /// </exception>
     /// <returns></returns>
     /// <exception cref="ArgumentOutOfRangeException">
     ///     The <paramref name="deviceIndex" /> or <paramref name="playerIndex" />
@@ -157,6 +179,11 @@ public partial class DsHidMiniInterop
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public unsafe UInt32 SetPlayerIndex(int deviceIndex, byte playerIndex)
     {
+        if (_commandMutex is null || _cmdAccessor is null)
+        {
+            throw new DsHidMiniInteropUnavailableException();
+        }
+
         ValidateDeviceIndex(deviceIndex);
 
         if (playerIndex is < 1 or > 7)
@@ -226,6 +253,10 @@ public partial class DsHidMiniInterop
     /// <param name="deviceIndex">The one-based device index.</param>
     /// <param name="report">The <see cref="Ds3RawInputReport" /> to populate.</param>
     /// <param name="timeout">Optional timeout to wait for a report update to arrive. Default invocation returns immediately.</param>
+    /// <exception cref="DsHidMiniInteropUnavailableException">
+    ///     Driver IPC unavailable, make sure that at least one compatible
+    ///     controller is connected and operational.
+    /// </exception>
     /// <returns>
     ///     TRUE if <paramref name="report" /> got filled in or FALSE if the given <paramref name="deviceIndex" /> is not
     ///     occupied.
@@ -234,6 +265,11 @@ public partial class DsHidMiniInterop
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public unsafe bool GetRawInputReport(int deviceIndex, ref Ds3RawInputReport report, TimeSpan? timeout = null)
     {
+        if (_hidAccessor is null)
+        {
+            throw new DsHidMiniInteropUnavailableException();
+        }
+
         ValidateDeviceIndex(deviceIndex);
 
         try

@@ -76,6 +76,10 @@ TRUE if `report` got filled in or FALSE if the given `deviceIndex` is not
 
 #### Exceptions
 
+[DsHidMiniInteropUnavailableException](./nefarius.dshidmini.ipc.exceptions.dshidminiinteropunavailableexception.md)<br>
+Driver IPC unavailable, make sure that at least one compatible
+ controller is connected and operational.
+
 [DsHidMiniInteropUnexpectedReplyException](./nefarius.dshidmini.ipc.exceptions.dshidminiinteropunexpectedreplyexception.md)<br>
 The driver returned unexpected or malformed data.
 
@@ -87,6 +91,21 @@ If `timeout` is null, this method returns the last known input report copy immed
  good reason. A new input report is typically available each average 5 milliseconds, depending on the connection
  (wired or wireless) so a timeout of 20 milliseconds should be a good recommendation.
 
+### <a id="methods-reconnect"/>**Reconnect()**
+
+Attempt re-initialization of IPC after all devices got disconnected.
+
+```csharp
+public void Reconnect()
+```
+
+#### Exceptions
+
+[DsHidMiniInteropUnavailableException](./nefarius.dshidmini.ipc.exceptions.dshidminiinteropunavailableexception.md)<br>
+No driver instance is available. Make sure that at least one
+ device is connected and that the driver is installed and working properly. Call [DsHidMiniInterop.IsAvailable](./nefarius.dshidmini.ipc.dshidminiinterop.md#isavailable) prior to
+ avoid this exception.
+
 ### <a id="methods-sendping"/>**SendPing()**
 
 Send a PING to the driver and awaits the reply.
@@ -96,6 +115,10 @@ public void SendPing()
 ```
 
 #### Exceptions
+
+[DsHidMiniInteropUnavailableException](./nefarius.dshidmini.ipc.exceptions.dshidminiinteropunavailableexception.md)<br>
+Driver IPC unavailable, make sure that at least one compatible
+ controller is connected and operational.
 
 [DsHidMiniInteropReplyTimeoutException](./nefarius.dshidmini.ipc.exceptions.dshidminiinteropreplytimeoutexception.md)<br>
 The driver didn't respond within an expected period.
@@ -124,6 +147,10 @@ The new host address.
 A [SetHostResult](./nefarius.dshidmini.ipc.models.public.sethostresult.md) containing success (or error) details.
 
 #### Exceptions
+
+[DsHidMiniInteropUnavailableException](./nefarius.dshidmini.ipc.exceptions.dshidminiinteropunavailableexception.md)<br>
+Driver IPC unavailable, make sure that at least one compatible
+ controller is connected and operational.
 
 [DsHidMiniInteropInvalidDeviceIndexException](./nefarius.dshidmini.ipc.exceptions.dshidminiinteropinvaliddeviceindexexception.md)<br>
 The `deviceIndex` was outside a valid
@@ -163,6 +190,10 @@ The player index to set to. Valid values include 1 to 7.
 [UInt32](https://docs.microsoft.com/en-us/dotnet/api/system.uint32)
 
 #### Exceptions
+
+[DsHidMiniInteropUnavailableException](./nefarius.dshidmini.ipc.exceptions.dshidminiinteropunavailableexception.md)<br>
+Driver IPC unavailable, make sure that at least one compatible
+ controller is connected and operational.
 
 [ArgumentOutOfRangeException](https://docs.microsoft.com/en-us/dotnet/api/system.argumentoutofrangeexception)<br>
 The `deviceIndex` or `playerIndex`
