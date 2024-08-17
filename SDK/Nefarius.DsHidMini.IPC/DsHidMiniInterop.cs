@@ -1,7 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO.MemoryMappedFiles;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 using Windows.Win32;
@@ -13,6 +12,7 @@ using Microsoft.Win32.SafeHandles;
 using Nefarius.DsHidMini.IPC.Exceptions;
 using Nefarius.DsHidMini.IPC.Models;
 using Nefarius.DsHidMini.IPC.Models.Drivers;
+using Nefarius.DsHidMini.IPC.Util;
 using Nefarius.Utilities.DeviceManagement.PnP;
 
 namespace Nefarius.DsHidMini.IPC;
@@ -199,39 +199,40 @@ public sealed partial class DsHidMiniInterop : IDisposable
 
         try
         {
-            byte* buffer = null;
-            _cmdAccessor.SafeMemoryMappedViewHandle.AcquirePointer(ref buffer);
+            using Overlay overlay = new(_cmdAccessor);
 
-            Unsafe.InitBlock(buffer, 0, CommandRegionSizeSize);
+            ref DSHM_IPC_MSG_HEADER request = ref overlay.As<DSHM_IPC_MSG_HEADER>();
 
-            DSHM_IPC_MSG_HEADER* request = (DSHM_IPC_MSG_HEADER*)buffer;
-
-            request->Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_RESPONSE_ONLY;
-            request->Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DEVICE;
-            request->Command.Device = DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_GET_HID_WAIT_HANDLE;
-            request->TargetIndex = (uint)deviceIndex;
-            request->Size = (uint)Marshal.SizeOf<DSHM_IPC_MSG_HEADER>();
+            request.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_RESPONSE_ONLY;
+            request.Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DEVICE;
+            request.Command.Device = DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_GET_HID_WAIT_HANDLE;
+            request.TargetIndex = (uint)deviceIndex;
+            request.Size = (uint)Marshal.SizeOf<DSHM_IPC_MSG_HEADER>();
 
             if (!SendAndWait())
             {
                 throw new DsHidMiniInteropReplyTimeoutException();
             }
 
-            DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE* reply = (DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE*)buffer;
+            ref DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE reply =
+                ref overlay.As<DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE>();
 
             //
             // Plausibility check
             // 
-            if (reply->Header.Type == DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_RESPONSE_ONLY
-                && reply->Header.Target == DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_CLIENT
-                && reply->Header.Command.Device == DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_GET_HID_WAIT_HANDLE
-                && reply->Header.TargetIndex == deviceIndex
-                && reply->Header.Size == Marshal.SizeOf<DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE>())
+            if (reply.Header is
+                {
+                    Type: DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_RESPONSE_ONLY,
+                    Target: DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_CLIENT,
+                    Command.Device: DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_GET_HID_WAIT_HANDLE
+                }
+                && reply.Header.TargetIndex == deviceIndex
+                && reply.Header.Size == Marshal.SizeOf<DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE>())
             {
                 HANDLE driverProcess = PInvoke.OpenProcess(
                     PROCESS_ACCESS_RIGHTS.PROCESS_DUP_HANDLE,
                     new BOOL(false),
-                    reply->ProcessId
+                    reply.ProcessId
                 );
 
                 try
@@ -245,7 +246,7 @@ public sealed partial class DsHidMiniInterop : IDisposable
 
                     if (!PInvoke.DuplicateHandle(
                             driverProcess,
-                            new HANDLE(reply->WaitHandle),
+                            new HANDLE(reply.WaitHandle),
                             PInvoke.GetCurrentProcess(),
                             &dupHandle,
                             0,
@@ -270,11 +271,10 @@ public sealed partial class DsHidMiniInterop : IDisposable
                 }
             }
 
-            throw new DsHidMiniInteropUnexpectedReplyException(&reply->Header);
+            throw new DsHidMiniInteropUnexpectedReplyException();
         }
         finally
         {
-            _cmdAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
             _commandMutex.ReleaseMutex();
         }
     }
