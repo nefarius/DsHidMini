@@ -4,9 +4,6 @@
 #define DSHM_IPC_MUTEX_NAME			"Global\\DsHidMiniCommandMutex"
 #define DSHM_IPC_READ_EVENT_NAME	"Global\\DsHidMiniReadEvent"
 #define DSHM_IPC_WRITE_EVENT_NAME	"Global\\DsHidMiniWriteEvent"
-#define DSHM_IPC_CMD_REGION_SIZE	1024 // 1KB
-#define DSHM_IPC_HID_REGION_SIZE	1024 // 1KB
-#define DSHM_IPC_BUFFER_SIZE		(DSHM_IPC_CMD_REGION_SIZE + DSHM_IPC_HID_REGION_SIZE)
 
 
 //

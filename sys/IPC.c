@@ -17,6 +17,10 @@ NTSTATUS InitIPC(void)
     GetSystemInfo(&sysInfo);
     DWORD pageSize = sysInfo.dwAllocationGranularity; // Usually 4096 bytes (4KB)
 
+	DWORD cmdRegionSize = pageSize;
+	DWORD hidRegionSize = pageSize;
+	DWORD totalRegionSize = cmdRegionSize + hidRegionSize;
+
 	PUCHAR pCmdBuf = NULL;
 	PUCHAR pHIDBuf = NULL;
 	HANDLE hReadEvent = NULL;
@@ -112,10 +116,10 @@ NTSTATUS InitIPC(void)
 	// Create a memory-mapped file
 	hMapFile = CreateFileMappingA(
 		INVALID_HANDLE_VALUE, // use paging file
-		&sa, // default security
+		&sa, // custom security
 		PAGE_READWRITE, // read/write access
 		0, // maximum object size (high-order DWORD)
-		DSHM_IPC_BUFFER_SIZE, // maximum object size (low-order DWORD)
+		totalRegionSize, // maximum object size (low-order DWORD)
 		DSHM_IPC_FILE_MAP_NAME // name of mapping object
 	);
 
@@ -135,7 +139,7 @@ NTSTATUS InitIPC(void)
 		FILE_MAP_ALL_ACCESS, // read/write permission
 		0,
 		0,
-		DSHM_IPC_CMD_REGION_SIZE
+		cmdRegionSize
 	);
 
 	if (pCmdBuf == NULL)
@@ -149,15 +153,15 @@ NTSTATUS InitIPC(void)
 	}
 
 	// Calculate the nearest page-aligned offset for the HID region
-    DWORD alignedOffset = (DSHM_IPC_CMD_REGION_SIZE / pageSize) * pageSize; // Page-aligned offset
-    DWORD offsetWithinPage = DSHM_IPC_CMD_REGION_SIZE % pageSize;           // Offset within the mapped page
+    DWORD alignedOffset = (cmdRegionSize / pageSize) * pageSize; // Page-aligned offset
+    DWORD offsetWithinPage = cmdRegionSize % pageSize;           // Offset within the mapped page
 
 	pHIDBuf = MapViewOfFile(
 		hMapFile, // handle to map object
 		FILE_MAP_ALL_ACCESS, // read/write permission
 		0,
 		alignedOffset,
-		DSHM_IPC_HID_REGION_SIZE + offsetWithinPage
+		hidRegionSize + offsetWithinPage
 	);
 
 	if (pHIDBuf == NULL)
@@ -177,10 +181,10 @@ NTSTATUS InitIPC(void)
 	context->IPC.WriteEvent = hWriteEvent;
 
 	context->IPC.SharedRegions.Commands.Buffer = pCmdBuf;
-	context->IPC.SharedRegions.Commands.BufferSize = DSHM_IPC_CMD_REGION_SIZE;
+	context->IPC.SharedRegions.Commands.BufferSize = cmdRegionSize;
 
 	context->IPC.SharedRegions.HID.Buffer = pHIDBuf;
-	context->IPC.SharedRegions.HID.BufferSize = DSHM_IPC_HID_REGION_SIZE;
+	context->IPC.SharedRegions.HID.BufferSize = hidRegionSize;
 
 	// 
 	// Start thread now that context is initialized at its minimum requirement
