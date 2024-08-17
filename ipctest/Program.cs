@@ -3,7 +3,9 @@
 using System.Diagnostics;
 
 using Nefarius.DsHidMini.IPC;
+#if INPUT_TEST
 using Nefarius.DsHidMini.IPC.Models.Public;
+#endif
 
 if (!DsHidMiniInterop.IsAvailable)
 {
@@ -13,7 +15,9 @@ if (!DsHidMiniInterop.IsAvailable)
 
 using DsHidMiniInterop ipc = new();
 
+#if INPUT_TEST
 Ds3RawInputReport report = new();
+#endif
 
 Stopwatch stopwatch = new();
 
@@ -27,18 +31,26 @@ do
 
         while (stopwatch.ElapsedMilliseconds < 1000)
         {
+#if INPUT_TEST
             bool success = ipc.GetRawInputReport(1, ref report, TimeSpan.FromMilliseconds(50));
 
             if (success && report.Buttons.Cross)
             {
                 Console.WriteLine("Cross pressed");
             }
+#else
+            ipc.SendPing();
+#endif
 
             executionCount++;
         }
 
         stopwatch.Stop();
 
+#if INPUT_TEST
         Console.WriteLine($"Read {executionCount} input reports in one second.");
+#else
+        Console.WriteLine($"Executed {executionCount} PINGs in one second.");
+#endif
     }
 } while (Console.ReadKey(true).Key != ConsoleKey.Escape);
