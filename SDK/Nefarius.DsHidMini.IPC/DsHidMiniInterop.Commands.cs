@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.NetworkInformation;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -24,9 +25,18 @@ public partial class DsHidMiniInterop
     /// <param name="deviceIndex">The one-based device index.</param>
     /// <param name="report">The <see cref="Ds3RawInputReport" /> to populate.</param>
     /// <param name="timeout">Optional timeout to wait for a report update to arrive. Default invocation returns immediately.</param>
+    /// <exception cref="DsHidMiniInteropAccessDeniedException">
+    ///     Driver process interaction failed due to missing permissions;
+    ///     this operation requires elevated privileges.
+    /// </exception>
+    /// <exception cref="DsHidMiniInteropUnexpectedReplyException">The driver returned unexpected or malformed data.</exception>
+    /// <exception cref="Win32Exception">Handle duplication failed.</exception>
+    /// <exception cref="DsHidMiniInteropReplyTimeoutException">The driver didn't respond within an expected period.</exception>
+    /// <exception cref="DsHidMiniInteropConcurrencyException">A different thread is currently performing a data exchange.</exception>
     /// <exception cref="DsHidMiniInteropUnavailableException">
-    ///     Driver IPC unavailable, make sure that at least one compatible
-    ///     controller is connected and operational.
+    ///     No driver instance is available. Make sure that at least one
+    ///     device is connected and that the driver is installed and working properly. Call <see cref="IsAvailable" /> prior to
+    ///     avoid this exception.
     /// </exception>
     /// <returns>
     ///     TRUE if <paramref name="report" /> got filled in or FALSE if the given <paramref name="deviceIndex" /> is not

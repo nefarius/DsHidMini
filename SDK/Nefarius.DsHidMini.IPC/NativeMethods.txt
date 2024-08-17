@@ -7,3 +7,4 @@ MapViewOfFile
 UnmapViewOfFile
 FILE_MAP
 GetSystemInfo
+WIN32_ERROR

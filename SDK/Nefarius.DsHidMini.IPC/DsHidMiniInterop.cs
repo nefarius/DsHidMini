@@ -215,6 +215,10 @@ public sealed partial class DsHidMiniInterop : IDisposable
     /// <summary>
     ///     Gets the input report wait handle from the driver and duplicates it into the current process.
     /// </summary>
+    /// <exception cref="DsHidMiniInteropAccessDeniedException">
+    ///     Driver process interaction failed due to missing permissions;
+    ///     this operation requires elevated privileges.
+    /// </exception>
     /// <exception cref="DsHidMiniInteropUnexpectedReplyException">The driver returned unexpected or malformed data.</exception>
     /// <exception cref="Win32Exception">Handle duplication failed.</exception>
     /// <exception cref="DsHidMiniInteropReplyTimeoutException">The driver didn't respond within an expected period.</exception>
@@ -275,6 +279,11 @@ public sealed partial class DsHidMiniInterop : IDisposable
                 {
                     if (driverProcess.IsNull)
                     {
+                        if (Marshal.GetLastWin32Error() == (int)WIN32_ERROR.ERROR_ACCESS_DENIED)
+                        {
+                            throw new DsHidMiniInteropAccessDeniedException();
+                        }
+
                         throw new Win32Exception(Marshal.GetLastWin32Error(), "OpenProcess call failed.");
                     }
 

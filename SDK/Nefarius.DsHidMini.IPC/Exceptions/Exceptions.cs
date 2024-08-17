@@ -65,3 +65,14 @@ public sealed class DsHidMiniInteropInvalidDeviceIndexException : Exception
     {
     }
 }
+
+/// <summary>
+///     Driver process interaction failed due to missing permissions; this operation requires elevated privileges.
+/// </summary>
+public sealed class DsHidMiniInteropAccessDeniedException : Exception
+{
+    internal DsHidMiniInteropAccessDeniedException() : base(
+        "Driver process interaction failed due to missing permissions; this operation requires elevated privileges.")
+    {
+    }
+}
