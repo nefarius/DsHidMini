@@ -23,6 +23,7 @@
           <Rule Enabled="true" Column="FunctionName" Relation="Is" Value="USB_WriteInterruptOutSync" Action="Exclude"/>
           <Rule Enabled="true" Column="FunctionName" Relation="Is" Value="DSHM_WriteReport" Action="Exclude"/>
           <Rule Enabled="true" Column="FunctionName" Relation="Is" Value="DsHidMini_WriteReport" Action="Exclude"/>
+          <Rule Enabled="true" Column="FunctionName" Relation="Is" Value="DsBth_HidInterruptReadContinuousRequestCompleted" Action="Exclude"/>
         </Rules>
       </Filter1>
     </Filters>
