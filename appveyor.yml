@@ -1,4 +1,4 @@
-version: 3.0.{build}.0
+version: 3.1.{build}.0
 build_cloud: WIN-LKR467JS4GL
 image: Windows
 test: off
@@ -37,9 +37,10 @@ dotnet_csproj:
   informational_version: '{version}'
 before_build:
 - cmd: nuget restore
-- cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\sys\dshidmini.vcxproj" --vcxproj.inf-time-stamp
-- cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\sys\dshidmini.rc" --resource.file-version --resource.product-version
-- cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\XInputBridge\XInputBridge.rc" --resource.file-version --resource.product-version
+- cmd: dotnet tool install --global Nefarius.Tools.Vpatch
+- cmd: vpatch --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\sys\dshidmini.vcxproj" --vcxproj.inf-time-stamp
+- cmd: vpatch --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\sys\dshidmini.rc" --resource.file-version --resource.product-version
+- cmd: vpatch --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\XInputBridge\XInputBridge.rc" --resource.file-version --resource.product-version
 - cmd: dotnet restore .\ControlApp\
 build_script:
 - cmd: .\build.cmd
