@@ -614,6 +614,15 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET((DMFMODULE)pDevCtx->DsHidMiniModule);
 	const PDS3_RAW_INPUT_REPORT pInReport = (PDS3_RAW_INPUT_REPORT)WdfMemoryGetBuffer(Buffer, NULL);
 
+	//
+	// Some controllers occasionally send this broken report, ignore packet
+	// 
+	if (pInReport->Reserved0 == 0xFF)
+	{
+		FuncExitNoReturn(TRACE_DSHIDMINIDRV);
+		return;
+	}
+
 	QueryPerformanceFrequency(&freq);
 	LARGE_INTEGER* t1 = &pDevCtx->Connection.Usb.ChargingCycleTimestamp;
 
