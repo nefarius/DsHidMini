@@ -6,7 +6,7 @@ Virtual HID Mini-user-mode driver for Sony DualShock 3 Controllers
 
 ## 🚨 What to expect with Version 3 🚨
 
-Next major version [**is available** for Beta-testing](https://github.com/nefarius/DsHidMini/releases/tag/setup-v3.0.3)!
+Next major version [**is available** for Beta-testing](https://github.com/nefarius/DsHidMini/releases)!
 Here's an overview of what you'll get:
 
 - New driver installer
