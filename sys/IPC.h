@@ -94,6 +94,9 @@ typedef enum
 	DSHM_IPC_MSG_CMD_DEVICE_GET_HID_WAIT_HANDLE,
 } DSHM_IPC_MSG_CMD_DEVICE;
 
+//
+// Prefix of every packet describing the message
+// 
 typedef struct _DSHM_IPC_MSG_HEADER
 {
 	//
@@ -129,6 +132,9 @@ typedef struct _DSHM_IPC_MSG_HEADER
 	UINT32 Size;
 } DSHM_IPC_MSG_HEADER, * PDSHM_IPC_MSG_HEADER;
 
+//
+// Updates a specified devices' host address
+// 
 typedef struct _DSHM_IPC_MSG_PAIR_TO_REQUEST
 {
 	DSHM_IPC_MSG_HEADER Header;
@@ -137,24 +143,43 @@ typedef struct _DSHM_IPC_MSG_PAIR_TO_REQUEST
 	
 } DSHM_IPC_MSG_PAIR_TO_REQUEST, *PDSHM_IPC_MSG_PAIR_TO_REQUEST;
 
+//
+// Reply to struct _DSHM_IPC_MSG_PAIR_TO_REQUEST
+// 
 typedef struct _DSHM_IPC_MSG_PAIR_TO_REPLY
 {
 	DSHM_IPC_MSG_HEADER Header;
 
+	//
+	// NTSTATUS of the set address action
+	// 
 	NTSTATUS WriteStatus;
 
+	//
+	// NTSTATUS of the get address action
+	// 
 	NTSTATUS ReadStatus;
 	
 } DSHM_IPC_MSG_PAIR_TO_REPLY, *PDSHM_IPC_MSG_PAIR_TO_REPLY;
 
+//
+// Updates the player index of a given device
+// 
 typedef struct _DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST
 {
 	DSHM_IPC_MSG_HEADER Header;
 
+	//
+	// The new player index to set
+	//   Valid values are 1 to 7
+	//   
 	BYTE PlayerIndex;
 	
 } DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST, *PDSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST;
 
+//
+// Reply to struct _DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST
+// 
 typedef struct _DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY
 {
 	DSHM_IPC_MSG_HEADER Header;
@@ -163,12 +188,21 @@ typedef struct _DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY
 	
 } DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY, *PDSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY;
 
+//
+// Requests the driver host process PID and a wait handle for new input reports
+// 
 typedef struct _DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE
 {
 	DSHM_IPC_MSG_HEADER Header;
 
+	//
+	// The driver hosting process PID
+	// 
 	DWORD ProcessId;
 
+	//
+	// A handle to an auto-reset event
+	// 
 	HANDLE WaitHandle;
 	
 } DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE, *PDSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE;
