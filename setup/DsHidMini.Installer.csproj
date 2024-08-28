@@ -33,7 +33,7 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
     <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
-    <PackageReference Include="Nefarius.Utilities.DeviceManagement" Version="3.22.0" />
+    <PackageReference Include="Nefarius.Utilities.DeviceManagement" Version="3.23.0" />
     <PackageReference Include="WixSharp" Version="1.25.3" />
     <PackageReference Include="WixSharp.bin" Version="1.25.3" />
     <PackageReference Include="WixSharp.wix.bin" Version="3.14.1" />
