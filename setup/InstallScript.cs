@@ -65,7 +65,8 @@ internal class InstallScript
         {
             Id = "BthPS3Feature",
             Description = "When selected, downloads the latest version of the " +
-                          "Nefarius BthPS3 Bluetooth Drivers for wireless connectivity."
+                          "Nefarius BthPS3 Bluetooth Drivers for wireless connectivity. " + 
+                          "You need to go through the BthPS3 installation AFTER this installation has finished."
         };
 
         Feature donationFeature = new("Make a donation", true, true)
@@ -145,8 +146,7 @@ internal class InstallScript
             WildCardDedup = Project.UniqueFileNameDedup,
             MajorUpgradeStrategy = MajorUpgradeStrategy.Default,
             BannerImage = "DsHidMini.dialog_banner.bmp",
-            ValidateBackgroundImage = false,
-            //BackgroundImage = "DsHidMini.dialog_background.bmp",
+            BackgroundImage = "DsHidMini.dialog_background.bmp",
             CAConfigFile = "CustomActions.config"
         };
 

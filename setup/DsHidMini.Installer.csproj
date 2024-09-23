@@ -6,6 +6,7 @@
     <RootNamespace>Nefarius.DsHidMini.Setup</RootNamespace>
     <LangVersion>latest</LangVersion>
     <Configurations>Debug;Release</Configurations>
+    <NoWarn>1591</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>
