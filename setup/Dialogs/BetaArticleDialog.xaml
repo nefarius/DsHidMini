@@ -1,0 +1,96 @@
+<wixsharp:WpfDialog
+    x:Class="Nefarius.DsHidMini.Setup.Dialogs.BetaArticleDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:wixsharp="clr-namespace:WixSharp.UI.WPF;assembly=WixSharp.UI.WPF"
+    d:DesignHeight="408"
+    d:DesignWidth="512"
+    DialogTitle="[ProductName] Setup"
+    mc:Ignorable="d">
+    <Grid x:Name="Root">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="60" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="53" />
+        </Grid.RowDefinitions>
+        <Border
+            Margin="-1,-1,-1,0"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            BorderBrush="Gray"
+            BorderThickness="1">
+            <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="80" />
+                </Grid.ColumnDefinitions>
+
+                <Image
+                    x:Name="Banner"
+                    Grid.Row="1"
+                    Grid.ColumnSpan="2"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
+                    Source="{Binding Banner}" />
+                <StackPanel Margin="9">
+                    <TextBlock
+                        FontSize="12"
+                        FontWeight="Bold">
+                        Online Documentation
+                    </TextBlock>
+                    <TextBlock
+                        x:Name="DialogDescription"
+                        Margin="17,5"
+                        VerticalAlignment="Stretch"
+                        TextWrapping="WrapWithOverflow">
+                        A web article should have opened in your default Browser by now
+                    </TextBlock>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <StackPanel Grid.Row="1" Margin="9">
+            <TextBlock TextWrapping="WrapWithOverflow">
+                The next steps are outlined in the online documentation. If the website did not for you, you can try again by clicking the link below:
+            </TextBlock>
+
+            <TextBlock Margin="0, 10, 0, 10">
+                <Hyperlink NavigateUri="http://www.google.com" RequestNavigate="Hyperlink_OnRequestNavigate">
+                    Open Beta Article
+                </Hyperlink>
+            </TextBlock>
+
+            <TextBlock Margin="0, 10, 0, 10">
+                Contact support if this didn't work for some reason. Click Next to finish.
+            </TextBlock>
+        </StackPanel>
+
+        <Border
+            Grid.Row="2"
+            Margin="-1,0,-1,-1"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            BorderBrush="Gray"
+            BorderThickness="1">
+            <StackPanel
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+
+                <Separator Width="10" Opacity="0" />
+                <Separator Width="10" Opacity="0" />
+                <Button
+                    x:Name="GoNext"
+                    Height="23"
+                    MinWidth="73"
+                    Click="GoNext_Click">
+                    [WixUINext]
+                </Button>
+                <Separator Width="20" Opacity="0" />
+                <Separator Width="10" Opacity="0" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</wixsharp:WpfDialog>

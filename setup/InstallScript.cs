@@ -154,8 +154,8 @@ internal class InstallScript
         project.ManagedUI.InstallDialogs.Add<WelcomeDialog>()
             .Add<LicenceDialog>()
             .Add<FeaturesDialog>()
-            .Add<InstallDirDialog>()
             .Add<ProgressDialog>()
+            .Add<BetaArticleDialog>()
             .Add<ExitDialog>();
 
         project.ManagedUI.ModifyDialogs.Add<MaintenanceTypeDialog>()
