@@ -348,15 +348,16 @@ public static class CustomActions
     [CustomAction]
     public static ActionResult OpenBetaArticle(Session session)
     {
-        CommandResult? result = Cli.Wrap("explorer")
-            .WithArguments("https://docs.nefarius.at/projects/DsHidMini/Experimental/Version-3-Beta/")
-            .WithValidation(CommandResultValidation.None)
-            .ExecuteAsync()
-            .GetAwaiter()
-            .GetResult();
-
-        session.Log(
-            $"Beta article launch {(result.IsSuccess ? "succeeded" : "failed")}, exit code: {result.ExitCode}");
+        try
+        {
+            Process.Start(
+                "https://docs.nefarius.at/projects/DsHidMini/Experimental/Version-3-Beta/");
+        }
+        catch (Exception ex)
+        {
+            session.Log(
+                $"Beta article launch failed, exception: {ex}");
+        }
 
         return ActionResult.Success;
     }
