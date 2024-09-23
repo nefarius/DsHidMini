@@ -7,6 +7,11 @@
     <LangVersion>latest</LangVersion>
     <Configurations>Debug;Release</Configurations>
     <NoWarn>1591</NoWarn>
+    <UseWPF>true</UseWPF>
+    <RollForward>Major</RollForward>
+    <!-- https://stackoverflow.com/questions/58844785/how-to-reference-system-windows-forms-in-net-core-3-0-for-wpf-apps -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -38,13 +43,12 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
     <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
-    <PackageReference Include="Nefarius.Utilities.DeviceManagement" Version="3.23.0" />
-    <PackageReference Include="WixSharp_wix4" Version="2.3.2" />
+    <PackageReference Include="Nefarius.Utilities.DeviceManagement" Version="4.0.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="System.Windows.Forms" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="WixSharp-wix4.WPF" Version="2.4.0.1" />
+    </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="cd .\&#xD;&#xA;set ide=true&#xD;&#xA;&quot;$(TargetPath)&quot;" />

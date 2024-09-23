@@ -1,0 +1,125 @@
+<wixsharp:WpfDialog
+    x:Class="Nefarius.DsHidMini.Setup.Dialogs.ProgressDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:wixsharp="clr-namespace:WixSharp.UI.WPF;assembly=WixSharp.UI.WPF"
+    d:DesignHeight="408"
+    d:DesignWidth="512"
+    DialogTitle="[ProductName] Setup"
+    mc:Ignorable="d">
+    <Grid x:Name="Root">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="60" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="53" />
+        </Grid.RowDefinitions>
+        <Border
+            Margin="-1,-1,-1,0"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            BorderBrush="Gray"
+            BorderThickness="1">
+            <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="80" />
+                </Grid.ColumnDefinitions>
+
+                <Image
+                    x:Name="Banner"
+                    Grid.Row="1"
+                    Grid.ColumnSpan="2"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
+                    Source="{Binding Banner}" />
+                <StackPanel Margin="9">
+                    <TextBlock
+                        x:Name="DialogTitleLabel"
+                        Grid.Column="0"
+                        FontSize="12"
+                        FontWeight="Bold">
+                        [ProgressDlgTitleInstalling]
+                    </TextBlock>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <StackPanel Grid.Row="1" Margin="20,10">
+            <TextBlock
+                x:Name="DialogDescription"
+                MinHeight="35"
+                TextWrapping="WrapWithOverflow">
+                [ProgressDlgTextInstalling]
+            </TextBlock>
+            <StackPanel
+                MinHeight="30"
+                Margin="0,40,0,0"
+                Orientation="Horizontal">
+                <TextBlock x:Name="CurrentStatus">
+                    [ProgressDlgStatusLabel]
+                </TextBlock>
+                <TextBlock
+                    x:Name="CurrentAction"
+                    Text="{Binding CurrentAction}"
+                    TextWrapping="WrapWithOverflow" />
+            </StackPanel>
+            <ProgressBar
+                Height="10"
+                Margin="10"
+                VerticalContentAlignment="Center"
+                Maximum="100"
+                Value="{Binding ProgressValue}" />
+            <Grid
+                x:Name="UacPromptIsVisible"
+                Width="328"
+                MinHeight="35">
+                <TextBlock
+                    x:Name="UacPrompt"
+                    FontStyle="Italic"
+                    Foreground="#FF0967FC"
+                    TextWrapping="WrapWithOverflow" />
+            </Grid>
+        </StackPanel>
+
+        <Border
+            Grid.Row="2"
+            Margin="-1,0,-1,-1"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            BorderBrush="Gray"
+            BorderThickness="1">
+            <StackPanel
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+                <Separator Width="10" Opacity="0" />
+                <Button
+                    x:Name="GoPrev"
+                    Height="23"
+                    MinWidth="73"
+                    IsEnabled="False">
+                    [WixUIBack]
+                </Button>
+                <Separator Width="10" Opacity="0" />
+                <Button
+                    x:Name="GoNext"
+                    Height="23"
+                    MinWidth="73"
+                    IsEnabled="False">
+                    [WixUINext]
+                </Button>
+                <Separator Width="20" Opacity="0" />
+                <Button
+                    x:Name="Cancel"
+                    Height="23"
+                    MinWidth="73"
+                    Click="Cancel_Click">
+                    [WixUICancel]
+                </Button>
+                <Separator Width="10" Opacity="0" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</wixsharp:WpfDialog>

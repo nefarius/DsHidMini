@@ -16,6 +16,7 @@ using CliWrap;
 using CliWrap.Buffered;
 
 using Nefarius.DsHidMini.Setup.CustomDialogs;
+using Nefarius.DsHidMini.Setup.Dialogs;
 using Nefarius.DsHidMini.Setup.Util;
 using Nefarius.Utilities.DeviceManagement.Drivers;
 using Nefarius.Utilities.DeviceManagement.Exceptions;
@@ -150,17 +151,17 @@ internal class InstallScript
             CAConfigFile = "CustomActions.config"
         };
 
-        project.ManagedUI.InstallDialogs.Add(Dialogs.Welcome)
-            .Add(Dialogs.Licence)
-            .Add(Dialogs.Features)
-            .Add(Dialogs.Progress)
-            .Add<BetaArticleLaunchDialog>()
-            .Add(Dialogs.Exit);
+        project.ManagedUI.InstallDialogs.Add<WelcomeDialog>()
+            .Add<LicenceDialog>()
+            .Add<FeaturesDialog>()
+            .Add<InstallDirDialog>()
+            .Add<ProgressDialog>()
+            .Add<ExitDialog>();
 
-        project.ManagedUI.ModifyDialogs.Add(Dialogs.MaintenanceType)
-            .Add(Dialogs.Features)
-            .Add(Dialogs.Progress)
-            .Add(Dialogs.Exit);
+        project.ManagedUI.ModifyDialogs.Add<MaintenanceTypeDialog>()
+            .Add<FeaturesDialog>()
+            .Add<ProgressDialog>()
+            .Add<ExitDialog>();
 
         // embed types of Nefarius.Utilities.DeviceManagement
         project.DefaultRefAssemblies.Add(typeof(Devcon).Assembly.Location);
