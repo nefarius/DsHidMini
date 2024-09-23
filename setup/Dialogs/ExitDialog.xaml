@@ -64,7 +64,8 @@
                     Margin="13,25,7,0"
                     VerticalAlignment="Top"
                     FontSize="16"
-                    FontWeight="Normal">
+                    FontWeight="Normal"
+                    TextWrapping="WrapWithOverflow">
                     [ExitDialogTitle]
                 </TextBlock>
                 <TextBlock
