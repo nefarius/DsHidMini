@@ -4,7 +4,7 @@ using System.Diagnostics;
 using WixSharp;
 using WixSharp.UI.Forms;
 
-namespace Nefarius.DsHidMini.Setup.Dialogs;
+namespace Nefarius.DsHidMini.Setup.CustomDialogs;
 public partial class BetaArticleLaunchDialog : ManagedForm, IManagedDialog
 {
     public BetaArticleLaunchDialog()

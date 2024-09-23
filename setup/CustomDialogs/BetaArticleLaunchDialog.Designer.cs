@@ -1,4 +1,4 @@
-﻿namespace Nefarius.DsHidMini.Setup.Dialogs;
+﻿namespace Nefarius.DsHidMini.Setup.CustomDialogs;
 
 partial class BetaArticleLaunchDialog
 {
