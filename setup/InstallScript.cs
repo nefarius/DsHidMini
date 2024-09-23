@@ -15,8 +15,6 @@ using System.Threading.Tasks;
 using CliWrap;
 using CliWrap.Buffered;
 
-using Microsoft.Deployment.WindowsInstaller;
-
 using Nefarius.DsHidMini.Setup.Util;
 using Nefarius.Utilities.DeviceManagement.Drivers;
 using Nefarius.Utilities.DeviceManagement.Exceptions;
@@ -25,6 +23,8 @@ using Nefarius.Utilities.DeviceManagement.PnP;
 using Newtonsoft.Json;
 
 using WixSharp;
+
+using WixToolset.Dtf.WindowsInstaller;
 
 using File = WixSharp.File;
 
@@ -58,13 +58,14 @@ internal class InstallScript
 
         Feature bthPs3Feature = new("BthPS3 Wireless Drivers", false, true)
         {
+            Id = "BthPS3Feature",
             Description = "When selected, downloads the latest version of the " +
                           "Nefarius BthPS3 Bluetooth Drivers for wireless connectivity."
         };
 
         Feature donationFeature = new("Make a donation", true, true)
         {
-            Description = "Opens the donation page after setup is finished."
+            Id = "DonationFeature", Description = "Opens the donation page after setup is finished."
         };
 
         // TODO: enable after Beta is over
@@ -159,9 +160,6 @@ internal class InstallScript
         project.DefaultRefAssemblies.Add(typeof(Binder).Assembly.Location);
 
         project.AfterInstall += ProjectOnAfterInstall;
-
-        //project.SourceBaseDir = "<input dir path>";
-        //project.OutDir = "<output dir path>";
 
         project.ControlPanelInfo.ProductIcon = @"..\assets\FireShock.ico";
         project.ControlPanelInfo.Manufacturer = "Nefarius Software Solutions e.U.";
@@ -305,7 +303,7 @@ public static class CustomActions
     [SuppressMessage("ReSharper", "InconsistentNaming")]
     public static ActionResult InstallBthPS3(Session session)
     {
-        if (!session.IsFeatureEnabledPartial("BthPS3"))
+        if (!session.IsFeatureEnabled("BthPS3Feature"))
         {
             return ActionResult.Success;
         }
@@ -369,7 +367,7 @@ public static class CustomActions
     [CustomAction]
     public static ActionResult OpenDonationPage(Session session)
     {
-        if (!session.IsFeatureEnabledPartial("Donation"))
+        if (!session.IsFeatureEnabled("DonationFeature"))
         {
             return ActionResult.Success;
         }
