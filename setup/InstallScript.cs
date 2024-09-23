@@ -23,6 +23,7 @@ using Nefarius.Utilities.DeviceManagement.PnP;
 using Newtonsoft.Json;
 
 using WixSharp;
+using WixSharp.Forms;
 
 using WixToolset.Dtf.WindowsInstaller;
 
@@ -131,7 +132,7 @@ internal class InstallScript
             ) { Win64 = true }
         )
         {
-            UI = WUI.WixUI_FeatureTree,
+            ManagedUI = new ManagedUI(),
             OutFileName = $"Nefarius_DsHidMini_Drivers_x64_arm64_v{version}",
             Version = version,
             Platform = Platform.x64,
@@ -144,6 +145,17 @@ internal class InstallScript
             BackgroundImage = "DsHidMini.dialog_background.bmp",
             CAConfigFile = "CustomActions.config"
         };
+
+        project.ManagedUI.InstallDialogs.Add(Dialogs.Welcome)
+            .Add(Dialogs.Licence)
+            .Add(Dialogs.Features)
+            .Add(Dialogs.Progress)
+            .Add(Dialogs.Exit);
+
+        project.ManagedUI.ModifyDialogs.Add(Dialogs.MaintenanceType)
+            .Add(Dialogs.Features)
+            .Add(Dialogs.Progress)
+            .Add(Dialogs.Exit);
 
         // embed types of Nefarius.Utilities.DeviceManagement
         project.DefaultRefAssemblies.Add(typeof(Devcon).Assembly.Location);
