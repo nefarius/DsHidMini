@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using CliWrap;
 using CliWrap.Buffered;
 
+using Nefarius.DsHidMini.Setup.Dialogs;
 using Nefarius.DsHidMini.Setup.Util;
 using Nefarius.Utilities.DeviceManagement.Drivers;
 using Nefarius.Utilities.DeviceManagement.Exceptions;
@@ -34,6 +35,9 @@ namespace Nefarius.DsHidMini.Setup;
 internal class InstallScript
 {
     public const string ProductName = "Nefarius DsHidMini Driver";
+
+    public static Uri BetaArticleUrl =
+        new Uri("https://docs.nefarius.at/projects/DsHidMini/Experimental/Version-3-Beta/");
 
     private static void Main()
     {
@@ -142,7 +146,7 @@ internal class InstallScript
             MajorUpgradeStrategy = MajorUpgradeStrategy.Default,
             BannerImage = "DsHidMini.dialog_banner.bmp",
             ValidateBackgroundImage = false,
-            BackgroundImage = "DsHidMini.dialog_background.bmp",
+            //BackgroundImage = "DsHidMini.dialog_background.bmp",
             CAConfigFile = "CustomActions.config"
         };
 
@@ -150,6 +154,7 @@ internal class InstallScript
             .Add(Dialogs.Licence)
             .Add(Dialogs.Features)
             .Add(Dialogs.Progress)
+            .Add<BetaArticleLaunchDialog>()
             .Add(Dialogs.Exit);
 
         project.ManagedUI.ModifyDialogs.Add(Dialogs.MaintenanceType)
@@ -362,8 +367,7 @@ public static class CustomActions
     {
         try
         {
-            Process.Start(
-                "https://docs.nefarius.at/projects/DsHidMini/Experimental/Version-3-Beta/");
+            Process.Start(InstallScript.BetaArticleUrl.ToString());
         }
         catch (Exception ex)
         {
