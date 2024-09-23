@@ -15,7 +15,6 @@ using System.Threading.Tasks;
 using CliWrap;
 using CliWrap.Buffered;
 
-using Nefarius.DsHidMini.Setup.CustomDialogs;
 using Nefarius.DsHidMini.Setup.Dialogs;
 using Nefarius.DsHidMini.Setup.Util;
 using Nefarius.Utilities.DeviceManagement.Drivers;
@@ -25,7 +24,6 @@ using Nefarius.Utilities.DeviceManagement.PnP;
 using Newtonsoft.Json;
 
 using WixSharp;
-using WixSharp.Forms;
 
 using WixToolset.Dtf.WindowsInstaller;
 

@@ -101,6 +101,11 @@
                 Grid.Column="0"
                 ItemsSource="{Binding RootNodes}"
                 SelectedItemChanged="Features_SelectedItemChanged">
+                <TreeView.ItemContainerStyle>
+                    <Style TargetType="{x:Type TreeViewItem}">
+                        <Setter Property="IsExpanded" Value="True"/>
+                    </Style>
+                </TreeView.ItemContainerStyle>
                 <TreeView.ItemTemplate>
                     <HierarchicalDataTemplate ItemsSource="{Binding Nodes}">
                         <StackPanel Orientation="Horizontal">
@@ -124,6 +129,7 @@
                 BorderThickness="1">
                 <TextBlock
                     x:Name="SelectedNodeDescription"
+                    TextWrapping="WrapWithOverflow"
                     Margin="10"
                     Text="{Binding SelectedNodeDescription}" />
             </Border>
