@@ -89,6 +89,13 @@
                     [WixUINext]
                 </Button>
                 <Separator Width="20" Opacity="0" />
+                <Button
+                    x:Name="Cancel"
+                    Height="23"
+                    MinWidth="73"
+                    IsEnabled="False">
+                    [WixUICancel]
+                </Button>
                 <Separator Width="10" Opacity="0" />
             </StackPanel>
         </Border>
