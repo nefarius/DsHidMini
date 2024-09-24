@@ -35,8 +35,7 @@ internal class InstallScript
 {
     public const string ProductName = "Nefarius DsHidMini Driver";
 
-    public static Uri BetaArticleUrl =
-        new Uri("https://docs.nefarius.at/projects/DsHidMini/Experimental/Version-3-Beta/");
+    public static Uri BetaArticleUrl = new("https://docs.nefarius.at/projects/DsHidMini/Experimental/Version-3-Beta/");
 
     private static void Main()
     {
@@ -64,7 +63,7 @@ internal class InstallScript
         {
             Id = "BthPS3Feature",
             Description = "When selected, downloads the latest version of the " +
-                          "Nefarius BthPS3 Bluetooth Drivers for wireless connectivity. " + 
+                          "Nefarius BthPS3 Bluetooth Drivers for wireless connectivity. " +
                           "You need to go through the BthPS3 installation AFTER this installation has finished."
         };
 
@@ -73,8 +72,7 @@ internal class InstallScript
             Id = "DonationFeature", Description = "Opens the donation page after setup is finished."
         };
 
-        // TODO: enable after Beta is over
-        //driversFeature.Add(donationFeature);
+        driversFeature.Add(donationFeature);
         driversFeature.Add(bthPs3Feature);
         driversFeature.Display = FeatureDisplay.expand;
 
@@ -388,15 +386,15 @@ public static class CustomActions
             return ActionResult.Success;
         }
 
-        CommandResult? result = Cli.Wrap("explorer")
-            .WithArguments("https://docs.nefarius.at/Donations/")
-            .WithValidation(CommandResultValidation.None)
-            .ExecuteAsync()
-            .GetAwaiter()
-            .GetResult();
-
-        session.Log(
-            $"Donations page launch {(result.IsSuccess ? "succeeded" : "failed")}, exit code: {result.ExitCode}");
+        try
+        {
+            Process.Start("https://docs.nefarius.at/Donations/");
+        }
+        catch (Exception ex)
+        {
+            session.Log(
+                $"Beta article launch failed, exception: {ex}");
+        }
 
         return ActionResult.Success;
     }
