@@ -1,0 +1,121 @@
+<wixsharp:WpfDialog
+    x:Class="Nefarius.DsHidMini.Setup.Dialogs.LicenceDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:wixsharp="clr-namespace:WixSharp.UI.WPF;assembly=WixSharp.UI.WPF"
+    d:DesignHeight="408"
+    d:DesignWidth="512"
+    DialogTitle="[ProductName] Setup"
+    mc:Ignorable="d">
+    <Grid x:Name="Root">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="60" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="53" />
+        </Grid.RowDefinitions>
+        <Border
+            Margin="-1,-1,-1,0"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            BorderBrush="Gray"
+            BorderThickness="1">
+            <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="80" />
+                </Grid.ColumnDefinitions>
+
+                <Image
+                    x:Name="Banner"
+                    Grid.Row="1"
+                    Grid.ColumnSpan="2"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
+                    Source="{Binding Banner}" />
+                <StackPanel Margin="9">
+                    <TextBlock
+                        Grid.Column="0"
+                        FontSize="12"
+                        FontWeight="Bold">
+                        [LicenseAgreementDlgTitle]
+                    </TextBlock>
+                    <TextBlock
+                        x:Name="DialogDescription"
+                        Margin="17,5"
+                        VerticalAlignment="Stretch"
+                        TextWrapping="WrapWithOverflow">
+                        [AdvancedWelcomeEulaDlgTitle]
+                    </TextBlock>
+                </StackPanel>
+            </Grid>
+        </Border>
+        <RichTextBox
+            x:Name="LicenceText"
+            Grid.Row="1"
+            Margin="10,10,10,35"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            HorizontalScrollBarVisibility="Auto"
+            IsReadOnly="True"
+            IsReadOnlyCaretVisible="False"
+            VerticalScrollBarVisibility="Auto" />
+        <CheckBox
+            x:Name="LicenseAcceptedChecked"
+            Grid.Row="1"
+            Margin="10"
+            VerticalAlignment="Bottom"
+            VerticalContentAlignment="Center"
+            IsChecked="{Binding LicenseAcceptedChecked}">
+            [LicenseAgreementDlgLicenseAcceptedCheckBox]
+        </CheckBox>
+
+        <Border
+            Grid.Row="2"
+            Margin="-1,0,-1,-1"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            BorderBrush="Gray"
+            BorderThickness="1">
+            <StackPanel
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+                <Button
+                    x:Name="Print"
+                    Height="23"
+                    MinWidth="73"
+                    Click="Print_Click">
+                    [WixUIPrint]
+                </Button>
+                <Separator Width="10" Opacity="0" />
+                <Button
+                    x:Name="GoPrev"
+                    Height="23"
+                    MinWidth="73"
+                    Click="GoPrev_Click">
+                    [WixUIBack]
+                </Button>
+                <Separator Width="10" Opacity="0" />
+                <Button
+                    x:Name="GoNext"
+                    Height="23"
+                    MinWidth="73"
+                    Click="GoNext_Click"
+                    IsEnabled="{Binding CanGoNext}">
+                    [WixUINext]
+                </Button>
+                <Separator Width="20" Opacity="0" />
+                <Button
+                    x:Name="Cancel"
+                    Height="23"
+                    MinWidth="73"
+                    Click="Cancel_Click">
+                    [WixUICancel]
+                </Button>
+                <Separator Width="10" Opacity="0" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</wixsharp:WpfDialog>
