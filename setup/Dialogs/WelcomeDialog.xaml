@@ -40,7 +40,8 @@
                     Margin="10,25,10,10"
                     VerticalAlignment="Top"
                     FontSize="16"
-                    FontWeight="Normal">
+                    FontWeight="Normal"
+                    TextWrapping="WrapWithOverflow">
                     [WelcomeDlgTitle]
                 </TextBlock>
                 <TextBlock
