@@ -72,7 +72,7 @@ internal class InstallScript
             Id = "DonationFeature", Description = "Opens the donation page after setup is finished."
         };
 
-        driversFeature.Add(donationFeature);
+        //driversFeature.Add(donationFeature);
         driversFeature.Add(bthPs3Feature);
         driversFeature.Display = FeatureDisplay.expand;
 
