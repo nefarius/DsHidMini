@@ -14,6 +14,7 @@
         WPP_DEFINE_BIT(TRACE_DS3)                                      \
         WPP_DEFINE_BIT(TRACE_DSBTH)                                    \
         WPP_DEFINE_BIT(TRACE_CONFIG)                                   \
+        WPP_DEFINE_BIT(TRACE_IPC)                                      \
         )                                                              \
 
 #define WPP_FLAG_LEVEL_LOGGER(flag, level)                              \

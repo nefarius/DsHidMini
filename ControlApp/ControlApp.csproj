@@ -13,9 +13,8 @@
         <RootNamespace>Nefarius.DsHidMini.ControlApp</RootNamespace>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <Version>3.0.0</Version>
-        <Authors>Kanuan, Nefarius</Authors>
-        <Copyright>Copyright (c) 2024 Nefarius Software Solutions e.U.</Copyright>
         <Configurations>Debug;Release</Configurations>
+        <IsPackable>false</IsPackable>
     </PropertyGroup>
 
     <ItemGroup>

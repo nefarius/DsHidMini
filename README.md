@@ -197,6 +197,7 @@ The following awesome resources have made this project possible.
 - [linux/drivers/hid/hid-sony.c](https://github.com/torvalds/linux/blob/master/drivers/hid/hid-sony.c)
 - [The HID Page](http://janaxelson.com/hidpage.htm)
 - [CircumSpector/Research/Sony DualShock 3](https://github.com/CircumSpector/Research/tree/master/Sony%20DualShock%203)
+- [Memory-Mapped Files and Overlaid Structs](https://blog.stephencleary.com/2023/09/memory-mapped-files-overlaid-structs.html)
 
 ### DevOps
 

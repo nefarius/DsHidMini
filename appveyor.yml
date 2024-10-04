@@ -1,4 +1,4 @@
-version: 3.1.{build}.0
+version: 3.2.{build}.0
 build_cloud: WIN-LKR467JS4GL
 image: Windows
 test: off
@@ -13,6 +13,9 @@ platform:
 - x86
 configuration:
 - Release
+branches:
+  only:
+    - master
 skip_commits:
   files:
     - '**/*.md'
@@ -27,6 +30,7 @@ install:
     cd "C:\projects\DMF"
     git pull > NUL
     cd %appveyor_build_folder%
+- cmd: mklink /J "%APPVEYOR_BUILD_FOLDER%\XInputBridge\vcpkg_installed" "C:\tools\build-cache\dshidmini\XInputBridge\vcpkg_installed\%PLATFORM%"
 dotnet_csproj:
   patch: true
   file: '**\*.csproj'
@@ -42,6 +46,7 @@ before_build:
 - cmd: vpatch --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\sys\dshidmini.rc" --resource.file-version --resource.product-version
 - cmd: vpatch --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\XInputBridge\XInputBridge.rc" --resource.file-version --resource.product-version
 - cmd: dotnet restore .\ControlApp\
+- cmd: dotnet restore .\ipctest\
 build_script:
 - cmd: .\build.cmd
 - cmd: if %PLATFORM%==x64 dotnet publish /p:PublishProfile=Properties\PublishProfiles\release-win-x64.pubxml .\ControlApp\
