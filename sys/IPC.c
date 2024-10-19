@@ -6,6 +6,9 @@ static DWORD WINAPI DSHM_IPC_ClientDispatchProc(
 	_In_ LPVOID lpParameter
 );
 
+//
+// Sets up direct driver process IPC for sideband communication
+// 
 NTSTATUS InitIPC(void)
 {
 	FuncEntry(TRACE_IPC);
@@ -15,7 +18,7 @@ NTSTATUS InitIPC(void)
 
 	SYSTEM_INFO sysInfo;
     GetSystemInfo(&sysInfo);
-    DWORD pageSize = sysInfo.dwAllocationGranularity; // Usually 4096 bytes (4KB)
+    DWORD pageSize = sysInfo.dwAllocationGranularity;
 
 	DWORD cmdRegionSize = pageSize;
 	DWORD hidRegionSize = pageSize;
@@ -85,7 +88,6 @@ NTSTATUS InitIPC(void)
 		goto exitFailure;
 	}
 
-	// Create a named event for signaling
 	hReadEvent = CreateEventA(&sa, FALSE, FALSE, DSHM_IPC_READ_EVENT_NAME);
 	if (hReadEvent == NULL)
 	{
@@ -252,6 +254,9 @@ exitFailure:
 	return status;
 }
 
+//
+// Frees IPC resources
+// 
 void DestroyIPC(void)
 {
 	FuncEntry(TRACE_IPC);
@@ -291,6 +296,9 @@ void DestroyIPC(void)
 	FuncExitNoReturn(TRACE_IPC);
 }
 
+//
+// Processes incoming IPC commands
+// 
 static NTSTATUS DSHM_IPC_DispatchIncomingCommandMessage(
 	_In_ const PDSHM_DRIVER_CONTEXT Context,
 	_In_ const PDSHM_IPC_MSG_HEADER Message
@@ -445,6 +453,8 @@ static DWORD WINAPI DSHM_IPC_ClientDispatchProc(
 					"DSHM_IPC_DispatchIncomingCommandMessage reported non-success status %!STATUS!",
 					status
 				);
+
+				// TODO: can we do anything else with a failure status?
 			}
 		}
 
