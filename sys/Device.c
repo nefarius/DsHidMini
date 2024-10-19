@@ -742,7 +742,33 @@ DsDevice_InitContext(
 			break;
 		}
 
-		pDevCtx->IPC.InputReportWaitHandle = CreateEventA(&sa, FALSE, FALSE, NULL);
+		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
+		attributes.ParentObject = Device;
+
+		PUCHAR hidEventNameBuffer = NULL;
+
+		if (!NT_SUCCESS(status = WdfMemoryCreate(
+			&attributes,
+			NonPagedPoolNx,
+			DS3_POOL_TAG,
+			DSHM_HID_EVENT_NAME_LEN,
+			&pDevCtx->IPC.InputReportWaitEventName,
+			(PVOID*)&hidEventNameBuffer
+		)))
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"WdfMemoryCreate failed with status %!STATUS!",
+				status
+			);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfMemoryCreate", status);
+			break;
+		}
+
+		RtlZeroMemory(hidEventNameBuffer, DSHM_HID_EVENT_NAME_LEN);
+		GenerateRandomEventName(hidEventNameBuffer, DSHM_HID_EVENT_NAME_RND_LEN);
+
+		pDevCtx->IPC.InputReportWaitHandle = CreateEventA(&sa, FALSE, FALSE, (LPCSTR)hidEventNameBuffer);
 
 		if (pDevCtx->IPC.InputReportWaitHandle == NULL)
 		{
