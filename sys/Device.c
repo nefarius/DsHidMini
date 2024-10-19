@@ -9,7 +9,6 @@ EVT_DMF_DEVICE_MODULES_ADD DmfDeviceModulesAdd;
 EVT_WDF_DEVICE_CONTEXT_CLEANUP DsHidMini_DeviceCleanup;
 
 #pragma code_seg("PAGED")
-DMF_DEFAULT_DRIVERCLEANUP(dshidminiEvtDriverContextCleanup)
 
 //
 // Bootstrap device
@@ -216,6 +215,25 @@ void DsHidMini_DeviceCleanup(
 
 	PAGED_CODE();
 
+	const WDFDEVICE device = Object;
+	const PDEVICE_CONTEXT deviceContext = DeviceGetContext(device);
+	const WDFDRIVER driver = WdfGetDriver();
+	const PDSHM_DRIVER_CONTEXT driverContext = DriverGetContext(driver);
+
+	WdfWaitLockAcquire(driverContext->SlotsLock, NULL);
+	{
+		CLEAR_SLOT(driverContext, deviceContext->SlotIndex);
+		driverContext->IPC.DeviceDispatchers.Callbacks[deviceContext->SlotIndex] = NULL;
+		driverContext->IPC.DeviceDispatchers.Contexts[deviceContext->SlotIndex] = NULL;
+	}
+	WdfWaitLockRelease(driverContext->SlotsLock);
+
+	const size_t offset = (sizeof(IPC_HID_INPUT_REPORT_MESSAGE) * (deviceContext->SlotIndex - 1));
+	const PUCHAR pHIDBuffer = (driverContext->IPC.SharedRegions.HID.Buffer + offset);
+
+	// zero out the slot so potential readers get notified we're gone
+	RtlZeroMemory(pHIDBuffer, sizeof(IPC_HID_INPUT_REPORT_MESSAGE));
+
 	EventWriteUnloadEvent(Object);
 
 	FuncExitNoReturn(TRACE_DEVICE);
@@ -405,13 +423,50 @@ DsDevice_InitContext(
 )
 {
 	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
-	NTSTATUS status = STATUS_SUCCESS;
+	const PDSHM_DRIVER_CONTEXT pDrvCtx = DriverGetContext(WdfGetDriver());
+	NTSTATUS status = STATUS_INSUFFICIENT_RESOURCES;
 	WDF_OBJECT_ATTRIBUTES attributes;
 	PUCHAR outReportBuffer = NULL;
 	WDF_TIMER_CONFIG timerCfg;
 
 	FuncEntry(TRACE_DEVICE);
 
+	WdfWaitLockAcquire(pDrvCtx->SlotsLock, NULL);
+	{
+		//
+		// Get next free slot
+		// 
+		for (UINT32 slotIndex = 1; slotIndex <= DSHM_MAX_DEVICES; slotIndex++)
+		{
+			if (!TEST_SLOT(pDrvCtx, slotIndex))
+			{
+				SET_SLOT(pDrvCtx, slotIndex);
+				status = STATUS_SUCCESS;
+
+				TraceVerbose(
+					TRACE_DEVICE,
+					"Claimed device slot: %d",
+					slotIndex
+				);
+
+				pDevCtx->SlotIndex = slotIndex;
+				pDrvCtx->IPC.DeviceDispatchers.Callbacks[slotIndex] = DSHM_EvtDispatchDeviceMessage;
+				pDrvCtx->IPC.DeviceDispatchers.Contexts[slotIndex] = pDevCtx;
+				break;
+			}
+		}
+	}
+	WdfWaitLockRelease(pDrvCtx->SlotsLock);
+
+	if (!NT_SUCCESS(status))
+	{
+		FuncExit(TRACE_DEVICE, "status=%!STATUS!", status);
+
+		return status;
+	}
+
+	// ReSharper disable once CppIncompleteSwitchStatement
+	// ReSharper disable once CppDefaultCaseNotHandledInSwitchStatement
 	switch (pDevCtx->ConnectionType)
 	{
 	case DsDeviceConnectionTypeUsb:
@@ -644,6 +699,63 @@ DsDevice_InitContext(
 			EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfTimerCreate", status);
 			break;
 		}
+
+#pragma region IPC
+
+		SECURITY_DESCRIPTOR sd = { 0 };
+
+		if (!InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION))
+		{
+			TraceError(
+				TRACE_IPC,
+				"InitializeSecurityDescriptor failed with error: %!WINERROR!",
+				GetLastError()
+			);
+			EventWriteFailedWithWin32Error(__FUNCTION__, L"InitializeSecurityDescriptor", GetLastError());
+			break;
+		}
+
+		SECURITY_ATTRIBUTES sa = { 0 };
+		sa.nLength = sizeof(sa);
+		sa.bInheritHandle = TRUE;
+		sa.lpSecurityDescriptor = &sd;
+
+		CHAR* szSD = "D:" // Discretionary ACL
+		"(D;OICI;GA;;;BG)" // Deny access to Built-in Guests
+		"(D;OICI;GA;;;AN)" // Deny access to Anonymous Logon
+		"(A;OICI;GRGWGX;;;AU)" // Allow read/write/execute to Authenticated Users
+		"(A;OICI;GA;;;BA)"; // Allow full control to Administrators
+
+		if (!ConvertStringSecurityDescriptorToSecurityDescriptorA(
+			szSD,
+			SDDL_REVISION_1,
+			&sa.lpSecurityDescriptor,
+			NULL
+		))
+		{
+			TraceError(
+				TRACE_IPC,
+				"ConvertStringSecurityDescriptorToSecurityDescriptor failed with error: %!WINERROR!",
+				GetLastError()
+			);
+			EventWriteFailedWithWin32Error(__FUNCTION__, L"ConvertStringSecurityDescriptorToSecurityDescriptor", GetLastError());
+			break;
+		}
+
+		pDevCtx->IPC.InputReportWaitHandle = CreateEventA(&sa, FALSE, FALSE, NULL);
+
+		if (pDevCtx->IPC.InputReportWaitHandle == NULL)
+		{
+			TraceError(
+				TRACE_IPC,
+				"CreateEventA failed with error: %!WINERROR!",
+				GetLastError()
+			);
+			EventWriteFailedWithWin32Error(__FUNCTION__, L"CreateEventA", GetLastError());
+			break;
+		}
+
+#pragma endregion
 
 	} while (FALSE);
 

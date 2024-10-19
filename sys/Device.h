@@ -357,7 +357,32 @@ typedef struct _DEVICE_CONTEXT
 
 	} RumbleControlState;
 
+	UINT32 SlotIndex;
+
+	struct
+	{
+		HANDLE InputReportWaitHandle;
+	} IPC;
+
 } DEVICE_CONTEXT, * PDEVICE_CONTEXT;
+
+#include <pshpack1.h>
+//
+// Describes a raw input report packet shared via IPC
+// 
+typedef struct _IPC_HID_INPUT_REPORT_MESSAGE
+{
+	//
+	// One-based device index
+	// 
+	UINT32 SlotIndex;
+
+	//
+	// Input report copy
+	// 
+	DS3_RAW_INPUT_REPORT InputReport;
+} IPC_HID_INPUT_REPORT_MESSAGE, *PIPC_HID_INPUT_REPORT_MESSAGE;
+#include <poppack.h>
 
 //
 // This macro will generate an inline function called DeviceGetContext
@@ -415,6 +440,8 @@ EVT_DMF_ThreadedBufferQueue_Callback DSHM_EvtExecuteOutputPacketReceived;
 EVT_WDF_TIMER DSHM_OutputReportDelayTimerElapsed;
 
 EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL DSHM_EvtWdfIoQueueIoDeviceControl;
+
+EVT_DSHM_IPC_DispatchDeviceMessage DSHM_EvtDispatchDeviceMessage;
 
 NTSTATUS
 DsDevice_ReadProperties(

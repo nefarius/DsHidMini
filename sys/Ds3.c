@@ -411,7 +411,6 @@ NTSTATUS DS3_GetActiveRadioAddress(BD_ADDR* Address)
 NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 {
 	NTSTATUS status = STATUS_UNSUCCESSFUL;
-	WDF_DEVICE_PROPERTY_DATA propertyData;
 	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 	BD_ADDR newHostAddress = { 0 };
 
@@ -499,28 +498,6 @@ NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 		status = STATUS_SUCCESS;
 
 	} while (FALSE);
-
-	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RO_LastPairingStatus);
-	propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
-	propertyData.Lcid = LOCALE_NEUTRAL;
-
-	//
-	// Store in property
-	// 	
-	if (!NT_SUCCESS(status = WdfDeviceAssignProperty(
-		Device,
-		&propertyData,
-		DEVPROP_TYPE_NTSTATUS,
-		sizeof(NTSTATUS),
-		&status
-	)))
-	{
-		TraceError(
-			TRACE_DS3,
-			"Setting DEVPKEY_DsHidMini_RO_LastPairingStatus failed with status %!STATUS!",
-			status
-		);
-	}
 
 	FuncExit(TRACE_DS3, "status=%!STATUS!", status);
 
