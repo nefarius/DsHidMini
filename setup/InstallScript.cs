@@ -20,6 +20,7 @@ using Nefarius.DsHidMini.Setup.Util;
 using Nefarius.Utilities.DeviceManagement.Drivers;
 using Nefarius.Utilities.DeviceManagement.Exceptions;
 using Nefarius.Utilities.DeviceManagement.PnP;
+using Nefarius.Utilities.WixSharp.Util;
 
 using Newtonsoft.Json;
 
@@ -82,7 +83,7 @@ internal class InstallScript
                 new Dir(driversFeature, "nefcon")
                 {
                     Files = new DirFiles(driversFeature, "*.*").GetFiles(nefconDir),
-                    Dirs = GetSubDirectories(driversFeature, nefconDir).ToArray()
+                    Dirs = WixExt.GetSubDirectories(driversFeature, nefconDir).ToArray()
                 },
                 new Dir(driversFeature, "drivers",
                     new Files(driversFeature, @"..\artifacts\drivers\*.*"),
@@ -197,27 +198,6 @@ internal class InstallScript
         {
             CustomActions.UninstallDrivers(e.Session);
         }
-    }
-
-    /// <summary>
-    ///     Recursively resolves all subdirectories and their containing files.
-    /// </summary>
-    private static List<Dir> GetSubDirectories(Feature feature, string directory)
-    {
-        List<Dir> subDirectoryInfosCollection = new();
-
-        foreach (string subDirectory in Directory.GetDirectories(directory))
-        {
-            string subDirectoryName = subDirectory.Remove(0, subDirectory.LastIndexOf('\\') + 1);
-            Dir newDir =
-                new(feature, subDirectoryName, new Files(feature, subDirectory + @"\*.*")) { Name = subDirectoryName };
-            subDirectoryInfosCollection.Add(newDir);
-
-            // Recursively traverse nested directories
-            GetSubDirectories(feature, subDirectory);
-        }
-
-        return subDirectoryInfosCollection;
     }
 }
 
