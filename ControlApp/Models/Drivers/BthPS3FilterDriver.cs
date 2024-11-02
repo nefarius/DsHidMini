@@ -6,9 +6,11 @@ using Windows.Win32.Storage.FileSystem;
 
 using Microsoft.Win32.SafeHandles;
 
+using Nefarius.Utilities.Bluetooth;
+
 namespace Nefarius.DsHidMini.ControlApp.Models.Drivers;
 
-public static class BthPS3FilterDriver
+internal static class BthPS3FilterDriver
 {
     private const uint IOCTL_BTHPS3PSM_ENABLE_PSM_PATCHING = 0x002AAC04;
     private const uint IOCTL_BTHPS3PSM_DISABLE_PSM_PATCHING = 0x002AAC08;
@@ -26,14 +28,14 @@ public static class BthPS3FilterDriver
     {
         get
         {
-            if (!BluetoothHelper.IsBluetoothRadioAvailable)
+            if (!HostRadio.IsOperable)
             {
                 return false;
             }
 
             using SafeFileHandle? handle = PInvoke.CreateFile(
                 BTHPS3PSM_CONTROL_DEVICE_PATH,
-                FILE_ACCESS_FLAGS.FILE_GENERIC_READ | FILE_ACCESS_FLAGS.FILE_GENERIC_WRITE,
+                (uint)(FILE_ACCESS_RIGHTS.FILE_GENERIC_READ | FILE_ACCESS_RIGHTS.FILE_GENERIC_WRITE),
                 FILE_SHARE_MODE.FILE_SHARE_READ | FILE_SHARE_MODE.FILE_SHARE_WRITE,
                 null,
                 FILE_CREATION_DISPOSITION.OPEN_EXISTING,
@@ -53,14 +55,14 @@ public static class BthPS3FilterDriver
     {
         get
         {
-            if (!BluetoothHelper.IsBluetoothRadioAvailable)
+            if (!HostRadio.IsOperable)
             {
                 return false;
             }
 
             using SafeFileHandle? handle = PInvoke.CreateFile(
                 BTHPS3PSM_CONTROL_DEVICE_PATH,
-                FILE_ACCESS_FLAGS.FILE_GENERIC_READ | FILE_ACCESS_FLAGS.FILE_GENERIC_WRITE,
+                (uint)(FILE_ACCESS_RIGHTS.FILE_GENERIC_READ | FILE_ACCESS_RIGHTS.FILE_GENERIC_WRITE),
                 FILE_SHARE_MODE.FILE_SHARE_READ | FILE_SHARE_MODE.FILE_SHARE_WRITE,
                 null,
                 FILE_CREATION_DISPOSITION.OPEN_EXISTING,
@@ -73,7 +75,7 @@ public static class BthPS3FilterDriver
             }
 
             IntPtr payloadBuffer = Marshal.AllocHGlobal(Marshal.SizeOf<BTHPS3PSM_GET_PSM_PATCHING>());
-            BTHPS3PSM_GET_PSM_PATCHING payload = new BTHPS3PSM_GET_PSM_PATCHING { DeviceIndex = 0 };
+            BTHPS3PSM_GET_PSM_PATCHING payload = new() { DeviceIndex = 0 };
 
             try
             {
@@ -103,7 +105,7 @@ public static class BthPS3FilterDriver
         {
             using SafeFileHandle? handle = PInvoke.CreateFile(
                 BTHPS3PSM_CONTROL_DEVICE_PATH,
-                FILE_ACCESS_FLAGS.FILE_GENERIC_READ | FILE_ACCESS_FLAGS.FILE_GENERIC_WRITE,
+                (uint)(FILE_ACCESS_RIGHTS.FILE_GENERIC_READ | FILE_ACCESS_RIGHTS.FILE_GENERIC_WRITE),
                 FILE_SHARE_MODE.FILE_SHARE_READ | FILE_SHARE_MODE.FILE_SHARE_WRITE,
                 null,
                 FILE_CREATION_DISPOSITION.OPEN_EXISTING,
@@ -116,9 +118,9 @@ public static class BthPS3FilterDriver
             }
 
             IntPtr payloadEnableBuffer = Marshal.AllocHGlobal(Marshal.SizeOf<BTHPS3PSM_ENABLE_PSM_PATCHING>());
-            BTHPS3PSM_ENABLE_PSM_PATCHING payloadEnable = new BTHPS3PSM_ENABLE_PSM_PATCHING { DeviceIndex = 0 };
+            BTHPS3PSM_ENABLE_PSM_PATCHING payloadEnable = new() { DeviceIndex = 0 };
             IntPtr payloadDisableBuffer = Marshal.AllocHGlobal(Marshal.SizeOf<BTHPS3PSM_DISABLE_PSM_PATCHING>());
-            BTHPS3PSM_DISABLE_PSM_PATCHING payloadDisable = new BTHPS3PSM_DISABLE_PSM_PATCHING { DeviceIndex = 0 };
+            BTHPS3PSM_DISABLE_PSM_PATCHING payloadDisable = new() { DeviceIndex = 0 };
 
             try
             {
