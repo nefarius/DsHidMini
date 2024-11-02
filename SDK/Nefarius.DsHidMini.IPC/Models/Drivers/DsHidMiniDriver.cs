@@ -132,6 +132,7 @@ public enum DsBatteryStatus : byte
 [TypeConverter(typeof(EnumDescriptionTypeConverter))]
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
+[SuppressMessage("ReSharper", "UnusedType.Global")]
 public enum DsHidDeviceMode : byte
 {
     /// <summary>
