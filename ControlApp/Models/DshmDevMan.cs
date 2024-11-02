@@ -1,4 +1,5 @@
 ﻿using Nefarius.DsHidMini.ControlApp.Models.Drivers;
+using Nefarius.DsHidMini.IPC.Models.Drivers;
 using Nefarius.Utilities.DeviceManagement.PnP;
 using Nefarius.Utilities.Bluetooth;
 using Nefarius.Utilities.DeviceManagement.Extensions;
