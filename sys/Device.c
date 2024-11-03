@@ -223,16 +223,22 @@ void DsHidMini_DeviceCleanup(
 	WdfWaitLockAcquire(driverContext->SlotsLock, NULL);
 	{
 		CLEAR_SLOT(driverContext, deviceContext->SlotIndex);
-		driverContext->IPC.DeviceDispatchers.Callbacks[deviceContext->SlotIndex] = NULL;
-		driverContext->IPC.DeviceDispatchers.Contexts[deviceContext->SlotIndex] = NULL;
+		if (driverContext->IPC.IsEnabled)
+		{
+			driverContext->IPC.DeviceDispatchers.Callbacks[deviceContext->SlotIndex] = NULL;
+			driverContext->IPC.DeviceDispatchers.Contexts[deviceContext->SlotIndex] = NULL;
+		}
 	}
 	WdfWaitLockRelease(driverContext->SlotsLock);
 
-	const size_t offset = (sizeof(IPC_HID_INPUT_REPORT_MESSAGE) * (deviceContext->SlotIndex - 1));
-	const PUCHAR pHIDBuffer = (driverContext->IPC.SharedRegions.HID.Buffer + offset);
+	if (driverContext->IPC.IsEnabled)
+	{
+		const size_t offset = (sizeof(IPC_HID_INPUT_REPORT_MESSAGE) * (deviceContext->SlotIndex - 1));
+		const PUCHAR pHIDBuffer = (driverContext->IPC.SharedRegions.HID.Buffer + offset);
 
-	// zero out the slot so potential readers get notified we're gone
-	RtlZeroMemory(pHIDBuffer, sizeof(IPC_HID_INPUT_REPORT_MESSAGE));
+		// zero out the slot so potential readers get notified we're gone
+		RtlZeroMemory(pHIDBuffer, sizeof(IPC_HID_INPUT_REPORT_MESSAGE));
+	}
 
 	EventWriteUnloadEvent(Object);
 
@@ -450,8 +456,11 @@ DsDevice_InitContext(
 				);
 
 				pDevCtx->SlotIndex = slotIndex;
-				pDrvCtx->IPC.DeviceDispatchers.Callbacks[slotIndex] = DSHM_EvtDispatchDeviceMessage;
-				pDrvCtx->IPC.DeviceDispatchers.Contexts[slotIndex] = pDevCtx;
+				if (pDrvCtx->IPC.IsEnabled)
+				{
+					pDrvCtx->IPC.DeviceDispatchers.Callbacks[slotIndex] = DSHM_EvtDispatchDeviceMessage;
+					pDrvCtx->IPC.DeviceDispatchers.Contexts[slotIndex] = pDevCtx;
+				}
 				break;
 			}
 		}
