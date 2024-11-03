@@ -16,6 +16,7 @@ configuration:
 branches:
   only:
     - master
+    - /v\d+\.\d+\.\d+\.\d+/
 skip_commits:
   files:
     - '**/*.md'
