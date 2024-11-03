@@ -15,11 +15,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Windows.CsWin32" Version="0.3.136">
+    <PackageReference Include="Microsoft.Windows.CsWin32" Version="0.3.151">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Nefarius.Utilities.DeviceManagement" Version="3.23.0" />
+    <PackageReference Include="Nefarius.Utilities.DeviceManagement" Version="4.0.2" />
   </ItemGroup>
 
 </Project>

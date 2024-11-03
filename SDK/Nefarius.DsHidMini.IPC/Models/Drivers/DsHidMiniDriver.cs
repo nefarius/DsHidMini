@@ -15,7 +15,7 @@ public static class DsHidMiniDriver
     /// <summary>
     ///     Interface GUID common to all devices the DsHidMini driver supports.
     /// </summary>
-    public static Guid DeviceInterfaceGuid => Guid.Parse("{399ED672-E0BD-4FB3-AB0C-4955B56FB86A}");
+    public static Guid DeviceInterfaceGuid => Guid.Parse("{16F3FE42-B710-4F67-B6EE-9A8D249C9CE5}");
 
     #region Read-only properties
 
@@ -132,6 +132,7 @@ public enum DsBatteryStatus : byte
 [TypeConverter(typeof(EnumDescriptionTypeConverter))]
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
+[SuppressMessage("ReSharper", "UnusedType.Global")]
 public enum DsHidDeviceMode : byte
 {
     /// <summary>

@@ -1,11 +1,11 @@
 ﻿using System.Text.RegularExpressions;
 
 using Nefarius.DsHidMini.ControlApp.Models;
-using Nefarius.DsHidMini.ControlApp.Models.Drivers;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.Enums;
 using Nefarius.DsHidMini.ControlApp.Services;
+using Nefarius.DsHidMini.IPC.Models.Drivers;
 using Nefarius.Utilities.DeviceManagement.PnP;
 
 using Wpf.Ui;
