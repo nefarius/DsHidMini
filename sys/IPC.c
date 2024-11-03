@@ -13,8 +13,63 @@ NTSTATUS InitIPC(void)
 {
 	FuncEntry(TRACE_IPC);
 
+	DECLARE_CONST_UNICODE_STRING(valNameIPCEnaabled, L"IPCEnabled");
+
 	const WDFDRIVER driver = WdfGetDriver();
 	const PDSHM_DRIVER_CONTEXT context = DriverGetContext(driver);
+	WDFKEY hKeyParameters = NULL;
+	NTSTATUS status;
+
+	PUCHAR pCmdBuf = NULL;
+	PUCHAR pHIDBuf = NULL;
+	HANDLE hReadEvent = NULL;
+	HANDLE hWriteEvent = NULL;
+	HANDLE hMapFile = NULL;
+	HANDLE hMutex = NULL;
+	HANDLE hThread = NULL;
+	HANDLE hThreadTermination = NULL;
+
+	if (!NT_SUCCESS(status = WdfDriverOpenParametersRegistryKey(
+		driver,
+		KEY_READ,
+		WDF_NO_OBJECT_ATTRIBUTES,
+		&hKeyParameters
+	)))
+	{
+		TraceError(
+			TRACE_IPC,
+			"WdfDriverOpenParametersRegistryKey failed with status %!STATUS!",
+			status
+		);
+		goto exitFailure;
+	}
+
+	if (!NT_SUCCESS(status = WdfRegistryQueryULong(
+		hKeyParameters,
+		&valNameIPCEnaabled,
+		&context->IPC.IsEnabled
+	)))
+	{
+		TraceError(
+			TRACE_IPC,
+			"WdfRegistryQueryULong failed with status %!STATUS!",
+			status
+		);
+		goto exitFailure;
+	}
+
+	//
+	// Feature disabled in registry
+	// 
+	if (!context->IPC.IsEnabled)
+	{
+		TraceInformation(
+			TRACE_IPC,
+			"IPC feature disabled, aborting initialization"
+		);
+		status = STATUS_DEVICE_FEATURE_NOT_SUPPORTED;
+		goto exitFailure;
+	}
 
 	SYSTEM_INFO sysInfo;
     GetSystemInfo(&sysInfo);
@@ -28,16 +83,7 @@ NTSTATUS InitIPC(void)
 		TRACE_IPC,
 		"pageSize = %d, cmdRegionSize = %d, hidRegionSize = %d, totalRegionSize = %d",
 		pageSize, cmdRegionSize, hidRegionSize, totalRegionSize
-	);
-
-	PUCHAR pCmdBuf = NULL;
-	PUCHAR pHIDBuf = NULL;
-	HANDLE hReadEvent = NULL;
-	HANDLE hWriteEvent = NULL;
-	HANDLE hMapFile = NULL;
-	HANDLE hMutex = NULL;
-	HANDLE hThread = NULL;
-	HANDLE hThreadTermination = NULL;
+	);	
 
 	SECURITY_DESCRIPTOR sd = { 0 };
 
@@ -247,7 +293,7 @@ exitFailure:
 	if (hThreadTermination)
 		CloseHandle(hThreadTermination);
 
-	const NTSTATUS status = NTSTATUS_FROM_WIN32(GetLastError());
+	status = NT_SUCCESS(status) ? status : NTSTATUS_FROM_WIN32(GetLastError());
 
 	FuncExit(TRACE_IPC, "status=%!STATUS!", status);
 

@@ -55,6 +55,11 @@ typedef struct _DSHM_DRIVER_CONTEXT
 	struct
 	{
 		//
+		// Whether the IPC module is enabled or not
+		// 
+		ULONG IsEnabled;
+
+		//
 		// Handle of the memory-mapped file
 		// 
 		HANDLE MapFile;
