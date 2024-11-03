@@ -264,11 +264,17 @@ NTSTATUS InitIPC(void)
 
 	context->IPC.DispatchThread = hThread;
 
+	if (hKeyParameters)
+		WdfRegistryClose(hKeyParameters);
+
 	FuncExitNoReturn(TRACE_IPC);
 
 	return STATUS_SUCCESS;
 
 exitFailure:
+	if (hKeyParameters)
+		WdfRegistryClose(hKeyParameters);
+
 	if (pCmdBuf)
 		UnmapViewOfFile(pCmdBuf);
 
