@@ -223,16 +223,22 @@ void DsHidMini_DeviceCleanup(
 	WdfWaitLockAcquire(driverContext->SlotsLock, NULL);
 	{
 		CLEAR_SLOT(driverContext, deviceContext->SlotIndex);
-		driverContext->IPC.DeviceDispatchers.Callbacks[deviceContext->SlotIndex] = NULL;
-		driverContext->IPC.DeviceDispatchers.Contexts[deviceContext->SlotIndex] = NULL;
+		if (driverContext->IPC.IsEnabled)
+		{
+			driverContext->IPC.DeviceDispatchers.Callbacks[deviceContext->SlotIndex] = NULL;
+			driverContext->IPC.DeviceDispatchers.Contexts[deviceContext->SlotIndex] = NULL;
+		}
 	}
 	WdfWaitLockRelease(driverContext->SlotsLock);
 
-	const size_t offset = (sizeof(IPC_HID_INPUT_REPORT_MESSAGE) * (deviceContext->SlotIndex - 1));
-	const PUCHAR pHIDBuffer = (driverContext->IPC.SharedRegions.HID.Buffer + offset);
+	if (driverContext->IPC.IsEnabled)
+	{
+		const size_t offset = (sizeof(IPC_HID_INPUT_REPORT_MESSAGE) * (deviceContext->SlotIndex - 1));
+		const PUCHAR pHIDBuffer = (driverContext->IPC.SharedRegions.HID.Buffer + offset);
 
-	// zero out the slot so potential readers get notified we're gone
-	RtlZeroMemory(pHIDBuffer, sizeof(IPC_HID_INPUT_REPORT_MESSAGE));
+		// zero out the slot so potential readers get notified we're gone
+		RtlZeroMemory(pHIDBuffer, sizeof(IPC_HID_INPUT_REPORT_MESSAGE));
+	}
 
 	EventWriteUnloadEvent(Object);
 
@@ -450,8 +456,11 @@ DsDevice_InitContext(
 				);
 
 				pDevCtx->SlotIndex = slotIndex;
-				pDrvCtx->IPC.DeviceDispatchers.Callbacks[slotIndex] = DSHM_EvtDispatchDeviceMessage;
-				pDrvCtx->IPC.DeviceDispatchers.Contexts[slotIndex] = pDevCtx;
+				if (pDrvCtx->IPC.IsEnabled)
+				{
+					pDrvCtx->IPC.DeviceDispatchers.Callbacks[slotIndex] = DSHM_EvtDispatchDeviceMessage;
+					pDrvCtx->IPC.DeviceDispatchers.Contexts[slotIndex] = pDevCtx;
+				}
 				break;
 			}
 		}
@@ -742,7 +751,33 @@ DsDevice_InitContext(
 			break;
 		}
 
-		pDevCtx->IPC.InputReportWaitHandle = CreateEventA(&sa, FALSE, FALSE, NULL);
+		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
+		attributes.ParentObject = Device;
+
+		PUCHAR hidEventNameBuffer = NULL;
+
+		if (!NT_SUCCESS(status = WdfMemoryCreate(
+			&attributes,
+			NonPagedPoolNx,
+			DS3_POOL_TAG,
+			DSHM_HID_EVENT_NAME_LEN,
+			&pDevCtx->IPC.InputReportWaitEventName,
+			(PVOID*)&hidEventNameBuffer
+		)))
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"WdfMemoryCreate failed with status %!STATUS!",
+				status
+			);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfMemoryCreate", status);
+			break;
+		}
+
+		RtlZeroMemory(hidEventNameBuffer, DSHM_HID_EVENT_NAME_LEN);
+		GenerateRandomEventName(hidEventNameBuffer, DSHM_HID_EVENT_NAME_RND_LEN);
+
+		pDevCtx->IPC.InputReportWaitHandle = CreateEventA(&sa, FALSE, FALSE, (LPCSTR)hidEventNameBuffer);
 
 		if (pDevCtx->IPC.InputReportWaitHandle == NULL)
 		{

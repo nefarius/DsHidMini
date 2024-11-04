@@ -173,6 +173,8 @@ internal class InstallScript
         project.DefaultRefAssemblies.Add(typeof(WebClient).Assembly.Location);
         project.DefaultRefAssemblies.Add(typeof(JsonSerializer).Assembly.Location);
         project.DefaultRefAssemblies.Add(typeof(Binder).Assembly.Location);
+        // Nefarius.Utilities.WixSharp
+        project.DefaultRefAssemblies.Add(typeof(WixExt).Assembly.Location);
 
         project.AfterInstall += ProjectOnAfterInstall;
 

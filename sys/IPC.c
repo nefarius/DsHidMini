@@ -6,26 +6,19 @@ static DWORD WINAPI DSHM_IPC_ClientDispatchProc(
 	_In_ LPVOID lpParameter
 );
 
+//
+// Sets up direct driver process IPC for sideband communication
+// 
 NTSTATUS InitIPC(void)
 {
 	FuncEntry(TRACE_IPC);
 
+	DECLARE_CONST_UNICODE_STRING(valNameIPCEnaabled, L"IPCEnabled");
+
 	const WDFDRIVER driver = WdfGetDriver();
 	const PDSHM_DRIVER_CONTEXT context = DriverGetContext(driver);
-
-	SYSTEM_INFO sysInfo;
-    GetSystemInfo(&sysInfo);
-    DWORD pageSize = sysInfo.dwAllocationGranularity; // Usually 4096 bytes (4KB)
-
-	DWORD cmdRegionSize = pageSize;
-	DWORD hidRegionSize = pageSize;
-	DWORD totalRegionSize = cmdRegionSize + hidRegionSize;
-
-	TraceVerbose(
-		TRACE_IPC,
-		"pageSize = %d, cmdRegionSize = %d, hidRegionSize = %d, totalRegionSize = %d",
-		pageSize, cmdRegionSize, hidRegionSize, totalRegionSize
-	);
+	WDFKEY hKeyParameters = NULL;
+	NTSTATUS status;
 
 	PUCHAR pCmdBuf = NULL;
 	PUCHAR pHIDBuf = NULL;
@@ -35,6 +28,62 @@ NTSTATUS InitIPC(void)
 	HANDLE hMutex = NULL;
 	HANDLE hThread = NULL;
 	HANDLE hThreadTermination = NULL;
+
+	if (!NT_SUCCESS(status = WdfDriverOpenParametersRegistryKey(
+		driver,
+		KEY_READ,
+		WDF_NO_OBJECT_ATTRIBUTES,
+		&hKeyParameters
+	)))
+	{
+		TraceError(
+			TRACE_IPC,
+			"WdfDriverOpenParametersRegistryKey failed with status %!STATUS!",
+			status
+		);
+		goto exitFailure;
+	}
+
+	if (!NT_SUCCESS(status = WdfRegistryQueryULong(
+		hKeyParameters,
+		&valNameIPCEnaabled,
+		&context->IPC.IsEnabled
+	)))
+	{
+		TraceError(
+			TRACE_IPC,
+			"WdfRegistryQueryULong failed with status %!STATUS!",
+			status
+		);
+		goto exitFailure;
+	}
+
+	//
+	// Feature disabled in registry
+	// 
+	if (!context->IPC.IsEnabled)
+	{
+		TraceInformation(
+			TRACE_IPC,
+			"IPC feature disabled, aborting initialization"
+		);
+		status = STATUS_DEVICE_FEATURE_NOT_SUPPORTED;
+		goto exitFailure;
+	}
+
+	SYSTEM_INFO sysInfo;
+    GetSystemInfo(&sysInfo);
+    DWORD pageSize = sysInfo.dwAllocationGranularity;
+
+	DWORD cmdRegionSize = pageSize;
+	DWORD hidRegionSize = pageSize;
+	DWORD totalRegionSize = cmdRegionSize + hidRegionSize;
+
+	TraceVerbose(
+		TRACE_IPC,
+		"pageSize = %d, cmdRegionSize = %d, hidRegionSize = %d, totalRegionSize = %d",
+		pageSize, cmdRegionSize, hidRegionSize, totalRegionSize
+	);	
 
 	SECURITY_DESCRIPTOR sd = { 0 };
 
@@ -85,7 +134,6 @@ NTSTATUS InitIPC(void)
 		goto exitFailure;
 	}
 
-	// Create a named event for signaling
 	hReadEvent = CreateEventA(&sa, FALSE, FALSE, DSHM_IPC_READ_EVENT_NAME);
 	if (hReadEvent == NULL)
 	{
@@ -216,11 +264,17 @@ NTSTATUS InitIPC(void)
 
 	context->IPC.DispatchThread = hThread;
 
+	if (hKeyParameters)
+		WdfRegistryClose(hKeyParameters);
+
 	FuncExitNoReturn(TRACE_IPC);
 
 	return STATUS_SUCCESS;
 
 exitFailure:
+	if (hKeyParameters)
+		WdfRegistryClose(hKeyParameters);
+
 	if (pCmdBuf)
 		UnmapViewOfFile(pCmdBuf);
 
@@ -245,13 +299,16 @@ exitFailure:
 	if (hThreadTermination)
 		CloseHandle(hThreadTermination);
 
-	const NTSTATUS status = NTSTATUS_FROM_WIN32(GetLastError());
+	status = NT_SUCCESS(status) ? status : NTSTATUS_FROM_WIN32(GetLastError());
 
 	FuncExit(TRACE_IPC, "status=%!STATUS!", status);
 
 	return status;
 }
 
+//
+// Frees IPC resources
+// 
 void DestroyIPC(void)
 {
 	FuncEntry(TRACE_IPC);
@@ -291,6 +348,9 @@ void DestroyIPC(void)
 	FuncExitNoReturn(TRACE_IPC);
 }
 
+//
+// Processes incoming IPC commands
+// 
 static NTSTATUS DSHM_IPC_DispatchIncomingCommandMessage(
 	_In_ const PDSHM_DRIVER_CONTEXT Context,
 	_In_ const PDSHM_IPC_MSG_HEADER Message
@@ -445,6 +505,8 @@ static DWORD WINAPI DSHM_IPC_ClientDispatchProc(
 					"DSHM_IPC_DispatchIncomingCommandMessage reported non-success status %!STATUS!",
 					status
 				);
+
+				// TODO: can we do anything else with a failure status?
 			}
 		}
 

@@ -207,7 +207,6 @@
       <AdditionalDependencies>%(AdditionalDependencies);OneCoreUAP.lib;BluetoothApis.lib</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries);kernel32.lib;user32.lib</IgnoreSpecificDefaultLibraries>
     </Link>
-    <Inf />
     <Inf>
       <TimeStamp>1.0.0.0</TimeStamp>
     </Inf>

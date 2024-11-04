@@ -55,6 +55,11 @@ typedef struct _DSHM_DRIVER_CONTEXT
 	struct
 	{
 		//
+		// Whether the IPC module is enabled or not
+		// 
+		ULONG IsEnabled;
+
+		//
 		// Handle of the memory-mapped file
 		// 
 		HANDLE MapFile;
@@ -190,5 +195,6 @@ EVT_WDF_DRIVER_DEVICE_ADD dshidminiEvtDeviceAdd;
 EVT_WDF_OBJECT_CONTEXT_CLEANUP dshidminiEvtDriverContextCleanup;
 
 VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength);
+void GenerateRandomEventName(PUCHAR buffer, size_t length);
 
 EXTERN_C_END

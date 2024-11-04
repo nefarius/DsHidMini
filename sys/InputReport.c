@@ -19,24 +19,29 @@ DSHM_ParseInputReport(
 
 	const WDFDRIVER driver = WdfGetDriver();
 	const PDSHM_DRIVER_CONTEXT pDrvCtx = DriverGetContext(driver);
-	/*
-	 * Offset calculation puts each devices' input report copy 
-     * in their respective position in the memory region, like:
-     *   1st device: ((4 + 49) * (1 - 1)) = 0
-     *   2nd device: ((4 + 49) * (2 - 1)) = 53
-     *   3rd device: ((4 + 49) * (3 - 1)) = 106
-     * and so on
-	 */
-	const size_t offset = (sizeof(IPC_HID_INPUT_REPORT_MESSAGE) * (DeviceContext->SlotIndex - 1));
-	const PIPC_HID_INPUT_REPORT_MESSAGE pHIDBuffer = (PIPC_HID_INPUT_REPORT_MESSAGE)(pDrvCtx->IPC.SharedRegions.HID.Buffer + offset);
 
-	// prefix each report with associated device index
-	pHIDBuffer->SlotIndex = DeviceContext->SlotIndex;
-	// skip index and copy unmodified raw report to the section
-	RtlCopyMemory(&pHIDBuffer->InputReport, Report, sizeof(DS3_RAW_INPUT_REPORT));
+	if (pDrvCtx->IPC.IsEnabled)
+	{
+		/*
+		 * Offset calculation puts each devices' input report copy 
+	     * in their respective position in the memory region, like:
+	     *   1st device: ((4 + 49) * (1 - 1)) = 0
+	     *   2nd device: ((4 + 49) * (2 - 1)) = 53
+	     *   3rd device: ((4 + 49) * (3 - 1)) = 106
+	     * and so on
+		 */
+		const size_t offset = (sizeof(IPC_HID_INPUT_REPORT_MESSAGE) * (DeviceContext->SlotIndex - 1));
+		const PIPC_HID_INPUT_REPORT_MESSAGE pHIDBuffer = (PIPC_HID_INPUT_REPORT_MESSAGE)(pDrvCtx->IPC.SharedRegions.HID.Buffer +
+			offset);
 
-	// signal any reader that there is new data available
-	SetEvent(DeviceContext->IPC.InputReportWaitHandle);
+		// prefix each report with associated device index
+		pHIDBuffer->SlotIndex = DeviceContext->SlotIndex;
+		// skip index and copy unmodified raw report to the section
+		RtlCopyMemory(&pHIDBuffer->InputReport, Report, sizeof(DS3_RAW_INPUT_REPORT));
+
+		// signal any reader that there is new data available
+		SetEvent(DeviceContext->IPC.InputReportWaitHandle);
+	}
 
 #pragma endregion
 
