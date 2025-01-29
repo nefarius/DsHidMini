@@ -155,7 +155,7 @@ Take a look at the [project page](https://docs.nefarius.at/projects/DsHidMini/) 
 
 ## Installation
 
-Pre-built binaries and instructions are provided [on the releases page](../../releases).
+Pre-built binaries and instructions are provided [on the releases page](../../releases/latest).
 
 ## Support
 
