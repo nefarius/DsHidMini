@@ -53,7 +53,7 @@
 
         <StackPanel Grid.Row="1" Margin="9">
             <TextBlock TextWrapping="WrapWithOverflow">
-                The next steps are outlined in the online documentation. If the website did not for you, you can try again by clicking the link below:
+                The next steps are outlined in the online documentation. If the website did not open for you, you can try again by clicking the link below:
             </TextBlock>
 
             <TextBlock Margin="0, 10, 0, 10">
