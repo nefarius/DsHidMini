@@ -57,7 +57,7 @@
             </TextBlock>
 
             <TextBlock Margin="0, 10, 0, 10">
-                <Hyperlink NavigateUri="http://www.google.com" RequestNavigate="Hyperlink_OnRequestNavigate">
+                <Hyperlink NavigateUri="https://docs.nefarius.at/projects/DsHidMini/Experimental/Version-3-Beta/" RequestNavigate="Hyperlink_OnRequestNavigate">
                     Open Beta Article
                 </Hyperlink>
             </TextBlock>
