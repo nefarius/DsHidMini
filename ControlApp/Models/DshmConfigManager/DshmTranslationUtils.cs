@@ -260,7 +260,7 @@ public class DshmManagerToDriverConversion
         dshmForcedSMSettings.LightThreshold = (byte)x_AltRumbleAdjusts.ForcedRightMotorLightThreshold;
 
         // Left rumble (Heavy) threshold
-        dshmForcedSMSettings.IsHeavyThresholdEnabled = x_AltRumbleAdjusts.IsForcedRightMotorHeavyThreasholdEnabled;
+        dshmForcedSMSettings.IsHeavyThresholdEnabled = x_AltRumbleAdjusts.IsForcedRightMotorHeavyThresholdEnabled;
         dshmForcedSMSettings.HeavyThreshold = (byte)x_AltRumbleAdjusts.ForcedRightMotorHeavyThreshold;
 
         ////////////////////////////////////////////////////////////////////////////////

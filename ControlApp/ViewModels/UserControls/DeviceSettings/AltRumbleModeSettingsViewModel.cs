@@ -50,10 +50,10 @@ public class AltRumbleModeSettingsViewModel : DeviceSettingsViewModel
 
     public bool IsForcedRightMotorHeavyThresholdEnabled
     {
-        get => _tempBackingData.IsForcedRightMotorHeavyThreasholdEnabled;
+        get => _tempBackingData.IsForcedRightMotorHeavyThresholdEnabled;
         set
         {
-            _tempBackingData.IsForcedRightMotorHeavyThreasholdEnabled = value;
+            _tempBackingData.IsForcedRightMotorHeavyThresholdEnabled = value;
             OnPropertyChanged();
         }
     }

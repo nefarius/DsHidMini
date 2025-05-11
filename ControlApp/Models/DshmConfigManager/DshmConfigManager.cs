@@ -240,13 +240,13 @@ public class DshmConfigManager
     /// <returns>The device data of the DsHidMini device</returns>
     public DeviceData GetDeviceData(string deviceMac)
     {
-        Log.Logger.Information($"Getting data for device {deviceMac}.");
+        Log.Logger.Information("Getting data for device {DeviceMac}.", deviceMac);
         foreach (DeviceData dev in dshmManagerUserData.Devices.Where(dev => dev.DeviceMac == deviceMac))
         {
             return dev;
         }
 
-        Log.Logger.Information($"Data for Device {deviceMac} does not exist. Creating new.");
+        Log.Logger.Information("Data for Device {DeviceMac} does not exist. Creating new.", deviceMac);
         DeviceData newDevice = new(deviceMac) { DeviceMac = deviceMac };
         dshmManagerUserData.Devices.Add(newDevice);
         return newDevice;

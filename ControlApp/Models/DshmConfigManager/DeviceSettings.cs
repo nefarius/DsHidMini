@@ -335,7 +335,7 @@ public class AltRumbleModeSettings : DeviceSubSettings
 {
     public int ForcedRightMotorHeavyThreshold { get; set; } = 230;
     public int ForcedRightMotorLightThreshold { get; set; } = 230;
-    public bool IsForcedRightMotorHeavyThreasholdEnabled { get; set; }
+    public bool IsForcedRightMotorHeavyThresholdEnabled { get; set; }
     public bool IsForcedRightMotorLightThresholdEnabled { get; set; }
 
     public int RightRumbleConversionUpperRange { get; set; } = 140;
@@ -355,7 +355,7 @@ public class AltRumbleModeSettings : DeviceSubSettings
         destiny.IsForcedRightMotorLightThresholdEnabled = source.IsForcedRightMotorLightThresholdEnabled;
         destiny.ForcedRightMotorLightThreshold = source.ForcedRightMotorLightThreshold;
         // Left rumble (Heavy) threshold
-        destiny.IsForcedRightMotorHeavyThreasholdEnabled = source.IsForcedRightMotorHeavyThreasholdEnabled;
+        destiny.IsForcedRightMotorHeavyThresholdEnabled = source.IsForcedRightMotorHeavyThresholdEnabled;
         destiny.ForcedRightMotorHeavyThreshold = source.ForcedRightMotorHeavyThreshold;
     }
 }
