@@ -20,7 +20,7 @@ public partial class ProfilesViewModel : ObservableObject, INavigationAware
     private bool _anyProfileSelected;
 
     [ObservableProperty]
-    public List<ProfileViewModel> _profilesViewModels;
+    private List<ProfileViewModel> _profilesViewModels;
 
     [ObservableProperty]
     private ProfileViewModel? _selectedProfileVM;
@@ -63,7 +63,7 @@ public partial class ProfilesViewModel : ObservableObject, INavigationAware
         return Task.CompletedTask;
     }
 
-    public void UpdateProfileList()
+    private void UpdateProfileList()
     {
         Log.Logger.Debug("Rebuilding profiles' ViewModels.");
         List<ProfileViewModel> newList = new();
@@ -76,7 +76,7 @@ public partial class ProfilesViewModel : ObservableObject, INavigationAware
         UpdateGlobalProfileCheck();
     }
 
-    public void UpdateGlobalProfileCheck()
+    private void UpdateGlobalProfileCheck()
     {
         Log.Logger.Debug("Updating Profiles' ViewModels 'Global' check");
         foreach (ProfileViewModel profVM in ProfilesViewModels)
@@ -96,7 +96,8 @@ public partial class ProfilesViewModel : ObservableObject, INavigationAware
         if (obj != null)
         {
             Log.Logger.Information(
-                $"Setting profile '{obj.ProfileData.ProfileName}' ({obj.ProfileData.ProfileGuid}) as Global.");
+                "Setting profile '{ProfileDataProfileName}' ({ProfileDataProfileGuid}) as Global.", obj.ProfileData
+                    .ProfileName, obj.ProfileData.ProfileGuid);
             _dshmConfigManager.GlobalProfile = obj.ProfileData;
             _appSnackbarMessagesService.ShowGlobalProfileUpdatedMessage();
             _dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile();
@@ -121,7 +122,9 @@ public partial class ProfilesViewModel : ObservableObject, INavigationAware
             return;
         }
 
-        Log.Logger.Information($"Deleting profile '{obj.ProfileData.ProfileName}' ({obj.ProfileData.ProfileGuid})");
+        Log.Logger.Information(
+            "Deleting profile '{ProfileDataProfileName}' ({ProfileDataProfileGuid})", obj.ProfileData.ProfileName, obj
+                .ProfileData.ProfileGuid);
         if (obj.ProfileData == ProfileData.DefaultProfile)
         {
             Log.Logger.Information("Profile to be deleted is ControlApp's Default Profile. Delete action canceled.");

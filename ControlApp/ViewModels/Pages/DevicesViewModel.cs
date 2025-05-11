@@ -77,23 +77,22 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
         return Task.CompletedTask;
     }
 
-
     partial void OnSelectedDeviceChanged(DeviceViewModel? value)
     {
         AnyDeviceSelected = value != null;
     }
 
-    public void OnConnectedDevicesListUpdated(object? obj, EventArgs? eventArgs)
+    private void OnConnectedDevicesListUpdated(object? obj, EventArgs? eventArgs)
     {
         RefreshDevicesList();
     }
 
-    public void OnDshmConfigUpdated(object? obj, EventArgs? eventArgs)
+    private void OnDshmConfigUpdated(object? obj, EventArgs? eventArgs)
     {
         ReconnectDevicesWithMismatchedHidMode();
     }
 
-    public void ReconnectAllDevices()
+    private void ReconnectAllDevices()
     {
         bool oneOrMoreFails = false;
         foreach (DeviceViewModel devVM in Devices)
@@ -156,8 +155,10 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
             new SimpleContentDialogCreateOptions
             {
                 Title = "One or more devices pending reconnection",
-                Content = @"The HID mode setting of one or more connected device has changed.
-Reconnect the pending devices to make this change effective.",
+                Content = """
+                          The HID mode setting of one or more connected device has changed.
+                          Reconnect the pending devices to make this change effective.
+                          """,
                 //PrimaryButtonText = "Ok",
                 //SecondaryButtonText = "Don't Save",
                 PrimaryButtonText = "Reconnect them now",
