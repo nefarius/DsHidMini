@@ -490,7 +490,7 @@ public partial class DeviceViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async void PairingHelpButtonPressed()
+    private async Task PairingHelpButtonPressed()
     {
         ContentDialogResult result = await ShowPairingHelpInfoDialog();
         //if(result == ContentDialogResult.Primary)
