@@ -51,20 +51,21 @@ public class DshmDevMan
         while (Devcon.FindByInterfaceGuid(DsHidMiniDriver.DeviceInterfaceGuid, out string? path, out string? instanceId,
                    instance++))
         {
-            Log.Logger.Debug($"DsHidMini device detected and added to devices list. InstanceID: {instanceId}");
+            Log.Logger.Debug(
+                "DsHidMini device detected and added to devices list. InstanceID: {InstanceId}", instanceId);
             Devices.Add(PnPDevice.GetDeviceByInstanceId(instanceId));
         }
 
-        Log.Logger.Debug($"DsHidMini devices list rebuilt. {Devices.Count} connected devices");
-        ConnectedDeviceListUpdated?.Invoke(this, new EventArgs());
+        Log.Logger.Debug("DsHidMini devices list rebuilt. {DevicesCount} connected devices", Devices.Count);
+        ConnectedDeviceListUpdated?.Invoke(this, EventArgs.Empty);
     }
 
     public static bool TryReconnectDevice(PnPDevice device)
     {
-        Log.Logger.Information($"Attempting on reconnecting device of instance {device.InstanceId}");
+        Log.Logger.Information("Attempting on reconnecting device of instance {DeviceInstanceId}", device.InstanceId);
         string? enumerator = device.GetProperty<string>(DevicePropertyKey.Device_EnumeratorName);
         bool isWireless = !enumerator!.Equals("USB", StringComparison.InvariantCultureIgnoreCase);
-        Log.Logger.Debug($"Is Device connected wireless: {isWireless}");
+        Log.Logger.Debug("Is Device connected wireless: {IsWireless}", isWireless);
 
         if (isWireless)
         {
@@ -72,7 +73,7 @@ public class DshmDevMan
             {
                 HostRadio hostRadio = new();
                 string deviceAddress = device.GetProperty<string>(DsHidMiniDriver.DeviceAddressProperty)!.ToUpper();
-                Log.Logger.Debug($"Instructing BT host on disconnecting device of MAC {deviceAddress}");
+                Log.Logger.Debug("Instructing BT host on disconnecting device of MAC {DeviceAddress}", deviceAddress);
                 hostRadio.DisconnectRemoteDevice(deviceAddress);
                 return true;
             }

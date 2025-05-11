@@ -22,21 +22,17 @@ public static class JsonApplicationConfiguration
     /// <summary>Loads the application configuration. </summary>
     /// <typeparam name="T">The type of the application configuration. </typeparam>
     /// <param name="fileNameWithoutExtension">The configuration file name without extension. </param>
-    /// <param name="alwaysCreateNewSchemaFile">Defines if the schema file should always be generated and overwritten. </param>
     /// <param name="storeInAppData">Defines if the configuration file should be loaded from the user's AppData directory. </param>
     /// <returns>The configuration object. </returns>
     /// <exception cref="IOException">An I/O error occurred while opening the file. </exception>
-    public static T Load<T>(string fileNameWithoutExtension, bool alwaysCreateNewSchemaFile, bool storeInAppData)
+    public static T? Load<T>(string fileNameWithoutExtension, bool storeInAppData)
         where T : new()
     {
         string configPath = CreateFilePath(fileNameWithoutExtension, ConfigExtension, storeInAppData);
 
-        if (!File.Exists(configPath))
-        {
-            return CreateDefaultConfigurationFile<T>(fileNameWithoutExtension, storeInAppData);
-        }
-
-        return JsonConvert.DeserializeObject<T>(File.ReadAllText(configPath, Encoding.UTF8));
+        return !File.Exists(configPath)
+            ? CreateDefaultConfigurationFile<T>(fileNameWithoutExtension, storeInAppData)
+            : JsonConvert.DeserializeObject<T>(File.ReadAllText(configPath, Encoding.UTF8));
     }
 
     /// <summary>Saves the configuration. </summary>
