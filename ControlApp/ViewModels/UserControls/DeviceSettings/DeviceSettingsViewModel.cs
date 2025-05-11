@@ -107,46 +107,32 @@ public abstract partial class DeviceSettingsViewModel : ObservableObject
 
     public void SaveSettingsToBackingDataContainer(Models.DshmConfigManager.DeviceSettings dataContainerSource)
     {
-        if (_mySubSetting is HidModeSettings)
+        switch (_mySubSetting)
         {
-            HidModeSettings.CopySettings(dataContainerSource.HidMode, (HidModeSettings)_mySubSetting);
-        }
-
-        if (_mySubSetting is LedsSettings)
-        {
-            LedsSettings.CopySettings(dataContainerSource.LEDs, (LedsSettings)_mySubSetting);
-        }
-
-        if (_mySubSetting is WirelessSettings)
-        {
-            WirelessSettings.CopySettings(dataContainerSource.Wireless, (WirelessSettings)_mySubSetting);
-        }
-
-        if (_mySubSetting is SticksSettings)
-        {
-            SticksSettings.CopySettings(dataContainerSource.Sticks, (SticksSettings)_mySubSetting);
-        }
-
-        if (_mySubSetting is GeneralRumbleSettings)
-        {
-            GeneralRumbleSettings.CopySettings(dataContainerSource.GeneralRumble, (GeneralRumbleSettings)_mySubSetting);
-        }
-
-        if (_mySubSetting is OutputReportSettings)
-        {
-            OutputReportSettings.CopySettings(dataContainerSource.OutputReport, (OutputReportSettings)_mySubSetting);
-        }
-
-        if (_mySubSetting is LeftMotorRescalingSettings)
-        {
-            LeftMotorRescalingSettings.CopySettings(dataContainerSource.LeftMotorRescaling,
-                (LeftMotorRescalingSettings)_mySubSetting);
-        }
-
-        if (_mySubSetting is AltRumbleModeSettings)
-        {
-            AltRumbleModeSettings.CopySettings(dataContainerSource.AltRumbleAdjusts,
-                (AltRumbleModeSettings)_mySubSetting);
+            case HidModeSettings setting:
+                HidModeSettings.CopySettings(dataContainerSource.HidMode, setting);
+                break;
+            case LedsSettings setting:
+                LedsSettings.CopySettings(dataContainerSource.LEDs, setting);
+                break;
+            case WirelessSettings setting:
+                WirelessSettings.CopySettings(dataContainerSource.Wireless, setting);
+                break;
+            case SticksSettings setting:
+                SticksSettings.CopySettings(dataContainerSource.Sticks, setting);
+                break;
+            case GeneralRumbleSettings setting:
+                GeneralRumbleSettings.CopySettings(dataContainerSource.GeneralRumble, setting);
+                break;
+            case OutputReportSettings setting:
+                OutputReportSettings.CopySettings(dataContainerSource.OutputReport, setting);
+                break;
+            case LeftMotorRescalingSettings setting:
+                LeftMotorRescalingSettings.CopySettings(dataContainerSource.LeftMotorRescaling, setting);
+                break;
+            case AltRumbleModeSettings setting:
+                AltRumbleModeSettings.CopySettings(dataContainerSource.AltRumbleAdjusts, setting);
+                break;
         }
     }
 }

@@ -83,7 +83,7 @@ public partial class SettingsEditorViewModel : ObservableObject
         }
     }
 
-    private void ModeSettingsChanged(object sender, PropertyChangedEventArgs e)
+    private void ModeSettingsChanged(object? sender, PropertyChangedEventArgs e)
     {
         switch (e.PropertyName)
         {
