@@ -412,7 +412,7 @@ public partial class DeviceViewModel : ObservableObject
     [RelayCommand]
     private void ApplyChanges()
     {
-        Log.Logger.Information($"Saving and applying changes made to Device '{DeviceAddress}'");
+        Log.Logger.Information("Saving and applying changes made to Device '{DeviceAddress}'", DeviceAddress);
         _deviceUserData.BluetoothPairingMode = (BluetoothPairingMode)PairingMode;
 
         string formattedCustomMacAddress = Regex.Replace(CustomPairingAddress, @"[^a-fA-F0-9]", "").ToUpper();
