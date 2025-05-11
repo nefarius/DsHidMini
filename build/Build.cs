@@ -59,7 +59,9 @@ class Build : NukeBuild
                 .SetConfiguration(Configuration)
                 .SetTargetPlatform(platform)
                 .SetMaxCpuCount(Environment.ProcessorCount)
-                .SetNodeReuse(IsLocalBuild));
+                .SetNodeReuse(IsLocalBuild)
+                .SetVerbosity(MSBuildVerbosity.Minimal)
+            );
         });
 
     Target Compile => _ => _
@@ -75,6 +77,7 @@ class Build : NukeBuild
                 .SetConfiguration(Configuration)
                 .SetMaxCpuCount(Environment.ProcessorCount)
                 .SetNodeReuse(IsLocalBuild)
+                .SetVerbosity(MSBuildVerbosity.Minimal)
             );
         });
 
