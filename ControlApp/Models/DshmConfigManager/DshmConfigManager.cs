@@ -35,23 +35,26 @@ public class DshmConfigManager
     {
         get
         {
-            ProfileData gp = GetProfile(dshmManagerUserData.GlobalProfileGuid);
-            if (gp == null)
+            ProfileData? gp = GetProfile(dshmManagerUserData.GlobalProfileGuid);
+
+            if (gp != null)
             {
-                Log.Logger.Debug("Global profile set to non-existing profile");
-                Log.Logger.Debug("Reverting Global profile to default profile.");
-                dshmManagerUserData.GlobalProfileGuid = ProfileData.DefaultGuid;
-                GlobalProfileUpdated?.Invoke(this, new EventArgs());
-                gp = ProfileData.DefaultProfile;
+                return gp;
             }
+
+            Log.Logger.Debug("Global profile set to non-existing profile");
+            Log.Logger.Debug("Reverting Global profile to default profile.");
+            dshmManagerUserData.GlobalProfileGuid = ProfileData.DefaultGuid;
+            GlobalProfileUpdated?.Invoke(this, EventArgs.Empty);
+            gp = ProfileData.DefaultProfile;
 
             return gp;
         }
         set
         {
-            Log.Logger.Debug($"Setting profile {value.ProfileName} as Global Profile");
+            Log.Logger.Debug("Setting profile {ValueProfileName} as Global Profile", value.ProfileName);
             dshmManagerUserData.GlobalProfileGuid = value.ProfileGuid;
-            GlobalProfileUpdated?.Invoke(this, new EventArgs());
+            GlobalProfileUpdated?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -83,7 +86,8 @@ public class DshmConfigManager
                      GetProfile(device.GuidOfProfileToUse) == null))
         {
             Log.Logger.Information(
-                $"Device {device.DeviceMac} linked to non-existing profile. Reverting link to default profile.");
+                "Device {DeviceDeviceMac} linked to non-existing profile. Reverting link to default profile.", device
+                    .DeviceMac);
             device.GuidOfProfileToUse = ProfileData.DefaultGuid;
             if (device.SettingsMode != SettingsModes.Profile)
             {
@@ -91,7 +95,8 @@ public class DshmConfigManager
             }
 
             Log.Logger.Information(
-                $"Device {device.DeviceMac} was in Profile Settings Mode while using a non-existing profile. Setting device back to Global Settings. ");
+                "Device {DeviceDeviceMac} was in Profile Settings Mode while using a non-existing profile. Setting device back to Global Settings. "
+                , device.DeviceMac);
             device.SettingsMode = SettingsModes.Global;
         }
     }
@@ -107,7 +112,7 @@ public class DshmConfigManager
 
         if (profile == null)
         {
-            Log.Logger.Debug($"No profile with GUID {profileGuid} found.");
+            Log.Logger.Debug("No profile with GUID {ProfileGuid} found.", profileGuid);
         }
 
         return profile;
@@ -141,7 +146,7 @@ public class DshmConfigManager
                 DeviceSettings =
                 {
                     // Disable BT auto-pairing if in Disabled BT Pairing Mode
-                    DisableAutoPairing = dev.BluetoothPairingMode == BluetoothPairingMode.Disabled ? true : false,
+                    DisableAutoPairing = dev.BluetoothPairingMode == BluetoothPairingMode.Disabled,
                     DevicePairingMode =
                         DshmManagerToDriverConversion.PairingModeManagerToDriver[dev.BluetoothPairingMode],
                     PairOnHotReload = dev.PairOnHotReload,
@@ -195,7 +200,7 @@ public class DshmConfigManager
         ProfileData newProfile = new() { ProfileName = profileName };
         //newProfile.DiskFileName = profileName + ".json";
         dshmManagerUserData.Profiles.Add(newProfile);
-        Log.Logger.Information($"Profile '{profileName}' created on DsHidMini User Data.");
+        Log.Logger.Information("Profile '{ProfileName}' created on DsHidMini User Data.", profileName);
         return newProfile;
     }
 
@@ -207,7 +212,7 @@ public class DshmConfigManager
     /// <param name="profile">The profile to be deleted</param>
     public void DeleteProfile(ProfileData profile)
     {
-        Log.Logger.Information($"Deleting profile '{profile.ProfileName}'");
+        Log.Logger.Information("Deleting profile '{ProfileProfileName}'", profile.ProfileName);
         if (profile == ProfileData.DefaultProfile) // Never remove Default profile from the list
         {
             Log.Logger.Information("Default Profile can't be deleted.");
