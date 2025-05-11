@@ -79,7 +79,8 @@ public class DshmConfigManager
     /// </summary>
     private void FixDevicesWithBlankProfiles()
     {
-        foreach (var device in dshmManagerUserData.Devices.Where(device => GetProfile(device.GuidOfProfileToUse) == null))
+        foreach (DeviceData device in dshmManagerUserData.Devices.Where(device =>
+                     GetProfile(device.GuidOfProfileToUse) == null))
         {
             Log.Logger.Information(
                 $"Device {device.DeviceMac} linked to non-existing profile. Reverting link to default profile.");
@@ -128,7 +129,7 @@ public class DshmConfigManager
     {
         Log.Information("Updating DsHidMini configuration based on DsHidMini User Data");
         Log.Debug("Building DsHidMini configuration object based on DsHidMini User Data");
-        DshmConfiguration dshmConfiguration = new DshmConfiguration();
+        DshmConfiguration dshmConfiguration = new();
         DshmManagerToDriverConversion.ConvertDeviceSettingsToDriverFormat(GlobalProfile.Settings,
             dshmConfiguration.Global);
 
@@ -179,7 +180,7 @@ public class DshmConfigManager
 
     public List<ProfileData> GetListOfProfilesWithDefault()
     {
-        List<ProfileData> userProfilesPlusDefault = new List<ProfileData>(dshmManagerUserData.Profiles);
+        List<ProfileData> userProfilesPlusDefault = new(dshmManagerUserData.Profiles);
         userProfilesPlusDefault.Insert(0, ProfileData.DefaultProfile);
         return userProfilesPlusDefault;
     }

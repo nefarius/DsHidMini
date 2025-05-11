@@ -20,36 +20,37 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Content Include="wpfui-icon.ico" />
+        <Content Include="wpfui-icon.ico"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.4" />
+        <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.4"/>
         <PackageReference Include="Microsoft.Windows.CsWin32" Version="0.3.196">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Nefarius.Utilities.Bluetooth" Version="1.8.0" />
-        <PackageReference Include="Nefarius.Utilities.DeviceManagement" Version="5.1.0" />
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-        <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
-        <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.4" />
-        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-        <PackageReference Include="WPF-UI" Version="3.0.4" />
+        <PackageReference Include="Nefarius.Utilities.Bluetooth" Version="1.8.0"/>
+        <PackageReference Include="Nefarius.Utilities.DeviceManagement" Version="5.1.0"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
+        <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0"/>
+        <PackageReference Include="Serilog.Sinks.File" Version="7.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.4"/>
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0"/>
+        <PackageReference Include="WPF-UI" Version="4.0.2"/>
+        <PackageReference Include="WPF-UI.DependencyInjection" Version="4.0.2"/>
     </ItemGroup>
 
     <ItemGroup>
-        <None Remove="Assets\wpfui-icon-256.png" />
-        <None Remove="Assets\wpfui-icon-1024.png" />
-        <None Remove="Resources\AltRumbleMode.png" />
-        <None Remove="Resources\NormalRumbleMode.png" />
+        <None Remove="Assets\wpfui-icon-256.png"/>
+        <None Remove="Assets\wpfui-icon-1024.png"/>
+        <None Remove="Resources\AltRumbleMode.png"/>
+        <None Remove="Resources\NormalRumbleMode.png"/>
     </ItemGroup>
     <ItemGroup>
-        <Resource Include="Assets\wpfui-icon-256.png" />
-        <Resource Include="Assets\wpfui-icon-1024.png" />
-        <Resource Include="Resources\AltRumbleMode.png" />
-        <Resource Include="Resources\NormalRumbleMode.png" />
+        <Resource Include="Assets\wpfui-icon-256.png"/>
+        <Resource Include="Assets\wpfui-icon-1024.png"/>
+        <Resource Include="Resources\AltRumbleMode.png"/>
+        <Resource Include="Resources\NormalRumbleMode.png"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -74,7 +75,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\SDK\Nefarius.DsHidMini.IPC\Nefarius.DsHidMini.IPC.csproj" />
+        <ProjectReference Include="..\SDK\Nefarius.DsHidMini.IPC\Nefarius.DsHidMini.IPC.csproj"/>
     </ItemGroup>
 
 </Project>

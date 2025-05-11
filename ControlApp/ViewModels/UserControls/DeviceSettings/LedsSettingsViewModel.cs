@@ -7,6 +7,8 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls.DeviceSettings;
 
 public partial class LedsSettingsViewModel : DeviceSettingsViewModel
 {
+    private readonly LedsSettings _tempBackingData = new();
+
     [ObservableProperty]
     private int _currentLEDCustomsIndex;
 
@@ -15,8 +17,6 @@ public partial class LedsSettingsViewModel : DeviceSettingsViewModel
 
     [ObservableProperty]
     private LED_VM? _selectedLED_VM;
-
-    private readonly LedsSettings _tempBackingData = new();
 
     public LedsSettingsViewModel()
     {

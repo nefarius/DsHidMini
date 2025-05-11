@@ -3,9 +3,8 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-namespace Nefarius.DsHidMini.ControlApp.Resources
+namespace Nefarius.DsHidMini.ControlApp.Resources;
+
+public class Translations
 {
-    public partial class Translations
-    {
-    }
 }

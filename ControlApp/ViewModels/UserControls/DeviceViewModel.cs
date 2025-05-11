@@ -20,6 +20,8 @@ public partial class DeviceViewModel : ObservableObject
     private readonly Timer _batteryQuery;
     private readonly IContentDialogService _contentDialogService;
 
+    private readonly DeviceData _deviceUserData;
+
     // ------------------------------------------------------ FIELDS
 
     private readonly DshmConfigManager _dshmConfigManager;
@@ -80,8 +82,6 @@ public partial class DeviceViewModel : ObservableObject
 
     [ObservableProperty]
     private ProfileData? _selectedProfile;
-
-    private readonly DeviceData _deviceUserData;
 
 
     // ------------------------------------------------------ CONSTRUCTOR
@@ -500,13 +500,12 @@ Wait 2 or 5 seconds before hitting ok to check for results.",
         //{
         //    // to-do: open bluetooth pairing troubleshooting page
         //}
-
     }
 
     private async Task<ContentDialogResult> ShowPairingHelpInfoDialog()
     {
-        var result = await _contentDialogService.ShowSimpleDialogAsync(
-            new SimpleContentDialogCreateOptions()
+        ContentDialogResult result = await _contentDialogService.ShowSimpleDialogAsync(
+            new SimpleContentDialogCreateOptions
             {
                 Title = "Bluetooth pairing info",
                 Content = @"➤ Pairing is only possible when connected via USB.
@@ -519,7 +518,7 @@ Wait 2 or 5 seconds before hitting ok to check for results.",
 
 ➤ If in ""To this PC"" mode, the PC's bluetooth adapter must be enabled and turned ON for pairing to succeed.",
                 PrimaryButtonText = "I need more help!",
-                CloseButtonText = "Close",
+                CloseButtonText = "Close"
             }
         );
         return result;

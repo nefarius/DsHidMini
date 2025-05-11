@@ -46,7 +46,7 @@ public static class JsonApplicationConfiguration
     /// <exception cref="IOException">An I/O error occurred while opening the file. </exception>
     public static void Save<T>(string fileNameWithoutExtension, T configuration, bool storeInAppData) where T : new()
     {
-        JsonSerializerSettings settings = new JsonSerializerSettings();
+        JsonSerializerSettings settings = new();
         settings.Converters.Add(new StringEnumConverter());
 
         string configPath = CreateFilePath(fileNameWithoutExtension, ConfigExtension, storeInAppData);
@@ -76,7 +76,7 @@ public static class JsonApplicationConfiguration
     private static T CreateDefaultConfigurationFile<T>(string fileNameWithoutExtension, bool storeInAppData)
         where T : new()
     {
-        T? config = new T();
+        T? config = new();
         string configData = JsonConvert.SerializeObject(config, Formatting.Indented);
         string configPath = CreateFilePath(fileNameWithoutExtension, ConfigExtension, storeInAppData);
 
