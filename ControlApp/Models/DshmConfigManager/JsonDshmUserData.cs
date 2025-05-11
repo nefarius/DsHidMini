@@ -24,14 +24,15 @@ public static class JsonDshmUserData
     /// <summary>Loads the application configuration. </summary>
     /// <typeparam name="T">The type of the application configuration. </typeparam>
     /// <param name="fileNameWithoutExtension">The configuration file name without extension. </param>
-    /// <param name="alwaysCreateNewSchemaFile">Defines if the schema file should always be generated and overwritten. </param>
     /// <param name="userDataDir">Defines the directory the UserData file will be loaded from. </param>
     /// <returns>The configuration object. </returns>
     /// <exception cref="IOException">An I/O error occurred while opening the file. </exception>
-    public static T Load<T>(string fileNameWithoutExtension, bool alwaysCreateNewSchemaFile, string userDataDir)
+    public static T? Load<T>(string fileNameWithoutExtension, string userDataDir)
         where T : new()
     {
-        Log.Logger.Debug($"Loading DsHidMini User Data from {fileNameWithoutExtension} file in {userDataDir}.");
+        Log.Logger.Debug(
+            "Loading DsHidMini User Data from {FileNameWithoutExtension} file in {UserDataDir}.",
+            fileNameWithoutExtension, userDataDir);
         string configPath = CreateFilePath(fileNameWithoutExtension, ConfigExtension, userDataDir);
 
         if (!File.Exists(configPath))
@@ -52,7 +53,9 @@ public static class JsonDshmUserData
     /// <exception cref="IOException">An I/O error occurred while opening the file. </exception>
     public static void Save<T>(string fileNameWithoutExtension, T configuration, string userDataDir) where T : new()
     {
-        Log.Logger.Debug($"Saving DsHidMini User Data to {fileNameWithoutExtension} in dir {userDataDir}");
+        Log.Logger.Debug(
+            "Saving DsHidMini User Data to {FileNameWithoutExtension} in dir {UserDataDir}", fileNameWithoutExtension,
+            userDataDir);
         JsonSerializerSettings settings = new();
         settings.Converters.Add(new StringEnumConverter());
 

@@ -264,8 +264,7 @@ public class DshmConfigManager
             new(() => JsonDshmUserData
                 .Load<DshmConfigManagerUserData>(
                     GlobalUserDataFileName,
-                    true,
-                    GlobalUserDataDirectory));
+                    GlobalUserDataDirectory)!);
 
         /// <summary>
         ///     Singleton instance of app configuration.

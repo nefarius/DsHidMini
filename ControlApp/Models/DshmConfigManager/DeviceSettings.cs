@@ -10,26 +10,26 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 
 public class ButtonsCombo
 {
-    private int holdTime;
+    private int _holdTime;
 
     public ButtonsCombo() { }
 
     public ButtonsCombo(ButtonsCombo comboToCopy)
     {
-        copyCombo(comboToCopy);
+        CopyCombo(comboToCopy);
     }
 
     public bool IsEnabled { get; set; }
 
     public int HoldTime
     {
-        get => holdTime;
-        set => holdTime = value >= 0 ? value : 0;
+        get => _holdTime;
+        set => _holdTime = value >= 0 ? value : 0;
     }
 
     public Button[] ButtonCombo { get; init; } = new Button[3];
 
-    public void copyCombo(ButtonsCombo comboToCopy)
+    public void CopyCombo(ButtonsCombo comboToCopy)
     {
         IsEnabled = comboToCopy.IsEnabled;
         HoldTime = comboToCopy.HoldTime;
@@ -217,7 +217,7 @@ public class WirelessSettings : DeviceSubSettings
     {
         destiny.IsWirelessIdleDisconnectEnabled = source.IsWirelessIdleDisconnectEnabled;
         destiny.WirelessIdleDisconnectTime = source.WirelessIdleDisconnectTime;
-        destiny.QuickDisconnectCombo.copyCombo(source.QuickDisconnectCombo);
+        destiny.QuickDisconnectCombo.CopyCombo(source.QuickDisconnectCombo);
     }
 }
 
@@ -288,7 +288,7 @@ public class GeneralRumbleSettings : DeviceSubSettings
         destiny.IsLeftMotorDisabled = source.IsLeftMotorDisabled;
         destiny.IsRightMotorDisabled = source.IsRightMotorDisabled;
         destiny.AlwaysStartInNormalMode = source.IsAltModeToggleButtonComboEnabled;
-        destiny.AltModeToggleButtonCombo.copyCombo(source.AltModeToggleButtonCombo);
+        destiny.AltModeToggleButtonCombo.CopyCombo(source.AltModeToggleButtonCombo);
     }
 }
 
