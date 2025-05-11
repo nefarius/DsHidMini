@@ -1,0 +1,11 @@
+version: 2
+
+updates:
+  - package-ecosystem: "nuget"
+    directory: "/ControlApp"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "nuget"
+    directory: "/SDK"
+    schedule:
+      interval: "weekly"
