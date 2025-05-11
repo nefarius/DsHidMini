@@ -19,7 +19,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Nefarius.Utilities.DeviceManagement" Version="4.0.2" />
+    <PackageReference Include="Nefarius.Utilities.DeviceManagement" Version="5.1.0" />
   </ItemGroup>
 
 </Project>

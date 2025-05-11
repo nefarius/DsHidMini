@@ -19,5 +19,7 @@
     <Page.Resources>
     </Page.Resources>
 
-    <Grid />
+    <Grid>
+        <TextBlock>Uh oh, nobody has anything programmed for in here yet!</TextBlock>
+    </Grid>
 </Page>
