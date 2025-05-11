@@ -20,6 +20,6 @@
     </Page.Resources>
 
     <Grid>
-        <TextBlock>Uh oh, nobody has anything programmed for in here yet!</TextBlock>
+        <TextBlock Margin="20">Uh oh, nobody has anything programmed for in here yet!</TextBlock>
     </Grid>
 </Page>
