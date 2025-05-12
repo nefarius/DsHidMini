@@ -65,7 +65,7 @@ public static class DsHidMiniDriver
     public static DevicePropertyKey BluetoothLastConnectedTimeProperty =>
         CustomDeviceProperty.CreateCustomDeviceProperty(
             Guid.Parse("{0x2bd67d8b, 0x8beb, 0x48d5, {0x87, 0xe0, 0x6c, 0xda, 0x34, 0x28, 0x04, 0x0a}}"), 11,
-            typeof(DateTimeOffset?));
+            typeof(DateTimeOffset));
 
     #endregion
 }
