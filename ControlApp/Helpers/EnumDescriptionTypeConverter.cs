@@ -1,37 +1,37 @@
 ﻿using System.ComponentModel;
 using System.Globalization;
+using System.Reflection;
 
-namespace Nefarius.DsHidMini.ControlApp.Helpers
+namespace Nefarius.DsHidMini.ControlApp.Helpers;
+
+public class EnumDescriptionTypeConverter : EnumConverter
 {
-    public class EnumDescriptionTypeConverter : EnumConverter
+    public EnumDescriptionTypeConverter(Type type)
+        : base(type)
     {
-        public EnumDescriptionTypeConverter(Type type)
-            : base(type)
-        {
-        }
+    }
 
-        public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value,
-            Type destinationType)
+    public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value,
+        Type destinationType)
+    {
+        if (destinationType == typeof(string))
         {
-            if (destinationType == typeof(string))
+            if (value != null)
             {
-                if (value != null)
+                FieldInfo? fi = value.GetType().GetField(value.ToString());
+                if (fi != null)
                 {
-                    var fi = value.GetType().GetField(value.ToString());
-                    if (fi != null)
-                    {
-                        var attributes =
-                            (DescriptionAttribute[])fi.GetCustomAttributes(typeof(DescriptionAttribute), false);
-                        return attributes.Length > 0 && !string.IsNullOrEmpty(attributes[0].Description)
-                            ? attributes[0].Description
-                            : value.ToString();
-                    }
+                    DescriptionAttribute[] attributes =
+                        (DescriptionAttribute[])fi.GetCustomAttributes(typeof(DescriptionAttribute), false);
+                    return attributes.Length > 0 && !string.IsNullOrEmpty(attributes[0].Description)
+                        ? attributes[0].Description
+                        : value.ToString();
                 }
-
-                return string.Empty;
             }
 
-            return base.ConvertTo(context, culture, value, destinationType);
+            return string.Empty;
         }
+
+        return base.ConvertTo(context, culture, value, destinationType);
     }
 }

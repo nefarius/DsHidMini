@@ -10,6 +10,7 @@ using Nefarius.Utilities.Bluetooth;
 
 namespace Nefarius.DsHidMini.ControlApp.Models.Drivers;
 
+[SuppressMessage("ReSharper", "InconsistentNaming")]
 internal static class BthPS3FilterDriver
 {
     private const uint IOCTL_BTHPS3PSM_ENABLE_PSM_PATCHING = 0x002AAC04;

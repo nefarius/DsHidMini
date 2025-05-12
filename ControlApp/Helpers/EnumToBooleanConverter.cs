@@ -6,35 +6,36 @@
 using System.Globalization;
 using System.Windows.Data;
 
-namespace Nefarius.DsHidMini.ControlApp.Helpers
+using Wpf.Ui.Appearance;
+
+namespace Nefarius.DsHidMini.ControlApp.Helpers;
+
+internal class EnumToBooleanConverter : IValueConverter
 {
-    internal class EnumToBooleanConverter : IValueConverter
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        if (parameter is not string enumString)
         {
-            if (parameter is not String enumString)
-            {
-                throw new ArgumentException("ExceptionEnumToBooleanConverterParameterMustBeAnEnumName");
-            }
-
-            if (!Enum.IsDefined(typeof(Wpf.Ui.Appearance.ApplicationTheme), value))
-            {
-                throw new ArgumentException("ExceptionEnumToBooleanConverterValueMustBeAnEnum");
-            }
-
-            var enumValue = Enum.Parse(typeof(Wpf.Ui.Appearance.ApplicationTheme), enumString);
-
-            return enumValue.Equals(value);
+            throw new ArgumentException("ExceptionEnumToBooleanConverterParameterMustBeAnEnumName");
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        if (!Enum.IsDefined(typeof(ApplicationTheme), value))
         {
-            if (parameter is not String enumString)
-            {
-                throw new ArgumentException("ExceptionEnumToBooleanConverterParameterMustBeAnEnumName");
-            }
-
-            return Enum.Parse(typeof(Wpf.Ui.Appearance.ApplicationTheme), enumString);
+            throw new ArgumentException("ExceptionEnumToBooleanConverterValueMustBeAnEnum");
         }
+
+        object enumValue = Enum.Parse(typeof(ApplicationTheme), enumString);
+
+        return enumValue.Equals(value);
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (parameter is not string enumString)
+        {
+            throw new ArgumentException("ExceptionEnumToBooleanConverterParameterMustBeAnEnumName");
+        }
+
+        return Enum.Parse(typeof(ApplicationTheme), enumString);
     }
 }

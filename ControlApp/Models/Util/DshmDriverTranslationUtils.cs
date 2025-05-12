@@ -2,9 +2,9 @@
 
 namespace Nefarius.DsHidMini.ControlApp.Models.Util;
 
-internal class DshmDriverTranslationUtils
+internal static class DshmDriverTranslationUtils
 {
-    public static Dictionary<int, SettingsContext> HidDeviceMode = new()
+    public static readonly Dictionary<int, SettingsContext> HidDeviceMode = new()
     {
         { 0x01, SettingsContext.SDF },
         { 0x02, SettingsContext.GPJ },

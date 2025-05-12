@@ -359,7 +359,7 @@ public sealed partial class DsHidMiniInterop : IDisposable
     /// <summary>
     ///     Signal the driver that we are done modifying the shared region and are now awaiting an update from the driver.
     /// </summary>
-    /// <param name="timeoutMs">Timeout to wait for a reply. Defaults to 500ms.</param>
+    /// <param name="timeoutMs">Timeout to wait for a reply. Defaults to 500 ms.</param>
     /// <returns>TRUE if we got a reply in time, FALSE otherwise.</returns>
     private bool SendAndWait(int timeoutMs = 500)
     {

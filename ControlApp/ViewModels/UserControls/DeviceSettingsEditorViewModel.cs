@@ -1,96 +1,114 @@
 ﻿using System.ComponentModel;
+
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 using Nefarius.DsHidMini.ControlApp.ViewModels.UserControls.DeviceSettings;
 
-namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls
+namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls;
+
+public partial class SettingsEditorViewModel : ObservableObject
 {
-    public partial class SettingsEditorViewModel : ObservableObject
-    {   
-        private readonly List<DeviceSettingsViewModel> groupSettingsList = new();
-        [ObservableProperty] public bool _allowEditing = false;
-        [ObservableProperty] private HidModeSettingsViewModel _hidModeVM = new();
-        [ObservableProperty] private LedsSettingsViewModel _ledsSettingsVM = new();
-        [ObservableProperty] private WirelessSettingsViewModel _wirelessSettingsVM = new();
-        [ObservableProperty] private SticksSettingsViewModel _sticksSettingsVM = new();
-        [ObservableProperty] private GeneralRumbleSettingsViewModel _generalRumbleSettingsVM = new();
-        [ObservableProperty] private OutputReportSettingsViewModel _outRepSettingsVM = new();
-        [ObservableProperty] private LeftMotorRescalingSettingsViewModel _leftMotorRescaleSettingsVM = new();
-        [ObservableProperty] private AltRumbleModeSettingsViewModel _altRumbleSettingsVM = new();
+    private readonly List<DeviceSettingsViewModel> groupSettingsList = new();
 
-        public SettingsEditorViewModel() : this(null)
+    [ObservableProperty]
+    public bool _allowEditing = false;
+
+    [ObservableProperty]
+    private AltRumbleModeSettingsViewModel _altRumbleSettingsVM = new();
+
+    [ObservableProperty]
+    private GeneralRumbleSettingsViewModel _generalRumbleSettingsVM = new();
+
+    [ObservableProperty]
+    private HidModeSettingsViewModel _hidModeVM = new();
+
+    [ObservableProperty]
+    private LedsSettingsViewModel _ledsSettingsVM = new();
+
+    [ObservableProperty]
+    private LeftMotorRescalingSettingsViewModel _leftMotorRescaleSettingsVM = new();
+
+    [ObservableProperty]
+    private OutputReportSettingsViewModel _outRepSettingsVM = new();
+
+    [ObservableProperty]
+    private SticksSettingsViewModel _sticksSettingsVM = new();
+
+    [ObservableProperty]
+    private WirelessSettingsViewModel _wirelessSettingsVM = new();
+
+    public SettingsEditorViewModel() : this(null)
+    {
+    }
+
+    public SettingsEditorViewModel(Models.DshmConfigManager.DeviceSettings? dataContainer = null)
+    {
+        groupSettingsList.Add(HidModeVM);
+        groupSettingsList.Add(LedsSettingsVM);
+        groupSettingsList.Add(WirelessSettingsVM);
+        groupSettingsList.Add(SticksSettingsVM);
+        groupSettingsList.Add(GeneralRumbleSettingsVM);
+        groupSettingsList.Add(OutRepSettingsVM);
+        groupSettingsList.Add(LeftMotorRescaleSettingsVM);
+        groupSettingsList.Add(AltRumbleSettingsVM);
+
+        HidModeVM.PropertyChanged += ModeSettingsChanged;
+
+        if (dataContainer != null)
         {
+            LoadDatasToAllGroups(dataContainer);
         }
 
-        public SettingsEditorViewModel(Models.DshmConfigManager.DeviceSettings? dataContainer = null)
+        UpdateLockStateOfGroups();
+    }
+
+    private void UpdateLockStateOfGroups()
+    {
+        foreach (DeviceSettingsViewModel group in groupSettingsList)
         {
-            groupSettingsList.Add(HidModeVM);
-            groupSettingsList.Add(LedsSettingsVM);
-            groupSettingsList.Add(WirelessSettingsVM);
-            groupSettingsList.Add(SticksSettingsVM);
-            groupSettingsList.Add(GeneralRumbleSettingsVM);
-            groupSettingsList.Add(OutRepSettingsVM);
-            groupSettingsList.Add(LeftMotorRescaleSettingsVM);
-            groupSettingsList.Add(AltRumbleSettingsVM);
-
-            this.HidModeVM.PropertyChanged += ModeSettingsChanged;
-
-            if (dataContainer != null)
-                LoadDatasToAllGroups(dataContainer);
-
-            UpdateLockStateOfGroups();
+            group.IsGroupLocked = false;
         }
 
-        private void UpdateLockStateOfGroups()
+        if (HidModeVM.Context == SettingsContext.DS4W)
         {
-            foreach (DeviceSettingsViewModel group in groupSettingsList)
-            {
-                group.IsGroupLocked = false;
-            }
-
-            if (HidModeVM.Context == SettingsContext.DS4W)
-            {
-                SticksSettingsVM.IsGroupLocked = HidModeVM.PreventRemappingConflictsInDS4WMode;
-            }
-
-            if (HidModeVM.Context == SettingsContext.SXS)
-            {
-                // Rumble related settings currently don't matter in SXS mode
-                // rumble instructions are directly passthru to the controller
-                GeneralRumbleSettingsVM.IsGroupLocked = true;
-                LeftMotorRescaleSettingsVM.IsGroupLocked = true;
-                AltRumbleSettingsVM.IsGroupLocked = true;
-            }
+            SticksSettingsVM.IsGroupLocked = HidModeVM.PreventRemappingConflictsInDS4WMode;
         }
 
-        private void ModeSettingsChanged(object sender, PropertyChangedEventArgs e)
+        if (HidModeVM.Context == SettingsContext.SXS)
         {
-            switch (e.PropertyName)
-            {
-                case "":
-                case nameof(HidModeSettingsViewModel.Context):
-                case nameof(HidModeSettingsViewModel.PreventRemappingConflictsInSXSMode):
-                case nameof(HidModeSettingsViewModel.PreventRemappingConflictsInDS4WMode):
-                    UpdateLockStateOfGroups();
-                    break;
-            }
+            // Rumble related settings currently don't matter in SXS mode
+            // rumble instructions are directly passthru to the controller
+            GeneralRumbleSettingsVM.IsGroupLocked = true;
+            LeftMotorRescaleSettingsVM.IsGroupLocked = true;
+            AltRumbleSettingsVM.IsGroupLocked = true;
         }
+    }
 
-        public void SaveAllChangesToBackingData(Models.DshmConfigManager.DeviceSettings dataContainer)
+    private void ModeSettingsChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        switch (e.PropertyName)
         {
-            foreach (DeviceSettingsViewModel group in groupSettingsList)
-            {
-                group.SaveSettingsToBackingDataContainer(dataContainer);
-            }
-
+            case "":
+            case nameof(HidModeSettingsViewModel.Context):
+            case nameof(HidModeSettingsViewModel.PreventRemappingConflictsInSXSMode):
+            case nameof(HidModeSettingsViewModel.PreventRemappingConflictsInDS4WMode):
+                UpdateLockStateOfGroups();
+                break;
         }
+    }
 
-        public void LoadDatasToAllGroups(Models.DshmConfigManager.DeviceSettings dataContainer)
+    public void SaveAllChangesToBackingData(Models.DshmConfigManager.DeviceSettings dataContainer)
+    {
+        foreach (DeviceSettingsViewModel group in groupSettingsList)
         {
-            foreach (DeviceSettingsViewModel group in groupSettingsList)
-            {
-                group.LoadSettingsFromBackingDataContainer(dataContainer);
-            }
+            group.SaveSettingsToBackingDataContainer(dataContainer);
+        }
+    }
 
+    public void LoadDatasToAllGroups(Models.DshmConfigManager.DeviceSettings dataContainer)
+    {
+        foreach (DeviceSettingsViewModel group in groupSettingsList)
+        {
+            group.LoadSettingsFromBackingDataContainer(dataContainer);
         }
     }
 }

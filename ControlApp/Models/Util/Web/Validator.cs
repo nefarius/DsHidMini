@@ -61,12 +61,12 @@ public class Validator
     [Obsolete("Redesign to use modern HttpClient instead.")]
     public static bool IsGenuineAddress(PhysicalAddress address)
     {
-        using (WebClient client = new WebClient())
+        using (WebClient client = new())
         {
             IEnumerable<OUIEntry> ouiList = JsonConvert.DeserializeObject<IList<string>>(client.DownloadString(ApiUrl))
                 .Select(e => new OUIEntry(e));
 
-            OUIEntry device = new OUIEntry(address);
+            OUIEntry device = new(address);
 
             return ouiList.Contains(device);
         }

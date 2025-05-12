@@ -1,0 +1,9 @@
+<Project>
+ <Import Project="$(MSBuildThisFileDirectory)vcpkg\scripts\buildsystems\msbuild\vcpkg.targets" />
+ <ItemDefinitionGroup Condition="!Exists('$(MSBuildThisFileDirectory)/vcpkg/vcpkg.exe')">
+   <PreBuildEvent>
+     <Command>$(MSBuildThisFileDirectory)vcpkg\bootstrap-vcpkg.bat</Command>
+     <Message>Bootstrap vcpkg</Message>
+   </PreBuildEvent>
+ </ItemDefinitionGroup>
+</Project>
