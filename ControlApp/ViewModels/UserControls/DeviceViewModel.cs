@@ -346,8 +346,9 @@ public partial class DeviceViewModel : ObservableObject
     /// <summary>
     ///     Last time this device has been seen connected (applies to Bluetooth connected devices only).
     /// </summary>
-    public DateTimeOffset LastConnected =>
-        Device.GetProperty<DateTimeOffset>(DsHidMiniDriver.BluetoothLastConnectedTimeProperty);
+    public string LastConnected =>
+        Device.GetProperty<DateTimeOffset?>(DsHidMiniDriver.BluetoothLastConnectedTimeProperty)?.DateTime
+            .ToShortDateString() ?? "not available while wired";
 
     /// <summary>
     ///     The driver version of the device
