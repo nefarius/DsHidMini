@@ -3,7 +3,7 @@
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
         <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
-        <RollForward>Major</RollForward>
+        <RollForward>LatestMajor</RollForward>
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <ApplicationIcon>wpfui-icon.ico</ApplicationIcon>
         <Nullable>enable</Nullable>
