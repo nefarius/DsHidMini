@@ -80,7 +80,7 @@ std::optional<std::vector<std::wstring>> GlobalState::GetSymbolicLinksForDeviceI
 		return std::nullopt;
 
 	const std::vector<wchar_t> multiString{ &szListBuffer[0], szListBuffer + requiredNumChars };
-	const auto symlinks = winreg::details::ParseMultiString(multiString);
+	auto symlinks = winreg::details::ParseMultiString(multiString);
 
 	return symlinks;
 }
@@ -182,7 +182,7 @@ std::optional<std::vector<std::wstring>> GlobalState::GetDeviceChildren(const st
 	const std::vector<wchar_t> multiString{
 		reinterpret_cast<PWSTR>(childrenIdBuf), reinterpret_cast<PWSTR>(childrenIdBuf + childrenIdBytes)
 	};
-	const auto childIds = winreg::details::ParseMultiString(multiString);
+	auto childIds = winreg::details::ParseMultiString(multiString);
 
 	return childIds;
 }
@@ -229,7 +229,7 @@ std::optional<std::vector<std::wstring>> GlobalState::InstanceIdToHidPaths(const
 		return std::nullopt;
 
 	const std::vector<wchar_t> multiString{ &buffer[0], buffer + requiredNumChars };
-	const auto symlinks = winreg::details::ParseMultiString(multiString);
+	auto symlinks = winreg::details::ParseMultiString(multiString);
 
 	return symlinks;
 }
