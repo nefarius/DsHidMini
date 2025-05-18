@@ -41,7 +41,7 @@ dotnet_csproj:
   file_version: '{version}'
   informational_version: '{version}'
 before_build:
-- cmd: nuget restore
+#- cmd: nuget restore
 #- cmd: dotnet tool install --global Nefarius.Tools.Vpatch
 - cmd: vpatch --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\sys\dshidmini.vcxproj" --vcxproj.inf-time-stamp
 - cmd: vpatch --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\sys\dshidmini.rc" --resource.file-version --resource.product-version
