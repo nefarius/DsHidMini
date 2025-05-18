@@ -57,32 +57,50 @@
         </DataTemplate>
         <DataTemplate x:Key="MyKey_ButtonsComboTemplate" DataType="{x:Type deviceSettings:ButtonComboViewModel}">
             <DockPanel LastChildFill="False">
+				<DockPanel DockPanel.Dock="Top" LastChildFill="False">
                 <!--  DataContext="{Binding VariableRightEmulToggleCombo}"  -->
                 <Label
                     VerticalAlignment="Center"
                     Content="Buttons combo:"
                     DockPanel.Dock="Left" />
                 <ComboBox
-                    Width="80"
+						Width="100"
                     DockPanel.Dock="Left"
                     ItemsSource="{Binding Source={helpers:EnumBindingSource {x:Type enums:Button}}}"
                     SelectedItem="{Binding Button1, Delay=100}" />
                 <ComboBox
-                    Width="80"
+						Width="100"
+						Margin="5,0,0,0"
                     DockPanel.Dock="Left"
                     ItemsSource="{Binding Source={helpers:EnumBindingSource {x:Type enums:Button}}}"
                     SelectedItem="{Binding Button2, Delay=100}" />
                 <ComboBox
-                    Width="80"
+						Width="100"
+						Margin="5,0,0,0"
                     DockPanel.Dock="Left"
                     ItemsSource="{Binding Source={helpers:EnumBindingSource {x:Type enums:Button}}}"
                     SelectedItem="{Binding Button3, Delay=100}" />
+
+				</DockPanel>
+				<DockPanel
+					Margin="0,5,0,0"
+					DockPanel.Dock="Top"
+					LastChildFill="False">
+					<Label
+						VerticalAlignment="Center"
+						Content="Seconds holding combo for activation:"
+						DockPanel.Dock="Left" />
+					<DockPanel LastChildFill="False">
                 <ui:NumberBox
+							MinWidth="80"
                     ClearButtonEnabled="False"
                     Maximum="5"
                     Minimum="{Binding MinHoldTime}"
                     Value="{Binding HoldTime, UpdateSourceTrigger=PropertyChanged}" />
             </DockPanel>
+				</DockPanel>
+			</DockPanel>
+
         </DataTemplate>
         <Style x:Key="SetGroupItem" TargetType="ContentControl">
             <Setter Property="DockPanel.Dock" Value="Top" />
