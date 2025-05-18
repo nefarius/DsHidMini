@@ -17,7 +17,9 @@ class Build : NukeBuild
     [Solution]
     readonly Solution Solution;
 
-    AbsolutePath DmfSolution => Solution.Directory / "DMF/Dmf.sln";
+    AbsolutePath DmfSolution => IsLocalBuild 
+        ? Solution.Directory / "DMF/Dmf.sln"
+        : "C:/projects/DMF/Dmf.sln";
 
     Target Clean => _ => _
         .Before(Restore)
