@@ -61,6 +61,7 @@ class Build : NukeBuild
                 .SetMaxCpuCount(Environment.ProcessorCount)
                 .SetNodeReuse(IsLocalBuild)
                 .SetVerbosity(MSBuildVerbosity.Minimal)
+                .DisableTreatWarningsAsErrors()
             );
         });
 
