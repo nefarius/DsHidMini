@@ -64,6 +64,7 @@ class Build : NukeBuild
                 .SetNodeReuse(IsLocalBuild)
                 .SetVerbosity(MSBuildVerbosity.Minimal)
                 .DisableTreatWarningsAsErrors()
+                .AddNoWarns(4100)
             );
         });
 
