@@ -20,6 +20,8 @@ public partial class DeviceViewModel : ObservableObject
     private readonly Timer _batteryQuery;
     private readonly IContentDialogService _contentDialogService;
 
+    private readonly DeviceData _deviceUserData;
+
     // ------------------------------------------------------ FIELDS
 
     private readonly DshmConfigManager _dshmConfigManager;
@@ -80,8 +82,6 @@ public partial class DeviceViewModel : ObservableObject
 
     [ObservableProperty]
     private ProfileData? _selectedProfile;
-
-    private readonly DeviceData _deviceUserData;
 
 
     // ------------------------------------------------------ CONSTRUCTOR
@@ -167,15 +167,21 @@ public partial class DeviceViewModel : ObservableObject
     /// <summary>
     ///     The Bluetooth MAC address of this device.
     /// </summary>
-    public string DeviceAddress => Device.GetProperty<string>(DsHidMiniDriver.DeviceAddressProperty).ToUpper();
+    private string? DeviceAddress =>
+        Device.GetProperty<string>(DsHidMiniDriver.DeviceAddressProperty)?.ToUpperInvariant();
 
     /// <summary>
     ///     The Bluetooth MAC address of this device.
     /// </summary>
-    public string DeviceAddressFriendly
+    public string? DeviceAddressFriendly
     {
         get
         {
+            if (string.IsNullOrEmpty(DeviceAddress))
+            {
+                return null;
+            }
+
             string friendlyAddress = DeviceAddress;
 
             int insertedCount = 0;
@@ -188,7 +194,6 @@ public partial class DeviceViewModel : ObservableObject
         }
     }
 
-
     /// <summary>
     ///     The Bluetooth MAC address of the host radio this device is currently paired to.
     /// </summary>
@@ -198,11 +203,11 @@ public partial class DeviceViewModel : ObservableObject
         {
             if (!WasLastHostRequestSuccessful)
             {
-                return "Unkown";
+                return "Unknown";
             }
 
             string hostAddress = Device.GetProperty<ulong>(DsHidMiniDriver.HostAddressProperty).ToString("X12")
-                .ToUpper();
+                .ToUpperInvariant();
 
             string friendlyAddress = hostAddress;
 
@@ -270,31 +275,18 @@ public partial class DeviceViewModel : ObservableObject
     /// <summary>
     ///     Return a battery icon depending on the charge.
     /// </summary>
-    public SymbolRegular BatteryIcon
-    {
-        get
+    public SymbolRegular BatteryIcon =>
+        BatteryStatus switch
         {
-            switch (BatteryStatus)
-            {
-                case DsBatteryStatus.Charged:
-                    return SymbolRegular.Battery1024;
-                case DsBatteryStatus.Charging:
-                    return SymbolRegular.BatteryCharge24;
-                case DsBatteryStatus.Full:
-                    return SymbolRegular.Battery1024;
-                case DsBatteryStatus.High:
-                    return SymbolRegular.Battery724;
-                case DsBatteryStatus.Medium:
-                    return SymbolRegular.Battery524;
-                case DsBatteryStatus.Low:
-                    return SymbolRegular.Battery224;
-                case DsBatteryStatus.Dying:
-                    return SymbolRegular.Battery024;
-                default:
-                    return SymbolRegular.BatteryWarning24;
-            }
-        }
-    }
+            DsBatteryStatus.Charged => SymbolRegular.Battery1024,
+            DsBatteryStatus.Charging => SymbolRegular.BatteryCharge24,
+            DsBatteryStatus.Full => SymbolRegular.Battery1024,
+            DsBatteryStatus.High => SymbolRegular.Battery724,
+            DsBatteryStatus.Medium => SymbolRegular.Battery524,
+            DsBatteryStatus.Low => SymbolRegular.Battery224,
+            DsBatteryStatus.Dying => SymbolRegular.Battery024,
+            _ => SymbolRegular.BatteryWarning24
+        };
 
     /// <summary>
     ///     Representation of last pairing attempt status
@@ -303,8 +295,8 @@ public partial class DeviceViewModel : ObservableObject
     {
         get
         {
-            int ntstatus = Device.GetProperty<int>(DsHidMiniDriver.LastPairingStatusProperty);
-            return ntstatus == 0
+            int ntStatus = Device.GetProperty<int>(DsHidMiniDriver.LastPairingStatusProperty);
+            return ntStatus == 0
                 ? SymbolRegular.CheckmarkCircle24
                 : SymbolRegular.DismissCircle24;
         }
@@ -337,7 +329,7 @@ public partial class DeviceViewModel : ObservableObject
     {
         get
         {
-            string? enumerator = Device.GetProperty<string>(DevicePropertyKey.Device_EnumeratorName);
+            string enumerator = Device.GetProperty<string>(DevicePropertyKey.Device_EnumeratorName)!;
 
             return !enumerator.Equals("USB", StringComparison.InvariantCultureIgnoreCase);
         }
@@ -360,14 +352,15 @@ public partial class DeviceViewModel : ObservableObject
     /// <summary>
     ///     The driver version of the device
     /// </summary>
-    public string DriverVersion => Device.GetProperty<string>(DevicePropertyKey.Device_DriverVersion).ToUpper();
+    public string DriverVersion =>
+        Device.GetProperty<string>(DevicePropertyKey.Device_DriverVersion)!.ToUpperInvariant();
 
     /// <summary>
     ///     The device Instance ID.
     /// </summary>
     public string InstanceId => Device.InstanceId;
 
-    private void UpdateBatteryStatus(object state)
+    private void UpdateBatteryStatus(object? state)
     {
         OnPropertyChanged(nameof(BatteryStatus));
     }
@@ -393,7 +386,7 @@ public partial class DeviceViewModel : ObservableObject
     [RelayCommand]
     public void RefreshDeviceSettings()
     {
-        Log.Logger.Debug($"Refreshing ViewModel of Device '{DeviceAddress}'");
+        Log.Logger.Debug("Refreshing ViewModel of Device '{Address}'", DeviceAddress);
         // Bluetooth
         PairingMode = (int)_deviceUserData.BluetoothPairingMode;
         CustomPairingAddress = _deviceUserData.PairingAddress;
@@ -404,10 +397,11 @@ public partial class DeviceViewModel : ObservableObject
         ListOfProfiles = _dshmConfigManager.GetListOfProfilesWithDefault();
 
         Log.Logger.Information(
-            $"Device '{DeviceAddress}' set for {ExpectedHidMode} HID Mode (currently in {HidModeShort}), {(BluetoothPairingMode)PairingMode} Bluetooth pairing mode.");
+            "Device '{S}' set for {SettingsContext} HID Mode (currently in {HidModeShort1}), {BluetoothPairingMode} Bluetooth pairing mode."
+            , DeviceAddress, ExpectedHidMode, HidModeShort, (BluetoothPairingMode)PairingMode);
         if ((BluetoothPairingMode)PairingMode == BluetoothPairingMode.Custom)
         {
-            Log.Logger.Information($"Custom pairing address: {CustomPairingAddress}.");
+            Log.Logger.Information("Custom pairing address: {CustomPairingAddress}.", CustomPairingAddress);
         }
 
         AdjustSettingsTabState();
@@ -418,7 +412,7 @@ public partial class DeviceViewModel : ObservableObject
     [RelayCommand]
     private void ApplyChanges()
     {
-        Log.Logger.Information($"Saving and applying changes made to Device '{DeviceAddress}'");
+        Log.Logger.Information("Saving and applying changes made to Device '{DeviceAddress}'", DeviceAddress);
         _deviceUserData.BluetoothPairingMode = (BluetoothPairingMode)PairingMode;
 
         string formattedCustomMacAddress = Regex.Replace(CustomPairingAddress, @"[^a-fA-F0-9]", "").ToUpper();
@@ -450,7 +444,8 @@ public partial class DeviceViewModel : ObservableObject
     {
         bool reconnectionResult = DshmDevMan.TryReconnectDevice(Device);
         Log.Logger.Information(
-            $"User instructed {(IsWireless ? "wireless" : "wired")} device '{DeviceAddress}' to restart/disconnect.");
+            "User instructed {Wireless} device '{DeviceAddress}' to restart/disconnect.",
+            IsWireless ? "wireless" : "wired", DeviceAddress);
         _appSnackbarMessagesService.ShowPowerCyclingDeviceMessage(IsWireless, SecurityUtil.IsElevated,
             reconnectionResult);
     }
@@ -482,9 +477,11 @@ public partial class DeviceViewModel : ObservableObject
             new SimpleContentDialogCreateOptions
             {
                 Title = "Manual pairing triggered",
-                Content = @"Pairing was requested.
+                Content = """
+                          Pairing was requested.
 
-Wait 2 or 5 seconds before hitting ok to check for results.",
+                          Wait 2 or 5 seconds before hitting ok to check for results.
+                          """,
                 //PrimaryButtonText = "Ok",
                 //SecondaryButtonText = "Don't Save",
                 CloseButtonText = "OK"
@@ -493,33 +490,34 @@ Wait 2 or 5 seconds before hitting ok to check for results.",
     }
 
     [RelayCommand]
-    private async void PairingHelpButtonPressed()
+    private async Task PairingHelpButtonPressed()
     {
         ContentDialogResult result = await ShowPairingHelpInfoDialog();
         //if(result == ContentDialogResult.Primary)
         //{
         //    // to-do: open bluetooth pairing troubleshooting page
         //}
-
     }
 
     private async Task<ContentDialogResult> ShowPairingHelpInfoDialog()
     {
-        var result = await _contentDialogService.ShowSimpleDialogAsync(
-            new SimpleContentDialogCreateOptions()
+        ContentDialogResult result = await _contentDialogService.ShowSimpleDialogAsync(
+            new SimpleContentDialogCreateOptions
             {
                 Title = "Bluetooth pairing info",
-                Content = @"➤ Pairing is only possible when connected via USB.
+                Content = """
+                          ➤ Pairing is only possible when connected via USB.
 
-➤ NEVER TRY PAIRING A PS3 CONTROLLER VIA WINDOWS' BLUETOOTH SETTINGS MENU!! Pairing is done by the DsHidMini driver itself.
+                          ➤ NEVER TRY PAIRING A PS3 CONTROLLER VIA WINDOWS' BLUETOOTH SETTINGS MENU!! Pairing is done by the DsHidMini driver itself.
 
-➤ Pairing happens automatically when connecting via USB or when using the ""Pair now"" button, unless pairing has been set to ""Disabled"".
+                          ➤ Pairing happens automatically when connecting via USB or when using the "Pair now" button, unless pairing has been set to "Disabled".
 
-➤ The BthPS3 driver is required to be installed and operating for Windows to allow paired controllers to connect.
+                          ➤ The BthPS3 driver is required to be installed and operating for Windows to allow paired controllers to connect.
 
-➤ If in ""To this PC"" mode, the PC's bluetooth adapter must be enabled and turned ON for pairing to succeed.",
+                          ➤ If in "To this PC" mode, the PC's bluetooth adapter must be enabled and turned ON for pairing to succeed.
+                          """,
                 PrimaryButtonText = "I need more help!",
-                CloseButtonText = "Close",
+                CloseButtonText = "Close"
             }
         );
         return result;

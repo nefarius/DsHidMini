@@ -92,7 +92,6 @@ public class AppSnackbarMessagesService
 
     public void ShowPowerCyclingDeviceMessage(bool isWireless, bool isAppElevated, bool reconnectionResult)
     {
-        string temp = "";
         if (!isWireless && !isAppElevated)
         {
             _snackbarService.Show(

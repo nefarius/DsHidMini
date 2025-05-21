@@ -1,10 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
-// If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
-// Copyright (C) Leszek Pomianowski and WPF UI Contributors.
-// All Rights Reserved.
-
-using System.IO;
-using System.Reflection;
+﻿using System.IO;
 using System.Windows.Threading;
 
 using Microsoft.Extensions.Configuration;
@@ -21,6 +15,7 @@ using Nefarius.DsHidMini.ControlApp.Views.Windows;
 using Nefarius.Utilities.DeviceManagement.PnP;
 
 using Wpf.Ui;
+using Wpf.Ui.DependencyInjection;
 
 namespace Nefarius.DsHidMini.ControlApp;
 
@@ -34,16 +29,19 @@ public partial class App
     // https://docs.microsoft.com/dotnet/core/extensions/dependency-injection
     // https://docs.microsoft.com/dotnet/core/extensions/configuration
     // https://docs.microsoft.com/dotnet/core/extensions/logging
-    private static readonly IHost _host = Host
+    private static readonly IHost AppHost = Host
         .CreateDefaultBuilder()
-        .ConfigureAppConfiguration(
-            c => { c.SetBasePath(Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)); })
+        .ConfigureAppConfiguration(c =>
+        {
+            c.SetBasePath(Path.GetDirectoryName(Environment.ProcessPath!)!);
+        })
         .ConfigureServices((context, services) =>
         {
             services.AddHostedService<ApplicationHostService>();
 
             services.AddSingleton<MainWindow>();
             services.AddSingleton<MainWindowViewModel>();
+            services.AddNavigationViewPageProvider();
             services.AddSingleton<INavigationService, NavigationService>();
             services.AddSingleton<ISnackbarService, SnackbarService>();
             services.AddSingleton<IContentDialogService, ContentDialogService>();
@@ -63,7 +61,9 @@ public partial class App
             services.AddSingleton<Main>();
 
             Log.Logger = new LoggerConfiguration()
-                //.MinimumLevel.Debug()
+#if DEBUG
+                .MinimumLevel.Debug()
+#endif
                 .WriteTo.File(Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
                     "DsHidMini\\Log\\ControlAppLog.txt"))
@@ -79,23 +79,12 @@ public partial class App
         }).Build();
 
     /// <summary>
-    ///     Gets registered service.
-    /// </summary>
-    /// <typeparam name="T">Type of the service to get.</typeparam>
-    /// <returns>Instance of the service or <see langword="null" />.</returns>
-    public static T GetService<T>()
-        where T : class
-    {
-        return _host.Services.GetService(typeof(T)) as T;
-    }
-
-    /// <summary>
     ///     Occurs when the application is loading.
     /// </summary>
     private void OnStartup(object sender, StartupEventArgs e)
     {
         Log.Logger.Information("App startup");
-        _host.Start();
+        AppHost.Start();
     }
 
     /// <summary>
@@ -104,8 +93,8 @@ public partial class App
     private async void OnExit(object sender, ExitEventArgs e)
     {
         Log.Logger.Information("App exiting");
-        await _host.StopAsync();
-        _host.Dispose();
+        await AppHost.StopAsync();
+        AppHost.Dispose();
     }
 
     /// <summary>
@@ -114,5 +103,7 @@ public partial class App
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         // For more info see https://docs.microsoft.com/en-us/dotnet/api/system.windows.application.dispatcherunhandledexception?view=windowsdesktop-6.0
+
+        Log.Logger.Fatal(e.Exception, "Unhandled exception");
     }
 }

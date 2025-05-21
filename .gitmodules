@@ -1,0 +1,7 @@
+[submodule "XInputBridge/vcpkg"]
+	path = XInputBridge/vcpkg
+	url = https://github.com/microsoft/vcpkg.git
+[submodule "DMF"]
+	path = DMF
+	url = https://github.com/nefarius/DMF.git
+	branch = nefarius

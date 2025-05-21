@@ -684,7 +684,7 @@
                         x:Name="ForcedRMLeftThresholdCheckbox"
                         Content="Left rumble threshold:"
                         DockPanel.Dock="Left"
-                        IsChecked="{Binding IsForcedRightMotorHeavyThreasholdEnabled}" />
+                        IsChecked="{Binding IsForcedRightMotorHeavyThresholdEnabled}" />
                     <Label
                         VerticalAlignment="Center"
                         VerticalContentAlignment="Center"

@@ -17,7 +17,9 @@ class Build : NukeBuild
     [Solution]
     readonly Solution Solution;
 
-    AbsolutePath DmfSolution => "C:/projects/DMF/Dmf.sln";
+    AbsolutePath DmfSolution => IsLocalBuild 
+        ? Solution.Directory / "DMF/Dmf.sln"
+        : "C:/projects/DMF/Dmf.sln";
 
     Target Clean => _ => _
         .Before(Restore)
@@ -59,7 +61,9 @@ class Build : NukeBuild
                 .SetConfiguration(Configuration)
                 .SetTargetPlatform(platform)
                 .SetMaxCpuCount(Environment.ProcessorCount)
-                .SetNodeReuse(IsLocalBuild));
+                .SetNodeReuse(IsLocalBuild)
+                .SetVerbosity(MSBuildVerbosity.Minimal)
+            );
         });
 
     Target Compile => _ => _
@@ -75,6 +79,7 @@ class Build : NukeBuild
                 .SetConfiguration(Configuration)
                 .SetMaxCpuCount(Environment.ProcessorCount)
                 .SetNodeReuse(IsLocalBuild)
+                .SetVerbosity(MSBuildVerbosity.Minimal)
             );
         });
 

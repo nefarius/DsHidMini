@@ -35,14 +35,15 @@ public partial class ProfileViewModel : ObservableObject
         private set
         {
             Log.Logger.Information(
-                $"Edition of profile '{ProfileData.ProfileName}' ({ProfileData.ProfileGuid}) set to {value}");
+                "Edition of profile '{ProfileDataProfileName}' ({ProfileDataProfileGuid}) set to {Value}",
+                ProfileData.ProfileName, ProfileData.ProfileGuid, value);
             VmGroupsCont.AllowEditing = value;
             OnPropertyChanged();
         }
     }
 
     [RelayCommand]
-    public void EnableEditing()
+    private void EnableEditing()
     {
         if (ProfileData == ProfileData.DefaultProfile)
         {
@@ -54,7 +55,7 @@ public partial class ProfileViewModel : ObservableObject
     }
 
     [RelayCommand]
-    public void SaveChanges()
+    private void SaveChanges()
     {
         Log.Logger.Information($"Saving changes to profile '{ProfileData.ProfileName}' ({ProfileData.ProfileGuid})");
         if (string.IsNullOrEmpty(Name))
@@ -65,7 +66,8 @@ public partial class ProfileViewModel : ObservableObject
 
         if (ProfileData.ProfileName != Name)
         {
-            Log.Logger.Information($"Profile name changed from '{ProfileData.ProfileName}' to '{Name}'");
+            Log.Logger.Information(
+                "Profile name changed from '{ProfileDataProfileName}' to '{S}'", ProfileData.ProfileName, Name);
             ProfileData.ProfileName = Name;
         }
 

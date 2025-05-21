@@ -1,14 +1,10 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
-// If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
-// Copyright (C) Leszek Pomianowski and WPF UI Contributors.
-// All Rights Reserved.
-
-using System.ComponentModel;
+﻿using System.ComponentModel;
 
 using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.ViewModels.Windows;
 
 using Wpf.Ui;
+using Wpf.Ui.Abstractions;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 
@@ -73,9 +69,9 @@ public partial class MainWindow : INavigationWindow
         return RootNavigation.Navigate(pageType);
     }
 
-    public void SetPageService(IPageService pageService)
+    public void SetPageService(INavigationViewPageProvider pageService)
     {
-        RootNavigation.SetPageService(pageService);
+        RootNavigation.SetPageProviderService(pageService);
     }
 
     public void ShowWindow()
