@@ -40,8 +40,8 @@ dotnet_csproj:
   file_version: '{version}'
   informational_version: '{version}'
 before_build:
-- cmd: vpatch --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\sys\dshidmini.vcxproj" --vcxproj.inf-time-stamp
-- cmd: vpatch --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\sys\dshidmini.rc" --resource.file-version --resource.product-version
+- cmd: vpatch --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\driver\dshidmini.vcxproj" --vcxproj.inf-time-stamp
+- cmd: vpatch --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\driver\dshidmini.rc" --resource.file-version --resource.product-version
 - cmd: vpatch --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\XInputBridge\XInputBridge.rc" --resource.file-version --resource.product-version
 - cmd: dotnet restore .\ControlApp\
 - cmd: dotnet restore .\ipctest\
