@@ -80,6 +80,9 @@ public partial class DeviceViewModel : ObservableObject
     /// </summary>
     private BluetoothPairingMode? _pairingMode;
 
+    /// <summary>
+    ///     Whether the controller is deemed official Sony genuine by using the online address database.
+    /// </summary>
     [ObservableProperty]
     private bool _isGenuine;
 
@@ -102,7 +105,7 @@ public partial class DeviceViewModel : ObservableObject
         )
     {
         Device = device;
-        Log.Logger.Debug($"Creating Device ViewModel for device '{DeviceAddress}'");
+        Log.Logger.Debug("Creating Device ViewModel for device '{S}'", DeviceAddress);
         _dshmDevMan = dshmDevMan;
         _dshmConfigManager = dshmConfigManager;
         _appSnackbarMessagesService = appSnackbarMessagesService;
@@ -135,7 +138,7 @@ public partial class DeviceViewModel : ObservableObject
     /// <summary>
     ///     State of Device's current HID Mode in relation to mode it's expected to be
     /// </summary>
-    public bool IsHidModeMismatched => HidEmulationMode != ExpectedHidMode ? true : false;
+    public bool IsHidModeMismatched => HidEmulationMode != ExpectedHidMode;
 
     /// <summary>
     ///     Summary of device's current HID mode and Settings mode
