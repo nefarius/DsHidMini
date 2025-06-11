@@ -1,7 +1,6 @@
-﻿using System.Net;
+﻿using System.Net.Http;
+using System.Net.Http.Json;
 using System.Net.NetworkInformation;
-
-using Newtonsoft.Json;
 
 namespace Nefarius.DsHidMini.ControlApp.Models.Util.Web;
 
@@ -54,21 +53,28 @@ public class OUIEntry : IEquatable<OUIEntry>
     }
 }
 
-public class Validator
+/// <summary>
+///     Genuine controller MAC address validator.
+/// </summary>
+/// <remarks>https://github.com/nefarius/DsHidMini/discussions/166</remarks>
+internal sealed class AddressValidator(IHttpClientFactory clientFactory)
 {
-    public static Uri ApiUrl => new("https://docs.nefarius.at/projects/DsHidMini/genuine_oui_db.json");
-
     [Obsolete("Redesign to use modern HttpClient instead.")]
-    public static bool IsGenuineAddress(PhysicalAddress address)
+    public async Task<bool> IsGenuineAddress(PhysicalAddress address)
     {
-        using (WebClient client = new())
+        using HttpClient client = clientFactory.CreateClient("Docs");
+
+        IEnumerable<OUIEntry>? ouiList =
+            (await client.GetFromJsonAsync<IList<string>>("/projects/DsHidMini/genuine_oui_db.json"))
+            ?.Select(e => new OUIEntry(e));
+
+        if (ouiList is null)
         {
-            IEnumerable<OUIEntry> ouiList = JsonConvert.DeserializeObject<IList<string>>(client.DownloadString(ApiUrl))
-                .Select(e => new OUIEntry(e));
-
-            OUIEntry device = new(address);
-
-            return ouiList.Contains(device);
+            return false;
         }
+
+        OUIEntry device = new(address);
+
+        return ouiList.Contains(device);
     }
 }
