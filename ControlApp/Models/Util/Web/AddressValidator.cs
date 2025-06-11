@@ -57,9 +57,8 @@ public class OUIEntry : IEquatable<OUIEntry>
 ///     Genuine controller MAC address validator.
 /// </summary>
 /// <remarks>https://github.com/nefarius/DsHidMini/discussions/166</remarks>
-internal sealed class AddressValidator(IHttpClientFactory clientFactory)
+public sealed class AddressValidator(IHttpClientFactory clientFactory)
 {
-    [Obsolete("Redesign to use modern HttpClient instead.")]
     public async Task<bool> IsGenuineAddress(PhysicalAddress address)
     {
         using HttpClient client = clientFactory.CreateClient("Docs");

@@ -4,6 +4,7 @@ using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.Enums;
+using Nefarius.DsHidMini.ControlApp.Models.Util.Web;
 using Nefarius.DsHidMini.ControlApp.Services;
 using Nefarius.DsHidMini.IPC.Models.Drivers;
 using Nefarius.Utilities.DeviceManagement.PnP;
@@ -19,6 +20,7 @@ public partial class DeviceViewModel : ObservableObject
     private readonly AppSnackbarMessagesService _appSnackbarMessagesService;
     private readonly Timer _batteryQuery;
     private readonly IContentDialogService _contentDialogService;
+    private readonly AddressValidator _addressValidator;
 
     private readonly DeviceData _deviceUserData;
 
@@ -86,8 +88,14 @@ public partial class DeviceViewModel : ObservableObject
 
     // ------------------------------------------------------ CONSTRUCTOR
 
-    internal DeviceViewModel(PnPDevice device, DshmDevMan dshmDevMan, DshmConfigManager dshmConfigManager,
-        AppSnackbarMessagesService appSnackbarMessagesService, IContentDialogService contentDialogService)
+    internal DeviceViewModel(
+        PnPDevice device, 
+        DshmDevMan dshmDevMan,
+        DshmConfigManager dshmConfigManager,
+        AppSnackbarMessagesService appSnackbarMessagesService,
+        IContentDialogService contentDialogService,
+        AddressValidator addressValidator
+        )
     {
         Device = device;
         Log.Logger.Debug($"Creating Device ViewModel for device '{DeviceAddress}'");
@@ -95,6 +103,7 @@ public partial class DeviceViewModel : ObservableObject
         _dshmConfigManager = dshmConfigManager;
         _appSnackbarMessagesService = appSnackbarMessagesService;
         _contentDialogService = contentDialogService;
+        _addressValidator = addressValidator;
         _batteryQuery = new Timer(UpdateBatteryStatus, null, 10000, 10000);
         _deviceUserData = _dshmConfigManager.GetDeviceData(DeviceAddress);
         // Loads correspondent controller data based on controller's MAC address 

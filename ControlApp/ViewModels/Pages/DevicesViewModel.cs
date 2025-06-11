@@ -2,6 +2,7 @@
 
 using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
+using Nefarius.DsHidMini.ControlApp.Models.Util.Web;
 using Nefarius.DsHidMini.ControlApp.Services;
 using Nefarius.DsHidMini.ControlApp.ViewModels.UserControls;
 using Nefarius.Utilities.DeviceManagement.PnP;
@@ -19,6 +20,7 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
 {
     private readonly AppSnackbarMessagesService _appSnackbarMessagesService;
     private readonly IContentDialogService _contentDialogService;
+    private readonly AddressValidator _addressValidator;
     private readonly DshmConfigManager _dshmConfigManager;
 
     private readonly DshmDevMan _dshmDevMan;
@@ -36,8 +38,13 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
     [ObservableProperty]
     private DeviceViewModel? _selectedDevice;
 
-    public DevicesViewModel(DshmDevMan dshmDevMan, DshmConfigManager dshmConfigManager,
-        AppSnackbarMessagesService appSnackbarMessagesService, IContentDialogService contentDialogService)
+    public DevicesViewModel(
+        DshmDevMan dshmDevMan,
+        DshmConfigManager dshmConfigManager,
+        AppSnackbarMessagesService appSnackbarMessagesService, 
+        IContentDialogService contentDialogService,
+        AddressValidator addressValidator
+        )
     {
         _dshmDevMan = dshmDevMan;
         _dshmConfigManager = dshmConfigManager;
@@ -45,6 +52,7 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
         _dshmDevMan.ConnectedDeviceListUpdated += OnConnectedDevicesListUpdated;
         _dshmConfigManager.DshmConfigurationUpdated += OnDshmConfigUpdated;
         _contentDialogService = contentDialogService;
+        _addressValidator = addressValidator;
         RefreshDevicesList();
     }
 
@@ -173,13 +181,20 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
 
     private void RefreshDevicesList()
     {
-        App.Current.Dispatcher.BeginInvoke(new Action(() =>
+        Application.Current.Dispatcher.BeginInvoke(new Action(() =>
         {
             Devices.Clear();
             foreach (PnPDevice device in _dshmDevMan.Devices)
             {
-                Devices.Add(new DeviceViewModel(device, _dshmDevMan, _dshmConfigManager, _appSnackbarMessagesService,
-                    _contentDialogService));
+                Devices.Add(new DeviceViewModel(
+                    device,
+                    _dshmDevMan,
+                    _dshmConfigManager, 
+                    _appSnackbarMessagesService,
+                    _contentDialogService,
+                    _addressValidator
+                    )
+                );
             }
         }));
     }
