@@ -67,16 +67,14 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
     /// </summary>
     public bool HasDeviceSelected => SelectedDevice != null;
 
-    public Task OnNavigatedToAsync()
+    public async Task OnNavigatedToAsync()
     {
         Log.Logger.Debug(
             "Navigating to Devices page. Refreshing dynamic properties of each connected Device ViewModel.");
         foreach (DeviceViewModel device in Devices)
         {
-            device.RefreshDeviceSettings();
+            await device.RefreshDeviceSettings();
         }
-
-        return Task.CompletedTask;
     }
 
     public Task OnNavigatedFromAsync()
@@ -181,20 +179,27 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
 
     private void RefreshDevicesList()
     {
-        Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+        Application.Current.Dispatcher.BeginInvoke(new Action(async void () =>
         {
-            Devices.Clear();
-            foreach (PnPDevice device in _dshmDevMan.Devices)
+            try
             {
-                Devices.Add(new DeviceViewModel(
-                    device,
-                    _dshmDevMan,
-                    _dshmConfigManager, 
-                    _appSnackbarMessagesService,
-                    _contentDialogService,
-                    _addressValidator
-                    )
-                );
+                Devices.Clear();
+                foreach (DeviceViewModel newDev in _dshmDevMan.Devices.Select(device => new DeviceViewModel(
+                             device,
+                             _dshmDevMan,
+                             _dshmConfigManager,
+                             _appSnackbarMessagesService,
+                             _contentDialogService,
+                             _addressValidator
+                         )))
+                {
+                    Devices.Add(newDev);
+                    await newDev.RefreshDeviceSettings();
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Logger.Error(e, "Error refreshing devices list");
             }
         }));
     }
