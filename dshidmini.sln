@@ -1,4 +1,3 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34009.444
@@ -6,12 +5,18 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dshidmini", "driver\dshidmini.vcxproj", "{BEAF5753-7811-465B-8FED-CFB114DA66A5}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Driver", "Driver", "{774E55AE-92A2-4514-A174-A875219FFD1B}"
+	ProjectSection(SolutionItems) = preProject
+		driver\README.md = driver\README.md
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "App", "App", "{CE492389-7FB3-4DC4-9AFF-B7A04F70F891}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", "build\_build.csproj", "{30CAEA37-74D5-4219-AF2D-827F12FF6ECF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Lib", "Lib", "{D5FFDFFE-55A3-4AF3-92A6-13F28598A5EE}"
+	ProjectSection(SolutionItems) = preProject
+		XInputBridge\README.md = XInputBridge\README.md
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XInputBridge", "XInputBridge\XInputBridge.vcxproj", "{DC58FE95-938F-4BFB-B434-C043C62E9EF5}"
 EndProject
