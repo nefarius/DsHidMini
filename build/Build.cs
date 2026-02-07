@@ -48,14 +48,15 @@ class Build : NukeBuild
             }
             else
             {
-                if (AppVeyor.Instance.Platform == MSBuildTargetPlatform.x86 ||
-                    AppVeyor.Instance.Platform == MSBuildTargetPlatform.Win32)
+                var appVeyorPlatform = AppVeyor.Instance?.Platform;
+                if (appVeyorPlatform == MSBuildTargetPlatform.x86 ||
+                    appVeyorPlatform == MSBuildTargetPlatform.Win32)
                 {
                     Log.Warning("DMF dropped 32-Bit support, skipping build");
                     return;
                 }
 
-                MSBuildTargetPlatform platform = AppVeyor.Instance.Platform switch
+                MSBuildTargetPlatform platform = appVeyorPlatform switch
                 {
                     "ARM64" => "ARM64",
                     _ => MSBuildTargetPlatform.x64
