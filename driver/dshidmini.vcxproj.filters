@@ -244,6 +244,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="DsHidMini.json" />
+    <None Include="DMF.props" />
   </ItemGroup>
   <ItemGroup>
     <MessageCompile Include="DsHidMini.man">

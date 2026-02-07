@@ -4,8 +4,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_PropertySheetDisplayName>Driver Module Framework</_PropertySheetDisplayName>
-    <!-- By default, look for DMF in parent root directory, otherwise use environment variable value -->
-    <DmfRootPath Condition="'$(DmfRootPath)' == ''">$(SolutionDir)..\DMF</DmfRootPath>
+    <!-- By default, look for DMF submodule at repo root (same directory as solution), otherwise use DmfRootPath env/override -->
+    <DmfRootPath Condition="'$(DmfRootPath)' == ''">$(SolutionDir)DMF</DmfRootPath>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>

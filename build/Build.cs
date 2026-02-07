@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 using Nuke.Common;
 using Nuke.Common.CI.AppVeyor;
@@ -35,35 +37,46 @@ class Build : NukeBuild
     Target BuildDmf => _ => _
         .Executes(() =>
         {
-            if (IsLocalBuild)
-            {
-                return;
-            }
-
             Log.Information("DMF solution path: {DmfSolution}", DmfSolution);
 
-            if (AppVeyor.Instance.Platform == MSBuildTargetPlatform.x86 ||
-                AppVeyor.Instance.Platform == MSBuildTargetPlatform.Win32)
+            IEnumerable<(Configuration config, MSBuildTargetPlatform platform)> buildCombinations;
+            if (IsLocalBuild)
             {
-                Log.Warning("DMF dropped 32-Bit support, skipping build");
-                return;
+                var configs = new[] { Configuration.Debug, Configuration.Release };
+                var platforms = new[] { MSBuildTargetPlatform.x64, (MSBuildTargetPlatform)"ARM64" };
+                buildCombinations = configs.SelectMany(c => platforms.Select(p => (c, p)));
+            }
+            else
+            {
+                var appVeyorPlatform = AppVeyor.Instance?.Platform;
+                if (appVeyorPlatform == MSBuildTargetPlatform.x86 ||
+                    appVeyorPlatform == MSBuildTargetPlatform.Win32)
+                {
+                    Log.Warning("DMF dropped 32-Bit support, skipping build");
+                    return;
+                }
+
+                MSBuildTargetPlatform platform = appVeyorPlatform switch
+                {
+                    "ARM64" => "ARM64",
+                    _ => MSBuildTargetPlatform.x64
+                };
+                buildCombinations = new[] { (Configuration, platform) };
             }
 
-            MSBuildTargetPlatform platform = AppVeyor.Instance.Platform switch
+            foreach (var (config, platform) in buildCombinations)
             {
-                "ARM64" => "ARM64",
-                _ => MSBuildTargetPlatform.x64
-            };
-
-            MSBuildTasks.MSBuild(s => s
-                .SetTargetPath(DmfSolution)
-                .SetTargets("Build")
-                .SetConfiguration(Configuration)
-                .SetTargetPlatform(platform)
-                .SetMaxCpuCount(Environment.ProcessorCount)
-                .SetNodeReuse(IsLocalBuild)
-                .SetVerbosity(MSBuildVerbosity.Minimal)
-            );
+                Log.Information("Building DMF {Configuration} | {Platform}", config, platform);
+                MSBuildTasks.MSBuild(s => s
+                    .SetTargetPath(DmfSolution)
+                    .SetTargets("Build")
+                    .SetConfiguration(config)
+                    .SetTargetPlatform(platform)
+                    .SetMaxCpuCount(Environment.ProcessorCount)
+                    .SetNodeReuse(IsLocalBuild)
+                    .SetVerbosity(MSBuildVerbosity.Minimal)
+                );
+            }
         });
 
     Target Compile => _ => _
@@ -72,15 +85,25 @@ class Build : NukeBuild
         {
             Logging.Level = LogLevel.Normal;
 
-            // regular Release config
-            MSBuildTasks.MSBuild(s => s
-                .SetTargetPath(Solution)
-                .SetTargets("Rebuild")
-                .SetConfiguration(Configuration)
-                .SetMaxCpuCount(Environment.ProcessorCount)
-                .SetNodeReuse(IsLocalBuild)
-                .SetVerbosity(MSBuildVerbosity.Minimal)
-            );
+            MSBuildTasks.MSBuild(s =>
+            {
+                var settings = s
+                    .SetTargetPath(Solution)
+                    .SetTargets("Rebuild")
+                    .SetConfiguration(Configuration)
+                    .SetMaxCpuCount(Environment.ProcessorCount)
+                    .SetNodeReuse(IsLocalBuild)
+                    .SetVerbosity(MSBuildVerbosity.Minimal);
+
+                // Aggressively silence C# warnings for local Nuke builds (nullability, CS8981, XML docs, etc.)
+                if (IsLocalBuild)
+                {
+                    var noWarn = "CS0219;CS1587;CS1591;CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8619;CS8622;CS8625;CS8629;CS8765;CS8767;CS8981";
+                    settings = settings.SetProperty("NoWarn", noWarn.Replace(";", "%3B"));
+                }
+
+                return settings;
+            });
         });
 
     /// Support plugins are available for:
