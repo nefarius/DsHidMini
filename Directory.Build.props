@@ -3,7 +3,7 @@
     <PropertyGroup>
         <!-- Copyright information -->
         <Authors>Kanuan, Benjamin Höglinger-Stelzer</Authors>
-        <Copyright>Copyright © Nefarius Software Solutions e.U. 2022-2024</Copyright>
+        <Copyright>Copyright © Nefarius Software Solutions e.U. 2022-2026</Copyright>
 
         <!-- Common solution settings -->
         <!--<OutputPath>$(SolutionDir)bin\</OutputPath>-->

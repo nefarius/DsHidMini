@@ -81,7 +81,7 @@ BEGIN
             VALUE "FileDescription", "Virtual HID Mini-user-mode-driver for Sony DualShock 3 Controllers"
             VALUE "FileVersion", "1.0.0.1"
             VALUE "InternalName", "dshidmin.dll"
-            VALUE "LegalCopyright", "Copyright (C) 2020 Nefarius Software Solutions e.U."
+            VALUE "LegalCopyright", "Copyright (C) 2026 Nefarius Software Solutions e.U."
             VALUE "OriginalFilename", "dshidmin.dll"
             VALUE "ProductName", "Virtual HID Mini-user-mode-driver for Sony DualShock 3 Controllers"
             VALUE "ProductVersion", "1.0.0.1"
