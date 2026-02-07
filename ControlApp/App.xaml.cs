@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 
 using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
+using Nefarius.DsHidMini.ControlApp.Models.Util.Web;
 using Nefarius.DsHidMini.ControlApp.Services;
 using Nefarius.DsHidMini.ControlApp.ViewModels.Pages;
 using Nefarius.DsHidMini.ControlApp.ViewModels.Windows;
@@ -60,6 +61,8 @@ public partial class App
             services.AddSingleton<SettingsViewModel>();
             services.AddSingleton<Main>();
 
+            services.AddSingleton<AddressValidator>();
+
             Log.Logger = new LoggerConfiguration()
 #if DEBUG
                 .MinimumLevel.Debug()
@@ -74,6 +77,12 @@ public partial class App
             services.AddHttpClient("Buildbot", client =>
             {
                 client.BaseAddress = new Uri("https://buildbot.nefarius.at/");
+                client.DefaultRequestHeaders.UserAgent.ParseAdd(context.HostingEnvironment.ApplicationName);
+            });
+            
+            services.AddHttpClient("Docs", client =>
+            {
+                client.BaseAddress = new Uri("https://docs.nefarius.at/");
                 client.DefaultRequestHeaders.UserAgent.ParseAdd(context.HostingEnvironment.ApplicationName);
             });
         }).Build();

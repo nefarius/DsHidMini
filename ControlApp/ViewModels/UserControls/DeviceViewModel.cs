@@ -1,9 +1,11 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Net.NetworkInformation;
+using System.Text.RegularExpressions;
 
 using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.Enums;
+using Nefarius.DsHidMini.ControlApp.Models.Util.Web;
 using Nefarius.DsHidMini.ControlApp.Services;
 using Nefarius.DsHidMini.IPC.Models.Drivers;
 using Nefarius.Utilities.DeviceManagement.PnP;
@@ -19,6 +21,7 @@ public partial class DeviceViewModel : ObservableObject
     private readonly AppSnackbarMessagesService _appSnackbarMessagesService;
     private readonly Timer _batteryQuery;
     private readonly IContentDialogService _contentDialogService;
+    private readonly AddressValidator _addressValidator;
 
     private readonly DeviceData _deviceUserData;
 
@@ -77,6 +80,12 @@ public partial class DeviceViewModel : ObservableObject
     /// </summary>
     private BluetoothPairingMode? _pairingMode;
 
+    /// <summary>
+    ///     Whether the controller is deemed official Sony genuine by using the online address database.
+    /// </summary>
+    [ObservableProperty]
+    private bool _isGenuine;
+
 
     // ------------------------------------------------------ METHODS
 
@@ -86,22 +95,28 @@ public partial class DeviceViewModel : ObservableObject
 
     // ------------------------------------------------------ CONSTRUCTOR
 
-    internal DeviceViewModel(PnPDevice device, DshmDevMan dshmDevMan, DshmConfigManager dshmConfigManager,
-        AppSnackbarMessagesService appSnackbarMessagesService, IContentDialogService contentDialogService)
+    internal DeviceViewModel(
+        PnPDevice device, 
+        DshmDevMan dshmDevMan,
+        DshmConfigManager dshmConfigManager,
+        AppSnackbarMessagesService appSnackbarMessagesService,
+        IContentDialogService contentDialogService,
+        AddressValidator addressValidator
+        )
     {
         Device = device;
-        Log.Logger.Debug($"Creating Device ViewModel for device '{DeviceAddress}'");
+        Log.Logger.Debug("Creating Device ViewModel for device '{S}'", DeviceAddress);
         _dshmDevMan = dshmDevMan;
         _dshmConfigManager = dshmConfigManager;
         _appSnackbarMessagesService = appSnackbarMessagesService;
         _contentDialogService = contentDialogService;
+        _addressValidator = addressValidator;
         _batteryQuery = new Timer(UpdateBatteryStatus, null, 10000, 10000);
         _deviceUserData = _dshmConfigManager.GetDeviceData(DeviceAddress);
         // Loads correspondent controller data based on controller's MAC address 
 
 
         //DisplayName = DeviceAddress;
-        RefreshDeviceSettings();
     }
 
     public PnPDevice Device { get; }
@@ -123,7 +138,7 @@ public partial class DeviceViewModel : ObservableObject
     /// <summary>
     ///     State of Device's current HID Mode in relation to mode it's expected to be
     /// </summary>
-    public bool IsHidModeMismatched => HidEmulationMode != ExpectedHidMode ? true : false;
+    public bool IsHidModeMismatched => HidEmulationMode != ExpectedHidMode;
 
     /// <summary>
     ///     Summary of device's current HID mode and Settings mode
@@ -249,12 +264,12 @@ public partial class DeviceViewModel : ObservableObject
     /// <summary>
     ///     Index of the desired Bluetooth pairing mode
     /// </summary>
-    public int PairingMode
+    public BluetoothPairingMode PairingMode
     {
-        get => (int)_pairingMode;
+        get => _pairingMode ?? BluetoothPairingMode.Auto;
         set
         {
-            _pairingMode = (BluetoothPairingMode)value;
+            _pairingMode = value;
             OnPropertyChanged();
         }
     }
@@ -384,11 +399,11 @@ public partial class DeviceViewModel : ObservableObject
     }
 
     [RelayCommand]
-    public void RefreshDeviceSettings()
+    public async Task RefreshDeviceSettings()
     {
         Log.Logger.Debug("Refreshing ViewModel of Device '{Address}'", DeviceAddress);
         // Bluetooth
-        PairingMode = (int)_deviceUserData.BluetoothPairingMode;
+        PairingMode = _deviceUserData.BluetoothPairingMode;
         CustomPairingAddress = _deviceUserData.PairingAddress;
 
         // Settings and selected profile
@@ -398,10 +413,27 @@ public partial class DeviceViewModel : ObservableObject
 
         Log.Logger.Information(
             "Device '{S}' set for {SettingsContext} HID Mode (currently in {HidModeShort1}), {BluetoothPairingMode} Bluetooth pairing mode."
-            , DeviceAddress, ExpectedHidMode, HidModeShort, (BluetoothPairingMode)PairingMode);
-        if ((BluetoothPairingMode)PairingMode == BluetoothPairingMode.Custom)
+            , DeviceAddress, ExpectedHidMode, HidModeShort, PairingMode);
+        if (PairingMode == BluetoothPairingMode.Custom)
         {
             Log.Logger.Information("Custom pairing address: {CustomPairingAddress}.", CustomPairingAddress);
+        }
+
+        if (string.IsNullOrWhiteSpace(DeviceAddress))
+        {
+            IsGenuine = false;
+        }
+        else
+        {
+            try
+            {
+                IsGenuine = await _addressValidator.IsGenuineAddress(PhysicalAddress.Parse(DeviceAddress));
+            }
+            catch (FormatException ex)
+            {
+                Log.Logger.Warning(ex, "Failed to parse device address '{DeviceAddress}' as PhysicalAddress.", DeviceAddress);
+                IsGenuine = false;
+            }
         }
 
         AdjustSettingsTabState();
@@ -410,10 +442,10 @@ public partial class DeviceViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void ApplyChanges()
+    private async Task ApplyChanges()
     {
         Log.Logger.Information("Saving and applying changes made to Device '{DeviceAddress}'", DeviceAddress);
-        _deviceUserData.BluetoothPairingMode = (BluetoothPairingMode)PairingMode;
+        _deviceUserData.BluetoothPairingMode = PairingMode;
 
         string formattedCustomMacAddress = Regex.Replace(CustomPairingAddress, @"[^a-fA-F0-9]", "").ToUpper();
         if (formattedCustomMacAddress.Length > 12)
@@ -436,7 +468,7 @@ public partial class DeviceViewModel : ObservableObject
 
         _dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile();
         _appSnackbarMessagesService.ShowDsHidMiniConfigurationUpdateSuccessMessage();
-        RefreshDeviceSettings();
+        await RefreshDeviceSettings();
     }
 
     [RelayCommand]
