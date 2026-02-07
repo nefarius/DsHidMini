@@ -39,7 +39,7 @@ Configuration is stored under **%AppData%**; the app does not require administra
 | **.NET** | .NET 8.0 |
 | **OS** | Windows 10 or later (targeting `net8.0-windows10.0.17763.0`) |
 | **Driver** | [DsHidMini](https://github.com/ViGEm/DsHidMini) driver installed; at least one compatible controller connected for full functionality |
-| **Architecture** | AnyCPU or x64 (publish profile uses win-x64) |
+| **Architecture** | AnyCPU or x64 (NUKE publish uses win-x64) |
 
 ---
 
@@ -67,28 +67,21 @@ dotnet build ControlAppSolution.sln
 
 ## Publishing
 
-Single-file, framework-dependent release for Windows x64 (output under `ControlApp\bin\`):
+Production-ready, single-file, framework-dependent publish for Windows x64 is done via the NUKE build. From the repository root:
 
 ```powershell
-dotnet publish /p:PublishProfile=Properties\PublishProfiles\release-win-x64.pubxml
+.\build.ps1 PublishControlApp
 ```
 
-Run from the **ControlApp** project directory. The profile sets:
+This compiles the solution (if needed) and publishes the ControlApp to the solution `bin` folder. The NUKE task uses:
 
 | Option | Value |
 |--------|--------|
 | **Configuration** | Release |
-| **Platform** | x64 |
 | **Runtime** | win-x64 |
 | **Self-contained** | false (framework-dependent) |
 | **Single-file** | true |
-| **Publish directory** | `ControlApp\bin\` |
-
-To publish from the repo root:
-
-```powershell
-dotnet publish D:\DsHidMini\ControlApp\ControlApp.csproj /p:PublishProfile=Properties\PublishProfiles\release-win-x64.pubxml
-```
+| **Publish directory** | `bin\` (at repo root) |
 
 ---
 

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
@@ -10,6 +10,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <UseWPF>true</UseWPF>
         <Platforms>AnyCPU;x64</Platforms>
+        <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
         <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
         <RootNamespace>Nefarius.DsHidMini.ControlApp</RootNamespace>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

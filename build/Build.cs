@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 using Nuke.Common;
@@ -7,6 +8,7 @@ using Nuke.Common.CI.AppVeyor;
 using Nuke.Common.Execution;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
+using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
 
 using Serilog;
@@ -29,9 +31,18 @@ class Build : NukeBuild
         {
         });
 
+    /// <summary>
+    /// Restores ControlApp for win-x64 (used only by PublishControlApp so project.assets.json has the RID target).
+    /// </summary>
     Target Restore => _ => _
         .Executes(() =>
         {
+            var controlAppProjectPath = RootDirectory / "ControlApp" / "ControlApp.csproj";
+            if (!File.Exists(controlAppProjectPath))
+                throw new InvalidOperationException($"ControlApp project not found at {controlAppProjectPath}");
+            DotNetTasks.DotNetRestore(s => s
+                .SetProjectFile(controlAppProjectPath)
+                .SetRuntime("win-x64"));
         });
 
     Target BuildDmf => _ => _
@@ -104,6 +115,32 @@ class Build : NukeBuild
 
                 return settings;
             });
+        });
+
+    /// <summary>
+    /// Publishes the ControlApp as a production-ready, single-file, framework-dependent executable for win-x64.
+    /// Output is written to the solution's bin folder (same layout as the former release-win-x64 publish profile).
+    /// </summary>
+    public Target PublishControlApp => _ => _
+        .DependsOn(Restore)
+        .Executes(() =>
+        {
+            var controlAppProjectPath = RootDirectory / "ControlApp" / "ControlApp.csproj";
+            if (!File.Exists(controlAppProjectPath))
+                throw new InvalidOperationException($"ControlApp project not found at {controlAppProjectPath}");
+            var publishOutput = RootDirectory / "bin";
+
+            DotNetTasks.DotNetPublish(s => s
+                .SetProject(controlAppProjectPath)
+                .SetConfiguration(Configuration.Release)
+                .SetRuntime("win-x64")
+                .SetOutput(publishOutput)
+                .SetSelfContained(false)
+                .SetProperty("PublishSingleFile", true)
+                .SetProperty("IncludeAllContentForSelfExtract", true)
+            );
+
+            Log.Information("ControlApp published to {PublishOutput}", publishOutput);
         });
 
     /// Support plugins are available for:

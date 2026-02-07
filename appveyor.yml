@@ -47,7 +47,7 @@ before_build:
 - cmd: dotnet restore .\ipctest\
 build_script:
 - cmd: .\build.cmd
-- cmd: if %PLATFORM%==x64 dotnet publish /p:PublishProfile=Properties\PublishProfiles\release-win-x64.pubxml .\ControlApp\
+- cmd: if %PLATFORM%==x64 .\build.cmd PublishControlApp --skip Compile
 after_build:
 - cmd: if not %PLATFORM%==x86 makecab.exe /f .\DsHidMini_%PLATFORM%.ddf
 artifacts:

@@ -27,6 +27,7 @@
         "BuildDmf",
         "Clean",
         "Compile",
+        "PublishControlApp",
         "Restore"
       ]
     },
