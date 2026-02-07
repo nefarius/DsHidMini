@@ -4,7 +4,7 @@ Drop-in **XInput proxy DLL** for [DsHidMini](../README.md). It replaces `XInput1
 
 ## Overview
 
-- **Role:** Implements the XInput 1.3 API; built as `XInput1_3.dll` so apps load it instead of the system DLL (e.g. via game directory or [x360ce](https://www.x360ce.com/)).
+- **Role:** Implements the XInput 1.3 API plus selected XInput 1.4 functions (XInput 1.3+ / XInput 1.4–compatible); built as `XInput1_3.dll` so apps load it instead of the system DLL (e.g. via game directory or [x360ce](https://www.x360ce.com/)). Functions such as `XInputWaitForGuideButton`, `XInputCancelGuideButtonWait`, and `XInputPowerOffController` are proxied to the system DLL.
 - **Per–user index:** Each of the 4 XInput “slots” (plus extended handling) is either:
   - **DsHidMini DS3** (SXS HID device) → bridge reads HID via [HIDAPI](https://github.com/libusb/hidapi), maps to XInput state/rumble and optionally exposes extended data, or
   - **Real XUSB device** → call is proxied to `C:\Windows\System32\XInput1_3.dll`.
