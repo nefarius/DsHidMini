@@ -258,6 +258,7 @@
     <ResourceCompile Include="$(IntDir)DsHidMiniETW.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="DMF.props" />
     <None Include="DsHidMini.json" />
   </ItemGroup>
   <ItemGroup>
