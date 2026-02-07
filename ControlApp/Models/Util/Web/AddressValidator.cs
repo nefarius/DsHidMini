@@ -12,9 +12,42 @@ public class OUIEntry : IEquatable<OUIEntry>
 {
     public OUIEntry(string manufacturer)
     {
-        string hex = manufacturer.Replace(":", string.Empty);
+        if (manufacturer is null)
+        {
+            throw new ArgumentNullException(nameof(manufacturer));
+        }
 
-        Bytes = Enumerable.Range(0, hex.Length / 2).Select(x => Convert.ToByte(hex.Substring(x * 2, 2), 16))
+        // Strip common separators and all whitespace (e.g., "AA:BB:CC", "AA-BB-CC", "AABBCC", " AA BB CC ").
+        string hex = new string(manufacturer
+            .Where(c => !char.IsWhiteSpace(c) && c is not ':' and not '-' and not '.')
+            .ToArray());
+
+        // Fail fast on malformed lengths (prevents truncation of a trailing nibble).
+        if ((hex.Length % 2) != 0)
+        {
+            throw new ArgumentException(
+                $@"OUI hex string must contain an even number of hex digits after removing separators/whitespace, but was {hex.Length}.",
+                nameof(manufacturer));
+        }
+
+        // OUIs are exactly 3 bytes = 6 hex digits.
+        if (hex.Length != 6)
+        {
+            throw new ArgumentException(
+                $@"OUI hex string must contain exactly 6 hex digits (3 bytes) after removing separators/whitespace, but was {hex.Length}.",
+                nameof(manufacturer));
+        }
+
+        // Optional: validate characters before parsing to give a clearer error than Convert.ToByte might.
+        if (hex.Any(c => !Uri.IsHexDigit(c)))
+        {
+            throw new ArgumentException(
+                @"OUI hex string contains non-hex characters after removing separators/whitespace.",
+                nameof(manufacturer));
+        }
+
+        Bytes = Enumerable.Range(0, hex.Length / 2)
+            .Select(i => Convert.ToByte(hex.Substring(i * 2, 2), 16))
             .ToArray();
     }
 
