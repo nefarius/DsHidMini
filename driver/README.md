@@ -15,7 +15,7 @@ The driver is a filter below `mshidumdf.sys`, acting as a function driver for US
 
 ### Environment
 
-Designed for **Windows 10** version 1809 or newer (x86, x64, ARM64). Dependencies are not available on Windows 7/8/8.1, so those are unsupported.
+Designed for **Windows 10** version 1809 or newer (**x64**, **ARM64**). Dependencies are not available on Windows 7/8/8.1, so those are unsupported.
 
 ## Project layout
 
