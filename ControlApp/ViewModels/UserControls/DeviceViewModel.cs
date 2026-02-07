@@ -18,10 +18,10 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls;
 
 public partial class DeviceViewModel : ObservableObject
 {
+    private readonly AddressValidator _addressValidator;
     private readonly AppSnackbarMessagesService _appSnackbarMessagesService;
     private readonly Timer _batteryQuery;
     private readonly IContentDialogService _contentDialogService;
-    private readonly AddressValidator _addressValidator;
 
     private readonly DeviceData _deviceUserData;
 
@@ -59,6 +59,12 @@ public partial class DeviceViewModel : ObservableObject
     private bool _isEditorVisible;
 
     /// <summary>
+    ///     Whether the controller is deemed official Sony genuine by using the online address database.
+    /// </summary>
+    [ObservableProperty]
+    private bool _isGenuine;
+
+    /// <summary>
     ///     Determines if the profile selector is enabled.
     ///     True if in Profile settings mode, false otherwise
     /// </summary>
@@ -80,12 +86,6 @@ public partial class DeviceViewModel : ObservableObject
     /// </summary>
     private BluetoothPairingMode? _pairingMode;
 
-    /// <summary>
-    ///     Whether the controller is deemed official Sony genuine by using the online address database.
-    /// </summary>
-    [ObservableProperty]
-    private bool _isGenuine;
-
 
     // ------------------------------------------------------ METHODS
 
@@ -96,13 +96,13 @@ public partial class DeviceViewModel : ObservableObject
     // ------------------------------------------------------ CONSTRUCTOR
 
     internal DeviceViewModel(
-        PnPDevice device, 
+        PnPDevice device,
         DshmDevMan dshmDevMan,
         DshmConfigManager dshmConfigManager,
         AppSnackbarMessagesService appSnackbarMessagesService,
         IContentDialogService contentDialogService,
         AddressValidator addressValidator
-        )
+    )
     {
         Device = device;
         Log.Logger.Debug("Creating Device ViewModel for device '{S}'", DeviceAddress);
@@ -431,7 +431,8 @@ public partial class DeviceViewModel : ObservableObject
             }
             catch (FormatException ex)
             {
-                Log.Logger.Warning(ex, "Failed to parse device address '{DeviceAddress}' as PhysicalAddress.", DeviceAddress);
+                Log.Logger.Warning(ex, "Failed to parse device address '{DeviceAddress}' as PhysicalAddress.",
+                    DeviceAddress);
                 IsGenuine = false;
             }
         }
@@ -485,7 +486,7 @@ public partial class DeviceViewModel : ObservableObject
     [RelayCommand]
     private async Task TriggerPairingOnHotReload()
     {
-        _deviceUserData.BluetoothPairingMode = (BluetoothPairingMode)PairingMode;
+        _deviceUserData.BluetoothPairingMode = PairingMode;
         string formattedCustomMacAddress = Regex.Replace(CustomPairingAddress, @"[^a-fA-F0-9]", "").ToUpper();
         if (formattedCustomMacAddress.Length > 12)
         {

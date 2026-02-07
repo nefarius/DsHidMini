@@ -122,10 +122,10 @@
                                                                 <ui:SymbolIcon.Style>
                                                                     <Style TargetType="ui:SymbolIcon">
                                                                         <Setter Property="Symbol"
-                                                                            Value="ArrowClockWise24" />
+                                                                                Value="ArrowClockWise24" />
                                                                         <Style.Triggers>
                                                                             <DataTrigger Binding="{Binding IsWireless}"
-                                                                                Value="True">
+                                                                                    Value="True">
                                                                                 <Setter Property="Symbol"
                                                                                     Value="Power24" />
                                                                             </DataTrigger>

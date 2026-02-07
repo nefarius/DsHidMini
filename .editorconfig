@@ -46,6 +46,7 @@ dotnet_separate_import_directive_groups = true
 dotnet_sort_system_directives_first = true
 file_header_template = # this. and Me. preferences
 
+
 dotnet_style_qualification_for_event = false:warning
 dotnet_style_qualification_for_field = false:warning
 dotnet_style_qualification_for_method = false:silent

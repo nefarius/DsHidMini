@@ -18,12 +18,12 @@ public class OUIEntry : IEquatable<OUIEntry>
         }
 
         // Strip common separators and all whitespace (e.g., "AA:BB:CC", "AA-BB-CC", "AABBCC", " AA BB CC ").
-        string hex = new string(manufacturer
+        string hex = new(manufacturer
             .Where(c => !char.IsWhiteSpace(c) && c is not ':' and not '-' and not '.')
             .ToArray());
 
         // Fail fast on malformed lengths (prevents truncation of a trailing nibble).
-        if ((hex.Length % 2) != 0)
+        if (hex.Length % 2 != 0)
         {
             throw new ArgumentException(
                 $@"OUI hex string must contain an even number of hex digits after removing separators/whitespace, but was {hex.Length}.",
@@ -85,7 +85,7 @@ public class OUIEntry : IEquatable<OUIEntry>
 
     public override int GetHashCode()
     {
-        var hash = new HashCode();
+        HashCode hash = new();
         hash.AddBytes(Bytes);
         return hash.ToHashCode();
     }
@@ -125,7 +125,8 @@ public sealed class AddressValidator(IHttpClientFactory clientFactory, ILogger<A
         }
         catch (TaskCanceledException ex)
         {
-            logger?.LogWarning(ex, "Downloading genuine OUI database timed out/canceled; treating address as not genuine.");
+            logger?.LogWarning(ex,
+                "Downloading genuine OUI database timed out/canceled; treating address as not genuine.");
             return false;
         }
         catch (JsonException ex)

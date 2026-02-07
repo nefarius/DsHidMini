@@ -5,7 +5,6 @@ using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.Util.Web;
 using Nefarius.DsHidMini.ControlApp.Services;
 using Nefarius.DsHidMini.ControlApp.ViewModels.UserControls;
-using Nefarius.Utilities.DeviceManagement.PnP;
 
 using Wpf.Ui;
 using Wpf.Ui.Abstractions.Controls;
@@ -18,9 +17,9 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages;
 
 public partial class DevicesViewModel : ObservableObject, INavigationAware
 {
+    private readonly AddressValidator _addressValidator;
     private readonly AppSnackbarMessagesService _appSnackbarMessagesService;
     private readonly IContentDialogService _contentDialogService;
-    private readonly AddressValidator _addressValidator;
     private readonly DshmConfigManager _dshmConfigManager;
 
     private readonly DshmDevMan _dshmDevMan;
@@ -41,10 +40,10 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
     public DevicesViewModel(
         DshmDevMan dshmDevMan,
         DshmConfigManager dshmConfigManager,
-        AppSnackbarMessagesService appSnackbarMessagesService, 
+        AppSnackbarMessagesService appSnackbarMessagesService,
         IContentDialogService contentDialogService,
         AddressValidator addressValidator
-        )
+    )
     {
         _dshmDevMan = dshmDevMan;
         _dshmConfigManager = dshmConfigManager;
