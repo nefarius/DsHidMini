@@ -8,7 +8,7 @@ Drop-in **XInput proxy DLL** for [DsHidMini](../README.md). It replaces `XInput1
 - **Per–user index:** Each of the 4 XInput “slots” (plus extended handling) is either:
   - **DsHidMini DS3** (SXS HID device) → bridge reads HID via [HIDAPI](https://github.com/libusb/hidapi), maps to XInput state/rumble and optionally exposes extended data, or
   - **Real XUSB device** → call is proxied to `C:\Windows\System32\XInput1_3.dll`.
-- **Extended API:** `XInputGetExtended` returns a struct (see `ScpTypes.h` / `include/DsHidMini/ScpTypes.h`) with normalized float values for all DS3 axes and buttons (1.0 = full press / full axis, 0.0 = released / center). Only meaningful for slots occupied by a DsHidMini DS3.
+- **Extended API:** `XInputGetExtended` returns a struct (see `include/DsHidMini/ScpTypes.h`) with normalized float values for all DS3 axes and buttons (1.0 = full press / full axis, 0.0 = released / center). Only meaningful for slots occupied by a DsHidMini DS3.
 
 This project revives the [extended XInput API from ScpToolkit](https://github.com/nefarius/ScpToolkit/tree/master/ScpXInputBridge) as a maintained replacement for the legacy [SCP proxy DLL](https://github.com/nefarius/ScpToolkit/tree/9f4076ad6912002687d1824494258607d859c67e/XInput_Scp).
 

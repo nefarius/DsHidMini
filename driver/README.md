@@ -9,6 +9,14 @@ User-mode filter driver for Sony DualShock 3 controllers. This project builds th
 - **Transports:** USB (`DsUsb`) and Bluetooth via [BthPS3](https://github.com/nefarius/BthPS3) (`DsBth`)
 - **Configuration:** Primarily via a JSON config file and IPC (memory-mapped file) used by the configuration app
 
+### How it works
+
+The driver is a filter below `mshidumdf.sys`, acting as a function driver for USB and Bluetooth via the [User-mode Driver Framework Reflector](https://docs.microsoft.com/en-us/windows-hardware/drivers/wdf/detailed-view-of-the-umdf-architecture). It translates HID I/O to USB/Bluetooth I/O and presents the device as user-configurable HID modes. On Bluetooth with [BthPS3](https://github.com/nefarius/BthPS3) it replaces the need for [Shibari](https://github.com/nefarius/Shibari). Core HID handling is provided by [DMF Virtual Hid Mini](https://github.com/microsoft/DMF/blob/master/Dmf/Modules.Library/Dmf_VirtualHidMini.md).
+
+### Environment
+
+Designed for **Windows 10** version 1809 or newer (x86, x64, ARM64). Dependencies are not available on Windows 7/8/8.1, so those are unsupported.
+
 ## Project layout
 
 | Area | Description |
@@ -36,7 +44,7 @@ User-mode filter driver for Sony DualShock 3 controllers. This project builds th
 
 ### Building
 
-Open the solution (e.g. `dshidmini.sln` in the repo root) in Visual Studio and build the **driver** project, or use the repo’s [build scripts](../../README.md#how-to-build). Supported platforms: **x64**, **ARM64**.
+Open the solution (e.g. `dshidmini.sln` in the repo root) in Visual Studio and build the **driver** project, or use the repo’s [build scripts](../../README.md#building). Supported platforms: **x64**, **ARM64**.
 
 ## Installation
 
