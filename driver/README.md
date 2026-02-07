@@ -7,7 +7,7 @@ User-mode filter driver for Sony DualShock 3 controllers. This project builds th
 - **Framework:** [UMDF](https://docs.microsoft.com/en-us/windows-hardware/drivers/wdf/overview-of-the-umdf) (User-Mode Driver Framework), sitting below `mshidumdf.sys`
 - **Core HID:** [DMF Virtual Hid Mini](https://github.com/microsoft/DMF/blob/master/Dmf/Modules.Library/Dmf_VirtualHidMini.md) for virtual HID report handling
 - **Transports:** USB (`DsUsb`) and Bluetooth via [BthPS3](https://github.com/nefarius/BthPS3) (`DsBth`)
-- **Configuration:** Device settings via [Unified Device Property Model](https://docs.microsoft.com/en-us/windows-hardware/drivers/install/unified-device-property-model--windows-vista-and-later-) and IPC (memory-mapped file) for the configuration app
+- **Configuration:** Primarily via a JSON config file and IPC (memory-mapped file) used by the configuration app
 
 ## Project layout
 
