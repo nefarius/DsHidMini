@@ -419,7 +419,22 @@ public partial class DeviceViewModel : ObservableObject
             Log.Logger.Information("Custom pairing address: {CustomPairingAddress}.", CustomPairingAddress);
         }
 
-        IsGenuine = await _addressValidator.IsGenuineAddress(PhysicalAddress.Parse(DeviceAddress));
+        if (string.IsNullOrWhiteSpace(DeviceAddress))
+        {
+            IsGenuine = false;
+        }
+        else
+        {
+            try
+            {
+                IsGenuine = await _addressValidator.IsGenuineAddress(PhysicalAddress.Parse(DeviceAddress));
+            }
+            catch (FormatException ex)
+            {
+                Log.Logger.Warning(ex, "Failed to parse device address '{DeviceAddress}' as PhysicalAddress.", DeviceAddress);
+                IsGenuine = false;
+            }
+        }
 
         AdjustSettingsTabState();
         OnPropertyChanged(nameof(DeviceSettingsStatus));
