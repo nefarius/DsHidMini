@@ -21,7 +21,7 @@ class Build : NukeBuild
     [Solution]
     readonly Solution Solution;
 
-    AbsolutePath DmfSolution => IsLocalBuild 
+    AbsolutePath DmfSolution => IsLocalBuild
         ? Solution.Directory / "DMF/Dmf.sln"
         : "C:/projects/DMF/Dmf.sln";
 
@@ -37,9 +37,12 @@ class Build : NukeBuild
     Target Restore => _ => _
         .Executes(() =>
         {
-            var controlAppProjectPath = RootDirectory / "ControlApp" / "ControlApp.csproj";
+            AbsolutePath controlAppProjectPath = RootDirectory / "ControlApp" / "ControlApp.csproj";
             if (!File.Exists(controlAppProjectPath))
+            {
                 throw new InvalidOperationException($"ControlApp project not found at {controlAppProjectPath}");
+            }
+
             DotNetTasks.DotNetRestore(s => s
                 .SetProjectFile(controlAppProjectPath)
                 .SetRuntime("win-x64"));
@@ -53,13 +56,13 @@ class Build : NukeBuild
             IEnumerable<(Configuration config, MSBuildTargetPlatform platform)> buildCombinations;
             if (IsLocalBuild)
             {
-                var configs = new[] { Configuration.Debug, Configuration.Release };
-                var platforms = new[] { MSBuildTargetPlatform.x64, (MSBuildTargetPlatform)"ARM64" };
+                Configuration[] configs = [Configuration.Debug, Configuration.Release];
+                MSBuildTargetPlatform[] platforms = [MSBuildTargetPlatform.x64, (MSBuildTargetPlatform)"ARM64"];
                 buildCombinations = configs.SelectMany(c => platforms.Select(p => (c, p)));
             }
             else
             {
-                var appVeyorPlatform = AppVeyor.Instance?.Platform;
+                string appVeyorPlatform = AppVeyor.Instance?.Platform;
                 if (appVeyorPlatform == MSBuildTargetPlatform.x86 ||
                     appVeyorPlatform == MSBuildTargetPlatform.Win32)
                 {
@@ -72,10 +75,10 @@ class Build : NukeBuild
                     "ARM64" => "ARM64",
                     _ => MSBuildTargetPlatform.x64
                 };
-                buildCombinations = new[] { (Configuration, platform) };
+                buildCombinations = [(Configuration, platform)];
             }
 
-            foreach (var (config, platform) in buildCombinations)
+            foreach ((Configuration config, MSBuildTargetPlatform platform) in buildCombinations)
             {
                 Log.Information("Building DMF {Configuration} | {Platform}", config, platform);
                 MSBuildTasks.MSBuild(s => s
@@ -98,7 +101,7 @@ class Build : NukeBuild
 
             MSBuildTasks.MSBuild(s =>
             {
-                var settings = s
+                MSBuildSettings settings = s
                     .SetTargetPath(Solution)
                     .SetTargets("Rebuild")
                     .SetConfiguration(Configuration)
@@ -109,7 +112,8 @@ class Build : NukeBuild
                 // Aggressively silence C# warnings for local Nuke builds (nullability, CS8981, XML docs, etc.)
                 if (IsLocalBuild)
                 {
-                    var noWarn = "CS0219;CS1587;CS1591;CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8619;CS8622;CS8625;CS8629;CS8765;CS8767;CS8981";
+                    string noWarn =
+                        "CS0219;CS1587;CS1591;CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8619;CS8622;CS8625;CS8629;CS8765;CS8767;CS8981";
                     settings = settings.SetProperty("NoWarn", noWarn.Replace(";", "%3B"));
                 }
 
@@ -125,20 +129,29 @@ class Build : NukeBuild
         .DependsOn(Restore)
         .Executes(() =>
         {
-            var controlAppProjectPath = RootDirectory / "ControlApp" / "ControlApp.csproj";
+            AbsolutePath controlAppProjectPath = RootDirectory / "ControlApp" / "ControlApp.csproj";
             if (!File.Exists(controlAppProjectPath))
+            {
                 throw new InvalidOperationException($"ControlApp project not found at {controlAppProjectPath}");
-            var publishOutput = RootDirectory / "bin";
+            }
 
-            DotNetTasks.DotNetPublish(s => s
-                .SetProject(controlAppProjectPath)
-                .SetConfiguration(Configuration.Release)
-                .SetRuntime("win-x64")
-                .SetOutput(publishOutput)
-                .SetSelfContained(false)
-                .SetProperty("PublishSingleFile", true)
-                .SetProperty("IncludeAllContentForSelfExtract", true)
-            );
+            AbsolutePath publishOutput = RootDirectory / "bin";
+
+            DotNetTasks.DotNetPublish(s =>
+            {
+                string noWarn =
+                    "CS0219;CS1587;CS1591;CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8619;CS8622;CS8625;CS8629;CS8765;CS8767;CS8981";
+                s = s.SetProperty("NoWarn", noWarn.Replace(";", "%3B"));
+
+                return s
+                    .SetProject(controlAppProjectPath)
+                    .SetConfiguration(Configuration.Release)
+                    .SetRuntime("win-x64")
+                    .SetOutput(publishOutput)
+                    .SetSelfContained(false)
+                    .SetProperty("PublishSingleFile", true)
+                    .SetProperty("IncludeAllContentForSelfExtract", true);
+            });
 
             Log.Information("ControlApp published to {PublishOutput}", publishOutput);
         });
