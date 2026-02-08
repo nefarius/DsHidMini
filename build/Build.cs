@@ -254,19 +254,32 @@ class Build : NukeBuild
                     string artifactsListUri = $"{AppVeyorApiUrl}/buildjobs/{jobId}/artifacts";
                     string listJson = http.GetStringAsync(artifactsListUri).GetAwaiter().GetResult();
                     using JsonDocument listDoc = JsonDocument.Parse(listJson);
+                    string artifactsDirFull = Path.GetFullPath(artifactsDir);
+                    string artifactsDirRoot = artifactsDirFull.TrimEnd(Path.DirectorySeparatorChar);
+
                     foreach (JsonElement artifact in listDoc.RootElement.EnumerateArray())
                     {
                         string fileName = artifact.GetProperty("fileName").GetString()!;
-                        string localPath = Path.Combine(artifactsDir,
-                            fileName.Replace('/', Path.DirectorySeparatorChar));
-                        string localPathUnescaped = Uri.UnescapeDataString(localPath);
+                        string fileNameDecoded = Uri.UnescapeDataString(fileName);
+                        string fileNameNormalized = fileNameDecoded.Replace('/', Path.DirectorySeparatorChar);
+                        string candidatePath = Path.Combine(artifactsDirFull, fileNameNormalized);
+                        string fullPath = Path.GetFullPath(candidatePath);
+
+                        if (!fullPath.StartsWith(artifactsDirRoot + Path.DirectorySeparatorChar, StringComparison.Ordinal)
+                            && fullPath != artifactsDirRoot)
+                        {
+                            Log.Error("Path traversal blocked: artifact fileName \"{FileName}\" resolves outside {ArtifactsDir}",
+                                fileName, artifactsDirFull);
+                            continue;
+                        }
+
                         string fileNameEncoded = Uri.EscapeDataString(fileName);
                         string downloadUri =
                             $"{AppVeyorApiUrl}/buildjobs/{jobId}/artifacts/{fileNameEncoded}";
-                        Directory.CreateDirectory(Path.GetDirectoryName(localPathUnescaped)!);
+                        Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
                         byte[] bytes = http.GetByteArrayAsync(downloadUri).GetAwaiter().GetResult();
-                        File.WriteAllBytes(localPathUnescaped, bytes);
-                        Log.Information("Downloaded {File}", localPathUnescaped);
+                        File.WriteAllBytes(fullPath, bytes);
+                        Log.Information("Downloaded {File}", fullPath);
                     }
                 }
             }
