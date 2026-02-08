@@ -42,8 +42,11 @@ class Build : NukeBuild
     [Parameter("Setup version for BuildSetup (e.g. 3.0.0)")]
     readonly string SetupVersion = "";
 
-    [Parameter("Path to signtool.exe. Default: WDK 10.0.22621.0 x64 or WDKWHERE env")]
+    [Parameter("Path to signtool.exe. When not set, Nefarius.Tools.WDKWhere is used to run signtool.")]
     readonly string SignToolPath = "";
+
+    [NuGetPackage("Nefarius.Tools.WDKWhere", "wdkwhere.dll", Framework = "net8.0")]
+    readonly Tool WdkWhere;
 
     const string AppVeyorApiUrl = "https://ci.appveyor.com/api";
     const string SignTimestampUrl = "http://timestamp.digicert.com";
@@ -55,31 +58,17 @@ class Build : NukeBuild
 
     AbsolutePath ResolvedArtifactsPath => (AbsolutePath)Path.GetFullPath(Path.Combine(RootDirectory, ArtifactsPath));
 
-    string GetSignToolPath()
+    void InvokeSignTool(string arguments)
     {
         if (!string.IsNullOrWhiteSpace(SignToolPath) && File.Exists(SignToolPath))
         {
-            return SignToolPath;
+            ProcessTasks.StartProcess(SignToolPath, arguments).AssertZeroExitCode();
         }
-
-        string wdkWhere = Environment.GetEnvironmentVariable("WDKWHERE");
-        if (!string.IsNullOrWhiteSpace(wdkWhere))
+        else
         {
-            string path = Path.Combine(wdkWhere.TrimEnd(Path.DirectorySeparatorChar), "signtool.exe");
-            if (File.Exists(path))
-            {
-                return path;
-            }
+            var cmd = "run signtool " + arguments;
+            WdkWhere.Invoke($"{cmd:nq}");
         }
-
-        string defaultPath = @"C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe";
-        if (File.Exists(defaultPath))
-        {
-            return defaultPath;
-        }
-
-        throw new InvalidOperationException(
-            "signtool.exe not found. Set SignToolPath or WDKWHERE, or install WDK 10.0.22621.0.");
     }
 
     Target Clean => _ => _
@@ -244,11 +233,19 @@ class Build : NukeBuild
                 string[] jobNames = ["Platform: ARM64", "Platform: x64", "Platform: x86"];
                 foreach (string jobName in jobNames)
                 {
-                    int jobId = (from job in jobs.EnumerateArray()
-                        where job.GetProperty("name").GetString() == jobName
-                        select job.GetProperty("jobId").GetInt32()).FirstOrDefault();
+                    string? jobId = null;
+                    foreach (JsonElement job in jobs.EnumerateArray())
+                    {
+                        if (job.GetProperty("name").GetString() != jobName)
+                            continue;
+                        JsonElement jobIdEl = job.GetProperty("jobId");
+                        jobId = jobIdEl.ValueKind == JsonValueKind.String
+                            ? jobIdEl.GetString()!
+                            : jobIdEl.GetInt32().ToString();
+                        break;
+                    }
 
-                    if (jobId == 0)
+                    if (string.IsNullOrEmpty(jobId))
                     {
                         Log.Warning("Job not found: {JobName}", jobName);
                         continue;
@@ -275,7 +272,6 @@ class Build : NukeBuild
 
             if (!NoSigning)
             {
-                string signTool = GetSignToolPath();
                 string[] files =
                 [
                     Path.Combine(artifactsDir, "disk1", "*.cab"), Path.Combine(artifactsDir, "bin", "*.exe"),
@@ -305,12 +301,9 @@ class Build : NukeBuild
 
                 if (existingFiles.Count > 0)
                 {
-                    ProcessTasks
-                        .StartProcess(signTool, $"remove /s {string.Join(" ", existingFiles.Select(f => $"\"{f}\""))}")
-                        .AssertZeroExitCode();
-                    ProcessTasks.StartProcess(signTool,
-                            $"sign /v /n \"{SignCertName}\" /tr {SignTimestampUrl} /fd sha256 /td sha256 {string.Join(" ", existingFiles.Select(f => $"\"{f}\""))}")
-                        .AssertZeroExitCode();
+                    InvokeSignTool($"remove /s {string.Join(" ", existingFiles.Select(f => $"\"{f}\""))}");
+                    InvokeSignTool(
+                        $"sign /v /n \"{SignCertName}\" /tr {SignTimestampUrl} /fd sha256 /td sha256 {string.Join(" ", existingFiles.Select(f => $"\"{f}\""))}");
                 }
             }
 
@@ -348,10 +341,8 @@ class Build : NukeBuild
                 return;
             }
 
-            string signTool = GetSignToolPath();
-            ProcessTasks.StartProcess(signTool,
-                    $"sign /v /as /n \"{SignCertName}\" /tr {SignTimestampUrl} /fd sha256 /td sha256 {string.Join(" ", files.Select(f => $"\"{f}\""))}")
-                .AssertZeroExitCode();
+            InvokeSignTool(
+                $"sign /v /as /n \"{SignCertName}\" /tr {SignTimestampUrl} /fd sha256 /td sha256 {string.Join(" ", files.Select(f => $"\"{f}\""))}");
         });
 
     /// <summary>
@@ -386,10 +377,8 @@ class Build : NukeBuild
                 throw new InvalidOperationException($"MSI not found: {msiInSetup} or {msiInBin}");
             }
 
-            string signTool = GetSignToolPath();
-            ProcessTasks.StartProcess(signTool,
-                    $"sign /v /n \"{SignCertName}\" /tr {SignTimestampUrl} /fd sha256 /td sha256 \"{msiPath}\"")
-                .AssertZeroExitCode();
+            InvokeSignTool(
+                $"sign /v /n \"{SignCertName}\" /tr {SignTimestampUrl} /fd sha256 /td sha256 \"{msiPath}\"");
         });
 
     /// Support plugins are available for:

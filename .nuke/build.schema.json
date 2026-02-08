@@ -131,7 +131,7 @@
         },
         "SignToolPath": {
           "type": "string",
-          "description": "Path to signtool.exe. Default: WDK 10.0.22621.0 x64 or WDKWHERE env"
+          "description": "Path to signtool.exe. When not set, Nefarius.Tools.WDKWhere is used to run signtool"
         },
         "Solution": {
           "type": "string",
