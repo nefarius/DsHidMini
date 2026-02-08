@@ -1,7 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Text.Json;
+
+using JetBrains.Annotations;
 
 using Nuke.Common;
 using Nuke.Common.CI.AppVeyor;
@@ -10,6 +15,7 @@ using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
+using Nuke.Common.Tooling;
 
 using Serilog;
 
@@ -21,9 +27,51 @@ class Build : NukeBuild
     [Solution]
     readonly Solution Solution;
 
+    [Parameter("Build version or branch for DownloadAppVeyorArtifacts (AppVeyor artifact download)")]
+    readonly string BuildVersion = "";
+
+    [Parameter("AppVeyor API token for DownloadAppVeyorArtifacts artifact download")]
+    readonly string Token = "";
+
+    [Parameter("Output path for DownloadAppVeyorArtifacts artifacts. Default: ./artifacts")]
+    readonly string ArtifactsPath = "./artifacts";
+
+    [Parameter("Skip signing in DownloadAppVeyorArtifacts")]
+    readonly bool NoSigning;
+
+    [Parameter("Setup version for BuildSetup (e.g. 3.0.0)")]
+    readonly string SetupVersion = "";
+
+    [Parameter("Path to signtool.exe. Default: WDK 10.0.22621.0 x64 or WDKWHERE env")]
+    readonly string SignToolPath = "";
+
+    const string AppVeyorApiUrl = "https://ci.appveyor.com/api";
+    const string SignTimestampUrl = "http://timestamp.digicert.com";
+    const string SignCertName = "Nefarius Software Solutions e.U.";
+
     AbsolutePath DmfSolution => IsLocalBuild
         ? Solution.Directory / "DMF/Dmf.sln"
         : "C:/projects/DMF/Dmf.sln";
+
+    AbsolutePath ResolvedArtifactsPath => (AbsolutePath)Path.GetFullPath(Path.Combine(RootDirectory, ArtifactsPath));
+
+    string GetSignToolPath()
+    {
+        if (!string.IsNullOrWhiteSpace(SignToolPath) && File.Exists(SignToolPath))
+            return SignToolPath;
+        string wdkWhere = Environment.GetEnvironmentVariable("WDKWHERE");
+        if (!string.IsNullOrWhiteSpace(wdkWhere))
+        {
+            string path = Path.Combine(wdkWhere.TrimEnd(Path.DirectorySeparatorChar), "signtool.exe");
+            if (File.Exists(path))
+                return path;
+        }
+        string defaultPath = @"C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe";
+        if (File.Exists(defaultPath))
+            return defaultPath;
+        throw new InvalidOperationException(
+            "signtool.exe not found. Set SignToolPath or WDKWHERE, or install WDK 10.0.22621.0.");
+    }
 
     Target Clean => _ => _
         .Before(Restore)
@@ -125,6 +173,7 @@ class Build : NukeBuild
     /// Publishes the ControlApp as a production-ready, single-file, framework-dependent executable for win-x64.
     /// Output is written to the solution's bin folder (same layout as the former release-win-x64 publish profile).
     /// </summary>
+    [UsedImplicitly]
     public Target PublishControlApp => _ => _
         .DependsOn(Restore)
         .Executes(() =>
@@ -154,6 +203,164 @@ class Build : NukeBuild
             });
 
             Log.Information("ControlApp published to {PublishOutput}", publishOutput);
+        });
+
+    /// <summary>
+    /// Download AppVeyor build artifacts (ARM64, x64, x86) and optionally sign CABs, EXEs, and driver/XInput DLLs.
+    /// Requires BuildVersion and Token. Use --NoSigning to skip signing.
+    /// </summary>
+    [UsedImplicitly]
+    public Target DownloadAppVeyorArtifacts => _ => _
+        .Executes(() =>
+        {
+            if (string.IsNullOrWhiteSpace(BuildVersion) || string.IsNullOrWhiteSpace(Token))
+                throw new InvalidOperationException("DownloadAppVeyorArtifacts requires BuildVersion and Token.");
+
+            string artifactsDir = ResolvedArtifactsPath;
+            Directory.CreateDirectory(artifactsDir);
+
+            using var http = new HttpClient();
+            http.DefaultRequestHeaders.Add("Authorization", "Bearer " + Token);
+
+            string projectUri = $"{AppVeyorApiUrl}/projects/nefarius/DsHidMini/build/{BuildVersion}";
+            Log.Information("Fetching build info: {Uri}", projectUri);
+            string json = http.GetStringAsync(projectUri).GetAwaiter().GetResult();
+            using (var buildDoc = JsonDocument.Parse(json))
+            {
+                JsonElement build = buildDoc.RootElement.GetProperty("build");
+                JsonElement jobs = build.GetProperty("jobs");
+
+                string[] jobNames = ["Platform: ARM64", "Platform: x64", "Platform: x86"];
+                foreach (string jobName in jobNames)
+                {
+                    int jobId = 0;
+                    foreach (JsonElement job in jobs.EnumerateArray())
+                    {
+                        if (job.GetProperty("name").GetString() == jobName)
+                        {
+                            jobId = job.GetProperty("jobId").GetInt32();
+                            break;
+                        }
+                    }
+                    if (jobId == 0)
+                    {
+                        Log.Warning("Job not found: {JobName}", jobName);
+                        continue;
+                    }
+
+                    string artifactsListUri = $"{AppVeyorApiUrl}/buildjobs/{jobId}/artifacts";
+                    string listJson = http.GetStringAsync(artifactsListUri).GetAwaiter().GetResult();
+                    using var listDoc = JsonDocument.Parse(listJson);
+                    foreach (JsonElement artifact in listDoc.RootElement.EnumerateArray())
+                    {
+                        string fileName = artifact.GetProperty("fileName").GetString()!;
+                        string localPath = Path.Combine(artifactsDir, fileName.Replace('/', Path.DirectorySeparatorChar));
+                        string localPathUnescaped = Uri.UnescapeDataString(localPath);
+                        string downloadUri = $"{AppVeyorApiUrl}/buildjobs/{jobId}/artifacts/{artifact.GetProperty("fileName").GetString()}";
+                        Directory.CreateDirectory(Path.GetDirectoryName(localPathUnescaped)!);
+                        byte[] bytes = http.GetByteArrayAsync(downloadUri).GetAwaiter().GetResult();
+                        File.WriteAllBytes(localPathUnescaped, bytes);
+                        Log.Information("Downloaded {File}", localPathUnescaped);
+                    }
+                }
+            }
+
+            if (!NoSigning)
+            {
+                string signTool = GetSignToolPath();
+                var files = new[]
+                {
+                    Path.Combine(artifactsDir, "disk1", "*.cab"),
+                    Path.Combine(artifactsDir, "bin", "*.exe"),
+                    Path.Combine(artifactsDir, "bin", "ARM64", "dshidmini", "dshidmini.dll"),
+                    Path.Combine(artifactsDir, "bin", "x64", "dshidmini", "dshidmini.dll"),
+                    Path.Combine(artifactsDir, "bin", "x64", "XInput1_3.dll"),
+                    Path.Combine(artifactsDir, "bin", "ARM64", "XInput1_3.dll"),
+                    Path.Combine(artifactsDir, "bin", "x86", "XInput1_3.dll")
+                };
+                var existingFiles = new List<string>();
+                foreach (string pattern in files)
+                {
+                    string dir = Path.GetDirectoryName(pattern)!;
+                    string search = Path.GetFileName(pattern);
+                    if (search.Contains('*'))
+                    {
+                        if (Directory.Exists(dir))
+                            existingFiles.AddRange(Directory.GetFiles(dir, search));
+                    }
+                    else if (File.Exists(pattern))
+                        existingFiles.Add(pattern);
+                }
+                if (existingFiles.Count > 0)
+                {
+                    ProcessTasks.StartProcess(signTool, $"remove /s {string.Join(" ", existingFiles.Select(f => $"\"{f}\""))}").AssertZeroExitCode();
+                    ProcessTasks.StartProcess(signTool,
+                        $"sign /v /n \"{SignCertName}\" /tr {SignTimestampUrl} /fd sha256 /td sha256 {string.Join(" ", existingFiles.Select(f => $"\"{f}\""))}").AssertZeroExitCode();
+                }
+            }
+
+            Log.Information("Helper job names for sign portal:");
+            Log.Information("DsHidMini ARM64 v{BuildVersion} {Date:dd.MM.yyyy}", BuildVersion, DateTime.Now);
+            Log.Information("DsHidMini x64 v{BuildVersion} {Date:dd.MM.yyyy}", BuildVersion, DateTime.Now);
+        });
+
+    /// <summary>
+    /// Stage1: Sign driver DLLs (append signature) under artifacts/drivers.
+    /// </summary>
+    Target Stage1 => _ => _
+        .Executes(() =>
+        {
+            string artifactsDir = ResolvedArtifactsPath;
+            var patterns = new[]
+            {
+                Path.Combine(artifactsDir, "drivers", "dshidmini_ARM64", "*.dll"),
+                Path.Combine(artifactsDir, "drivers", "dshidmini_x64", "*.dll")
+            };
+            var files = new List<string>();
+            foreach (string pattern in patterns)
+            {
+                string dir = Path.GetDirectoryName(pattern)!;
+                if (Directory.Exists(dir))
+                    files.AddRange(Directory.GetFiles(dir, Path.GetFileName(pattern)));
+            }
+            if (files.Count == 0)
+            {
+                Log.Warning("No driver DLLs found under {ArtifactsPath}", artifactsDir);
+                return;
+            }
+            string signTool = GetSignToolPath();
+            ProcessTasks.StartProcess(signTool,
+                $"sign /v /as /n \"{SignCertName}\" /tr {SignTimestampUrl} /fd sha256 /td sha256 {string.Join(" ", files.Select(f => $"\"{f}\""))}").AssertZeroExitCode();
+        });
+
+    /// <summary>
+    /// Build setup MSI and sign it. Requires SetupVersion (e.g. 3.0.0).
+    /// </summary>
+    Target BuildSetup => _ => _
+        .Executes(() =>
+        {
+            if (string.IsNullOrWhiteSpace(SetupVersion))
+                throw new InvalidOperationException("BuildSetup requires SetupVersion.");
+
+            AbsolutePath setupProject = RootDirectory / "setup" / "DsHidMini.Installer.csproj";
+            if (!File.Exists(setupProject))
+                throw new InvalidOperationException($"Setup project not found at {setupProject}");
+
+            DotNetTasks.DotNetBuild(s => s
+                .SetProjectFile(setupProject)
+                .SetConfiguration(Configuration.Release)
+                .SetProperty("SetupVersion", SetupVersion));
+
+            string msiName = $"Nefarius_DsHidMini_Drivers_x64_arm64_v{SetupVersion}.msi";
+            AbsolutePath msiInSetup = RootDirectory / "setup" / msiName;
+            AbsolutePath msiInBin = RootDirectory / "setup" / "bin" / "Release" / "net48" / msiName;
+            AbsolutePath msiPath = File.Exists(msiInSetup) ? msiInSetup : msiInBin;
+            if (!File.Exists(msiPath))
+                throw new InvalidOperationException($"MSI not found: {msiInSetup} or {msiInBin}");
+
+            string signTool = GetSignToolPath();
+            ProcessTasks.StartProcess(signTool,
+                $"sign /v /n \"{SignCertName}\" /tr {SignTimestampUrl} /fd sha256 /td sha256 \"{msiPath}\"").AssertZeroExitCode();
         });
 
     /// Support plugins are available for:
