@@ -298,10 +298,9 @@ class Build : NukeBuild
                         existingFiles.Add(pattern);
                     }
                 }
-
+                
                 if (existingFiles.Count > 0)
                 {
-                    InvokeSignTool($"remove /s {string.Join(" ", existingFiles.Select(f => $"\"{f}\""))}");
                     InvokeSignTool(
                         $"sign /v /n \"{SignCertName}\" /tr {SignTimestampUrl} /fd sha256 /td sha256 {string.Join(" ", existingFiles.Select(f => $"\"{f}\""))}");
                 }
