@@ -222,7 +222,7 @@ class Build : NukeBuild
             using HttpClient http = new();
             http.DefaultRequestHeaders.Add("Authorization", "Bearer " + Token);
 
-            string projectUri = $"{AppVeyorApiUrl}/projects/nefarius/DsHidMini/build/{BuildVersion}";
+            string projectUri = $"{AppVeyorApiUrl}/projects/nefarius/DsHidMini/build/{Uri.EscapeDataString(BuildVersion)}";
             Log.Information("Fetching build info: {Uri}", projectUri);
             string json = http.GetStringAsync(projectUri).GetAwaiter().GetResult();
             using (JsonDocument buildDoc = JsonDocument.Parse(json))
@@ -260,8 +260,9 @@ class Build : NukeBuild
                         string localPath = Path.Combine(artifactsDir,
                             fileName.Replace('/', Path.DirectorySeparatorChar));
                         string localPathUnescaped = Uri.UnescapeDataString(localPath);
+                        string fileNameEncoded = Uri.EscapeDataString(fileName);
                         string downloadUri =
-                            $"{AppVeyorApiUrl}/buildjobs/{jobId}/artifacts/{artifact.GetProperty("fileName").GetString()}";
+                            $"{AppVeyorApiUrl}/buildjobs/{jobId}/artifacts/{fileNameEncoded}";
                         Directory.CreateDirectory(Path.GetDirectoryName(localPathUnescaped)!);
                         byte[] bytes = http.GetByteArrayAsync(downloadUri).GetAwaiter().GetResult();
                         File.WriteAllBytes(localPathUnescaped, bytes);
