@@ -1,3 +1,10 @@
+> [!WARNING]
+> **No other official website exists** for this project besides this GitHub repository (github.com/nefarius/DsHidMini) and sites hosted on `*.nefarius.at` (e.g. docs.nefarius.at, discord.nefarius.at).
+>
+> **Anyone claiming otherwise is a scammer and a fraud.** Do not trust other websites, download links, or people claiming to represent this project. Please be wary and only use the sources listed above.
+
+---
+
 # <img src="assets/FireShock.png" align="left" alt="DsHidMini logo" />DsHidMini
 
 [![Build status](https://ci.appveyor.com/api/projects/status/vmf09i95d06c8mbh/branch/master?svg=true)](https://ci.appveyor.com/project/nefarius/dshidmini/branch/master) [![GitHub All Releases](https://img.shields.io/github/downloads/nefarius/DsHidMini/total)](https://somsubhra.github.io/github-release-stats/?username=nefarius&repository=DsHidMini) ![GitHub issues](https://img.shields.io/github/issues/nefarius/DsHidMini) [![Discord](https://img.shields.io/discord/346756263763378176.svg)](https://discord.nefarius.at/) [![Website](https://img.shields.io/website-up-down-green-red/https/docs.nefarius.at.svg?label=docs.nefarius.at)](https://docs.nefarius.at/)
