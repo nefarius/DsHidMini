@@ -58,17 +58,26 @@ class Build : NukeBuild
     string GetSignToolPath()
     {
         if (!string.IsNullOrWhiteSpace(SignToolPath) && File.Exists(SignToolPath))
+        {
             return SignToolPath;
+        }
+
         string wdkWhere = Environment.GetEnvironmentVariable("WDKWHERE");
         if (!string.IsNullOrWhiteSpace(wdkWhere))
         {
             string path = Path.Combine(wdkWhere.TrimEnd(Path.DirectorySeparatorChar), "signtool.exe");
             if (File.Exists(path))
+            {
                 return path;
+            }
         }
+
         string defaultPath = @"C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe";
         if (File.Exists(defaultPath))
+        {
             return defaultPath;
+        }
+
         throw new InvalidOperationException(
             "signtool.exe not found. Set SignToolPath or WDKWHERE, or install WDK 10.0.22621.0.");
     }
@@ -214,18 +223,20 @@ class Build : NukeBuild
         .Executes(() =>
         {
             if (string.IsNullOrWhiteSpace(BuildVersion) || string.IsNullOrWhiteSpace(Token))
+            {
                 throw new InvalidOperationException("DownloadAppVeyorArtifacts requires BuildVersion and Token.");
+            }
 
             string artifactsDir = ResolvedArtifactsPath;
             Directory.CreateDirectory(artifactsDir);
 
-            using var http = new HttpClient();
+            using HttpClient http = new();
             http.DefaultRequestHeaders.Add("Authorization", "Bearer " + Token);
 
             string projectUri = $"{AppVeyorApiUrl}/projects/nefarius/DsHidMini/build/{BuildVersion}";
             Log.Information("Fetching build info: {Uri}", projectUri);
             string json = http.GetStringAsync(projectUri).GetAwaiter().GetResult();
-            using (var buildDoc = JsonDocument.Parse(json))
+            using (JsonDocument buildDoc = JsonDocument.Parse(json))
             {
                 JsonElement build = buildDoc.RootElement.GetProperty("build");
                 JsonElement jobs = build.GetProperty("jobs");
@@ -233,15 +244,10 @@ class Build : NukeBuild
                 string[] jobNames = ["Platform: ARM64", "Platform: x64", "Platform: x86"];
                 foreach (string jobName in jobNames)
                 {
-                    int jobId = 0;
-                    foreach (JsonElement job in jobs.EnumerateArray())
-                    {
-                        if (job.GetProperty("name").GetString() == jobName)
-                        {
-                            jobId = job.GetProperty("jobId").GetInt32();
-                            break;
-                        }
-                    }
+                    int jobId = (from job in jobs.EnumerateArray()
+                        where job.GetProperty("name").GetString() == jobName
+                        select job.GetProperty("jobId").GetInt32()).FirstOrDefault();
+
                     if (jobId == 0)
                     {
                         Log.Warning("Job not found: {JobName}", jobName);
@@ -250,13 +256,15 @@ class Build : NukeBuild
 
                     string artifactsListUri = $"{AppVeyorApiUrl}/buildjobs/{jobId}/artifacts";
                     string listJson = http.GetStringAsync(artifactsListUri).GetAwaiter().GetResult();
-                    using var listDoc = JsonDocument.Parse(listJson);
+                    using JsonDocument listDoc = JsonDocument.Parse(listJson);
                     foreach (JsonElement artifact in listDoc.RootElement.EnumerateArray())
                     {
                         string fileName = artifact.GetProperty("fileName").GetString()!;
-                        string localPath = Path.Combine(artifactsDir, fileName.Replace('/', Path.DirectorySeparatorChar));
+                        string localPath = Path.Combine(artifactsDir,
+                            fileName.Replace('/', Path.DirectorySeparatorChar));
                         string localPathUnescaped = Uri.UnescapeDataString(localPath);
-                        string downloadUri = $"{AppVeyorApiUrl}/buildjobs/{jobId}/artifacts/{artifact.GetProperty("fileName").GetString()}";
+                        string downloadUri =
+                            $"{AppVeyorApiUrl}/buildjobs/{jobId}/artifacts/{artifact.GetProperty("fileName").GetString()}";
                         Directory.CreateDirectory(Path.GetDirectoryName(localPathUnescaped)!);
                         byte[] bytes = http.GetByteArrayAsync(downloadUri).GetAwaiter().GetResult();
                         File.WriteAllBytes(localPathUnescaped, bytes);
@@ -268,17 +276,16 @@ class Build : NukeBuild
             if (!NoSigning)
             {
                 string signTool = GetSignToolPath();
-                var files = new[]
-                {
-                    Path.Combine(artifactsDir, "disk1", "*.cab"),
-                    Path.Combine(artifactsDir, "bin", "*.exe"),
+                string[] files =
+                [
+                    Path.Combine(artifactsDir, "disk1", "*.cab"), Path.Combine(artifactsDir, "bin", "*.exe"),
                     Path.Combine(artifactsDir, "bin", "ARM64", "dshidmini", "dshidmini.dll"),
                     Path.Combine(artifactsDir, "bin", "x64", "dshidmini", "dshidmini.dll"),
                     Path.Combine(artifactsDir, "bin", "x64", "XInput1_3.dll"),
                     Path.Combine(artifactsDir, "bin", "ARM64", "XInput1_3.dll"),
                     Path.Combine(artifactsDir, "bin", "x86", "XInput1_3.dll")
-                };
-                var existingFiles = new List<string>();
+                ];
+                List<string> existingFiles = new();
                 foreach (string pattern in files)
                 {
                     string dir = Path.GetDirectoryName(pattern)!;
@@ -286,16 +293,24 @@ class Build : NukeBuild
                     if (search.Contains('*'))
                     {
                         if (Directory.Exists(dir))
+                        {
                             existingFiles.AddRange(Directory.GetFiles(dir, search));
+                        }
                     }
                     else if (File.Exists(pattern))
+                    {
                         existingFiles.Add(pattern);
+                    }
                 }
+
                 if (existingFiles.Count > 0)
                 {
-                    ProcessTasks.StartProcess(signTool, $"remove /s {string.Join(" ", existingFiles.Select(f => $"\"{f}\""))}").AssertZeroExitCode();
+                    ProcessTasks
+                        .StartProcess(signTool, $"remove /s {string.Join(" ", existingFiles.Select(f => $"\"{f}\""))}")
+                        .AssertZeroExitCode();
                     ProcessTasks.StartProcess(signTool,
-                        $"sign /v /n \"{SignCertName}\" /tr {SignTimestampUrl} /fd sha256 /td sha256 {string.Join(" ", existingFiles.Select(f => $"\"{f}\""))}").AssertZeroExitCode();
+                            $"sign /v /n \"{SignCertName}\" /tr {SignTimestampUrl} /fd sha256 /td sha256 {string.Join(" ", existingFiles.Select(f => $"\"{f}\""))}")
+                        .AssertZeroExitCode();
                 }
             }
 
@@ -305,46 +320,57 @@ class Build : NukeBuild
         });
 
     /// <summary>
-    /// Stage1: Sign driver DLLs (append signature) under artifacts/drivers.
+    /// Sign driver DLLs (append signature) under artifacts/drivers.
     /// </summary>
-    Target Stage1 => _ => _
+    [UsedImplicitly]
+    public Target SignProductionBinaries => _ => _
         .Executes(() =>
         {
             string artifactsDir = ResolvedArtifactsPath;
-            var patterns = new[]
-            {
+            string[] patterns =
+            [
                 Path.Combine(artifactsDir, "drivers", "dshidmini_ARM64", "*.dll"),
                 Path.Combine(artifactsDir, "drivers", "dshidmini_x64", "*.dll")
-            };
-            var files = new List<string>();
+            ];
+            List<string> files = new();
             foreach (string pattern in patterns)
             {
                 string dir = Path.GetDirectoryName(pattern)!;
                 if (Directory.Exists(dir))
+                {
                     files.AddRange(Directory.GetFiles(dir, Path.GetFileName(pattern)));
+                }
             }
+
             if (files.Count == 0)
             {
                 Log.Warning("No driver DLLs found under {ArtifactsPath}", artifactsDir);
                 return;
             }
+
             string signTool = GetSignToolPath();
             ProcessTasks.StartProcess(signTool,
-                $"sign /v /as /n \"{SignCertName}\" /tr {SignTimestampUrl} /fd sha256 /td sha256 {string.Join(" ", files.Select(f => $"\"{f}\""))}").AssertZeroExitCode();
+                    $"sign /v /as /n \"{SignCertName}\" /tr {SignTimestampUrl} /fd sha256 /td sha256 {string.Join(" ", files.Select(f => $"\"{f}\""))}")
+                .AssertZeroExitCode();
         });
 
     /// <summary>
     /// Build setup MSI and sign it. Requires SetupVersion (e.g. 3.0.0).
     /// </summary>
-    Target BuildSetup => _ => _
+    [UsedImplicitly]
+    public Target BuildSetup => _ => _
         .Executes(() =>
         {
             if (string.IsNullOrWhiteSpace(SetupVersion))
+            {
                 throw new InvalidOperationException("BuildSetup requires SetupVersion.");
+            }
 
             AbsolutePath setupProject = RootDirectory / "setup" / "DsHidMini.Installer.csproj";
             if (!File.Exists(setupProject))
+            {
                 throw new InvalidOperationException($"Setup project not found at {setupProject}");
+            }
 
             DotNetTasks.DotNetBuild(s => s
                 .SetProjectFile(setupProject)
@@ -356,11 +382,14 @@ class Build : NukeBuild
             AbsolutePath msiInBin = RootDirectory / "setup" / "bin" / "Release" / "net48" / msiName;
             AbsolutePath msiPath = File.Exists(msiInSetup) ? msiInSetup : msiInBin;
             if (!File.Exists(msiPath))
+            {
                 throw new InvalidOperationException($"MSI not found: {msiInSetup} or {msiInBin}");
+            }
 
             string signTool = GetSignToolPath();
             ProcessTasks.StartProcess(signTool,
-                $"sign /v /n \"{SignCertName}\" /tr {SignTimestampUrl} /fd sha256 /td sha256 \"{msiPath}\"").AssertZeroExitCode();
+                    $"sign /v /n \"{SignCertName}\" /tr {SignTimestampUrl} /fd sha256 /td sha256 \"{msiPath}\"")
+                .AssertZeroExitCode();
         });
 
     /// Support plugins are available for:
