@@ -25,10 +25,13 @@
       "type": "string",
       "enum": [
         "BuildDmf",
+        "BuildSetup",
         "Clean",
         "Compile",
+        "DownloadAppVeyorArtifacts",
         "PublishControlApp",
-        "Restore"
+        "Restore",
+        "SignProductionBinaries"
       ]
     },
     "Verbosity": {
@@ -102,6 +105,14 @@
   "allOf": [
     {
       "properties": {
+        "ArtifactsPath": {
+          "type": "string",
+          "description": "Output path for DownloadAppVeyorArtifacts artifacts. Default: ./artifacts"
+        },
+        "BuildVersion": {
+          "type": "string",
+          "description": "Build version or branch for DownloadAppVeyorArtifacts (AppVeyor artifact download)"
+        },
         "Configuration": {
           "type": "string",
           "description": "Configuration to build - Default is 'Debug' (local) or 'Release' (server)",
@@ -110,9 +121,25 @@
             "Release"
           ]
         },
+        "NoSigning": {
+          "type": "boolean",
+          "description": "Skip signing in DownloadAppVeyorArtifacts"
+        },
+        "SetupVersion": {
+          "type": "string",
+          "description": "Setup version for BuildSetup (e.g. 3.0.0)"
+        },
+        "SignToolPath": {
+          "type": "string",
+          "description": "Path to signtool.exe. When not set, Nefarius.Tools.WDKWhere is used to run signtool"
+        },
         "Solution": {
           "type": "string",
           "description": "Path to a solution file that is automatically loaded"
+        },
+        "Token": {
+          "type": "string",
+          "description": "AppVeyor API token for DownloadAppVeyorArtifacts artifact download"
         }
       }
     },
