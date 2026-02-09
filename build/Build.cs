@@ -58,6 +58,10 @@ class Build : NukeBuild
 
     AbsolutePath ResolvedArtifactsPath => (AbsolutePath)Path.GetFullPath(Path.Combine(RootDirectory, ArtifactsPath));
 
+    /// <summary>
+    /// Runs Microsoft's SignTool with the provided command-line arguments, using the explicit SignToolPath when available or delegating to the WdkWhere tool otherwise.
+    /// </summary>
+    /// <param name="arguments">Command-line arguments to pass to SignTool (e.g., certificate, timestamp and file options).</param>
     void InvokeSignTool(string arguments)
     {
         if (!string.IsNullOrWhiteSpace(SignToolPath) && File.Exists(SignToolPath))
