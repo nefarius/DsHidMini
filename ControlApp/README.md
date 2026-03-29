@@ -1,6 +1,6 @@
 # <img src="../assets/FireShock.png" align="left" /> DsHidMini ControlApp
 
-![Requirements](https://img.shields.io/badge/Requires-.NET%208.0-blue.svg)
+![Requirements](https://img.shields.io/badge/Requires-.NET%209.0-blue.svg)
 ![Platform](https://img.shields.io/badge/Platform-Windows%2010%2B-lightgrey.svg)
 
 **Desktop control application for the DsHidMini driver.**  
@@ -36,8 +36,8 @@ Configuration is stored under **%AppData%**; the app does not require administra
 
 | Requirement | Details |
 |-------------|---------|
-| **.NET** | .NET 8.0 |
-| **OS** | Windows 10 or later (targeting `net8.0-windows10.0.17763.0`) |
+| **.NET** | .NET 9.0 |
+| **OS** | Windows 10 or later (targeting `net9.0-windows10.0.17763.0`) |
 | **Driver** | [DsHidMini](https://github.com/ViGEm/DsHidMini) driver installed; at least one compatible controller connected for full functionality |
 | **Architecture** | AnyCPU or x64 (NUKE publish uses win-x64) |
 
