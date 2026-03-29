@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
 
 using Windows.Win32;
 using Windows.Win32.Foundation;
@@ -82,16 +83,22 @@ internal static class BthPS3FilterDriver
             {
                 Marshal.StructureToPtr(payload, payloadBuffer, false);
 
-                PInvoke.DeviceIoControl(
+                int getPayloadSize = Marshal.SizeOf<BTHPS3PSM_GET_PSM_PATCHING>();
+                Span<byte> getPayloadBytes = new((byte*)payloadBuffer.ToPointer(), getPayloadSize);
+
+                BOOL getOk = PInvoke.DeviceIoControl(
                     handle,
                     IOCTL_BTHPS3PSM_GET_PSM_PATCHING,
-                    payloadBuffer.ToPointer(),
-                    (uint)Marshal.SizeOf<BTHPS3PSM_GET_PSM_PATCHING>(),
-                    payloadBuffer.ToPointer(),
-                    (uint)Marshal.SizeOf<BTHPS3PSM_GET_PSM_PATCHING>(),
-                    null,
+                    getPayloadBytes,
+                    getPayloadBytes,
+                    out _,
                     null
                 );
+
+                if (!getOk)
+                {
+                    throw new Win32Exception(Marshal.GetLastWin32Error(), ErrorMessage);
+                }
 
                 payload = Marshal.PtrToStructure<BTHPS3PSM_GET_PSM_PATCHING>(payloadBuffer);
             }
@@ -130,29 +137,27 @@ internal static class BthPS3FilterDriver
 
                 if (value)
                 {
-                    PInvoke.DeviceIoControl(
-                        handle,
-                        IOCTL_BTHPS3PSM_ENABLE_PSM_PATCHING,
-                        payloadEnableBuffer.ToPointer(),
-                        (uint)Marshal.SizeOf<BTHPS3PSM_ENABLE_PSM_PATCHING>(),
-                        null,
-                        0,
-                        null,
-                        null
-                    );
+                    ReadOnlySpan<byte> enableIn = new(
+                        (byte*)payloadEnableBuffer.ToPointer(),
+                        Marshal.SizeOf<BTHPS3PSM_ENABLE_PSM_PATCHING>());
+                    BOOL enableOk = PInvoke.DeviceIoControl(
+                        handle, IOCTL_BTHPS3PSM_ENABLE_PSM_PATCHING, enableIn, default, null);
+                    if (!enableOk)
+                    {
+                        throw new Win32Exception(Marshal.GetLastWin32Error(), ErrorMessage);
+                    }
                 }
                 else
                 {
-                    PInvoke.DeviceIoControl(
-                        handle,
-                        IOCTL_BTHPS3PSM_DISABLE_PSM_PATCHING,
-                        payloadDisableBuffer.ToPointer(),
-                        (uint)Marshal.SizeOf<BTHPS3PSM_DISABLE_PSM_PATCHING>(),
-                        null,
-                        0,
-                        null,
-                        null
-                    );
+                    ReadOnlySpan<byte> disableIn = new(
+                        (byte*)payloadDisableBuffer.ToPointer(),
+                        Marshal.SizeOf<BTHPS3PSM_DISABLE_PSM_PATCHING>());
+                    BOOL disableOk = PInvoke.DeviceIoControl(
+                        handle, IOCTL_BTHPS3PSM_DISABLE_PSM_PATCHING, disableIn, default, null);
+                    if (!disableOk)
+                    {
+                        throw new Win32Exception(Marshal.GetLastWin32Error(), ErrorMessage);
+                    }
                 }
             }
             finally

@@ -1,4 +1,4 @@
-﻿<ui:FluentWindow
+<ui:FluentWindow
     x:Class="Nefarius.DsHidMini.ControlApp.Views.Windows.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -73,7 +73,7 @@
                 </ui:NavigationView.ContentOverlay>
             </ui:NavigationView>
 
-            <ContentPresenter
+            <ui:ContentDialogHost
                 x:Name="RootContentDialog"
                 Grid.Row="0"
                 Grid.ColumnSpan="2" />
