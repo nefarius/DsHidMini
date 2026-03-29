@@ -29,7 +29,7 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.5" />
-        <PackageReference Include="Microsoft.Windows.CsWin32" Version="0.3.196">
+        <PackageReference Include="Microsoft.Windows.CsWin32" Version="0.3.272">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>

@@ -1,4 +1,4 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 
 using Windows.Win32;
 using Windows.Win32.Foundation;
@@ -82,14 +82,15 @@ internal static class BthPS3FilterDriver
             {
                 Marshal.StructureToPtr(payload, payloadBuffer, false);
 
+                int getPayloadSize = Marshal.SizeOf<BTHPS3PSM_GET_PSM_PATCHING>();
+                Span<byte> getPayloadBytes = new((byte*)payloadBuffer.ToPointer(), getPayloadSize);
+
                 PInvoke.DeviceIoControl(
                     handle,
                     IOCTL_BTHPS3PSM_GET_PSM_PATCHING,
-                    payloadBuffer.ToPointer(),
-                    (uint)Marshal.SizeOf<BTHPS3PSM_GET_PSM_PATCHING>(),
-                    payloadBuffer.ToPointer(),
-                    (uint)Marshal.SizeOf<BTHPS3PSM_GET_PSM_PATCHING>(),
-                    null,
+                    getPayloadBytes,
+                    getPayloadBytes,
+                    out _,
                     null
                 );
 
@@ -130,29 +131,17 @@ internal static class BthPS3FilterDriver
 
                 if (value)
                 {
-                    PInvoke.DeviceIoControl(
-                        handle,
-                        IOCTL_BTHPS3PSM_ENABLE_PSM_PATCHING,
-                        payloadEnableBuffer.ToPointer(),
-                        (uint)Marshal.SizeOf<BTHPS3PSM_ENABLE_PSM_PATCHING>(),
-                        null,
-                        0,
-                        null,
-                        null
-                    );
+                    ReadOnlySpan<byte> enableIn = new(
+                        (byte*)payloadEnableBuffer.ToPointer(),
+                        Marshal.SizeOf<BTHPS3PSM_ENABLE_PSM_PATCHING>());
+                    PInvoke.DeviceIoControl(handle, IOCTL_BTHPS3PSM_ENABLE_PSM_PATCHING, enableIn, default, null);
                 }
                 else
                 {
-                    PInvoke.DeviceIoControl(
-                        handle,
-                        IOCTL_BTHPS3PSM_DISABLE_PSM_PATCHING,
-                        payloadDisableBuffer.ToPointer(),
-                        (uint)Marshal.SizeOf<BTHPS3PSM_DISABLE_PSM_PATCHING>(),
-                        null,
-                        0,
-                        null,
-                        null
-                    );
+                    ReadOnlySpan<byte> disableIn = new(
+                        (byte*)payloadDisableBuffer.ToPointer(),
+                        Marshal.SizeOf<BTHPS3PSM_DISABLE_PSM_PATCHING>());
+                    PInvoke.DeviceIoControl(handle, IOCTL_BTHPS3PSM_DISABLE_PSM_PATCHING, disableIn, default, null);
                 }
             }
             finally
