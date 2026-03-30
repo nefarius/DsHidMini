@@ -11,9 +11,9 @@
 
 Virtual HID Mini user-mode driver for Sony DualShock 3 controllers on Windows 10/11.
 
-## Version 3 (Beta)
+## Version 3 (Stable)
 
-The next major version is [available for Beta-testing](https://github.com/nefarius/DsHidMini/releases). Highlights: new installer and configuration app, **ARM64** and **Windows 11** support, LED/dead-zone/rumble customization, Xbox One emulation, and more. Follow progress on [Discord](https://discord.nefarius.at/) or [Mastodon](https://fosstodon.org/@Nefarius).
+Version 3 is the current stable release. Get the latest build from [releases](https://github.com/nefarius/DsHidMini/releases). Highlights: new installer and configuration app, **ARM64** and **Windows 11** support, LED/dead-zone/rumble customization, Xbox One emulation, and more. Support and updates on [Discord](https://discord.nefarius.at/) or [Mastodon](https://fosstodon.org/@Nefarius).
 
 ## Repository activity
 

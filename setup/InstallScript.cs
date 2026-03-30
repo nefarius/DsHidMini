@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 using System;
 using System.Buffers;
 using System.Collections.Generic;
@@ -36,7 +36,7 @@ internal class InstallScript
 {
     public const string ProductName = "Nefarius DsHidMini Driver";
 
-    public static Uri BetaArticleUrl = new("https://docs.nefarius.at/projects/DsHidMini/Experimental/Version-3-Beta/");
+    public static Uri OnlineDocumentationUrl = new("https://docs.nefarius.at/projects/DsHidMini/v3/How-to-Install/");
 
     private static void Main()
     {
@@ -110,8 +110,8 @@ internal class InstallScript
                 When.After,
                 Step.InstallFinalize,
                 Condition.NOT_Installed),
-            // open beta article
-            new ManagedAction(CustomActions.OpenBetaArticle, Return.check,
+            // open online documentation
+            new ManagedAction(CustomActions.OpenOnlineDocumentation, Return.check,
                 When.After,
                 Step.InstallFinalize,
                 Condition.NOT_Installed),
@@ -152,7 +152,7 @@ internal class InstallScript
             .Add<LicenceDialog>()
             .Add<FeaturesDialog>()
             .Add<ProgressDialog>()
-            .Add<BetaArticleDialog>()
+            .Add<OnlineDocumentationDialog>()
             .Add<ExitDialog>();
 
         project.ManagedUI.ModifyDialogs.Add<MaintenanceTypeDialog>()
@@ -339,19 +339,19 @@ public static class CustomActions
     }
 
     /// <summary>
-    ///     Open beta article in default browser.
+    ///     Open online documentation in default browser.
     /// </summary>
     [CustomAction]
-    public static ActionResult OpenBetaArticle(Session session)
+    public static ActionResult OpenOnlineDocumentation(Session session)
     {
         try
         {
-            Process.Start(InstallScript.BetaArticleUrl.ToString());
+            Process.Start(InstallScript.OnlineDocumentationUrl.ToString());
         }
         catch (Exception ex)
         {
             session.Log(
-                $"Beta article launch failed, exception: {ex}");
+                $"Online documentation launch failed, exception: {ex}");
         }
 
         return ActionResult.Success;
@@ -375,7 +375,7 @@ public static class CustomActions
         catch (Exception ex)
         {
             session.Log(
-                $"Beta article launch failed, exception: {ex}");
+                $"Donation page launch failed, exception: {ex}");
         }
 
         return ActionResult.Success;
