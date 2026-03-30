@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 
+using WixSharp;
 using WixSharp.UI.Forms;
 using WixSharp.UI.WPF;
 
@@ -11,6 +12,8 @@ namespace Nefarius.DsHidMini.Setup.Dialogs;
 
 public partial class OnlineDocumentationDialog : WpfDialog, IWpfDialog
 {
+    private OnlineDocumentationDialogModel _model;
+
     public OnlineDocumentationDialog()
     {
         InitializeComponent();
@@ -20,8 +23,6 @@ public partial class OnlineDocumentationDialog : WpfDialog, IWpfDialog
     {
         DataContext = _model = new OnlineDocumentationDialogModel { Host = ManagedFormHost };
     }
-
-    private OnlineDocumentationDialogModel _model;
 
     private void GoNext_Click(object sender, RoutedEventArgs e)
     {
