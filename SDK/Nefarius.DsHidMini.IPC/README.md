@@ -52,7 +52,7 @@ The SDK handles reconnection when the last device disconnects and the next one a
 | **.NET** | .NET 8.0 (Windows-specific: `net8.0-windows`) |
 | **OS** | Windows (named kernel objects and shared memory are Windows-only) |
 | **Driver** | DsHidMini driver installed; at least one compatible controller connected and bound to the driver |
-| **Elevation** | Required only for operations that duplicate the driver’s HID report wait handle (e.g. when using a timeout in `GetRawInputReport`). Other operations do not require admin. |
+| **Elevation** | Not required for normal use. IPC uses named objects (mutex, events, shared memory, and per-device HID wait events) with DACLs that allow authenticated users, including event-based `GetRawInputReport`. |
 
 Before creating a `DsHidMiniInterop` instance, check **`DsHidMiniInterop.IsAvailable`** to avoid throwing when no device is present.
 
@@ -117,7 +117,7 @@ if (gotReport)
 | **`DsHidMiniInterop()`** | Connects to the driver IPC. Throws if not available. Subscribes to device arrival/removal for reconnection. |
 | **`void Dispose()`** | Releases mapped views, file mapping, and events. Implement `IDisposable` and dispose when done. |
 | **`void Reconnect()`** | Re-opens mutex, events, and shared memory (e.g. after all devices were removed). Throws if still no device. |
-| **`bool GetRawInputReport(int deviceIndex, ref DS3_RAW_INPUT_REPORT report, TimeSpan? timeout)`** | Fills `report` with the last or next raw HID report. Use `timeout: null` for immediate read; use e.g. `TimeSpan.FromMilliseconds(20)` for event-based waiting. Returns `false` if the slot is empty. |
+| **`bool GetRawInputReport(int deviceIndex, ref DS3_RAW_INPUT_REPORT report, TimeSpan? timeout)`** | Fills `report` with the last or next raw HID report. Use `timeout: null` for immediate read; use e.g. `TimeSpan.FromMilliseconds(20)` for event-based waiting on the driver’s named per-slot event (`Global\DsHidMiniHidReportEvent` + index). Returns `false` if the slot is empty, or if a timeout was requested and no wait object exists for that slot (nothing connected there). |
 | **`void SendPing()`** | Sends a ping to the driver and waits for a reply (liveness check). |
 | **`SetHostResult SetHostAddress(int deviceIndex, PhysicalAddress hostAddress)`** | Writes the new Bluetooth host address (pairing). Returns write/read NTSTATUS in `SetHostResult`. |
 | **`uint SetPlayerIndex(int deviceIndex, byte playerIndex)`** | Sets the player LED index (1–7). Returns NTSTATUS. |
@@ -168,10 +168,10 @@ The SDK uses dedicated exception types so you can handle driver and usage errors
 | **`DsHidMiniInteropInvalidDeviceIndexException`** | `deviceIndex` not in 1…255. |
 | **`DsHidMiniInteropReplyTimeoutException`** | Driver did not respond within the expected time (e.g. ping or command). |
 | **`DsHidMiniInteropConcurrencyException`** | Another thread is already performing an IPC call; only one at a time is allowed. |
-| **`DsHidMiniInteropAccessDeniedException`** | Handle duplication failed (e.g. when using `GetRawInputReport` with a timeout without sufficient privileges). Run elevated if you need event-based reading. |
+| **`DsHidMiniInteropAccessDeniedException`** | Reserved; not thrown by the current SDK. |
 | **`DsHidMiniInteropUnexpectedReplyException`** | Driver replied with an unexpected or malformed message. |
 
-Other failures (e.g. Win32 errors during handle duplication) may surface as `Win32Exception`.
+Other failures may surface as `Win32Exception` where low-level Win32 calls apply.
 
 ---
 

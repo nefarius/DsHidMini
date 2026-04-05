@@ -1,8 +1,9 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.NetworkInformation;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 using Nefarius.DsHidMini.IPC.Exceptions;
 using Nefarius.DsHidMini.IPC.Models;
@@ -21,18 +22,13 @@ public partial class DsHidMiniInterop
     ///     only return when the driver signaled that new data is available, otherwise you will just burn through CPU for no
     ///     good reason. A new input report is typically available each average 5 milliseconds, depending on the connection
     ///     (wired or wireless) so a timeout of 20 milliseconds should be a good recommendation.
+    ///     When <paramref name="timeout" /> is set, the implementation waits on the driver's per-slot named auto-reset event
+    ///     (same DACL as other IPC objects); it does not require administrator elevation.
     /// </remarks>
     /// <param name="deviceIndex">The one-based device index.</param>
     /// <param name="report">The <see cref="DS3_RAW_INPUT_REPORT" /> to populate.</param>
     /// <param name="timeout">Optional timeout to wait for a report update to arrive. Default invocation returns immediately.</param>
-    /// <exception cref="DsHidMiniInteropAccessDeniedException">
-    ///     Driver process interaction failed due to missing permissions;
-    ///     this operation requires elevated privileges.
-    /// </exception>
     /// <exception cref="DsHidMiniInteropUnexpectedReplyException">The driver returned unexpected or malformed data.</exception>
-    /// <exception cref="Win32Exception">Handle duplication failed.</exception>
-    /// <exception cref="DsHidMiniInteropReplyTimeoutException">The driver didn't respond within an expected period.</exception>
-    /// <exception cref="DsHidMiniInteropConcurrencyException">A different thread is currently performing a data exchange.</exception>
     /// <exception cref="DsHidMiniInteropUnavailableException">
     ///     No driver instance is available. Make sure that at least one
     ///     device is connected and that the driver is installed and working properly. Call <see cref="IsAvailable" /> prior to
@@ -40,7 +36,8 @@ public partial class DsHidMiniInterop
     /// </exception>
     /// <returns>
     ///     TRUE if <paramref name="report" /> got filled in or FALSE if the given <paramref name="deviceIndex" /> is not
-    ///     occupied.
+    ///     occupied, or if <paramref name="timeout" /> is used and the named wait event for that slot does not exist (no device
+    ///     in that slot).
     /// </returns>
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public unsafe bool GetRawInputReport(int deviceIndex, ref DS3_RAW_INPUT_REPORT report, TimeSpan? timeout = null)
@@ -52,13 +49,20 @@ public partial class DsHidMiniInterop
 
         ValidateDeviceIndex(deviceIndex);
 
-        ref IPC_HID_INPUT_REPORT_MESSAGE message = ref Unsafe.AsRef<IPC_HID_INPUT_REPORT_MESSAGE>(_hidView);
+        nuint byteOffset = (nuint)((deviceIndex - 1) * Marshal.SizeOf<IPC_HID_INPUT_REPORT_MESSAGE>());
+        void* pMessage = (byte*)_hidView.Value + byteOffset;
+        ref IPC_HID_INPUT_REPORT_MESSAGE message = ref Unsafe.AsRef<IPC_HID_INPUT_REPORT_MESSAGE>(pMessage);
 
         if (timeout.HasValue)
         {
-            _inputReportEvent ??= GetHidReportWaitHandle(deviceIndex);
-
-            _inputReportEvent.WaitOne(timeout.Value);
+            try
+            {
+                GetOrOpenHidReportWaitEvent(deviceIndex).WaitOne(timeout.Value);
+            }
+            catch (WaitHandleCannotBeOpenedException)
+            {
+                return false;
+            }
         }
 
         //

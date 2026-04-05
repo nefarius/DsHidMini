@@ -195,6 +195,5 @@ EVT_WDF_DRIVER_DEVICE_ADD dshidminiEvtDeviceAdd;
 EVT_WDF_OBJECT_CONTEXT_CLEANUP dshidminiEvtDriverContextCleanup;
 
 VOID DumpAsHex(PCSTR Prefix, PVOID Buffer, ULONG BufferLength);
-void GenerateRandomEventName(PUCHAR buffer, size_t length);
 
 EXTERN_C_END
