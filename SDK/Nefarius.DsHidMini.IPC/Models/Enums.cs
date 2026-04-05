@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Nefarius.DsHidMini.IPC.Models;
 
@@ -99,10 +99,5 @@ internal enum DSHM_IPC_MSG_CMD_DEVICE : UInt32
     /// <summary>
     ///     Requests a player index update (switch player LED etc.)
     /// </summary>
-    DSHM_IPC_MSG_CMD_DEVICE_SET_PLAYER_INDEX,
-
-    /// <summary>
-    ///     Requests a wait handle for input report state changes
-    /// </summary>
-    DSHM_IPC_MSG_CMD_DEVICE_GET_HID_WAIT_HANDLE
+    DSHM_IPC_MSG_CMD_DEVICE_SET_PLAYER_INDEX
 }

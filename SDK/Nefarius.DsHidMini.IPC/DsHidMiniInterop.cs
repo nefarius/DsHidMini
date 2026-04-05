@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.CompilerServices;
@@ -8,7 +8,6 @@ using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.System.Memory;
 using Windows.Win32.System.SystemInformation;
-using Windows.Win32.System.Threading;
 
 using Microsoft.Win32.SafeHandles;
 
@@ -29,6 +28,11 @@ public sealed partial class DsHidMiniInterop : IDisposable
     private const string WriteEventName = "Global\\DsHidMiniWriteEvent";
     private const string MutexName = "Global\\DsHidMiniCommandMutex";
 
+    /// <summary>
+    ///     Must match <c>DSHM_IPC_HID_REPORT_EVENT_PREFIX</c> in driver <c>IPC.h</c> (suffix is the one-based device index).
+    /// </summary>
+    private const string HidReportWaitEventNamePrefix = "Global\\DsHidMiniHidReportEvent";
+
     private readonly Dictionary<int, PnPDevice> _connectedDevices = new();
     private readonly DeviceNotificationListener _deviceListener = new();
     private MEMORY_MAPPED_VIEW_ADDRESS? _cmdView;
@@ -38,7 +42,7 @@ public sealed partial class DsHidMiniInterop : IDisposable
     private SafeFileHandle? _fileMapping;
     private MEMORY_MAPPED_VIEW_ADDRESS? _hidView;
 
-    private EventWaitHandle? _inputReportEvent;
+    private readonly Dictionary<int, EventWaitHandle> _inputReportWaitEvents = new();
 
     private EventWaitHandle? _readEvent;
     private EventWaitHandle? _writeEvent;
@@ -99,7 +103,7 @@ public sealed partial class DsHidMiniInterop : IDisposable
 
         _readEvent?.Dispose();
         _writeEvent?.Dispose();
-        _inputReportEvent?.Dispose();
+        DisposeInputReportWaitEvents();
 
         _commandMutex?.Dispose();
     }
@@ -114,6 +118,8 @@ public sealed partial class DsHidMiniInterop : IDisposable
     /// </exception>
     public void Reconnect()
     {
+        DisposeInputReportWaitEvents();
+
         PInvoke.GetSystemInfo(out SYSTEM_INFO systemInfo);
 
         try
@@ -173,6 +179,8 @@ public sealed partial class DsHidMiniInterop : IDisposable
 
     private void RefreshDevices()
     {
+        DisposeInputReportWaitEvents();
+
         _connectedDevices.Clear();
 
         int instanceIndex = 0;
@@ -212,116 +220,32 @@ public sealed partial class DsHidMiniInterop : IDisposable
         RefreshDevices();
     }
 
-    /// <summary>
-    ///     Gets the input report wait handle from the driver and duplicates it into the current process.
-    /// </summary>
-    /// <exception cref="DsHidMiniInteropAccessDeniedException">
-    ///     Driver process interaction failed due to missing permissions;
-    ///     this operation requires elevated privileges.
-    /// </exception>
-    /// <exception cref="DsHidMiniInteropUnexpectedReplyException">The driver returned unexpected or malformed data.</exception>
-    /// <exception cref="Win32Exception">Handle duplication failed.</exception>
-    /// <exception cref="DsHidMiniInteropReplyTimeoutException">The driver didn't respond within an expected period.</exception>
-    /// <exception cref="DsHidMiniInteropConcurrencyException">A different thread is currently performing a data exchange.</exception>
-    /// <exception cref="DsHidMiniInteropUnavailableException">
-    ///     No driver instance is available. Make sure that at least one
-    ///     device is connected and that the driver is installed and working properly. Call <see cref="IsAvailable" /> prior to
-    ///     avoid this exception.
-    /// </exception>
-    private unsafe EventWaitHandle GetHidReportWaitHandle(int deviceIndex)
+    private void DisposeInputReportWaitEvents()
     {
-        if (_commandMutex is null || _cmdView is null)
+        foreach (EventWaitHandle handle in _inputReportWaitEvents.Values)
         {
-            throw new DsHidMiniInteropUnavailableException();
+            handle.Dispose();
         }
 
-        ValidateDeviceIndex(deviceIndex);
+        _inputReportWaitEvents.Clear();
+    }
 
-        AcquireCommandLock();
-
-        try
+    /// <summary>
+    ///     Opens the driver's named auto-reset event for the given one-based device slot (created with DACL allowing
+    ///     authenticated users).
+    /// </summary>
+    private EventWaitHandle GetOrOpenHidReportWaitEvent(int deviceIndex)
+    {
+        if (_inputReportWaitEvents.TryGetValue(deviceIndex, out EventWaitHandle? existing))
         {
-            ref DSHM_IPC_MSG_HEADER request = ref Unsafe.AsRef<DSHM_IPC_MSG_HEADER>(_cmdView);
-
-            request.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_RESPONSE_ONLY;
-            request.Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DEVICE;
-            request.Command.Device = DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_GET_HID_WAIT_HANDLE;
-            request.TargetIndex = (uint)deviceIndex;
-            request.Size = (uint)Marshal.SizeOf<DSHM_IPC_MSG_HEADER>();
-
-            if (!SendAndWait())
-            {
-                throw new DsHidMiniInteropReplyTimeoutException();
-            }
-
-            ref DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE reply =
-                ref Unsafe.AsRef<DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE>(_cmdView);
-
-            //
-            // Plausibility check
-            // 
-            if (reply.Header is
-                {
-                    Type: DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_RESPONSE_ONLY,
-                    Target: DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_CLIENT,
-                    Command.Device: DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_GET_HID_WAIT_HANDLE
-                }
-                && reply.Header.TargetIndex == deviceIndex
-                && reply.Header.Size == Marshal.SizeOf<DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE>())
-            {
-                HANDLE driverProcess = PInvoke.OpenProcess(
-                    PROCESS_ACCESS_RIGHTS.PROCESS_DUP_HANDLE,
-                    new BOOL(false),
-                    reply.ProcessId
-                );
-
-                try
-                {
-                    if (driverProcess.IsNull)
-                    {
-                        if (Marshal.GetLastWin32Error() == (int)WIN32_ERROR.ERROR_ACCESS_DENIED)
-                        {
-                            throw new DsHidMiniInteropAccessDeniedException();
-                        }
-
-                        throw new Win32Exception(Marshal.GetLastWin32Error(), "OpenProcess call failed.");
-                    }
-
-                    HANDLE dupHandle;
-
-                    if (!PInvoke.DuplicateHandle(
-                            driverProcess,
-                            new HANDLE(reply.WaitHandle),
-                            PInvoke.GetCurrentProcess(),
-                            &dupHandle,
-                            0,
-                            new BOOL(false),
-                            DUPLICATE_HANDLE_OPTIONS.DUPLICATE_SAME_ACCESS
-                        ))
-                    {
-                        throw new Win32Exception(Marshal.GetLastWin32Error(), "DuplicateHandle call failed.");
-                    }
-
-                    return new EventWaitHandle(false, EventResetMode.AutoReset)
-                    {
-                        SafeWaitHandle = new SafeWaitHandle(dupHandle, true)
-                    };
-                }
-                finally
-                {
-                    if (!driverProcess.IsNull)
-                    {
-                        PInvoke.CloseHandle(driverProcess);
-                    }
-                }
-            }
-
-            throw new DsHidMiniInteropUnexpectedReplyException(ref reply.Header);
+            return existing;
         }
-        finally
-        {
-            _commandMutex.ReleaseMutex();
-        }
+
+        string name = $"{HidReportWaitEventNamePrefix}{deviceIndex}";
+        EventWaitHandle opened = EventWaitHandle.OpenExisting(name);
+        _inputReportWaitEvents[deviceIndex] = opened;
+
+        return opened;
     }
 
     private void AcquireCommandLock()
