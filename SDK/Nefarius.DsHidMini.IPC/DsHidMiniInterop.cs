@@ -1,9 +1,10 @@
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO.MemoryMappedFiles;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.System.Memory;
@@ -42,7 +43,7 @@ public sealed partial class DsHidMiniInterop : IDisposable
     private SafeFileHandle? _fileMapping;
     private MEMORY_MAPPED_VIEW_ADDRESS? _hidView;
 
-    private readonly Dictionary<int, EventWaitHandle> _inputReportWaitEvents = new();
+    private readonly ConcurrentDictionary<int, EventWaitHandle> _inputReportWaitEvents = new();
 
     private EventWaitHandle? _readEvent;
     private EventWaitHandle? _writeEvent;
@@ -222,18 +223,30 @@ public sealed partial class DsHidMiniInterop : IDisposable
 
     private void DisposeInputReportWaitEvents()
     {
-        foreach (EventWaitHandle handle in _inputReportWaitEvents.Values)
+        foreach (int key in _inputReportWaitEvents.Keys.ToArray())
         {
-            handle.Dispose();
+            if (_inputReportWaitEvents.TryRemove(key, out EventWaitHandle? handle))
+            {
+                handle.Dispose();
+            }
         }
-
-        _inputReportWaitEvents.Clear();
     }
 
     /// <summary>
-    ///     Opens the driver's named auto-reset event for the given one-based device slot (created with DACL allowing
-    ///     authenticated users).
+    ///     Returns a cached handle to the driver's named auto-reset event for the given one-based device slot (created with
+    ///     DACL allowing authenticated users).
     /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         <see cref="EventWaitHandle.OpenExisting(string)" /> is used to obtain the handle. It throws
+    ///         <see cref="WaitHandleCannotBeOpenedException" /> when the named event does not exist (for example, the device
+    ///         slot is empty). <see cref="GetRawInputReport" /> catches that exception and returns <see langword="false" />.
+    ///     </para>
+    /// </remarks>
+    /// <exception cref="WaitHandleCannotBeOpenedException">
+    ///     No kernel object exists for the per-slot name (prefix <see cref="HidReportWaitEventNamePrefix" /> plus
+    ///     <paramref name="deviceIndex" />).
+    /// </exception>
     private EventWaitHandle GetOrOpenHidReportWaitEvent(int deviceIndex)
     {
         if (_inputReportWaitEvents.TryGetValue(deviceIndex, out EventWaitHandle? existing))
@@ -243,9 +256,15 @@ public sealed partial class DsHidMiniInterop : IDisposable
 
         string name = $"{HidReportWaitEventNamePrefix}{deviceIndex}";
         EventWaitHandle opened = EventWaitHandle.OpenExisting(name);
-        _inputReportWaitEvents[deviceIndex] = opened;
 
-        return opened;
+        if (_inputReportWaitEvents.TryAdd(deviceIndex, opened))
+        {
+            return opened;
+        }
+
+        opened.Dispose();
+
+        return _inputReportWaitEvents[deviceIndex];
     }
 
     private void AcquireCommandLock()
