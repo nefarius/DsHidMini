@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO.MemoryMappedFiles;
@@ -184,11 +185,51 @@ public sealed partial class DsHidMiniInterop : IDisposable
 
         _connectedDevices.Clear();
 
+        var enumerated = new List<PnPDevice>();
         int instanceIndex = 0;
-
         while (Devcon.FindByInterfaceGuid(DsHidMiniDriver.DeviceInterfaceGuid, out PnPDevice device, instanceIndex++))
         {
-            _connectedDevices.Add(instanceIndex, device);
+            enumerated.Add(device);
+        }
+
+        var usedKeys = new HashSet<int>();
+        foreach (PnPDevice device in enumerated)
+        {
+            int? slot = TryGetIpcSlotIndex(device);
+            if (slot is int s && !usedKeys.Contains(s))
+            {
+                _connectedDevices[s] = device;
+                usedKeys.Add(s);
+            }
+        }
+
+        foreach (PnPDevice device in enumerated)
+        {
+            if (_connectedDevices.ContainsValue(device))
+            {
+                continue;
+            }
+
+            // Only devices without a readable/valid IPC slot property use enumeration-order fallback.
+            // Devices that reported an explicit slot (including duplicate-slot collisions) are left out.
+            if (TryGetIpcSlotIndex(device) is not null)
+            {
+                continue;
+            }
+
+            int fallback = 1;
+            while (fallback <= byte.MaxValue && usedKeys.Contains(fallback))
+            {
+                fallback++;
+            }
+
+            if (fallback > byte.MaxValue)
+            {
+                break;
+            }
+
+            _connectedDevices[fallback] = device;
+            usedKeys.Add(fallback);
         }
 
         //
@@ -200,14 +241,33 @@ public sealed partial class DsHidMiniInterop : IDisposable
         }
     }
 
-    private void DsHidMiniDeviceRemoved(DeviceEventArgs obj)
+    /// <summary>
+    ///     Reads the driver's one-based IPC slot for a device when available (see <see cref="DsHidMiniDriver.IpcSlotIndexProperty" />).
+    /// </summary>
+    /// <returns>The slot index, or <see langword="null" /> if the property is missing (older driver) or invalid.</returns>
+    private static int? TryGetIpcSlotIndex(PnPDevice device)
     {
-        PnPDevice? device = PnPDevice.GetDeviceByInterfaceId(obj.SymLink, DeviceLocationFlags.Phantom);
+        uint slot;
+        try
+        {
+            slot = device.GetProperty<uint>(DsHidMiniDriver.IpcSlotIndexProperty);
+        }
+        catch (Exception)
+        {
+            // Older driver without the property, or property not yet available
+            return null;
+        }
 
-        KeyValuePair<int, PnPDevice> item = _connectedDevices.Single(kvp => kvp.Value.Equals(device));
+        if (slot is < 1 or > byte.MaxValue)
+        {
+            return null;
+        }
 
-        // TODO: react to removal
+        return (int)slot;
+    }
 
+    private void DsHidMiniDeviceRemoved(DeviceEventArgs _)
+    {
         RefreshDevices();
     }
 
