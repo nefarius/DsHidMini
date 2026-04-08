@@ -210,6 +210,13 @@ public sealed partial class DsHidMiniInterop : IDisposable
                 continue;
             }
 
+            // Only devices without a readable/valid IPC slot property use enumeration-order fallback.
+            // Devices that reported an explicit slot (including duplicate-slot collisions) are left out.
+            if (TryGetIpcSlotIndex(device) is not null)
+            {
+                continue;
+            }
+
             int fallback = 1;
             while (fallback <= byte.MaxValue && usedKeys.Contains(fallback))
             {
@@ -259,15 +266,8 @@ public sealed partial class DsHidMiniInterop : IDisposable
         return (int)slot;
     }
 
-    private void DsHidMiniDeviceRemoved(DeviceEventArgs obj)
+    private void DsHidMiniDeviceRemoved(DeviceEventArgs _)
     {
-        PnPDevice? device = PnPDevice.GetDeviceByInterfaceId(obj.SymLink, DeviceLocationFlags.Phantom);
-
-        if (device is not null)
-        {
-            _ = _connectedDevices.Single(kvp => kvp.Value.Equals(device));
-        }
-
         RefreshDevices();
     }
 

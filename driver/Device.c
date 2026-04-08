@@ -482,18 +482,37 @@ DsDevice_InitContext(
 
 	{
 		WDF_DEVICE_PROPERTY_DATA propertyData;
+		NTSTATUS propStatus;
 
 		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RO_IpcSlotIndex);
 		propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
 		propertyData.Lcid = LOCALE_NEUTRAL;
 
-		(void)WdfDeviceAssignProperty(
+		propStatus = WdfDeviceAssignProperty(
 			Device,
 			&propertyData,
 			DEVPROP_TYPE_UINT32,
 			sizeof(UINT32),
 			&pDevCtx->SlotIndex
 		);
+
+		if (!NT_SUCCESS(propStatus))
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"WdfDeviceAssignProperty(DEVPKEY_DsHidMini_RO_IpcSlotIndex) failed with %!STATUS! (SlotIndex=%u)",
+				propStatus,
+				pDevCtx->SlotIndex
+			);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfDeviceAssignProperty(IpcSlotIndex)", propStatus);
+
+			if (pDrvCtx->IPC.IsEnabled)
+			{
+				FuncExit(TRACE_DEVICE, "status=%!STATUS!", propStatus);
+
+				return propStatus;
+			}
+		}
 	}
 
 	// ReSharper disable once CppIncompleteSwitchStatement
