@@ -129,9 +129,10 @@ All device-indexed APIs use a **one-based** device index (see [Device index](#de
 ## Device index
 
 - **Valid range:** `1` … `255` (inclusive).  
-- **Convention:** One-based; e.g. first device is `1`, second is `2`.  
-- **Invalid index:** APIs throw `DsHidMiniInteropInvalidDeviceIndexException` if `deviceIndex` is ≤ 0 or &gt; 255.  
-- The driver exposes at most one device per index; use your own discovery (e.g. device list from your app or driver docs) to map physical controllers to indices.
+- **Meaning:** The index is the driver’s **IPC slot** (`SlotIndex`): shared HID memory, per-slot wait events (`Global\DsHidMiniHidReportEvent` + index), and IPC `TargetIndex` all use this same one-based value.  
+- **Discovery:** Read the read-only device property **`DsHidMiniDriver.IpcSlotIndexProperty`** (`DEVPROP_TYPE_UINT32`, same value the driver publishes after claiming a slot). Enumerate DsHidMini device interfaces and query this property per `PnPDevice`—do **not** assume SetupAPI / `CM_Get_Device_Interface_List` ordering matches slot order (e.g. after a middle device disconnects, remaining devices may occupy non-contiguous slots such as `1` and `3`).  
+- **Older drivers:** If the property is absent, fall back to your own mapping; ordering-only heuristics may be wrong when slots are not contiguous.  
+- **Invalid index:** APIs throw `DsHidMiniInteropInvalidDeviceIndexException` if `deviceIndex` is ≤ 0 or &gt; 255.
 
 ---
 

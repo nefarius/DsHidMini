@@ -480,6 +480,22 @@ DsDevice_InitContext(
 		return status;
 	}
 
+	{
+		WDF_DEVICE_PROPERTY_DATA propertyData;
+
+		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RO_IpcSlotIndex);
+		propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+		propertyData.Lcid = LOCALE_NEUTRAL;
+
+		(void)WdfDeviceAssignProperty(
+			Device,
+			&propertyData,
+			DEVPROP_TYPE_UINT32,
+			sizeof(UINT32),
+			&pDevCtx->SlotIndex
+		);
+	}
+
 	// ReSharper disable once CppIncompleteSwitchStatement
 	// ReSharper disable once CppDefaultCaseNotHandledInSwitchStatement
 	switch (pDevCtx->ConnectionType)
