@@ -1,4 +1,4 @@
-﻿<Page
+<Page
     x:Class="Nefarius.DsHidMini.ControlApp.Views.Pages.DevicesPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -164,7 +164,7 @@
                 HorizontalContentAlignment="Left"
                 DockPanel.Dock="Bottom"
                 Icon="{ui:SymbolIcon Link24}"
-                NavigateUri="https://docs.nefarius.at/projects/DsHidMini/Experimental/Version-3-Beta/">
+                NavigateUri="https://docs.nefarius.at/projects/DsHidMini/v3/How-to-Install/#troubleshooting">
                 <ui:HyperlinkButton.Content>
                     <ui:TextBlock Text="Troubleshooting page" TextWrapping="Wrap" />
                 </ui:HyperlinkButton.Content>
