@@ -90,16 +90,16 @@ internal static class XInputSlotResolver
             return false;
         }
 
-        if (NegativeResolutionExpiryByBaseContainer.TryGetValue(dshmContainer, out DateTime negUntil)
-            && DateTime.UtcNow < negUntil)
-        {
-            return false;
-        }
-
         if (ResolutionCacheByBaseContainer.TryGetValue(dshmContainer, out byte cached))
         {
             userIndex = cached;
             return true;
+        }
+
+        if (NegativeResolutionExpiryByBaseContainer.TryGetValue(dshmContainer, out DateTime negUntil)
+            && DateTime.UtcNow < negUntil)
+        {
+            return false;
         }
 
         foreach (string xusbPath in EnumeratePresentXusbDeviceInterfacePaths())
