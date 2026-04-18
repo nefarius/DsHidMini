@@ -1,13 +1,13 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
-
-using Nefarius.Utilities.DeviceManagement.PnP;
 
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.Storage.FileSystem;
 
 using Microsoft.Win32.SafeHandles;
+
+using Nefarius.Utilities.DeviceManagement.PnP;
 
 namespace Nefarius.DsHidMini.ControlApp.Models.Util;
 
@@ -19,6 +19,14 @@ namespace Nefarius.DsHidMini.ControlApp.Models.Util;
 internal static class XInputSlotResolver
 {
     private const byte InvalidXInputUserId = 0xFF;
+
+    /// <summary>
+    ///     Win32 IOCTL to read Xbox 360 controller LED / ring-of-light state (<c>IOCTL_XUSB_GET_LED_STATE</c>).
+    /// </summary>
+    // Same IOCTL (0x8000E008) as XInputBridge GlobalState::SymlinkToUserIndex.
+    private const uint IoctlXusbGetLedState = 0x8000E008;
+
+    private static readonly ConcurrentDictionary<Guid, byte> ResolutionCacheByBaseContainer = new();
 
     /// <summary>
     ///     XUSB device interface class GUID (see XInputBridge/Macros.h).
@@ -37,8 +45,6 @@ internal static class XInputSlotResolver
     /// </summary>
     private static readonly SetupApiWrapper.DevPropKey DevpKeyDeviceBaseContainerId = new(
         0x80497100, 0x8c73, 0x48ea, 0x87, 0x08, 0x33, 0xa1, 0x6b, 0x18, 0x77, 0xfa, 2);
-
-    private const uint IoctlXusbGetLedState = 0x8000E008;
 
     /// <summary>
     ///     Mirrors XINPUT_LED_TO_PORT_MAP in XInputBridge/GlobalState.cpp.
@@ -65,6 +71,14 @@ internal static class XInputSlotResolver
     ];
 
     /// <summary>
+    ///     Clears cached XInput user-index lookups when device topology may have changed.
+    /// </summary>
+    public static void InvalidateResolutionCache()
+    {
+        ResolutionCacheByBaseContainer.Clear();
+    }
+
+    /// <summary>
     ///     Returns the XInput user index (0-3) for this DsHidMini device, or false if it cannot be determined.
     ///     Call only when the device is in XInput HID mode.
     /// </summary>
@@ -74,6 +88,17 @@ internal static class XInputSlotResolver
         if (!TryGetBaseContainerId(dshmDevice.InstanceId, out Guid dshmContainer))
         {
             return false;
+        }
+
+        if (ResolutionCacheByBaseContainer.TryGetValue(dshmContainer, out byte cached))
+        {
+            if (cached == InvalidXInputUserId)
+            {
+                return false;
+            }
+
+            userIndex = cached;
+            return true;
         }
 
         foreach (string xusbPath in EnumeratePresentXusbDeviceInterfacePaths())
@@ -91,13 +116,19 @@ internal static class XInputSlotResolver
             if (TrySymlinkToUserIndex(xusbPath, out byte idx) && idx != InvalidXInputUserId)
             {
                 userIndex = idx;
+                ResolutionCacheByBaseContainer[dshmContainer] = idx;
                 return true;
             }
         }
 
+        ResolutionCacheByBaseContainer[dshmContainer] = InvalidXInputUserId;
         return false;
     }
 
+    /// <summary>
+    ///     Yields symbolic link paths for all present device interfaces of class <see cref="XusbInterfaceClassGuid" />.
+    /// </summary>
+    /// <returns>Device interface paths (e.g. for use with <see cref="TrySymlinkToUserIndex" />).</returns>
     private static IEnumerable<string> EnumeratePresentXusbDeviceInterfacePaths()
     {
         uint lenChars = 0;
@@ -114,7 +145,14 @@ internal static class XInputSlotResolver
             yield break;
         }
 
-        IntPtr buffer = Marshal.AllocHGlobal((int)(lenChars * 2));
+        long byteCountLong = (long)lenChars * sizeof(char);
+        if (byteCountLong > int.MaxValue)
+        {
+            yield break;
+        }
+
+        int byteCount = (int)byteCountLong;
+        IntPtr buffer = Marshal.AllocHGlobal(byteCount);
         try
         {
             r = SetupApiWrapper.CM_Get_Device_Interface_ListW(
@@ -130,8 +168,7 @@ internal static class XInputSlotResolver
                 yield break;
             }
 
-            int byteLen = (int)(lenChars * 2);
-            foreach (string path in ParseDoubleNullTerminatedUnicode(buffer, byteLen))
+            foreach (string path in ParseDoubleNullTerminatedUnicode(buffer, byteCount))
             {
                 if (!string.IsNullOrEmpty(path))
                 {
@@ -145,6 +182,12 @@ internal static class XInputSlotResolver
         }
     }
 
+    /// <summary>
+    ///     Parses a CONFIGMG multi-string buffer (double-null-terminated UTF-16) into individual strings.
+    /// </summary>
+    /// <param name="buffer">Pointer to the buffer returned by <c>CM_Get_Device_Interface_ListW</c>.</param>
+    /// <param name="byteLength">Size of the buffer in bytes.</param>
+    /// <returns>Each non-empty string segment in order until a zero-length segment ends the list.</returns>
     private static IEnumerable<string> ParseDoubleNullTerminatedUnicode(IntPtr buffer, int byteLength)
     {
         int offset = 0;
@@ -157,7 +200,7 @@ internal static class XInputSlotResolver
             }
 
             yield return s;
-            offset += 2 * (s.Length + 1);
+            offset += sizeof(char) * (s.Length + 1);
         }
     }
 
@@ -270,14 +313,13 @@ internal static class XInputSlotResolver
     private static unsafe bool TrySymlinkToUserIndex(string symlink, out byte userIndex)
     {
         userIndex = InvalidXInputUserId;
-        using SafeFileHandle? handle = PInvoke.CreateFile(
+        using SafeFileHandle handle = PInvoke.CreateFile(
             symlink,
             (uint)(FILE_ACCESS_RIGHTS.FILE_GENERIC_READ | FILE_ACCESS_RIGHTS.FILE_GENERIC_WRITE),
             FILE_SHARE_MODE.FILE_SHARE_READ | FILE_SHARE_MODE.FILE_SHARE_WRITE,
             null,
             FILE_CREATION_DISPOSITION.OPEN_EXISTING,
-            FILE_FLAGS_AND_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
-            null
+            FILE_FLAGS_AND_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL
         );
 
         if (handle.IsInvalid)

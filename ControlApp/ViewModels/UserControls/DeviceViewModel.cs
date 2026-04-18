@@ -1,5 +1,6 @@
 ﻿using System.Net.NetworkInformation;
 using System.Text.RegularExpressions;
+using System.Windows;
 
 using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
@@ -458,10 +459,10 @@ public partial class DeviceViewModel : ObservableObject
         AdjustSettingsTabState();
         OnPropertyChanged(nameof(DeviceSettingsStatus));
         OnPropertyChanged(nameof(IsHidModeMismatched));
-        RefreshXInputSlotLabel();
+        await RefreshXInputSlotLabelAsync();
     }
 
-    private void RefreshXInputSlotLabel()
+    private async Task RefreshXInputSlotLabelAsync()
     {
         OnPropertyChanged(nameof(IsXInputHidMode));
         if (HidEmulationMode != SettingsContext.XInput)
@@ -471,16 +472,39 @@ public partial class DeviceViewModel : ObservableObject
             return;
         }
 
-        if (XInputSlotResolver.TryGetXInputUserIndex(Device, out byte userIndex))
+        PnPDevice device = Device;
+        (bool ok, byte userIndex) = await Task.Run(() =>
         {
-            XInputSlotDetail = $"Player {userIndex + 1}";
-            XInputSlotBanner = $"XInput: Player {userIndex + 1}";
-        }
-        else
+            bool success = XInputSlotResolver.TryGetXInputUserIndex(device, out byte idx);
+            return (success, idx);
+        });
+
+        await Application.Current.Dispatcher.InvokeAsync(() =>
         {
-            XInputSlotDetail = "Unavailable";
-            XInputSlotBanner = "XInput: Unavailable";
-        }
+            if (device.InstanceId != Device.InstanceId)
+            {
+                return;
+            }
+
+            if (HidEmulationMode != SettingsContext.XInput)
+            {
+                XInputSlotBanner = null;
+                XInputSlotDetail = null;
+                return;
+            }
+
+            OnPropertyChanged(nameof(IsXInputHidMode));
+            if (ok)
+            {
+                XInputSlotDetail = $"Player {userIndex + 1}";
+                XInputSlotBanner = $"XInput: Player {userIndex + 1}";
+            }
+            else
+            {
+                XInputSlotDetail = "Unavailable";
+                XInputSlotBanner = "XInput: Unavailable";
+            }
+        });
     }
 
     [RelayCommand]
