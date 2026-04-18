@@ -52,7 +52,8 @@
                                 <Grid Width="200" ShowGridLines="False">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="20" />
-                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
                                         <RowDefinition Height="25" />
                                     </Grid.RowDefinitions>
                                     <!--  Device name  -->
@@ -69,7 +70,15 @@
                                         Grid.ColumnSpan="2"
                                         FontSize="12"
                                         Text="{Binding DeviceSettingsStatus}" />
-                                    <DockPanel Grid.Row="2" LastChildFill="False">
+                                    <!--  XInput player slot (driver HID mode XInput only)  -->
+                                    <ui:TextBlock
+                                        Grid.Row="2"
+                                        Grid.ColumnSpan="2"
+                                        FontSize="11"
+                                        Opacity="0.9"
+                                        Text="{Binding XInputSlotBanner}"
+                                        Visibility="{Binding IsXInputHidMode, Converter={StaticResource BoolToVis_TV_FC}}" />
+                                    <DockPanel Grid.Row="3" LastChildFill="False">
 
 
                                         <DockPanel DockPanel.Dock="Right" LastChildFill="False">

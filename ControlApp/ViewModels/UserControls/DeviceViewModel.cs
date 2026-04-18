@@ -5,6 +5,7 @@ using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.Enums;
+using Nefarius.DsHidMini.ControlApp.Models.Util;
 using Nefarius.DsHidMini.ControlApp.Models.Util.Web;
 using Nefarius.DsHidMini.ControlApp.Services;
 using Nefarius.DsHidMini.IPC.Models.Drivers;
@@ -128,6 +129,23 @@ public partial class DeviceViewModel : ObservableObject
         DshmDriverTranslationUtils.HidDeviceMode[Device.GetProperty<byte>(DsHidMiniDriver.HidDeviceModeProperty)];
 
     public HidModeShort HidModeShort => (HidModeShort)HidEmulationMode;
+
+    /// <summary>
+    ///     True when the driver reports active HID mode XInput (0x05). Used to show XInput player slot only in that mode.
+    /// </summary>
+    public bool IsXInputHidMode => HidEmulationMode == SettingsContext.XInput;
+
+    /// <summary>
+    ///     Full line for the device list (e.g. "XInput: Player 1") when <see cref="IsXInputHidMode" />; otherwise null.
+    /// </summary>
+    [ObservableProperty]
+    private string? _xInputSlotBanner;
+
+    /// <summary>
+    ///     Short value for the Info tab (e.g. "Player 1" or "Unavailable"); null when not in XInput HID mode.
+    /// </summary>
+    [ObservableProperty]
+    private string? _xInputSlotDetail;
 
     /// <summary>
     ///     The Hid Mode the device is expected to be based on the device's user data
@@ -440,6 +458,29 @@ public partial class DeviceViewModel : ObservableObject
         AdjustSettingsTabState();
         OnPropertyChanged(nameof(DeviceSettingsStatus));
         OnPropertyChanged(nameof(IsHidModeMismatched));
+        RefreshXInputSlotLabel();
+    }
+
+    private void RefreshXInputSlotLabel()
+    {
+        OnPropertyChanged(nameof(IsXInputHidMode));
+        if (HidEmulationMode != SettingsContext.XInput)
+        {
+            XInputSlotBanner = null;
+            XInputSlotDetail = null;
+            return;
+        }
+
+        if (XInputSlotResolver.TryGetXInputUserIndex(Device, out byte userIndex))
+        {
+            XInputSlotDetail = $"Player {userIndex + 1}";
+            XInputSlotBanner = $"XInput: Player {userIndex + 1}";
+        }
+        else
+        {
+            XInputSlotDetail = "Unavailable";
+            XInputSlotBanner = "XInput: Unavailable";
+        }
     }
 
     [RelayCommand]
