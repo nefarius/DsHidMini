@@ -21,12 +21,20 @@ internal static class XInputSlotResolver
     private const byte InvalidXInputUserId = 0xFF;
 
     /// <summary>
+    ///     Short-lived negative cache to avoid hammering PnP/XUSB on repeated misses without permanently
+    ///     blocking resolution after transient enumeration or IOCTL races.
+    /// </summary>
+    private static readonly TimeSpan NegativeResolutionCacheTtl = TimeSpan.FromSeconds(3);
+
+    /// <summary>
     ///     Win32 IOCTL to read Xbox 360 controller LED / ring-of-light state (<c>IOCTL_XUSB_GET_LED_STATE</c>).
     /// </summary>
     // Same IOCTL (0x8000E008) as XInputBridge GlobalState::SymlinkToUserIndex.
     private const uint IoctlXusbGetLedState = 0x8000E008;
 
     private static readonly ConcurrentDictionary<Guid, byte> ResolutionCacheByBaseContainer = new();
+
+    private static readonly ConcurrentDictionary<Guid, DateTime> NegativeResolutionExpiryByBaseContainer = new();
 
     /// <summary>
     ///     XUSB device interface class GUID (see XInputBridge/Macros.h).
@@ -76,6 +84,7 @@ internal static class XInputSlotResolver
     public static void InvalidateResolutionCache()
     {
         ResolutionCacheByBaseContainer.Clear();
+        NegativeResolutionExpiryByBaseContainer.Clear();
     }
 
     /// <summary>
@@ -90,13 +99,14 @@ internal static class XInputSlotResolver
             return false;
         }
 
+        if (NegativeResolutionExpiryByBaseContainer.TryGetValue(dshmContainer, out DateTime negUntil)
+            && DateTime.UtcNow < negUntil)
+        {
+            return false;
+        }
+
         if (ResolutionCacheByBaseContainer.TryGetValue(dshmContainer, out byte cached))
         {
-            if (cached == InvalidXInputUserId)
-            {
-                return false;
-            }
-
             userIndex = cached;
             return true;
         }
@@ -116,12 +126,13 @@ internal static class XInputSlotResolver
             if (TrySymlinkToUserIndex(xusbPath, out byte idx) && idx != InvalidXInputUserId)
             {
                 userIndex = idx;
+                NegativeResolutionExpiryByBaseContainer.TryRemove(dshmContainer, out _);
                 ResolutionCacheByBaseContainer[dshmContainer] = idx;
                 return true;
             }
         }
 
-        ResolutionCacheByBaseContainer[dshmContainer] = InvalidXInputUserId;
+        NegativeResolutionExpiryByBaseContainer[dshmContainer] = DateTime.UtcNow.Add(NegativeResolutionCacheTtl);
         return false;
     }
 

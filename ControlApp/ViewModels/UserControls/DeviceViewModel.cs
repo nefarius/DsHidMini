@@ -1,5 +1,6 @@
 ﻿using System.Net.NetworkInformation;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Windows;
 
 using Nefarius.DsHidMini.ControlApp.Models;
@@ -24,6 +25,8 @@ public partial class DeviceViewModel : ObservableObject
     private readonly AppSnackbarMessagesService _appSnackbarMessagesService;
     private readonly Timer _batteryQuery;
     private readonly IContentDialogService _contentDialogService;
+
+    private int _xInputSlotRefreshGeneration;
 
     private readonly DeviceData _deviceUserData;
 
@@ -464,6 +467,8 @@ public partial class DeviceViewModel : ObservableObject
 
     private async Task RefreshXInputSlotLabelAsync()
     {
+        int refreshGeneration = Interlocked.Increment(ref _xInputSlotRefreshGeneration);
+
         OnPropertyChanged(nameof(IsXInputHidMode));
         if (HidEmulationMode != SettingsContext.XInput)
         {
@@ -481,7 +486,7 @@ public partial class DeviceViewModel : ObservableObject
 
         await Application.Current.Dispatcher.InvokeAsync(() =>
         {
-            if (device.InstanceId != Device.InstanceId)
+            if (refreshGeneration != _xInputSlotRefreshGeneration)
             {
                 return;
             }
