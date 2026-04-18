@@ -42,17 +42,8 @@ internal static class XInputSlotResolver
     private static readonly Guid XusbInterfaceClassGuid =
         Guid.Parse("{EC87F1E3-C13B-4100-B5F7-8B84D54260CB}");
 
-    /// <summary>
-    ///     DEVPKEY_Device_InstanceId - used with CM_Get_Device_Interface_Property.
-    /// </summary>
-    private static readonly SetupApiWrapper.DevPropKey DevpKeyDeviceInstanceId = new(
-        0x78c34fc8, 0x104a, 0x4aca, 0x9e, 0xa4, 0x52, 0x4d, 0x52, 0x94, 0x39, 0x5d, 256);
-
-    /// <summary>
-    ///     DEVPKEY_Device_BaseContainerId - used with CM_Get_DevNode_Property.
-    /// </summary>
-    private static readonly SetupApiWrapper.DevPropKey DevpKeyDeviceBaseContainerId = new(
-        0x80497100, 0x8c73, 0x48ea, 0x87, 0x08, 0x33, 0xa1, 0x6b, 0x18, 0x77, 0xfa, 2);
+    private static SetupApiWrapper.DevPropKey ToDevPropKey(DevicePropertyKey key) =>
+        new(key.CategoryGuid, key.PropertyIdentifier);
 
     /// <summary>
     ///     Mirrors XINPUT_LED_TO_PORT_MAP in XInputBridge/GlobalState.cpp.
@@ -219,7 +210,7 @@ internal static class XInputSlotResolver
         [NotNullWhen(true)] out string? instanceId)
     {
         instanceId = null;
-        SetupApiWrapper.DevPropKey key = DevpKeyDeviceInstanceId;
+        SetupApiWrapper.DevPropKey key = ToDevPropKey(DevicePropertyKey.Device_InstanceId);
         uint bufferSize = 0;
         SetupApiWrapper.ConfigManagerResult r = SetupApiWrapper.CM_Get_Device_Interface_Property(
             deviceInterfacePath,
@@ -274,7 +265,7 @@ internal static class XInputSlotResolver
             return false;
         }
 
-        SetupApiWrapper.DevPropKey key = DevpKeyDeviceBaseContainerId;
+        SetupApiWrapper.DevPropKey key = ToDevPropKey(DevicePropertyKey.Device_BaseContainerId);
         uint size = 0;
         SetupApiWrapper.ConfigManagerResult r = SetupApiWrapper.CM_Get_DevNode_Property(
             devInst,
