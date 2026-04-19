@@ -37,6 +37,11 @@ internal static class XInputSlotResolver
     private static readonly ConcurrentDictionary<Guid, DateTime> NegativeResolutionExpiryByBaseContainer = new();
 
     /// <summary>
+    ///     Cache-generation token incremented when caches are invalidated to prevent stale writes after a clear.
+    /// </summary>
+    private static long _cacheGeneration;
+
+    /// <summary>
     ///     XUSB device interface class GUID (see XInputBridge/Macros.h).
     /// </summary>
     private static readonly Guid XusbInterfaceClassGuid =
@@ -74,6 +79,7 @@ internal static class XInputSlotResolver
     /// </summary>
     public static void InvalidateResolutionCache()
     {
+        Interlocked.Increment(ref _cacheGeneration);
         ResolutionCacheByBaseContainer.Clear();
         NegativeResolutionExpiryByBaseContainer.Clear();
     }
@@ -102,6 +108,9 @@ internal static class XInputSlotResolver
             return false;
         }
 
+        // Capture generation before resolving to prevent stale writes after InvalidateResolutionCache
+        long generationSnapshot = Interlocked.Read(ref _cacheGeneration);
+
         foreach (string xusbPath in EnumeratePresentXusbDeviceInterfacePaths())
         {
             if (!TryGetDeviceInstanceIdFromInterfacePath(xusbPath, out string? xusbInstanceId))
@@ -117,13 +126,21 @@ internal static class XInputSlotResolver
             if (TrySymlinkToUserIndex(xusbPath, out byte idx) && idx != InvalidXInputUserId)
             {
                 userIndex = idx;
-                NegativeResolutionExpiryByBaseContainer.TryRemove(dshmContainer, out _);
-                ResolutionCacheByBaseContainer[dshmContainer] = idx;
+                // Only write to cache if generation hasn't changed (no InvalidateResolutionCache since we started)
+                if (Interlocked.Read(ref _cacheGeneration) == generationSnapshot)
+                {
+                    NegativeResolutionExpiryByBaseContainer.TryRemove(dshmContainer, out _);
+                    ResolutionCacheByBaseContainer[dshmContainer] = idx;
+                }
                 return true;
             }
         }
 
-        NegativeResolutionExpiryByBaseContainer[dshmContainer] = DateTime.UtcNow.Add(NegativeResolutionCacheTtl);
+        // Only write negative cache if generation hasn't changed
+        if (Interlocked.Read(ref _cacheGeneration) == generationSnapshot)
+        {
+            NegativeResolutionExpiryByBaseContainer[dshmContainer] = DateTime.UtcNow.Add(NegativeResolutionCacheTtl);
+        }
         return false;
     }
 
