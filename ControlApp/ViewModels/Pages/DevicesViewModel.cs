@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 
 using Nefarius.DsHidMini.ControlApp.Models;
+using Nefarius.DsHidMini.ControlApp.Models.Util;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.Util.Web;
 using Nefarius.DsHidMini.ControlApp.Services;
@@ -94,6 +95,7 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
 
     private void OnDshmConfigUpdated(object? obj, EventArgs? eventArgs)
     {
+        XInputSlotResolver.InvalidateResolutionCache();
         ReconnectDevicesWithMismatchedHidMode();
     }
 

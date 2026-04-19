@@ -1,10 +1,13 @@
 ﻿using System.Net.NetworkInformation;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Windows;
 
 using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.Enums;
+using Nefarius.DsHidMini.ControlApp.Models.Util;
 using Nefarius.DsHidMini.ControlApp.Models.Util.Web;
 using Nefarius.DsHidMini.ControlApp.Services;
 using Nefarius.DsHidMini.IPC.Models.Drivers;
@@ -22,6 +25,8 @@ public partial class DeviceViewModel : ObservableObject
     private readonly AppSnackbarMessagesService _appSnackbarMessagesService;
     private readonly Timer _batteryQuery;
     private readonly IContentDialogService _contentDialogService;
+
+    private int _xInputSlotRefreshGeneration;
 
     private readonly DeviceData _deviceUserData;
 
@@ -128,6 +133,23 @@ public partial class DeviceViewModel : ObservableObject
         DshmDriverTranslationUtils.HidDeviceMode[Device.GetProperty<byte>(DsHidMiniDriver.HidDeviceModeProperty)];
 
     public HidModeShort HidModeShort => (HidModeShort)HidEmulationMode;
+
+    /// <summary>
+    ///     True when the driver reports active HID mode XInput (0x05). Used to show XInput player slot only in that mode.
+    /// </summary>
+    public bool IsXInputHidMode => HidEmulationMode == SettingsContext.XInput;
+
+    /// <summary>
+    ///     Full line for the device list (e.g. "XInput: Player 1") when <see cref="IsXInputHidMode" />; otherwise null.
+    /// </summary>
+    [ObservableProperty]
+    private string? _xInputSlotBanner;
+
+    /// <summary>
+    ///     Short value for the Info tab (e.g. "Player 1" or "Unavailable"); null when not in XInput HID mode.
+    /// </summary>
+    [ObservableProperty]
+    private string? _xInputSlotDetail;
 
     /// <summary>
     ///     The Hid Mode the device is expected to be based on the device's user data
@@ -440,6 +462,54 @@ public partial class DeviceViewModel : ObservableObject
         AdjustSettingsTabState();
         OnPropertyChanged(nameof(DeviceSettingsStatus));
         OnPropertyChanged(nameof(IsHidModeMismatched));
+        await RefreshXInputSlotLabelAsync();
+    }
+
+    private async Task RefreshXInputSlotLabelAsync()
+    {
+        int refreshGeneration = Interlocked.Increment(ref _xInputSlotRefreshGeneration);
+
+        OnPropertyChanged(nameof(IsXInputHidMode));
+        if (HidEmulationMode != SettingsContext.XInput)
+        {
+            XInputSlotBanner = null;
+            XInputSlotDetail = null;
+            return;
+        }
+
+        PnPDevice device = Device;
+        (bool ok, byte userIndex) = await Task.Run(() =>
+        {
+            bool success = XInputSlotResolver.TryGetXInputUserIndex(device, out byte idx);
+            return (success, idx);
+        });
+
+        await Application.Current.Dispatcher.InvokeAsync(() =>
+        {
+            if (refreshGeneration != _xInputSlotRefreshGeneration)
+            {
+                return;
+            }
+
+            if (HidEmulationMode != SettingsContext.XInput)
+            {
+                XInputSlotBanner = null;
+                XInputSlotDetail = null;
+                return;
+            }
+
+            OnPropertyChanged(nameof(IsXInputHidMode));
+            if (ok)
+            {
+                XInputSlotDetail = $"Player {userIndex + 1}";
+                XInputSlotBanner = $"XInput: Player {userIndex + 1}";
+            }
+            else
+            {
+                XInputSlotDetail = "Unavailable";
+                XInputSlotBanner = "XInput: Unavailable";
+            }
+        });
     }
 
     [RelayCommand]
