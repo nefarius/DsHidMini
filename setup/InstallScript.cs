@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 using System;
 using System.Buffers;
 using System.Collections.Generic;
@@ -36,8 +36,14 @@ internal class InstallScript
 {
     public const string ProductName = "Nefarius DsHidMini Driver";
 
-    public static Uri BetaArticleUrl = new("https://docs.nefarius.at/projects/DsHidMini/Experimental/Version-3-Beta/");
+    public static Uri OnlineDocumentationUrl = new("https://docs.nefarius.at/projects/DsHidMini/v3/How-to-Install/");
 
+    /// <summary>
+    /// Builds and emits the MSI installer for the Nefarius DsHidMini drivers and packaged artifacts.
+    /// </summary>
+    /// <remarks>
+    /// Reads setup, driver, and filter versions from build variables and artifact file metadata; defines installer features and package contents; configures managed actions, custom actions, registry writes, UI dialogs, embedded reference assemblies, and control panel metadata; hooks post-install handling; and finally generates the MSI file.
+    /// </remarks>
     private static void Main()
     {
         // grab main app version
@@ -110,8 +116,8 @@ internal class InstallScript
                 When.After,
                 Step.InstallFinalize,
                 Condition.NOT_Installed),
-            // open beta article
-            new ManagedAction(CustomActions.OpenBetaArticle, Return.check,
+            // open online documentation
+            new ManagedAction(CustomActions.OpenOnlineDocumentation, Return.check,
                 When.After,
                 Step.InstallFinalize,
                 Condition.NOT_Installed),
@@ -152,7 +158,7 @@ internal class InstallScript
             .Add<LicenceDialog>()
             .Add<FeaturesDialog>()
             .Add<ProgressDialog>()
-            .Add<BetaArticleDialog>()
+            .Add<OnlineDocumentationDialog>()
             .Add<ExitDialog>();
 
         project.ManagedUI.ModifyDialogs.Add<MaintenanceTypeDialog>()
@@ -294,7 +300,11 @@ public static class CustomActions
 
     /// <summary>
     ///     Download and install BthPS3.
+    /// <summary>
+    /// Downloads metadata for the latest BthPS3 update and opens its download URL when the BthPS3 feature is enabled.
     /// </summary>
+    /// <param name="session">The MSI session used to check whether the BthPS3 feature is enabled and to record logs.</param>
+    /// <returns>`ActionResult.Success` on completion.</returns>
     [CustomAction]
     [SuppressMessage("ReSharper", "InconsistentNaming")]
     public static ActionResult InstallBthPS3(Session session)
@@ -339,19 +349,23 @@ public static class CustomActions
     }
 
     /// <summary>
-    ///     Open beta article in default browser.
+    ///     Open online documentation in default browser.
+    /// <summary>
+    /// Opens the product's online documentation URL in the user's default browser.
     /// </summary>
+    /// <param name="session">The current MSI session used for logging.</param>
+    /// <returns>`ActionResult.Success` to indicate the custom action completed; if launching the URL fails the exception is logged and the action still returns `ActionResult.Success`.</returns>
     [CustomAction]
-    public static ActionResult OpenBetaArticle(Session session)
+    public static ActionResult OpenOnlineDocumentation(Session session)
     {
         try
         {
-            Process.Start(InstallScript.BetaArticleUrl.ToString());
+            Process.Start(InstallScript.OnlineDocumentationUrl.ToString());
         }
         catch (Exception ex)
         {
             session.Log(
-                $"Beta article launch failed, exception: {ex}");
+                $"Online documentation launch failed, exception: {ex}");
         }
 
         return ActionResult.Success;
@@ -359,7 +373,11 @@ public static class CustomActions
 
     /// <summary>
     ///     Open donations page in default browser.
+    /// <summary>
+    /// Opens the donation web page in the user's default browser when the DonationFeature is enabled.
     /// </summary>
+    /// <param name="session">MSI session used to check feature state and to record failures to the installer log.</param>
+    /// <returns><see cref="ActionResult.Success"/> on completion.</returns>
     [CustomAction]
     public static ActionResult OpenDonationPage(Session session)
     {
@@ -375,7 +393,7 @@ public static class CustomActions
         catch (Exception ex)
         {
             session.Log(
-                $"Beta article launch failed, exception: {ex}");
+                $"Donation page launch failed, exception: {ex}");
         }
 
         return ActionResult.Success;
