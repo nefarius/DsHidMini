@@ -14,7 +14,10 @@ START_TEST(test_number_print_no_overflow)
         -DBL_MAX,                   /* extreme negative */
         1.7976931348623157e+308,    /* boundary: max finite double */
         0.0,                        /* valid simple case */
-        1.23456789012345678e-308    /* near-denormal, long representation */
+        1.23456789012345678e-308    /* near-denormal, long representation */,
+        DBL_MIN,                    /* smallest positive normalized double */
+        -0.0,                       /* negative zero */
+        DBL_MIN / 2                 /* subnormal value */
     };
     int num_payloads = sizeof(payloads) / sizeof(payloads[0]);
 
