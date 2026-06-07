@@ -95,8 +95,16 @@ internal class InstallScript
                     new Files(driversFeature, @"..\artifacts\drivers\*.*"),
                     new Files(driversFeature, @"..\artifacts\igfilter\*.*")
                 ),
-                new File(driversFeature, "nefarius_DsHidMini_Updater.exe")
+                new File(driversFeature, "nefarius_DsHidMini_Updater.exe"),
+                new File(driversFeature, @"..\artifacts\bin\ControlApp.exe",
+                    new FileShortcut("DsHidMini Control App",
+                        @"%ProgramMenu%\Nefarius Software Solutions\DsHidMini"))
             ),
+            // check for .NET 9 Desktop Runtime before any files are laid down
+            new ManagedAction(CustomActions.CheckDotNetRuntime, Return.check,
+                When.Before,
+                Step.LaunchConditions,
+                Condition.NOT_Installed),
             // install drivers
             new ElevatedManagedAction(CustomActions.InstallDrivers, Return.check,
                 When.After,
@@ -106,6 +114,11 @@ internal class InstallScript
             new Error("9000",
                 "Driver installation succeeded but a reboot is required to be fully operational. " +
                 "After the setup is finished, please reboot the system before using the software."),
+            // .NET 9 Desktop Runtime missing
+            new Error("9001",
+                "The .NET 9 Desktop Runtime (x64) is required by DsHidMini Control App. " +
+                "Please download and install it from https://dotnet.microsoft.com/download/dotnet/9.0 " +
+                "and then re-run this installer."),
             // install BthPS3
             new ManagedAction(CustomActions.InstallBthPS3, Return.check,
                 When.After,
@@ -211,6 +224,57 @@ internal class InstallScript
 
 public static class CustomActions
 {
+    /// <summary>
+    ///     Verifies that the .NET 9 Desktop Runtime (x64) is installed before setup proceeds.
+    ///     Aborts the install with a user-facing message when the runtime is absent.
+    /// </summary>
+    /// <remarks>
+    ///     Detection uses the filesystem rather than the registry: modern .NET installers
+    ///     do not reliably populate HKLM\SOFTWARE\dotnet\Setup\InstalledVersions, but they
+    ///     always create a versioned subdirectory under
+    ///     %ProgramFiles%\dotnet\shared\Microsoft.WindowsDesktop.App.
+    /// </remarks>
+    [CustomAction]
+    public static ActionResult CheckDotNetRuntime(Session session)
+    {
+        string runtimeDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+            "dotnet", "shared", "Microsoft.WindowsDesktop.App");
+
+        session.Log($"Probing .NET Desktop Runtime directory: {runtimeDir}");
+
+        try
+        {
+            if (Directory.Exists(runtimeDir))
+            {
+                foreach (string versionDir in Directory.GetDirectories(runtimeDir))
+                {
+                    string dirName = Path.GetFileName(versionDir);
+                    if (Version.TryParse(dirName, out Version? installedVersion) &&
+                        installedVersion.Major >= 9)
+                    {
+                        session.Log($".NET Desktop Runtime {installedVersion} found - prerequisite satisfied.");
+                        return ActionResult.Success;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            session.Log($"Failed to probe .NET 9 Desktop Runtime directory: {ex}");
+        }
+
+        session.Log(".NET 9 Desktop Runtime not found, aborting installation.");
+
+        Record record = new(1);
+        record[1] = "9001";
+        session.Message(
+            InstallMessage.User | (InstallMessage)MessageButtons.OK | (InstallMessage)MessageIcon.Error,
+            record);
+
+        return ActionResult.Failure;
+    }
+
     /// <summary>
     ///     Put install logic here.
     /// </summary>
