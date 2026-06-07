@@ -238,6 +238,12 @@ void DsHidMini_DeviceCleanup(
 
 		// zero out the slot so potential readers get notified we're gone
 		RtlZeroMemory(pHIDBuffer, sizeof(IPC_HID_INPUT_REPORT_MESSAGE));
+
+		if (deviceContext->IPC.InputReportWaitHandle != NULL)
+		{
+			CloseHandle(deviceContext->IPC.InputReportWaitHandle);
+			deviceContext->IPC.InputReportWaitHandle = NULL;
+		}
 	}
 
 	EventWriteUnloadEvent(Object);
@@ -472,6 +478,41 @@ DsDevice_InitContext(
 		FuncExit(TRACE_DEVICE, "status=%!STATUS!", status);
 
 		return status;
+	}
+
+	{
+		WDF_DEVICE_PROPERTY_DATA propertyData;
+		NTSTATUS propStatus;
+
+		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RO_IpcSlotIndex);
+		propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+		propertyData.Lcid = LOCALE_NEUTRAL;
+
+		propStatus = WdfDeviceAssignProperty(
+			Device,
+			&propertyData,
+			DEVPROP_TYPE_UINT32,
+			sizeof(UINT32),
+			&pDevCtx->SlotIndex
+		);
+
+		if (!NT_SUCCESS(propStatus))
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"WdfDeviceAssignProperty(DEVPKEY_DsHidMini_RO_IpcSlotIndex) failed with %!STATUS! (SlotIndex=%u)",
+				propStatus,
+				pDevCtx->SlotIndex
+			);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfDeviceAssignProperty(IpcSlotIndex)", propStatus);
+
+			if (pDrvCtx->IPC.IsEnabled)
+			{
+				FuncExit(TRACE_DEVICE, "status=%!STATUS!", propStatus);
+
+				return propStatus;
+			}
+		}
 	}
 
 	// ReSharper disable once CppIncompleteSwitchStatement
@@ -751,33 +792,30 @@ DsDevice_InitContext(
 			break;
 		}
 
-		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
-		attributes.ParentObject = Device;
+		CHAR hidEventName[DSHM_IPC_HID_REPORT_EVENT_NAME_CCH];
 
-		PUCHAR hidEventNameBuffer = NULL;
-
-		if (!NT_SUCCESS(status = WdfMemoryCreate(
-			&attributes,
-			NonPagedPoolNx,
-			DS3_POOL_TAG,
-			DSHM_HID_EVENT_NAME_LEN,
-			&pDevCtx->IPC.InputReportWaitEventName,
-			(PVOID*)&hidEventNameBuffer
-		)))
+		if (sprintf_s(
+			hidEventName,
+			ARRAYSIZE(hidEventName),
+			"%s%u",
+			DSHM_IPC_HID_REPORT_EVENT_PREFIX,
+			pDevCtx->SlotIndex
+		) < 0)
 		{
 			TraceError(
-				TRACE_DEVICE,
-				"WdfMemoryCreate failed with status %!STATUS!",
-				status
+				TRACE_IPC,
+				"sprintf_s failed formatting HID report wait event name"
 			);
-			EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfMemoryCreate", status);
+			LocalFree(sa.lpSecurityDescriptor);
+			sa.lpSecurityDescriptor = NULL;
+			status = STATUS_INVALID_PARAMETER;
 			break;
 		}
 
-		RtlZeroMemory(hidEventNameBuffer, DSHM_HID_EVENT_NAME_LEN);
-		GenerateRandomEventName(hidEventNameBuffer, DSHM_HID_EVENT_NAME_RND_LEN);
+		pDevCtx->IPC.InputReportWaitHandle = CreateEventA(&sa, FALSE, FALSE, hidEventName);
 
-		pDevCtx->IPC.InputReportWaitHandle = CreateEventA(&sa, FALSE, FALSE, (LPCSTR)hidEventNameBuffer);
+		LocalFree(sa.lpSecurityDescriptor);
+		sa.lpSecurityDescriptor = NULL;
 
 		if (pDevCtx->IPC.InputReportWaitHandle == NULL)
 		{

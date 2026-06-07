@@ -482,6 +482,28 @@ internal static class SetupApiWrapper
         CM_SETUP_DEVINST_FLAGS ulFlags
     );
 
+    /// <summary>
+    ///     Present devices only (same as default 0).
+    /// </summary>
+    internal const uint CM_GET_DEVICE_INTERFACE_LIST_PRESENT = 0;
+
+    [DllImport("Cfgmgr32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    internal static extern ConfigManagerResult CM_Get_Device_Interface_List_SizeW(
+        ref uint pulLen,
+        ref Guid interfaceClassGuid,
+        [MarshalAs(UnmanagedType.LPWStr)] string? pEnumerator,
+        uint ulFlags
+    );
+
+    [DllImport("Cfgmgr32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    internal static extern ConfigManagerResult CM_Get_Device_Interface_ListW(
+        ref Guid interfaceClassGuid,
+        [MarshalAs(UnmanagedType.LPWStr)] string? pEnumerator,
+        IntPtr buffer,
+        uint bufferLen,
+        uint ulFlags
+    );
+
     #endregion
 
     #region Newdev

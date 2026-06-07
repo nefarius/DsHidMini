@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 
 using Nefarius.DsHidMini.IPC.Util.Converters;
@@ -33,6 +33,13 @@ public static class DsHidMiniDriver
     public static DevicePropertyKey LastHostRequestStatusProperty => CustomDeviceProperty.CreateCustomDeviceProperty(
         Guid.Parse("{3FECF510-CC94-4FBE-8839-738201F84D59}"), 5,
         typeof(int));
+
+    /// <summary>
+    ///     One-based driver IPC slot index (<c>deviceIndex</c> for shared memory, per-slot events, and IPC <c>TargetIndex</c>).
+    /// </summary>
+    public static DevicePropertyKey IpcSlotIndexProperty => CustomDeviceProperty.CreateCustomDeviceProperty(
+        Guid.Parse("{3FECF510-CC94-4FBE-8839-738201F84D59}"), 6,
+        typeof(uint));
 
     #endregion
 

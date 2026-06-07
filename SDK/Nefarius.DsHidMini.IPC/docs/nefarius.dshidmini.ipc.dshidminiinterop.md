@@ -72,7 +72,7 @@ Optional timeout to wait for a report update to arrive. Default invocation retur
 #### Returns
 
 TRUE if `report` got filled in or FALSE if the given `deviceIndex` is not
- occupied.
+ occupied, or if `timeout` is set and the named wait event for that slot does not exist.
 
 #### Exceptions
 
@@ -90,6 +90,8 @@ If `timeout` is null, this method returns the last known input report copy immed
  only return when the driver signaled that new data is available, otherwise you will just burn through CPU for no
  good reason. A new input report is typically available each average 5 milliseconds, depending on the connection
  (wired or wireless) so a timeout of 20 milliseconds should be a good recommendation.
+ When `timeout` is set, the implementation waits on the driver's per-slot named auto-reset event
+ (same DACL as other IPC objects); it does not require administrator elevation.
 
 ### <a id="methods-reconnect"/>**Reconnect()**
 

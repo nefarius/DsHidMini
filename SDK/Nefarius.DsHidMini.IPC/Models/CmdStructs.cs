@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 using Nefarius.DsHidMini.IPC.Models.Public;
@@ -123,26 +123,4 @@ internal struct DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY
     public DSHM_IPC_MSG_HEADER Header;
 
     public UInt32 NtStatus;
-}
-
-/// <summary>
-///     Requests the driver host process PID and a wait handle for new input reports
-/// </summary>
-/// <remarks>Post-processing this command requires elevated privileges.</remarks>
-[SuppressMessage("ReSharper", "InconsistentNaming")]
-[StructLayout(LayoutKind.Sequential)]
-internal struct DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE
-{
-    public DSHM_IPC_MSG_HEADER Header;
-
-    /// <summary>
-    ///     The driver hosting process PID
-    /// </summary>
-    public UInt32 ProcessId;
-
-    /// <summary>
-    ///     A handle to an auto-reset event
-    /// </summary>
-    /// <remarks>The requester of this handle must duplicate it into the current process before it becomes usable.</remarks>
-    public IntPtr WaitHandle;
 }

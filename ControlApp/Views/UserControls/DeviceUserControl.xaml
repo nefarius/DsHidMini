@@ -123,6 +123,21 @@
                                 DockPanel.Dock="Right"
                                 Text="{Binding HidEmulationMode, Mode=OneWay}" />
                         </DockPanel>
+                        <!--  XInput player slot (XInput HID mode only)  -->
+                        <DockPanel
+                            Margin="{StaticResource MyKey_NextLineSpacement}"
+                            DockPanel.Dock="Top"
+                            Visibility="{Binding IsXInputHidMode, Converter={StaticResource BoolToVis_TV_FC}}">
+                            <ui:TextBlock
+                                DockPanel.Dock="Left"
+                                Style="{StaticResource MyKey_InfoDescriptionTextbox}"
+                                Text="XInput player slot:" />
+                            <ui:TextBlock
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                DockPanel.Dock="Right"
+                                Text="{Binding XInputSlotDetail}" />
+                        </DockPanel>
                         <!--  Current host address  -->
                         <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
                             <ui:TextBlock

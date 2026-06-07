@@ -5,9 +5,6 @@
 EXTERN_C_START
 
 #define DSHM_NAMED_EVENT_DISCONNECT		L"Global\\DsHidMiniDisconnectEvent%ls"
-#define DSHM_HID_EVENT_NAME_PREFIX		"Global\\DsHidMiniHidInputReportEvent_"
-#define DSHM_HID_EVENT_NAME_RND_LEN		16
-#define DSHM_HID_EVENT_NAME_LEN			(sizeof(DSHM_HID_EVENT_NAME_PREFIX) + DSHM_HID_EVENT_NAME_RND_LEN)
 
 struct USB_DEVICE_CONTEXT
 {
@@ -364,8 +361,6 @@ typedef struct _DEVICE_CONTEXT
 
 	struct
 	{
-		WDFMEMORY InputReportWaitEventName;
-
 		HANDLE InputReportWaitHandle;
 	} IPC;
 

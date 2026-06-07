@@ -4,6 +4,12 @@
 #define DSHM_IPC_MUTEX_NAME			"Global\\DsHidMiniCommandMutex"
 #define DSHM_IPC_READ_EVENT_NAME	"Global\\DsHidMiniReadEvent"
 #define DSHM_IPC_WRITE_EVENT_NAME	"Global\\DsHidMiniWriteEvent"
+//
+// Per-device auto-reset event: Global\DsHidMiniHidReportEvent{1-based slot index}
+// Must stay in sync with SDK DsHidMiniInterop.HidReportWaitEventNamePrefix
+// 
+#define DSHM_IPC_HID_REPORT_EVENT_PREFIX	"Global\\DsHidMiniHidReportEvent"
+#define DSHM_IPC_HID_REPORT_EVENT_NAME_CCH	64
 
 
 //
@@ -88,10 +94,6 @@ typedef enum
 	// Requests a player index update (switch player LED etc.)
 	// 
 	DSHM_IPC_MSG_CMD_DEVICE_SET_PLAYER_INDEX,
-	//
-	// Requests a wait handle for input report state changes
-	// 
-	DSHM_IPC_MSG_CMD_DEVICE_GET_HID_WAIT_HANDLE,
 } DSHM_IPC_MSG_CMD_DEVICE;
 
 //
@@ -188,25 +190,6 @@ typedef struct _DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY
 	
 } DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY, *PDSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY;
 
-//
-// Requests the driver host process PID and a wait handle for new input reports
-// 
-typedef struct _DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE
-{
-	DSHM_IPC_MSG_HEADER Header;
-
-	//
-	// The driver hosting process PID
-	// 
-	DWORD ProcessId;
-
-	//
-	// A handle to an auto-reset event
-	// 
-	HANDLE WaitHandle;
-	
-} DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE, *PDSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE;
-
 typedef
 _Function_class_(EVT_DSHM_IPC_DispatchDeviceMessage)
 _IRQL_requires_same_
@@ -296,28 +279,6 @@ DSHM_IPC_MSG_SET_PLAYER_INDEX_RESPONSE_INIT(
 	Message->Header.Size = size;
 
 	Message->NtStatus = Status;
-}
-
-VOID
-FORCEINLINE
-DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE_INIT(
-	_Inout_ PDSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE Message,
-	_In_ UINT32 DeviceIndex,
-	_In_ DWORD ProcessId,
-	_In_opt_ HANDLE WaitHandle
-)
-{
-	const UINT32 size = sizeof(DSHM_IPC_MSG_GET_HID_WAIT_HANDLE_RESPONSE);
-	RtlZeroMemory(Message, size);
-
-	Message->Header.Type = DSHM_IPC_MSG_TYPE_RESPONSE_ONLY;
-	Message->Header.Target = DSHM_IPC_MSG_TARGET_CLIENT;
-	Message->Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE_GET_HID_WAIT_HANDLE;
-	Message->Header.TargetIndex = DeviceIndex;
-	Message->Header.Size = size;
-
-	Message->ProcessId = ProcessId;
-	Message->WaitHandle = WaitHandle;
 }
 
 

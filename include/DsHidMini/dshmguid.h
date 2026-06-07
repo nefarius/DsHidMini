@@ -44,3 +44,8 @@ DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RO_IdentificationData,
 // {3FECF510-CC94-4FBE-8839-738201F84D59}
 DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RO_LastHostRequestStatus,
 	0x3fecf510, 0xcc94, 0x4fbe, 0x88, 0x39, 0x73, 0x82, 0x1, 0xf8, 0x4d, 0x59, 5); // DEVPROP_TYPE_NTSTATUS
+
+// One-based IPC SlotIndex / message TargetIndex; matches shared HID region and per-slot wait events
+// {3FECF510-CC94-4FBE-8839-738201F84D59}
+DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RO_IpcSlotIndex,
+	0x3fecf510, 0xcc94, 0x4fbe, 0x88, 0x39, 0x73, 0x82, 0x1, 0xf8, 0x4d, 0x59, 6); // DEVPROP_TYPE_UINT32

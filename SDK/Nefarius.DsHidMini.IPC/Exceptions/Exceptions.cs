@@ -1,4 +1,4 @@
-﻿using Nefarius.DsHidMini.IPC.Models;
+using Nefarius.DsHidMini.IPC.Models;
 
 namespace Nefarius.DsHidMini.IPC.Exceptions;
 
@@ -67,12 +67,13 @@ public sealed class DsHidMiniInteropInvalidDeviceIndexException : Exception
 }
 
 /// <summary>
-///     Driver process interaction failed due to missing permissions; this operation requires elevated privileges.
+///     Reserved for compatibility; the current SDK does not throw this type. HID report waiting uses named events with
+///     standard IPC DACLs (no handle duplication).
 /// </summary>
 public sealed class DsHidMiniInteropAccessDeniedException : Exception
 {
     internal DsHidMiniInteropAccessDeniedException() : base(
-        "Driver process interaction failed due to missing permissions; this operation requires elevated privileges.")
+        "Reserved; not used by the current SDK.")
     {
     }
 }

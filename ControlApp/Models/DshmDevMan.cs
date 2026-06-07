@@ -1,4 +1,5 @@
-﻿using Nefarius.DsHidMini.IPC.Models.Drivers;
+﻿using Nefarius.DsHidMini.ControlApp.Models.Util;
+using Nefarius.DsHidMini.IPC.Models.Drivers;
 using Nefarius.Utilities.Bluetooth;
 using Nefarius.Utilities.DeviceManagement.Extensions;
 using Nefarius.Utilities.DeviceManagement.PnP;
@@ -45,6 +46,7 @@ public class DshmDevMan
 
     private void UpdateConnectedDshmDevicesList()
     {
+        XInputSlotResolver.InvalidateResolutionCache();
         Log.Logger.Debug("Rebuilding list of connected DsHidMini devices");
         Devices.Clear();
         int instance = 0;
