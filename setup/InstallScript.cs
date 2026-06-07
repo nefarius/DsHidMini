@@ -250,7 +250,10 @@ public static class CustomActions
                 foreach (string versionDir in Directory.GetDirectories(runtimeDir))
                 {
                     string dirName = Path.GetFileName(versionDir);
-                    if (Version.TryParse(dirName, out Version? installedVersion) &&
+                    // strip pre-release suffix (e.g. "9.0.0-preview.3") before parsing
+                    int dashIndex = dirName.IndexOf('-');
+                    string numericPart = dashIndex >= 0 ? dirName.Substring(0, dashIndex) : dirName;
+                    if (Version.TryParse(numericPart, out Version? installedVersion) &&
                         installedVersion.Major >= 9)
                     {
                         session.Log($".NET Desktop Runtime {installedVersion} found - prerequisite satisfied.");
