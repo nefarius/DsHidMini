@@ -69,7 +69,7 @@ This solution contains **BSD-3-Clause** and other licensed components; see the i
 
 ## Installation
 
-Pre-built binaries and instructions: [releases](https://github.com/nefarius/DsHidMini/releases). Installation steps: [How to Install](https://docs.nefarius.at/projects/DsHidMini/v2/How-to-Install/).
+Pre-built binaries and instructions: [releases](https://github.com/nefarius/DsHidMini/releases). Installation steps: [How to Install](https://docs.nefarius.at/projects/DsHidMini/v3/How-to-Install/).
 
 ## Support
 
