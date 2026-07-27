@@ -131,10 +131,13 @@ class Build : NukeBuild
 
             foreach ((Configuration config, MSBuildTargetPlatform platform) in buildCombinations)
             {
-                Log.Information("Building DMF {Configuration} | {Platform}", config, platform);
+                // dshidmini is UMDF and links only DmfU.lib; skip the kernel-mode half of Dmf.sln.
+                // MSBuild resolves "DmfU" as a solution-level target and pulls in its dependencies
+                // (DmfUFramework, DmfUModules.Library, DmfUModules.Template, DmfUModules.Library.Tests).
+                Log.Information("Building DMF DmfU {Configuration} | {Platform}", config, platform);
                 MSBuildTasks.MSBuild(s => s
                     .SetTargetPath(DmfSolution)
-                    .SetTargets("Build")
+                    .SetTargets("DmfU")
                     .SetConfiguration(config)
                     .SetTargetPlatform(platform)
                     .SetMaxCpuCount(Environment.ProcessorCount)

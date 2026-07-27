@@ -112,9 +112,33 @@ jobs:
           dotnet restore .\ControlApp\
           dotnet restore .\ipctest\
 
+      # DMF output is fully determined by the submodule commit and the runner toolchain.
+      # Skip the build entirely on a cache hit (x86 never builds DMF). No restore-keys: a
+      # partial match must never reuse libs built for a different commit or image.
+      - name: 'Resolve DMF submodule commit'
+        if: matrix.platform != 'x86'
+        id: dmf-sha
+        shell: pwsh
+        run: |
+          # ImageVersion is a runner process env var, not an Actions `env:` context value,
+          # so capture it here for the cache key (invalidates on toolchain image upgrades).
+          $sha = git rev-parse HEAD:DMF
+          $imageVersion = $env:ImageVersion
+          echo "sha=$sha" >> $env:GITHUB_OUTPUT
+          echo "image-version=$imageVersion" >> $env:GITHUB_OUTPUT
+          Write-Output "DMF submodule commit $sha (ImageVersion=$imageVersion)"
+
+      - name: 'Cache DMF libraries'
+        if: matrix.platform != 'x86'
+        id: dmf-cache
+        uses: actions/cache@v4
+        with:
+          path: DMF/Release/${{ matrix.platform }}
+          key: dmf-v1-${{ matrix.platform }}-${{ steps.dmf-sha.outputs.sha }}-${{ steps.dmf-sha.outputs.image-version }}
+
       - name: 'Build'
         shell: cmd
-        run: .\build.cmd --target-platform ${{ matrix.platform }}
+        run: .\build.cmd --target-platform ${{ matrix.platform }} ${{ steps.dmf-cache.outputs.cache-hit == 'true' && '--skip BuildDmf' || '' }}
 
       - name: 'Publish ControlApp'
         if: matrix.platform == 'x64'
