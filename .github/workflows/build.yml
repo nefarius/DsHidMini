@@ -39,6 +39,10 @@ jobs:
     runs-on: windows-2022
     permissions:
       contents: read
+    env:
+      # Secrets can't be referenced directly in `if:` conditions, only in `env:`/`with:`,
+      # so promote it here and check env.VCPKG_NUGET_TOKEN in the step below instead.
+      VCPKG_NUGET_TOKEN: ${{ secrets.VCPKG_NUGET_TOKEN }}
     strategy:
       fail-fast: false
       matrix:
@@ -66,10 +70,8 @@ jobs:
         run: .\XInputBridge\vcpkg\bootstrap-vcpkg.bat -disableMetrics
 
       - name: 'Configure vcpkg NuGet binary cache'
-        if: ${{ secrets.VCPKG_NUGET_TOKEN != '' }}
+        if: ${{ env.VCPKG_NUGET_TOKEN != '' }}
         shell: pwsh
-        env:
-          VCPKG_NUGET_TOKEN: ${{ secrets.VCPKG_NUGET_TOKEN }}
         run: |
           $nugetExe = & .\XInputBridge\vcpkg\vcpkg.exe fetch nuget | Select-Object -Last 1
           & $nugetExe sources add `
