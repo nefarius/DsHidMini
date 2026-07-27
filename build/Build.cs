@@ -160,6 +160,22 @@ class Build : NukeBuild
                     .SetNodeReuse(IsLocalBuild)
                     .SetVerbosity(MSBuildVerbosity.Minimal);
 
+                // On CI, MSBuild must be told the solution platform explicitly. AppVeyor's "platform:" matrix
+                // axis set a $env:PLATFORM variable that MSBuild picks up implicitly for the unset Platform
+                // property; GitHub Actions has no such variable, so without this MSBuild falls back to
+                // "Any CPU", which dshidmini.sln maps to a Release|x64 build of the driver project for every
+                // leg (including x86), pulling in a DMF x64 lib that BuildDmf never produced for that leg.
+                if (!IsLocalBuild)
+                {
+                    if (string.IsNullOrWhiteSpace(TargetPlatform))
+                    {
+                        throw new InvalidOperationException(
+                            "TargetPlatform must be set on CI, e.g. --target-platform x64.");
+                    }
+
+                    settings = settings.SetTargetPlatform((MSBuildTargetPlatform)TargetPlatform);
+                }
+
                 // Aggressively silence C# warnings for local Nuke builds (nullability, CS8981, XML docs, etc.)
                 if (IsLocalBuild)
                 {
