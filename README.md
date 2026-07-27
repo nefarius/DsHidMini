@@ -7,7 +7,7 @@
 
 # <img src="assets/FireShock.png" align="left" alt="DsHidMini logo" />DsHidMini
 
-[![Build status](https://ci.appveyor.com/api/projects/status/vmf09i95d06c8mbh/branch/master?svg=true)](https://ci.appveyor.com/project/nefarius/dshidmini/branch/master) [![GitHub All Releases](https://img.shields.io/github/downloads/nefarius/DsHidMini/total)](https://somsubhra.github.io/github-release-stats/?username=nefarius&repository=DsHidMini) ![GitHub issues](https://img.shields.io/github/issues/nefarius/DsHidMini) [![Discord](https://img.shields.io/discord/346756263763378176.svg)](https://discord.nefarius.at/) [![Website](https://img.shields.io/website-up-down-green-red/https/docs.nefarius.at.svg?label=docs.nefarius.at)](https://docs.nefarius.at/)
+[![Build status](https://github.com/nefarius/DsHidMini/actions/workflows/build.yml/badge.svg)](https://github.com/nefarius/DsHidMini/actions/workflows/build.yml) [![GitHub All Releases](https://img.shields.io/github/downloads/nefarius/DsHidMini/total)](https://somsubhra.github.io/github-release-stats/?username=nefarius&repository=DsHidMini) ![GitHub issues](https://img.shields.io/github/issues/nefarius/DsHidMini) [![Discord](https://img.shields.io/discord/346756263763378176.svg)](https://discord.nefarius.at/) [![Website](https://img.shields.io/website-up-down-green-red/https/docs.nefarius.at.svg?label=docs.nefarius.at)](https://docs.nefarius.at/)
 
 Virtual HID Mini user-mode driver for Sony DualShock 3 controllers on Windows 10/11.
 
@@ -84,4 +84,4 @@ Pre-built binaries and instructions: [releases](https://github.com/nefarius/DsHi
 - **Related:** [ScpToolkit](https://github.com/nefarius/ScpToolkit), [FireShock](https://github.com/nefarius/FireShock), [AirBender](https://github.com/nefarius/AirBender), [WireShock](https://github.com/nefarius/WireShock), [EmuController](https://github.com/FirstPlatoLV/EmuController), [USB_Host_Shield_2.0 PS3 Info](https://github.com/felis/USB_Host_Shield_2.0/wiki/PS3-Information#USB)
 - **Dependencies:** [DMF](https://github.com/microsoft/DMF), [cJSON](https://github.com/DaveGamble/cJSON), [HIDAPI](https://github.com/libusb/hidapi)
 - **References:** [Eleccelerator DualShock 3](http://eleccelerator.com/wiki/index.php?title=DualShock_3), [HID Usage Tables](https://usb.org/sites/default/files/documents/hut1_12v2.pdf), [The HID Page](http://janaxelson.com/hidpage.htm), [CircumSpector/Research Sony DS3](https://github.com/CircumSpector/Research/tree/master/Sony%20DualShock%203), [linux hid-sony](https://github.com/torvalds/linux/blob/master/drivers/hid/hid-sony.c)
-- **DevOps:** [AppVeyor](https://www.appveyor.com/), [NUKE](https://nuke.build/)
+- **DevOps:** [GitHub Actions](https://github.com/features/actions), [NUKE](https://nuke.build/)

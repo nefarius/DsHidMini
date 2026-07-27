@@ -14,6 +14,9 @@
 
         <!-- Docs and symbols generation -->
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <!-- CI artifacts don't consume the local .nupkg; skip packing to avoid NU1012 on
+             net8.0-windows-targeted projects with unpinned/newer .NET SDKs (see dotnet/sdk). -->
+        <GeneratePackageOnBuild Condition="'$(CI)' == 'True'">false</GeneratePackageOnBuild>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>

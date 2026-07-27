@@ -1,0 +1,169 @@
+name: 'Build'
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.aip'
+      - '.vscode/**'
+      - '**/*.json'
+      - 'setup/**'
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_type != 'tag' }}
+
+env:
+  # Offset chosen to stay well above the last AppVeyor build counter (3.3.1251.0) at time of migration.
+  BUILD_VERSION_OFFSET: 2000
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+  DOTNET_NOLOGO: 'true'
+  SCPLIB_ENABLE_TELEMETRY: 'false'
+  # Disabled by default; enabled per-job below only when the VCPKG_NUGET_TOKEN secret is present.
+  # GITHUB_TOKEN cannot push new packages under a personal-account GitHub Packages namespace, so a
+  # PAT with read:packages/write:packages is required. See:
+  # https://github.com/microsoft/vcpkg/issues/47470
+  VCPKG_BINARY_SOURCES: 'clear'
+
+jobs:
+  build:
+    name: 'Platform: ${{ matrix.platform }}'
+    runs-on: windows-2022
+    permissions:
+      contents: read
+    env:
+      # Secrets can't be referenced directly in `if:` conditions, only in `env:`/`with:`,
+      # so promote it here and check env.VCPKG_NUGET_TOKEN in the step below instead.
+      VCPKG_NUGET_TOKEN: ${{ secrets.VCPKG_NUGET_TOKEN }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [x64, ARM64, x86]
+    outputs:
+      build-version: ${{ steps.version.outputs.build-version }}
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          lfs: true
+          persist-credentials: false
+
+      - name: 'Compute build version'
+        id: version
+        shell: pwsh
+        run: |
+          $buildVersion = "3.3.$([int]$env:BUILD_VERSION_OFFSET + ${{ github.run_number }}).0"
+          echo "BUILD_VERSION=$buildVersion" >> $env:GITHUB_ENV
+          echo "build-version=$buildVersion" >> $env:GITHUB_OUTPUT
+          Write-Output "Building version $buildVersion"
+
+      - name: 'Bootstrap vcpkg'
+        shell: cmd
+        run: .\XInputBridge\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+
+      - name: 'Configure vcpkg NuGet binary cache'
+        if: ${{ env.VCPKG_NUGET_TOKEN != '' }}
+        shell: pwsh
+        run: |
+          $nugetExe = & .\XInputBridge\vcpkg\vcpkg.exe fetch nuget | Select-Object -Last 1
+          & $nugetExe sources add `
+            -Source "https://nuget.pkg.github.com/nefarius/index.json" `
+            -StorePasswordInClearText `
+            -Name "GitHubPackages" `
+            -UserName "nefarius" `
+            -Password "$env:VCPKG_NUGET_TOKEN"
+          & $nugetExe setapikey "$env:VCPKG_NUGET_TOKEN" `
+            -Source "https://nuget.pkg.github.com/nefarius/index.json"
+          echo "VCPKG_BINARY_SOURCES=clear;nuget,https://nuget.pkg.github.com/nefarius/index.json,readwrite" >> $env:GITHUB_ENV
+
+      - name: 'Cache NuGet packages'
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'nuget.config') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: 'Install vpatch'
+        run: dotnet tool install --global Nefarius.Tools.Vpatch
+
+      - name: 'Stamp version into driver and XInputBridge'
+        shell: cmd
+        run: |
+          vpatch --stamp-version "%BUILD_VERSION%" --target-file ".\driver\dshidmini.vcxproj" --vcxproj.inf-time-stamp
+          vpatch --stamp-version "%BUILD_VERSION%" --target-file ".\driver\dshidmini.rc" --resource.file-version --resource.product-version
+          vpatch --stamp-version "%BUILD_VERSION%" --target-file ".\XInputBridge\XInputBridge.rc" --resource.file-version --resource.product-version
+
+      - name: 'Restore managed projects'
+        # msbuild's /t:Rebuild over the whole solution does not implicitly restore SDK-style
+        # projects; these two dotnet restore calls also transitively restore the SDK project
+        # referenced by both. Mirrors appveyor.yml's former before_build steps.
+        shell: cmd
+        run: |
+          dotnet restore .\ControlApp\
+          dotnet restore .\ipctest\
+
+      - name: 'Build'
+        shell: cmd
+        run: .\build.cmd --target-platform ${{ matrix.platform }}
+
+      - name: 'Publish ControlApp'
+        if: matrix.platform == 'x64'
+        shell: cmd
+        run: .\build.cmd PublishControlApp --skip Compile
+
+      - name: 'Pack driver CAB'
+        if: matrix.platform != 'x86'
+        shell: cmd
+        run: makecab.exe /f .\DsHidMini_${{ matrix.platform }}.ddf
+
+      - name: 'Upload artifacts'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dshidmini-${{ matrix.platform }}
+          if-no-files-found: error
+          path: |
+            disk1/*.cab
+            bin/**/dshidmini/*.inf
+            bin/**/dshidmini/*.cat
+            bin/**/dshidmini/*.dll
+            bin/**/*.pdb
+            bin/**/*.dll
+            bin/*.exe
+
+  release:
+    name: 'Draft release'
+    needs: build
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: 'Download artifacts'
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: dshidmini-*
+
+      - name: 'Create draft release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          gh release create "$REF_NAME" \
+            --repo "${{ github.repository }}" \
+            --title "$REF_NAME (build ${{ needs.build.outputs.build-version }})" \
+            --draft \
+            --generate-notes \
+            artifacts/dshidmini-x64/disk1/*.cab \
+            artifacts/dshidmini-ARM64/disk1/*.cab \
+            artifacts/dshidmini-x64/bin/*.exe
