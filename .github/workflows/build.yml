@@ -120,9 +120,13 @@ jobs:
         id: dmf-sha
         shell: pwsh
         run: |
+          # ImageVersion is a runner process env var, not an Actions `env:` context value,
+          # so capture it here for the cache key (invalidates on toolchain image upgrades).
           $sha = git rev-parse HEAD:DMF
+          $imageVersion = $env:ImageVersion
           echo "sha=$sha" >> $env:GITHUB_OUTPUT
-          Write-Output "DMF submodule commit $sha"
+          echo "image-version=$imageVersion" >> $env:GITHUB_OUTPUT
+          Write-Output "DMF submodule commit $sha (ImageVersion=$imageVersion)"
 
       - name: 'Cache DMF libraries'
         if: matrix.platform != 'x86'
@@ -130,7 +134,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: DMF/Release/${{ matrix.platform }}
-          key: dmf-v1-${{ matrix.platform }}-${{ steps.dmf-sha.outputs.sha }}-${{ env.ImageVersion }}
+          key: dmf-v1-${{ matrix.platform }}-${{ steps.dmf-sha.outputs.sha }}-${{ steps.dmf-sha.outputs.image-version }}
 
       - name: 'Build'
         shell: cmd
