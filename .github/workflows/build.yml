@@ -27,7 +27,11 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
   DOTNET_NOLOGO: 'true'
   SCPLIB_ENABLE_TELEMETRY: 'false'
-  VCPKG_BINARY_SOURCES: 'clear;nuget,https://nuget.pkg.github.com/nefarius/index.json,readwrite'
+  # Disabled by default; enabled per-job below only when the VCPKG_NUGET_TOKEN secret is present.
+  # GITHUB_TOKEN cannot push new packages under a personal-account GitHub Packages namespace, so a
+  # PAT with read:packages/write:packages is required. See:
+  # https://github.com/microsoft/vcpkg/issues/47470
+  VCPKG_BINARY_SOURCES: 'clear'
 
 jobs:
   build:
@@ -35,7 +39,6 @@ jobs:
     runs-on: windows-2022
     permissions:
       contents: read
-      packages: write
     strategy:
       fail-fast: false
       matrix:
@@ -63,7 +66,10 @@ jobs:
         run: .\XInputBridge\vcpkg\bootstrap-vcpkg.bat -disableMetrics
 
       - name: 'Configure vcpkg NuGet binary cache'
+        if: ${{ secrets.VCPKG_NUGET_TOKEN != '' }}
         shell: pwsh
+        env:
+          VCPKG_NUGET_TOKEN: ${{ secrets.VCPKG_NUGET_TOKEN }}
         run: |
           $nugetExe = & .\XInputBridge\vcpkg\vcpkg.exe fetch nuget | Select-Object -Last 1
           & $nugetExe sources add `
@@ -71,9 +77,10 @@ jobs:
             -StorePasswordInClearText `
             -Name "GitHubPackages" `
             -UserName "nefarius" `
-            -Password "${{ secrets.GITHUB_TOKEN }}"
-          & $nugetExe setapikey "${{ secrets.GITHUB_TOKEN }}" `
+            -Password "$env:VCPKG_NUGET_TOKEN"
+          & $nugetExe setapikey "$env:VCPKG_NUGET_TOKEN" `
             -Source "https://nuget.pkg.github.com/nefarius/index.json"
+          echo "VCPKG_BINARY_SOURCES=clear;nuget,https://nuget.pkg.github.com/nefarius/index.json,readwrite" >> $env:GITHUB_ENV
 
       - name: 'Cache NuGet packages'
         uses: actions/cache@v4
@@ -92,6 +99,15 @@ jobs:
           vpatch --stamp-version "%BUILD_VERSION%" --target-file ".\driver\dshidmini.vcxproj" --vcxproj.inf-time-stamp
           vpatch --stamp-version "%BUILD_VERSION%" --target-file ".\driver\dshidmini.rc" --resource.file-version --resource.product-version
           vpatch --stamp-version "%BUILD_VERSION%" --target-file ".\XInputBridge\XInputBridge.rc" --resource.file-version --resource.product-version
+
+      - name: 'Restore managed projects'
+        # msbuild's /t:Rebuild over the whole solution does not implicitly restore SDK-style
+        # projects; these two dotnet restore calls also transitively restore the SDK project
+        # referenced by both. Mirrors appveyor.yml's former before_build steps.
+        shell: cmd
+        run: |
+          dotnet restore .\ControlApp\
+          dotnet restore .\ipctest\
 
       - name: 'Build'
         shell: cmd
