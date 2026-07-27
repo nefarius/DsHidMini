@@ -28,7 +28,7 @@
         "BuildSetup",
         "Clean",
         "Compile",
-        "DownloadAppVeyorArtifacts",
+        "DownloadCiArtifacts",
         "PublishControlApp",
         "Restore",
         "SignProductionBinaries"
@@ -107,11 +107,11 @@
       "properties": {
         "ArtifactsPath": {
           "type": "string",
-          "description": "Output path for DownloadAppVeyorArtifacts artifacts. Default: ./artifacts"
+          "description": "Output path for DownloadCiArtifacts artifacts. Default: ./artifacts"
         },
         "BuildVersion": {
           "type": "string",
-          "description": "Build version or branch for DownloadAppVeyorArtifacts (AppVeyor artifact download)"
+          "description": "GitHub Actions run ID for DownloadCiArtifacts artifact download"
         },
         "Configuration": {
           "type": "string",
@@ -123,7 +123,7 @@
         },
         "NoSigning": {
           "type": "boolean",
-          "description": "Skip signing in DownloadAppVeyorArtifacts"
+          "description": "Skip signing in DownloadCiArtifacts"
         },
         "SetupVersion": {
           "type": "string",
@@ -137,9 +137,9 @@
           "type": "string",
           "description": "Path to a solution file that is automatically loaded"
         },
-        "Token": {
+        "TargetPlatform": {
           "type": "string",
-          "description": "AppVeyor API token for DownloadAppVeyorArtifacts artifact download"
+          "description": "Target platform for BuildDmf on CI (x64, ARM64 or x86). Not needed for local builds."
         }
       }
     },

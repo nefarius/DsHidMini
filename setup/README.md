@@ -6,12 +6,13 @@ This project generates an MSI package containing x64 and ARM64 driver editions u
 
 Commands/scripts are to be run from solution root directory.
 
-- Tag a release and let it build on CI
+- Tag a release and let it build on CI (the "Build" GitHub Actions workflow)
+- Authenticate the GitHub CLI once with `gh auth login` (needs `repo` scope)
 - Use  
   ```PowerShell
-  nuke download-appveyor-artifacts -token $appVeyorToken -buildversion "3.3.1251.0"
+  nuke download-ci-artifacts -buildversion "<workflow-run-id>"
   ```  
-  to download the tagged release
+  to download the tagged release (the run ID is the numeric ID in the workflow run URL)
 - Submit the `*.cab` files to MS Partner Portal for signing
 - Place the signed files in `.\artifacts\drivers` directory
 - Run  

@@ -1,15 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
-using System.Text.Json;
 
 using JetBrains.Annotations;
 
 using Nuke.Common;
-using Nuke.Common.CI.AppVeyor;
 using Nuke.Common.Execution;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
@@ -27,16 +23,16 @@ class Build : NukeBuild
     [Solution]
     readonly Solution Solution;
 
-    [Parameter("Build version or branch for DownloadAppVeyorArtifacts (AppVeyor artifact download)")]
+    [Parameter("Target platform for BuildDmf on CI (x64, ARM64 or x86). Not needed for local builds.")]
+    readonly string TargetPlatform = "";
+
+    [Parameter("GitHub Actions run ID for DownloadCiArtifacts artifact download")]
     readonly string BuildVersion = "";
 
-    [Parameter("AppVeyor API token for DownloadAppVeyorArtifacts artifact download")]
-    readonly string Token = "";
-
-    [Parameter("Output path for DownloadAppVeyorArtifacts artifacts. Default: ./artifacts")]
+    [Parameter("Output path for DownloadCiArtifacts artifacts. Default: ./artifacts")]
     readonly string ArtifactsPath = "./artifacts";
 
-    [Parameter("Skip signing in DownloadAppVeyorArtifacts")]
+    [Parameter("Skip signing in DownloadCiArtifacts")]
     readonly bool NoSigning;
 
     [Parameter("Setup version for BuildSetup (e.g. 3.0.0)")]
@@ -48,15 +44,17 @@ class Build : NukeBuild
     [NuGetPackage("Nefarius.Tools.WDKWhere", "wdkwhere.dll", Framework = "net8.0")]
     readonly Tool WdkWhere;
 
-    const string AppVeyorApiUrl = "https://ci.appveyor.com/api";
     const string SignTimestampUrl = "http://timestamp.digicert.com";
     const string SignCertName = "Nefarius Software Solutions e.U.";
 
-    AbsolutePath DmfSolution => IsLocalBuild
-        ? Solution.Directory / "DMF/Dmf.sln"
-        : "C:/projects/DMF/Dmf.sln";
+    AbsolutePath DmfSolution => Solution.Directory / "DMF/Dmf.sln";
 
     AbsolutePath ResolvedArtifactsPath => (AbsolutePath)Path.GetFullPath(Path.Combine(RootDirectory, ArtifactsPath));
+
+    /// <summary>
+    /// Version stamp propagated from CI (BUILD_VERSION env var, set from github.run_number). Empty for local builds.
+    /// </summary>
+    static string BuildVersionStamp => Environment.GetEnvironmentVariable("BUILD_VERSION");
 
     /// <summary>
     /// Runs Microsoft's SignTool with the provided command-line arguments, using the explicit SignToolPath when available or delegating to the WdkWhere tool otherwise.
@@ -112,19 +110,22 @@ class Build : NukeBuild
             }
             else
             {
-                string appVeyorPlatform = AppVeyor.Instance?.Platform;
-                if (appVeyorPlatform == MSBuildTargetPlatform.x86 ||
-                    appVeyorPlatform == MSBuildTargetPlatform.Win32)
+                if (string.IsNullOrWhiteSpace(TargetPlatform))
+                {
+                    throw new InvalidOperationException(
+                        "TargetPlatform must be set on CI, e.g. --target-platform x64.");
+                }
+
+                if (string.Equals(TargetPlatform, "x86", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(TargetPlatform, "Win32", StringComparison.OrdinalIgnoreCase))
                 {
                     Log.Warning("DMF dropped 32-Bit support, skipping build");
                     return;
                 }
 
-                MSBuildTargetPlatform platform = appVeyorPlatform switch
-                {
-                    "ARM64" => "ARM64",
-                    _ => MSBuildTargetPlatform.x64
-                };
+                MSBuildTargetPlatform platform = string.Equals(TargetPlatform, "ARM64", StringComparison.OrdinalIgnoreCase)
+                    ? (MSBuildTargetPlatform)"ARM64"
+                    : MSBuildTargetPlatform.x64;
                 buildCombinations = [(Configuration, platform)];
             }
 
@@ -167,6 +168,17 @@ class Build : NukeBuild
                     settings = settings.SetProperty("NoWarn", noWarn.Replace(";", "%3B"));
                 }
 
+                // Stamps managed projects (ControlApp, SDK, ipctest, installer) with the CI build version,
+                // replacing AppVeyor's dotnet_csproj auto-patching. C++ projects ignore unknown properties.
+                if (!string.IsNullOrWhiteSpace(BuildVersionStamp))
+                {
+                    settings = settings
+                        .SetProperty("Version", BuildVersionStamp)
+                        .SetProperty("AssemblyVersion", BuildVersionStamp)
+                        .SetProperty("FileVersion", BuildVersionStamp)
+                        .SetProperty("InformationalVersion", BuildVersionStamp);
+                }
+
                 return settings;
             });
         });
@@ -194,6 +206,15 @@ class Build : NukeBuild
                     "CS0219;CS1587;CS1591;CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8619;CS8622;CS8625;CS8629;CS8765;CS8767;CS8981";
                 s = s.SetProperty("NoWarn", noWarn.Replace(";", "%3B"));
 
+                if (!string.IsNullOrWhiteSpace(BuildVersionStamp))
+                {
+                    s = s
+                        .SetProperty("Version", BuildVersionStamp)
+                        .SetProperty("AssemblyVersion", BuildVersionStamp)
+                        .SetProperty("FileVersion", BuildVersionStamp)
+                        .SetProperty("InformationalVersion", BuildVersionStamp);
+                }
+
                 return s
                     .SetProject(controlAppProjectPath)
                     .SetConfiguration(Configuration.Release)
@@ -208,119 +229,42 @@ class Build : NukeBuild
         });
 
     /// <summary>
-    /// Download AppVeyor build artifacts (ARM64, x64, x86) and optionally sign CABs, EXEs, and driver/XInput DLLs.
-    /// Requires BuildVersion and Token. Use --NoSigning to skip signing.
+    /// Download GitHub Actions build artifacts (ARM64, x64, x86) for a tagged run and optionally sign CABs, EXEs,
+    /// and driver/XInput DLLs. Requires BuildVersion (a GitHub Actions run ID) and the "gh" CLI to be authenticated
+    /// (run "gh auth login" once). Use --NoSigning to skip signing.
     /// </summary>
     [UsedImplicitly]
-    public Target DownloadAppVeyorArtifacts => _ => _
+    public Target DownloadCiArtifacts => _ => _
         .Executes(() =>
         {
-            if (string.IsNullOrWhiteSpace(BuildVersion) || string.IsNullOrWhiteSpace(Token))
+            if (string.IsNullOrWhiteSpace(BuildVersion))
             {
-                throw new InvalidOperationException("DownloadAppVeyorArtifacts requires BuildVersion and Token.");
+                throw new InvalidOperationException(
+                    "DownloadCiArtifacts requires BuildVersion (a GitHub Actions run ID, see the \"Build\" workflow run URL).");
             }
 
             string artifactsDir = ResolvedArtifactsPath;
             Directory.CreateDirectory(artifactsDir);
 
-            using HttpClient http = new();
-            http.DefaultRequestHeaders.Add("Authorization", "Bearer " + Token);
-
-            string projectUri = $"{AppVeyorApiUrl}/projects/nefarius/DsHidMini/build/{Uri.EscapeDataString(BuildVersion)}";
-            Log.Information("Fetching build info: {Uri}", projectUri);
-            string json = http.GetStringAsync(projectUri).GetAwaiter().GetResult();
-            using (JsonDocument buildDoc = JsonDocument.Parse(json))
-            {
-                JsonElement build = buildDoc.RootElement.GetProperty("build");
-                JsonElement jobs = build.GetProperty("jobs");
-
-                string[] jobNames = ["Platform: ARM64", "Platform: x64", "Platform: x86"];
-                foreach (string jobName in jobNames)
-                {
-                    string? jobId = null;
-                    foreach (JsonElement job in jobs.EnumerateArray())
-                    {
-                        if (job.GetProperty("name").GetString() != jobName)
-                            continue;
-                        JsonElement jobIdEl = job.GetProperty("jobId");
-                        jobId = jobIdEl.ValueKind == JsonValueKind.String
-                            ? jobIdEl.GetString()!
-                            : jobIdEl.GetInt32().ToString();
-                        break;
-                    }
-
-                    if (string.IsNullOrEmpty(jobId))
-                    {
-                        Log.Warning("Job not found: {JobName}", jobName);
-                        continue;
-                    }
-
-                    string artifactsListUri = $"{AppVeyorApiUrl}/buildjobs/{jobId}/artifacts";
-                    string listJson = http.GetStringAsync(artifactsListUri).GetAwaiter().GetResult();
-                    using JsonDocument listDoc = JsonDocument.Parse(listJson);
-                    string artifactsDirFull = Path.GetFullPath(artifactsDir);
-                    string artifactsDirRoot = artifactsDirFull.TrimEnd(Path.DirectorySeparatorChar);
-
-                    foreach (JsonElement artifact in listDoc.RootElement.EnumerateArray())
-                    {
-                        string fileName = artifact.GetProperty("fileName").GetString()!;
-                        string fileNameDecoded = Uri.UnescapeDataString(fileName);
-                        string fileNameNormalized = fileNameDecoded.Replace('/', Path.DirectorySeparatorChar);
-                        string candidatePath = Path.Combine(artifactsDirFull, fileNameNormalized);
-                        string fullPath = Path.GetFullPath(candidatePath);
-
-                        if (!fullPath.StartsWith(artifactsDirRoot + Path.DirectorySeparatorChar, StringComparison.Ordinal)
-                            && fullPath != artifactsDirRoot)
-                        {
-                            Log.Error("Path traversal blocked: artifact fileName \"{FileName}\" resolves outside {ArtifactsDir}",
-                                fileName, artifactsDirFull);
-                            continue;
-                        }
-
-                        string fileNameEncoded = Uri.EscapeDataString(fileName);
-                        string downloadUri =
-                            $"{AppVeyorApiUrl}/buildjobs/{jobId}/artifacts/{fileNameEncoded}";
-                        Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
-                        byte[] bytes = http.GetByteArrayAsync(downloadUri).GetAwaiter().GetResult();
-                        File.WriteAllBytes(fullPath, bytes);
-                        Log.Information("Downloaded {File}", fullPath);
-                    }
-                }
-            }
+            ProcessTasks.StartProcess("gh",
+                    $"run download {BuildVersion} --repo nefarius/DsHidMini --dir \"{artifactsDir}\" --pattern \"dshidmini-*\"")
+                .AssertZeroExitCode();
 
             if (!NoSigning)
             {
-                string[] files =
-                [
-                    Path.Combine(artifactsDir, "disk1", "*.cab"), Path.Combine(artifactsDir, "bin", "*.exe"),
-                    Path.Combine(artifactsDir, "bin", "ARM64", "dshidmini", "dshidmini.dll"),
-                    Path.Combine(artifactsDir, "bin", "x64", "dshidmini", "dshidmini.dll"),
-                    Path.Combine(artifactsDir, "bin", "x64", "XInput1_3.dll"),
-                    Path.Combine(artifactsDir, "bin", "ARM64", "XInput1_3.dll"),
-                    Path.Combine(artifactsDir, "bin", "x86", "XInput1_3.dll")
-                ];
-                List<string> existingFiles = new();
-                foreach (string pattern in files)
-                {
-                    string dir = Path.GetDirectoryName(pattern)!;
-                    string search = Path.GetFileName(pattern);
-                    if (search.Contains('*'))
-                    {
-                        if (Directory.Exists(dir))
-                        {
-                            existingFiles.AddRange(Directory.GetFiles(dir, search));
-                        }
-                    }
-                    else if (File.Exists(pattern))
-                    {
-                        existingFiles.Add(pattern);
-                    }
-                }
-                
+                string[] patterns = ["*.cab", "*.exe", "dshidmini.dll", "XInput1_3.dll"];
+                List<string> existingFiles = patterns
+                    .SelectMany(pattern => Directory.GetFiles(artifactsDir, pattern, SearchOption.AllDirectories))
+                    .ToList();
+
                 if (existingFiles.Count > 0)
                 {
                     InvokeSignTool(
                         $"sign /v /n \"{SignCertName}\" /tr {SignTimestampUrl} /fd sha256 /td sha256 {string.Join(" ", existingFiles.Select(f => $"\"{f}\""))}");
+                }
+                else
+                {
+                    Log.Warning("No files found to sign under {ArtifactsDir}", artifactsDir);
                 }
             }
 
