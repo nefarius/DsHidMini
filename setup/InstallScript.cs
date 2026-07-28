@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 using System;
 using System.Buffers;
 using System.Collections.Generic;
@@ -36,8 +36,14 @@ internal class InstallScript
 {
     public const string ProductName = "Nefarius DsHidMini Driver";
 
-    public static Uri BetaArticleUrl = new("https://docs.nefarius.at/projects/DsHidMini/Experimental/Version-3-Beta/");
+    public static Uri OnlineDocumentationUrl = new("https://docs.nefarius.at/projects/DsHidMini/v3/How-to-Install/");
 
+    /// <summary>
+    /// Builds and emits the MSI installer for the Nefarius DsHidMini drivers and packaged artifacts.
+    /// </summary>
+    /// <remarks>
+    /// Reads setup, driver, and filter versions from build variables and artifact file metadata; defines installer features and package contents; configures managed actions, custom actions, registry writes, UI dialogs, embedded reference assemblies, and control panel metadata; hooks post-install handling; and finally generates the MSI file.
+    /// </remarks>
     private static void Main()
     {
         // grab main app version
@@ -89,8 +95,16 @@ internal class InstallScript
                     new Files(driversFeature, @"..\artifacts\drivers\*.*"),
                     new Files(driversFeature, @"..\artifacts\igfilter\*.*")
                 ),
-                new File(driversFeature, "nefarius_DsHidMini_Updater.exe")
+                new File(driversFeature, "nefarius_DsHidMini_Updater.exe"),
+                new File(driversFeature, @"..\artifacts\bin\ControlApp.exe",
+                    new FileShortcut("DsHidMini Control App",
+                        @"%ProgramMenu%\Nefarius Software Solutions\DsHidMini"))
             ),
+            // check for .NET 9 Desktop Runtime before any files are laid down
+            new ManagedAction(CustomActions.CheckDotNetRuntime, Return.check,
+                When.Before,
+                Step.LaunchConditions,
+                Condition.NOT_Installed),
             // install drivers
             new ElevatedManagedAction(CustomActions.InstallDrivers, Return.check,
                 When.After,
@@ -100,6 +114,11 @@ internal class InstallScript
             new Error("9000",
                 "Driver installation succeeded but a reboot is required to be fully operational. " +
                 "After the setup is finished, please reboot the system before using the software."),
+            // .NET 9 Desktop Runtime missing
+            new Error("9001",
+                "The .NET 9 Desktop Runtime (x64) is required by DsHidMini Control App. " +
+                "Please download and install it from https://dotnet.microsoft.com/download/dotnet/9.0 " +
+                "and then re-run this installer."),
             // install BthPS3
             new ManagedAction(CustomActions.InstallBthPS3, Return.check,
                 When.After,
@@ -110,8 +129,8 @@ internal class InstallScript
                 When.After,
                 Step.InstallFinalize,
                 Condition.NOT_Installed),
-            // open beta article
-            new ManagedAction(CustomActions.OpenBetaArticle, Return.check,
+            // open online documentation
+            new ManagedAction(CustomActions.OpenOnlineDocumentation, Return.check,
                 When.After,
                 Step.InstallFinalize,
                 Condition.NOT_Installed),
@@ -152,7 +171,7 @@ internal class InstallScript
             .Add<LicenceDialog>()
             .Add<FeaturesDialog>()
             .Add<ProgressDialog>()
-            .Add<BetaArticleDialog>()
+            .Add<OnlineDocumentationDialog>()
             .Add<ExitDialog>();
 
         project.ManagedUI.ModifyDialogs.Add<MaintenanceTypeDialog>()
@@ -205,6 +224,60 @@ internal class InstallScript
 
 public static class CustomActions
 {
+    /// <summary>
+    ///     Verifies that the .NET 9 Desktop Runtime (x64) is installed before setup proceeds.
+    ///     Aborts the install with a user-facing message when the runtime is absent.
+    /// </summary>
+    /// <remarks>
+    ///     Detection uses the filesystem rather than the registry: modern .NET installers
+    ///     do not reliably populate HKLM\SOFTWARE\dotnet\Setup\InstalledVersions, but they
+    ///     always create a versioned subdirectory under
+    ///     %ProgramFiles%\dotnet\shared\Microsoft.WindowsDesktop.App.
+    /// </remarks>
+    [CustomAction]
+    public static ActionResult CheckDotNetRuntime(Session session)
+    {
+        string runtimeDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+            "dotnet", "shared", "Microsoft.WindowsDesktop.App");
+
+        session.Log($"Probing .NET Desktop Runtime directory: {runtimeDir}");
+
+        try
+        {
+            if (Directory.Exists(runtimeDir))
+            {
+                foreach (string versionDir in Directory.GetDirectories(runtimeDir))
+                {
+                    string dirName = Path.GetFileName(versionDir);
+                    // strip pre-release suffix (e.g. "9.0.0-preview.3") before parsing
+                    int dashIndex = dirName.IndexOf('-');
+                    string numericPart = dashIndex >= 0 ? dirName.Substring(0, dashIndex) : dirName;
+                    if (Version.TryParse(numericPart, out Version? installedVersion) &&
+                        installedVersion.Major >= 9)
+                    {
+                        session.Log($".NET Desktop Runtime {installedVersion} found - prerequisite satisfied.");
+                        return ActionResult.Success;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            session.Log($"Failed to probe .NET 9 Desktop Runtime directory: {ex}");
+        }
+
+        session.Log(".NET 9 Desktop Runtime not found, aborting installation.");
+
+        Record record = new(1);
+        record[1] = "9001";
+        session.Message(
+            InstallMessage.User | (InstallMessage)MessageButtons.OK | (InstallMessage)MessageIcon.Error,
+            record);
+
+        return ActionResult.Failure;
+    }
+
     /// <summary>
     ///     Put install logic here.
     /// </summary>
@@ -294,7 +367,11 @@ public static class CustomActions
 
     /// <summary>
     ///     Download and install BthPS3.
+    /// <summary>
+    /// Downloads metadata for the latest BthPS3 update and opens its download URL when the BthPS3 feature is enabled.
     /// </summary>
+    /// <param name="session">The MSI session used to check whether the BthPS3 feature is enabled and to record logs.</param>
+    /// <returns>`ActionResult.Success` on completion.</returns>
     [CustomAction]
     [SuppressMessage("ReSharper", "InconsistentNaming")]
     public static ActionResult InstallBthPS3(Session session)
@@ -339,19 +416,23 @@ public static class CustomActions
     }
 
     /// <summary>
-    ///     Open beta article in default browser.
+    ///     Open online documentation in default browser.
+    /// <summary>
+    /// Opens the product's online documentation URL in the user's default browser.
     /// </summary>
+    /// <param name="session">The current MSI session used for logging.</param>
+    /// <returns>`ActionResult.Success` to indicate the custom action completed; if launching the URL fails the exception is logged and the action still returns `ActionResult.Success`.</returns>
     [CustomAction]
-    public static ActionResult OpenBetaArticle(Session session)
+    public static ActionResult OpenOnlineDocumentation(Session session)
     {
         try
         {
-            Process.Start(InstallScript.BetaArticleUrl.ToString());
+            Process.Start(InstallScript.OnlineDocumentationUrl.ToString());
         }
         catch (Exception ex)
         {
             session.Log(
-                $"Beta article launch failed, exception: {ex}");
+                $"Online documentation launch failed, exception: {ex}");
         }
 
         return ActionResult.Success;
@@ -359,7 +440,11 @@ public static class CustomActions
 
     /// <summary>
     ///     Open donations page in default browser.
+    /// <summary>
+    /// Opens the donation web page in the user's default browser when the DonationFeature is enabled.
     /// </summary>
+    /// <param name="session">MSI session used to check feature state and to record failures to the installer log.</param>
+    /// <returns><see cref="ActionResult.Success"/> on completion.</returns>
     [CustomAction]
     public static ActionResult OpenDonationPage(Session session)
     {
@@ -375,7 +460,7 @@ public static class CustomActions
         catch (Exception ex)
         {
             session.Log(
-                $"Beta article launch failed, exception: {ex}");
+                $"Donation page launch failed, exception: {ex}");
         }
 
         return ActionResult.Success;
