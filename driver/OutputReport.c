@@ -293,7 +293,7 @@ DSHM_EvtExecuteOutputPacketReceived(
 			NULL,
 			0,
 			ContinuousRequestTarget_RequestType_Ioctl,
-			IOCTL_BTHPS3_HID_CONTROL_WRITE,
+			IOCTL_BTHPS3_HID_INTERRUPT_WRITE,
 			0,
 			&bytesWritten
 		);
