@@ -250,6 +250,9 @@ jobs:
             if ($sig.Status -eq 'HashMismatch') {
               throw "Driver DLL signature is invalid: $dll (Status=$($sig.Status))."
             }
+            if ($sig.Status -ne 'Valid') {
+              throw "Driver DLL signature is not Valid: $dll (Status=$($sig.Status))."
+            }
             Write-Output "Signed: $dll (Status=$($sig.Status); Subject=$($sig.SignerCertificate.Subject))"
           }
 
@@ -284,6 +287,9 @@ jobs:
           }
           if ($sig.Status -eq 'HashMismatch') {
             throw "Partner CAB signature is invalid: $cab (Status=$($sig.Status))."
+          }
+          if ($sig.Status -ne 'Valid') {
+            throw "Partner CAB signature is not Valid: $cab (Status=$($sig.Status))."
           }
           Write-Output "Signed: $cab (Status=$($sig.Status); Subject=$($sig.SignerCertificate.Subject))"
 
