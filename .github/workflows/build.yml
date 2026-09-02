@@ -225,7 +225,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: 'Sign driver DLLs'
-        uses: nefarius/SignRelay@v1.0.0-pre010
+        uses: nefarius/SignRelay@master
         with:
           server: ${{ env.SIGN_RELAY_SERVER }}
           token: ${{ env.SIGN_RELAY_CI_TOKEN }}
