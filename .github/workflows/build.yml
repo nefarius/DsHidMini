@@ -301,7 +301,7 @@ jobs:
           path: ${{ env.PARTNER_CAB }}
 
       - name: 'Mirror partner submission CAB'
-        uses: nefarius/AppVeyorArtifactsReceiver@6198a6e8cb60b8c16d3a276b4c85a1dd2d52545a
+        uses: nefarius/AppVeyorArtifactsReceiver@master
         with:
           webhook-url: ${{ secrets.WEBHOOK_URL }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
