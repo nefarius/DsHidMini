@@ -176,7 +176,11 @@ class Build : NukeBuild
                             "TargetPlatform must be set on CI, e.g. --target-platform x64.");
                     }
 
-                    settings = settings.SetTargetPlatform((MSBuildTargetPlatform)TargetPlatform);
+                    settings = settings
+                        .SetTargetPlatform((MSBuildTargetPlatform)TargetPlatform)
+                        // Partner Portal submissions require an unsigned driver DLL. Force this
+                        // at the MSBuild command line so CI never inherits a local test signature.
+                        .SetProperty("SignMode", "Off");
                 }
 
                 // Aggressively silence C# warnings for local Nuke builds (nullability, CS8981, XML docs, etc.)
