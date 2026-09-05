@@ -603,6 +603,27 @@ DSHM_ProcessHidInputReport(
 
 	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(dmfModule);
 
+	//
+	// Handle special case of SIXAXIS.SYS emulation. This writes into
+	// [DsHidMini]'s Module context, so it must stay inside the reference
+	// held above (see DMF_ModuleReference(dmfModule) further up); this is
+	// moved here from the USB/Bluetooth receive callbacks, which used to
+	// touch this without holding any reference on [DsHidMini].
+	// 
+	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
+	{
+		RtlCopyMemory(
+			&pModCtx->GetFeatureReport,
+			Report,
+			sizeof(DS3_RAW_INPUT_REPORT)
+		);
+
+		pModCtx->GetFeatureReport.AccelerometerX = 0x03FF - _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerX);
+		pModCtx->GetFeatureReport.AccelerometerY = _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerY);
+		pModCtx->GetFeatureReport.AccelerometerZ = _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerZ);
+		pModCtx->GetFeatureReport.Gyroscope = _byteswap_ushort(pModCtx->GetFeatureReport.Gyroscope);
+	}
+
 	if (NT_SUCCESS(DMF_ModuleReference(pModCtx->DmfModuleVirtualHidMini)))
 	{
 		DSHM_ParseInputReport(Context, pModCtx, Report);
@@ -665,7 +686,6 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	}
 
 	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Context);
-	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET((DMFMODULE)pDevCtx->DsHidMiniModule);
 	const PDS3_RAW_INPUT_REPORT pInReport = (PDS3_RAW_INPUT_REPORT)WdfMemoryGetBuffer(Buffer, NULL);
 
 	//
@@ -685,21 +705,11 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 #endif
 
 	//
-	// Handle special case of SIXAXIS.SYS emulation
+	// NOTE: the SIXAXIS.SYS GetFeatureReport emulation update used to happen
+	// here, directly touching [DsHidMini]'s Module context without holding a
+	// reference on it. It is now handled inside DSHM_ProcessHidInputReport,
+	// under the reference that function already takes.
 	// 
-	if (pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
-	{
-		RtlCopyMemory(
-			&pModCtx->GetFeatureReport,
-			pInReport,
-			sizeof(DS3_RAW_INPUT_REPORT)
-		);
-
-		pModCtx->GetFeatureReport.AccelerometerX = 0x03FF - _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerX);
-		pModCtx->GetFeatureReport.AccelerometerY = _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerY);
-		pModCtx->GetFeatureReport.AccelerometerZ = _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerZ);
-		pModCtx->GetFeatureReport.Gyroscope = _byteswap_ushort(pModCtx->GetFeatureReport.Gyroscope);
-	}
 
 	battery = (DS_BATTERY_STATUS)pInReport->BatteryStatus;
 
@@ -858,7 +868,6 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	LARGE_INTEGER freq, * t1, t2;
 	LONGLONG ms;
 	DS_BATTERY_STATUS battery;
-	DMF_CONTEXT_DsHidMini* pModCtx;
 	PDS3_RAW_INPUT_REPORT pInReport;
 	WDFDEVICE device;
 
@@ -881,7 +890,6 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 
 	device = DMF_ParentDeviceGet(DmfModule);
 	pDevCtx = DeviceGetContext(device);
-	pModCtx = DMF_CONTEXT_GET((DMFMODULE)pDevCtx->DsHidMiniModule);
 	QueryPerformanceFrequency(&freq);
 
 	buffer = (PUCHAR)OutputBuffer;
@@ -913,21 +921,11 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	pInReport = (PDS3_RAW_INPUT_REPORT)&buffer[1];
 
 	//
-	// Handle special case of SIXAXIS.SYS emulation
+	// NOTE: the SIXAXIS.SYS GetFeatureReport emulation update used to happen
+	// here, directly touching [DsHidMini]'s Module context without holding a
+	// reference on it. It is now handled inside DSHM_ProcessHidInputReport,
+	// under the reference that function already takes.
 	// 
-	if (pDevCtx->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
-	{
-		RtlCopyMemory(
-			&pModCtx->GetFeatureReport,
-			pInReport,
-			sizeof(DS3_RAW_INPUT_REPORT)
-		);
-
-		pModCtx->GetFeatureReport.AccelerometerX = 0x03FF - _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerX);
-		pModCtx->GetFeatureReport.AccelerometerY = _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerY);
-		pModCtx->GetFeatureReport.AccelerometerZ = _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerZ);
-		pModCtx->GetFeatureReport.Gyroscope = _byteswap_ushort(pModCtx->GetFeatureReport.Gyroscope);
-	}
 
 	//
 	// Grab battery info

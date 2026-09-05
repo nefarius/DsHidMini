@@ -146,13 +146,24 @@ DsHidMini_EvtDeviceReleaseHardware(
 	//
 	if (pDevCtx->ConfigurationDirectoryWatcherWaitHandle)
 	{
-		UnregisterWait(pDevCtx->ConfigurationDirectoryWatcherWaitHandle);
+		//
+		// INVALID_HANDLE_VALUE makes this block until any callback that is
+		// already running (DsDevice_HotReloadEventCallback) has completed,
+		// so the handles below can't be freed out from under a callback
+		// that is still in flight. Plain UnregisterWait()/UnregisterWaitEx()
+		// with a NULL completion event does not guarantee that.
+		// 
+		UnregisterWaitEx(pDevCtx->ConfigurationDirectoryWatcherWaitHandle, INVALID_HANDLE_VALUE);
 		pDevCtx->ConfigurationDirectoryWatcherWaitHandle = NULL;
 	}
 
 	if (pDevCtx->ConfigurationDirectoryWatcherEvent)
 	{
-		CloseHandle(pDevCtx->ConfigurationDirectoryWatcherEvent);
+		//
+		// This handle comes from FindFirstChangeNotification(A), which must
+		// be paired with FindCloseChangeNotification, not CloseHandle.
+		// 
+		FindCloseChangeNotification(pDevCtx->ConfigurationDirectoryWatcherEvent);
 		pDevCtx->ConfigurationDirectoryWatcherEvent = NULL;
 	}
 
