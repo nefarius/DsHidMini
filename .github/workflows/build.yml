@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master
+    tags:
+      - 'v*'
     paths-ignore:
       - '**/*.md'
       - '**/*.aip'
@@ -316,14 +318,21 @@ jobs:
           if-no-files-found: error
           path: ${{ env.PARTNER_CAB }}
 
-      # Glob keeps the bin/ prefix inside the zip so the receiver extracts to
-      # …/latest/bin/ControlApp.exe. A single-file path would flatten the zip.
+      - name: 'Stage ControlApp'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dest = 'control-app-artifact\bin'
+          New-Item -ItemType Directory -Force -Path $dest | Out-Null
+          Copy-Item -Path 'bin\*.exe' -Destination $dest
+          Get-ChildItem -LiteralPath $dest | ForEach-Object { Write-Output $_.Name }
+
       - name: 'Upload ControlApp'
         uses: actions/upload-artifact@v4
         with:
           name: control-app
           if-no-files-found: error
-          path: bin/*.exe
+          path: control-app-artifact
 
       - name: 'Mirror partner submission CAB'
         uses: nefarius/AppVeyorArtifactsReceiver@master
