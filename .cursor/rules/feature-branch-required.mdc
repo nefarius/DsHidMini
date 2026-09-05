@@ -5,8 +5,10 @@ alwaysApply: true
 
 # New branch required
 
-Do not implement or commit work on `master`. Create a new branch from current `master` first
-(`feat/…` or `fix/…`), then make changes there.
+Do not implement or commit work on `master`. Before making changes, check whether the current
+branch already is the requested work.
 
-- Continue an existing branch only when it already is the requested work.
+- If it is, continue on that branch.
+- Otherwise, create a new branch from current `master` first (`feat/…` or `fix/…`), then make
+  changes there.
 - Do not merge or push to `master` unless the user explicitly asks.
