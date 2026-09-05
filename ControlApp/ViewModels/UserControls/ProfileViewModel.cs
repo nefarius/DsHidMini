@@ -72,10 +72,16 @@ public partial class ProfileViewModel : ObservableObject
         }
 
         VmGroupsCont.SaveAllChangesToBackingData(ProfileData.Settings);
-        _dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile();
-        IsEditEnabled = false;
+        if (_dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile())
+        {
+            _appSnackbarMessagesService.ShowProfileUpdateMessage();
+        }
+        else
+        {
+            _appSnackbarMessagesService.ShowDsHidMiniConfigurationUpdateFailedMessage();
+        }
 
-        _appSnackbarMessagesService.ShowProfileUpdateMessage();
+        IsEditEnabled = false;
     }
 
     [RelayCommand]

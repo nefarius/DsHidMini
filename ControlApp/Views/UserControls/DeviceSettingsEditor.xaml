@@ -124,7 +124,7 @@
                         VerticalAlignment="Center"
                         DockPanel.Dock="Right"
                         ItemsSource="{Binding HIDDeviceModesList}"
-                        SelectedItem="{Binding Context, FallbackValue=4}" />
+                        SelectedItem="{Binding Context, FallbackValue={x:Static enums:SettingsContext.XInput}}" />
                 </DockPanel>
                 <ui:ToggleSwitch
                     Margin="{StaticResource MyKey_NextLineSpacement}"
@@ -191,7 +191,7 @@
 
                     </DockPanel>
                     <TabControl HorizontalAlignment="Stretch"
-                                SelectedIndex="{Binding SelectedIndex, ElementName=LEDModeComboBox}">
+                                SelectedIndex="{Binding LEDMode}">
                         <!--  Index 0: LEDs as battery - single led  -->
                         <TabItem Visibility="Collapsed" />
                         <!--  Index 1: LEDs as battery - filling bar  -->
@@ -352,7 +352,7 @@
                     <Slider
                         AutoToolTipPlacement="TopLeft"
                         DockPanel.Dock="Left"
-                        IsEnabled="{Binding IsChecked, ElementName=IdleDisconnectEnableCheckbox}"
+                        IsEnabled="{Binding IsWirelessIdleDisconnectEnabled}"
                         IsSnapToTickEnabled="True"
                         Maximum="60"
                         Minimum="1"
@@ -370,7 +370,8 @@
                     Margin="{StaticResource MyKey_NextLineSpacement}"
                     Content="{Binding QuickDisconnectButtonCombo}"
                     ContentTemplate="{StaticResource MyKey_ButtonsComboTemplate}"
-                    DockPanel.Dock="Top" />
+                    DockPanel.Dock="Top"
+                    IsEnabled="{Binding QuickDisconnectButtonCombo.IsEnabled}" />
             </DockPanel>
         </DataTemplate>
 
@@ -475,7 +476,7 @@
                         <Style TargetType="Image">
                             <Setter Property="Source" Value="{StaticResource NormalRumbleModeImage}" />
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsChecked, ElementName=AltModeEnabler_ToggleSwitch}"
+                                <DataTrigger Binding="{Binding IsAltModeEnabled}"
                                              Value="True">
                                     <Setter Property="Source" Value="\Resources\AltRumbleMode.png" />
                                 </DataTrigger>
@@ -506,17 +507,17 @@
                 <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}"
                            Visibility="{Binding IsAltModeEnabled, Converter={StaticResource BoolToVis}}">
                     <ui:ToggleSwitch
-                        x:Name="AltModeCombo_ToggleSwitch"
                         Content="Enable toggling Alt Mode via button combo"
-                        DockPanel.Dock="Top" />
+                        DockPanel.Dock="Top"
+                        IsChecked="{Binding AltModeToggleButtonCombo.IsEnabled}" />
                     <ContentControl
                         Margin="{StaticResource MyKey_NextLineSpacement}"
                         Content="{Binding AltModeToggleButtonCombo}"
                         ContentTemplate="{StaticResource MyKey_ButtonsComboTemplate}"
                         DockPanel.Dock="Top"
-                        IsEnabled="{Binding IsChecked, ElementName=AltModeCombo_ToggleSwitch}" />
+                        IsEnabled="{Binding AltModeToggleButtonCombo.IsEnabled}" />
                     <DockPanel DockPanel.Dock="Top"
-                               Visibility="{Binding IsChecked, ElementName=AltModeCombo_ToggleSwitch, Converter={StaticResource BoolToVis_TV_FH}}">
+                               Visibility="{Binding AltModeToggleButtonCombo.IsEnabled, Converter={StaticResource BoolToVis_TV_FH}}">
                         <ui:ToggleSwitch
                             Margin="{StaticResource MyKey_NextLineSpacement}"
                             DockPanel.Dock="Top"
@@ -692,7 +693,7 @@
                         DockPanel.Dock="Left" />
                     <Slider
                         DockPanel.Dock="Right"
-                        IsEnabled="{Binding IsChecked, ElementName=ForcedRMLeftThresholdCheckbox}"
+                        IsEnabled="{Binding IsForcedRightMotorHeavyThresholdEnabled}"
                         IsSnapToTickEnabled="True"
                         Maximum="255"
                         Minimum="1"
@@ -715,7 +716,7 @@
                         DockPanel.Dock="Left" />
                     <Slider
                         DockPanel.Dock="Right"
-                        IsEnabled="{Binding IsChecked, ElementName=ForcedRMRightThresholdCheckbox}"
+                        IsEnabled="{Binding IsForcedRightMotorLightThresholdEnabled}"
                         IsSnapToTickEnabled="True"
                         Maximum="255"
                         Minimum="1"
@@ -740,19 +741,11 @@
             IsEnabled="{Binding AllowEditing}"
             LastChildFill="True">
 
-            <!--  Mode unique settings  -->
-            <ContentControl Content="{Binding HidModeVM}" Style="{StaticResource SetGroupItem}" />
-
-            <!--  Mode Settings groups  -->
-            <ContentControl Content="{Binding LedsSettingsVM}" Style="{StaticResource SetGroupItem}" />
-            <ContentControl Content="{Binding WirelessSettingsVM}" Style="{StaticResource SetGroupItem}" />
-
-
-            <ContentControl Content="{Binding SticksSettingsVM}" Style="{StaticResource SetGroupItem}" />
-            <ContentControl Content="{Binding GeneralRumbleSettingsVM}" Style="{StaticResource SetGroupItem}" />
-
-
-            <!--  Advanced options  -->
+            <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding PrimaryGroups}">
+                <ItemsControl.ItemTemplate>
+                    <StaticResource ResourceKey="ModeSetting" />
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
 
             <ui:CardExpander
                 Margin="10"
@@ -768,15 +761,11 @@
                             IsOpen="True"
                             Message=" Don't change them unless you really know what you are doing (documentation on the website)"
                             Severity="Error" />
-                        <ContentControl
-                            Content="{Binding OutRepSettingsVM}"
-                            Style="{StaticResource SetGroupItem}" />
-                        <ContentControl
-                            Content="{Binding LeftMotorRescaleSettingsVM}"
-                            Style="{StaticResource SetGroupItem}" />
-                        <ContentControl
-                            Content="{Binding AltRumbleSettingsVM}"
-                            Style="{StaticResource SetGroupItem}" />
+                        <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding AdvancedGroups}">
+                            <ItemsControl.ItemTemplate>
+                                <StaticResource ResourceKey="ModeSetting" />
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </DockPanel>
                 </ui:CardExpander.Content>
             </ui:CardExpander>

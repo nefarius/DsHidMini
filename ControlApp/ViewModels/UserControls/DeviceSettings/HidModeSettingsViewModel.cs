@@ -10,7 +10,7 @@ public class HidModeSettingsViewModel : DeviceSettingsViewModel
         PressureMode.Digital, PressureMode.Analogue, PressureMode.Default
     };
 
-    public static readonly List<DPadMode> listOfDPadModes = new() { DPadMode.HAT, DPadMode.Buttons };
+    public static readonly List<DPadMode> listOfDPadModes = new() { DPadMode.Default, DPadMode.HAT, DPadMode.Buttons };
 
     private readonly HidModeSettings _tempBackingData = new();
 

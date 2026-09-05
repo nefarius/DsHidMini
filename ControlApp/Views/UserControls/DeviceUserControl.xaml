@@ -203,10 +203,10 @@
                             IsEnabled="{Binding IsWireless, Converter={StaticResource BoolInverter}}">
                             <DockPanel.Style>
                                 <Style TargetType="DockPanel">
-                                    <Setter Property="Visibility" Value="Hidden" />
+                                    <Setter Property="Visibility" Value="Collapsed" />
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding SelectedIndex, ElementName=PairingModeComboBox}"
-                                                     Value="1">
+                                        <DataTrigger Binding="{Binding IsCustomPairingAddressVisible}"
+                                                     Value="True">
                                             <Setter Property="Visibility" Value="Visible" />
                                         </DataTrigger>
                                     </Style.Triggers>

@@ -2,71 +2,69 @@
 
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.Enums;
 
-using static Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.DshmDeviceSettings;
-
 namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig;
 
 /// <summary>
-///     DsHidMini driver settings for a specific Device (or global)
+///     DsHidMini driver settings for a specific device (or Global). Property names match the native parser in
+///     <c>driver/Configuration.c</c>.
 /// </summary>
 public class DshmDeviceSettings
 {
-    public HidDeviceMode? HIDDeviceMode { get; set; } // = DSHM_HidDeviceModes.DS4Windows;
-    public bool? AutoRestartOnHidModeMismatch { get; set; } // = true;
-    public bool? DisableAutoPairing { get; set; }
+    public HidDeviceMode? HidDeviceMode { get; set; }
+    public bool? AutoRestartOnHidModeMismatch { get; set; }
 
     public DevicePairingMode? DevicePairingMode { get; set; }
-    public bool? PairOnHotReload { get; set; } // = false;
+    public bool? PairOnHotReload { get; set; }
     public string? CustomPairingAddress { get; set; }
-    public bool? DisableWirelessIdleTimeout { get; set; } // = false;
-    public bool? IsOutputRateControlEnabled { get; set; } // = true;
-    public byte? OutputRateControlPeriodMs { get; set; } // = 150;
-    public bool? IsOutputDeduplicatorEnabled { get; set; } // = false;
-    public double? WirelessIdleTimeoutPeriodMs { get; set; } // = 300000;
-    public bool? IsQuickDisconnectComboEnabled { get; set; } = true;
+    public bool? DisableWirelessIdleTimeout { get; set; }
+    public bool? IsOutputRateControlEnabled { get; set; }
+    public byte? OutputRateControlPeriodMs { get; set; }
+    public int? WirelessIdleTimeoutPeriodMs { get; set; }
     public ButtonCombo QuickDisconnectCombo { get; set; } = new();
-
 
     [JsonIgnore]
     public DshmHidModeSettings ContextSettings { get; set; } = new();
 
-    public DshmHidModeSettings? SDF => HIDDeviceMode == HidDeviceMode.SDF ? ContextSettings : null;
-    public DshmHidModeSettings? GPJ => HIDDeviceMode == HidDeviceMode.GPJ ? ContextSettings : null;
-    public DshmHidModeSettings? SXS => HIDDeviceMode == HidDeviceMode.SXS ? ContextSettings : null;
-    public DshmHidModeSettings? DS4Windows => HIDDeviceMode == HidDeviceMode.DS4Windows ? ContextSettings : null;
-    public DshmHidModeSettings? XInput => HIDDeviceMode == HidDeviceMode.XInput ? ContextSettings : null;
+    /// <summary>
+    ///     Mode blocks present in the source JSON that were not the active <see cref="HidDeviceMode" />.
+    ///     Used only during import; never serialized.
+    /// </summary>
+    [JsonIgnore]
+    public List<string> UnusedModeBlocks { get; } = new();
+
+    public DshmHidModeSettings? SDF => HidDeviceMode == Enums.HidDeviceMode.SDF ? ContextSettings : null;
+    public DshmHidModeSettings? GPJ => HidDeviceMode == Enums.HidDeviceMode.GPJ ? ContextSettings : null;
+    public DshmHidModeSettings? SXS => HidDeviceMode == Enums.HidDeviceMode.SXS ? ContextSettings : null;
+    public DshmHidModeSettings? DS4Windows => HidDeviceMode == Enums.HidDeviceMode.DS4Windows ? ContextSettings : null;
+    public DshmHidModeSettings? XInput => HidDeviceMode == Enums.HidDeviceMode.XInput ? ContextSettings : null;
 
     public class DeadZoneSettings
     {
-        public bool? Apply
-        {
-            get;
-            set;
-        }
+        public bool? Apply { get; set; }
 
-        public byte? PolarValue { get; set; } // = 10.0;
+        public double? PolarValue { get; set; }
     }
 
     public class HeavyRescaleSettings
     {
-        public bool? IsEnabled { get; set; } // = true;
-        public byte? RescaleMinRange { get; set; } // = 64;
-        public byte? RescaleMaxRange { get; set; } // = 255;
+        public bool? IsEnabled { get; set; }
+        public byte? RescaleMinRange { get; set; }
+        public byte? RescaleMaxRange { get; set; }
     }
 
     public class AlternativeModeSettings
     {
-        public bool? IsEnabled { get; set; } // = false;
-        public byte? RescaleMinRange { get; set; } // = 1;
-        public byte? RescaleMaxRange { get; set; } // = 160;
+        public bool? IsEnabled { get; set; }
+        public byte? RescaleMinRange { get; set; }
+        public byte? RescaleMaxRange { get; set; }
         public ForcedRightAdjusts ForcedRight { get; set; } = new();
-        public ButtonCombo? ToggleCombo { get; set; } = new(); // = DSHM_QuickDisconnectCombo.PS_R1_L1
+        public ButtonCombo? ToggleCombo { get; set; } = new();
     }
 
     public class ButtonCombo
     {
         public bool? IsEnabled { get; set; }
-        public double? HoldTime { get; set; }
+        public int? HoldTime { get; set; }
         public int? Button1 { get; set; }
         public int? Button2 { get; set; }
         public int? Button3 { get; set; }
@@ -74,38 +72,38 @@ public class DshmDeviceSettings
 
     public class ForcedRightAdjusts
     {
-        public bool? IsHeavyThresholdEnabled { get; set; } // = false;
-        public byte? HeavyThreshold { get; set; } // = 230;
-        public bool? IsLightThresholdEnabled { get; set; } // = false;
-        public byte? LightThreshold { get; set; } // = 230;
+        public bool? IsHeavyThresholdEnabled { get; set; }
+        public byte? HeavyThreshold { get; set; }
+        public bool? IsLightThresholdEnabled { get; set; }
+        public byte? LightThreshold { get; set; }
     }
 
     public class AllRumbleSettings
     {
-        public bool? DisableLeft { get; set; } // = false;
-        public bool? DisableRight { get; set; } // = false;
+        public bool? DisableLeft { get; set; }
+        public bool? DisableRight { get; set; }
         public HeavyRescaleSettings HeavyRescale { get; set; } = new();
         public AlternativeModeSettings AlternativeMode { get; set; } = new();
     }
 
     public class SingleLEDCustoms
     {
-        public byte? TotalDuration { get; set; } // = 255;
-        public ushort? BasePortionDuration { get; set; } // = 255;
-        public byte? OffPortionMultiplier { get; set; } // = 0;
-        public byte? OnPortionMultiplier { get; set; } // = 255;
+        public byte? TotalDuration { get; set; }
+        public ushort? BasePortionDuration { get; set; }
+        public byte? OffPortionMultiplier { get; set; }
+        public byte? OnPortionMultiplier { get; set; }
     }
 
     public class AllLEDSettings
     {
-        public LEDsMode? Mode { get; set; } // = DSHM_LEDsModes.BatteryIndicatorPlayerIndex;
+        public LEDsMode? Mode { get; set; }
         public DSHM_LEDsAuthority? Authority { get; set; }
         public LEDsCustoms CustomPatterns { get; set; } = new();
     }
 
     public class LEDsCustoms
     {
-        public byte? LEDFlags { get; set; } // = 0x2;
+        public byte? LEDFlags { get; set; }
         public SingleLEDCustoms Player1 { get; set; } = new();
         public SingleLEDCustoms Player2 { get; set; } = new();
         public SingleLEDCustoms Player3 { get; set; } = new();
@@ -122,24 +120,24 @@ public class DshmDeviceSettings
 }
 
 /// <summary>
-///     DsHidMini driver settings related only to a given Hid Device Mode
+///     DsHidMini driver settings related only to a given HID device mode.
 /// </summary>
 public class DshmHidModeSettings
 {
     [JsonIgnore]
-    public HidDeviceMode? HIDDeviceMode { get; set; }
+    public HidDeviceMode? HidDeviceMode { get; set; }
 
-    public PressureMode? PressureExposureMode { get; set; } // = DSHM_PressureModes.Default;
-    public DPadExposureMode? DPadExposureMode { get; set; } // = DSHM_DPadExposureModes.Default;
-    public DeadZoneSettings DeadZoneLeft { get; set; } = new();
-    public DeadZoneSettings DeadZoneRight { get; set; } = new();
-    public AllRumbleSettings RumbleSettings { get; set; } = new();
-    public AllLEDSettings LEDSettings { get; set; } = new();
-    public AxesFlipping FlipAxis { get; set; } = new();
+    public PressureMode? PressureExposureMode { get; set; }
+    public DPadExposureMode? DPadExposureMode { get; set; }
+    public DshmDeviceSettings.DeadZoneSettings DeadZoneLeft { get; set; } = new();
+    public DshmDeviceSettings.DeadZoneSettings DeadZoneRight { get; set; } = new();
+    public DshmDeviceSettings.AllRumbleSettings RumbleSettings { get; set; } = new();
+    public DshmDeviceSettings.AllLEDSettings LEDSettings { get; set; } = new();
+    public DshmDeviceSettings.AxesFlipping FlipAxis { get; set; } = new();
 }
 
 /// <summary>
-///     A class representing the DsHidMini configuration disk file
+///     A class representing the DsHidMini configuration disk file.
 /// </summary>
 public class DshmConfiguration
 {
@@ -149,19 +147,18 @@ public class DshmConfiguration
     /// <summary>
     ///     Updates the DsHidMini configuration file on disk accordingly to this object's settings
     /// </summary>
-    /// <returns>If the update was successfully</returns>
-    public bool ApplyConfiguration()
+    public bool ApplyConfiguration(string? directory = null)
     {
         Log.Logger.Debug("Converting DsHidMini configuration object to configuration file.");
-        return DshmConfigSerialization.UpdateDsHidMiniConfigFile(this);
+        return DshmConfigSerialization.UpdateDsHidMiniConfigFile(this, directory);
     }
 }
 
 /// <summary>
-///     class representing a DsHidMini specific device data, containing its MAC address and Settings
+///     A DsHidMini specific device entry, containing its MAC address and settings.
 /// </summary>
 public class DshmDeviceData
 {
-    public string DeviceAddress { get; set; }
+    public string DeviceAddress { get; set; } = string.Empty;
     public DshmDeviceSettings DeviceSettings { get; set; } = new();
 }

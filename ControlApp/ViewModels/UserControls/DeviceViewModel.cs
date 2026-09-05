@@ -1,5 +1,4 @@
 ﻿using System.Net.NetworkInformation;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
 
@@ -19,7 +18,7 @@ using Wpf.Ui.Extensions;
 
 namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls;
 
-public partial class DeviceViewModel : ObservableObject
+public partial class DeviceViewModel : ObservableObject, IDisposable
 {
     private readonly AddressValidator _addressValidator;
     private readonly AppSnackbarMessagesService _appSnackbarMessagesService;
@@ -204,7 +203,7 @@ public partial class DeviceViewModel : ObservableObject
     /// <summary>
     ///     The Bluetooth MAC address of this device.
     /// </summary>
-    private string? DeviceAddress =>
+    internal string? DeviceAddress =>
         Device.GetProperty<string>(DsHidMiniDriver.DeviceAddressProperty)?.ToUpperInvariant();
 
     /// <summary>
@@ -219,15 +218,7 @@ public partial class DeviceViewModel : ObservableObject
                 return null;
             }
 
-            string friendlyAddress = DeviceAddress;
-
-            int insertedCount = 0;
-            for (int i = 2; i < DeviceAddress.Length; i = i + 2)
-            {
-                friendlyAddress = friendlyAddress.Insert(i + insertedCount++, ":");
-            }
-
-            return friendlyAddress;
+            return MacAddressFormatter.ToFriendly(DeviceAddress);
         }
     }
 
@@ -246,15 +237,7 @@ public partial class DeviceViewModel : ObservableObject
             string hostAddress = Device.GetProperty<ulong>(DsHidMiniDriver.HostAddressProperty).ToString("X12")
                 .ToUpperInvariant();
 
-            string friendlyAddress = hostAddress;
-
-            int insertedCount = 0;
-            for (int i = 2; i < hostAddress.Length; i = i + 2)
-            {
-                friendlyAddress = friendlyAddress.Insert(i + insertedCount++, ":");
-            }
-
-            return friendlyAddress;
+            return MacAddressFormatter.ToFriendly(hostAddress);
         }
     }
 
@@ -263,25 +246,15 @@ public partial class DeviceViewModel : ObservableObject
     /// </summary>
     public string? CustomPairingAddress
     {
-        get
-        {
-            string regex = "(.{2})(.{2})(.{2})(.{2})(.{2})(.{2})";
-            string replace = "$1:$2:$3:$4:$5:$6";
-            string newformat = Regex.Replace(_customPairingAddress, regex, replace);
-            return newformat;
-        }
+        get => MacAddressFormatter.ToFriendly(_customPairingAddress);
         set
         {
-            string formattedCustomMacAddress = Regex.Replace(value, @"[^a-fA-F0-9]", string.Empty).ToUpper();
-            if (formattedCustomMacAddress.Length > 12)
-            {
-                formattedCustomMacAddress = formattedCustomMacAddress.Substring(0, 12);
-            }
-
-            _customPairingAddress = formattedCustomMacAddress;
+            _customPairingAddress = MacAddressFormatter.Normalize(value);
             OnPropertyChanged();
         }
     }
+
+    public bool IsCustomPairingAddressVisible => PairingMode == BluetoothPairingMode.Custom;
 
     /// <summary>
     ///     Index of the desired Bluetooth pairing mode
@@ -293,6 +266,7 @@ public partial class DeviceViewModel : ObservableObject
         {
             _pairingMode = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(IsCustomPairingAddressVisible));
         }
     }
 
@@ -345,9 +319,6 @@ public partial class DeviceViewModel : ObservableObject
     public bool WasLastHostRequestSuccessful =>
         Device.GetProperty<int>(DsHidMiniDriver.LastHostRequestStatusProperty) == 0;
 
-    /// <summary>
-    ///     Representation of genuine status of device
-    /// </summary>
     //public SymbolRegular GenuineIcon
     //{
     //    get
@@ -366,7 +337,7 @@ public partial class DeviceViewModel : ObservableObject
     {
         get
         {
-            string enumerator = Device.GetProperty<string>(DevicePropertyKey.Device_EnumeratorName)!;
+            string enumerator = Device.GetProperty<string>(DevicePropertyKey.Device_EnumeratorName) ?? "USB";
 
             return !enumerator.Equals("USB", StringComparison.InvariantCultureIgnoreCase);
         }
@@ -399,7 +370,18 @@ public partial class DeviceViewModel : ObservableObject
 
     private void UpdateBatteryStatus(object? state)
     {
-        OnPropertyChanged(nameof(BatteryStatus));
+        Application.Current?.Dispatcher.BeginInvoke(() =>
+        {
+            OnPropertyChanged(nameof(BatteryStatus));
+            OnPropertyChanged(nameof(BatteryIcon));
+            OnPropertyChanged(nameof(BatteryStatusInText));
+        });
+    }
+
+    public void Dispose()
+    {
+        _batteryQuery.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     partial void OnCurrentDeviceSettingsModeChanged(SettingsModes value)
@@ -415,7 +397,7 @@ public partial class DeviceViewModel : ObservableObject
         SelectedProfile = CurrentDeviceSettingsMode switch
         {
             SettingsModes.Global => _dshmConfigManager.GlobalProfile,
-            SettingsModes.Profile => _dshmConfigManager.GetProfile(_deviceUserData.GuidOfProfileToUse),
+            SettingsModes.Profile => _dshmConfigManager.ResolveProfileOrDefault(_deviceUserData.GuidOfProfileToUse),
             _ => SelectedProfile
         };
     }
@@ -518,13 +500,7 @@ public partial class DeviceViewModel : ObservableObject
         Log.Logger.Information("Saving and applying changes made to Device '{DeviceAddress}'", DeviceAddress);
         _deviceUserData.BluetoothPairingMode = PairingMode;
 
-        string formattedCustomMacAddress = Regex.Replace(CustomPairingAddress, @"[^a-fA-F0-9]", "").ToUpper();
-        if (formattedCustomMacAddress.Length > 12)
-        {
-            formattedCustomMacAddress = formattedCustomMacAddress.Substring(0, 12);
-        }
-
-        _deviceUserData.PairingAddress = formattedCustomMacAddress;
+        _deviceUserData.PairingAddress = MacAddressFormatter.Normalize(CustomPairingAddress);
 
         _deviceUserData.SettingsMode = CurrentDeviceSettingsMode;
         if (CurrentDeviceSettingsMode == SettingsModes.Custom)
@@ -534,11 +510,21 @@ public partial class DeviceViewModel : ObservableObject
 
         if (CurrentDeviceSettingsMode == SettingsModes.Profile)
         {
-            _deviceUserData.GuidOfProfileToUse = SelectedProfile.ProfileGuid;
+            _deviceUserData.GuidOfProfileToUse =
+                (SelectedProfile ?? _dshmConfigManager.ResolveProfileOrDefault(_deviceUserData.GuidOfProfileToUse))
+                .ProfileGuid;
         }
 
-        _dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile();
-        _appSnackbarMessagesService.ShowDsHidMiniConfigurationUpdateSuccessMessage();
+        bool updated = _dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile();
+        if (updated)
+        {
+            _appSnackbarMessagesService.ShowDsHidMiniConfigurationUpdateSuccessMessage();
+        }
+        else
+        {
+            _appSnackbarMessagesService.ShowDsHidMiniConfigurationUpdateFailedMessage();
+        }
+
         await RefreshDeviceSettings();
     }
 
@@ -581,19 +567,28 @@ public partial class DeviceViewModel : ObservableObject
     private async Task TriggerPairingOnHotReload()
     {
         _deviceUserData.BluetoothPairingMode = PairingMode;
-        string formattedCustomMacAddress = Regex.Replace(CustomPairingAddress, @"[^a-fA-F0-9]", "").ToUpper();
-        if (formattedCustomMacAddress.Length > 12)
+        _deviceUserData.PairingAddress = MacAddressFormatter.Normalize(CustomPairingAddress);
+
+        try
         {
-            formattedCustomMacAddress = formattedCustomMacAddress.Substring(0, 12);
+            _deviceUserData.PairOnHotReload = true;
+            if (!_dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile())
+            {
+                _appSnackbarMessagesService.ShowDsHidMiniConfigurationUpdateFailedMessage();
+                return;
+            }
+
+            await ShowPairingDialog();
+        }
+        finally
+        {
+            _deviceUserData.PairOnHotReload = false;
+            if (!_dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile())
+            {
+                _appSnackbarMessagesService.ShowDsHidMiniConfigurationUpdateFailedMessage();
+            }
         }
 
-        _deviceUserData.PairingAddress = formattedCustomMacAddress;
-
-        _deviceUserData.PairOnHotReload = true;
-        _dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile();
-        await ShowPairingDialog();
-        _deviceUserData.PairOnHotReload = false;
-        _dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile();
         OnPropertyChanged(nameof(HostAddress));
         OnPropertyChanged(nameof(LastPairingStatusIcon));
     }

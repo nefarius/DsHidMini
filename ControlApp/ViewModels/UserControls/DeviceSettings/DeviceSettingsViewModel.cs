@@ -22,7 +22,7 @@ public abstract partial class DeviceSettingsViewModel : ObservableObject
         { SettingsModeGroups.Unique_GPJ, "GPJ mode specific settings" },
         { SettingsModeGroups.Unique_SXS, "SXS mode specific settings" },
         { SettingsModeGroups.Unique_DS4W, "DS4W mode specific settings" },
-        { SettingsModeGroups.Unique_XInput, "GPJ mode specific settings" }
+        { SettingsModeGroups.Unique_XInput, "XInput mode specific settings" }
     };
 
     [ObservableProperty]
@@ -60,80 +60,13 @@ public abstract partial class DeviceSettingsViewModel : ObservableObject
 
     public void LoadSettingsFromBackingDataContainer(Models.DshmConfigManager.DeviceSettings dataContainerSource)
     {
-        if (_mySubSetting is HidModeSettings)
-        {
-            HidModeSettings.CopySettings((HidModeSettings)_mySubSetting, dataContainerSource.HidMode);
-        }
-
-        if (_mySubSetting is LedsSettings)
-        {
-            LedsSettings.CopySettings((LedsSettings)_mySubSetting, dataContainerSource.LEDs);
-        }
-
-        if (_mySubSetting is WirelessSettings)
-        {
-            WirelessSettings.CopySettings((WirelessSettings)_mySubSetting, dataContainerSource.Wireless);
-        }
-
-        if (_mySubSetting is SticksSettings)
-        {
-            SticksSettings.CopySettings((SticksSettings)_mySubSetting, dataContainerSource.Sticks);
-        }
-
-        if (_mySubSetting is GeneralRumbleSettings)
-        {
-            GeneralRumbleSettings.CopySettings((GeneralRumbleSettings)_mySubSetting, dataContainerSource.GeneralRumble);
-        }
-
-        if (_mySubSetting is OutputReportSettings)
-        {
-            OutputReportSettings.CopySettings((OutputReportSettings)_mySubSetting, dataContainerSource.OutputReport);
-        }
-
-        if (_mySubSetting is LeftMotorRescalingSettings)
-        {
-            LeftMotorRescalingSettings.CopySettings((LeftMotorRescalingSettings)_mySubSetting,
-                dataContainerSource.LeftMotorRescaling);
-        }
-
-        if (_mySubSetting is AltRumbleModeSettings)
-        {
-            AltRumbleModeSettings.CopySettings((AltRumbleModeSettings)_mySubSetting,
-                dataContainerSource.AltRumbleAdjusts);
-        }
-
+        _mySubSetting.CopyFrom(dataContainerSource);
         NotifyAllPropertiesHaveChanged();
     }
 
     public void SaveSettingsToBackingDataContainer(Models.DshmConfigManager.DeviceSettings dataContainerSource)
     {
-        switch (_mySubSetting)
-        {
-            case HidModeSettings setting:
-                HidModeSettings.CopySettings(dataContainerSource.HidMode, setting);
-                break;
-            case LedsSettings setting:
-                LedsSettings.CopySettings(dataContainerSource.LEDs, setting);
-                break;
-            case WirelessSettings setting:
-                WirelessSettings.CopySettings(dataContainerSource.Wireless, setting);
-                break;
-            case SticksSettings setting:
-                SticksSettings.CopySettings(dataContainerSource.Sticks, setting);
-                break;
-            case GeneralRumbleSettings setting:
-                GeneralRumbleSettings.CopySettings(dataContainerSource.GeneralRumble, setting);
-                break;
-            case OutputReportSettings setting:
-                OutputReportSettings.CopySettings(dataContainerSource.OutputReport, setting);
-                break;
-            case LeftMotorRescalingSettings setting:
-                LeftMotorRescalingSettings.CopySettings(dataContainerSource.LeftMotorRescaling, setting);
-                break;
-            case AltRumbleModeSettings setting:
-                AltRumbleModeSettings.CopySettings(dataContainerSource.AltRumbleAdjusts, setting);
-                break;
-        }
+        _mySubSetting.CopyTo(dataContainerSource);
     }
 }
 
@@ -163,7 +96,7 @@ public class ButtonComboViewModel : ObservableObject
         set
         {
             _buttonCombo.HoldTime = value * 1000;
-            OnPropertyChanged(nameof(IsEnabled));
+            OnPropertyChanged();
         }
     }
 
@@ -201,6 +134,6 @@ public class ButtonComboViewModel : ObservableObject
 
     public void NotifyAllPropertiesChanged()
     {
-        OnPropertyChanged(nameof(string.Empty));
+        OnPropertyChanged(string.Empty);
     }
 }

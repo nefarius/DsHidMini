@@ -40,6 +40,12 @@ public partial class SettingsEditorViewModel : ObservableObject
     {
     }
 
+    public IReadOnlyList<DeviceSettingsViewModel> Groups => groupSettingsList;
+
+    public IReadOnlyList<DeviceSettingsViewModel> PrimaryGroups { get; }
+
+    public IReadOnlyList<DeviceSettingsViewModel> AdvancedGroups { get; }
+
     public SettingsEditorViewModel(Models.DshmConfigManager.DeviceSettings? dataContainer = null)
     {
         groupSettingsList.Add(HidModeVM);
@@ -50,6 +56,8 @@ public partial class SettingsEditorViewModel : ObservableObject
         groupSettingsList.Add(OutRepSettingsVM);
         groupSettingsList.Add(LeftMotorRescaleSettingsVM);
         groupSettingsList.Add(AltRumbleSettingsVM);
+        PrimaryGroups = [HidModeVM, LedsSettingsVM, WirelessSettingsVM, SticksSettingsVM, GeneralRumbleSettingsVM];
+        AdvancedGroups = [OutRepSettingsVM, LeftMotorRescaleSettingsVM, AltRumbleSettingsVM];
 
         HidModeVM.PropertyChanged += ModeSettingsChanged;
 

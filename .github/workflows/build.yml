@@ -90,7 +90,7 @@ jobs:
         with:
           path: ~/.nuget/packages
           # Explicit project list so DMF submodule csproj churn does not evict the cache.
-          key: nuget-${{ runner.os }}-${{ hashFiles('ControlApp/ControlApp.csproj', 'ipctest/ipctest.csproj', 'SDK/Nefarius.DsHidMini.IPC/Nefarius.DsHidMini.IPC.csproj', 'build/_build.csproj', 'nuget.config', '.config/dotnet-tools.json') }}
+          key: nuget-${{ runner.os }}-${{ hashFiles('ControlApp/ControlApp.csproj', 'ControlApp.Tests/ControlApp.Tests.csproj', 'ipctest/ipctest.csproj', 'SDK/Nefarius.DsHidMini.IPC/Nefarius.DsHidMini.IPC.csproj', 'build/_build.csproj', 'nuget.config', '.config/dotnet-tools.json') }}
           restore-keys: |
             nuget-${{ runner.os }}-
 
@@ -154,7 +154,13 @@ jobs:
         shell: cmd
         run: |
           dotnet restore .\ControlApp\
+          dotnet restore .\ControlApp.Tests\
           dotnet restore .\ipctest\
+
+      - name: 'Test ControlApp'
+        if: matrix.platform == 'x64'
+        shell: cmd
+        run: dotnet test .\ControlApp.Tests\ControlApp.Tests.csproj --configuration Release --no-restore
 
       - name: 'Build'
         shell: cmd

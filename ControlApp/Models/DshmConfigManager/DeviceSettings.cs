@@ -84,13 +84,17 @@ public class DeviceSettings
 public abstract class DeviceSubSettings
 {
     public abstract void ResetToDefault();
+
+    public abstract void CopyFrom(DeviceSettings source);
+
+    public abstract void CopyTo(DeviceSettings destination);
 }
 
 public class HidModeSettings : DeviceSubSettings
 {
     public SettingsContext SettingsContext { get; set; } = SettingsContext.XInput;
     public PressureMode PressureExposureMode { get; set; } = PressureMode.Default;
-    public DPadMode DPadExposureMode { get; set; } = DPadMode.HAT;
+    public DPadMode DPadExposureMode { get; set; } = DPadMode.Default;
     public bool IsLEDsAsXInputSlotEnabled { get; set; }
     public bool PreventRemappingConflictsInSXSMode { get; set; }
     public bool PreventRemappingConflictsInDS4WMode { get; set; }
@@ -100,6 +104,10 @@ public class HidModeSettings : DeviceSubSettings
     {
         CopySettings(this, new HidModeSettings());
     }
+
+    public override void CopyFrom(DeviceSettings source) => CopySettings(this, source.HidMode);
+
+    public override void CopyTo(DeviceSettings destination) => CopySettings(destination.HidMode, this);
 
     public static void CopySettings(HidModeSettings destiny, HidModeSettings source)
     {
@@ -124,6 +132,10 @@ public class LedsSettings : DeviceSubSettings
     {
         CopySettings(this, new LedsSettings());
     }
+
+    public override void CopyFrom(DeviceSettings source) => CopySettings(this, source.LEDs);
+
+    public override void CopyTo(DeviceSettings destination) => CopySettings(destination.LEDs, this);
 
     public static void CopySettings(LedsSettings destiny, LedsSettings source)
     {
@@ -205,13 +217,17 @@ public class WirelessSettings : DeviceSubSettings
 
     public ButtonsCombo QuickDisconnectCombo { get; set; } = new()
     {
-        IsEnabled = true, HoldTime = 1000, ButtonCombo = new[] { Button.PS, Button.R1, Button.L1 }
+        IsEnabled = true, HoldTime = 1000, ButtonCombo = new[] { Button.L1, Button.R1, Button.PS }
     };
 
     public override void ResetToDefault()
     {
         CopySettings(this, new WirelessSettings());
     }
+
+    public override void CopyFrom(DeviceSettings source) => CopySettings(this, source.Wireless);
+
+    public override void CopyTo(DeviceSettings destination) => CopySettings(destination.Wireless, this);
 
     public static void CopySettings(WirelessSettings destiny, WirelessSettings source)
     {
@@ -232,6 +248,10 @@ public class SticksSettings : DeviceSubSettings
         RightStickData.Reset();
     }
 
+    public override void CopyFrom(DeviceSettings source) => CopySettings(this, source.Sticks);
+
+    public override void CopyTo(DeviceSettings destination) => CopySettings(destination.Sticks, this);
+
     public static void CopySettings(SticksSettings destiny, SticksSettings source)
     {
         destiny.LeftStickData.CopyStickDataFromOtherStick(source.LeftStickData);
@@ -241,7 +261,7 @@ public class SticksSettings : DeviceSubSettings
     public class StickData
     {
         public bool IsDeadZoneEnabled { get; set; } = true;
-        public int DeadZone { get; set; }
+        public int DeadZone { get; set; } = DshmDeadZoneConversion.DefaultUiDeadZone;
 
         public bool InvertXAxis { get; set; }
         public bool InvertYAxis { get; set; }
@@ -282,13 +302,18 @@ public class GeneralRumbleSettings : DeviceSubSettings
         CopySettings(this, new GeneralRumbleSettings());
     }
 
+    public override void CopyFrom(DeviceSettings source) => CopySettings(this, source.GeneralRumble);
+
+    public override void CopyTo(DeviceSettings destination) => CopySettings(destination.GeneralRumble, this);
+
     public static void CopySettings(GeneralRumbleSettings destiny, GeneralRumbleSettings source)
     {
         destiny.IsAltRumbleModeEnabled = source.IsAltRumbleModeEnabled;
         destiny.IsLeftMotorDisabled = source.IsLeftMotorDisabled;
         destiny.IsRightMotorDisabled = source.IsRightMotorDisabled;
-        destiny.AlwaysStartInNormalMode = source.IsAltModeToggleButtonComboEnabled;
+        destiny.AlwaysStartInNormalMode = source.AlwaysStartInNormalMode;
         destiny.AltModeToggleButtonCombo.CopyCombo(source.AltModeToggleButtonCombo);
+        destiny.IsAltModeToggleButtonComboEnabled = destiny.AltModeToggleButtonCombo.IsEnabled;
     }
 }
 
@@ -302,6 +327,10 @@ public class OutputReportSettings : DeviceSubSettings
     {
         CopySettings(this, new OutputReportSettings());
     }
+
+    public override void CopyFrom(DeviceSettings source) => CopySettings(this, source.OutputReport);
+
+    public override void CopyTo(DeviceSettings destination) => CopySettings(destination.OutputReport, this);
 
     public static void CopySettings(OutputReportSettings destiny, OutputReportSettings source)
     {
@@ -323,6 +352,11 @@ public class LeftMotorRescalingSettings : DeviceSubSettings
         CopySettings(this, new LeftMotorRescalingSettings());
     }
 
+    public override void CopyFrom(DeviceSettings source) => CopySettings(this, source.LeftMotorRescaling);
+
+    public override void CopyTo(DeviceSettings destination) =>
+        CopySettings(destination.LeftMotorRescaling, this);
+
     public static void CopySettings(LeftMotorRescalingSettings destiny, LeftMotorRescalingSettings source)
     {
         destiny.IsLeftMotorStrRescalingEnabled = source.IsLeftMotorStrRescalingEnabled;
@@ -333,12 +367,12 @@ public class LeftMotorRescalingSettings : DeviceSubSettings
 
 public class AltRumbleModeSettings : DeviceSubSettings
 {
-    public int ForcedRightMotorHeavyThreshold { get; set; } = 230;
-    public int ForcedRightMotorLightThreshold { get; set; } = 230;
-    public bool IsForcedRightMotorHeavyThresholdEnabled { get; set; }
+    public int ForcedRightMotorHeavyThreshold { get; set; } = 242;
+    public int ForcedRightMotorLightThreshold { get; set; } = 242;
+    public bool IsForcedRightMotorHeavyThresholdEnabled { get; set; } = true;
     public bool IsForcedRightMotorLightThresholdEnabled { get; set; }
 
-    public int RightRumbleConversionUpperRange { get; set; } = 140;
+    public int RightRumbleConversionUpperRange { get; set; } = 90;
     public int RightRumbleConversionLowerRange { get; set; } = 1;
 
 
@@ -346,6 +380,11 @@ public class AltRumbleModeSettings : DeviceSubSettings
     {
         CopySettings(this, new AltRumbleModeSettings());
     }
+
+    public override void CopyFrom(DeviceSettings source) => CopySettings(this, source.AltRumbleAdjusts);
+
+    public override void CopyTo(DeviceSettings destination) =>
+        CopySettings(destination.AltRumbleAdjusts, this);
 
     public static void CopySettings(AltRumbleModeSettings destiny, AltRumbleModeSettings source)
     {

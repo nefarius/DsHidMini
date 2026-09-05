@@ -33,6 +33,7 @@ public partial class ProfilesViewModel : ObservableObject, INavigationAware
         _dshmDevMan = dshmDevMan;
         _dshmConfigManager = dshmConfigManager;
         _appSnackbarMessagesService = appSnackbarMessagesService;
+        _dshmConfigManager.GlobalProfileUpdated += (_, _) => UpdateGlobalProfileCheck();
         UpdateProfileList();
     }
 
@@ -99,8 +100,15 @@ public partial class ProfilesViewModel : ObservableObject, INavigationAware
                 "Setting profile '{ProfileDataProfileName}' ({ProfileDataProfileGuid}) as Global.", obj.ProfileData
                     .ProfileName, obj.ProfileData.ProfileGuid);
             _dshmConfigManager.GlobalProfile = obj.ProfileData;
-            _appSnackbarMessagesService.ShowGlobalProfileUpdatedMessage();
-            _dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile();
+            if (_dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile())
+            {
+                _appSnackbarMessagesService.ShowGlobalProfileUpdatedMessage();
+            }
+            else
+            {
+                _appSnackbarMessagesService.ShowDsHidMiniConfigurationUpdateFailedMessage();
+            }
+
             UpdateGlobalProfileCheck();
         }
     }
@@ -110,7 +118,11 @@ public partial class ProfilesViewModel : ObservableObject, INavigationAware
     {
         Log.Logger.Information("Creating new profile generic name.");
         _dshmConfigManager.CreateProfile("New profile");
-        _dshmConfigManager.SaveChanges();
+        if (!_dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile())
+        {
+            _appSnackbarMessagesService.ShowDsHidMiniConfigurationUpdateFailedMessage();
+        }
+
         UpdateProfileList();
     }
 
@@ -133,8 +145,14 @@ public partial class ProfilesViewModel : ObservableObject, INavigationAware
         }
 
         _dshmConfigManager.DeleteProfile(obj.ProfileData);
-        _dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile();
-        _appSnackbarMessagesService.ShowProfileDeletedMessage();
+        if (_dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile())
+        {
+            _appSnackbarMessagesService.ShowProfileDeletedMessage();
+        }
+        else
+        {
+            _appSnackbarMessagesService.ShowDsHidMiniConfigurationUpdateFailedMessage();
+        }
         UpdateProfileList();
     }
 }

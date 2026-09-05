@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Threading;
 
 using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.Util;
@@ -24,6 +25,7 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
     private readonly DshmConfigManager _dshmConfigManager;
 
     private readonly DshmDevMan _dshmDevMan;
+    private int _refreshGeneration;
 
     /// <summary>
     ///     Are there devices connected.
@@ -95,6 +97,11 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
 
     private void OnDshmConfigUpdated(object? obj, EventArgs? eventArgs)
     {
+        if (eventArgs is DshmConfigManager.DshmUpdatedEventArgs { UpdatedSuccessfully: false })
+        {
+            return;
+        }
+
         XInputSlotResolver.InvalidateResolutionCache();
         ReconnectDevicesWithMismatchedHidMode();
     }
@@ -185,9 +192,18 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
     {
         Application.Current.Dispatcher.BeginInvoke(new Action(async void () =>
         {
+            int generation = Interlocked.Increment(ref _refreshGeneration);
             try
             {
+                string? selectedAddress = SelectedDevice?.DeviceAddress;
+                SelectedDevice = null;
+                List<DeviceViewModel> previous = Devices.ToList();
                 Devices.Clear();
+                foreach (DeviceViewModel oldDev in previous)
+                {
+                    oldDev.Dispose();
+                }
+
                 foreach (DeviceViewModel newDev in _dshmDevMan.Devices.Select(device => new DeviceViewModel(
                              device,
                              _dshmDevMan,
@@ -197,8 +213,20 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
                              _addressValidator
                          )))
                 {
+                    if (generation != _refreshGeneration)
+                    {
+                        newDev.Dispose();
+                        return;
+                    }
+
                     Devices.Add(newDev);
                     await newDev.RefreshDeviceSettings();
+                    if (selectedAddress is not null &&
+                        string.Equals(newDev.DeviceAddress, selectedAddress,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        SelectedDevice = newDev;
+                    }
                 }
             }
             catch (Exception e)

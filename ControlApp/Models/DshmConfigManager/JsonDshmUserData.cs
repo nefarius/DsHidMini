@@ -16,18 +16,12 @@ using ErrorEventArgs = Newtonsoft.Json.Serialization.ErrorEventArgs;
 
 namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 
-/// <summary>Provides methods to load and save the application configuration. </summary>
+/// <summary>Provides methods to load and save the ControlApp user-data store.</summary>
 public static class JsonDshmUserData
 {
     private const string ConfigExtension = ".json";
 
-    /// <summary>Loads the application configuration. </summary>
-    /// <typeparam name="T">The type of the application configuration. </typeparam>
-    /// <param name="fileNameWithoutExtension">The configuration file name without extension. </param>
-    /// <param name="userDataDir">Defines the directory the UserData file will be loaded from. </param>
-    /// <returns>The configuration object. </returns>
-    /// <exception cref="IOException">An I/O error occurred while opening the file. </exception>
-    public static T? Load<T>(string fileNameWithoutExtension, string userDataDir)
+    public static T Load<T>(string fileNameWithoutExtension, string userDataDir, bool createIfMissing = true)
         where T : new()
     {
         Log.Logger.Debug(
@@ -37,20 +31,34 @@ public static class JsonDshmUserData
 
         if (!File.Exists(configPath))
         {
-            Log.Logger.Debug("User Data file does not exist in the specified directory. Creating new User Data.");
-            return CreateDefaultConfigurationFile<T>(fileNameWithoutExtension, userDataDir);
+            Log.Logger.Debug("User Data file does not exist in the specified directory.");
+            return createIfMissing
+                ? CreateDefaultConfigurationFile<T>(fileNameWithoutExtension, userDataDir)
+                : new T();
         }
 
-        // Handle errors on deserialization
-        JsonSerializerSettings settings = new() { Error = HandleDeserializationError };
-        return JsonConvert.DeserializeObject<T>(File.ReadAllText(configPath, Encoding.UTF8), settings);
+        try
+        {
+            JsonSerializerSettings settings = new() { Error = HandleDeserializationError };
+            T? loaded = JsonConvert.DeserializeObject<T>(File.ReadAllText(configPath, Encoding.UTF8), settings);
+            if (loaded is not null)
+            {
+                return loaded;
+            }
+
+            Log.Logger.Error("User Data file {ConfigPath} deserialized to null. Backing up and using defaults.",
+                configPath);
+            BackupCorruptFile(configPath);
+            return new T();
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Error(ex, "Failed to load User Data from {ConfigPath}. Backing up corrupt file.", configPath);
+            BackupCorruptFile(configPath);
+            return new T();
+        }
     }
 
-    /// <summary>Saves the configuration. </summary>
-    /// <param name="fileNameWithoutExtension">The configuration file name without extension. </param>
-    /// <param name="configuration">The configuration object to store. </param>
-    /// <param name="userDataDir">Defines the directory the UserData file will be stored. </param>
-    /// <exception cref="IOException">An I/O error occurred while opening the file. </exception>
     public static void Save<T>(string fileNameWithoutExtension, T configuration, string userDataDir) where T : new()
     {
         Log.Logger.Debug(
@@ -60,13 +68,49 @@ public static class JsonDshmUserData
         settings.Converters.Add(new StringEnumConverter());
 
         string configPath = CreateFilePath(fileNameWithoutExtension, ConfigExtension, userDataDir);
-        File.WriteAllText(configPath, JsonConvert.SerializeObject(configuration, Formatting.Indented, settings),
-            Encoding.UTF8);
+        string tempPath = configPath + ".tmp";
+        try
+        {
+            File.WriteAllText(tempPath, JsonConvert.SerializeObject(configuration, Formatting.Indented, settings),
+                Encoding.UTF8);
+            File.Move(tempPath, configPath, overwrite: true);
+        }
+        catch
+        {
+            try
+            {
+                if (File.Exists(tempPath))
+                {
+                    File.Delete(tempPath);
+                }
+            }
+            catch (Exception cleanupEx) when (cleanupEx is IOException or UnauthorizedAccessException)
+            {
+                Log.Logger.Debug(cleanupEx, "Failed to delete temporary User Data file {TempPath}.", tempPath);
+            }
+
+            throw;
+        }
+    }
+
+    internal static void BackupCorruptFile(string configPath)
+    {
+        try
+        {
+            string backupPath = $"{configPath}.corrupt-{DateTime.UtcNow:yyyyMMddHHmmss}";
+            File.Copy(configPath, backupPath, overwrite: true);
+            Log.Logger.Warning("Backed up unreadable User Data to {BackupPath}", backupPath);
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Error(ex, "Failed to back up corrupt User Data file {ConfigPath}", configPath);
+        }
     }
 
     private static void HandleDeserializationError(object? sender, ErrorEventArgs errorArgs)
     {
-        string currentError = errorArgs.ErrorContext.Error.Message;
+        Log.Logger.Warning("User Data deserialization error at {Path}: {Message}",
+            errorArgs.ErrorContext.Path, errorArgs.ErrorContext.Error.Message);
         errorArgs.ErrorContext.Handled = true;
     }
 
@@ -75,14 +119,12 @@ public static class JsonDshmUserData
         if (userDataDir != null)
         {
             string filePath = Path.Combine(userDataDir, fileNameWithoutExtension) + extension;
-
             string? directoryPath = Path.GetDirectoryName(filePath);
             if (directoryPath != null && !Directory.Exists(directoryPath))
             {
                 Log.Logger.Debug("Specified directory of DsHidMini User Data does not exist. Creating directory.");
                 Directory.CreateDirectory(directoryPath);
             }
-
 
             return filePath;
         }
@@ -94,11 +136,8 @@ public static class JsonDshmUserData
         where T : new()
     {
         Log.Logger.Debug("Creating default configuration file for DsHidMini User Data.");
-        T? config = new();
-        string configData = JsonConvert.SerializeObject(config, Formatting.Indented);
-        string configPath = CreateFilePath(fileNameWithoutExtension, ConfigExtension, userDataDir);
-
-        File.WriteAllText(configPath, configData, Encoding.UTF8);
+        T config = new();
+        Save(fileNameWithoutExtension, config, userDataDir);
         return config;
     }
 }

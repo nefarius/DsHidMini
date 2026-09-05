@@ -39,7 +39,11 @@ public partial class SettingsViewModel : ObservableObject, INavigationAware
             }
 
             _dshmConfigManager.AutoRestartOnHidModeMismatch = value;
-            _dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile();
+            if (!_dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile())
+            {
+                Log.Logger.Error("Failed to persist AutoRestartOnHidModeMismatch.");
+            }
+
             OnPropertyChanged();
         }
     }
