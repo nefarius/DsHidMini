@@ -1,5 +1,9 @@
 # DsHidMini Control Utility (DSHMC)
 
+> [!WARNING]
+> **Deprecated.** `DSHMC` is a legacy control utility. Do not extend it.
+> Use [`ControlApp/`](../ControlApp/) for all configuration-app work.
+
 Portable single-executable .NET Framework 4.6 application to read and alter driver properties.
 
 ## Sources & 3rd party credits

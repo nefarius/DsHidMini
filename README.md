@@ -51,6 +51,7 @@ See the [issue tracker](https://github.com/nefarius/DsHidMini/issues) for known 
 | [XInputBridge/](XInputBridge/README.md) | XInput proxy DLL (`XInput1_3.dll`), extended API for DS3 pressure data |
 | [setup/](setup/README.md) | MSI installer (WixSharp), release packaging |
 | [ControlApp/](ControlApp/) | Configuration app (WPF) |
+| [DSHMC/](DSHMC/) | **Deprecated** legacy control utility. Use [ControlApp/](ControlApp/) |
 | [docs/](docs/README.md) | R&D notes; official docs at [docs.nefarius.at](https://docs.nefarius.at/projects/DsHidMini/) |
 
 For **how the driver works** (UMDF, DMF, config) and **build prerequisites** (Visual Studio, WDK, DMF), see [driver/README.md](driver/README.md). For the XInput Bridge build, see [XInputBridge/README.md](XInputBridge/README.md).
