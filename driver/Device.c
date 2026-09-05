@@ -50,6 +50,7 @@ dshidminiEvtDeviceAdd(
 	}
 
 	pnpPowerCallbacks.EvtDevicePrepareHardware = DsHidMini_EvtDevicePrepareHardware;
+	pnpPowerCallbacks.EvtDeviceReleaseHardware = DsHidMini_EvtDeviceReleaseHardware;
 	pnpPowerCallbacks.EvtDeviceD0Entry = DsHidMini_EvtDeviceD0Entry;
 	pnpPowerCallbacks.EvtDeviceD0Exit = DsHidMini_EvtDeviceD0Exit;
 

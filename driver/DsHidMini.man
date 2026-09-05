@@ -67,6 +67,7 @@
 					<event value="13" channel="SYSTEM" level="win:Informational" message="$(string.PairedSuccessfully.EventMessage)" opcode="win:Info" symbol="PairedSuccessfully" template="tid_device_address"/>
 					<event value="14" channel="SYSTEM" level="win:Informational" message="$(string.FFBNoFreeEffectBlockIndex.EventMessage)" opcode="win:Info" symbol="FFBNoFreeEffectBlockIndex" />
 					<event value="15" channel="SYSTEM" level="win:Informational" message="$(string.ApplyingWirelessWorkarounds.EventMessage)" opcode="win:Info" symbol="ApplyingWirelessWorkarounds" />
+					<event value="16" channel="SYSTEM" level="win:Warning" message="$(string.RequestingDeviceRestartAfterResume.EventMessage)" opcode="win:Info" symbol="RequestingDeviceRestartAfterResume" template="tid_device_address"/>
 				</events>
 			</provider>
 		</events>
@@ -89,6 +90,7 @@
 				<string id="PairedSuccessfully.EventMessage" value="Device %1 paired successfully"/>
 				<string id="FFBNoFreeEffectBlockIndex.EventMessage" value="No free effect block index, can't create Force-Feedback Effect"/>
 				<string id="ApplyingWirelessWorkarounds.EventMessage" value="Battery status still unknown, applying workarounds"/>
+				<string id="RequestingDeviceRestartAfterResume.EventMessage" value="Device %1 failed to resume from a low-power state; requesting a device restart"/>
 			</stringTable>
 		</resources>
 	</localization>
