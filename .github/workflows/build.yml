@@ -179,9 +179,100 @@ jobs:
             bin/**/*.dll
             bin/*.exe
 
+  control-app:
+    name: 'Sign and mirror ControlApp'
+    needs: build
+    if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
+    runs-on: windows-2022
+    permissions:
+      contents: read
+      actions: read
+    env:
+      SIGN_RELAY_SERVER: ${{ vars.SIGN_RELAY_SERVER }}
+      SIGN_RELAY_CI_TOKEN: ${{ secrets.SIGN_RELAY_CI_TOKEN }}
+    steps:
+      - name: 'Require signing configuration'
+        shell: pwsh
+        run: |
+          if (-not $env:SIGN_RELAY_SERVER) { throw 'Repository variable SIGN_RELAY_SERVER is not set.' }
+          if (-not $env:SIGN_RELAY_CI_TOKEN) { throw 'Repository secret SIGN_RELAY_CI_TOKEN is not set.' }
+
+      - name: 'Download x64 artifacts'
+        uses: actions/download-artifact@v4
+        with:
+          name: dshidmini-x64
+          path: .
+
+      - name: 'Assert ControlApp is unsigned'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $file = 'bin\ControlApp.exe'
+          if (-not (Test-Path -LiteralPath $file)) {
+            throw "File not found: $file"
+          }
+          $sig = Get-AuthenticodeSignature -LiteralPath $file
+          if ($sig.Status -ne 'NotSigned') {
+            throw "Expected unsigned $file but Get-AuthenticodeSignature returned $($sig.Status)."
+          }
+          Write-Output "Unsigned as required: $file"
+
+      - name: 'Setup .NET'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: 'Sign ControlApp'
+        uses: nefarius/SignRelay@master
+        with:
+          server: ${{ env.SIGN_RELAY_SERVER }}
+          token: ${{ env.SIGN_RELAY_CI_TOKEN }}
+          in-place: true
+          files: bin/ControlApp.exe
+
+      - name: 'Verify signed ControlApp'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $file = 'bin\ControlApp.exe'
+          $sig = Get-AuthenticodeSignature -LiteralPath $file
+          if ($sig.Status -eq 'NotSigned' -or -not $sig.SignerCertificate) {
+            throw "File is not signed: $file (Status=$($sig.Status))."
+          }
+          if ($sig.Status -eq 'HashMismatch') {
+            throw "File signature is invalid: $file (Status=$($sig.Status))."
+          }
+          if ($sig.Status -ne 'Valid') {
+            throw "File signature is not Valid: $file (Status=$($sig.Status))."
+          }
+          Write-Output "Signed: $file (Status=$($sig.Status); Subject=$($sig.SignerCertificate.Subject))"
+
+      - name: 'Stage ControlApp'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dest = 'control-app-artifact\bin'
+          New-Item -ItemType Directory -Force -Path $dest | Out-Null
+          Copy-Item -Path 'bin\*.exe' -Destination $dest
+          Get-ChildItem -LiteralPath $dest | ForEach-Object { Write-Output $_.Name }
+
+      - name: 'Upload ControlApp'
+        uses: actions/upload-artifact@v4
+        with:
+          name: control-app
+          if-no-files-found: error
+          path: control-app-artifact
+
+      - name: 'Mirror ControlApp'
+        uses: nefarius/AppVeyorArtifactsReceiver@master
+        with:
+          webhook-url: ${{ secrets.WEBHOOK_URL }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          artifact-name: control-app
+
   partner-cab:
     name: 'Partner Portal CAB'
-    needs: build
+    needs: [build, control-app]
     if: github.event_name == 'workflow_dispatch'
     runs-on: windows-2022
     permissions:
@@ -215,14 +306,13 @@ jobs:
           name: dshidmini-ARM64
           path: .
 
-      - name: 'Assert binaries are unsigned'
+      - name: 'Assert driver DLLs are unsigned'
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $files = @(
             'bin\x64\dshidmini\dshidmini.dll',
-            'bin\ARM64\dshidmini\dshidmini.dll',
-            'bin\ControlApp.exe'
+            'bin\ARM64\dshidmini\dshidmini.dll'
           )
           foreach ($file in $files) {
             if (-not (Test-Path -LiteralPath $file)) {
@@ -240,7 +330,7 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: 'Sign driver DLLs and ControlApp'
+      - name: 'Sign driver DLLs'
         uses: nefarius/SignRelay@master
         with:
           server: ${{ env.SIGN_RELAY_SERVER }}
@@ -249,16 +339,14 @@ jobs:
           files: |
             bin/x64/dshidmini/dshidmini.dll
             bin/ARM64/dshidmini/dshidmini.dll
-            bin/ControlApp.exe
 
-      - name: 'Verify signed driver DLLs and ControlApp'
+      - name: 'Verify signed driver DLLs'
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $files = @(
             'bin\x64\dshidmini\dshidmini.dll',
-            'bin\ARM64\dshidmini\dshidmini.dll',
-            'bin\ControlApp.exe'
+            'bin\ARM64\dshidmini\dshidmini.dll'
           )
           foreach ($file in $files) {
             $sig = Get-AuthenticodeSignature -LiteralPath $file
@@ -318,32 +406,9 @@ jobs:
           if-no-files-found: error
           path: ${{ env.PARTNER_CAB }}
 
-      - name: 'Stage ControlApp'
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $dest = 'control-app-artifact\bin'
-          New-Item -ItemType Directory -Force -Path $dest | Out-Null
-          Copy-Item -Path 'bin\*.exe' -Destination $dest
-          Get-ChildItem -LiteralPath $dest | ForEach-Object { Write-Output $_.Name }
-
-      - name: 'Upload ControlApp'
-        uses: actions/upload-artifact@v4
-        with:
-          name: control-app
-          if-no-files-found: error
-          path: control-app-artifact
-
       - name: 'Mirror partner submission CAB'
         uses: nefarius/AppVeyorArtifactsReceiver@master
         with:
           webhook-url: ${{ secrets.WEBHOOK_URL }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           artifact-name: dshidmini-partner-submission
-
-      - name: 'Mirror ControlApp'
-        uses: nefarius/AppVeyorArtifactsReceiver@master
-        with:
-          webhook-url: ${{ secrets.WEBHOOK_URL }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          artifact-name: control-app
