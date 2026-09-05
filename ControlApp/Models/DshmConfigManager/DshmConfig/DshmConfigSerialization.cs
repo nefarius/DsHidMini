@@ -44,8 +44,17 @@ internal static class DshmConfigSerialization
             return false;
         }
 
-        configuration = Deserialize(File.ReadAllText(path));
-        return true;
+        try
+        {
+            configuration = Deserialize(File.ReadAllText(path));
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        {
+            Log.Logger.Warning(ex, "Failed to read DsHidMini configuration from {Path}.", path);
+            configuration = null;
+            return false;
+        }
     }
 
     /// <summary>
@@ -59,7 +68,19 @@ internal static class DshmConfigSerialization
         {
             string targetDirectory = directory ?? GetDriverConfigDirectory();
             Directory.CreateDirectory(targetDirectory);
-            File.WriteAllText(GetDriverConfigFilePath(targetDirectory), Serialize(dshmConfig));
+            string configPath = GetDriverConfigFilePath(targetDirectory);
+            string tempPath = configPath + ".tmp";
+            try
+            {
+                File.WriteAllText(tempPath, Serialize(dshmConfig));
+                File.Move(tempPath, configPath, overwrite: true);
+            }
+            catch
+            {
+                TryDeleteFile(tempPath);
+                throw;
+            }
+
             return true;
         }
         catch (Exception e)
@@ -83,7 +104,8 @@ internal static class DshmConfigSerialization
         return options;
     }
 
-    internal static DshmDeviceSettings ParseDeviceSettings(JsonElement element)
+    internal static DshmDeviceSettings ParseDeviceSettings(JsonElement element,
+        HidDeviceMode? inheritedHidDeviceMode = null)
     {
         DshmDeviceSettings settings = new();
 
@@ -103,7 +125,8 @@ internal static class DshmConfigSerialization
             settings.QuickDisconnectCombo = ParseButtonCombo(combo);
         }
 
-        string? activeModeName = settings.HidDeviceMode?.ToString();
+        HidDeviceMode? activeMode = settings.HidDeviceMode ?? inheritedHidDeviceMode;
+        string? activeModeName = activeMode?.ToString();
         foreach (string modeName in ModeBlockNames)
         {
             if (!TryGetProperty(element, modeName, out JsonElement modeBlock))
@@ -114,7 +137,7 @@ internal static class DshmConfigSerialization
             if (string.Equals(modeName, activeModeName, StringComparison.Ordinal))
             {
                 settings.ContextSettings = ParseHidModeSettings(modeBlock);
-                settings.ContextSettings.HidDeviceMode = settings.HidDeviceMode;
+                settings.ContextSettings.HidDeviceMode = activeMode;
             }
             else
             {
@@ -383,7 +406,7 @@ internal static class DshmConfigSerialization
                     configuration.Devices.Add(new DshmDeviceData
                     {
                         DeviceAddress = deviceProperty.Name,
-                        DeviceSettings = ParseDeviceSettings(deviceProperty.Value)
+                        DeviceSettings = ParseDeviceSettings(deviceProperty.Value, configuration.Global.HidDeviceMode)
                     });
                 }
             }
@@ -412,6 +435,21 @@ internal static class DshmConfigSerialization
 
             writer.WriteEndObject();
             writer.WriteEndObject();
+        }
+    }
+
+    private static void TryDeleteFile(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Log.Logger.Debug(ex, "Failed to delete temporary file {Path}.", path);
         }
     }
 }

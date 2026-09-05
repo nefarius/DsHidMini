@@ -337,7 +337,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     {
         get
         {
-            string enumerator = Device.GetProperty<string>(DevicePropertyKey.Device_EnumeratorName)!;
+            string enumerator = Device.GetProperty<string>(DevicePropertyKey.Device_EnumeratorName) ?? "USB";
 
             return !enumerator.Equals("USB", StringComparison.InvariantCultureIgnoreCase);
         }

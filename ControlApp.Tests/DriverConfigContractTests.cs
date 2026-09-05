@@ -141,6 +141,30 @@ public class DriverConfigContractTests
     }
 
     [Fact]
+    public void Deserialize_DeviceWithoutHidDeviceMode_UsesGlobalModeBlock()
+    {
+        const string json = """
+            {
+              "Global": { "HidDeviceMode": "XInput" },
+              "Devices": {
+                "AABBCCDDEEFF": {
+                  "XInput": { "DeadZoneLeft": { "Apply": true, "PolarValue": 12.0 } },
+                  "SDF": { "DeadZoneLeft": { "Apply": false } }
+                }
+              }
+            }
+            """;
+
+        DshmConfiguration parsed = DshmConfigSerialization.Deserialize(json);
+        DshmDeviceSettings device = parsed.Devices.Single().DeviceSettings;
+        Assert.Null(device.HidDeviceMode);
+        Assert.Equal(12.0, device.ContextSettings.DeadZoneLeft.PolarValue);
+        Assert.True(device.ContextSettings.DeadZoneLeft.Apply);
+        Assert.Contains("SDF", device.UnusedModeBlocks);
+        Assert.DoesNotContain("XInput", device.UnusedModeBlocks);
+    }
+
+    [Fact]
     public void Deserialize_UnknownProperties_AreIgnored()
     {
         const string json = """

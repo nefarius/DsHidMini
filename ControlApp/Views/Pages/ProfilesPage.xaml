@@ -29,7 +29,7 @@
             Width="250"
             MaxWidth="250"
             DockPanel.Dock="Left"
-            IsEnabled="{Binding ViewModel.SelectedProfileVM.IsEditEnabled, FallbackValue=False, TargetNullValue=False, Converter={StaticResource BooleanToReverseConverterKey}}">
+            IsEnabled="{Binding ViewModel.SelectedProfileVM.IsEditEnabled, FallbackValue=True, TargetNullValue=False, Converter={StaticResource BooleanToReverseConverterKey}}">
             <DockPanel.Style>
                 <Style TargetType="DockPanel">
                     <Style.Setters>

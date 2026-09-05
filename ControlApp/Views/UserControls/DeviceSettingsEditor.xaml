@@ -741,12 +741,7 @@
             IsEnabled="{Binding AllowEditing}"
             LastChildFill="True">
 
-            <ItemsControl ItemsSource="{Binding PrimaryGroups}">
-                <ItemsControl.ItemContainerStyle>
-                    <Style TargetType="ContentPresenter">
-                        <Setter Property="DockPanel.Dock" Value="Top" />
-                    </Style>
-                </ItemsControl.ItemContainerStyle>
+            <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding PrimaryGroups}">
                 <ItemsControl.ItemTemplate>
                     <StaticResource ResourceKey="ModeSetting" />
                 </ItemsControl.ItemTemplate>
@@ -766,12 +761,7 @@
                             IsOpen="True"
                             Message=" Don't change them unless you really know what you are doing (documentation on the website)"
                             Severity="Error" />
-                        <ItemsControl ItemsSource="{Binding AdvancedGroups}">
-                            <ItemsControl.ItemContainerStyle>
-                                <Style TargetType="ContentPresenter">
-                                    <Setter Property="DockPanel.Dock" Value="Top" />
-                                </Style>
-                            </ItemsControl.ItemContainerStyle>
+                        <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding AdvancedGroups}">
                             <ItemsControl.ItemTemplate>
                                 <StaticResource ResourceKey="ModeSetting" />
                             </ItemsControl.ItemTemplate>

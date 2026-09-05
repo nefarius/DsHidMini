@@ -69,10 +69,28 @@ public static class JsonDshmUserData
 
         string configPath = CreateFilePath(fileNameWithoutExtension, ConfigExtension, userDataDir);
         string tempPath = configPath + ".tmp";
-        File.WriteAllText(tempPath, JsonConvert.SerializeObject(configuration, Formatting.Indented, settings),
-            Encoding.UTF8);
-        File.Copy(tempPath, configPath, overwrite: true);
-        File.Delete(tempPath);
+        try
+        {
+            File.WriteAllText(tempPath, JsonConvert.SerializeObject(configuration, Formatting.Indented, settings),
+                Encoding.UTF8);
+            File.Move(tempPath, configPath, overwrite: true);
+        }
+        catch
+        {
+            try
+            {
+                if (File.Exists(tempPath))
+                {
+                    File.Delete(tempPath);
+                }
+            }
+            catch (Exception cleanupEx) when (cleanupEx is IOException or UnauthorizedAccessException)
+            {
+                Log.Logger.Debug(cleanupEx, "Failed to delete temporary User Data file {TempPath}.", tempPath);
+            }
+
+            throw;
+        }
     }
 
     internal static void BackupCorruptFile(string configPath)

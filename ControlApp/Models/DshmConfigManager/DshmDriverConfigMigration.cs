@@ -26,7 +26,13 @@ internal static class DshmDriverConfigMigration
             if (userData.SchemaVersion < DshmConfigManagerUserData.CurrentSchemaVersion)
             {
                 userData.SchemaVersion = DshmConfigManagerUserData.CurrentSchemaVersion;
-                userData.Save(locations);
+                if (!TrySaveUserData(userData, locations, out string? saveError))
+                {
+                    return new DshmDriverConfigMigrationResult
+                    {
+                        Attempted = false, Succeeded = false, Error = saveError
+                    };
+                }
             }
 
             return new DshmDriverConfigMigrationResult { Attempted = false, Succeeded = true };
@@ -35,7 +41,14 @@ internal static class DshmDriverConfigMigration
         if (!File.Exists(locations.DriverConfigFilePath))
         {
             userData.SchemaVersion = DshmConfigManagerUserData.CurrentSchemaVersion;
-            userData.Save(locations);
+            if (!TrySaveUserData(userData, locations, out string? saveError))
+            {
+                return new DshmDriverConfigMigrationResult
+                {
+                    Attempted = false, Succeeded = false, Error = saveError
+                };
+            }
+
             return new DshmDriverConfigMigrationResult { Attempted = false, Succeeded = true };
         }
 
@@ -59,12 +72,8 @@ internal static class DshmDriverConfigMigration
             CollectUnusedModeWarnings(driverConfig.Global, "Global", result.Warnings);
             DeviceSettings importedGlobal = new();
             DshmManagerToDriverConversion.ConvertDriverFormatToDeviceSettings(driverConfig.Global, importedGlobal);
-            DeviceSettings.CopySettings(ProfileData.DefaultProfile.Settings, importedGlobal);
-
-            if (driverConfig.Global.AutoRestartOnHidModeMismatch is { } autoRestart)
-            {
-                userData.AutoRestartOnHidModeMismatch = autoRestart;
-            }
+            bool? importedAutoRestart = driverConfig.Global.AutoRestartOnHidModeMismatch;
+            List<DeviceData> importedDevices = new();
 
             foreach (DshmDeviceData device in driverConfig.Devices)
             {
@@ -98,11 +107,22 @@ internal static class DshmDriverConfigMigration
                     deviceData.SettingsMode = SettingsModes.Global;
                 }
 
-                userData.Devices.Add(deviceData);
+                importedDevices.Add(deviceData);
             }
 
+            DeviceSettings.CopySettings(ProfileData.DefaultProfile.Settings, importedGlobal);
+            if (importedAutoRestart is { } autoRestart)
+            {
+                userData.AutoRestartOnHidModeMismatch = autoRestart;
+            }
+
+            userData.Devices.AddRange(importedDevices);
             userData.SchemaVersion = DshmConfigManagerUserData.CurrentSchemaVersion;
-            userData.Save(locations);
+            if (!TrySaveUserData(userData, locations, out string? saveError))
+            {
+                result.Error = saveError;
+                return result;
+            }
 
             DshmConfiguration rewritten = BuildDriverConfiguration(userData);
             if (!DshmConfigSerialization.UpdateDsHidMiniConfigFile(rewritten, locations.DriverConfigDirectory))
@@ -194,6 +214,23 @@ internal static class DshmDriverConfigMigration
         }
 
         return userData.Profiles.FirstOrDefault(p => p.ProfileGuid == profileGuid);
+    }
+
+    private static bool TrySaveUserData(DshmConfigManagerUserData userData, DshmConfigLocations locations,
+        out string? error)
+    {
+        try
+        {
+            userData.Save(locations);
+            error = null;
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Log.Logger.Error(ex, "Failed to save ControlApp user data to {Directory}.", locations.UserDataDirectory);
+            error = ex.Message;
+            return false;
+        }
     }
 
     private static void CollectUnusedModeWarnings(DshmDeviceSettings settings, string owner,

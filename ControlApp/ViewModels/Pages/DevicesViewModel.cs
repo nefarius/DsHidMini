@@ -196,6 +196,7 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
             try
             {
                 string? selectedAddress = SelectedDevice?.DeviceAddress;
+                SelectedDevice = null;
                 List<DeviceViewModel> previous = Devices.ToList();
                 Devices.Clear();
                 foreach (DeviceViewModel oldDev in previous)

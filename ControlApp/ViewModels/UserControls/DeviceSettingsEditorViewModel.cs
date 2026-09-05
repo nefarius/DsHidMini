@@ -56,8 +56,8 @@ public partial class SettingsEditorViewModel : ObservableObject
         groupSettingsList.Add(OutRepSettingsVM);
         groupSettingsList.Add(LeftMotorRescaleSettingsVM);
         groupSettingsList.Add(AltRumbleSettingsVM);
-        PrimaryGroups = groupSettingsList.Take(5).ToList();
-        AdvancedGroups = groupSettingsList.Skip(5).ToList();
+        PrimaryGroups = [HidModeVM, LedsSettingsVM, WirelessSettingsVM, SticksSettingsVM, GeneralRumbleSettingsVM];
+        AdvancedGroups = [OutRepSettingsVM, LeftMotorRescaleSettingsVM, AltRumbleSettingsVM];
 
         HidModeVM.PropertyChanged += ModeSettingsChanged;
 
