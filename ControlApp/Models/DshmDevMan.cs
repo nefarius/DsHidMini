@@ -65,8 +65,8 @@ public class DshmDevMan
     public static bool TryReconnectDevice(PnPDevice device)
     {
         Log.Logger.Information("Attempting on reconnecting device of instance {DeviceInstanceId}", device.InstanceId);
-        string? enumerator = device.GetProperty<string>(DevicePropertyKey.Device_EnumeratorName);
-        bool isWireless = !enumerator!.Equals("USB", StringComparison.InvariantCultureIgnoreCase);
+        string enumerator = device.GetProperty<string>(DevicePropertyKey.Device_EnumeratorName) ?? "USB";
+        bool isWireless = !enumerator.Equals("USB", StringComparison.InvariantCultureIgnoreCase);
         Log.Logger.Debug("Is Device connected wireless: {IsWireless}", isWireless);
 
         if (isWireless)

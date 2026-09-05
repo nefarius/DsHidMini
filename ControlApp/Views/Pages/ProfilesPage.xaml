@@ -29,14 +29,14 @@
             Width="250"
             MaxWidth="250"
             DockPanel.Dock="Left"
-            IsEnabled="{Binding ViewModel.SelectedProfileVM.IsEditEnabled, Converter={StaticResource BooleanToReverseConverterKey}}">
+            IsEnabled="{Binding ViewModel.SelectedProfileVM.IsEditEnabled, FallbackValue=False, TargetNullValue=False, Converter={StaticResource BooleanToReverseConverterKey}}">
             <DockPanel.Style>
                 <Style TargetType="DockPanel">
                     <Style.Setters>
                         <Setter Property="Opacity" Value="1" />
                     </Style.Setters>
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding ViewModel.SelectedProfileVM.IsEditEnabled}" Value="True">
+                        <DataTrigger Binding="{Binding ViewModel.SelectedProfileVM.IsEditEnabled, FallbackValue=False, TargetNullValue=False}" Value="True">
                             <Setter Property="Opacity" Value="0.3" />
                         </DataTrigger>
                     </Style.Triggers>

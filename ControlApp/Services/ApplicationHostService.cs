@@ -5,6 +5,7 @@
 
 using Microsoft.Extensions.Hosting;
 
+using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Views.Pages;
 using Nefarius.DsHidMini.ControlApp.Views.Windows;
 
@@ -17,12 +18,14 @@ namespace Nefarius.DsHidMini.ControlApp.Services;
 /// </summary>
 public class ApplicationHostService : IHostedService
 {
+    private readonly DshmDevMan _dshmDevMan;
     private readonly IServiceProvider _serviceProvider;
     private INavigationWindow _navigationWindow;
 
-    public ApplicationHostService(IServiceProvider serviceProvider)
+    public ApplicationHostService(IServiceProvider serviceProvider, DshmDevMan dshmDevMan)
     {
         _serviceProvider = serviceProvider;
+        _dshmDevMan = dshmDevMan;
     }
 
     /// <summary>
@@ -40,6 +43,7 @@ public class ApplicationHostService : IHostedService
     /// <param name="cancellationToken">Indicates that the shutdown process should no longer be graceful.</param>
     public async Task StopAsync(CancellationToken cancellationToken)
     {
+        _dshmDevMan.StopListeningForDshmDevices();
         await Task.CompletedTask;
     }
 

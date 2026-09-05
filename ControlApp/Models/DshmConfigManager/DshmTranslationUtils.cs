@@ -23,7 +23,14 @@ public class DshmManagerToDriverConversion
         { SettingsContext.XInput, DshmConfig.Enums.HidDeviceMode.XInput }
     };
 
-    //---------------------------------------------------- LEDsModes
+    public static Dictionary<HidDeviceMode, SettingsContext> HidDeviceModeDriverToManager = new()
+    {
+        { DshmConfig.Enums.HidDeviceMode.SDF, SettingsContext.SDF },
+        { DshmConfig.Enums.HidDeviceMode.GPJ, SettingsContext.GPJ },
+        { DshmConfig.Enums.HidDeviceMode.SXS, SettingsContext.SXS },
+        { DshmConfig.Enums.HidDeviceMode.DS4Windows, SettingsContext.DS4W },
+        { DshmConfig.Enums.HidDeviceMode.XInput, SettingsContext.XInput }
+    };
 
     public static Dictionary<LEDsMode, DshmConfig.Enums.LEDsMode> LedModeManagerToDriver = new()
     {
@@ -33,7 +40,12 @@ public class DshmManagerToDriverConversion
         { LEDsMode.CustomPattern, DshmConfig.Enums.LEDsMode.CustomPattern }
     };
 
-    //---------------------------------------------------- DPadModes
+    public static Dictionary<DshmConfig.Enums.LEDsMode, LEDsMode> LedModeDriverToManager = new()
+    {
+        { DshmConfig.Enums.LEDsMode.BatteryIndicatorPlayerIndex, LEDsMode.BatteryIndicatorPlayerIndex },
+        { DshmConfig.Enums.LEDsMode.BatteryIndicatorBarGraph, LEDsMode.BatteryIndicatorBarGraph },
+        { DshmConfig.Enums.LEDsMode.CustomPattern, LEDsMode.CustomPattern }
+    };
 
     public static Dictionary<DPadMode, DPadExposureMode> DPadExposureModeManagerToDriver = new()
     {
@@ -42,13 +54,25 @@ public class DshmManagerToDriverConversion
         { DPadMode.Buttons, DPadExposureMode.IndividualButtons }
     };
 
-    //---------------------------------------------------- PressureModes
+    public static Dictionary<DPadExposureMode, DPadMode> DPadExposureModeDriverToManager = new()
+    {
+        { DPadExposureMode.Default, DPadMode.Default },
+        { DPadExposureMode.HAT, DPadMode.HAT },
+        { DPadExposureMode.IndividualButtons, DPadMode.Buttons }
+    };
 
     public static Dictionary<PressureMode, DshmConfig.Enums.PressureMode> DsPressureModeManagerToDriver = new()
     {
         { PressureMode.Default, DshmConfig.Enums.PressureMode.Default },
         { PressureMode.Analogue, DshmConfig.Enums.PressureMode.Analogue },
         { PressureMode.Digital, DshmConfig.Enums.PressureMode.Digital }
+    };
+
+    public static Dictionary<DshmConfig.Enums.PressureMode, PressureMode> DsPressureModeDriverToManager = new()
+    {
+        { DshmConfig.Enums.PressureMode.Default, PressureMode.Default },
+        { DshmConfig.Enums.PressureMode.Analogue, PressureMode.Analogue },
+        { DshmConfig.Enums.PressureMode.Digital, PressureMode.Digital }
     };
 
     public static Dictionary<Button, int> ButtonManagerToDriver = new()
@@ -72,6 +96,9 @@ public class DshmManagerToDriverConversion
         { Button.PS, 16 }
     };
 
+    public static Dictionary<int, Button> ButtonDriverToManager =
+        ButtonManagerToDriver.ToDictionary(pair => pair.Value, pair => pair.Key);
+
     public static Dictionary<BluetoothPairingMode, DevicePairingMode> PairingModeManagerToDriver = new()
     {
         { BluetoothPairingMode.Auto, DevicePairingMode.Auto },
@@ -79,33 +106,32 @@ public class DshmManagerToDriverConversion
         { BluetoothPairingMode.Disabled, DevicePairingMode.Disabled }
     };
 
+    public static Dictionary<DevicePairingMode, BluetoothPairingMode> PairingModeDriverToManager = new()
+    {
+        { DevicePairingMode.Auto, BluetoothPairingMode.Auto },
+        { DevicePairingMode.Custom, BluetoothPairingMode.Custom },
+        { DevicePairingMode.Disabled, BluetoothPairingMode.Disabled }
+    };
+
     public static void ConvertDeviceSettingsToDriverFormat(DeviceSettings appFormat, DshmDeviceSettings driverFormat)
     {
-        ////////////////////////////////////////////////////////////////////////////////
-        // HID MODE
-        ////////////////////////////////////////////////////////////////////////////////
         HidModeSettings x_HidMode = appFormat.HidMode;
         if (appFormat.HidMode.SettingsContext != SettingsContext.General)
         {
-            driverFormat.HIDDeviceMode = HidDeviceMode[x_HidMode.SettingsContext];
-            driverFormat.ContextSettings.HIDDeviceMode = driverFormat.HIDDeviceMode;
+            driverFormat.HidDeviceMode = HidDeviceMode[x_HidMode.SettingsContext];
+            driverFormat.ContextSettings.HidDeviceMode = driverFormat.HidDeviceMode;
         }
 
         driverFormat.ContextSettings.PressureExposureMode =
-            x_HidMode.SettingsContext == SettingsContext.SDF
-            || x_HidMode.SettingsContext == SettingsContext.GPJ
+            x_HidMode.SettingsContext is SettingsContext.SDF or SettingsContext.GPJ
                 ? DsPressureModeManagerToDriver[x_HidMode.PressureExposureMode]
                 : null;
 
         driverFormat.ContextSettings.DPadExposureMode =
-            x_HidMode.SettingsContext == SettingsContext.SDF
-            || x_HidMode.SettingsContext == SettingsContext.GPJ
+            x_HidMode.SettingsContext is SettingsContext.SDF or SettingsContext.GPJ
                 ? DPadExposureModeManagerToDriver[x_HidMode.DPadExposureMode]
                 : null;
 
-        ////////////////////////////////////////////////////////////////////////////////
-        // LEDS 
-        ////////////////////////////////////////////////////////////////////////////////
         LedsSettings x_Leds = appFormat.LEDs;
         DshmDeviceSettings.AllLEDSettings dshm_AllLEDsSettings = driverFormat.ContextSettings.LEDSettings;
 
@@ -113,139 +139,54 @@ public class DshmManagerToDriverConversion
         dshm_AllLEDsSettings.Authority =
             x_Leds.AllowExternalLedsControl ? DSHM_LEDsAuthority.Automatic : DSHM_LEDsAuthority.Driver;
 
-
-        if (x_Leds.LeDMode == LEDsMode.CustomPattern || x_Leds.LeDMode == LEDsMode.CustomStatic)
+        if (x_Leds.LeDMode is LEDsMode.CustomPattern or LEDsMode.CustomStatic)
         {
-            DshmDeviceSettings.LEDsCustoms dshm_Customs = dshm_AllLEDsSettings.CustomPatterns;
-
-            DshmDeviceSettings.SingleLEDCustoms[] dshm_singleLED = new[]
-            {
-                dshm_Customs.Player1, dshm_Customs.Player2, dshm_Customs.Player3, dshm_Customs.Player4
-            };
-
-            dshm_Customs.LEDFlags = 0;
-            for (int i = 0; i < x_Leds.LEDsCustoms.LED_x_Customs.Length; i++)
-            {
-                All4LEDsCustoms.singleLEDCustoms singleLEDCustoms = x_Leds.LEDsCustoms.LED_x_Customs[i];
-
-                if (singleLEDCustoms.IsLedEnabled)
-                {
-                    dshm_Customs.LEDFlags |= (byte)(1 << (1 + i));
-                    dshm_singleLED[i].TotalDuration = x_Leds.LeDMode == LEDsMode.CustomPattern
-                        ? singleLEDCustoms.Duration
-                        : (byte)0xFF;
-                    dshm_singleLED[i].BasePortionDuration = x_Leds.LeDMode == LEDsMode.CustomPattern
-                        ? (ushort)singleLEDCustoms.CycleDuration
-                        : (byte)0x01;
-                    dshm_singleLED[i].OffPortionMultiplier = x_Leds.LeDMode == LEDsMode.CustomPattern
-                        ? singleLEDCustoms.OffPeriodCycles
-                        : (byte)0x00;
-                    dshm_singleLED[i].OnPortionMultiplier = x_Leds.LeDMode == LEDsMode.CustomPattern
-                        ? singleLEDCustoms.OnPeriodCycles
-                        : (byte)0x01;
-                }
-                else
-                {
-                    dshm_singleLED[i].TotalDuration = 0x00;
-                    dshm_singleLED[i].BasePortionDuration = 0x00;
-                    dshm_singleLED[i].OffPortionMultiplier = 0x00;
-                    dshm_singleLED[i].OnPortionMultiplier = 0x00;
-                }
-            }
-
-            if (dshm_Customs.LEDFlags == 0)
-            {
-                dshm_Customs.LEDFlags = 0x20; // Turn off all LEDs with 0x20 if none has been enabled
-            }
+            ApplyCustomLedPatterns(x_Leds, dshm_AllLEDsSettings);
         }
 
-        ////////////////////////////////////////////////////////////////////////////////
-        // WIRELESS
-        ////////////////////////////////////////////////////////////////////////////////
         WirelessSettings x_Wireless = appFormat.Wireless;
-
         driverFormat.DisableWirelessIdleTimeout = !x_Wireless.IsWirelessIdleDisconnectEnabled;
         driverFormat.WirelessIdleTimeoutPeriodMs = x_Wireless.WirelessIdleDisconnectTime;
+        ApplyButtonCombo(x_Wireless.QuickDisconnectCombo, driverFormat.QuickDisconnectCombo);
 
-        driverFormat.QuickDisconnectCombo.IsEnabled = x_Wireless.QuickDisconnectCombo.IsEnabled;
-        driverFormat.QuickDisconnectCombo.HoldTime = x_Wireless.QuickDisconnectCombo.HoldTime;
-        driverFormat.QuickDisconnectCombo.Button1 =
-            ButtonManagerToDriver[x_Wireless.QuickDisconnectCombo.ButtonCombo[0]];
-        driverFormat.QuickDisconnectCombo.Button2 =
-            ButtonManagerToDriver[x_Wireless.QuickDisconnectCombo.ButtonCombo[1]];
-        driverFormat.QuickDisconnectCombo.Button3 =
-            ButtonManagerToDriver[x_Wireless.QuickDisconnectCombo.ButtonCombo[2]];
+        ApplyStickSettings(appFormat.Sticks.LeftStickData, driverFormat.ContextSettings.DeadZoneLeft,
+            driverFormat.ContextSettings.FlipAxis, left: true);
+        ApplyStickSettings(appFormat.Sticks.RightStickData, driverFormat.ContextSettings.DeadZoneRight,
+            driverFormat.ContextSettings.FlipAxis, left: false);
 
-        ////////////////////////////////////////////////////////////////////////////////
-        // Sticks
-        ////////////////////////////////////////////////////////////////////////////////
-        SticksSettings x_Sticks = appFormat.Sticks;
-        DshmDeviceSettings.DeadZoneSettings dshmLeftDZSettings = driverFormat.ContextSettings.DeadZoneLeft;
-        DshmDeviceSettings.DeadZoneSettings dshmRightDZSettings = driverFormat.ContextSettings.DeadZoneRight;
-        DshmDeviceSettings.AxesFlipping axesFlipping = driverFormat.ContextSettings.FlipAxis;
-
-        dshmLeftDZSettings.Apply = x_Sticks.LeftStickData.IsDeadZoneEnabled;
-        dshmLeftDZSettings.PolarValue = (byte)(x_Sticks.LeftStickData.DeadZone * 181 / 142);
-        axesFlipping.LeftX = x_Sticks.LeftStickData.InvertXAxis;
-        axesFlipping.LeftY = x_Sticks.LeftStickData.InvertYAxis;
-
-        dshmRightDZSettings.Apply = x_Sticks.RightStickData.IsDeadZoneEnabled;
-        dshmRightDZSettings.PolarValue = (byte)(x_Sticks.RightStickData.DeadZone * 181 / 142);
-        axesFlipping.RightX = x_Sticks.RightStickData.InvertXAxis;
-        axesFlipping.RightY = x_Sticks.RightStickData.InvertYAxis;
-
-        ////////////////////////////////////////////////////////////////////////////////
-        // General Rumble
-        ////////////////////////////////////////////////////////////////////////////////
         GeneralRumbleSettings x_RumbleGeneral = appFormat.GeneralRumble;
         DshmDeviceSettings.AllRumbleSettings dshmRumbleSettings = driverFormat.ContextSettings.RumbleSettings;
 
         dshmRumbleSettings.DisableLeft = x_RumbleGeneral.IsLeftMotorDisabled;
         dshmRumbleSettings.DisableRight = x_RumbleGeneral.IsRightMotorDisabled;
-
         dshmRumbleSettings.AlternativeMode.IsEnabled = x_RumbleGeneral.AlwaysStartInNormalMode
             ? false
             : x_RumbleGeneral.IsAltRumbleModeEnabled;
 
         if (x_RumbleGeneral.IsAltRumbleModeEnabled)
         {
-            dshmRumbleSettings.AlternativeMode.ToggleCombo.IsEnabled = true;
-            dshmRumbleSettings.AlternativeMode.ToggleCombo.HoldTime = x_RumbleGeneral.AltModeToggleButtonCombo.HoldTime;
-            dshmRumbleSettings.AlternativeMode.ToggleCombo.Button1 =
-                ButtonManagerToDriver[x_RumbleGeneral.AltModeToggleButtonCombo.ButtonCombo[0]];
-            dshmRumbleSettings.AlternativeMode.ToggleCombo.Button2 =
-                ButtonManagerToDriver[x_RumbleGeneral.AltModeToggleButtonCombo.ButtonCombo[1]];
-            dshmRumbleSettings.AlternativeMode.ToggleCombo.Button3 =
-                ButtonManagerToDriver[x_RumbleGeneral.AltModeToggleButtonCombo.ButtonCombo[2]];
+            ApplyButtonCombo(x_RumbleGeneral.AltModeToggleButtonCombo,
+                dshmRumbleSettings.AlternativeMode.ToggleCombo ??= new DshmDeviceSettings.ButtonCombo());
+            dshmRumbleSettings.AlternativeMode.ToggleCombo.IsEnabled =
+                x_RumbleGeneral.IsAltModeToggleButtonComboEnabled
+                || x_RumbleGeneral.AltModeToggleButtonCombo.IsEnabled;
         }
-        else
+        else if (dshmRumbleSettings.AlternativeMode.ToggleCombo is not null)
         {
             dshmRumbleSettings.AlternativeMode.ToggleCombo.IsEnabled = false;
         }
 
-        ////////////////////////////////////////////////////////////////////////////////
-        //  Output Report
-        ////////////////////////////////////////////////////////////////////////////////
         OutputReportSettings x_OutRep = appFormat.OutputReport;
-
         driverFormat.IsOutputRateControlEnabled = x_OutRep.IsOutputReportRateControlEnabled;
         driverFormat.OutputRateControlPeriodMs = (byte)x_OutRep.MaxOutputRate;
-        driverFormat.IsOutputDeduplicatorEnabled = x_OutRep.IsOutputReportDeduplicatorEnabled;
 
-        ////////////////////////////////////////////////////////////////////////////////
-        ///  Left Motor Rescaling
-        //////////////////////////////////////////////////////////////////////////////// 
         LeftMotorRescalingSettings x_LeftMRescale = appFormat.LeftMotorRescaling;
         DshmDeviceSettings.HeavyRescaleSettings dshmLeftRumbleRescaleSettings =
             driverFormat.ContextSettings.RumbleSettings.HeavyRescale;
-
         dshmLeftRumbleRescaleSettings.IsEnabled = x_LeftMRescale.IsLeftMotorStrRescalingEnabled;
         dshmLeftRumbleRescaleSettings.RescaleMinRange = (byte)x_LeftMRescale.LeftMotorStrRescalingLowerRange;
         dshmLeftRumbleRescaleSettings.RescaleMaxRange = (byte)x_LeftMRescale.LeftMotorStrRescalingUpperRange;
 
-        ////////////////////////////////////////////////////////////////////////////////
-        //  Alt Mode Adjuster
-        ////////////////////////////////////////////////////////////////////////////////
         AltRumbleModeSettings x_AltRumbleAdjusts = appFormat.AltRumbleAdjusts;
         DshmDeviceSettings.AlternativeModeSettings dshmSMConversionSettings =
             driverFormat.ContextSettings.RumbleSettings.AlternativeMode;
@@ -254,25 +195,380 @@ public class DshmManagerToDriverConversion
 
         dshmSMConversionSettings.RescaleMinRange = (byte)x_AltRumbleAdjusts.RightRumbleConversionLowerRange;
         dshmSMConversionSettings.RescaleMaxRange = (byte)x_AltRumbleAdjusts.RightRumbleConversionUpperRange;
-
-        // Right rumble (light) threshold
         dshmForcedSMSettings.IsLightThresholdEnabled = x_AltRumbleAdjusts.IsForcedRightMotorLightThresholdEnabled;
         dshmForcedSMSettings.LightThreshold = (byte)x_AltRumbleAdjusts.ForcedRightMotorLightThreshold;
-
-        // Left rumble (Heavy) threshold
         dshmForcedSMSettings.IsHeavyThresholdEnabled = x_AltRumbleAdjusts.IsForcedRightMotorHeavyThresholdEnabled;
         dshmForcedSMSettings.HeavyThreshold = (byte)x_AltRumbleAdjusts.ForcedRightMotorHeavyThreshold;
 
-        ////////////////////////////////////////////////////////////////////////////////
-        //  Fine tweaking
-        ////////////////////////////////////////////////////////////////////////////////
-        if (appFormat.HidMode.SettingsContext == SettingsContext.DS4W)
+        if (appFormat.HidMode.SettingsContext == SettingsContext.DS4W &&
+            appFormat.HidMode.PreventRemappingConflictsInDS4WMode)
         {
-            if (appFormat.HidMode.PreventRemappingConflictsInDS4WMode)
+            driverFormat.ContextSettings.DeadZoneLeft.Apply = false;
+            driverFormat.ContextSettings.DeadZoneRight.Apply = false;
+        }
+    }
+
+    public static void ConvertDriverFormatToDeviceSettings(DshmDeviceSettings driverFormat, DeviceSettings appFormat)
+    {
+        appFormat.ResetToDefault();
+
+        if (driverFormat.HidDeviceMode is { } hidMode &&
+            HidDeviceModeDriverToManager.TryGetValue(hidMode, out SettingsContext context))
+        {
+            appFormat.HidMode.SettingsContext = context;
+        }
+
+        if (driverFormat.ContextSettings.PressureExposureMode is { } pressure &&
+            DsPressureModeDriverToManager.TryGetValue(pressure, out PressureMode appPressure))
+        {
+            appFormat.HidMode.PressureExposureMode = appPressure;
+        }
+
+        if (driverFormat.ContextSettings.DPadExposureMode is { } dpad &&
+            DPadExposureModeDriverToManager.TryGetValue(dpad, out DPadMode appDpad))
+        {
+            appFormat.HidMode.DPadExposureMode = appDpad;
+        }
+
+        if (driverFormat.ContextSettings.LEDSettings.Mode is { } ledMode &&
+            LedModeDriverToManager.TryGetValue(ledMode, out LEDsMode appLedMode))
+        {
+            appFormat.LEDs.LeDMode = appLedMode;
+        }
+
+        if (driverFormat.ContextSettings.LEDSettings.Authority is { } authority)
+        {
+            appFormat.LEDs.AllowExternalLedsControl = authority != DSHM_LEDsAuthority.Driver;
+        }
+
+        ReadCustomLedPatterns(driverFormat.ContextSettings.LEDSettings, appFormat.LEDs);
+
+        if (driverFormat.DisableWirelessIdleTimeout is { } disableIdle)
+        {
+            appFormat.Wireless.IsWirelessIdleDisconnectEnabled = !disableIdle;
+        }
+
+        if (driverFormat.WirelessIdleTimeoutPeriodMs is { } idleMs)
+        {
+            appFormat.Wireless.WirelessIdleDisconnectTime = idleMs;
+        }
+
+        ReadButtonCombo(driverFormat.QuickDisconnectCombo, appFormat.Wireless.QuickDisconnectCombo);
+
+        ReadStickSettings(driverFormat.ContextSettings.DeadZoneLeft, driverFormat.ContextSettings.FlipAxis,
+            appFormat.Sticks.LeftStickData, left: true);
+        ReadStickSettings(driverFormat.ContextSettings.DeadZoneRight, driverFormat.ContextSettings.FlipAxis,
+            appFormat.Sticks.RightStickData, left: false);
+
+        DshmDeviceSettings.AllRumbleSettings rumble = driverFormat.ContextSettings.RumbleSettings;
+        if (rumble.DisableLeft is { } disableLeft)
+        {
+            appFormat.GeneralRumble.IsLeftMotorDisabled = disableLeft;
+        }
+
+        if (rumble.DisableRight is { } disableRight)
+        {
+            appFormat.GeneralRumble.IsRightMotorDisabled = disableRight;
+        }
+
+        bool toggleEnabled = rumble.AlternativeMode.ToggleCombo?.IsEnabled == true;
+        bool altEnabled = rumble.AlternativeMode.IsEnabled == true;
+        appFormat.GeneralRumble.IsAltRumbleModeEnabled = altEnabled || toggleEnabled;
+        appFormat.GeneralRumble.AlwaysStartInNormalMode = toggleEnabled && !altEnabled;
+        appFormat.GeneralRumble.IsAltModeToggleButtonComboEnabled = toggleEnabled;
+        if (rumble.AlternativeMode.ToggleCombo is { } toggleCombo)
+        {
+            ReadButtonCombo(toggleCombo, appFormat.GeneralRumble.AltModeToggleButtonCombo);
+        }
+
+        if (driverFormat.IsOutputRateControlEnabled is { } rateEnabled)
+        {
+            appFormat.OutputReport.IsOutputReportRateControlEnabled = rateEnabled;
+        }
+
+        if (driverFormat.OutputRateControlPeriodMs is { } rateMs)
+        {
+            appFormat.OutputReport.MaxOutputRate = rateMs;
+        }
+
+        if (rumble.HeavyRescale.IsEnabled is { } heavyEnabled)
+        {
+            appFormat.LeftMotorRescaling.IsLeftMotorStrRescalingEnabled = heavyEnabled;
+        }
+
+        if (rumble.HeavyRescale.RescaleMinRange is { } heavyMin)
+        {
+            appFormat.LeftMotorRescaling.LeftMotorStrRescalingLowerRange = heavyMin;
+        }
+
+        if (rumble.HeavyRescale.RescaleMaxRange is { } heavyMax)
+        {
+            appFormat.LeftMotorRescaling.LeftMotorStrRescalingUpperRange = heavyMax;
+        }
+
+        if (rumble.AlternativeMode.RescaleMinRange is { } altMin)
+        {
+            appFormat.AltRumbleAdjusts.RightRumbleConversionLowerRange = altMin;
+        }
+
+        if (rumble.AlternativeMode.RescaleMaxRange is { } altMax)
+        {
+            appFormat.AltRumbleAdjusts.RightRumbleConversionUpperRange = altMax;
+        }
+
+        DshmDeviceSettings.ForcedRightAdjusts forced = rumble.AlternativeMode.ForcedRight;
+        if (forced.IsLightThresholdEnabled is { } lightEnabled)
+        {
+            appFormat.AltRumbleAdjusts.IsForcedRightMotorLightThresholdEnabled = lightEnabled;
+        }
+
+        if (forced.LightThreshold is { } lightThreshold)
+        {
+            appFormat.AltRumbleAdjusts.ForcedRightMotorLightThreshold = lightThreshold;
+        }
+
+        if (forced.IsHeavyThresholdEnabled is { } heavyThresholdEnabled)
+        {
+            appFormat.AltRumbleAdjusts.IsForcedRightMotorHeavyThresholdEnabled = heavyThresholdEnabled;
+        }
+
+        if (forced.HeavyThreshold is { } heavyThreshold)
+        {
+            appFormat.AltRumbleAdjusts.ForcedRightMotorHeavyThreshold = heavyThreshold;
+        }
+    }
+
+    public static DshmDeviceSettings OverlayDeviceSettings(DshmDeviceSettings baseline, DshmDeviceSettings overlay) =>
+        MergeDriverSettings(baseline, overlay);
+
+    internal static DshmDeviceSettings MergeDriverSettings(DshmDeviceSettings baseline, DshmDeviceSettings overlay)
+    {
+        DshmDeviceSettings merged = CloneDriverSettings(baseline);
+        merged.HidDeviceMode = overlay.HidDeviceMode ?? merged.HidDeviceMode;
+        merged.AutoRestartOnHidModeMismatch =
+            overlay.AutoRestartOnHidModeMismatch ?? merged.AutoRestartOnHidModeMismatch;
+        merged.DevicePairingMode = overlay.DevicePairingMode ?? merged.DevicePairingMode;
+        merged.PairOnHotReload = overlay.PairOnHotReload ?? merged.PairOnHotReload;
+        merged.CustomPairingAddress = overlay.CustomPairingAddress ?? merged.CustomPairingAddress;
+        merged.DisableWirelessIdleTimeout = overlay.DisableWirelessIdleTimeout ?? merged.DisableWirelessIdleTimeout;
+        merged.IsOutputRateControlEnabled = overlay.IsOutputRateControlEnabled ?? merged.IsOutputRateControlEnabled;
+        merged.OutputRateControlPeriodMs = overlay.OutputRateControlPeriodMs ?? merged.OutputRateControlPeriodMs;
+        merged.WirelessIdleTimeoutPeriodMs = overlay.WirelessIdleTimeoutPeriodMs ?? merged.WirelessIdleTimeoutPeriodMs;
+        OverlayButtonCombo(merged.QuickDisconnectCombo, overlay.QuickDisconnectCombo);
+
+        if (overlay.HidDeviceMode is not null || overlay.ContextSettings.HidDeviceMode is not null
+                                              || overlay.UnusedModeBlocks.Count == 0 && HasModeContent(overlay.ContextSettings))
+        {
+            if (HasModeContent(overlay.ContextSettings) || overlay.HidDeviceMode is not null)
             {
-                driverFormat.ContextSettings.DeadZoneLeft.Apply = false;
-                driverFormat.ContextSettings.DeadZoneRight.Apply = false;
+                merged.ContextSettings = CloneHidModeSettings(overlay.ContextSettings);
+                merged.ContextSettings.HidDeviceMode = overlay.HidDeviceMode ?? merged.HidDeviceMode;
             }
         }
+
+        merged.UnusedModeBlocks.Clear();
+        merged.UnusedModeBlocks.AddRange(overlay.UnusedModeBlocks);
+        return merged;
+    }
+
+    internal static bool HasDeviceSpecificSettings(DshmDeviceSettings settings)
+    {
+        return settings.HidDeviceMode is not null || HasModeContent(settings.ContextSettings);
+    }
+
+    private static bool HasModeContent(DshmHidModeSettings settings)
+    {
+        return settings.PressureExposureMode is not null
+               || settings.DPadExposureMode is not null
+               || settings.DeadZoneLeft.Apply is not null
+               || settings.DeadZoneLeft.PolarValue is not null
+               || settings.DeadZoneRight.Apply is not null
+               || settings.DeadZoneRight.PolarValue is not null
+               || settings.RumbleSettings.DisableLeft is not null
+               || settings.RumbleSettings.DisableRight is not null
+               || settings.RumbleSettings.HeavyRescale.IsEnabled is not null
+               || settings.LEDSettings.Mode is not null
+               || settings.FlipAxis.LeftX is not null
+               || settings.FlipAxis.LeftY is not null
+               || settings.FlipAxis.RightX is not null
+               || settings.FlipAxis.RightY is not null;
+    }
+
+    private static void ApplyCustomLedPatterns(LedsSettings x_Leds,
+        DshmDeviceSettings.AllLEDSettings dshm_AllLEDsSettings)
+    {
+        DshmDeviceSettings.LEDsCustoms dshm_Customs = dshm_AllLEDsSettings.CustomPatterns;
+        DshmDeviceSettings.SingleLEDCustoms[] dshm_singleLED =
+        [
+            dshm_Customs.Player1, dshm_Customs.Player2, dshm_Customs.Player3, dshm_Customs.Player4
+        ];
+
+        dshm_Customs.LEDFlags = 0;
+        for (int i = 0; i < x_Leds.LEDsCustoms.LED_x_Customs.Length; i++)
+        {
+            All4LEDsCustoms.singleLEDCustoms singleLEDCustoms = x_Leds.LEDsCustoms.LED_x_Customs[i];
+            if (singleLEDCustoms.IsLedEnabled)
+            {
+                dshm_Customs.LEDFlags |= (byte)(1 << (1 + i));
+                dshm_singleLED[i].TotalDuration = x_Leds.LeDMode == LEDsMode.CustomPattern
+                    ? singleLEDCustoms.Duration
+                    : (byte)0xFF;
+                dshm_singleLED[i].BasePortionDuration = x_Leds.LeDMode == LEDsMode.CustomPattern
+                    ? (ushort)singleLEDCustoms.CycleDuration
+                    : (ushort)0x01;
+                dshm_singleLED[i].OffPortionMultiplier = x_Leds.LeDMode == LEDsMode.CustomPattern
+                    ? singleLEDCustoms.OffPeriodCycles
+                    : (byte)0x00;
+                dshm_singleLED[i].OnPortionMultiplier = x_Leds.LeDMode == LEDsMode.CustomPattern
+                    ? singleLEDCustoms.OnPeriodCycles
+                    : (byte)0x01;
+            }
+            else
+            {
+                dshm_singleLED[i].TotalDuration = 0x00;
+                dshm_singleLED[i].BasePortionDuration = 0x00;
+                dshm_singleLED[i].OffPortionMultiplier = 0x00;
+                dshm_singleLED[i].OnPortionMultiplier = 0x00;
+            }
+        }
+
+        if (dshm_Customs.LEDFlags == 0)
+        {
+            dshm_Customs.LEDFlags = 0x20;
+        }
+    }
+
+    private static void ReadCustomLedPatterns(DshmDeviceSettings.AllLEDSettings leds, LedsSettings appLeds)
+    {
+        if (leds.Mode != DshmConfig.Enums.LEDsMode.CustomPattern)
+        {
+            return;
+        }
+
+        DshmDeviceSettings.SingleLEDCustoms[] players =
+        [
+            leds.CustomPatterns.Player1, leds.CustomPatterns.Player2, leds.CustomPatterns.Player3,
+            leds.CustomPatterns.Player4
+        ];
+
+        byte flags = leds.CustomPatterns.LEDFlags ?? 0;
+        for (int i = 0; i < appLeds.LEDsCustoms.LED_x_Customs.Length; i++)
+        {
+            All4LEDsCustoms.singleLEDCustoms dest = appLeds.LEDsCustoms.LED_x_Customs[i];
+            dest.IsLedEnabled = (flags & (1 << (1 + i))) != 0;
+            dest.Duration = players[i].TotalDuration ?? dest.Duration;
+            dest.CycleDuration = players[i].BasePortionDuration ?? (ushort)dest.CycleDuration;
+            dest.OffPeriodCycles = players[i].OffPortionMultiplier ?? dest.OffPeriodCycles;
+            dest.OnPeriodCycles = players[i].OnPortionMultiplier ?? dest.OnPeriodCycles;
+        }
+    }
+
+    private static void ApplyStickSettings(SticksSettings.StickData stick,
+        DshmDeviceSettings.DeadZoneSettings deadZone, DshmDeviceSettings.AxesFlipping axesFlipping, bool left)
+    {
+        deadZone.Apply = stick.IsDeadZoneEnabled;
+        deadZone.PolarValue = DshmDeadZoneConversion.ToPolarValue(stick.DeadZone);
+        if (left)
+        {
+            axesFlipping.LeftX = stick.InvertXAxis;
+            axesFlipping.LeftY = stick.InvertYAxis;
+        }
+        else
+        {
+            axesFlipping.RightX = stick.InvertXAxis;
+            axesFlipping.RightY = stick.InvertYAxis;
+        }
+    }
+
+    private static void ReadStickSettings(DshmDeviceSettings.DeadZoneSettings deadZone,
+        DshmDeviceSettings.AxesFlipping axesFlipping, SticksSettings.StickData stick, bool left)
+    {
+        if (deadZone.Apply is { } apply)
+        {
+            stick.IsDeadZoneEnabled = apply;
+        }
+
+        if (deadZone.PolarValue is { } polar)
+        {
+            stick.DeadZone = DshmDeadZoneConversion.FromPolarValue(polar);
+        }
+
+        if (left)
+        {
+            stick.InvertXAxis = axesFlipping.LeftX ?? stick.InvertXAxis;
+            stick.InvertYAxis = axesFlipping.LeftY ?? stick.InvertYAxis;
+        }
+        else
+        {
+            stick.InvertXAxis = axesFlipping.RightX ?? stick.InvertXAxis;
+            stick.InvertYAxis = axesFlipping.RightY ?? stick.InvertYAxis;
+        }
+    }
+
+    private static void ApplyButtonCombo(ButtonsCombo source, DshmDeviceSettings.ButtonCombo destination)
+    {
+        destination.IsEnabled = source.IsEnabled;
+        destination.HoldTime = source.HoldTime;
+        destination.Button1 = ButtonManagerToDriver[source.ButtonCombo[0]];
+        destination.Button2 = ButtonManagerToDriver[source.ButtonCombo[1]];
+        destination.Button3 = ButtonManagerToDriver[source.ButtonCombo[2]];
+    }
+
+    private static void ReadButtonCombo(DshmDeviceSettings.ButtonCombo source, ButtonsCombo destination)
+    {
+        if (source.IsEnabled is { } enabled)
+        {
+            destination.IsEnabled = enabled;
+        }
+
+        if (source.HoldTime is { } holdTime)
+        {
+            destination.HoldTime = holdTime;
+        }
+
+        destination.ButtonCombo[0] = MapButton(source.Button1, destination.ButtonCombo[0]);
+        destination.ButtonCombo[1] = MapButton(source.Button2, destination.ButtonCombo[1]);
+        destination.ButtonCombo[2] = MapButton(source.Button3, destination.ButtonCombo[2]);
+    }
+
+    private static Button MapButton(int? driverButton, Button fallback)
+    {
+        if (driverButton is { } value && ButtonDriverToManager.TryGetValue(value, out Button mapped))
+        {
+            return mapped;
+        }
+
+        return fallback;
+    }
+
+    private static void OverlayButtonCombo(DshmDeviceSettings.ButtonCombo dest,
+        DshmDeviceSettings.ButtonCombo overlay)
+    {
+        dest.IsEnabled = overlay.IsEnabled ?? dest.IsEnabled;
+        dest.HoldTime = overlay.HoldTime ?? dest.HoldTime;
+        dest.Button1 = overlay.Button1 ?? dest.Button1;
+        dest.Button2 = overlay.Button2 ?? dest.Button2;
+        dest.Button3 = overlay.Button3 ?? dest.Button3;
+    }
+
+    private static DshmDeviceSettings CloneDriverSettings(DshmDeviceSettings source)
+    {
+        DeviceSettings app = new();
+        ConvertDriverFormatToDeviceSettings(source, app);
+        DshmDeviceSettings clone = new();
+        ConvertDeviceSettingsToDriverFormat(app, clone);
+        clone.HidDeviceMode = source.HidDeviceMode;
+        clone.AutoRestartOnHidModeMismatch = source.AutoRestartOnHidModeMismatch;
+        clone.DevicePairingMode = source.DevicePairingMode;
+        clone.PairOnHotReload = source.PairOnHotReload;
+        clone.CustomPairingAddress = source.CustomPairingAddress;
+        return clone;
+    }
+
+    private static DshmHidModeSettings CloneHidModeSettings(DshmHidModeSettings source)
+    {
+        DshmDeviceSettings wrapper = new() { ContextSettings = source, HidDeviceMode = source.HidDeviceMode };
+        DshmDeviceSettings clone = CloneDriverSettings(wrapper);
+        return clone.ContextSettings;
     }
 }

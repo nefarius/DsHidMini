@@ -82,4 +82,8 @@
         <ProjectReference Include="..\SDK\Nefarius.DsHidMini.IPC\Nefarius.DsHidMini.IPC.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <InternalsVisibleTo Include="ControlApp.Tests" />
+    </ItemGroup>
+
 </Project>

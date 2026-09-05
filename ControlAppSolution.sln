@@ -11,36 +11,61 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SDK", "SDK", "{D0F6B995-AA8
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nefarius.DsHidMini.IPC", "SDK\Nefarius.DsHidMini.IPC\Nefarius.DsHidMini.IPC.csproj", "{99F5F24C-06A7-4F6C-A2E5-81C8772BBDE6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ControlApp.Tests", "ControlApp.Tests\ControlApp.Tests.csproj", "{E4916BDB-A9F3-49F3-BBF6-3F6A5EED0A62}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
 		Release|x64 = Release|x64
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{4FC75652-3769-44DC-8BC6-9810FD59C1B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4FC75652-3769-44DC-8BC6-9810FD59C1B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4FC75652-3769-44DC-8BC6-9810FD59C1B3}.Debug|x64.ActiveCfg = Debug|x64
 		{4FC75652-3769-44DC-8BC6-9810FD59C1B3}.Debug|x64.Build.0 = Debug|x64
+		{4FC75652-3769-44DC-8BC6-9810FD59C1B3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4FC75652-3769-44DC-8BC6-9810FD59C1B3}.Debug|x86.Build.0 = Debug|Any CPU
 		{4FC75652-3769-44DC-8BC6-9810FD59C1B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4FC75652-3769-44DC-8BC6-9810FD59C1B3}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4FC75652-3769-44DC-8BC6-9810FD59C1B3}.Release|x64.ActiveCfg = Release|x64
 		{4FC75652-3769-44DC-8BC6-9810FD59C1B3}.Release|x64.Build.0 = Release|x64
+		{4FC75652-3769-44DC-8BC6-9810FD59C1B3}.Release|x86.ActiveCfg = Release|Any CPU
+		{4FC75652-3769-44DC-8BC6-9810FD59C1B3}.Release|x86.Build.0 = Release|Any CPU
 		{99F5F24C-06A7-4F6C-A2E5-81C8772BBDE6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{99F5F24C-06A7-4F6C-A2E5-81C8772BBDE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{99F5F24C-06A7-4F6C-A2E5-81C8772BBDE6}.Debug|x64.ActiveCfg = Debug|Any CPU
 		{99F5F24C-06A7-4F6C-A2E5-81C8772BBDE6}.Debug|x64.Build.0 = Debug|Any CPU
+		{99F5F24C-06A7-4F6C-A2E5-81C8772BBDE6}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{99F5F24C-06A7-4F6C-A2E5-81C8772BBDE6}.Debug|x86.Build.0 = Debug|Any CPU
 		{99F5F24C-06A7-4F6C-A2E5-81C8772BBDE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{99F5F24C-06A7-4F6C-A2E5-81C8772BBDE6}.Release|Any CPU.Build.0 = Release|Any CPU
 		{99F5F24C-06A7-4F6C-A2E5-81C8772BBDE6}.Release|x64.ActiveCfg = Release|Any CPU
 		{99F5F24C-06A7-4F6C-A2E5-81C8772BBDE6}.Release|x64.Build.0 = Release|Any CPU
+		{99F5F24C-06A7-4F6C-A2E5-81C8772BBDE6}.Release|x86.ActiveCfg = Release|Any CPU
+		{99F5F24C-06A7-4F6C-A2E5-81C8772BBDE6}.Release|x86.Build.0 = Release|Any CPU
+		{E4916BDB-A9F3-49F3-BBF6-3F6A5EED0A62}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E4916BDB-A9F3-49F3-BBF6-3F6A5EED0A62}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E4916BDB-A9F3-49F3-BBF6-3F6A5EED0A62}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E4916BDB-A9F3-49F3-BBF6-3F6A5EED0A62}.Debug|x64.Build.0 = Debug|Any CPU
+		{E4916BDB-A9F3-49F3-BBF6-3F6A5EED0A62}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E4916BDB-A9F3-49F3-BBF6-3F6A5EED0A62}.Debug|x86.Build.0 = Debug|Any CPU
+		{E4916BDB-A9F3-49F3-BBF6-3F6A5EED0A62}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E4916BDB-A9F3-49F3-BBF6-3F6A5EED0A62}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4916BDB-A9F3-49F3-BBF6-3F6A5EED0A62}.Release|x64.ActiveCfg = Release|Any CPU
+		{E4916BDB-A9F3-49F3-BBF6-3F6A5EED0A62}.Release|x64.Build.0 = Release|Any CPU
+		{E4916BDB-A9F3-49F3-BBF6-3F6A5EED0A62}.Release|x86.ActiveCfg = Release|Any CPU
+		{E4916BDB-A9F3-49F3-BBF6-3F6A5EED0A62}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{4FC75652-3769-44DC-8BC6-9810FD59C1B3} = {2EA3786E-1A9C-4442-9279-63D238ACEB22}
+		{E4916BDB-A9F3-49F3-BBF6-3F6A5EED0A62} = {2EA3786E-1A9C-4442-9279-63D238ACEB22}
 		{99F5F24C-06A7-4F6C-A2E5-81C8772BBDE6} = {D0F6B995-AA89-4029-AFC8-0C90F62D8F71}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution

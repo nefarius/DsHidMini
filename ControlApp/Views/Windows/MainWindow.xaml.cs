@@ -45,7 +45,6 @@ public partial class MainWindow : INavigationWindow
     {
         base.OnSourceInitialized(e);
 
-        InitializeComponent();
         _dshmDevMan.StartListeningForDshmDevices();
     }
 
