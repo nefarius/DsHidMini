@@ -428,6 +428,39 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 }
 
 //
+// Deferred callback that requests a self re-enumeration when
+// DMF_DsHidMini_Open detected that the HID mode loaded from configuration
+// differs from the mode already exposed via
+// DEVPKEY_DsHidMini_RW_HidDeviceMode (see issue #374).
+//
+// Running this from a timer rather than inline in DMF_DsHidMini_Open keeps
+// WdfDeviceSetFailed off the power-up call stack, mirroring the approach
+// already used for the failed-resume restart in DsUsb.c (issue #311).
+// 
+_Use_decl_annotations_
+VOID
+DsDevice_EvtHidModeRestartTimerFunc(
+	WDFTIMER Timer
+)
+{
+	FuncEntry(TRACE_DEVICE);
+
+	const WDFDEVICE device = WdfTimerGetParentObject(Timer);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(device);
+
+	TraceWarning(
+		TRACE_DEVICE,
+		"Requesting a device restart, HID mode from configuration mismatched the mode already probed by PnP"
+	);
+
+	EventWriteRequestingDeviceRestartOnHidModeMismatch(pDevCtx->DeviceAddressString);
+
+	WdfDeviceSetFailed(device, WdfDeviceFailedAttemptRestart);
+
+	FuncExitNoReturn(TRACE_DEVICE);
+}
+
+//
 // Initialize remaining device context fields
 // 
 NTSTATUS
@@ -748,6 +781,34 @@ DsDevice_InitContext(
 				status
 			);
 			EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfTimerCreate", status);
+			break;
+		}
+
+		//
+		// Create timer used to defer a self re-enumeration request when a
+		// HID mode mismatch is detected (see issue #374)
+		// 
+
+		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
+		attributes.ParentObject = Device;
+
+		WDF_TIMER_CONFIG_INIT(
+			&timerCfg,
+			DsDevice_EvtHidModeRestartTimerFunc
+		);
+
+		if (!NT_SUCCESS(status = WdfTimerCreate(
+			&timerCfg,
+			&attributes,
+			&pDevCtx->HidModeRestartTimer
+		)))
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"WdfTimerCreate (HidModeRestartTimer) failed with status %!STATUS!",
+				status
+			);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfTimerCreate (HidModeRestartTimer)", status);
 			break;
 		}
 

@@ -192,6 +192,12 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 	// 
 	pDevCtx->InputReportDropLogged = FALSE;
 
+	//
+	// Re-arm the HID mode mismatch restart latch for this power cycle (see
+	// DMF_DsHidMini_Open, issue #374).
+	// 
+	pDevCtx->HidModeRestartRequested = FALSE;
+
 	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
 	{
 		status = DsUsb_D0Entry(Device, PreviousState);

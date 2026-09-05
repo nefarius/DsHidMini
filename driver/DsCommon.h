@@ -561,6 +561,14 @@ typedef struct _DS_DRIVER_CONFIGURATION
 	BOOLEAN PairOnHotReload;
 
 	//
+	// When set, the driver requests a self re-enumeration if the HID mode
+	// loaded from configuration differs from the mode already exposed via
+	// DEVPKEY_DsHidMini_RW_HidDeviceMode when this power-up started (see
+	// issue #374). Can't be altered at runtime.
+	// 
+	BOOLEAN AutoRestartOnHidModeMismatch;
+
+	//
 	// True if output rate control is enabled, false if not
 	// 
 	BOOLEAN IsOutputRateControlEnabled;

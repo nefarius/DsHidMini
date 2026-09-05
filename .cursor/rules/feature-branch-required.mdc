@@ -1,0 +1,12 @@
+---
+description: Introduce all changes on a new branch from master
+alwaysApply: true
+---
+
+# New branch required
+
+Do not implement or commit work on `master`. Create a new branch from current `master` first
+(`feat/…` or `fix/…`), then make changes there.
+
+- Continue an existing branch only when it already is the requested work.
+- Do not merge or push to `master` unless the user explicitly asks.

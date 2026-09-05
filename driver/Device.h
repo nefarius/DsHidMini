@@ -114,7 +114,7 @@ typedef struct _FFB_ATTRIBUTES
 /**
  * Output report context.
  *
- * @author	Benjamin "Nefarius" Hˆglinger-Stelzer
+ * @author	Benjamin "Nefarius" Hùglinger-Stelzer
  * @date	01.04.2021
  */
 typedef struct _DS_OUTPUT_REPORT_CONTEXT
@@ -139,7 +139,7 @@ typedef struct _DS_OUTPUT_REPORT_CONTEXT
 /**
  * Cached output report values to help with rate-control.
  *
- * @author	Benjamin "Nefarius" Hˆglinger-Stelzer
+ * @author	Benjamin "Nefarius" Hùglinger-Stelzer
  * @date	12.03.2021
  */
 typedef struct _DS_OUTPUT_REPORT_CACHE
@@ -208,6 +208,21 @@ typedef struct _DEVICE_CONTEXT
 	// the trace at report rate. Reset in DsHidMini_EvtDeviceD0Entry.
 	// 
 	BOOLEAN InputReportDropLogged;
+
+	//
+	// Timer used to defer a self re-enumeration request off the D0Entry
+	// path when DMF_DsHidMini_Open detects that the HID mode loaded from
+	// configuration differs from the mode already exposed via
+	// DEVPKEY_DsHidMini_RW_HidDeviceMode (see issue #374).
+	// 
+	WDFTIMER HidModeRestartTimer;
+
+	//
+	// Set once a self re-enumeration has been requested because of a HID
+	// mode mismatch, so this power-up only asks for it once. Reset in
+	// DsHidMini_EvtDeviceD0Entry.
+	// 
+	BOOLEAN HidModeRestartRequested;
 	
 	struct
 	{
@@ -446,6 +461,8 @@ DMF_Open DMF_DsHidMini_Open;
 EVT_DMF_ThreadedBufferQueue_Callback DSHM_EvtExecuteOutputPacketReceived;
 
 EVT_WDF_TIMER DSHM_OutputReportDelayTimerElapsed;
+
+EVT_WDF_TIMER DsDevice_EvtHidModeRestartTimerFunc;
 
 EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL DSHM_EvtWdfIoQueueIoDeviceControl;
 

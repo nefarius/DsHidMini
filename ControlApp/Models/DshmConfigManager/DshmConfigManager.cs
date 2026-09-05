@@ -59,6 +59,17 @@ public class DshmConfigManager
     }
 
     /// <summary>
+    ///     When enabled (default), the driver requests a self restart if the HID mode loaded from configuration at
+    ///     power-up differs from the mode already probed by PnP filters (see issue #374). Applies to all devices;
+    ///     written into the <c>Global</c> section of the DsHidMini configuration file.
+    /// </summary>
+    public bool AutoRestartOnHidModeMismatch
+    {
+        get => dshmManagerUserData.AutoRestartOnHidModeMismatch;
+        set => dshmManagerUserData.AutoRestartOnHidModeMismatch = value;
+    }
+
+    /// <summary>
     ///     Raised when the DsHidMini Configuration File on disk is updated
     /// </summary>
     public event EventHandler<DshmUpdatedEventArgs> DshmConfigurationUpdated;
@@ -137,6 +148,9 @@ public class DshmConfigManager
         DshmConfiguration dshmConfiguration = new();
         DshmManagerToDriverConversion.ConvertDeviceSettingsToDriverFormat(GlobalProfile.Settings,
             dshmConfiguration.Global);
+
+        // App-wide toggle, not tied to any profile (see issue #374)
+        dshmConfiguration.Global.AutoRestartOnHidModeMismatch = AutoRestartOnHidModeMismatch;
 
         foreach (DeviceData dev in dshmManagerUserData.Devices)
         {
@@ -297,6 +311,11 @@ public class DshmConfigManager
         ///     Guid of the profile set as global
         /// </summary>
         public Guid GlobalProfileGuid { get; set; } = ProfileData.DefaultGuid;
+
+        /// <summary>
+        ///     When enabled (default), the driver requests a self restart on a HID mode mismatch (see issue #374).
+        /// </summary>
+        public bool AutoRestartOnHidModeMismatch { get; set; } = true;
 
         /// <summary>
         ///     List of profiles datas
