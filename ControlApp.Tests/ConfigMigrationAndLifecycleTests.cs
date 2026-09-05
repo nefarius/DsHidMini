@@ -139,6 +139,25 @@ public class ConfigMigrationAndLifecycleTests : IDisposable
     }
 
     [Fact]
+    public void SaveChangesAndUpdate_WhenDriverWriteFails_RestoresPreviousUserData()
+    {
+        DshmConfigLocations locations = new(UserDir, Path.Combine(_root, "not-a-dir"));
+        File.WriteAllText(locations.DriverConfigDirectory, "blocked");
+
+        DshmConfigManagerUserData userData = DshmConfigManagerUserData.Load(locations);
+        userData.SchemaVersion = DshmConfigManagerUserData.CurrentSchemaVersion;
+        userData.AutoRestartOnHidModeMismatch = true;
+        userData.Save(locations);
+        string original = File.ReadAllText(locations.UserDataFilePath);
+
+        DshmConfigManager manager = new(userData, locations);
+        manager.AutoRestartOnHidModeMismatch = false;
+
+        Assert.False(manager.SaveChangesAndUpdateDsHidMiniConfigFile());
+        Assert.Equal(original, File.ReadAllText(locations.UserDataFilePath));
+    }
+
+    [Fact]
     public void UserData_CorruptFile_IsBackedUp()
     {
         string userFile = Path.Combine(UserDir, "DshmUserData.json");

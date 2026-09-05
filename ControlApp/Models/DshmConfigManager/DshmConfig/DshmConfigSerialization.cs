@@ -69,7 +69,7 @@ internal static class DshmConfigSerialization
             string targetDirectory = directory ?? GetDriverConfigDirectory();
             Directory.CreateDirectory(targetDirectory);
             string configPath = GetDriverConfigFilePath(targetDirectory);
-            string tempPath = configPath + ".tmp";
+            string tempPath = Path.Combine(targetDirectory, $"{DriverFileName}.{Guid.NewGuid():N}.tmp");
             try
             {
                 File.WriteAllText(tempPath, Serialize(dshmConfig));

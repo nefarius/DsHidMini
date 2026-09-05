@@ -1,4 +1,6 @@
-﻿using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig;
+﻿using System.IO;
+
+using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 
 namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
@@ -132,8 +134,39 @@ public class DshmConfigManager
 
     public bool SaveChangesAndUpdateDsHidMiniConfigFile()
     {
+        string userDataPath = _locations.UserDataFilePath;
+        string? previousUserJson = File.Exists(userDataPath) ? File.ReadAllText(userDataPath) : null;
+
         _userData.Save(_locations);
-        return ApplySettings();
+        bool updated = ApplySettings();
+        if (!updated)
+        {
+            RestoreUserDataFile(userDataPath, previousUserJson);
+        }
+
+        return updated;
+    }
+
+    private static void RestoreUserDataFile(string userDataPath, string? previousUserJson)
+    {
+        try
+        {
+            if (previousUserJson is not null)
+            {
+                File.WriteAllText(userDataPath, previousUserJson);
+                return;
+            }
+
+            if (File.Exists(userDataPath))
+            {
+                File.Delete(userDataPath);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Log.Logger.Error(ex,
+                "Failed to restore previous ControlApp user data after a driver config write failure.");
+        }
     }
 
     public bool ApplySettings()
