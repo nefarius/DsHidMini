@@ -1,0 +1,12 @@
+---
+description: DSHMC is deprecated; use ControlApp for all control-app work
+alwaysApply: true
+---
+
+# DSHMC is deprecated
+
+`DSHMC/` is a legacy .NET Framework control utility. Do not add features, fix bugs,
+or use it as a template for new work unless the user explicitly asks to change DSHMC.
+
+Use `ControlApp/` instead. That is the current configuration app (WPF, .NET 9,
+`Nefarius.DsHidMini.IPC`).
