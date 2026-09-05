@@ -45,7 +45,8 @@ DsUsb_PrepareHardware(
 
 NTSTATUS
 DsUsb_D0Entry(
-    WDFDEVICE Device
+    WDFDEVICE Device,
+    WDF_POWER_DEVICE_STATE PreviousState
 );
 
 NTSTATUS

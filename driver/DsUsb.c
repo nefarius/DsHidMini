@@ -611,15 +611,89 @@ NTSTATUS DsUsb_PrepareHardware(WDFDEVICE Device)
 	return status;
 }
 
-NTSTATUS DsUsb_D0Entry(WDFDEVICE Device)
+//
+// Maximum number of attempts to get the DS3 to (re-)enter "streaming" mode
+// during a D0Entry. See issue #311: on some systems the device is briefly
+// unresponsive to control transfers immediately after a USB bus resume, and
+// a single failure used to be fatal, leaving the device stuck in an error
+// state until it was physically replugged.
+// 
+#define DS3_INIT_D0ENTRY_MAX_ATTEMPTS      5
+
+//
+// Delay between DsUsb_Ds3Init D0Entry retry attempts, in milliseconds.
+// 
+#define DS3_INIT_D0ENTRY_RETRY_DELAY_MS    100
+
+NTSTATUS DsUsb_D0Entry(WDFDEVICE Device, WDF_POWER_DEVICE_STATE PreviousState)
 {
 	NTSTATUS status = STATUS_SUCCESS;
 	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	ULONG attempt;
 
-	FuncEntry(TRACE_DSUSB);
+	FuncEntryArguments(
+		TRACE_DSUSB,
+		"PreviousState=%d",
+		PreviousState
+	);
 
 	do
 	{
+		//
+		// Instruct pad to (re-)enter streaming mode. This is done *before*
+		// starting the continuous reader below, on purpose: it guarantees no
+		// input report completion can race with this function while it may
+		// still fail and unwind (see DMF_HandleValidate_IsOpened crash
+		// reported in issue #311).
+		//
+		// Retried a bounded number of times because a single control
+		// transfer failure right after a bus resume is not necessarily
+		// terminal.
+		// 
+		for (attempt = 1; attempt <= DS3_INIT_D0ENTRY_MAX_ATTEMPTS; attempt++)
+		{
+			TraceInformation(
+				TRACE_DSUSB,
+				"Attempting DsUsb_Ds3Init, attempt %d of %d (PreviousState=%d)",
+				attempt,
+				DS3_INIT_D0ENTRY_MAX_ATTEMPTS,
+				PreviousState
+			);
+
+			status = DsUsb_Ds3Init(pDevCtx);
+
+			if (NT_SUCCESS(status))
+			{
+				break;
+			}
+
+			if (attempt < DS3_INIT_D0ENTRY_MAX_ATTEMPTS)
+			{
+				TraceWarning(
+					TRACE_DSUSB,
+					"DsUsb_Ds3Init attempt %d of %d failed with %!STATUS!, retrying in %d ms",
+					attempt,
+					DS3_INIT_D0ENTRY_MAX_ATTEMPTS,
+					status,
+					DS3_INIT_D0ENTRY_RETRY_DELAY_MS
+				);
+
+				Sleep(DS3_INIT_D0ENTRY_RETRY_DELAY_MS);
+			}
+		}
+
+		if (!NT_SUCCESS(status))
+		{
+			TraceError(
+				TRACE_DSUSB,
+				"DsUsb_Ds3Init failed with %!STATUS! after %d attempts, giving up",
+				status,
+				DS3_INIT_D0ENTRY_MAX_ATTEMPTS
+			);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"DsUsb_Ds3Init", status);
+			break;
+		}
+
 		//
 		// Since continuous reader is configured for this interrupt-pipe, we must explicitly start
 		// the I/O target to get the framework to post read requests.
@@ -636,21 +710,30 @@ NTSTATUS DsUsb_D0Entry(WDFDEVICE Device)
 			EventWriteFailedWithNTStatus(__FUNCTION__, L"Starting interrupt reader", status);
 			break;
 		}
-
-		//
-		// Instruct pad to send input reports
-		// 
-		if (!NT_SUCCESS(status = DsUsb_Ds3Init(pDevCtx)))
-		{
-			TraceError(
-				TRACE_DSUSB,
-				"DsUsb_Ds3Init failed with status %!STATUS!",
-				status
-			);
-			EventWriteFailedWithNTStatus(__FUNCTION__, L"DsUsb_Ds3Init", status);
-			break;
-		}
 	} while (FALSE);
+
+	if (!NT_SUCCESS(status))
+	{
+		//
+		// Only reachable after retries are exhausted or the reader failed to
+		// start, i.e. an unrecoverable failure for this power-up attempt.
+		// Rather than leaving the device stuck in a permanent error state
+		// until the user physically replugs it (issue #311), ask WDF/PnP to
+		// restart (re-enumerate) it instead. WDF caps the number of
+		// consecutive automatic restart attempts on its own, so this cannot
+		// loop forever.
+		// 
+		TraceWarning(
+			TRACE_DSUSB,
+			"Requesting a device restart after a failed power-up, PreviousState=%d, status=%!STATUS!",
+			PreviousState,
+			status
+		);
+
+		EventWriteRequestingDeviceRestartAfterResume(pDevCtx->DeviceAddressString);
+
+		WdfDeviceSetFailed(Device, WdfDeviceFailedAttemptRestart);
+	}
 
 	FuncExit(TRACE_DSUSB, "status=%!STATUS!", status);
 

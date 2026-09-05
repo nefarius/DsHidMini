@@ -200,6 +200,14 @@ typedef struct _DEVICE_CONTEXT
 	// VirtualHidMini DMF module
 	// 
 	DMFMODULE DsHidMiniModule;
+
+	//
+	// Set once an input report has been dropped because the DsHidMini or
+	// VirtualHidMini DMF Module was unavailable (closing/closed), so that
+	// only the first drop per power cycle gets logged instead of flooding
+	// the trace at report rate. Reset in DsHidMini_EvtDeviceD0Entry.
+	// 
+	BOOLEAN InputReportDropLogged;
 	
 	struct
 	{
