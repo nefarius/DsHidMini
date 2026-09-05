@@ -106,7 +106,10 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
         {
             if (devVM.IsHidModeMismatched)
             {
-                if (!DshmDevMan.TryReconnectDevice(devVM.Device))
+                // Best-effort: write the expected mode to the device property first, so the driver's
+                // D0Entry-time mismatch check (issue #374) sees a matching value on the very next power-up.
+                bool propertyApplyResult = devVM.ApplyExpectedHidModeProperty();
+                if (!DshmDevMan.TryReconnectDevice(devVM.Device) || !propertyApplyResult)
                 {
                     oneOrMoreFails = true;
                 }

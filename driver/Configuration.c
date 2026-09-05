@@ -485,6 +485,12 @@ static void ConfigNodeParse(
 			pCfg->HidDeviceMode = HID_DEVICE_MODE_FROM_NAME(cJSON_GetStringValue(pNode));
 			EventWriteOverrideSettingUInt(ParentNode->string, "HidDeviceMode", pCfg->HidDeviceMode);
 		}
+
+		if ((pNode = cJSON_GetObjectItem(ParentNode, "AutoRestartOnHidModeMismatch")))
+		{
+			pCfg->AutoRestartOnHidModeMismatch = (BOOLEAN)cJSON_IsTrue(pNode);
+			EventWriteOverrideSettingUInt(ParentNode->string, "AutoRestartOnHidModeMismatch", pCfg->AutoRestartOnHidModeMismatch);
+		}
 	}
 
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "DevicePairingMode")))
@@ -993,6 +999,7 @@ ConfigSetDefaults(
 	Config->HidDeviceMode = DsHidMiniDeviceModeXInputHIDCompatible;
 	Config->DevicePairingMode = DsDevicePairingModeAuto;
 	Config->PairOnHotReload = FALSE;
+	Config->AutoRestartOnHidModeMismatch = TRUE;
 	for (int i = 0; i < 6; i++)
 	{
 		Config->CustomHostAddress[i] = 0x00;

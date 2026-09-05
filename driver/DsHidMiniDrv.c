@@ -463,6 +463,29 @@ DMF_DsHidMini_Open(
 	propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
 	propertyData.Lcid = LOCALE_NEUTRAL;
 
+	//
+	// Re-query the property before it gets overwritten below: at this point
+	// it still holds whatever value the PnP-time filters (e.g. nssmkig) saw
+	// while the device stack was being built - potentially stale, since it
+	// was last written by a previous power-up before this one loaded the
+	// current configuration (see issue #374). Comparing it against the mode
+	// that was just loaded from configuration is what lets us detect the
+	// mismatch that causes the filter to run with the wrong HID report
+	// descriptor.
+	// 
+	DS_HID_DEVICE_MODE previouslyExposedHidDeviceMode = DsHidMiniDeviceModeUnknown;
+	ULONG previousModeRequiredSize = 0;
+	DEVPROPTYPE previousModePropType = DEVPROP_TYPE_EMPTY;
+
+	const NTSTATUS queryPreviousModeStatus = WdfDeviceQueryPropertyEx(
+		device,
+		&propertyData,
+		sizeof(BYTE),
+		(PBYTE)&previouslyExposedHidDeviceMode,
+		&previousModeRequiredSize,
+		&previousModePropType
+	);
+
 	status = WdfDeviceAssignProperty(
 		device,
 		&propertyData,
@@ -470,6 +493,30 @@ DMF_DsHidMini_Open(
 		sizeof(BYTE),
 		&pDevCtx->Configuration.HidDeviceMode
 	);
+
+	if (NT_SUCCESS(status)
+		&& NT_SUCCESS(queryPreviousModeStatus)
+		&& previouslyExposedHidDeviceMode != pDevCtx->Configuration.HidDeviceMode
+		&& pDevCtx->Configuration.AutoRestartOnHidModeMismatch
+		&& !pDevCtx->HidModeRestartRequested)
+	{
+		//
+		// Latch so this power-up only requests a restart once: the property
+		// now matches the loaded configuration, so on the next power-up
+		// (after the restart completes) this comparison will no longer
+		// trigger. Reset in DsHidMini_EvtDeviceD0Entry.
+		// 
+		pDevCtx->HidModeRestartRequested = TRUE;
+
+		TraceWarning(
+			TRACE_DSHIDMINIDRV,
+			"HID Device Mode mismatch detected (previously exposed: 0x%02X, configured: 0x%02X); scheduling a device restart",
+			previouslyExposedHidDeviceMode,
+			pDevCtx->Configuration.HidDeviceMode
+		);
+
+		WdfTimerStart(pDevCtx->HidModeRestartTimer, WDF_REL_TIMEOUT_IN_MS(1000));
+	}
 
 exit:
 	if (!NT_SUCCESS(status))

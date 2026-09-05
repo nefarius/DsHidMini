@@ -1,6 +1,7 @@
 {
   "Global": {
     "HidDeviceMode": "DS4Windows",
+    "AutoRestartOnHidModeMismatch": true,
     "DevicePairingMode": "Auto",
     "PairOnHotReload": false,
     "IsOutputRateControlEnabled": true,

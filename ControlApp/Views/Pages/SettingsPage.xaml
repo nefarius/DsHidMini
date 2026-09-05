@@ -19,6 +19,16 @@
     </Page.Resources>
 
     <Grid>
-        <TextBlock Margin="20">Uh oh, nobody has anything programmed for in here yet!</TextBlock>
+        <StackPanel Margin="20">
+            <CheckBox
+                Margin="0,0,0,8"
+                Content="Automatically restart devices on HID mode mismatch"
+                IsChecked="{Binding ViewModel.AutoRestartOnHidModeMismatch, Mode=TwoWay}" />
+            <TextBlock
+                MaxWidth="600"
+                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                Text="When enabled, DsHidMini requests a device restart on its own if the HID mode it loaded from configuration doesn't match the mode already probed by Windows, instead of requiring a manual reconnect or a second replug."
+                TextWrapping="Wrap" />
+        </StackPanel>
     </Grid>
 </Page>

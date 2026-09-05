@@ -1,5 +1,7 @@
 ﻿using System.Reflection;
 
+using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
+
 using Wpf.Ui.Abstractions.Controls;
 using Wpf.Ui.Appearance;
 
@@ -7,6 +9,8 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Pages;
 
 public partial class SettingsViewModel : ObservableObject, INavigationAware
 {
+    private readonly DshmConfigManager _dshmConfigManager;
+
     [ObservableProperty]
     private string _appVersion = string.Empty;
 
@@ -14,6 +18,31 @@ public partial class SettingsViewModel : ObservableObject, INavigationAware
     private ApplicationTheme _currentTheme = ApplicationTheme.Unknown;
 
     private bool _isInitialized;
+
+    public SettingsViewModel(DshmConfigManager dshmConfigManager)
+    {
+        _dshmConfigManager = dshmConfigManager;
+    }
+
+    /// <summary>
+    ///     When enabled (default), the driver requests a self restart on a HID mode mismatch instead of requiring a
+    ///     manual reconnect / second replug (see issue #374).
+    /// </summary>
+    public bool AutoRestartOnHidModeMismatch
+    {
+        get => _dshmConfigManager.AutoRestartOnHidModeMismatch;
+        set
+        {
+            if (_dshmConfigManager.AutoRestartOnHidModeMismatch == value)
+            {
+                return;
+            }
+
+            _dshmConfigManager.AutoRestartOnHidModeMismatch = value;
+            _dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile();
+            OnPropertyChanged();
+        }
+    }
 
     public Task OnNavigatedToAsync()
     {

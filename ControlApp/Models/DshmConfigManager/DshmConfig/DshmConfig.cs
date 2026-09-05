@@ -12,6 +12,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig;
 public class DshmDeviceSettings
 {
     public HidDeviceMode? HIDDeviceMode { get; set; } // = DSHM_HidDeviceModes.DS4Windows;
+    public bool? AutoRestartOnHidModeMismatch { get; set; } // = true;
     public bool? DisableAutoPairing { get; set; }
 
     public DevicePairingMode? DevicePairingMode { get; set; }

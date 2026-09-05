@@ -542,15 +542,39 @@ public partial class DeviceViewModel : ObservableObject
         await RefreshDeviceSettings();
     }
 
+    /// <summary>
+    ///     Writes the expected HID mode into DEVPKEY_DsHidMini_RW_HidDeviceMode before requesting a reconnect, so the
+    ///     driver's D0Entry-time mismatch check (see issue #374) sees a matching value on the very next power-up
+    ///     instead of the still-stale one the PnP-time filters probed. Best-effort: setting a device property
+    ///     requires elevation, same as <see cref="DshmDevMan.TryReconnectDevice" />.
+    /// </summary>
+    public bool ApplyExpectedHidModeProperty()
+    {
+        try
+        {
+            Device.SetProperty(DsHidMiniDriver.HidDeviceModeProperty,
+                DshmDriverTranslationUtils.ToHidDeviceModePropertyValue(ExpectedHidMode));
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Error(ex,
+                "Failed to write expected HID mode {ExpectedHidMode} to device '{DeviceAddress}' before reconnecting.",
+                ExpectedHidMode, DeviceAddress);
+            return false;
+        }
+    }
+
     [RelayCommand]
     private void RestartDevice()
     {
+        bool propertyApplyResult = ApplyExpectedHidModeProperty();
         bool reconnectionResult = DshmDevMan.TryReconnectDevice(Device);
         Log.Logger.Information(
             "User instructed {Wireless} device '{DeviceAddress}' to restart/disconnect.",
             IsWireless ? "wireless" : "wired", DeviceAddress);
         _appSnackbarMessagesService.ShowPowerCyclingDeviceMessage(IsWireless, SecurityUtil.IsElevated,
-            reconnectionResult);
+            reconnectionResult && propertyApplyResult);
     }
 
     [RelayCommand]
