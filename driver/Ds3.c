@@ -23,7 +23,7 @@ const UCHAR G_Ds3UsbHidOutputReport[] = {
 // Default Output Report for LED & Rumble state changes (Bluetooth)
 // 
 const UCHAR G_Ds3BthHidOutputReport[] = {
-	0x52, /* HID BT Set_report (0x50) | Report Type (Output 0x02)*/
+	0xA2, /* HID BT DATA (0xA0) | Report Type (Output 0x02) -- interrupt channel so rumble actuates (was 0x52 Set_report/control) */
 	0x01, /* Report ID */
 	0x00, 0xFF, 0x00, 0xFF, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00,
