@@ -290,6 +290,7 @@
     <ClInclude Include="GlobalState.h" />
     <ClInclude Include="Macros.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="ScopeGuard.h" />
     <ClInclude Include="Types.h" />
     <ClInclude Include="UniUtil.h" />
     <ClInclude Include="XInputBridge.h" />

@@ -58,7 +58,7 @@ bool GlobalState::SymlinkToUserIndex(_In_ PCWSTR Symlink, _Inout_ PDWORD UserInd
 		nullptr
 	);
 
-	absl::Cleanup handleFree = [handle]
+	ScopeCleanup handleFree = [handle]
 	{
 		if (handle != INVALID_HANDLE_VALUE)
 			CloseHandle(handle);
@@ -146,7 +146,7 @@ DeviceState* GlobalState::FindBySymbolicLink(const std::wstring& Symlink)
 	const auto item = std::ranges::find_if(this->States,
 		[narrow](const DeviceState& element)
 		{
-			return absl::EqualsIgnoreCase(element.SymbolicLink, narrow);
+			return EqualsIgnoreCase(element.SymbolicLink, narrow);
 		});
 
 	return (item != this->States.end()) ? &(*item) : nullptr;
