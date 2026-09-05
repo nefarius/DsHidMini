@@ -347,6 +347,7 @@ healthchecksdb
 /setup/DsHidMini Driver-SetupFiles
 /setup/DsHidMini Driver-cache
 **/vcpkg_installed
+/vcpkg-archives
 **/*.g.wxs
 /XInputBridge/exports
 **/*_OTEL

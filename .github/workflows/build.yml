@@ -27,9 +27,10 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
   DOTNET_NOLOGO: 'true'
   SCPLIB_ENABLE_TELEMETRY: 'false'
-  # Disabled by default; enabled per-job below only when the VCPKG_NUGET_TOKEN secret is present.
-  # GITHUB_TOKEN cannot push new packages under a personal-account GitHub Packages namespace, so a
-  # PAT with read:packages/write:packages is required. See:
+  # Files cache is always enabled (see Configure vcpkg binary cache). The GitHub Packages NuGet
+  # provider is appended only when VCPKG_NUGET_TOKEN is present. GITHUB_TOKEN cannot push new
+  # packages under a personal-account GitHub Packages namespace, so a PAT with
+  # read:packages/write:packages is required. See:
   # https://github.com/microsoft/vcpkg/issues/47470
   VCPKG_BINARY_SOURCES: 'clear'
 
@@ -70,6 +71,60 @@ jobs:
         shell: cmd
         run: .\XInputBridge\vcpkg\bootstrap-vcpkg.bat -disableMetrics
 
+      - name: 'Resolve cache keys'
+        id: cache-keys
+        shell: pwsh
+        run: |
+          # ImageVersion is a runner process env var, not an Actions `env:` context value,
+          # so capture it here for the cache keys (invalidates on toolchain image upgrades).
+          $dmfSha = git rev-parse HEAD:DMF
+          $vcpkgSha = git rev-parse HEAD:XInputBridge/vcpkg
+          $imageVersion = $env:ImageVersion
+          echo "dmf-sha=$dmfSha" >> $env:GITHUB_OUTPUT
+          echo "vcpkg-sha=$vcpkgSha" >> $env:GITHUB_OUTPUT
+          echo "image-version=$imageVersion" >> $env:GITHUB_OUTPUT
+          Write-Output "DMF $dmfSha / vcpkg $vcpkgSha (ImageVersion=$imageVersion)"
+
+      - name: 'Cache NuGet packages'
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          # Explicit project list so DMF submodule csproj churn does not evict the cache.
+          key: nuget-${{ runner.os }}-${{ hashFiles('ControlApp/ControlApp.csproj', 'ipctest/ipctest.csproj', 'SDK/Nefarius.DsHidMini.IPC/Nefarius.DsHidMini.IPC.csproj', 'build/_build.csproj', 'nuget.config', '.config/dotnet-tools.json') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: 'Restore local .NET tools'
+        run: dotnet tool restore
+
+      # DMF output is fully determined by the submodule commit and the runner toolchain.
+      # Skip the build entirely on a cache hit (x86 never builds DMF). No restore-keys: a
+      # partial match must never reuse libs built for a different commit or image.
+      - name: 'Cache DMF libraries'
+        if: matrix.platform != 'x86'
+        id: dmf-cache
+        uses: actions/cache@v4
+        with:
+          path: DMF/Release/${{ matrix.platform }}
+          key: dmf-v1-${{ matrix.platform }}-${{ steps.cache-keys.outputs.dmf-sha }}-${{ steps.cache-keys.outputs.image-version }}
+
+      # vcpkg validates every archive against its own ABI hash, so a partial key match is
+      # safe to restore: unused or stale archives are ignored rather than reused.
+      - name: 'Cache vcpkg binary archives'
+        uses: actions/cache@v4
+        with:
+          path: vcpkg-archives
+          key: vcpkg-v1-${{ matrix.platform }}-${{ hashFiles('XInputBridge/vcpkg.json') }}-${{ steps.cache-keys.outputs.vcpkg-sha }}-${{ steps.cache-keys.outputs.image-version }}
+          restore-keys: |
+            vcpkg-v1-${{ matrix.platform }}-
+
+      - name: 'Configure vcpkg files binary cache'
+        shell: pwsh
+        run: |
+          $archives = (Join-Path $env:GITHUB_WORKSPACE 'vcpkg-archives').Replace('\', '/')
+          New-Item -ItemType Directory -Force -Path $archives | Out-Null
+          echo "VCPKG_BINARY_SOURCES=clear;files,$archives,readwrite" >> $env:GITHUB_ENV
+
       - name: 'Configure vcpkg NuGet binary cache'
         if: ${{ env.VCPKG_NUGET_TOKEN != '' }}
         shell: pwsh
@@ -83,25 +138,14 @@ jobs:
             -Password "$env:VCPKG_NUGET_TOKEN"
           & $nugetExe setapikey "$env:VCPKG_NUGET_TOKEN" `
             -Source "https://nuget.pkg.github.com/nefarius/index.json"
-          echo "VCPKG_BINARY_SOURCES=clear;nuget,https://nuget.pkg.github.com/nefarius/index.json,readwrite" >> $env:GITHUB_ENV
-
-      - name: 'Cache NuGet packages'
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'nuget.config') }}
-          restore-keys: |
-            nuget-${{ runner.os }}-
-
-      - name: 'Install vpatch'
-        run: dotnet tool install --global Nefarius.Tools.Vpatch
+          echo "VCPKG_BINARY_SOURCES=$env:VCPKG_BINARY_SOURCES;nuget,https://nuget.pkg.github.com/nefarius/index.json,readwrite" >> $env:GITHUB_ENV
 
       - name: 'Stamp version into driver and XInputBridge'
         shell: cmd
         run: |
-          vpatch --stamp-version "%BUILD_VERSION%" --target-file ".\driver\dshidmini.vcxproj" --vcxproj.inf-time-stamp
-          vpatch --stamp-version "%BUILD_VERSION%" --target-file ".\driver\dshidmini.rc" --resource.file-version --resource.product-version
-          vpatch --stamp-version "%BUILD_VERSION%" --target-file ".\XInputBridge\XInputBridge.rc" --resource.file-version --resource.product-version
+          dotnet vpatch --stamp-version "%BUILD_VERSION%" --target-file ".\driver\dshidmini.vcxproj" --vcxproj.inf-time-stamp
+          dotnet vpatch --stamp-version "%BUILD_VERSION%" --target-file ".\driver\dshidmini.rc" --resource.file-version --resource.product-version
+          dotnet vpatch --stamp-version "%BUILD_VERSION%" --target-file ".\XInputBridge\XInputBridge.rc" --resource.file-version --resource.product-version
 
       - name: 'Restore managed projects'
         # msbuild's /t:Rebuild over the whole solution does not implicitly restore SDK-style
@@ -112,38 +156,9 @@ jobs:
           dotnet restore .\ControlApp\
           dotnet restore .\ipctest\
 
-      # DMF output is fully determined by the submodule commit and the runner toolchain.
-      # Skip the build entirely on a cache hit (x86 never builds DMF). No restore-keys: a
-      # partial match must never reuse libs built for a different commit or image.
-      - name: 'Resolve DMF submodule commit'
-        if: matrix.platform != 'x86'
-        id: dmf-sha
-        shell: pwsh
-        run: |
-          # ImageVersion is a runner process env var, not an Actions `env:` context value,
-          # so capture it here for the cache key (invalidates on toolchain image upgrades).
-          $sha = git rev-parse HEAD:DMF
-          $imageVersion = $env:ImageVersion
-          echo "sha=$sha" >> $env:GITHUB_OUTPUT
-          echo "image-version=$imageVersion" >> $env:GITHUB_OUTPUT
-          Write-Output "DMF submodule commit $sha (ImageVersion=$imageVersion)"
-
-      - name: 'Cache DMF libraries'
-        if: matrix.platform != 'x86'
-        id: dmf-cache
-        uses: actions/cache@v4
-        with:
-          path: DMF/Release/${{ matrix.platform }}
-          key: dmf-v1-${{ matrix.platform }}-${{ steps.dmf-sha.outputs.sha }}-${{ steps.dmf-sha.outputs.image-version }}
-
       - name: 'Build'
         shell: cmd
-        run: .\build.cmd --target-platform ${{ matrix.platform }} ${{ steps.dmf-cache.outputs.cache-hit == 'true' && '--skip BuildDmf' || '' }}
-
-      - name: 'Publish ControlApp'
-        if: matrix.platform == 'x64'
-        shell: cmd
-        run: .\build.cmd PublishControlApp --skip Compile
+        run: .\build.cmd Compile ${{ matrix.platform == 'x64' && 'PublishControlApp' || '' }} --target-platform ${{ matrix.platform }} ${{ steps.dmf-cache.outputs.cache-hit == 'true' && '--skip BuildDmf' || '' }}
 
       - name: 'Pack driver CAB'
         if: matrix.platform != 'x86'

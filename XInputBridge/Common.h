@@ -26,7 +26,6 @@
 #include <format>
 
 //
-// Abseil
-// 
-#include <absl/cleanup/cleanup.h>
-#include <absl/strings/match.h>
+// Scope guard (replaces absl::Cleanup / absl::EqualsIgnoreCase)
+//
+#include "ScopeGuard.h"

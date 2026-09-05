@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "nefarius.tools.vpatch": {
+      "version": "2.7.0",
+      "commands": [
+        "vpatch"
+      ]
+    }
+  }
+}

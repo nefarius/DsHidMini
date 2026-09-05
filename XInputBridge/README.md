@@ -51,7 +51,7 @@ Usage, setup, and deployment are documented on the project site:
 | `Common.h`, `Macros.h`, `Types.h`, `UniUtil.h` | Shared types and helpers. |
 | `XInput.def` | Export ordinals (matches XInput 1.3 + ordinal 200 for GetExtended). |
 
-Dependencies (via [vcpkg](https://vcpkg.io/)): **hidapi**, **abseil**, **winreg**.
+Dependencies (via [vcpkg](https://vcpkg.io/)): **hidapi**, **winreg**.
 
 ## Build
 
@@ -74,5 +74,5 @@ The bridge is maintained and stable. You can use it in your own projects if you 
 - [ScpToolkit / ScpXInputBridge](https://github.com/nefarius/ScpToolkit/tree/master/ScpXInputBridge) — extended XInput API origin
 - [X1nput](https://github.com/araghon007/X1nput), [OpenXInput](https://github.com/Nemirtingas/OpenXinput) — XInput proxy ideas
 - [RPCS3 ds3_pad_handler](https://github.com/RPCS3/rpcs3/blob/master/rpcs3/Input/ds3_pad_handler.cpp), [PCSX2 XInputEnum](https://github.com/PCSX2/pcsx2/blob/master/pcsx2/PAD/Windows/XInputEnum.cpp) — reference implementations
-- [HIDAPI](https://github.com/libusb/hidapi), [Abseil](https://abseil.io/), [WinReg](https://github.com/GiovanniDicanio/WinReg) — dependencies
+- [HIDAPI](https://github.com/libusb/hidapi), [WinReg](https://github.com/GiovanniDicanio/WinReg) — dependencies
 - [RawInputDemo](https://github.com/DJm00n/RawInputDemo) — Raw Input / device enumeration reference

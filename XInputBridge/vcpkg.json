@@ -6,7 +6,6 @@
   "supports": "!(arm | uwp)",
   "dependencies": [
     { "name": "hidapi" },
-    { "name": "abseil" },
     { "name": "winreg" }
   ]
 }

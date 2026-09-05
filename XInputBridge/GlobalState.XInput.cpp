@@ -10,7 +10,7 @@ DWORD GlobalState::ProxyXInputGetExtended(_In_ DWORD dwUserIndex, _Out_ SCP_EXTN
 	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
 
 	AcquireSRWLockShared(&this->StatesLock);
-	absl::Cleanup lockRelease = [this]
+	ScopeCleanup lockRelease = [this]
 	{
 		ReleaseSRWLockShared(&this->StatesLock);
 	};
@@ -124,7 +124,7 @@ DWORD GlobalState::ProxyXInputGetState(_In_ DWORD dwUserIndex, _Out_ XINPUT_STAT
 	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
 
 	AcquireSRWLockShared(&this->StatesLock);
-	absl::Cleanup lockRelease = [this]
+	ScopeCleanup lockRelease = [this]
 	{
 		ReleaseSRWLockShared(&this->StatesLock);
 	};
@@ -282,7 +282,7 @@ DWORD GlobalState::ProxyXInputSetState(_In_ DWORD dwUserIndex, _In_ XINPUT_VIBRA
 	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
 
 	AcquireSRWLockShared(&this->StatesLock);
-	absl::Cleanup lockRelease = [this]
+	ScopeCleanup lockRelease = [this]
 	{
 		ReleaseSRWLockShared(&this->StatesLock);
 	};
@@ -366,7 +366,7 @@ DWORD GlobalState::ProxyXInputGetCapabilities(_In_ DWORD dwUserIndex, _In_ DWORD
 	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
 
 	AcquireSRWLockShared(&this->StatesLock);
-	absl::Cleanup lockRelease = [this]
+	ScopeCleanup lockRelease = [this]
 	{
 		ReleaseSRWLockShared(&this->StatesLock);
 	};
@@ -444,7 +444,7 @@ DWORD GlobalState::ProxyXInputGetDSoundAudioDeviceGuids(DWORD dwUserIndex, GUID*
 	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
 
 	AcquireSRWLockShared(&this->StatesLock);
-	absl::Cleanup lockRelease = [this]
+	ScopeCleanup lockRelease = [this]
 	{
 		ReleaseSRWLockShared(&this->StatesLock);
 	};
@@ -464,7 +464,7 @@ DWORD GlobalState::ProxyXInputGetBatteryInformation(_In_ DWORD dwUserIndex,
 	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
 
 	AcquireSRWLockShared(&this->StatesLock);
-	absl::Cleanup lockRelease = [this]
+	ScopeCleanup lockRelease = [this]
 	{
 		ReleaseSRWLockShared(&this->StatesLock);
 	};
@@ -482,7 +482,7 @@ DWORD GlobalState::ProxyXInputGetKeystroke(DWORD dwUserIndex, DWORD dwReserved, 
 	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
 
 	AcquireSRWLockShared(&this->StatesLock);
-	absl::Cleanup lockRelease = [this]
+	ScopeCleanup lockRelease = [this]
 	{
 		ReleaseSRWLockShared(&this->StatesLock);
 	};
@@ -500,7 +500,7 @@ DWORD GlobalState::ProxyXInputGetStateEx(_In_ DWORD dwUserIndex, _Out_ XINPUT_ST
 	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
 
 	AcquireSRWLockShared(&this->StatesLock);
-	absl::Cleanup lockRelease = [this]
+	ScopeCleanup lockRelease = [this]
 	{
 		ReleaseSRWLockShared(&this->StatesLock);
 	};
@@ -655,7 +655,7 @@ DWORD GlobalState::ProxyXInputWaitForGuideButton(_In_ DWORD dwUserIndex, _In_ DW
 	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
 
 	AcquireSRWLockShared(&this->StatesLock);
-	absl::Cleanup lockRelease = [this]
+	ScopeCleanup lockRelease = [this]
 	{
 		ReleaseSRWLockShared(&this->StatesLock);
 	};
@@ -673,7 +673,7 @@ DWORD GlobalState::ProxyXInputCancelGuideButtonWait(_In_ DWORD dwUserIndex)
 	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
 
 	AcquireSRWLockShared(&this->StatesLock);
-	absl::Cleanup lockRelease = [this]
+	ScopeCleanup lockRelease = [this]
 	{
 		ReleaseSRWLockShared(&this->StatesLock);
 	};
@@ -691,7 +691,7 @@ DWORD GlobalState::ProxyXInputPowerOffController(_In_ DWORD dwUserIndex)
 	WaitForSingleObject(this->StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
 
 	AcquireSRWLockShared(&this->StatesLock);
-	absl::Cleanup lockRelease = [this]
+	ScopeCleanup lockRelease = [this]
 	{
 		ReleaseSRWLockShared(&this->StatesLock);
 	};

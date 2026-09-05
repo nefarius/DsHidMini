@@ -63,7 +63,7 @@ std::optional<std::vector<std::wstring>> GlobalState::GetSymbolicLinksForDeviceI
 	if (szListBuffer == nullptr)
 		return std::nullopt;
 
-	absl::Cleanup freeBuffer = [szListBuffer]
+	ScopeCleanup freeBuffer = [szListBuffer]
 	{
 		free(szListBuffer);
 	};
@@ -109,7 +109,7 @@ std::optional<std::wstring> GlobalState::InterfaceIdToInstanceId(const std::wstr
 	if (instanceIdBuf == nullptr)
 		return std::nullopt;
 
-	absl::Cleanup freeBuffer = [instanceIdBuf]
+	ScopeCleanup freeBuffer = [instanceIdBuf]
 	{
 		free(instanceIdBuf);
 	};
@@ -162,7 +162,7 @@ std::optional<std::vector<std::wstring>> GlobalState::GetDeviceChildren(const st
 
 	const auto childrenIdBuf = static_cast<PBYTE>(calloc(childrenIdBytes, 1));
 
-	absl::Cleanup freeBuffer = [childrenIdBuf]
+	ScopeCleanup freeBuffer = [childrenIdBuf]
 	{
 		free(childrenIdBuf);
 	};
@@ -212,7 +212,7 @@ std::optional<std::vector<std::wstring>> GlobalState::InstanceIdToHidPaths(const
 	if (buffer == nullptr)
 		return std::nullopt;
 
-	absl::Cleanup freeBuffer = [buffer]
+	ScopeCleanup freeBuffer = [buffer]
 	{
 		free(buffer);
 	};
