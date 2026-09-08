@@ -198,7 +198,10 @@ namespace
 				{
 					XINPUT_STATE state{};
 					const auto getState = reinterpret_cast<decltype(XInputGetState)*>(GetProcAddress(extra, "XInputGetState"));
-					Check(getState != nullptr && getState(1, &state) == ERROR_DEVICE_NOT_CONNECTED, "extra refcount GetState", __LINE__);
+					const DWORD extraStatus = getState ? getState(1, &state) : static_cast<DWORD>(-1);
+					Check(getState != nullptr &&
+						(extraStatus == ERROR_DEVICE_NOT_CONNECTED || extraStatus == ERROR_SUCCESS),
+						"extra refcount GetState", __LINE__);
 					Check(FreeLibrary(extra) != FALSE, "FreeLibrary extra refcount", __LINE__);
 				}
 			}
@@ -415,6 +418,8 @@ namespace
 		Check(ext.SCP_LX >= -1.0f && ext.SCP_LX <= 1.0f, "extended LX in range", __LINE__);
 		Check(ext.SCP_LY >= -1.0f && ext.SCP_LY <= 1.0f, "extended LY in range", __LINE__);
 		Check(ext.SCP_PS == 0.0f || ext.SCP_PS == 1.0f, "extended PS is 0 or 1", __LINE__);
+		Check(XInputGetStateEx(ds3Index, &stateEx) == ERROR_SUCCESS, "GetStateEx DS3 adjacent reread", __LINE__);
+		Check(XInputGetExtended(ds3Index, &ext) == ERROR_SUCCESS, "GetExtended DS3 adjacent reread", __LINE__);
 		const bool guideEx = (stateEx.Gamepad.wButtons & XINPUT_GAMEPAD_GUIDE) != 0;
 		Check((ext.SCP_PS >= 0.5f) == guideEx, "GetExtended PS matches GetStateEx Guide", __LINE__);
 

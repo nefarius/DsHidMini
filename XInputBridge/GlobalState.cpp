@@ -260,7 +260,11 @@ void GlobalState::AssignPreparedDs3(const std::wstring& Symlink, DeviceState& Pr
 
 	AcquireSRWLockExclusive(&this->StatesLock);
 	{
-		if (FindBySymbolicLink(Symlink))
+		if (ShuttingDown.load())
+		{
+			Prepared.Dispose();
+		}
+		else if (FindBySymbolicLink(Symlink))
 		{
 			LOG_INFO("DS3 {} already assigned, ignoring duplicate", ConvertWideToANSI(Symlink));
 			Prepared.Dispose();
@@ -285,24 +289,27 @@ void GlobalState::AssignXusbDevice(const std::wstring& Symlink, const DWORD User
 
 	AcquireSRWLockExclusive(&this->StatesLock);
 	{
-		if (FindBySymbolicLink(Symlink) || GetXusbByRealUserIndex(UserIndex))
+		if (!ShuttingDown.load())
 		{
-			LOG_INFO("XUSB {} already assigned, ignoring duplicate", ConvertWideToANSI(Symlink));
-		}
-		else if (const auto slot = GetNextFreeSlot())
-		{
-			if (!slot->InitializeAsXusb(Symlink, UserIndex))
+			if (FindBySymbolicLink(Symlink) || GetXusbByRealUserIndex(UserIndex))
 			{
-				LOG_ERROR("Failed to initialize {} as a XUSB device", ConvertWideToANSI(Symlink));
+				LOG_INFO("XUSB {} already assigned, ignoring duplicate", ConvertWideToANSI(Symlink));
+			}
+			else if (const auto slot = GetNextFreeSlot())
+			{
+				if (!slot->InitializeAsXusb(Symlink, UserIndex))
+				{
+					LOG_ERROR("Failed to initialize {} as a XUSB device", ConvertWideToANSI(Symlink));
+				}
+				else
+				{
+					LOG_INFO("Assigned {} to real user index {}", ConvertWideToANSI(Symlink), UserIndex);
+				}
 			}
 			else
 			{
-				LOG_INFO("Assigned {} to real user index {}", ConvertWideToANSI(Symlink), UserIndex);
+				LOG_WARN("No free slot to assign {} to", ConvertWideToANSI(Symlink));
 			}
-		}
-		else
-		{
-			LOG_WARN("No free slot to assign {} to", ConvertWideToANSI(Symlink));
 		}
 	}
 	ReleaseSRWLockExclusive(&this->StatesLock);

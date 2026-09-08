@@ -443,6 +443,28 @@ class Build : NukeBuild
                ?? (AbsolutePath)candidates[0];
     }
 
+    bool TryGetHostRunnableXInputBridge(
+        bool requireRelease,
+        out Configuration configuration,
+        out MSBuildTargetPlatform platform)
+    {
+        foreach ((Configuration config, MSBuildTargetPlatform candidate) in XInputBridgeBuildCombinations())
+        {
+            if (string.Equals(candidate.ToString(), "ARM64", StringComparison.OrdinalIgnoreCase))
+                continue;
+            if (requireRelease && config != Configuration.Release)
+                continue;
+
+            configuration = config;
+            platform = candidate;
+            return true;
+        }
+
+        configuration = default;
+        platform = default;
+        return false;
+    }
+
     void BuildXInputBridgeProjects(Configuration configuration, MSBuildTargetPlatform platform)
     {
         AbsolutePath testerProject = RootDirectory / "scpdlltester" / "scpdlltester.vcxproj";
@@ -508,10 +530,11 @@ class Build : NukeBuild
         .DependsOn(CompileXInputBridge)
         .Executes(() =>
         {
-            (Configuration config, MSBuildTargetPlatform platform) =
-                XInputBridgeBuildCombinations().First(item =>
-                    item.config == Configuration.Release &&
-                    !string.Equals(item.platform.ToString(), "ARM64", StringComparison.OrdinalIgnoreCase));
+            if (!TryGetHostRunnableXInputBridge(requireRelease: true, out Configuration config, out MSBuildTargetPlatform platform))
+            {
+                Log.Information("Skipping XInputBridge benchmarks; no host-runnable Release combination");
+                return;
+            }
 
             AbsolutePath tester = ResolveScpDllTesterPath(config, platform);
             if (!tester.FileExists())
@@ -531,9 +554,11 @@ class Build : NukeBuild
         .DependsOn(CompileXInputBridge)
         .Executes(() =>
         {
-            (Configuration config, MSBuildTargetPlatform platform) =
-                XInputBridgeBuildCombinations().First(item =>
-                    !string.Equals(item.platform.ToString(), "ARM64", StringComparison.OrdinalIgnoreCase));
+            if (!TryGetHostRunnableXInputBridge(requireRelease: false, out Configuration config, out MSBuildTargetPlatform platform))
+            {
+                Log.Information("Skipping XInputBridge hardware tests; no host-runnable combination");
+                return;
+            }
 
             AbsolutePath tester = ResolveScpDllTesterPath(config, platform);
             if (!tester.FileExists())
