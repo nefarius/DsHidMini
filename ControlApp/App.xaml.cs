@@ -113,13 +113,13 @@ public partial class App
             {
                 client.BaseAddress = new Uri("https://buildbot.nefarius.at/");
                 client.DefaultRequestHeaders.UserAgent.ParseAdd(context.HostingEnvironment.ApplicationName);
-            });
+            }).AddCommonRetryPolicy();
 
             services.AddHttpClient("Docs", client =>
             {
                 client.BaseAddress = new Uri("https://docs.nefarius.at/");
                 client.DefaultRequestHeaders.UserAgent.ParseAdd(context.HostingEnvironment.ApplicationName);
-            });
+            }).AddCommonRetryPolicy();
         }).Build();
 
     /// <summary>

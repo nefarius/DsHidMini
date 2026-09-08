@@ -101,6 +101,28 @@ public class AppSnackbarMessagesService
         );
     }
 
+    public void ShowControlAppUpToDateMessage()
+    {
+        _snackbarService.Show(
+            "ControlApp is up to date",
+            "No newer version is available on Buildbot.",
+            ControlAppearance.Success,
+            new SymbolIcon(SymbolRegular.CheckmarkCircle24),
+            TimeSpan.FromSeconds(3)
+        );
+    }
+
+    public void ShowControlAppUpdateCheckFailedMessage()
+    {
+        _snackbarService.Show(
+            "Update check failed",
+            "Could not reach Buildbot or read the latest version. Try again later.",
+            ControlAppearance.Caution,
+            new SymbolIcon(SymbolRegular.ErrorCircle24),
+            TimeSpan.FromSeconds(5)
+        );
+    }
+
     public void ShowBthPS3SettingsRectifyFailedMessage()
     {
         _snackbarService.Show(

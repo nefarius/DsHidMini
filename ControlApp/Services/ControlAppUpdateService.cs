@@ -14,6 +14,14 @@ using Wpf.Ui.Extensions;
 
 namespace Nefarius.DsHidMini.ControlApp.Services;
 
+internal enum UpdateCheckOutcome
+{
+    Skipped,
+    UpToDate,
+    UpdateAvailable,
+    Failed
+}
+
 /// <summary>
 ///     Checks Buildbot for a newer ControlApp once per local calendar day and offers a download.
 /// </summary>
@@ -25,7 +33,17 @@ public sealed class ControlAppUpdateService(
     public const string MetadataRelativePath = "builds/DsHidMini/latest/bin/.ControlApp.exe.json";
     public const string DownloadUrl = "https://buildbot.nefarius.at/builds/DsHidMini/latest/bin/ControlApp.exe";
 
-    public async Task CheckOnStartupAsync(CancellationToken cancellationToken = default)
+    public Task CheckOnStartupAsync(CancellationToken cancellationToken = default)
+    {
+        return CheckAsync(ignoreLastCheckDate: false, cancellationToken);
+    }
+
+    internal Task<UpdateCheckOutcome> CheckNowAsync(CancellationToken cancellationToken = default)
+    {
+        return CheckAsync(ignoreLastCheckDate: true, cancellationToken);
+    }
+
+    private async Task<UpdateCheckOutcome> CheckAsync(bool ignoreLastCheckDate, CancellationToken cancellationToken)
     {
         DateOnly today = DateOnly.FromDateTime(DateTime.Now);
         ApplicationConfiguration config = ApplicationConfiguration.Instance;
@@ -33,9 +51,10 @@ public sealed class ControlAppUpdateService(
         if (!UpdateCheckPolicy.ShouldPerformNetworkCheck(
                 config.IsUpdateCheckEnabled,
                 today,
-                config.LastUpdateCheckDate))
+                config.LastUpdateCheckDate,
+                ignoreLastCheckDate))
         {
-            return;
+            return UpdateCheckOutcome.Skipped;
         }
 
         TryRecordCheckDate(config, today);
@@ -51,32 +70,33 @@ public sealed class ControlAppUpdateService(
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
         {
             logger?.LogWarning(ex, "ControlApp update check failed.");
-            return;
+            return UpdateCheckOutcome.Failed;
         }
         catch (Exception ex)
         {
             logger?.LogWarning(ex, "ControlApp update check failed unexpectedly.");
-            return;
+            return UpdateCheckOutcome.Failed;
         }
 
         if (metadata is null ||
             !UpdateCheckPolicy.TryParseFileVersion(metadata.FileVersion, out Version? remote) ||
             remote is null)
         {
-            return;
+            return UpdateCheckOutcome.Failed;
         }
 
         if (!TryGetLocalFileVersion(out Version? local) || local is null)
         {
-            return;
+            return UpdateCheckOutcome.Failed;
         }
 
         if (!UpdateCheckPolicy.IsRemoteNewer(remote, local))
         {
-            return;
+            return UpdateCheckOutcome.UpToDate;
         }
 
         await ShowUpdateDialogAsync(remote, local).ConfigureAwait(false);
+        return UpdateCheckOutcome.UpdateAvailable;
     }
 
     private static void TryRecordCheckDate(ApplicationConfiguration config, DateOnly today)

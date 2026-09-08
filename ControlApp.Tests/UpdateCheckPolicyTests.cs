@@ -28,6 +28,24 @@ public class UpdateCheckPolicyTests
     }
 
     [Theory]
+    [InlineData(false, "2026-09-08", "2026-09-08")]
+    [InlineData(true, "2026-09-08", "2026-09-08")]
+    public void ShouldPerformNetworkCheck_ManualIgnoresEnablementAndLastCheckDate(
+        bool isEnabled,
+        string todayText,
+        string lastCheckText)
+    {
+        DateOnly today = DateOnly.Parse(todayText);
+        DateOnly lastCheck = DateOnly.Parse(lastCheckText);
+
+        Assert.True(UpdateCheckPolicy.ShouldPerformNetworkCheck(
+            isEnabled,
+            today,
+            lastCheck,
+            ignoreLastCheckDate: true));
+    }
+
+    [Theory]
     [InlineData("3.4.2131.0", "3.0.0.0", true)]
     [InlineData("3.4.2131.0", "3.4.2131.0", false)]
     [InlineData("3.0.0.0", "3.4.2131.0", false)]

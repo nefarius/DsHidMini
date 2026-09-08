@@ -100,6 +100,17 @@
             <ui:TextBlock
                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                 Text="{Binding ViewModel.AppVersion}" />
+            <ui:Button
+                Margin="0,12,0,0"
+                HorizontalAlignment="Left"
+                Command="{Binding ViewModel.CheckForUpdatesCommand}"
+                Content="Check for updates" />
+            <TextBlock
+                MaxWidth="600"
+                Margin="0,8,0,0"
+                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                Text="Looks for a newer ControlApp on Buildbot, even if you already skipped an update today."
+                TextWrapping="Wrap" />
         </StackPanel>
     </ScrollViewer>
 </Page>

@@ -9,8 +9,14 @@ internal static class UpdateCheckPolicy
     public static bool ShouldPerformNetworkCheck(
         bool isUpdateCheckEnabled,
         DateOnly today,
-        DateOnly? lastUpdateCheckDate)
+        DateOnly? lastUpdateCheckDate,
+        bool ignoreLastCheckDate = false)
     {
+        if (ignoreLastCheckDate)
+        {
+            return true;
+        }
+
         return isUpdateCheckEnabled && lastUpdateCheckDate != today;
     }
 
