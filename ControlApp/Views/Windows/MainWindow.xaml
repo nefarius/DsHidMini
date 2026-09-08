@@ -30,7 +30,7 @@
             Width="0"
             Height="0"
             FocusOnLeftClick="False"
-            Icon="pack://application:,,,/Assets/wpfui-icon-256.png"
+            Icon="pack://application:,,,/Assets/FireShock.png"
             LeftClick="AppNotifyIcon_OnLeftClick"
             MenuOnRightClick="True"
             TooltipText="DsHidMini ControlApp">
@@ -54,7 +54,7 @@
                 CloseWindowByDoubleClickOnIcon="False"
                 DockPanel.Dock="Left">
                 <ui:TitleBar.Icon>
-                    <ui:ImageIcon Source="pack://application:,,,/Assets/wpfui-icon-256.png" />
+                    <ui:ImageIcon Source="pack://application:,,,/Assets/FireShock.png" />
                 </ui:TitleBar.Icon>
             </ui:TitleBar>
         </DockPanel>

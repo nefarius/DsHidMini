@@ -12,7 +12,7 @@
     <PackageProjectUrl>https://github.com/nefarius/DsHidMini</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
-    <PackageIcon>FireShock.png</PackageIcon>
+    <PackageIcon>FireShock.nuget.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <MinVerTagPrefix>sdk-v</MinVerTagPrefix>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'True'">true</ContinuousIntegrationBuild>
@@ -25,7 +25,7 @@
     <EmbeddedResource Remove="docs\**" />
     <None Remove="docs\**" />
     <None Include="README.md" Pack="true" PackagePath="\" />
-    <None Include="..\..\assets\FireShock.png" Pack="true" PackagePath="\" />
+    <None Include="..\..\assets\FireShock.nuget.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>
