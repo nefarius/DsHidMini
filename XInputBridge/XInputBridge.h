@@ -29,6 +29,7 @@
 #define XINPUT_CAPS_WIRELESS            0x0002
 #define XINPUT_CAPS_PMD_SUPPORTED       0x0008
 #define XINPUT_CAPS_NO_NAVIGATION       0x0010
+#define XINPUT_FLAG_GAMEPAD             0x00000001
 
 //
 // Flags for battery status level

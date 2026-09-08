@@ -1,12 +1,10 @@
-﻿#include <Shlwapi.h>
+#include <Shlwapi.h>
+#include <hidapi/hidapi.h>
 #include "GlobalState.h"
 #include "UniUtil.h"
 #include "DsHidMini/dshmguid.h"
 
 
-//
-// Invoked on device arrival or removal
-// 
 DWORD CALLBACK GlobalState::DeviceNotificationCallback(
 	_In_ HCMNOTIFICATION hNotify,
 	_In_opt_ PVOID Context,
@@ -26,6 +24,9 @@ DWORD CALLBACK GlobalState::DeviceNotificationCallback(
 		return ERROR_INVALID_PARAMETER;
 	}
 
+	if (_this->ShuttingDown.load())
+		return ERROR_SUCCESS;
+
 	auto scopedSpan = TRACE_SCOPED_SPAN("");
 
 	switch (Action)
@@ -36,32 +37,38 @@ DWORD CALLBACK GlobalState::DeviceNotificationCallback(
 			const auto symlink = std::wstring(EventData->u.DeviceInterface.SymbolicLink);
 			LOG_INFO("New DS3 device arrived: {}", ConvertWideToANSI(symlink));
 
-			// child device boot is not instant so we need to do 
-			// this in the background to not block this callback
-			std::thread asyncArrival{
-				[_this, symlink]
-				{
-					AcquireSRWLockExclusive(&_this->StatesLock);
-					{
-						DWORD slotIndex = 0;
-						if (const auto slot = _this->GetNextFreeSlot(&slotIndex))
-						{
-							slot->Dispose();
-							if (!slot->InitializeAsDs3(symlink))
-							{
-								LOG_ERROR("Failed to initialize {} as a DS3 HID device", ConvertWideToANSI(symlink));
-							}
-							else
-							{
-								LOG_INFO("Assigned {} to index {}", ConvertWideToANSI(symlink), slotIndex);
-							}
-						}
-					}
-					ReleaseSRWLockExclusive(&_this->StatesLock);
-				}
-			};
+			InterlockedIncrement(&_this->ArrivalWorkCount);
 
-			asyncArrival.detach();
+			// child device boot is not instant so we need to do
+			// this in the background to not block this callback
+			try
+			{
+				std::thread asyncArrival{
+					[_this, symlink]
+					{
+						ScopeCleanup workDone = [_this]
+						{
+							InterlockedDecrement(&_this->ArrivalWorkCount);
+						};
+
+						if (_this->ShuttingDown.load())
+							return;
+
+						DeviceState prepared;
+						if (!prepared.InitializeAsDs3(symlink))
+							return;
+
+						_this->AssignPreparedDs3(symlink, prepared);
+					}
+				};
+
+				asyncArrival.detach();
+			}
+			catch (...)
+			{
+				InterlockedDecrement(&_this->ArrivalWorkCount);
+				LOG_ERROR("Failed to start DS3 arrival worker for {}", ConvertWideToANSI(symlink));
+			}
 		}
 
 		if (IsEqualGUID(XUSB_INTERFACE_CLASS_GUID, EventData->u.DeviceInterface.ClassGuid))
@@ -74,24 +81,7 @@ DWORD CALLBACK GlobalState::DeviceNotificationCallback(
 			if (SymlinkToUserIndex(EventData->u.DeviceInterface.SymbolicLink, &userIndex))
 			{
 				LOG_INFO("User index: {}", userIndex);
-
-				AcquireSRWLockExclusive(&_this->StatesLock);
-				{
-					DWORD slotIndex = 0;
-					if (const auto slot = _this->GetNextFreeSlot(&slotIndex))
-					{
-						slot->Dispose();
-						if (!slot->InitializeAsXusb(EventData->u.DeviceInterface.SymbolicLink, userIndex))
-						{
-							LOG_ERROR("Failed to initialize {} as a XUSB device", symlink);
-						}
-						else
-						{
-							LOG_INFO("Assigned {} to index {}", symlink, slotIndex);
-						}
-					}
-				}
-				ReleaseSRWLockExclusive(&_this->StatesLock);
+				_this->AssignXusbDevice(EventData->u.DeviceInterface.SymbolicLink, userIndex);
 			}
 			else
 			{
@@ -100,29 +90,11 @@ DWORD CALLBACK GlobalState::DeviceNotificationCallback(
 		}
 		break;
 	case CM_NOTIFY_ACTION_DEVICEINTERFACEREMOVAL:
-		if (IsEqualGUID(GUID_DEVINTERFACE_DSHIDMINI, EventData->u.DeviceInterface.ClassGuid))
+		if (IsEqualGUID(GUID_DEVINTERFACE_DSHIDMINI, EventData->u.DeviceInterface.ClassGuid) ||
+			IsEqualGUID(XUSB_INTERFACE_CLASS_GUID, EventData->u.DeviceInterface.ClassGuid))
 		{
 			const std::string symlink = ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink);
-			LOG_INFO("DS3 device got removed: {}", symlink);
-
-			AcquireSRWLockExclusive(&_this->StatesLock);
-			{
-				if (const auto slot = _this->FindBySymbolicLink(EventData->u.DeviceInterface.SymbolicLink))
-				{
-					slot->Dispose();
-				}
-				else
-				{
-					LOG_WARN("No state found for {}", symlink);
-				}
-			}
-			ReleaseSRWLockExclusive(&_this->StatesLock);
-		}
-
-		if (IsEqualGUID(XUSB_INTERFACE_CLASS_GUID, EventData->u.DeviceInterface.ClassGuid))
-		{
-			const std::string symlink = ConvertWideToANSI(EventData->u.DeviceInterface.SymbolicLink);
-			LOG_INFO("XUSB device got removed: {}", symlink);
+			LOG_INFO("Device got removed: {}", symlink);
 
 			AcquireSRWLockExclusive(&_this->StatesLock);
 			{
@@ -145,44 +117,20 @@ DWORD CALLBACK GlobalState::DeviceNotificationCallback(
 	return ERROR_SUCCESS;
 }
 
-//
-// Initialization tasks on a background thread
-// 
 DWORD WINAPI GlobalState::InitAsync(_In_ LPVOID lpParameter)
 {
-#if defined(SCPLIB_ENABLE_TELEMETRY)
-	//
-	// Set up tracing
-	// 
-
-	const auto resourceAttributes = sdkresource::ResourceAttributes{
-		{ opentelemetry::sdk::resource::SemanticConventions::kServiceName, TRACER_NAME }
+	const auto _this = static_cast<GlobalState*>(lpParameter);
+	ScopeCleanup finished = [_this]
+	{
+		_this->SignalStartupFinished();
 	};
 
-	const auto resource = sdkresource::Resource::Create(resourceAttributes);
-	auto traceExporter = otlp::OtlpGrpcExporterFactory::Create();
-	std::unique_ptr<opentelemetry::sdk::trace::SpanProcessor> traceProcessor = sdktrace::SimpleSpanProcessorFactory::Create(std::move(traceExporter));
-	std::shared_ptr<trace::TracerProvider> traceProvider = sdktrace::TracerProviderFactory::Create(std::move(traceProcessor), resource);
-
-	trace::Provider::SetTracerProvider(traceProvider);
-
-	//
-	// Set up logger
-	// 
-
-	auto loggerExporter = otlp::OtlpGrpcLogRecordExporterFactory::Create();
-	auto loggerProcessor = sdklogs::SimpleLogRecordProcessorFactory::Create(std::move(loggerExporter));
-	std::shared_ptr<logs::LoggerProvider> loggerProvider = sdklogs::LoggerProviderFactory::Create(std::move(loggerProcessor), resource);
-
-	logs::Provider::SetLoggerProvider(loggerProvider);
-
-	LOG_INFO("Library got loaded into PID {}", GetCurrentProcessId());
-#endif
-
-	const auto _this = static_cast<GlobalState*>(lpParameter);
 	auto scopedSpan = TRACE_SCOPED_SPAN("");
 
 	LOG_INFO("Async library startup initialized");
+
+	if (_this->ShuttingDown.load())
+		return ERROR_SUCCESS;
 
 	CHAR systemDir[MAX_PATH] = {};
 
@@ -200,17 +148,15 @@ DWORD WINAPI GlobalState::InitAsync(_In_ LPVOID lpParameter)
 		return GetLastError();
 	}
 
-	const HMODULE xiLib = LoadLibraryA(fullXiPath);
+	_this->SystemXInputModule = LoadLibraryA(fullXiPath);
 
-	if (xiLib == nullptr)
+	if (_this->SystemXInputModule == nullptr)
 	{
 		LOG_ERROR("LoadLibraryA failed: {:#x}", GetLastError());
 		return GetLastError();
 	}
 
-	//
-	// Grab the function pointers from the OS-provided exports
-	// 
+	const HMODULE xiLib = _this->SystemXInputModule;
 
 	_this->FpnXInputGetState = reinterpret_cast<decltype(XInputGetState)*>(GetProcAddress(xiLib,
 		NAMEOF(XInputGetState)
@@ -246,18 +192,14 @@ DWORD WINAPI GlobalState::InitAsync(_In_ LPVOID lpParameter)
 		MAKEINTRESOURCEA(103)
 	));
 
-	//
-	// Register notifications for device arrival/removal
-	// 
+	if (_this->ShuttingDown.load())
+		return ERROR_SUCCESS;
 
 	CM_NOTIFY_FILTER ds3Filter = {};
 	ds3Filter.cbSize = sizeof(CM_NOTIFY_FILTER);
 	ds3Filter.FilterType = CM_NOTIFY_FILTER_TYPE_DEVICEINTERFACE;
 	ds3Filter.u.DeviceInterface.ClassGuid = GUID_DEVINTERFACE_DSHIDMINI;
 
-	//
-	// Register DsHidMini device interface
-	// 
 	CONFIGRET ret = CM_Register_Notification(&ds3Filter, _this, DeviceNotificationCallback, &_this->Ds3NotificationHandle);
 
 	if (ret != CR_SUCCESS)
@@ -270,9 +212,6 @@ DWORD WINAPI GlobalState::InitAsync(_In_ LPVOID lpParameter)
 	xusbFilter.FilterType = CM_NOTIFY_FILTER_TYPE_DEVICEINTERFACE;
 	xusbFilter.u.DeviceInterface.ClassGuid = XUSB_INTERFACE_CLASS_GUID;
 
-	//
-	// Register X360/XBONE device interface
-	// 
 	ret = CM_Register_Notification(&xusbFilter, _this, DeviceNotificationCallback, &_this->XusbNotificationHandle);
 
 	if (ret != CR_SUCCESS)
@@ -285,10 +224,11 @@ DWORD WINAPI GlobalState::InitAsync(_In_ LPVOID lpParameter)
 		LOG_ERROR("hid_init failed: {}", ConvertWideToANSI(hid_error(nullptr)));
 	}
 
-	_this->EnumerateDs3Devices();
-	_this->EnumerateXusbDevices();
-
-	SetEvent(_this->StartupFinishedEvent);
+	if (!_this->ShuttingDown.load())
+	{
+		_this->EnumerateDs3Devices();
+		_this->EnumerateXusbDevices();
+	}
 
 	return ERROR_SUCCESS;
 }

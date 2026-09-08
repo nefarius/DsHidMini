@@ -401,6 +401,161 @@ class Build : NukeBuild
                 $"sign /v /n \"{SignCertName}\" /tr {SignTimestampUrl} /fd sha256 /td sha256 \"{msiPath}\"");
         });
 
+    IEnumerable<(Configuration config, MSBuildTargetPlatform platform)> XInputBridgeBuildCombinations()
+    {
+        if (IsLocalBuild && string.IsNullOrWhiteSpace(TargetPlatform))
+        {
+            return
+            [
+                (Configuration.Debug, MSBuildTargetPlatform.x64),
+                (Configuration.Release, MSBuildTargetPlatform.x64),
+                (Configuration.Release, MSBuildTargetPlatform.Win32)
+            ];
+        }
+
+        if (string.IsNullOrWhiteSpace(TargetPlatform))
+        {
+            throw new InvalidOperationException(
+                "TargetPlatform must be set on CI, e.g. --target-platform x64.");
+        }
+
+        MSBuildTargetPlatform platform = string.Equals(TargetPlatform, "x86", StringComparison.OrdinalIgnoreCase)
+            ? MSBuildTargetPlatform.Win32
+            : (MSBuildTargetPlatform)TargetPlatform;
+
+        return [(Configuration, platform)];
+    }
+
+    AbsolutePath ResolveScpDllTesterPath(Configuration configuration, MSBuildTargetPlatform platform)
+    {
+        string platformName = platform.ToString();
+        string[] candidates =
+        [
+            configuration == Configuration.Debug
+                ? RootDirectory / "bin" / "Debug" / platformName / "scpdlltester.exe"
+                : RootDirectory / "bin" / platformName / "scpdlltester.exe",
+            RootDirectory / "bin" / "Debug" / "x86" / "scpdlltester.exe",
+            RootDirectory / "bin" / "x86" / "scpdlltester.exe",
+            RootDirectory / "bin" / "Win32" / "scpdlltester.exe"
+        ];
+
+        return candidates.Select(path => (AbsolutePath)path).FirstOrDefault(path => path.FileExists())
+               ?? (AbsolutePath)candidates[0];
+    }
+
+    void BuildXInputBridgeProjects(Configuration configuration, MSBuildTargetPlatform platform)
+    {
+        AbsolutePath testerProject = RootDirectory / "scpdlltester" / "scpdlltester.vcxproj";
+        Log.Information("Building XInputBridge {Configuration} | {Platform}", configuration, platform);
+        MSBuildTasks.MSBuild(s => s
+            .SetProcessToolPath(MSBuildPath)
+            .SetTargetPath(testerProject)
+            .SetTargets("Rebuild")
+            .SetConfiguration(configuration)
+            .SetTargetPlatform(platform)
+            .SetMaxCpuCount(Environment.ProcessorCount)
+            .SetNodeReuse(IsLocalBuild)
+            .SetVerbosity(MSBuildVerbosity.Minimal)
+            .SetProperty("SignMode", "Off")
+            .SetProperty("SolutionDir", RootDirectory.ToString().TrimEnd('\\', '/') + "\\"));
+    }
+
+    /// <summary>
+    /// Build XInputBridge and scpdlltester without compiling the driver or DMF.
+    /// </summary>
+    [UsedImplicitly]
+    public Target CompileXInputBridge => _ => _
+        .Executes(() =>
+        {
+            foreach ((Configuration config, MSBuildTargetPlatform platform) in XInputBridgeBuildCombinations())
+            {
+                BuildXInputBridgeProjects(config, platform);
+            }
+        });
+
+    /// <summary>
+    /// Run XInputBridge synthetic self-tests for each built host-runnable platform.
+    /// </summary>
+    [UsedImplicitly]
+    public Target TestXInputBridge => _ => _
+        .DependsOn(CompileXInputBridge)
+        .Executes(() =>
+        {
+            foreach ((Configuration config, MSBuildTargetPlatform platform) in XInputBridgeBuildCombinations())
+            {
+                if (string.Equals(platform.ToString(), "ARM64", StringComparison.OrdinalIgnoreCase))
+                {
+                    Log.Information("Skipping XInputBridge tests on ARM64 in this environment");
+                    continue;
+                }
+
+                AbsolutePath tester = ResolveScpDllTesterPath(config, platform);
+                if (!tester.FileExists())
+                {
+                    throw new InvalidOperationException($"scpdlltester not found at {tester}");
+                }
+
+                Log.Information("Running {Tester} --self-test", tester);
+                ProcessTasks.StartProcess(tester, "--self-test").AssertZeroExitCode();
+            }
+        });
+
+    /// <summary>
+    /// Run synthetic XInputBridge microbenchmarks.
+    /// </summary>
+    [UsedImplicitly]
+    public Target BenchmarkXInputBridge => _ => _
+        .DependsOn(CompileXInputBridge)
+        .Executes(() =>
+        {
+            (Configuration config, MSBuildTargetPlatform platform) =
+                XInputBridgeBuildCombinations().First(item =>
+                    item.config == Configuration.Release &&
+                    !string.Equals(item.platform.ToString(), "ARM64", StringComparison.OrdinalIgnoreCase));
+
+            AbsolutePath tester = ResolveScpDllTesterPath(config, platform);
+            if (!tester.FileExists())
+            {
+                throw new InvalidOperationException($"scpdlltester not found at {tester}");
+            }
+
+            Log.Information("Running {Tester} --bench", tester);
+            ProcessTasks.StartProcess(tester, "--bench").AssertZeroExitCode();
+        });
+
+    /// <summary>
+    /// Run SXS DualShock 3 hardware checks. Requires a connected pad.
+    /// </summary>
+    [UsedImplicitly]
+    public Target HardwareTestXInputBridge => _ => _
+        .DependsOn(CompileXInputBridge)
+        .Executes(() =>
+        {
+            (Configuration config, MSBuildTargetPlatform platform) =
+                XInputBridgeBuildCombinations().First(item =>
+                    !string.Equals(item.platform.ToString(), "ARM64", StringComparison.OrdinalIgnoreCase));
+
+            AbsolutePath tester = ResolveScpDllTesterPath(config, platform);
+            if (!tester.FileExists())
+            {
+                throw new InvalidOperationException($"scpdlltester not found at {tester}");
+            }
+
+            Log.Information("Running {Tester} --hw-test", tester);
+            ProcessTasks.StartProcess(tester, "--hw-test").AssertZeroExitCode();
+        });
+
+    /// <summary>
+    /// Build, test, and benchmark XInputBridge.
+    /// </summary>
+    [UsedImplicitly]
+    public Target AuditXInputBridge => _ => _
+        .DependsOn(TestXInputBridge, BenchmarkXInputBridge)
+        .Executes(() =>
+        {
+            Log.Information("XInputBridge audit targets completed");
+        });
+
     /// Support plugins are available for:
     /// - JetBrains ReSharper        https://nuke.build/resharper
     /// - JetBrains Rider            https://nuke.build/rider

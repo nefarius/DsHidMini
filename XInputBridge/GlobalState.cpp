@@ -1,9 +1,10 @@
-﻿#include "GlobalState.h"
+#include "GlobalState.h"
 
 #include <Shlwapi.h>
 #include <hidapi/hidapi.h>
 #include <winreg/WinReg.hpp>
 
+#include "ReportMapper.h"
 #include "Types.h"
 #include "UniUtil.h"
 
@@ -11,39 +12,115 @@
 EXTERN_C IMAGE_DOS_HEADER __ImageBase; // NOLINT(bugprone-reserved-identifier)
 
 
-//
-// Initialization safe to perform in DllMain
-// 
 void GlobalState::Initialize()
 {
 	InitializeSRWLock(&StatesLock);
+	ShuttingDown.store(false);
+	StartupReady.store(false);
 
 	this->StartupFinishedEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr);
 
-	//
-	// Call stuff that must not be done in DllMain in the background
-	// 
-	(void)CreateThread(nullptr, 0, InitAsync, this, 0, nullptr);
+	this->InitThread = CreateThread(nullptr, 0, InitAsync, this, 0, nullptr);
+	if (this->InitThread == nullptr)
+	{
+		SignalStartupFinished();
+	}
 }
 
-void GlobalState::Destroy() const
+void GlobalState::Destroy()
 {
 	LOG_INFO("Library getting unloaded from PID {}", GetCurrentProcessId());
 
-	(void)CloseHandle(this->StartupFinishedEvent);
-	(void)CM_Unregister_Notification(this->Ds3NotificationHandle);
-	(void)CM_Unregister_Notification(this->XusbNotificationHandle);
+	ShuttingDown.store(true);
+	SignalStartupFinished();
+
+	if (this->Ds3NotificationHandle)
+	{
+		(void)CM_Unregister_Notification(this->Ds3NotificationHandle);
+		this->Ds3NotificationHandle = nullptr;
+	}
+
+	if (this->XusbNotificationHandle)
+	{
+		(void)CM_Unregister_Notification(this->XusbNotificationHandle);
+		this->XusbNotificationHandle = nullptr;
+	}
+
+	for (int i = 0; i < 50 && ArrivalWorkCount > 0; ++i)
+	{
+		Sleep(20);
+	}
+
+	AcquireSRWLockExclusive(&this->StatesLock);
+	DisposeAllSlots();
+	ReleaseSRWLockExclusive(&this->StatesLock);
 
 	(void)hid_exit();
+
+	if (this->SystemXInputModule)
+	{
+		FpnXInputGetState = nullptr;
+		FpnXInputSetState = nullptr;
+		FpnXInputGetCapabilities = nullptr;
+		FpnXInputEnable = nullptr;
+		FpnXInputGetDSoundAudioDeviceGuids = nullptr;
+		FpnXInputGetBatteryInformation = nullptr;
+		FpnXInputGetKeystroke = nullptr;
+		FpnXInputGetStateEx = nullptr;
+		FpnXInputWaitForGuideButton = nullptr;
+		FpnXInputCancelGuideButtonWait = nullptr;
+		FpnXInputPowerOffController = nullptr;
+		(void)FreeLibrary(this->SystemXInputModule);
+		this->SystemXInputModule = nullptr;
+	}
+
+	if (this->InitThread)
+	{
+		(void)WaitForSingleObject(this->InitThread, 250);
+		(void)CloseHandle(this->InitThread);
+		this->InitThread = nullptr;
+	}
+
+	if (this->StartupFinishedEvent && this->StartupFinishedEvent != INVALID_HANDLE_VALUE)
+	{
+		(void)CloseHandle(this->StartupFinishedEvent);
+		this->StartupFinishedEvent = INVALID_HANDLE_VALUE;
+	}
 }
 
-//
-// https://github.com/DJm00n/RawInputDemo/blob/master/RawInputLib/RawInputDeviceHid.cpp#L275-L339
-// 
+void GlobalState::WaitForStartup() const
+{
+	if (StartupReady.load(std::memory_order_acquire) || ShuttingDown.load(std::memory_order_acquire))
+		return;
+
+	if (StartupFinishedEvent && StartupFinishedEvent != INVALID_HANDLE_VALUE)
+		WaitForSingleObject(StartupFinishedEvent, MAX_STARTUP_WAIT_MS);
+}
+
+void GlobalState::SignalStartupFinished()
+{
+	if (StartupFinishedEvent && StartupFinishedEvent != INVALID_HANDLE_VALUE)
+		SetEvent(StartupFinishedEvent);
+
+	StartupReady.store(true, std::memory_order_release);
+}
+
+void GlobalState::DisposeAllSlots()
+{
+	for (auto& slot : States)
+	{
+		slot.Dispose();
+	}
+}
+
+_Success_(return)
 _Must_inspect_result_
-bool GlobalState::SymlinkToUserIndex(_In_ PCWSTR Symlink, _Inout_ PDWORD UserIndex)
+bool GlobalState::SymlinkToUserIndex(_In_ PCWSTR Symlink, _Out_ PDWORD UserIndex)
 {
 	auto scopedSpan = TRACE_SCOPED_SPAN("", { "global.symlink", ConvertWideToANSI(Symlink) });
+
+	if (!UserIndex)
+		return false;
 
 	constexpr DWORD desiredAccess = (GENERIC_WRITE | GENERIC_READ);
 	constexpr DWORD shareMode = FILE_SHARE_READ | FILE_SHARE_WRITE;
@@ -58,10 +135,12 @@ bool GlobalState::SymlinkToUserIndex(_In_ PCWSTR Symlink, _Inout_ PDWORD UserInd
 		nullptr
 	);
 
+	if (handle == INVALID_HANDLE_VALUE)
+		return false;
+
 	ScopeCleanup handleFree = [handle]
 	{
-		if (handle != INVALID_HANDLE_VALUE)
-			CloseHandle(handle);
+		CloseHandle(handle);
 	};
 
 	std::array<uint8_t, 3> gamepadStateRequest0101{ 0x01, 0x01, 0x00 };
@@ -75,46 +154,20 @@ bool GlobalState::SymlinkToUserIndex(_In_ PCWSTR Symlink, _Inout_ PDWORD UserInd
 	if (!DeviceIoControl(handle,
 		IOCTL_XUSB_GET_LED_STATE,
 		gamepadStateRequest0101.data(),
-		// ReSharper disable once CppRedundantCastExpression
-		(DWORD)gamepadStateRequest0101.size(),
+		static_cast<DWORD>(gamepadStateRequest0101.size()),
 		ledStateData.data(),
-		// ReSharper disable once CppRedundantCastExpression
-		(DWORD)ledStateData.size(),
+		static_cast<DWORD>(ledStateData.size()),
 		&len,
 		nullptr
 	))
 	{
-		// GetLastError()
 		return false;
 	}
 
-	// https://www.partsnotincluded.com/xbox-360-controller-led-animations-info/
-	// https://github.com/paroj/xpad/blob/5978d1020344c3288701ef70ea9a54dfc3312733/xpad.c#L1382-L1402
-	constexpr uint8_t XINPUT_LED_TO_PORT_MAP[] =
-	{
-		INVALID_X_INPUT_USER_ID, // All off
-		INVALID_X_INPUT_USER_ID, // All blinking, then previous setting
-		0, // 1 flashes, then on
-		1, // 2 flashes, then on
-		2, // 3 flashes, then on
-		3, // 4 flashes, then on
-		0, // 1 on
-		1, // 2 on
-		2, // 3 on
-		3, // 4 on
-		INVALID_X_INPUT_USER_ID, // Rotate
-		INVALID_X_INPUT_USER_ID, // Blink, based on previous setting
-		INVALID_X_INPUT_USER_ID, // Slow blink, based on previous setting
-		INVALID_X_INPUT_USER_ID, // Rotate with two lights
-		INVALID_X_INPUT_USER_ID, // Persistent slow all blink
-		INVALID_X_INPUT_USER_ID, // Blink once, then previous setting
-	};
+	if (len < 3)
+		return false;
 
-	const uint8_t ledState = ledStateData[2];
-
-	*UserIndex = XINPUT_LED_TO_PORT_MAP[ledState];
-
-	return true;
+	return ReportMapper::MapXusbLedStateToUserIndex(ledStateData[2], *UserIndex);
 }
 
 _Success_(return != NULL)
@@ -154,6 +207,11 @@ DeviceState* GlobalState::FindBySymbolicLink(const std::wstring& Symlink)
 
 DeviceState* GlobalState::GetXusbByUserIndex(const DWORD UserIndex)
 {
+	return GetXusbByRealUserIndex(UserIndex);
+}
+
+DeviceState* GlobalState::GetXusbByRealUserIndex(const DWORD UserIndex)
+{
 	auto scopedSpan = TRACE_SCOPED_SPAN("",
 		{ "xinput.userIndex", std::to_string(UserIndex) }
 	);
@@ -161,9 +219,13 @@ DeviceState* GlobalState::GetXusbByUserIndex(const DWORD UserIndex)
 	if (UserIndex >= DS3_DEVICES_MAX)
 		return nullptr;
 
-	const auto state = &this->States[UserIndex];
+	const auto item = std::ranges::find_if(this->States,
+		[UserIndex](const DeviceState& element)
+		{
+			return element.Type == XI_DEVICE_TYPE_XUSB && element.RealUserIndex == UserIndex;
+		});
 
-	return state->Type == XI_DEVICE_TYPE_XUSB ? state : nullptr;
+	return (item != this->States.end()) ? &(*item) : nullptr;
 }
 
 _Success_(return != NULL)
@@ -188,11 +250,67 @@ bool GlobalState::GetConnectedDs3ByUserIndex(_In_ const DWORD UserIndex, _Out_op
 	return true;
 }
 
+void GlobalState::AssignPreparedDs3(const std::wstring& Symlink, DeviceState& Prepared)
+{
+	if (ShuttingDown.load())
+	{
+		Prepared.Dispose();
+		return;
+	}
+
+	AcquireSRWLockExclusive(&this->StatesLock);
+	{
+		if (FindBySymbolicLink(Symlink))
+		{
+			LOG_INFO("DS3 {} already assigned, ignoring duplicate", ConvertWideToANSI(Symlink));
+			Prepared.Dispose();
+		}
+		else if (const auto slot = GetNextFreeSlot())
+		{
+			slot->AdoptFrom(Prepared);
+		}
+		else
+		{
+			LOG_WARN("No free slot to assign {} to", ConvertWideToANSI(Symlink));
+			Prepared.Dispose();
+		}
+	}
+	ReleaseSRWLockExclusive(&this->StatesLock);
+}
+
+void GlobalState::AssignXusbDevice(const std::wstring& Symlink, const DWORD UserIndex)
+{
+	if (ShuttingDown.load())
+		return;
+
+	AcquireSRWLockExclusive(&this->StatesLock);
+	{
+		if (FindBySymbolicLink(Symlink) || GetXusbByRealUserIndex(UserIndex))
+		{
+			LOG_INFO("XUSB {} already assigned, ignoring duplicate", ConvertWideToANSI(Symlink));
+		}
+		else if (const auto slot = GetNextFreeSlot())
+		{
+			if (!slot->InitializeAsXusb(Symlink, UserIndex))
+			{
+				LOG_ERROR("Failed to initialize {} as a XUSB device", ConvertWideToANSI(Symlink));
+			}
+			else
+			{
+				LOG_INFO("Assigned {} to real user index {}", ConvertWideToANSI(Symlink), UserIndex);
+			}
+		}
+		else
+		{
+			LOG_WARN("No free slot to assign {} to", ConvertWideToANSI(Symlink));
+		}
+	}
+	ReleaseSRWLockExclusive(&this->StatesLock);
+}
+
 void GlobalState::EnumerateDs3Devices()
 {
 	auto scopedSpan = TRACE_SCOPED_SPAN("");
-
-	constexpr uint8_t DsHidMiniDeviceModeSixaxisCompatible = 0x03;
 
 	LOG_INFO("Running DS3 enumeration");
 
@@ -201,53 +319,24 @@ void GlobalState::EnumerateDs3Devices()
 	if (!symlinks.has_value())
 	{
 		LOG_INFO("No DS3 interface devices found");
-		goto exit;
+		LOG_INFO("DS3 enumeration finished");
+		return;
 	}
 
 	LOG_INFO("Found {} device(s)", symlinks.value().size());
 
 	for (const auto& symlink : symlinks.value())
 	{
-		const auto instanceId = InterfaceIdToInstanceId(symlink);
+		if (ShuttingDown.load())
+			break;
 
-		if (!instanceId.has_value())
-		{
-			LOG_WARN("Instance ID lookup failed for {}", ConvertWideToANSI(symlink));
+		DeviceState prepared;
+		if (!prepared.InitializeAsDs3(symlink))
 			continue;
-		}
 
-		const auto hidDeviceMode = GetDs3HidDeviceModeProperty(instanceId.value());
-
-		if (hidDeviceMode != DsHidMiniDeviceModeSixaxisCompatible)
-		{
-			LOG_WARN("DS3 device {} not in SXS mode, skipping", ConvertWideToANSI(symlink));
-			continue;
-		}
-
-		AcquireSRWLockExclusive(&this->StatesLock);
-		{
-			DWORD slotIndex = 0;
-			if (const auto state = this->GetNextFreeSlot(&slotIndex))
-			{
-				state->Dispose();
-				if (!state->InitializeAsDs3(symlink))
-				{
-					LOG_ERROR("Failed to initialize {} as a DS3 device", ConvertWideToANSI(symlink));
-				}
-				else
-				{
-					LOG_INFO("Assigned {} to index {}", ConvertWideToANSI(symlink), slotIndex);
-				}
-			}
-			else
-			{
-				LOG_WARN("No free slot to assign {} to", ConvertWideToANSI(symlink));
-			}
-		}
-		ReleaseSRWLockExclusive(&this->StatesLock);
+		AssignPreparedDs3(symlink, prepared);
 	}
 
-exit:
 	LOG_INFO("DS3 enumeration finished");
 }
 
@@ -262,35 +351,22 @@ void GlobalState::EnumerateXusbDevices()
 	if (!symlinks.has_value())
 	{
 		LOG_INFO("No XUSB interface devices found");
-		goto exit;
+		LOG_INFO("XUSB enumeration finished");
+		return;
 	}
 
 	LOG_INFO("Found {} device(s)", symlinks.value().size());
 
 	for (const auto& symlink : symlinks.value())
 	{
+		if (ShuttingDown.load())
+			break;
+
 		DWORD userIndex = INVALID_X_INPUT_USER_ID;
 		if (SymlinkToUserIndex(symlink.c_str(), &userIndex))
 		{
 			LOG_INFO("User index: {}", userIndex);
-
-			AcquireSRWLockExclusive(&this->StatesLock);
-			{
-				DWORD slotIndex = 0;
-				if (const auto slot = this->GetNextFreeSlot(&slotIndex))
-				{
-					slot->Dispose();
-					if (!slot->InitializeAsXusb(symlink, slotIndex))
-					{
-						LOG_ERROR("Failed to initialize {} as a XUSB device", ConvertWideToANSI(symlink));
-					}
-					else
-					{
-						LOG_INFO("Assigned {} to index {}", ConvertWideToANSI(symlink), slotIndex);
-					}
-				}
-			}
-			ReleaseSRWLockExclusive(&this->StatesLock);
+			AssignXusbDevice(symlink, userIndex);
 		}
 		else
 		{
@@ -298,6 +374,5 @@ void GlobalState::EnumerateXusbDevices()
 		}
 	}
 
-exit:
 	LOG_INFO("XUSB enumeration finished");
 }

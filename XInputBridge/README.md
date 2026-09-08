@@ -58,8 +58,11 @@ Dependencies (via [vcpkg](https://vcpkg.io/)): **hidapi**, **winreg**.
 - **IDE:** Visual Studio 2022 with C++ desktop workload.
 - **vcpkg:** Install [vcpkg](https://vcpkg.io/en/docs/getting-started.html), then integrate (e.g. `vcpkg integrate install`). The project uses the vcpkg MSBuild integration; triplets are set in the vcxproj (e.g. `x64-windows-static` for x64).
 - **Solution:** Open the repository solution (e.g. `dshidmini.sln`) and build the **XInputBridge** project. Supported platforms: **Win32**, **x64**, **ARM64**.
+- **NUKE (preferred):** `.\build.cmd CompileXInputBridge` builds the proxy DLL and `scpdlltester`. `.\build.cmd TestXInputBridge` runs synthetic self-tests. `.\build.cmd BenchmarkXInputBridge` records mapping and no-device poll timings. `.\build.cmd AuditXInputBridge` runs all three.
 
 Output is `XInput1_3.dll`; deploy next to the game executable (or use a loader like x360ce) so the game loads this DLL instead of the system XInput.
+
+`scpdlltester` defaults to a live pad-0 poll loop. Use `scpdlltester --self-test` or `scpdlltester --bench` for CI-style checks that do not require hardware. Use `scpdlltester --hw-test` when an SXS DualShock 3 is connected to exercise GetState, GetStateEx, GetExtended, rumble, HID latency, and load/unload cycles.
 
 ## Known limitations
 
