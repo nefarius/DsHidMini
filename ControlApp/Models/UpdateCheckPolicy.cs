@@ -20,6 +20,13 @@ internal static class UpdateCheckPolicy
         return isUpdateCheckEnabled && lastUpdateCheckDate != today;
     }
 
+    public static bool ShouldReuseInFlightCheck(
+        bool requestIgnoresLastCheckDate,
+        bool inFlightIgnoresLastCheckDate)
+    {
+        return !requestIgnoresLastCheckDate || inFlightIgnoresLastCheckDate;
+    }
+
     public static bool TryParseFileVersion(string? value, out Version? version)
     {
         if (!string.IsNullOrWhiteSpace(value) && Version.TryParse(value.Trim(), out Version parsed))

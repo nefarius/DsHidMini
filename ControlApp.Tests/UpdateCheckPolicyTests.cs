@@ -46,6 +46,23 @@ public class UpdateCheckPolicyTests
     }
 
     [Theory]
+    [InlineData(false, false, true)]
+    [InlineData(false, true, true)]
+    [InlineData(true, true, true)]
+    [InlineData(true, false, false)]
+    public void ShouldReuseInFlightCheck_ManualDoesNotReuseGatedCheck(
+        bool requestIgnoresLastCheckDate,
+        bool inFlightIgnoresLastCheckDate,
+        bool expected)
+    {
+        Assert.Equal(
+            expected,
+            UpdateCheckPolicy.ShouldReuseInFlightCheck(
+                requestIgnoresLastCheckDate,
+                inFlightIgnoresLastCheckDate));
+    }
+
+    [Theory]
     [InlineData("3.4.2131.0", "3.0.0.0", true)]
     [InlineData("3.4.2131.0", "3.4.2131.0", false)]
     [InlineData("3.0.0.0", "3.4.2131.0", false)]

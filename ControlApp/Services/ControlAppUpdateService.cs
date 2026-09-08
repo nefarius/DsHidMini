@@ -33,7 +33,7 @@ public sealed class ControlAppUpdateService(
     public const string MetadataRelativePath = "builds/DsHidMini/latest/bin/.ControlApp.exe.json";
     public const string DownloadUrl = "https://buildbot.nefarius.at/builds/DsHidMini/latest/bin/ControlApp.exe";
 
-    private Task<UpdateCheckOutcome>? _inFlightCheck;
+    private InFlightUpdateCheck? _inFlightCheck;
 
     public Task CheckOnStartupAsync(CancellationToken cancellationToken = default)
     {
@@ -49,40 +49,58 @@ public sealed class ControlAppUpdateService(
         bool ignoreLastCheckDate,
         CancellationToken cancellationToken)
     {
-        Task<UpdateCheckOutcome>? existing = Volatile.Read(ref _inFlightCheck);
-        if (existing is not null)
+        while (true)
         {
-            return await existing.ConfigureAwait(false);
-        }
+            InFlightUpdateCheck? existing = Volatile.Read(ref _inFlightCheck);
+            if (existing is not null)
+            {
+                UpdateCheckOutcome existingOutcome = await existing.Task.ConfigureAwait(false);
+                if (UpdateCheckPolicy.ShouldReuseInFlightCheck(
+                        ignoreLastCheckDate,
+                        existing.IgnoreLastCheckDate))
+                {
+                    return existingOutcome;
+                }
 
-        TaskCompletionSource<UpdateCheckOutcome> completion =
-            new(TaskCreationOptions.RunContinuationsAsynchronously);
-        Task<UpdateCheckOutcome>? raced =
-            Interlocked.CompareExchange(ref _inFlightCheck, completion.Task, null);
-        if (raced is not null)
-        {
-            return await raced.ConfigureAwait(false);
-        }
+                continue;
+            }
 
-        try
-        {
-            UpdateCheckOutcome outcome = await CheckAsync(ignoreLastCheckDate, cancellationToken)
-                .ConfigureAwait(false);
-            completion.SetResult(outcome);
-            return outcome;
-        }
-        catch (Exception ex)
-        {
-            completion.SetException(ex);
-            throw;
-        }
-        finally
-        {
-            Task<UpdateCheckOutcome>? completed = Interlocked.CompareExchange(
-                ref _inFlightCheck,
-                null,
-                completion.Task);
-            _ = completed;
+            TaskCompletionSource<UpdateCheckOutcome> completion =
+                new(TaskCreationOptions.RunContinuationsAsynchronously);
+            InFlightUpdateCheck candidate = new(completion.Task, ignoreLastCheckDate);
+            InFlightUpdateCheck? raced =
+                Interlocked.CompareExchange(ref _inFlightCheck, candidate, null);
+            if (raced is not null)
+            {
+                UpdateCheckOutcome racedOutcome = await raced.Task.ConfigureAwait(false);
+                if (UpdateCheckPolicy.ShouldReuseInFlightCheck(
+                        ignoreLastCheckDate,
+                        raced.IgnoreLastCheckDate))
+                {
+                    return racedOutcome;
+                }
+
+                continue;
+            }
+
+            try
+            {
+                UpdateCheckOutcome outcome = await CheckAsync(ignoreLastCheckDate, cancellationToken)
+                    .ConfigureAwait(false);
+                completion.SetResult(outcome);
+                return outcome;
+            }
+            catch (Exception ex)
+            {
+                completion.SetException(ex);
+                throw;
+            }
+            finally
+            {
+                InFlightUpdateCheck? completed =
+                    Interlocked.CompareExchange(ref _inFlightCheck, null, candidate);
+                _ = completed;
+            }
         }
     }
 
@@ -221,4 +239,8 @@ public sealed class ControlAppUpdateService(
             Log.Logger.Warning(ex, "Failed to open ControlApp download URL.");
         }
     }
+
+    private sealed record InFlightUpdateCheck(
+        Task<UpdateCheckOutcome> Task,
+        bool IgnoreLastCheckDate);
 }
