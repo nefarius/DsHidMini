@@ -1,0 +1,60 @@
+name: 'Download artifact with retry'
+description: 'Downloads one workflow artifact with bounded exponential backoff'
+
+inputs:
+  name:
+    description: 'Artifact name'
+    required: true
+  path:
+    description: 'Destination directory'
+    required: false
+    default: '.'
+  github-token:
+    description: 'Token with actions:read permission'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Download artifact (attempt 1)'
+      id: attempt-1
+      continue-on-error: true
+      uses: actions/download-artifact@v8
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+        github-token: ${{ inputs.github-token }}
+        repository: ${{ github.repository }}
+        run-id: ${{ github.run_id }}
+
+    - name: 'Wait before attempt 2'
+      if: steps.attempt-1.outcome == 'failure'
+      shell: pwsh
+      run: Start-Sleep -Seconds 10
+
+    - name: 'Download artifact (attempt 2)'
+      id: attempt-2
+      if: steps.attempt-1.outcome == 'failure'
+      continue-on-error: true
+      uses: actions/download-artifact@v8
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+        github-token: ${{ inputs.github-token }}
+        repository: ${{ github.repository }}
+        run-id: ${{ github.run_id }}
+
+    - name: 'Wait before attempt 3'
+      if: steps.attempt-2.outcome == 'failure'
+      shell: pwsh
+      run: Start-Sleep -Seconds 30
+
+    - name: 'Download artifact (attempt 3)'
+      if: steps.attempt-2.outcome == 'failure'
+      uses: actions/download-artifact@v8
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+        github-token: ${{ inputs.github-token }}
+        repository: ${{ github.repository }}
+        run-id: ${{ github.run_id }}
