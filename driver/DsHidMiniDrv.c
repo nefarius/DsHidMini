@@ -12,6 +12,29 @@ PWSTR G_DsHidMini_Strings[] =
 #define DSHIDMINI_XBOX_PRODUCT_STRING    L"Controller (Xbox One For Windows)"
 #define DSHIDMINI_SERIAL_NUMBER_STRING   L"" // TODO: use device address?
 
+static
+DS_BATTERY_STATUS
+DSHM_NormalizeBatteryStatus(
+	UCHAR RawStatus
+)
+{
+	//
+	// Sony's hid-sony driver applies the same rule. Navigation Controllers
+	// can report values such as 0xF1: values from 0xEE upwards use the low
+	// bit to distinguish charging (even) from charged (odd).
+	//
+	if (RawStatus >= DsBatteryStatusCharging)
+	{
+		return (RawStatus & 0x01) != 0
+			? DsBatteryStatusCharged
+			: DsBatteryStatusCharging;
+	}
+
+	return RawStatus <= DsBatteryStatusFull
+		? (DS_BATTERY_STATUS)RawStatus
+		: DsBatteryStatusNone;
+}
+
 
 // This macro declares the following function:
 // DMF_CONTEXT_GET()
@@ -801,7 +824,7 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	// under the reference that function already takes.
 	// 
 
-	battery = (DS_BATTERY_STATUS)pInReport->BatteryStatus;
+	battery = DSHM_NormalizeBatteryStatus(pInReport->BatteryStatus);
 
 	//
 	// Capture the previous value before it gets overwritten below, so both
@@ -963,7 +986,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	//
 	// Grab battery info
 	// 
-	battery = (DS_BATTERY_STATUS)pInReport->BatteryStatus;
+	battery = DSHM_NormalizeBatteryStatus(pInReport->BatteryStatus);
 
 	//
 	// React if last known state differs from current state
