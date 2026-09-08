@@ -33,14 +33,57 @@ public sealed class ControlAppUpdateService(
     public const string MetadataRelativePath = "builds/DsHidMini/latest/bin/.ControlApp.exe.json";
     public const string DownloadUrl = "https://buildbot.nefarius.at/builds/DsHidMini/latest/bin/ControlApp.exe";
 
+    private Task<UpdateCheckOutcome>? _inFlightCheck;
+
     public Task CheckOnStartupAsync(CancellationToken cancellationToken = default)
     {
-        return CheckAsync(ignoreLastCheckDate: false, cancellationToken);
+        return RunExclusiveAsync(ignoreLastCheckDate: false, cancellationToken);
     }
 
     internal Task<UpdateCheckOutcome> CheckNowAsync(CancellationToken cancellationToken = default)
     {
-        return CheckAsync(ignoreLastCheckDate: true, cancellationToken);
+        return RunExclusiveAsync(ignoreLastCheckDate: true, cancellationToken);
+    }
+
+    private async Task<UpdateCheckOutcome> RunExclusiveAsync(
+        bool ignoreLastCheckDate,
+        CancellationToken cancellationToken)
+    {
+        Task<UpdateCheckOutcome>? existing = Volatile.Read(ref _inFlightCheck);
+        if (existing is not null)
+        {
+            return await existing.ConfigureAwait(false);
+        }
+
+        TaskCompletionSource<UpdateCheckOutcome> completion =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+        Task<UpdateCheckOutcome>? raced =
+            Interlocked.CompareExchange(ref _inFlightCheck, completion.Task, null);
+        if (raced is not null)
+        {
+            return await raced.ConfigureAwait(false);
+        }
+
+        try
+        {
+            UpdateCheckOutcome outcome = await CheckAsync(ignoreLastCheckDate, cancellationToken)
+                .ConfigureAwait(false);
+            completion.SetResult(outcome);
+            return outcome;
+        }
+        catch (Exception ex)
+        {
+            completion.SetException(ex);
+            throw;
+        }
+        finally
+        {
+            Task<UpdateCheckOutcome>? completed = Interlocked.CompareExchange(
+                ref _inFlightCheck,
+                null,
+                completion.Task);
+            _ = completed;
+        }
     }
 
     private async Task<UpdateCheckOutcome> CheckAsync(bool ignoreLastCheckDate, CancellationToken cancellationToken)
@@ -56,8 +99,6 @@ public sealed class ControlAppUpdateService(
         {
             return UpdateCheckOutcome.Skipped;
         }
-
-        TryRecordCheckDate(config, today);
 
         ArtifactMetaData? metadata;
         try
@@ -89,6 +130,8 @@ public sealed class ControlAppUpdateService(
         {
             return UpdateCheckOutcome.Failed;
         }
+
+        TryRecordCheckDate(config, today);
 
         if (!UpdateCheckPolicy.IsRemoteNewer(remote, local))
         {
