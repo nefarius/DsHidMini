@@ -22,8 +22,29 @@ internal sealed class DshmConfigLocations
     public string DriverConfigFilePath =>
         DshmConfigSerialization.GetDriverConfigFilePath(DriverConfigDirectory);
 
-    public static DshmConfigLocations Default { get; } = new(
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-            DshmConfigManagerUserData.GlobalUserDataFolderName),
-        DshmConfigSerialization.GetDriverConfigDirectory());
+    private static readonly Lazy<DshmConfigLocations> DefaultLazy = new(() => CreateDefault());
+
+    public static DshmConfigLocations Default => DefaultLazy.Value;
+
+    internal static DshmConfigLocations CreateDefault(
+        string? programDataDirectory = null,
+        string? driverConfigDirectory = null)
+    {
+        string programData = programDataDirectory
+                             ?? Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+        string driverDirectory = driverConfigDirectory
+                                 ?? DshmConfigSerialization.GetDriverConfigDirectory();
+        string preferredUserDataDirectory = Path.Combine(
+            driverDirectory,
+            DshmConfigManagerUserData.GlobalUserDataFolderName);
+        string legacyUserDataDirectory = Path.Combine(
+            programData,
+            DshmConfigManagerUserData.GlobalUserDataFolderName);
+
+        return new DshmConfigLocations(
+            DshmUserDataLocationMigration.ResolveUserDataDirectory(
+                preferredUserDataDirectory,
+                legacyUserDataDirectory),
+            driverDirectory);
+    }
 }
