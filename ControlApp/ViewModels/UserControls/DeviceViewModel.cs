@@ -120,6 +120,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         _batteryQuery = new Timer(UpdateBatteryStatus, null, 10000, 10000);
         _deviceUserData = _dshmConfigManager.GetDeviceData(DeviceAddress);
         _pairingMode = _deviceUserData.BluetoothPairingMode;
+        DeviceCustomsVM.ApplyDeviceCapabilities(DeviceType);
         // Loads correspondent controller data based on controller's MAC address 
 
 
@@ -190,6 +191,34 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
 
 
     /// <summary>
+    ///     Hardware family published by the driver. Missing property is Unknown.
+    /// </summary>
+    public DsDeviceType DeviceType
+    {
+        get
+        {
+            try
+            {
+                return (DsDeviceType)Device.GetProperty<byte>(DsHidMiniDriver.DeviceTypeProperty);
+            }
+            catch (Exception)
+            {
+                return DsDeviceType.Unknown;
+            }
+        }
+    }
+
+    public bool IsNavigationController => DsDeviceCapabilities.IsNavigation(DeviceType);
+
+    public bool HasRumble => DsDeviceCapabilities.HasRumble(DeviceType);
+
+    public string DeviceTypeDisplay => DsDeviceCapabilities.DisplayName(DeviceType);
+
+    public string DeviceCapabilityNote => DsDeviceCapabilities.HidModeGuidance(DeviceType);
+
+    public bool HasDeviceCapabilityNote => !string.IsNullOrEmpty(DeviceCapabilityNote);
+
+    /// <summary>
     ///     The friendly (product) name of this device.
     /// </summary>
     public string DisplayName
@@ -197,6 +226,13 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         get
         {
             string? name = Device.GetProperty<string>(DevicePropertyKey.NAME);
+
+            if (IsNavigationController)
+            {
+                return string.IsNullOrEmpty(name) || name == "DS3 Compatible HID Device"
+                    ? DsDeviceCapabilities.DisplayName(DsDeviceType.Navigation)
+                    : name;
+            }
 
             return string.IsNullOrEmpty(name) ? "DS3 Compatible HID Device" : name;
         }

@@ -124,6 +124,31 @@ DSHM_SendOutputReportUnlocked(
 			&sourceBufferLength
 		);
 
+		//
+		// Navigation has no motors. Clear duration/strength at the send
+		// boundary so HID-application and FFB rumble writes cannot leak
+		// onto the wire while LED bytes stay intact (issue #48).
+		// 
+		if (Context->DeviceType == DsDeviceTypeNavigation)
+		{
+			if (Context->ConnectionType == DsDeviceConnectionTypeUsb
+				&& sourceBufferLength > 5)
+			{
+				sourceBuffer[2] = 0x00;
+				sourceBuffer[3] = 0x00;
+				sourceBuffer[4] = 0x00;
+				sourceBuffer[5] = 0x00;
+			}
+			else if (Context->ConnectionType == DsDeviceConnectionTypeBth
+				&& sourceBufferLength > 6)
+			{
+				sourceBuffer[3] = 0x00;
+				sourceBuffer[4] = 0x00;
+				sourceBuffer[5] = 0x00;
+				sourceBuffer[6] = 0x00;
+			}
+		}
+
 		// 
 		// Timestamp arrival
 		//

@@ -307,6 +307,7 @@ NTSTATUS DsUsb_PrepareHardware(WDFDEVICE Device)
 		TraceVerbose(TRACE_DSUSB, "[USB] VID: 0x%04X", pDevCtx->VendorId);
 		pDevCtx->ProductId = pDevCtx->Connection.Usb.UsbDeviceDescriptor.idProduct;
 		TraceVerbose(TRACE_DSUSB, "[USB] PID: 0x%04X", pDevCtx->ProductId);
+		DsDevice_AssignDeviceType(Device);
 
 #pragma region USB Interface & Pipe settings
 

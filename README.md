@@ -40,7 +40,7 @@ DsHidMini is a self-contained [user-mode driver](https://docs.microsoft.com/en-u
 See the [issue tracker](https://github.com/nefarius/DsHidMini/issues) for known bugs and in-progress work. Not currently supported (contributions welcome where noted):
 
 - **Motion (SIXAXIS)** — gyro/accelerometer ([#217](https://github.com/nefarius/DsHidMini/issues/217))
-- **Navigation Controller** — mostly done ([#48](https://github.com/nefarius/DsHidMini/issues/48))
+- **Navigation Controller** — supported ([#48](https://github.com/nefarius/DsHidMini/issues/48)); see [docs/NAVIGATION_CONTROLLER.md](docs/NAVIGATION_CONTROLLER.md)
 - **Motion Controller** — not in scope
 
 ## Repository layout

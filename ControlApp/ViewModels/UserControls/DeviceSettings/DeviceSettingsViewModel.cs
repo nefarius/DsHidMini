@@ -31,6 +31,9 @@ public abstract partial class DeviceSettingsViewModel : ObservableObject
     [ObservableProperty]
     private bool _isGroupLocked;
 
+    [ObservableProperty]
+    private bool _isGroupVisible = true;
+
     public DeviceSettingsViewModel()
     {
         if (DictGroupHeader.TryGetValue(Group, out string groupHeader))

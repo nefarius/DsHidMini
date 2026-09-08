@@ -44,6 +44,10 @@ typedef enum
 	DsDeviceTypeWireless
 } DS_DEVICE_TYPE, * PDS_DEVICE_TYPE;
 
+#define DS_SONY_VENDOR_ID			0x054C
+#define DS_SONY_PID_SIXAXIS			0x0268
+#define DS_SONY_PID_NAVIGATION		0x042F
+
 //
 // Device connection type
 // 

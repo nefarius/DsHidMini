@@ -1190,6 +1190,12 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 	DOUBLE heavyRumble = Context->RumbleControlState.HeavyCache;
 	DOUBLE lightRumble = Context->RumbleControlState.LightCache;
 
+	if (Context->DeviceType == DsDeviceTypeNavigation)
+	{
+		heavyRumble = 0;
+		lightRumble = 0;
+	}
+
 	// LINEAR RANGE RESCALLING
 	// 
 	// To rescale a value that exists in a range into a new range:

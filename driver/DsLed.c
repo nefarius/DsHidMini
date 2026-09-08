@@ -38,6 +38,32 @@ DsLed_IsDriverInCharge(
 // Context->OutputReport.Lock is already held.
 // 
 static
+UCHAR
+DsLedClampFlagsForDevice(
+	_In_ const PDEVICE_CONTEXT Context,
+	_In_ UCHAR Flags
+)
+{
+	if (Context->DeviceType != DsDeviceTypeNavigation)
+	{
+		return Flags;
+	}
+
+	//
+	// Navigation has one physical LED. Preserve the explicit off marker,
+	// otherwise keep only LED 1 when any player LED was requested.
+	// 
+	if (Flags == DS3_LED_OFF)
+	{
+		return DS3_LED_OFF;
+	}
+
+	return (Flags & (DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4))
+		? DS3_LED_1
+		: DS3_LED_OFF;
+}
+
+static
 VOID
 DsLedSetFlagsAndEffectsLocked(
 	_In_ PDEVICE_CONTEXT Context,
@@ -46,6 +72,8 @@ DsLedSetFlagsAndEffectsLocked(
 )
 {
 	static const DS_LED noEffect = DS3_LED_EFFECT_NONE;
+
+	Flags = DsLedClampFlagsForDevice(Context, Flags);
 
 	DsLed_SetFlags(Context, Flags);
 
@@ -103,8 +131,9 @@ DsLed_ApplyCustomPatternLocked(
 )
 {
 	const PDS_LED_SETTINGS pLed = &Context->Configuration.LEDSettings;
+	const UCHAR flags = DsLedClampFlagsForDevice(Context, pLed->CustomPatterns.LEDFlags);
 
-	DsLed_SetFlags(Context, pLed->CustomPatterns.LEDFlags);
+	DsLed_SetFlags(Context, flags);
 
 	DsLed_SetEffect(
 		Context,
@@ -114,6 +143,15 @@ DsLed_ApplyCustomPatternLocked(
 		pLed->CustomPatterns.Player1.OffPortionMultiplier,
 		pLed->CustomPatterns.Player1.OnPortionMultiplier
 	);
+
+	if (Context->DeviceType == DsDeviceTypeNavigation)
+	{
+		DsLed_SetEffect(Context, 1, 0, 0, 0, 0);
+		DsLed_SetEffect(Context, 2, 0, 0, 0, 0);
+		DsLed_SetEffect(Context, 3, 0, 0, 0, 0);
+		return;
+	}
+
 	DsLed_SetEffect(
 		Context,
 		1,
@@ -156,9 +194,42 @@ DsLedApplyBatteryIndicatorLocked(
 {
 	static const DS_LED staticEffect = DS3_LED_EFFECT_STATIC;
 	static const DS_LED slowFlashEffect = DS3_LED_EFFECT_SLOW_FLASH;
+	static const DS_LED fastFlashEffect = DS3_LED_EFFECT_FAST_FLASH;
 
 	UCHAR flags;
 	const DS_LED* pEffect = &staticEffect;
+
+	if (Context->DeviceType == DsDeviceTypeNavigation)
+	{
+		switch (Context->BatteryStatus)
+		{
+		case DsBatteryStatusNone:
+		default:
+			flags = DS3_LED_OFF;
+			break;
+
+		case DsBatteryStatusDying:
+		case DsBatteryStatusLow:
+			flags = DS3_LED_1;
+			pEffect = &fastFlashEffect;
+			break;
+
+		case DsBatteryStatusCharging:
+			flags = DS3_LED_1;
+			pEffect = &slowFlashEffect;
+			break;
+
+		case DsBatteryStatusMedium:
+		case DsBatteryStatusHigh:
+		case DsBatteryStatusCharged:
+		case DsBatteryStatusFull:
+			flags = DS3_LED_1;
+			break;
+		}
+
+		DsLedSetFlagsAndEffectsLocked(Context, flags, pEffect);
+		return;
+	}
 
 	switch (Context->BatteryStatus)
 	{
@@ -338,6 +409,17 @@ DsLed_AdvanceChargingAnimation(
 		if (mode != DsLEDModeBatteryIndicatorPlayerIndex
 			&& mode != DsLEDModeBatteryIndicatorBarGraph)
 		{
+			break;
+		}
+
+		//
+		// Navigation has one LED; charging is a slow flash, not the
+		// four-LED USB chase used on DualShock 3 (issue #48).
+		// 
+		if (Context->DeviceType == DsDeviceTypeNavigation)
+		{
+			DsLedApplyBatteryIndicatorLocked(Context, FALSE);
+			(void)DSHM_SendOutputReportUnlocked(Context, Ds3OutputReportSourceDriverLowPriority);
 			break;
 		}
 

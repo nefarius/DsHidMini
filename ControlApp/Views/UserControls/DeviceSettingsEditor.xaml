@@ -37,7 +37,8 @@
             <ui:Card
                 Margin="0,0,0,14"
                 Padding="20,18"
-                DockPanel.Dock="Top">
+                DockPanel.Dock="Top"
+                Visibility="{Binding IsGroupVisible, Converter={StaticResource BoolToVis_TV_FC}}">
                 <DockPanel Margin="2,0">
                     <!--  Outer settings container with override button  -->
                     <Grid Margin="0,0,0,12" DockPanel.Dock="Top">
@@ -197,6 +198,13 @@
                         Margin="{StaticResource MyKey_NextLineSpacement}"
                         Content="Allow apps and games to take over LEDs control"
                         IsChecked="{Binding AllowLedsOverride}" />
+                    <ui:InfoBar
+                        Title="One LED"
+                        Margin="{StaticResource MyKey_NextLineSpacement}"
+                        IsClosable="False"
+                        IsOpen="{Binding IsSingleLedDevice}"
+                        Message="This controller has one LED. Battery mode uses a rapid flash when low, a slow flash while charging, and solid when charged."
+                        Severity="Informational" />
                     <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}">
                         <ui:TextBlock
                             Style="{StaticResource SettingsFieldLabel}"
@@ -209,7 +217,9 @@
                             DockPanel.Dock="Right"
                             SelectedIndex="{Binding LEDMode}">
                             <ComboBoxItem Content="Battery level (single led)" />
-                            <ComboBoxItem Content="Battery level (filling bar)" />
+                            <ComboBoxItem
+                                Content="Battery level (filling bar)"
+                                Visibility="{Binding IsSingleLedDevice, Converter={StaticResource BoolToVis_TC_FV}}" />
                             <ComboBoxItem Content="Custom (simple)" />
                             <ComboBoxItem Content="Custom (advanced)" />
                         </ComboBox>
@@ -229,9 +239,15 @@
                             <ContentControl MaxWidth="120">
                                 <UniformGrid Columns="4">
                                     <CheckBox IsChecked="{Binding Leds_VM[0].IsEnabled}" />
-                                    <CheckBox IsChecked="{Binding Leds_VM[1].IsEnabled}" />
-                                    <CheckBox IsChecked="{Binding Leds_VM[2].IsEnabled}" />
-                                    <CheckBox IsChecked="{Binding Leds_VM[3].IsEnabled}" />
+                                    <CheckBox
+                                        IsChecked="{Binding Leds_VM[1].IsEnabled}"
+                                        Visibility="{Binding IsSingleLedDevice, Converter={StaticResource BoolToVis_TC_FV}}" />
+                                    <CheckBox
+                                        IsChecked="{Binding Leds_VM[2].IsEnabled}"
+                                        Visibility="{Binding IsSingleLedDevice, Converter={StaticResource BoolToVis_TC_FV}}" />
+                                    <CheckBox
+                                        IsChecked="{Binding Leds_VM[3].IsEnabled}"
+                                        Visibility="{Binding IsSingleLedDevice, Converter={StaticResource BoolToVis_TC_FV}}" />
                                 </UniformGrid>
                             </ContentControl>
                             <!--  Index 3: LEDs custom advanced  -->
@@ -244,9 +260,18 @@
                                     HorizontalAlignment="Center"
                                     SelectedIndex="{Binding CurrentLEDCustomsIndex}">
                                     <TabItem Width="50" Header="1" />
-                                    <TabItem Width="50" Header="2" />
-                                    <TabItem Width="50" Header="3" />
-                                    <TabItem Width="50" Header="4" />
+                                    <TabItem
+                                        Width="50"
+                                        Header="2"
+                                        Visibility="{Binding IsSingleLedDevice, Converter={StaticResource BoolToVis_TC_FV}}" />
+                                    <TabItem
+                                        Width="50"
+                                        Header="3"
+                                        Visibility="{Binding IsSingleLedDevice, Converter={StaticResource BoolToVis_TC_FV}}" />
+                                    <TabItem
+                                        Width="50"
+                                        Header="4"
+                                        Visibility="{Binding IsSingleLedDevice, Converter={StaticResource BoolToVis_TC_FV}}" />
                                 </TabControl>
                                 <!--  LED fine tuning  -->
                                 <StackPanel Margin="{StaticResource MyKey_NextLineSpacement}"
@@ -874,6 +899,15 @@
             VerticalAlignment="Top"
             IsEnabled="{Binding AllowEditing}"
             LastChildFill="False">
+
+            <ui:InfoBar
+                Title="Navigation Controller"
+                Margin="0,0,0,14"
+                DockPanel.Dock="Top"
+                IsClosable="False"
+                IsOpen="{Binding HasDeviceCapabilityNote}"
+                Message="{Binding DeviceCapabilityNote}"
+                Severity="Informational" />
 
             <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding PrimaryGroups}">
                 <ItemsControl.ItemTemplate>

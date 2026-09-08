@@ -86,6 +86,13 @@ public static class DsHidMiniDriver
         Guid.Parse("{3FECF510-CC94-4FBE-8839-738201F84D59}"), 11,
         typeof(bool));
 
+    /// <summary>
+    ///     Hardware family (<see cref="DsDeviceType"/>). Navigation has one LED and no rumble.
+    /// </summary>
+    public static DevicePropertyKey DeviceTypeProperty => CustomDeviceProperty.CreateCustomDeviceProperty(
+        Guid.Parse("{3FECF510-CC94-4FBE-8839-738201F84D59}"), 12,
+        typeof(byte));
+
     #endregion
 
     #region Common device properties
@@ -210,6 +217,45 @@ public enum DsIdentificationMotionPath : byte
     /// </summary>
     [Description("SIXAXIS")]
     Sixaxis = 3
+}
+
+/// <summary>
+///     Hardware family derived from USB/Bluetooth VID and PID. Matches
+///     <c>DS_DEVICE_TYPE</c> in the driver.
+/// </summary>
+[TypeConverter(typeof(EnumDescriptionTypeConverter))]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+public enum DsDeviceType : byte
+{
+    /// <summary>
+    ///     Unknown or unclassified device.
+    /// </summary>
+    [Description("Unknown")]
+    Unknown = 0,
+
+    /// <summary>
+    ///     Sony DualShock 3 / SIXAXIS.
+    /// </summary>
+    [Description("DualShock 3 / SIXAXIS")]
+    Sixaxis = 1,
+
+    /// <summary>
+    ///     Sony Navigation Controller (CECH-ZCS1, PID 0x042F). One LED, no rumble.
+    /// </summary>
+    [Description("Navigation Controller")]
+    Navigation = 2,
+
+    /// <summary>
+    ///     Sony PlayStation Move Motion Controller. Not supported.
+    /// </summary>
+    [Description("Motion Controller")]
+    Motion = 3,
+
+    /// <summary>
+    ///     Sony DualShock 4. Not supported as a DsHidMini target.
+    /// </summary>
+    [Description("DualShock 4")]
+    Wireless = 4
 }
 
 /// <summary>

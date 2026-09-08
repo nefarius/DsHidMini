@@ -18,6 +18,9 @@ public partial class LedsSettingsViewModel : DeviceSettingsViewModel
     [ObservableProperty]
     private LED_VM? _selectedLED_VM;
 
+    [ObservableProperty]
+    private bool _isSingleLedDevice;
+
     public LedsSettingsViewModel()
     {
         Leds_VM[0].singleLEDCustoms = _tempBackingData.LEDsCustoms.LED_x_Customs[0];

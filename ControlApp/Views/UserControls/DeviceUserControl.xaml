@@ -78,6 +78,25 @@
 
 
                         </DockPanel>
+                        <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                            <ui:TextBlock
+                                DockPanel.Dock="Left"
+                                Style="{StaticResource MyKey_InfoDescriptionTextbox}"
+                                Text="Controller model:" />
+                            <ui:TextBlock
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                DockPanel.Dock="Right"
+                                Text="{Binding DeviceTypeDisplay, Mode=OneWay}" />
+                        </DockPanel>
+                        <ui:InfoBar
+                            Title="Hardware limits"
+                            Margin="{StaticResource MyKey_NextLineSpacement}"
+                            DockPanel.Dock="Top"
+                            IsClosable="False"
+                            IsOpen="{Binding HasDeviceCapabilityNote}"
+                            Message="{Binding DeviceCapabilityNote}"
+                            Severity="Informational" />
                         <!--  Device MAC address  -->
                         <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
                             <ui:TextBlock
