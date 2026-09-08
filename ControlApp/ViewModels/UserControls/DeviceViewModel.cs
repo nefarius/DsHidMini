@@ -1,4 +1,4 @@
-﻿using System.Net.NetworkInformation;
+using System.Net.NetworkInformation;
 using System.Threading;
 using System.Windows;
 
@@ -207,12 +207,19 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         {
             try
             {
-                return (DsDeviceType)Device.GetProperty<byte>(DsHidMiniDriver.DeviceTypeProperty);
+                DsDeviceType publishedType =
+                    (DsDeviceType)Device.GetProperty<byte>(DsHidMiniDriver.DeviceTypeProperty);
+                if (publishedType != DsDeviceType.Unknown)
+                {
+                    return publishedType;
+                }
             }
             catch (Exception)
             {
-                return DsDeviceType.Unknown;
+                // Older driver builds do not publish DeviceTypeProperty.
             }
+
+            return DsDeviceCapabilities.FromInstanceId(Device.InstanceId);
         }
     }
 
@@ -338,14 +345,13 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     /// <summary>
     ///     Current battery status.
     /// </summary>
-    public DsBatteryStatus BatteryStatus =>
-        (DsBatteryStatus)Device.GetProperty<byte>(DsHidMiniDriver.BatteryStatusProperty);
+    public DsBatteryStatus BatteryStatus => DsDeviceCapabilities.NormalizeBatteryStatus(
+        Device.GetProperty<byte>(DsHidMiniDriver.BatteryStatusProperty));
 
     /// <summary>
     ///     String representation of current battery status
     /// </summary>
-    public string BatteryStatusInText =>
-        ((DsBatteryStatus)Device.GetProperty<byte>(DsHidMiniDriver.BatteryStatusProperty)).ToString();
+    public string BatteryStatusInText => BatteryStatus.ToString();
 
     /// <summary>
     ///     Return a battery icon depending on the charge.

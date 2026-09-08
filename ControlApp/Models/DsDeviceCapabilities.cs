@@ -1,3 +1,5 @@
+using System.Globalization;
+
 using Nefarius.DsHidMini.IPC.Models.Drivers;
 
 namespace Nefarius.DsHidMini.ControlApp.Models;
@@ -25,6 +27,46 @@ public static class DsDeviceCapabilities
             SixaxisProductId => DsDeviceType.Sixaxis,
             _ => DsDeviceType.Unknown
         };
+    }
+
+    public static DsDeviceType FromInstanceId(string? instanceId)
+    {
+        return TryReadHexId(instanceId, "VID_", out ushort vendorId) &&
+               TryReadHexId(instanceId, "PID_", out ushort productId)
+            ? FromHardwareIds(vendorId, productId)
+            : DsDeviceType.Unknown;
+    }
+
+    private static bool TryReadHexId(string? instanceId, string marker, out ushort value)
+    {
+        value = 0;
+        if (string.IsNullOrEmpty(instanceId))
+        {
+            return false;
+        }
+
+        int markerIndex = instanceId.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+        int valueIndex = markerIndex + marker.Length;
+        return markerIndex >= 0 &&
+               instanceId.Length >= valueIndex + 4 &&
+               ushort.TryParse(instanceId.AsSpan(valueIndex, 4), NumberStyles.AllowHexSpecifier,
+                   CultureInfo.InvariantCulture, out value);
+    }
+
+    public static DsBatteryStatus NormalizeBatteryStatus(byte rawStatus)
+    {
+        // Linux hid-sony applies the same rule: Sony controllers can use values
+        // above 0xEF, where the low bit still distinguishes charged from charging.
+        if (rawStatus >= (byte)DsBatteryStatus.Charging)
+        {
+            return (rawStatus & 0x01) == 0
+                ? DsBatteryStatus.Charging
+                : DsBatteryStatus.Charged;
+        }
+
+        return rawStatus <= (byte)DsBatteryStatus.Full
+            ? (DsBatteryStatus)rawStatus
+            : DsBatteryStatus.Unknown;
     }
 
     public static bool HasRumble(DsDeviceType type) => type != DsDeviceType.Navigation;
