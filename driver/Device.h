@@ -358,6 +358,12 @@ typedef struct _DEVICE_CONTEXT
 	USHORT ProductId;
 
 	//
+	// Hardware family derived from VendorId/ProductId. Navigation (PID
+	// 0x042F) has one LED and no rumble; see issue #48.
+	// 
+	DS_DEVICE_TYPE DeviceType;
+
+	//
 	// Version number (rarely used)
 	// 
 	USHORT VersionNumber;
@@ -569,6 +575,11 @@ EVT_DSHM_IPC_DispatchDeviceMessage DSHM_EvtDispatchDeviceMessage;
 
 NTSTATUS
 DsDevice_ReadProperties(
+	WDFDEVICE Device
+);
+
+VOID
+DsDevice_AssignDeviceType(
 	WDFDEVICE Device
 );
 

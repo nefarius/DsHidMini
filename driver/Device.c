@@ -443,12 +443,72 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
                 pDevCtx->DeviceAddress.Address[1],
                 pDevCtx->DeviceAddress.Address[0]
             );
+
+			DsDevice_AssignDeviceType(Device);
 		}
 	} while (FALSE);
 
 	FuncExit(TRACE_DEVICE, "status=%!STATUS!", status);
 
 	return status;
+}
+
+//
+// Classify the hardware family from VID/PID and publish it as a read-only
+// property so ControlApp does not infer capabilities from display names.
+// Sony Navigation is VID_054C / PID_042F (issue #48).
+// 
+VOID
+DsDevice_AssignDeviceType(
+	WDFDEVICE Device
+)
+{
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	WDF_DEVICE_PROPERTY_DATA propertyData;
+	UCHAR deviceType;
+
+	if (pDevCtx->VendorId == DS_SONY_VENDOR_ID &&
+		pDevCtx->ProductId == DS_SONY_PID_NAVIGATION)
+	{
+		pDevCtx->DeviceType = DsDeviceTypeNavigation;
+	}
+	else if (pDevCtx->VendorId == DS_SONY_VENDOR_ID &&
+		pDevCtx->ProductId == DS_SONY_PID_SIXAXIS)
+	{
+		pDevCtx->DeviceType = DsDeviceTypeSixaxis;
+	}
+	else
+	{
+		pDevCtx->DeviceType = DsDeviceTypeUnknown;
+	}
+
+	deviceType = (UCHAR)pDevCtx->DeviceType;
+
+	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RO_DeviceType);
+	propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+	propertyData.Lcid = LOCALE_NEUTRAL;
+
+	if (!NT_SUCCESS(WdfDeviceAssignProperty(
+		Device,
+		&propertyData,
+		DEVPROP_TYPE_BYTE,
+		sizeof(deviceType),
+		&deviceType
+	)))
+	{
+		TraceError(
+			TRACE_DEVICE,
+			"Setting DEVPKEY_DsHidMini_RO_DeviceType failed"
+		);
+	}
+
+	TraceVerbose(
+		TRACE_DEVICE,
+		"DeviceType=%u (VID=0x%04X PID=0x%04X)",
+		pDevCtx->DeviceType,
+		pDevCtx->VendorId,
+		pDevCtx->ProductId
+	);
 }
 
 //

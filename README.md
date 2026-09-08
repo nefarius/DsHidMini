@@ -34,13 +34,13 @@ DsHidMini is a self-contained [user-mode driver](https://docs.microsoft.com/en-u
 - **Rumble** exposed as Force Feedback
 - **LED** indicates battery (wired: charging 1–4; wireless: 4 = full, 1 = low)
 - **Compatibility:** [PCSX2](https://pcsx2.net/), [RPCS3](https://rpcs3.net/), [DS4Windows](https://github.com/Ryochan7/DS4Windows) (v2.2.10+), [RetroArch](https://www.retroarch.com/), [x360ce](https://www.x360ce.com/), [Dolphin](https://dolphin-emu.org/), [DuckStation](https://github.com/stenzek/duckstation); see [issue #40](https://github.com/nefarius/DsHidMini/issues/40) for XInput/DS4 notes
+- **Navigation Controller** — supported ([#48](https://github.com/nefarius/DsHidMini/issues/48)); one LED, no rumble; see [docs/NAVIGATION_CONTROLLER.md](docs/NAVIGATION_CONTROLLER.md)
 
 ## What's missing
 
 See the [issue tracker](https://github.com/nefarius/DsHidMini/issues) for known bugs and in-progress work. Not currently supported (contributions welcome where noted):
 
 - **Motion (SIXAXIS)** — gyro/accelerometer ([#217](https://github.com/nefarius/DsHidMini/issues/217))
-- **Navigation Controller** — mostly done ([#48](https://github.com/nefarius/DsHidMini/issues/48))
 - **Motion Controller** — not in scope
 
 ## Repository layout

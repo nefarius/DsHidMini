@@ -75,3 +75,8 @@ DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RO_IdentificationMotionPath,
 // {3FECF510-CC94-4FBE-8839-738201F84D59}
 DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RO_IdentificationCloneHeuristic,
 	0x3fecf510, 0xcc94, 0x4fbe, 0x88, 0x39, 0x73, 0x82, 0x1, 0xf8, 0x4d, 0x59, 11); // DEVPROP_TYPE_BOOLEAN
+
+// Hardware family (DS_DEVICE_TYPE). Navigation (2) has one LED and no rumble; see issue #48
+// {3FECF510-CC94-4FBE-8839-738201F84D59}
+DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RO_DeviceType,
+	0x3fecf510, 0xcc94, 0x4fbe, 0x88, 0x39, 0x73, 0x82, 0x1, 0xf8, 0x4d, 0x59, 12); // DEVPROP_TYPE_BYTE

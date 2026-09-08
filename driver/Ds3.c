@@ -1241,6 +1241,17 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 		heavyRumble = heavyResc->ConstA * heavyRumble + heavyResc->ConstB;
 	}
 
+	//
+	// Navigation has no motors. Zero after AlternativeMode.ForcedRight
+	// (and rescale) so a cached threshold cannot re-arm the small motor
+	// before the output-report write (issue #48).
+	//
+	if (Context->DeviceType == DsDeviceTypeNavigation)
+	{
+		heavyRumble = 0;
+		lightRumble = 0;
+	}
+
 	switch (Context->ConnectionType)
 	{
 	case DsDeviceConnectionTypeUsb:

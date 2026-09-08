@@ -20,6 +20,8 @@
 
 - [DsBatteryStatus](./nefarius.dshidmini.ipc.models.drivers.dsbatterystatus.md)
 
+- [DsDeviceType](./nefarius.dshidmini.ipc.models.drivers.dsdevicetype.md)
+
 - [DsHidDeviceMode](./nefarius.dshidmini.ipc.models.drivers.dshiddevicemode.md)
 
 - [DsHidMiniDriver](./nefarius.dshidmini.ipc.models.drivers.dshidminidriver.md)

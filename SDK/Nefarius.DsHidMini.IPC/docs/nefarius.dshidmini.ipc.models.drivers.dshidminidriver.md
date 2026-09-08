@@ -37,6 +37,18 @@ public static DevicePropertyKey BluetoothLastConnectedTimeProperty { get; }
 
 DevicePropertyKey<br>
 
+### <a id="properties-devicetypeproperty"/>**DeviceTypeProperty**
+
+Hardware family ([DsDeviceType](./nefarius.dshidmini.ipc.models.drivers.dsdevicetype.md)). Navigation has one LED and no rumble.
+
+```csharp
+public static DevicePropertyKey DeviceTypeProperty { get; }
+```
+
+#### Property Value
+
+DevicePropertyKey<br>
+
 ### <a id="properties-deviceaddressproperty"/>**DeviceAddressProperty**
 
 The Bluetooth MAC address of the device itself.

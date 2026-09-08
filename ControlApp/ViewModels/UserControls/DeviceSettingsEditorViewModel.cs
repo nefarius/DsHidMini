@@ -1,7 +1,9 @@
 ﻿using System.ComponentModel;
 
+using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 using Nefarius.DsHidMini.ControlApp.ViewModels.UserControls.DeviceSettings;
+using Nefarius.DsHidMini.IPC.Models.Drivers;
 
 namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls;
 
@@ -69,11 +71,42 @@ public partial class SettingsEditorViewModel : ObservableObject
         UpdateLockStateOfGroups();
     }
 
+    public bool HideRumbleSettings { get; private set; }
+
+    public string DeviceCapabilityNote { get; private set; } = string.Empty;
+
+    public bool HasDeviceCapabilityNote => !string.IsNullOrEmpty(DeviceCapabilityNote);
+
+    public void ApplyDeviceCapabilities(DsDeviceType deviceType)
+    {
+        HideRumbleSettings = !DsDeviceCapabilities.HasRumble(deviceType);
+        LedsSettingsVM.IsSingleLedDevice = DsDeviceCapabilities.HasSingleLed(deviceType);
+        if (LedsSettingsVM.IsSingleLedDevice)
+        {
+            if (LedsSettingsVM.LEDMode == 1)
+            {
+                LedsSettingsVM.LEDMode = 0;
+            }
+
+            if (LedsSettingsVM.CurrentLEDCustomsIndex > 0)
+            {
+                LedsSettingsVM.CurrentLEDCustomsIndex = 0;
+            }
+        }
+
+        DeviceCapabilityNote = DsDeviceCapabilities.HidModeGuidance(deviceType);
+        OnPropertyChanged(nameof(HideRumbleSettings));
+        OnPropertyChanged(nameof(DeviceCapabilityNote));
+        OnPropertyChanged(nameof(HasDeviceCapabilityNote));
+        UpdateLockStateOfGroups();
+    }
+
     private void UpdateLockStateOfGroups()
     {
         foreach (DeviceSettingsViewModel group in groupSettingsList)
         {
             group.IsGroupLocked = false;
+            group.IsGroupVisible = true;
         }
 
         if (HidModeVM.Context == SettingsContext.DS4W)
@@ -88,6 +121,13 @@ public partial class SettingsEditorViewModel : ObservableObject
             GeneralRumbleSettingsVM.IsGroupLocked = true;
             LeftMotorRescaleSettingsVM.IsGroupLocked = true;
             AltRumbleSettingsVM.IsGroupLocked = true;
+        }
+
+        if (HideRumbleSettings)
+        {
+            GeneralRumbleSettingsVM.IsGroupVisible = false;
+            LeftMotorRescaleSettingsVM.IsGroupVisible = false;
+            AltRumbleSettingsVM.IsGroupVisible = false;
         }
     }
 
