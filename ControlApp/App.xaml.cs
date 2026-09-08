@@ -93,6 +93,8 @@ public partial class App
             services.AddSingleton<ProfilesViewModel>();
             services.AddSingleton<SettingsPage>();
             services.AddSingleton<SettingsViewModel>();
+            services.AddSingleton<AboutPage>();
+            services.AddSingleton<AboutViewModel>();
             services.AddSingleton<Main>();
 
             services.AddSingleton<AddressValidator>();

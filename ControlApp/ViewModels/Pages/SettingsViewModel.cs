@@ -1,7 +1,6 @@
 ﻿using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Services;
-using Nefarius.DsHidMini.ControlApp.ViewModels.Windows;
 
 using Wpf.Ui.Abstractions.Controls;
 using Wpf.Ui.Appearance;
@@ -12,30 +11,20 @@ public partial class SettingsViewModel : ObservableObject, INavigationAware
 {
     private readonly AppSnackbarMessagesService _appSnackbarMessagesService;
     private readonly DshmConfigManager _dshmConfigManager;
-    private readonly ControlAppUpdateService _updateService;
-
-    [ObservableProperty]
-    private string _appVersion = string.Empty;
 
     [ObservableProperty]
     private ApplicationTheme _currentTheme = ApplicationTheme.Unknown;
 
     private bool _isInitialized;
 
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(CheckForUpdatesCommand))]
-    private bool _isCheckingForUpdates;
-
     public SettingsViewModel(
         DshmConfigManager dshmConfigManager,
         BthPS3StatusService bthPs3,
-        AppSnackbarMessagesService appSnackbarMessagesService,
-        ControlAppUpdateService updateService)
+        AppSnackbarMessagesService appSnackbarMessagesService)
     {
         _dshmConfigManager = dshmConfigManager;
         BthPs3 = bthPs3;
         _appSnackbarMessagesService = appSnackbarMessagesService;
-        _updateService = updateService;
     }
 
     public BthPS3StatusService BthPs3 { get; }
@@ -141,7 +130,6 @@ public partial class SettingsViewModel : ObservableObject, INavigationAware
     private void InitializeViewModel()
     {
         CurrentTheme = ApplicationThemeManager.GetAppTheme();
-        AppVersion = $"DsHidMini ControlApp {MainWindowViewModel.GetDisplayVersion()}";
 
         _isInitialized = true;
     }
@@ -173,39 +161,6 @@ public partial class SettingsViewModel : ObservableObject, INavigationAware
 
                 break;
         }
-    }
-
-    [RelayCommand(CanExecute = nameof(CanCheckForUpdates))]
-    private async Task CheckForUpdates()
-    {
-        IsCheckingForUpdates = true;
-        try
-        {
-            UpdateCheckOutcome outcome = await _updateService.CheckNowAsync();
-            switch (outcome)
-            {
-                case UpdateCheckOutcome.UpToDate:
-                    _appSnackbarMessagesService.ShowControlAppUpToDateMessage();
-                    break;
-                case UpdateCheckOutcome.Failed:
-                    _appSnackbarMessagesService.ShowControlAppUpdateCheckFailedMessage();
-                    break;
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Logger.Warning(ex, "Manual ControlApp update check failed.");
-            _appSnackbarMessagesService.ShowControlAppUpdateCheckFailedMessage();
-        }
-        finally
-        {
-            IsCheckingForUpdates = false;
-        }
-    }
-
-    private bool CanCheckForUpdates()
-    {
-        return !IsCheckingForUpdates;
     }
 
     [RelayCommand]
