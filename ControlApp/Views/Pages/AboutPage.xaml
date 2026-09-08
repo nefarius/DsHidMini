@@ -1,0 +1,104 @@
+<Page
+    x:Class="Nefarius.DsHidMini.ControlApp.Views.Pages.AboutPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:Nefarius.DsHidMini.ControlApp.Views.Pages"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="AboutPage"
+    d:DataContext="{d:DesignInstance local:AboutPage,
+                                     IsDesignTimeCreatable=False}"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
+    ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    ScrollViewer.CanContentScroll="False"
+    mc:Ignorable="d">
+    <ScrollViewer
+        HorizontalScrollBarVisibility="Disabled"
+        VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="720" Margin="20" HorizontalAlignment="Left">
+            <StackPanel Margin="0,0,0,16" Orientation="Horizontal">
+                <Image
+                    Width="64"
+                    Height="64"
+                    Margin="0,0,16,0"
+                    Source="pack://application:,,,/Assets/wpfui-icon-256.png" />
+                <StackPanel VerticalAlignment="Center">
+                    <ui:TextBlock FontTypography="Title" Text="DsHidMini ControlApp" />
+                    <ui:TextBlock
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                        Text="{Binding ViewModel.AppVersion}" />
+                </StackPanel>
+            </StackPanel>
+
+            <StackPanel Margin="0,0,0,16" Orientation="Horizontal">
+                <ui:HyperlinkButton
+                    Margin="0,0,8,0"
+                    Content="Open repository"
+                    Icon="{ui:SymbolIcon Open24}"
+                    NavigateUri="https://github.com/nefarius/DsHidMini" />
+                <ui:HyperlinkButton
+                    Content="View license"
+                    Icon="{ui:SymbolIcon DocumentText24}"
+                    NavigateUri="https://github.com/nefarius/DsHidMini/blob/master/LICENSE" />
+            </StackPanel>
+
+            <ui:Button
+                Margin="0,0,0,8"
+                HorizontalAlignment="Left"
+                Command="{Binding ViewModel.CheckForUpdatesCommand}"
+                Content="Check for updates" />
+            <TextBlock
+                Margin="0,0,0,24"
+                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                Text="Looks for a newer ControlApp on Buildbot, even if you already skipped an update today."
+                TextWrapping="Wrap" />
+
+            <TextBlock
+                Margin="0,0,0,16"
+                Text="{Binding ViewModel.CopyrightNotice}"
+                TextWrapping="Wrap" />
+            <TextBlock
+                Margin="0,0,0,16"
+                Text="This is a community project and not affiliated with Sony Interactive Entertainment Inc. in any way."
+                TextWrapping="Wrap" />
+            <TextBlock
+                Margin="0,0,0,16"
+                Text="&quot;PlayStation&quot;, &quot;PSP&quot;, &quot;PS2&quot;, &quot;PS one&quot;, &quot;DUALSHOCK&quot; and &quot;SIXAXIS&quot; are registered trademarks of Sony Interactive Entertainment Inc."
+                TextWrapping="Wrap" />
+            <TextBlock
+                Margin="0,0,0,16"
+                Text="DsHidMini is released under the BSD 3-Clause License. Redistribution and use in source and binary forms, with or without modification, are permitted provided that the conditions of that license are met."
+                TextWrapping="Wrap" />
+            <TextBlock
+                Margin="0,0,0,16"
+                Text="Should you wish to redistribute this program, or any part of it, you should read the full terms and conditions set out in the license agreement before doing so. A copy of the license is available in the project repository."
+                TextWrapping="Wrap" />
+            <TextBlock
+                Margin="0,0,0,16"
+                Text="If you simply wish to install and use this software, you need only be aware of the disclaimer conditions in the license, which are set out below."
+                TextWrapping="Wrap" />
+            <TextBlock
+                Margin="0,0,0,16"
+                FontWeight="Bold"
+                Text="NO WARRANTY" />
+            <TextBlock
+                TextAlignment="Justify"
+                TextWrapping="Wrap">
+                THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
+                AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+                IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+                DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+                FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+                DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+                SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+                CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+                OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+                OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+            </TextBlock>
+        </StackPanel>
+    </ScrollViewer>
+</Page>
