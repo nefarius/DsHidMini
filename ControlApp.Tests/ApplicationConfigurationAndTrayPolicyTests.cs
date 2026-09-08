@@ -27,6 +27,7 @@ public class ApplicationConfigurationAndTrayPolicyTests
         Assert.True(loaded.MinimizeToTray);
         Assert.True(loaded.IsLoggingEnabled);
         Assert.False(loaded.IsUpdateCheckEnabled);
+        Assert.Null(loaded.LastUpdateCheckDate);
     }
 
     [Fact]
@@ -35,6 +36,26 @@ public class ApplicationConfigurationAndTrayPolicyTests
         ApplicationConfiguration config = new();
 
         Assert.False(config.MinimizeToTray);
+        Assert.True(config.IsUpdateCheckEnabled);
+        Assert.Null(config.LastUpdateCheckDate);
+    }
+
+    [Fact]
+    public void ApplicationConfiguration_JsonRoundTrip_PreservesLastUpdateCheckDate()
+    {
+        DateOnly checkedOn = new(2026, 9, 8);
+        ApplicationConfiguration original = new()
+        {
+            IsUpdateCheckEnabled = true,
+            LastUpdateCheckDate = checkedOn
+        };
+
+        string json = JsonConvert.SerializeObject(original);
+        ApplicationConfiguration? loaded = JsonConvert.DeserializeObject<ApplicationConfiguration>(json);
+
+        Assert.NotNull(loaded);
+        Assert.True(loaded.IsUpdateCheckEnabled);
+        Assert.Equal(checkedOn, loaded.LastUpdateCheckDate);
     }
 
     [Fact]

@@ -12,6 +12,7 @@ public partial class SettingsViewModel : ObservableObject, INavigationAware
 {
     private readonly AppSnackbarMessagesService _appSnackbarMessagesService;
     private readonly DshmConfigManager _dshmConfigManager;
+    private readonly ControlAppUpdateService _updateService;
 
     [ObservableProperty]
     private string _appVersion = string.Empty;
@@ -21,14 +22,20 @@ public partial class SettingsViewModel : ObservableObject, INavigationAware
 
     private bool _isInitialized;
 
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(CheckForUpdatesCommand))]
+    private bool _isCheckingForUpdates;
+
     public SettingsViewModel(
         DshmConfigManager dshmConfigManager,
         BthPS3StatusService bthPs3,
-        AppSnackbarMessagesService appSnackbarMessagesService)
+        AppSnackbarMessagesService appSnackbarMessagesService,
+        ControlAppUpdateService updateService)
     {
         _dshmConfigManager = dshmConfigManager;
         BthPs3 = bthPs3;
         _appSnackbarMessagesService = appSnackbarMessagesService;
+        _updateService = updateService;
     }
 
     public BthPS3StatusService BthPs3 { get; }
@@ -166,6 +173,39 @@ public partial class SettingsViewModel : ObservableObject, INavigationAware
 
                 break;
         }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanCheckForUpdates))]
+    private async Task CheckForUpdates()
+    {
+        IsCheckingForUpdates = true;
+        try
+        {
+            UpdateCheckOutcome outcome = await _updateService.CheckNowAsync();
+            switch (outcome)
+            {
+                case UpdateCheckOutcome.UpToDate:
+                    _appSnackbarMessagesService.ShowControlAppUpToDateMessage();
+                    break;
+                case UpdateCheckOutcome.Failed:
+                    _appSnackbarMessagesService.ShowControlAppUpdateCheckFailedMessage();
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Warning(ex, "Manual ControlApp update check failed.");
+            _appSnackbarMessagesService.ShowControlAppUpdateCheckFailedMessage();
+        }
+        finally
+        {
+            IsCheckingForUpdates = false;
+        }
+    }
+
+    private bool CanCheckForUpdates()
+    {
+        return !IsCheckingForUpdates;
     }
 
     [RelayCommand]

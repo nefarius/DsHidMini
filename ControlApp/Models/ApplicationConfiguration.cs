@@ -30,6 +30,12 @@ public class ApplicationConfiguration
     public bool IsUpdateCheckEnabled { get; set; } = true;
 
     /// <summary>
+    ///     Local calendar date of the last startup update check attempt (success or failure).
+    ///     Used so Download and Skip both suppress another check until the next local day.
+    /// </summary>
+    public DateOnly? LastUpdateCheckDate { get; set; }
+
+    /// <summary>
     ///     If true, downloads genuine OUI list and compares controller MAC against.
     /// </summary>
     public bool IsGenuineCheckEnabled { get; set; } = true;
