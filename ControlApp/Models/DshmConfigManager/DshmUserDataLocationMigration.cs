@@ -8,6 +8,9 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 /// </summary>
 internal static class DshmUserDataLocationMigration
 {
+    private static readonly string UserDataFileName =
+        DshmConfigManagerUserData.GlobalUserDataFileName + ".json";
+
     public static string ResolveUserDataDirectory(string preferredDirectory, string legacyDirectory)
     {
         string preferredFull = Path.GetFullPath(preferredDirectory);
@@ -22,12 +25,14 @@ internal static class DshmUserDataLocationMigration
 
         if (File.Exists(preferredFile))
         {
+            TryMigrateSidecarArtifacts(legacyFull, preferredFull);
             TryDeleteEmptyDirectory(legacyFull);
             return preferredFull;
         }
 
         if (!File.Exists(legacyFile))
         {
+            TryMigrateSidecarArtifacts(legacyFull, preferredFull);
             TryDeleteEmptyDirectory(legacyFull);
             return preferredFull;
         }
@@ -48,12 +53,56 @@ internal static class DshmUserDataLocationMigration
             return legacyFull;
         }
 
+        TryMigrateSidecarArtifacts(legacyFull, preferredFull);
         TryDeleteEmptyDirectory(legacyFull);
         return preferredFull;
     }
 
     private static string UserDataFilePath(string directory) =>
-        Path.Combine(directory, DshmConfigManagerUserData.GlobalUserDataFileName + ".json");
+        Path.Combine(directory, UserDataFileName);
+
+    private static void TryMigrateSidecarArtifacts(string legacyDirectory, string preferredDirectory)
+    {
+        foreach (string sourcePath in EnumerateUserDataArtifacts(legacyDirectory))
+        {
+            string fileName = Path.GetFileName(sourcePath);
+            if (string.Equals(fileName, UserDataFileName, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            string destinationPath = Path.Combine(preferredDirectory, fileName);
+            if (File.Exists(destinationPath))
+            {
+                continue;
+            }
+
+            try
+            {
+                Directory.CreateDirectory(preferredDirectory);
+                File.Move(sourcePath, destinationPath);
+                Log.Logger.Information(
+                    "Migrated ControlApp user-data artifact from {LegacyPath} to {PreferredPath}.",
+                    sourcePath, destinationPath);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                Log.Logger.Warning(ex,
+                    "Failed to migrate ControlApp user-data artifact from {LegacyPath} to {PreferredPath}.",
+                    sourcePath, destinationPath);
+            }
+        }
+    }
+
+    private static IEnumerable<string> EnumerateUserDataArtifacts(string directory)
+    {
+        if (!Directory.Exists(directory))
+        {
+            return [];
+        }
+
+        return Directory.EnumerateFiles(directory, UserDataFileName + "*");
+    }
 
     private static void TryDeleteEmptyDirectory(string directory)
     {

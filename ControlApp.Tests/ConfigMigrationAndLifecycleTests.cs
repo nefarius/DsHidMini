@@ -220,6 +220,25 @@ public class UserDataLocationMigrationTests : IDisposable
     }
 
     [Fact]
+    public void MigratesLegacyArtifacts_AndRemovesEmptyLegacyDirectory()
+    {
+        Directory.CreateDirectory(LegacyDir);
+        File.WriteAllText(LegacyFile, """{"SchemaVersion":1}""");
+        string corruptName = "DshmUserData.json.corrupt-20260101120000";
+        string tmpName = "DshmUserData.json.tmp";
+        File.WriteAllText(Path.Combine(LegacyDir, corruptName), "broken");
+        File.WriteAllText(Path.Combine(LegacyDir, tmpName), "tmp");
+
+        DshmConfigLocations locations = DshmConfigLocations.CreateDefault(ProgramData, DriverDir);
+
+        Assert.Equal(Path.GetFullPath(PreferredDir), locations.UserDataDirectory);
+        Assert.Equal("""{"SchemaVersion":1}""", File.ReadAllText(PreferredFile));
+        Assert.Equal("broken", File.ReadAllText(Path.Combine(PreferredDir, corruptName)));
+        Assert.Equal("tmp", File.ReadAllText(Path.Combine(PreferredDir, tmpName)));
+        Assert.False(Directory.Exists(LegacyDir));
+    }
+
+    [Fact]
     public void NoLegacyData_UsesPreferredDirectory()
     {
         DshmConfigLocations locations = DshmConfigLocations.CreateDefault(ProgramData, DriverDir);
