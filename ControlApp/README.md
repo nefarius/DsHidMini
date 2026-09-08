@@ -112,6 +112,7 @@ This compiles the solution (if needed) and publishes the ControlApp to the solut
 - **App version** — Displayed in the title bar / settings.
 - **Automatically restart devices on HID mode mismatch** — Driver self-restart when the loaded HID mode does not match the mode Windows already probed.
 - **Minimize to tray** — When enabled, Minimize and Close hide ControlApp to the notification area; use the tray icon to reopen or Exit to quit.
+- **Experimental driver IPC** — Check, enable, or disable the driver’s `IPCEnabled` registry flag. Changing it requires Administrator rights and a reboot or driver reload.
 - **Application configuration** — Stored in %AppData%; see [Configuration](#configuration).
 
 ---
@@ -135,7 +136,7 @@ DsHidMini driver configuration (profiles, global profile, per-device profile ass
 ## Elevation and permissions
 
 - The app runs **as invoker** (no mandatory elevation). Normal users can open the app, view devices and profiles, and change application settings.
-- **“Restart as Administrator”** — Shown in the title bar when not elevated; use it to get full device-editing and pairing support (e.g. handle duplication for raw input and pairing).
+- **“Restart as Administrator”** — Shown in the title bar when not elevated; use it to get full device-editing and pairing support (e.g. handle duplication for raw input and pairing) and to change experimental driver IPC.
 - **Device editing** — Some device operations (e.g. pairing to host, or reliable application of certain settings) require the process to have sufficient privileges; restarting as administrator is the supported way to obtain them.
 
 ---
