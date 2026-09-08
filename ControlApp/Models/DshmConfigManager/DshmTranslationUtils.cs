@@ -179,6 +179,7 @@ public class DshmManagerToDriverConversion
         OutputReportSettings x_OutRep = appFormat.OutputReport;
         driverFormat.IsOutputRateControlEnabled = x_OutRep.IsOutputReportRateControlEnabled;
         driverFormat.OutputRateControlPeriodMs = (byte)x_OutRep.MaxOutputRate;
+        driverFormat.BluetoothOutputReportTransport = x_OutRep.BluetoothOutputReportTransport;
 
         LeftMotorRescalingSettings x_LeftMRescale = appFormat.LeftMotorRescaling;
         DshmDeviceSettings.HeavyRescaleSettings dshmLeftRumbleRescaleSettings =
@@ -291,6 +292,11 @@ public class DshmManagerToDriverConversion
             appFormat.OutputReport.MaxOutputRate = rateMs;
         }
 
+        if (driverFormat.BluetoothOutputReportTransport is { } bluetoothTransport)
+        {
+            appFormat.OutputReport.BluetoothOutputReportTransport = bluetoothTransport;
+        }
+
         if (rumble.HeavyRescale.IsEnabled is { } heavyEnabled)
         {
             appFormat.LeftMotorRescaling.IsLeftMotorStrRescalingEnabled = heavyEnabled;
@@ -351,6 +357,8 @@ public class DshmManagerToDriverConversion
         merged.PairOnHotReload = overlay.PairOnHotReload ?? merged.PairOnHotReload;
         merged.CustomPairingAddress = overlay.CustomPairingAddress ?? merged.CustomPairingAddress;
         merged.UsbOutputReportTransport = overlay.UsbOutputReportTransport ?? merged.UsbOutputReportTransport;
+        merged.BluetoothOutputReportTransport =
+            overlay.BluetoothOutputReportTransport ?? merged.BluetoothOutputReportTransport;
         merged.DisableWirelessIdleTimeout = overlay.DisableWirelessIdleTimeout ?? merged.DisableWirelessIdleTimeout;
         merged.IsOutputRateControlEnabled = overlay.IsOutputRateControlEnabled ?? merged.IsOutputRateControlEnabled;
         merged.OutputRateControlPeriodMs = overlay.OutputRateControlPeriodMs ?? merged.OutputRateControlPeriodMs;
@@ -564,6 +572,7 @@ public class DshmManagerToDriverConversion
         clone.PairOnHotReload = source.PairOnHotReload;
         clone.CustomPairingAddress = source.CustomPairingAddress;
         clone.UsbOutputReportTransport = source.UsbOutputReportTransport;
+        clone.BluetoothOutputReportTransport = source.BluetoothOutputReportTransport;
         return clone;
     }
 

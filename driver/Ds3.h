@@ -11,6 +11,14 @@ extern const UCHAR G_Ds3BthHidOutputReport[];
 
 #define DS3_BTH_HID_OUTPUT_REPORT_SIZE		0x32
 
+//
+// Bluetooth HID transaction prefixes for the output-report template.
+// Control (SET_REPORT | Output) is the historical default; Interrupt
+// (DATA | Output) is applied at send time when configured (PR 460).
+// 
+#define DS3_BTH_HID_OUTPUT_REPORT_CONTROL_PREFIX	0x52
+#define DS3_BTH_HID_OUTPUT_REPORT_INTERRUPT_PREFIX	0xA2
+
 #define DS3_LED_1       0x02
 #define DS3_LED_2       0x04
 #define DS3_LED_3       0x08

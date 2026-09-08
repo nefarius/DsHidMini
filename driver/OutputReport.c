@@ -3,6 +3,37 @@
 
 
 //
+// Selects the Bluetooth HID channel and matching report prefix immediately
+// before a send. Control (0x52 / CONTROL_WRITE) is the historical default;
+// Interrupt (0xA2 / INTERRUPT_WRITE) is the PR 460 rumble candidate.
+// The 0x53 Sixaxis init write stays on the control channel in Ds3.c.
+// 
+static
+VOID
+DSHM_BthPrepareOutputReport(
+	_In_ const PDEVICE_CONTEXT DeviceContext,
+	_Inout_updates_(BufferSize) PUCHAR Buffer,
+	_In_ size_t BufferSize,
+	_Out_ PULONG Ioctl
+)
+{
+	const BOOLEAN useInterrupt =
+		DeviceContext->Configuration.BluetoothOutputReportTransport ==
+		DsBluetoothOutputReportTransportInterrupt;
+
+	if (BufferSize > 0)
+	{
+		Buffer[0] = useInterrupt
+			? DS3_BTH_HID_OUTPUT_REPORT_INTERRUPT_PREFIX
+			: DS3_BTH_HID_OUTPUT_REPORT_CONTROL_PREFIX;
+	}
+
+	*Ioctl = useInterrupt
+		? IOCTL_BTHPS3_HID_INTERRUPT_WRITE
+		: IOCTL_BTHPS3_HID_CONTROL_WRITE;
+}
+
+//
 // Enqueues current output report buffer to get sent to device. Takes
 // Context->OutputReport.Lock; see DSHM_SendOutputReportUnlocked for callers
 // that already hold it.
@@ -301,17 +332,26 @@ DSHM_EvtExecuteOutputPacketReceived(
 			break;
 		}
 
-		status = DMF_DefaultTarget_SendSynchronously(
-			pDevCtx->Connection.Bth.HidControl.OutputWriterModule,
-			ClientWorkBuffer,
-			bufferSize,
-			NULL,
-			0,
-			ContinuousRequestTarget_RequestType_Ioctl,
-			IOCTL_BTHPS3_HID_CONTROL_WRITE,
-			0,
-			&bytesWritten
-		);
+			ULONG bthOutputIoctl = IOCTL_BTHPS3_HID_CONTROL_WRITE;
+
+			DSHM_BthPrepareOutputReport(
+				pDevCtx,
+				ClientWorkBuffer,
+				bufferSize,
+				&bthOutputIoctl
+			);
+
+			status = DMF_DefaultTarget_SendSynchronously(
+				pDevCtx->Connection.Bth.HidControl.OutputWriterModule,
+				ClientWorkBuffer,
+				bufferSize,
+				NULL,
+				0,
+				ContinuousRequestTarget_RequestType_Ioctl,
+				bthOutputIoctl,
+				0,
+				&bytesWritten
+			);
 
 		if (NT_SUCCESS(status))
 		{

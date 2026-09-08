@@ -4,6 +4,7 @@
     "AutoRestartOnHidModeMismatch": true,
     "DevicePairingMode": "Auto",
     "PairOnHotReload": false,
+    "BluetoothOutputReportTransport": "Control",
     "IsOutputRateControlEnabled": true,
     "OutputRateControlPeriodMs": 150,
     "IsOutputDeduplicatorEnabled": false,

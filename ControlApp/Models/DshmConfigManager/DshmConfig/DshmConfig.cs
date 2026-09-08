@@ -17,6 +17,7 @@ public class DshmDeviceSettings
     public bool? PairOnHotReload { get; set; }
     public string? CustomPairingAddress { get; set; }
     public UsbOutputReportTransport? UsbOutputReportTransport { get; set; }
+    public BluetoothOutputReportTransport? BluetoothOutputReportTransport { get; set; }
     public bool? DisableWirelessIdleTimeout { get; set; }
     public bool? IsOutputRateControlEnabled { get; set; }
     public byte? OutputRateControlPeriodMs { get; set; }

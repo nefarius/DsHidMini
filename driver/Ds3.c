@@ -31,7 +31,7 @@ const UCHAR G_Ds3UsbHidOutputReport[] = {
 // Default Output Report for LED & Rumble state changes (Bluetooth)
 // 
 const UCHAR G_Ds3BthHidOutputReport[] = {
-	0x52, /* HID BT Set_report (0x50) | Report Type (Output 0x02)*/
+	DS3_BTH_HID_OUTPUT_REPORT_CONTROL_PREFIX, /* HID BT Set_report (0x50) | Output (0x02); send path may override to 0xA2 */
 	0x01, /* Report ID */
 	0x00, 0xFF, 0x00, 0xFF, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00,

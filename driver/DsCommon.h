@@ -175,6 +175,33 @@ static CONST PSTR G_USB_OUTPUT_REPORT_TRANSPORT_NAMES[] =
 };
 
 //
+// Which Bluetooth HID channel is used to send output reports (LEDs/rumble).
+// Control is the historical default; Interrupt is the PR 460 candidate that
+// some pads need for wireless rumble. Selected at send time so it can change
+// on hot-reload without reinstalling.
+// 
+typedef enum
+{
+	//
+	// HID control channel, 0x52 (SET_REPORT | Output)
+	// 
+	DsBluetoothOutputReportTransportControl = 0,
+	//
+	// HID interrupt channel, 0xA2 (DATA | Output)
+	// 
+	DsBluetoothOutputReportTransportInterrupt
+} DS_BLUETOOTH_OUTPUT_REPORT_TRANSPORT, * PDS_BLUETOOTH_OUTPUT_REPORT_TRANSPORT;
+
+//
+// Friendly names for reading from JSON
+// 
+static CONST PSTR G_BLUETOOTH_OUTPUT_REPORT_TRANSPORT_NAMES[] =
+{
+	"Control",
+	"Interrupt"
+};
+
+//
 // Output report processing mode
 // 
 typedef enum
@@ -597,6 +624,12 @@ typedef struct _DS_DRIVER_CONFIGURATION
 	// altered at runtime; only evaluated once during PrepareHardware.
 	// 
 	DS_USB_OUTPUT_REPORT_TRANSPORT UsbOutputReportTransport;
+
+	//
+	// Which Bluetooth HID channel to use for output reports (LEDs/rumble).
+	// Applied at send time so a hot-reload can switch without reinstalling.
+	// 
+	DS_BLUETOOTH_OUTPUT_REPORT_TRANSPORT BluetoothOutputReportTransport;
 
 	//
 	// When set, the driver requests a self re-enumeration if the HID mode

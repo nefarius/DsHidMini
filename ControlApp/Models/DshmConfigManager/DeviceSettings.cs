@@ -1,5 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
+using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 
 using Button = Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums.Button;
@@ -322,6 +323,8 @@ public class OutputReportSettings : DeviceSubSettings
     public bool IsOutputReportRateControlEnabled { get; set; } = true;
     public int MaxOutputRate { get; set; } = 150;
     public bool IsOutputReportDeduplicatorEnabled { get; set; }
+    public BluetoothOutputReportTransport BluetoothOutputReportTransport { get; set; } =
+        BluetoothOutputReportTransport.Control;
 
     public override void ResetToDefault()
     {
@@ -337,6 +340,7 @@ public class OutputReportSettings : DeviceSubSettings
         destiny.IsOutputReportDeduplicatorEnabled = source.IsOutputReportDeduplicatorEnabled;
         destiny.IsOutputReportRateControlEnabled = source.IsOutputReportRateControlEnabled;
         destiny.MaxOutputRate = source.MaxOutputRate;
+        destiny.BluetoothOutputReportTransport = source.BluetoothOutputReportTransport;
     }
 }
 
