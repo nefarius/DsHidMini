@@ -4,6 +4,7 @@ using System.Windows;
 
 using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
+using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.Util;
@@ -158,6 +159,13 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     ///     The Hid Mode the device is expected to be based on the device's user data
     /// </summary>
     public SettingsContext ExpectedHidMode => _dshmConfigManager.GetDeviceExpectedHidMode(_deviceUserData);
+
+    /// <summary>
+    ///     Configured Bluetooth HID channel used to send output reports (LEDs/rumble).
+    ///     Resolved from custom, profile, or global settings, or the Control default.
+    /// </summary>
+    public BluetoothOutputReportTransport BluetoothOutputReportTransport =>
+        _dshmConfigManager.ResolveEffectiveSettings(_deviceUserData).OutputReport.BluetoothOutputReportTransport;
 
 
     /// <summary>
@@ -641,6 +649,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         AdjustSettingsTabState();
         OnPropertyChanged(nameof(DeviceSettingsStatus));
         OnPropertyChanged(nameof(IsHidModeMismatched));
+        OnPropertyChanged(nameof(BluetoothOutputReportTransport));
         await RefreshXInputSlotLabelAsync();
     }
 
