@@ -284,6 +284,11 @@ jobs:
       SIGN_RELAY_SERVER: ${{ vars.SIGN_RELAY_SERVER }}
       SIGN_RELAY_CI_TOKEN: ${{ secrets.SIGN_RELAY_CI_TOKEN }}
     steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
       - name: 'Require signing configuration'
         shell: pwsh
         run: |
@@ -291,22 +296,25 @@ jobs:
           if (-not $env:SIGN_RELAY_CI_TOKEN) { throw 'Repository secret SIGN_RELAY_CI_TOKEN is not set.' }
 
       - name: 'Download x64 artifacts'
-        uses: actions/download-artifact@v4
+        uses: ./.github/actions/download-artifact-with-retry
         with:
           name: dshidmini-x64
           path: .
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 'Download ARM64 artifacts'
-        uses: actions/download-artifact@v4
+        uses: ./.github/actions/download-artifact-with-retry
         with:
           name: dshidmini-ARM64
           path: .
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 'Download x86 artifacts'
-        uses: actions/download-artifact@v4
+        uses: ./.github/actions/download-artifact-with-retry
         with:
           name: dshidmini-x86
           path: .
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 'Assert ControlApp is unsigned'
         shell: pwsh
@@ -470,16 +478,18 @@ jobs:
           if (-not $env:SIGN_RELAY_CI_TOKEN) { throw 'Repository secret SIGN_RELAY_CI_TOKEN is not set.' }
 
       - name: 'Download x64 artifacts'
-        uses: actions/download-artifact@v4
+        uses: ./.github/actions/download-artifact-with-retry
         with:
           name: dshidmini-x64
           path: .
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 'Download ARM64 artifacts'
-        uses: actions/download-artifact@v4
+        uses: ./.github/actions/download-artifact-with-retry
         with:
           name: dshidmini-ARM64
           path: .
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 'Assert driver DLLs are unsigned'
         shell: pwsh
