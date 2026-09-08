@@ -134,6 +134,39 @@ public class AppSnackbarMessagesService
         );
     }
 
+    public void ShowDriverIpcEnabledMessage()
+    {
+        _snackbarService.Show(
+            "Driver IPC enabled",
+            "A reboot or driver reload is required before this takes effect.",
+            ControlAppearance.Success,
+            new SymbolIcon(SymbolRegular.CheckmarkCircle24),
+            TimeSpan.FromSeconds(6)
+        );
+    }
+
+    public void ShowDriverIpcDisabledMessage()
+    {
+        _snackbarService.Show(
+            "Driver IPC disabled",
+            "A reboot or driver reload is required before this takes effect.",
+            ControlAppearance.Success,
+            new SymbolIcon(SymbolRegular.CheckmarkCircle24),
+            TimeSpan.FromSeconds(6)
+        );
+    }
+
+    public void ShowDriverIpcChangeFailedMessage()
+    {
+        _snackbarService.Show(
+            "Failed to update driver IPC",
+            "Run as Administrator and confirm DsHidMini is installed.",
+            ControlAppearance.Danger,
+            new SymbolIcon(SymbolRegular.DismissCircle24),
+            TimeSpan.FromSeconds(6)
+        );
+    }
+
     public void ShowDefenderBtSwitchedToPs3ModeMessage()
     {
         _snackbarService.Show(
