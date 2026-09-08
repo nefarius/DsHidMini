@@ -124,3 +124,35 @@ internal struct DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY
 
     public UInt32 NtStatus;
 }
+
+/// <summary>
+///     Requests the console-style USB power-off sequence (issue #366).
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+internal struct DSHM_IPC_MSG_USB_POWER_OFF_REQUEST
+{
+    public DSHM_IPC_MSG_HEADER Header;
+}
+
+/// <summary>
+///     Reply to <see cref="DSHM_IPC_MSG_USB_POWER_OFF_REQUEST" />.
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+internal struct DSHM_IPC_MSG_USB_POWER_OFF_REPLY
+{
+    public DSHM_IPC_MSG_HEADER Header;
+
+    /// <summary>
+    ///     NTSTATUS of the 48-byte zero output report (LEDs/rumble off)
+    /// </summary>
+    public UInt32 IndicatorsOffStatus;
+
+    /// <summary>
+    ///     NTSTATUS of the Feature 0xF4 disable transfer
+    /// </summary>
+    public UInt32 ShutdownStatus;
+}

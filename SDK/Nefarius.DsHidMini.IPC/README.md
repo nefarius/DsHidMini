@@ -39,6 +39,7 @@ Use it from a .NET Standard 2.0 consumer or a .NET 10 Windows application (deskt
 | **Read raw input** | Poll or wait for `DS3_RAW_INPUT_REPORT` (buttons, sticks, pressure, motion) |
 | **Pair to host** | Set the Bluetooth host address the controller pairs to (`SetHostAddress`) |
 | **Player index** | Set the player LED slot (1–7) with `SetPlayerIndex` |
+| **USB power-off** | Send the console USB power-off sequence with `PowerOffUsbDevice` |
 | **Liveness check** | Verify driver is responsive with `SendPing` |
 
 The SDK handles reconnection when the last device disconnects and the next one arrives, and exposes device arrival/removal via internal device notification handling.
@@ -121,6 +122,7 @@ if (gotReport)
 | **`void SendPing()`** | Sends a ping to the driver and waits for a reply (liveness check). |
 | **`SetHostResult SetHostAddress(int deviceIndex, PhysicalAddress hostAddress)`** | Writes the new Bluetooth host address (pairing). Returns write/read NTSTATUS in `SetHostResult`. |
 | **`uint SetPlayerIndex(int deviceIndex, byte playerIndex)`** | Sets the player LED index (1–7). Returns NTSTATUS. |
+| **`PowerOffUsbResult PowerOffUsbDevice(int deviceIndex)`** | Sends the PlayStation 3 USB power-off sequence (zero output report, then Feature 0xF4 disable). Wired devices only; the controller stays enumerated. |
 
 All device-indexed APIs use a **one-based** device index (see [Device index](#device-index)).
 
@@ -150,6 +152,12 @@ All device-indexed APIs use a **one-based** device index (see [Device index](#de
 
 - **`WriteStatus`** — NTSTATUS of the “pair to host” write.  
 - **`ReadStatus`** — NTSTATUS of the subsequent read-back of the address.
+
+### `PowerOffUsbResult` (USB power-off)
+
+- **`IndicatorsOffStatus`** — NTSTATUS of the 48-byte zero output report.  
+- **`ShutdownStatus`** — NTSTATUS of the Feature 0xF4 disable transfer.  
+- **`Succeeded`** — `true` when both transfers completed successfully.
 
 ### Driver / model enums (see API docs)
 

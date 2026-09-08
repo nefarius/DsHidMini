@@ -99,5 +99,10 @@ internal enum DSHM_IPC_MSG_CMD_DEVICE : UInt32
     /// <summary>
     ///     Requests a player index update (switch player LED etc.)
     /// </summary>
-    DSHM_IPC_MSG_CMD_DEVICE_SET_PLAYER_INDEX
+    DSHM_IPC_MSG_CMD_DEVICE_SET_PLAYER_INDEX,
+
+    /// <summary>
+    ///     Sends the console USB power-off sequence (zero output report + disable)
+    /// </summary>
+    DSHM_IPC_MSG_CMD_DEVICE_USB_POWER_OFF
 }

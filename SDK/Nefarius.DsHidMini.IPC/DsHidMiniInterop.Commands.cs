@@ -393,4 +393,74 @@ public partial class DsHidMiniInterop
             _commandMutex.ReleaseMutex();
         }
     }
+
+    /// <summary>
+    ///     Sends the PlayStation 3 USB power-off sequence to a wired device: a 48-byte zero
+    ///     output report, then Feature 0xF4 disable. The controller stays enumerated.
+    /// </summary>
+    /// <param name="deviceIndex">The one-based device index.</param>
+    /// <exception cref="DsHidMiniInteropUnavailableException">
+    ///     Driver IPC unavailable, make sure that at least one compatible
+    ///     controller is connected and operational.
+    /// </exception>
+    /// <exception cref="DsHidMiniInteropInvalidDeviceIndexException">
+    ///     The <paramref name="deviceIndex" /> was outside the valid range 1..255.
+    /// </exception>
+    /// <exception cref="DsHidMiniInteropConcurrencyException">A different thread is currently performing a data exchange.</exception>
+    /// <exception cref="DsHidMiniInteropReplyTimeoutException">The driver didn't respond within an expected period.</exception>
+    /// <exception cref="DsHidMiniInteropUnexpectedReplyException">The driver returned unexpected or malformed data.</exception>
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
+    public unsafe PowerOffUsbResult PowerOffUsbDevice(int deviceIndex)
+    {
+        if (_commandMutex is null || _cmdView is null)
+        {
+            throw new DsHidMiniInteropUnavailableException();
+        }
+
+        ValidateDeviceIndex(deviceIndex);
+
+        AcquireCommandLock();
+
+        try
+        {
+            ref DSHM_IPC_MSG_USB_POWER_OFF_REQUEST request =
+                ref Unsafe.AsRef<DSHM_IPC_MSG_USB_POWER_OFF_REQUEST>(_cmdView);
+
+            request.Header.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
+            request.Header.Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DEVICE;
+            request.Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_USB_POWER_OFF;
+            request.Header.TargetIndex = (uint)deviceIndex;
+            request.Header.Size = (uint)Marshal.SizeOf<DSHM_IPC_MSG_USB_POWER_OFF_REQUEST>();
+
+            if (!SendAndWait())
+            {
+                throw new DsHidMiniInteropReplyTimeoutException();
+            }
+
+            ref DSHM_IPC_MSG_USB_POWER_OFF_REPLY reply =
+                ref Unsafe.AsRef<DSHM_IPC_MSG_USB_POWER_OFF_REPLY>(_cmdView);
+
+            if (reply.Header is
+                {
+                    Type: DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_REPLY,
+                    Target: DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_CLIENT,
+                    Command.Device: DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_USB_POWER_OFF
+                }
+                && reply.Header.TargetIndex == deviceIndex
+                && reply.Header.Size == Marshal.SizeOf<DSHM_IPC_MSG_USB_POWER_OFF_REPLY>())
+            {
+                return new PowerOffUsbResult
+                {
+                    IndicatorsOffStatus = reply.IndicatorsOffStatus,
+                    ShutdownStatus = reply.ShutdownStatus
+                };
+            }
+
+            throw new DsHidMiniInteropUnexpectedReplyException(ref reply.Header);
+        }
+        finally
+        {
+            _commandMutex.ReleaseMutex();
+        }
+    }
 }
