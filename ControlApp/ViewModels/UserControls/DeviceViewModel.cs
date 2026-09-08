@@ -9,7 +9,9 @@ using Nefarius.DsHidMini.ControlApp.Models.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.Util;
 using Nefarius.DsHidMini.ControlApp.Models.Util.Web;
 using Nefarius.DsHidMini.ControlApp.Services;
+using Nefarius.DsHidMini.IPC;
 using Nefarius.DsHidMini.IPC.Models.Drivers;
+using Nefarius.DsHidMini.IPC.Models.Public;
 using Nefarius.Utilities.DeviceManagement.PnP;
 
 using Wpf.Ui;
@@ -378,6 +380,17 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             : "Restart this USB controller. Requires running as Administrator.";
 
     /// <summary>
+    ///     Wired controllers can receive the console USB power-off sequence.
+    /// </summary>
+    public bool CanPowerOffUsb => !IsWireless;
+
+    /// <summary>
+    ///     Tooltip for the wired-only USB power-off button.
+    /// </summary>
+    public string PowerOffUsbDeviceToolTip =>
+        "Turn off this USB controller. It stays plugged in; use Restart to wake it.";
+
+    /// <summary>
     ///     Last time this device has been seen connected (applies to Bluetooth connected devices only).
     /// </summary>
     public DateTimeOffset LastConnected =>
@@ -709,6 +722,102 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             IsWireless ? "wireless" : "wired", DeviceAddress);
         _appSnackbarMessagesService.ShowPowerCyclingDeviceMessage(IsWireless, SecurityUtil.IsElevated,
             reconnectionResult && propertyApplyResult);
+    }
+
+    [RelayCommand]
+    private async Task PowerOffUsbDevice()
+    {
+        if (!CanPowerOffUsb)
+        {
+            return;
+        }
+
+        ContentDialogResult confirmation = await _contentDialogService.ShowSimpleDialogAsync(
+            new SimpleContentDialogCreateOptions
+            {
+                Title = "Turn off controller?",
+                Content = """
+                          This sends the PlayStation 3 USB power-off sequence. The controller stays plugged in and can keep charging, but LEDs and input stop.
+
+                          Use Restart on this card to wake it again.
+                          """,
+                PrimaryButtonText = "Turn off",
+                CloseButtonText = "Cancel"
+            }
+        );
+
+        if (confirmation != ContentDialogResult.Primary)
+        {
+            return;
+        }
+
+        int? slot = TryGetIpcSlotIndex();
+        if (slot is not int deviceIndex)
+        {
+            Log.Logger.Warning(
+                "USB power-off skipped for '{DeviceAddress}': no readable IPC slot.",
+                DeviceAddress);
+            _appSnackbarMessagesService.ShowUsbPowerOffFailedMessage(
+                "The driver did not report an IPC slot for this device.");
+            return;
+        }
+
+        if (!DsHidMiniInterop.IsAvailable)
+        {
+            _appSnackbarMessagesService.ShowUsbPowerOffFailedMessage(
+                "Driver IPC is not available. Confirm the controller is still connected.");
+            return;
+        }
+
+        try
+        {
+            PowerOffUsbResult result = await Task.Run(() =>
+            {
+                using DsHidMiniInterop interop = new();
+                return interop.PowerOffUsbDevice(deviceIndex);
+            });
+
+            Log.Logger.Information(
+                "USB power-off for '{DeviceAddress}' slot {Slot}: {Result}",
+                DeviceAddress,
+                deviceIndex,
+                result);
+
+            if (result.Succeeded)
+            {
+                _appSnackbarMessagesService.ShowUsbPowerOffSucceededMessage();
+            }
+            else
+            {
+                _appSnackbarMessagesService.ShowUsbPowerOffFailedMessage(
+                    $"{result}. Restart the controller if it stopped responding.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Error(ex, "USB power-off failed for '{DeviceAddress}'", DeviceAddress);
+            _appSnackbarMessagesService.ShowUsbPowerOffFailedMessage(ex.Message);
+        }
+    }
+
+    private int? TryGetIpcSlotIndex()
+    {
+        uint slot;
+        try
+        {
+            slot = Device.GetProperty<uint>(DsHidMiniDriver.IpcSlotIndexProperty);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+
+        if (slot is < 1 or > byte.MaxValue)
+        {
+            return null;
+        }
+
+        return (int)slot;
     }
 
     [RelayCommand]

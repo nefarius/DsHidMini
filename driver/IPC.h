@@ -94,6 +94,10 @@ typedef enum
 	// Requests a player index update (switch player LED etc.)
 	// 
 	DSHM_IPC_MSG_CMD_DEVICE_SET_PLAYER_INDEX,
+	//
+	// Sends the console USB power-off sequence (zero output report + disable)
+	// 
+	DSHM_IPC_MSG_CMD_DEVICE_USB_POWER_OFF,
 } DSHM_IPC_MSG_CMD_DEVICE;
 
 //
@@ -190,6 +194,34 @@ typedef struct _DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY
 	
 } DSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY, *PDSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY;
 
+//
+// Requests the console-style USB power-off sequence (issue #366)
+// 
+typedef struct _DSHM_IPC_MSG_USB_POWER_OFF_REQUEST
+{
+	DSHM_IPC_MSG_HEADER Header;
+
+} DSHM_IPC_MSG_USB_POWER_OFF_REQUEST, *PDSHM_IPC_MSG_USB_POWER_OFF_REQUEST;
+
+//
+// Reply to struct _DSHM_IPC_MSG_USB_POWER_OFF_REQUEST
+// 
+typedef struct _DSHM_IPC_MSG_USB_POWER_OFF_REPLY
+{
+	DSHM_IPC_MSG_HEADER Header;
+
+	//
+	// NTSTATUS of the 48-byte zero output report (LEDs/rumble off)
+	// 
+	NTSTATUS IndicatorsOffStatus;
+
+	//
+	// NTSTATUS of the Feature 0xF4 disable transfer
+	// 
+	NTSTATUS ShutdownStatus;
+
+} DSHM_IPC_MSG_USB_POWER_OFF_REPLY, *PDSHM_IPC_MSG_USB_POWER_OFF_REPLY;
+
 typedef
 _Function_class_(EVT_DSHM_IPC_DispatchDeviceMessage)
 _IRQL_requires_same_
@@ -279,6 +311,28 @@ DSHM_IPC_MSG_SET_PLAYER_INDEX_RESPONSE_INIT(
 	Message->Header.Size = size;
 
 	Message->NtStatus = Status;
+}
+
+VOID
+FORCEINLINE
+DSHM_IPC_MSG_USB_POWER_OFF_RESPONSE_INIT(
+	_Inout_ PDSHM_IPC_MSG_USB_POWER_OFF_REPLY Message,
+	_In_ UINT32 DeviceIndex,
+	_In_ NTSTATUS IndicatorsOffStatus,
+	_In_ NTSTATUS ShutdownStatus
+)
+{
+	const UINT32 size = sizeof(DSHM_IPC_MSG_USB_POWER_OFF_REPLY);
+	RtlZeroMemory(Message, size);
+
+	Message->Header.Type = DSHM_IPC_MSG_TYPE_REQUEST_REPLY;
+	Message->Header.Target = DSHM_IPC_MSG_TARGET_CLIENT;
+	Message->Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE_USB_POWER_OFF;
+	Message->Header.TargetIndex = DeviceIndex;
+	Message->Header.Size = size;
+
+	Message->IndicatorsOffStatus = IndicatorsOffStatus;
+	Message->ShutdownStatus = ShutdownStatus;
 }
 
 

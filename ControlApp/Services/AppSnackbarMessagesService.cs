@@ -156,6 +156,28 @@ public class AppSnackbarMessagesService
         );
     }
 
+    public void ShowUsbPowerOffSucceededMessage()
+    {
+        _snackbarService.Show(
+            "Controller turned off",
+            "USB stays connected. Use Restart on the device card to wake it.",
+            ControlAppearance.Success,
+            new SymbolIcon(SymbolRegular.CheckmarkCircle24),
+            TimeSpan.FromSeconds(5)
+        );
+    }
+
+    public void ShowUsbPowerOffFailedMessage(string detail)
+    {
+        _snackbarService.Show(
+            "Failed to turn off controller",
+            detail,
+            ControlAppearance.Danger,
+            new SymbolIcon(SymbolRegular.DismissCircle24),
+            TimeSpan.FromSeconds(8)
+        );
+    }
+
     public void ShowPowerCyclingDeviceMessage(bool isWireless, bool isAppElevated, bool reconnectionResult)
     {
         if (!isWireless && !isAppElevated)

@@ -16,6 +16,8 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <MinVerTagPrefix>sdk-v</MinVerTagPrefix>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'True'">true</ContinuousIntegrationBuild>
+    <!-- CsWin32 already emits some C# 13 polyfills; only generate init support. -->
+    <PolySharpIncludeGeneratedTypes>System.Runtime.CompilerServices.IsExternalInit</PolySharpIncludeGeneratedTypes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -33,6 +35,10 @@
     </PackageReference>
     <PackageReference Include="MinVer" Version="8.0.0">
       <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="PolySharp" Version="1.15.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Nefarius.Utilities.DeviceManagement" Version="6.1.0" />
     <PackageReference Include="System.Memory" Version="4.6.3" Condition="'$(TargetFramework)' == 'netstandard2.0'" />

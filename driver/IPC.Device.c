@@ -69,6 +69,63 @@ DSHM_EvtDispatchDeviceMessage(
 
 		status = STATUS_SUCCESS;
 	}
+	else if (MessageHeader->Command.Device == DSHM_IPC_MSG_CMD_DEVICE_USB_POWER_OFF)
+	{
+		NTSTATUS indicatorsOffStatus = STATUS_NOT_SUPPORTED;
+		NTSTATUS shutdownStatus = STATUS_NOT_SUPPORTED;
+
+		if (DeviceContext->ConnectionType != DsDeviceConnectionTypeUsb)
+		{
+			TraceWarning(
+				TRACE_IPC,
+				"USB power-off requested for a non-USB device"
+			);
+		}
+		else
+		{
+			//
+			// PS3 sequence from issue #366: zero the 48-byte output report on
+			// EP0, then send Feature 0xF4 disable. Always attempt shutdown even
+			// if the first transfer fails.
+			// 
+			UCHAR zeroOutputReport[48] = { 0 };
+
+			indicatorsOffStatus = DsUsb_Ds3SendOutputReportControl(
+				DeviceContext,
+				zeroOutputReport,
+				ARRAYSIZE(zeroOutputReport)
+			);
+
+			if (!NT_SUCCESS(indicatorsOffStatus))
+			{
+				TraceWarning(
+					TRACE_IPC,
+					"USB power-off indicators-off report failed with %!STATUS!",
+					indicatorsOffStatus
+				);
+			}
+
+			shutdownStatus = DsUsb_Ds3Shutdown(DeviceContext);
+
+			if (!NT_SUCCESS(shutdownStatus))
+			{
+				TraceError(
+					TRACE_IPC,
+					"DsUsb_Ds3Shutdown failed with %!STATUS!",
+					shutdownStatus
+				);
+			}
+		}
+
+		DSHM_IPC_MSG_USB_POWER_OFF_RESPONSE_INIT(
+			(PDSHM_IPC_MSG_USB_POWER_OFF_REPLY)MessageHeader,
+			MessageHeader->TargetIndex,
+			indicatorsOffStatus,
+			shutdownStatus
+		);
+
+		status = STATUS_SUCCESS;
+	}
 
 	FuncExit(TRACE_IPC, "status=%!STATUS!", status);
 

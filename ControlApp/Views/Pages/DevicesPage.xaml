@@ -141,6 +141,35 @@
                                             </Viewbox>
 
 
+                                            <!--  Wired USB power-off (issue #366)  -->
+                                            <Viewbox
+                                                Margin="0"
+                                                DockPanel.Dock="Left"
+                                                Visibility="{Binding CanPowerOffUsb, Converter={StaticResource BoolToVis_TV_FC}}">
+                                                <ui:Button
+                                                    Width="50"
+                                                    Height="50"
+                                                    Padding="5"
+                                                    HorizontalAlignment="Stretch"
+                                                    VerticalAlignment="Stretch"
+                                                    HorizontalContentAlignment="Stretch"
+                                                    Command="{Binding PowerOffUsbDeviceCommand}"
+                                                    FontStyle="Normal"
+                                                    ToolTip="{Binding PowerOffUsbDeviceToolTip}"
+                                                    ToolTipService.InitialShowDelay="200">
+                                                    <ui:Button.Content>
+                                                        <Viewbox>
+                                                            <ui:SymbolIcon
+                                                                Margin="0"
+                                                                HorizontalAlignment="Center"
+                                                                FontSize="28"
+                                                                Foreground="White"
+                                                                Symbol="Sleep24" />
+                                                        </Viewbox>
+                                                    </ui:Button.Content>
+                                                </ui:Button>
+                                            </Viewbox>
+
                                             <!--  Power cycle/Reconnect button  -->
                                             <Viewbox Margin="0" DockPanel.Dock="Left">
                                                 <ui:Button
