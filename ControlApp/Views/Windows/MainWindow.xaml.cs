@@ -16,6 +16,8 @@ public partial class MainWindow : INavigationWindow
 {
     private readonly DshmDevMan _dshmDevMan;
     private readonly DefenderBtStatusService _defenderBtStatusService;
+    private readonly ControlAppUpdateService _updateService;
+    private bool _updateCheckStarted;
 
     public MainWindow(
         MainWindowViewModel viewModel,
@@ -24,7 +26,8 @@ public partial class MainWindow : INavigationWindow
         INavigationService navigationService,
         IServiceProvider serviceProvider,
         ISnackbarService snackbarService,
-        IContentDialogService contentDialogService
+        IContentDialogService contentDialogService,
+        ControlAppUpdateService updateService
     )
     {
         ViewModel = viewModel;
@@ -32,6 +35,7 @@ public partial class MainWindow : INavigationWindow
 
         _dshmDevMan = dshmDevMan;
         _defenderBtStatusService = defenderBtStatusService;
+        _updateService = updateService;
 
         SystemThemeWatcher.Watch(this);
 
@@ -74,6 +78,31 @@ public partial class MainWindow : INavigationWindow
         _dshmDevMan.StartListeningForDshmDevices();
         _defenderBtStatusService.StartListening();
         ApplyMinimizeToTraySetting();
+    }
+
+    protected override void OnContentRendered(EventArgs e)
+    {
+        base.OnContentRendered(e);
+
+        if (_updateCheckStarted)
+        {
+            return;
+        }
+
+        _updateCheckStarted = true;
+        _ = CheckForUpdatesAsync();
+    }
+
+    private async Task CheckForUpdatesAsync()
+    {
+        try
+        {
+            await _updateService.CheckOnStartupAsync();
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Warning(ex, "Startup update check failed.");
+        }
     }
 
     protected override void OnStateChanged(EventArgs e)

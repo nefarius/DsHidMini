@@ -96,6 +96,7 @@ public partial class App
             services.AddSingleton<Main>();
 
             services.AddSingleton<AddressValidator>();
+            services.AddSingleton<ControlAppUpdateService>();
 
             Log.Logger = new LoggerConfiguration()
 #if DEBUG
