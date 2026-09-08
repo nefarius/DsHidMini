@@ -65,7 +65,7 @@ public partial class DshmIpcStatusService : ObservableObject
         else
         {
             IsStateKnown = true;
-            IsEnabled = value is > 0;
+            IsEnabled = value.GetValueOrDefault() != 0;
         }
 
         CanEnable = IsElevated && IsStateKnown && !IsEnabled;

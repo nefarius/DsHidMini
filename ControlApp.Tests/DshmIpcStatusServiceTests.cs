@@ -43,6 +43,7 @@ public class DshmIpcStatusServiceTests
     [Theory]
     [InlineData(1)]
     [InlineData(2)]
+    [InlineData(-1)]
     public void Refresh_NonzeroValue_IsEnabled(int stored)
     {
         FakeStore store = new() { Value = stored };
