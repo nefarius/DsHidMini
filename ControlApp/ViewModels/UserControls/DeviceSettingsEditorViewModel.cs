@@ -81,6 +81,19 @@ public partial class SettingsEditorViewModel : ObservableObject
     {
         HideRumbleSettings = !DsDeviceCapabilities.HasRumble(deviceType);
         LedsSettingsVM.IsSingleLedDevice = DsDeviceCapabilities.HasSingleLed(deviceType);
+        if (LedsSettingsVM.IsSingleLedDevice)
+        {
+            if (LedsSettingsVM.LEDMode == 1)
+            {
+                LedsSettingsVM.LEDMode = 0;
+            }
+
+            if (LedsSettingsVM.CurrentLEDCustomsIndex > 0)
+            {
+                LedsSettingsVM.CurrentLEDCustomsIndex = 0;
+            }
+        }
+
         DeviceCapabilityNote = DsDeviceCapabilities.HidModeGuidance(deviceType);
         OnPropertyChanged(nameof(HideRumbleSettings));
         OnPropertyChanged(nameof(DeviceCapabilityNote));

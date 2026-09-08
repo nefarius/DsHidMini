@@ -1190,12 +1190,6 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 	DOUBLE heavyRumble = Context->RumbleControlState.HeavyCache;
 	DOUBLE lightRumble = Context->RumbleControlState.LightCache;
 
-	if (Context->DeviceType == DsDeviceTypeNavigation)
-	{
-		heavyRumble = 0;
-		lightRumble = 0;
-	}
-
 	// LINEAR RANGE RESCALLING
 	// 
 	// To rescale a value that exists in a range into a new range:
@@ -1245,6 +1239,17 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 	if (heavyRumble > 0 && Context->RumbleControlState.HeavyRescaleEnabled && heavyResc->IsAllowed)
 	{
 		heavyRumble = heavyResc->ConstA * heavyRumble + heavyResc->ConstB;
+	}
+
+	//
+	// Navigation has no motors. Zero after AlternativeMode.ForcedRight
+	// (and rescale) so a cached threshold cannot re-arm the small motor
+	// before the output-report write (issue #48).
+	//
+	if (Context->DeviceType == DsDeviceTypeNavigation)
+	{
+		heavyRumble = 0;
+		lightRumble = 0;
 	}
 
 	switch (Context->ConnectionType)

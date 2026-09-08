@@ -39,7 +39,7 @@ DevicePropertyKey<br>
 
 ### <a id="properties-devicetypeproperty"/>**DeviceTypeProperty**
 
-Hardware family ([DsDeviceType](./nefarius.dshidmini.ipc.models.drivers.dshidminidriver.md)). Navigation has one LED and no rumble.
+Hardware family ([DsDeviceType](./nefarius.dshidmini.ipc.models.drivers.dsdevicetype.md)). Navigation has one LED and no rumble.
 
 ```csharp
 public static DevicePropertyKey DeviceTypeProperty { get; }

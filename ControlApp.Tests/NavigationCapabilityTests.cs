@@ -93,4 +93,18 @@ public class NavigationCapabilityTests
         Assert.NotEqual(DsHidMiniDriver.DeviceAddressSynthesizedProperty, DsHidMiniDriver.DeviceTypeProperty);
         Assert.NotEqual(DsHidMiniDriver.IdentificationCloneHeuristicProperty, DsHidMiniDriver.DeviceTypeProperty);
     }
+
+    [Fact]
+    public void SettingsEditor_NavigationNormalizesBarGraphModeAndLedIndex()
+    {
+        SettingsEditorViewModel editor = new();
+        editor.LedsSettingsVM.LEDMode = 1;
+        editor.LedsSettingsVM.CurrentLEDCustomsIndex = 3;
+
+        editor.ApplyDeviceCapabilities(DsDeviceType.Navigation);
+
+        Assert.Equal(0, editor.LedsSettingsVM.LEDMode);
+        Assert.Equal(0, editor.LedsSettingsVM.CurrentLEDCustomsIndex);
+        Assert.True(editor.LedsSettingsVM.IsSingleLedDevice);
+    }
 }
