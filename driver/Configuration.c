@@ -80,6 +80,31 @@ static DS_USB_OUTPUT_REPORT_TRANSPORT DS_USB_OUTPUT_REPORT_TRANSPORT_FROM_NAME(_
 }
 
 //
+// Translates a friendly name string into the corresponding DS_BLUETOOTH_OUTPUT_REPORT_TRANSPORT value
+// 
+static DS_BLUETOOTH_OUTPUT_REPORT_TRANSPORT DS_BLUETOOTH_OUTPUT_REPORT_TRANSPORT_FROM_NAME(_In_ cJSON* pNode)
+{
+	if (!cJSON_IsString(pNode))
+	{
+		TraceWarning(
+			TRACE_CONFIG,
+			"BluetoothOutputReportTransport configuration value is not a string, ignoring and using Control"
+		);
+
+		return DsBluetoothOutputReportTransportControl;
+	}
+
+	const PSTR ModeName = cJSON_GetStringValue(pNode);
+
+	if (!_strcmpi(ModeName, G_BLUETOOTH_OUTPUT_REPORT_TRANSPORT_NAMES[1]))
+	{
+		return DsBluetoothOutputReportTransportInterrupt;
+	}
+
+	return DsBluetoothOutputReportTransportControl;
+}
+
+//
 // Translates a friendly name string into the corresponding DS_PRESSURE_EXPOSURE_MODE value
 // 
 static DS_PRESSURE_EXPOSURE_MODE DS_PRESSURE_EXPOSURE_MODE_FROM_NAME(_In_ const PSTR ModeName)
@@ -527,6 +552,12 @@ static void ConfigNodeParse(
 			pCfg->UsbOutputReportTransport = DS_USB_OUTPUT_REPORT_TRANSPORT_FROM_NAME(pNode);
 			EventWriteOverrideSettingUInt(ParentNode->string, "UsbOutputReportTransport", pCfg->UsbOutputReportTransport);
 		}
+	}
+
+	if ((pNode = cJSON_GetObjectItem(ParentNode, "BluetoothOutputReportTransport")))
+	{
+		pCfg->BluetoothOutputReportTransport = DS_BLUETOOTH_OUTPUT_REPORT_TRANSPORT_FROM_NAME(pNode);
+		EventWriteOverrideSettingUInt(ParentNode->string, "BluetoothOutputReportTransport", pCfg->BluetoothOutputReportTransport);
 	}
 
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "DevicePairingMode")))
@@ -1037,6 +1068,7 @@ ConfigSetDefaults(
 	Config->PairOnHotReload = FALSE;
 	Config->AutoRestartOnHidModeMismatch = TRUE;
 	Config->UsbOutputReportTransport = DsUsbOutputReportTransportAuto;
+	Config->BluetoothOutputReportTransport = DsBluetoothOutputReportTransportControl;
 	for (int i = 0; i < 6; i++)
 	{
 		Config->CustomHostAddress[i] = 0x00;

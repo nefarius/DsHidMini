@@ -27,6 +27,16 @@ public enum UsbOutputReportTransport
     ControlEndpoint
 }
 
+/// <summary>
+///     Which Bluetooth HID channel is used to send output reports (LEDs/rumble).
+///     Control is the historical default; Interrupt is the PR 460 candidate.
+/// </summary>
+public enum BluetoothOutputReportTransport
+{
+    Control,
+    Interrupt
+}
+
 public enum PressureMode
 {
     Digital,

@@ -138,6 +138,74 @@ public class DriverConfigContractTests
         Assert.True(restored.GeneralRumble.IsAltRumbleModeEnabled);
         Assert.True(restored.GeneralRumble.AlwaysStartInNormalMode);
         Assert.Equal(90, restored.AltRumbleAdjusts.RightRumbleConversionUpperRange);
+        Assert.Equal(BluetoothOutputReportTransport.Control, restored.OutputReport.BluetoothOutputReportTransport);
+    }
+
+    [Fact]
+    public void Serialize_DefaultSettings_EmitsControlBluetoothOutputTransport()
+    {
+        JsonNode global = JsonNode.Parse(SerializeDefaultProfile(SettingsContext.XInput))!["Global"]!;
+        Assert.Equal("Control", global["BluetoothOutputReportTransport"]!.GetValue<string>());
+    }
+
+    [Theory]
+    [InlineData(BluetoothOutputReportTransport.Control, "Control")]
+    [InlineData(BluetoothOutputReportTransport.Interrupt, "Interrupt")]
+    public void RoundTrip_BluetoothOutputReportTransport_PreservesValue(
+        BluetoothOutputReportTransport transport,
+        string expectedName)
+    {
+        DeviceSettings original = new();
+        original.OutputReport.BluetoothOutputReportTransport = transport;
+
+        DshmDeviceSettings driver = new();
+        DshmManagerToDriverConversion.ConvertDeviceSettingsToDriverFormat(original, driver);
+        string json = DshmConfigSerialization.Serialize(new DshmConfiguration { Global = driver });
+        JsonNode global = JsonNode.Parse(json)!["Global"]!;
+        Assert.Equal(expectedName, global["BluetoothOutputReportTransport"]!.GetValue<string>());
+
+        DshmConfiguration parsed = DshmConfigSerialization.Deserialize(json);
+        DeviceSettings restored = new();
+        DshmManagerToDriverConversion.ConvertDriverFormatToDeviceSettings(parsed.Global, restored);
+        Assert.Equal(transport, restored.OutputReport.BluetoothOutputReportTransport);
+    }
+
+    [Fact]
+    public void Deserialize_LegacyConfigWithoutBluetoothTransport_KeepsControlDefault()
+    {
+        const string json = """
+            {
+              "Global": {
+                "HidDeviceMode": "XInput",
+                "IsOutputRateControlEnabled": true,
+                "OutputRateControlPeriodMs": 150
+              },
+              "Devices": {}
+            }
+            """;
+
+        DshmConfiguration parsed = DshmConfigSerialization.Deserialize(json);
+        Assert.Null(parsed.Global.BluetoothOutputReportTransport);
+
+        DeviceSettings restored = new();
+        DshmManagerToDriverConversion.ConvertDriverFormatToDeviceSettings(parsed.Global, restored);
+        Assert.Equal(BluetoothOutputReportTransport.Control, restored.OutputReport.BluetoothOutputReportTransport);
+    }
+
+    [Fact]
+    public void Overlay_BluetoothOutputReportTransport_OverridesBaseline()
+    {
+        DshmDeviceSettings baseline = new()
+        {
+            BluetoothOutputReportTransport = BluetoothOutputReportTransport.Control
+        };
+        DshmDeviceSettings overlay = new()
+        {
+            BluetoothOutputReportTransport = BluetoothOutputReportTransport.Interrupt
+        };
+
+        DshmDeviceSettings merged = DshmManagerToDriverConversion.OverlayDeviceSettings(baseline, overlay);
+        Assert.Equal(BluetoothOutputReportTransport.Interrupt, merged.BluetoothOutputReportTransport);
     }
 
     [Fact]

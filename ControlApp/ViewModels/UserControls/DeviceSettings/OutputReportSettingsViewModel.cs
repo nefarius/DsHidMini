@@ -1,4 +1,5 @@
 ﻿using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
+using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 
 namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls.DeviceSettings;
@@ -38,6 +39,19 @@ public class OutputReportSettingsViewModel : DeviceSettingsViewModel
             OnPropertyChanged();
         }
     }
+
+    public BluetoothOutputReportTransport BluetoothOutputReportTransport
+    {
+        get => _tempBackingData.BluetoothOutputReportTransport;
+        set
+        {
+            _tempBackingData.BluetoothOutputReportTransport = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public static IReadOnlyList<BluetoothOutputReportTransport> BluetoothOutputReportTransports { get; } =
+        Enum.GetValues<BluetoothOutputReportTransport>();
 
     //public override void SaveSettingsToBackingDataContainer(BackingDataContainer dataContainerSource)
     //{

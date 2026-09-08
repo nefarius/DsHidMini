@@ -116,6 +116,8 @@ internal static class DshmConfigSerialization
         settings.PairOnHotReload = ReadBool(element, "PairOnHotReload");
         settings.CustomPairingAddress = ReadString(element, "CustomPairingAddress");
         settings.UsbOutputReportTransport = ReadEnum<UsbOutputReportTransport>(element, "UsbOutputReportTransport");
+        settings.BluetoothOutputReportTransport =
+            ReadEnum<BluetoothOutputReportTransport>(element, "BluetoothOutputReportTransport");
         settings.DisableWirelessIdleTimeout = ReadBool(element, "DisableWirelessIdleTimeout");
         settings.IsOutputRateControlEnabled = ReadBool(element, "IsOutputRateControlEnabled");
         settings.OutputRateControlPeriodMs = ReadByte(element, "OutputRateControlPeriodMs");

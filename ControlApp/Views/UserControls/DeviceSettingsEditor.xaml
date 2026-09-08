@@ -642,6 +642,19 @@
                     Content="Enable output report deduplicator"
                     DockPanel.Dock="Top"
                     IsChecked="{Binding IsOutputReportDeduplicatorEnabled}" />
+                <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}">
+                    <ui:TextBlock
+                        Style="{StaticResource SettingsFieldLabel}"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        DockPanel.Dock="Left"
+                        Text="Bluetooth output channel:" />
+                    <ComboBox
+                        VerticalAlignment="Center"
+                        DockPanel.Dock="Right"
+                        ItemsSource="{Binding BluetoothOutputReportTransports}"
+                        SelectedItem="{Binding BluetoothOutputReportTransport}" />
+                </DockPanel>
             </DockPanel>
         </DataTemplate>
 
