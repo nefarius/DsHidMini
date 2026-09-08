@@ -771,8 +771,11 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
 
         try
         {
-            using DsHidMiniInterop interop = new();
-            PowerOffUsbResult result = interop.PowerOffUsbDevice(deviceIndex);
+            PowerOffUsbResult result = await Task.Run(() =>
+            {
+                using DsHidMiniInterop interop = new();
+                return interop.PowerOffUsbDevice(deviceIndex);
+            });
 
             Log.Logger.Information(
                 "USB power-off for '{DeviceAddress}' slot {Slot}: {Result}",
