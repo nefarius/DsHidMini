@@ -174,3 +174,108 @@ public class ConfigMigrationAndLifecycleTests : IDisposable
     private DshmConfigManager CreateManager() =>
         new(new DshmConfigLocations(UserDir, DriverDir));
 }
+
+public class UserDataLocationMigrationTests : IDisposable
+{
+    private readonly string _root = Path.Combine(Path.GetTempPath(), "dshm-loc-" + Guid.NewGuid().ToString("N"));
+
+    public UserDataLocationMigrationTests()
+    {
+        Directory.CreateDirectory(ProgramData);
+        Directory.CreateDirectory(DriverDir);
+    }
+
+    private string ProgramData => _root;
+    private string DriverDir => Path.Combine(_root, "DsHidMini");
+    private string PreferredDir => Path.Combine(DriverDir, "ControlApp");
+    private string LegacyDir => Path.Combine(ProgramData, "ControlApp");
+    private string PreferredFile => Path.Combine(PreferredDir, "DshmUserData.json");
+    private string LegacyFile => Path.Combine(LegacyDir, "DshmUserData.json");
+
+    public void Dispose()
+    {
+        try
+        {
+            Directory.Delete(_root, recursive: true);
+        }
+        catch
+        {
+            // best-effort cleanup
+        }
+    }
+
+    [Fact]
+    public void MigratesLegacyFile_AndRemovesEmptyLegacyDirectory()
+    {
+        Directory.CreateDirectory(LegacyDir);
+        File.WriteAllText(LegacyFile, """{"SchemaVersion":1}""");
+
+        DshmConfigLocations locations = DshmConfigLocations.CreateDefault(ProgramData, DriverDir);
+
+        Assert.Equal(Path.GetFullPath(PreferredDir), locations.UserDataDirectory);
+        Assert.True(File.Exists(PreferredFile));
+        Assert.Equal("""{"SchemaVersion":1}""", File.ReadAllText(PreferredFile));
+        Assert.False(File.Exists(LegacyFile));
+        Assert.False(Directory.Exists(LegacyDir));
+    }
+
+    [Fact]
+    public void MigratesLegacyArtifacts_AndRemovesEmptyLegacyDirectory()
+    {
+        Directory.CreateDirectory(LegacyDir);
+        File.WriteAllText(LegacyFile, """{"SchemaVersion":1}""");
+        string corruptName = "DshmUserData.json.corrupt-20260101120000";
+        string tmpName = "DshmUserData.json.tmp";
+        File.WriteAllText(Path.Combine(LegacyDir, corruptName), "broken");
+        File.WriteAllText(Path.Combine(LegacyDir, tmpName), "tmp");
+
+        DshmConfigLocations locations = DshmConfigLocations.CreateDefault(ProgramData, DriverDir);
+
+        Assert.Equal(Path.GetFullPath(PreferredDir), locations.UserDataDirectory);
+        Assert.Equal("""{"SchemaVersion":1}""", File.ReadAllText(PreferredFile));
+        Assert.Equal("broken", File.ReadAllText(Path.Combine(PreferredDir, corruptName)));
+        Assert.Equal("tmp", File.ReadAllText(Path.Combine(PreferredDir, tmpName)));
+        Assert.False(Directory.Exists(LegacyDir));
+    }
+
+    [Fact]
+    public void NoLegacyData_UsesPreferredDirectory()
+    {
+        DshmConfigLocations locations = DshmConfigLocations.CreateDefault(ProgramData, DriverDir);
+
+        Assert.Equal(Path.GetFullPath(PreferredDir), locations.UserDataDirectory);
+        Assert.False(File.Exists(PreferredFile));
+        Assert.False(File.Exists(LegacyFile));
+    }
+
+    [Fact]
+    public void ExistingDestination_IsAuthoritative_AndIdempotent()
+    {
+        Directory.CreateDirectory(LegacyDir);
+        Directory.CreateDirectory(PreferredDir);
+        File.WriteAllText(LegacyFile, """{"SchemaVersion":1,"Source":"legacy"}""");
+        File.WriteAllText(PreferredFile, """{"SchemaVersion":1,"Source":"preferred"}""");
+
+        DshmConfigLocations first = DshmConfigLocations.CreateDefault(ProgramData, DriverDir);
+        DshmConfigLocations second = DshmConfigLocations.CreateDefault(ProgramData, DriverDir);
+
+        Assert.Equal(Path.GetFullPath(PreferredDir), first.UserDataDirectory);
+        Assert.Equal(first.UserDataDirectory, second.UserDataDirectory);
+        Assert.Equal("""{"SchemaVersion":1,"Source":"preferred"}""", File.ReadAllText(PreferredFile));
+        Assert.True(File.Exists(LegacyFile));
+    }
+
+    [Fact]
+    public void FailedMove_FallsBackToLegacyDirectory()
+    {
+        Directory.CreateDirectory(LegacyDir);
+        File.WriteAllText(LegacyFile, """{"SchemaVersion":1}""");
+        File.WriteAllText(PreferredDir, "blocked");
+
+        DshmConfigLocations locations = DshmConfigLocations.CreateDefault(ProgramData, DriverDir);
+
+        Assert.Equal(Path.GetFullPath(LegacyDir), locations.UserDataDirectory);
+        Assert.True(File.Exists(LegacyFile));
+        Assert.Equal("""{"SchemaVersion":1}""", File.ReadAllText(LegacyFile));
+    }
+}
