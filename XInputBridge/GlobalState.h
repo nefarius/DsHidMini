@@ -1,6 +1,7 @@
-﻿#pragma once
+#pragma once
 
 #include "Common.h"
+#include <atomic>
 #include "Macros.h"
 #include "DeviceState.h"
 #include "XInputBridge.h"
@@ -9,7 +10,7 @@ class GlobalState
 {
 public:
 	void Initialize();
-	void Destroy() const;
+	void Destroy();
 
 #pragma region XInput API proxies
 
@@ -36,7 +37,7 @@ public:
 
 	void ProxyXInputEnable(
 		_In_ BOOL enable
-	) const;
+	);
 
 	DWORD ProxyXInputGetDSoundAudioDeviceGuids(
 		DWORD dwUserIndex,
@@ -94,6 +95,19 @@ private:
 	HCMNOTIFICATION XusbNotificationHandle{};
 	/** Handle of the startup finished event */
 	HANDLE StartupFinishedEvent{ INVALID_HANDLE_VALUE };
+	/** Background initialization thread */
+	HANDLE InitThread{ nullptr };
+	/** System XInput1_3.dll module */
+	HMODULE SystemXInputModule{ nullptr };
+	/** In-flight DS3 arrival workers */
+	volatile LONG ArrivalWorkCount{ 0 };
+	/** Set when async startup has signaled completion */
+	std::atomic<bool> StartupReady{ false };
+	/** Set when the DLL is shutting down */
+	std::atomic<bool> ShuttingDown{ false };
+
+	void WaitForStartup() const;
+	void SignalStartupFinished();
 
 	_Success_(return != NULL)
 	_Must_inspect_result_
@@ -101,13 +115,20 @@ private:
 
 	DeviceState* FindBySymbolicLink(const std::wstring& Symlink);
 	DeviceState* GetXusbByUserIndex(DWORD UserIndex);
+	DeviceState* GetXusbByRealUserIndex(DWORD UserIndex);
 
 	_Success_(return != NULL)
 	_Must_inspect_result_
 	bool GetConnectedDs3ByUserIndex(_In_ DWORD UserIndex, _Out_opt_ DeviceState** Handle) const;
 
+	void AssignPreparedDs3(const std::wstring& Symlink, DeviceState& Prepared);
+	void AssignXusbDevice(const std::wstring& Symlink, DWORD UserIndex);
+
 	void EnumerateDs3Devices();
 	void EnumerateXusbDevices();
+	void DisposeAllSlots();
+
+	DWORD ReadDs3XInputState(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE* pState, _In_ bool includeGuide);
 
 #pragma region XInput declarations
 
@@ -133,12 +154,9 @@ private:
 		_In_ DWORD EventDataSize
 	);
 
+	_Success_(return)
 	_Must_inspect_result_
-	static bool SymlinkToUserIndex(_In_ PCWSTR Symlink, _Inout_ PDWORD UserIndex);
+	static bool SymlinkToUserIndex(_In_ PCWSTR Symlink, _Out_ PDWORD UserIndex);
 
 	static DWORD WINAPI InitAsync(_In_ LPVOID lpParameter);
-
-	static SHORT ScaleDsToXi(UCHAR value, BOOLEAN invert);
-	static float ClampAxis(float value);
-	static float ToAxis(UCHAR value);
 };

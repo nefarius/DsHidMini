@@ -24,14 +24,19 @@
     "ExecutableTarget": {
       "type": "string",
       "enum": [
+        "AuditXInputBridge",
+        "BenchmarkXInputBridge",
         "BuildDmf",
         "BuildSetup",
         "Clean",
         "Compile",
+        "CompileXInputBridge",
         "DownloadCiArtifacts",
+        "HardwareTestXInputBridge",
         "PublishControlApp",
         "Restore",
-        "SignProductionBinaries"
+        "SignProductionBinaries",
+        "TestXInputBridge"
       ]
     },
     "Verbosity": {

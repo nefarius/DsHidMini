@@ -1,6 +1,7 @@
-﻿#pragma once
+#pragma once
 
 #include "Common.h"
+#include <atomic>
 #include <hidapi/hidapi.h>
 #include "Types.h"
 
@@ -22,6 +23,7 @@ private:
 
 	bool InitializeAsXusb(const std::wstring& Symlink, DWORD UserIndex);
 	bool InitializeAsDs3(const std::wstring& Symlink);
+	void AdoptFrom(DeviceState& Other);
 	void Dispose();
 
 	_Must_inspect_result_

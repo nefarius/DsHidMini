@@ -1,6 +1,7 @@
-﻿#include "DeviceState.h"
+#include "DeviceState.h"
 #include "GlobalState.h"
 #include "Macros.h"
+#include "ReportMapper.h"
 #include "UniUtil.h"
 
 bool DeviceState::InitializeAsXusb(const std::wstring& Symlink, const DWORD UserIndex)
@@ -10,7 +11,7 @@ bool DeviceState::InitializeAsXusb(const std::wstring& Symlink, const DWORD User
 		{ "device.userIndex", std::to_string(UserIndex) }
 	);
 
-	this->Type = XI_DEVICE_TYPE_NOT_CONNECTED;
+	Dispose();
 
 	this->SymbolicLink = ConvertWideToANSI(Symlink);
 	this->RealUserIndex = UserIndex;
@@ -25,9 +26,8 @@ bool DeviceState::InitializeAsDs3(const std::wstring& Symlink)
 		{ "device.symlink", ConvertWideToANSI(Symlink) }
 	);
 
-	int retries = 5;
+	Dispose();
 
-	this->Type = XI_DEVICE_TYPE_NOT_CONNECTED;
 	this->SymbolicLink = ConvertWideToANSI(Symlink);
 
 	const auto instanceId = GlobalState::InterfaceIdToInstanceId(Symlink);
@@ -38,10 +38,17 @@ bool DeviceState::InitializeAsDs3(const std::wstring& Symlink)
 		return false;
 	}
 
+	if (GlobalState::GetDs3HidDeviceModeProperty(instanceId.value()) != DSHM_HID_DEVICE_MODE_SXS)
+	{
+		LOG_WARN("DS3 device {} not in SXS mode, skipping", this->SymbolicLink);
+		return false;
+	}
+
+	int retries = 5;
 	auto children = GlobalState::GetDeviceChildren(instanceId.value());
 
 	// PnP manager needs a bit of time to bring the device online
-	while (!children.has_value())
+	while (!children.has_value() || children->empty())
 	{
 		if (--retries == 0)
 		{
@@ -60,7 +67,7 @@ bool DeviceState::InitializeAsDs3(const std::wstring& Symlink)
 	auto hidPaths = GlobalState::InstanceIdToHidPaths(hidDeviceId);
 
 	// HID driver needs a bit of time to bring the interface online
-	while (!hidPaths.has_value())
+	while (!hidPaths.has_value() || hidPaths->empty())
 	{
 		if (--retries == 0)
 		{
@@ -92,6 +99,25 @@ bool DeviceState::InitializeAsDs3(const std::wstring& Symlink)
 	return true;
 }
 
+void DeviceState::AdoptFrom(DeviceState& Other)
+{
+	Dispose();
+
+	SymbolicLink = std::move(Other.SymbolicLink);
+	RealUserIndex = Other.RealUserIndex;
+	HidDeviceHandle = Other.HidDeviceHandle;
+	SyntheticPacketNumber = Other.SyntheticPacketNumber;
+	LastReport = Other.LastReport;
+	Type.store(Other.Type.load());
+
+	Other.HidDeviceHandle = nullptr;
+	Other.RealUserIndex = INVALID_X_INPUT_USER_ID;
+	Other.SyntheticPacketNumber = 0;
+	RtlZeroMemory(&Other.LastReport, sizeof(Other.LastReport));
+	Other.Type = XI_DEVICE_TYPE_NOT_CONNECTED;
+	Other.SymbolicLink.clear();
+}
+
 void DeviceState::Dispose()
 {
 	auto scopedSpan = TRACE_SCOPED_SPAN("");
@@ -108,10 +134,13 @@ void DeviceState::Dispose()
 	case XI_DEVICE_TYPE_XUSB:
 		this->RealUserIndex = INVALID_X_INPUT_USER_ID;
 		break;
+	default:
+		break;
 	}
 
 	RtlZeroMemory(&this->LastReport, sizeof(DS3_RAW_INPUT_REPORT));
 	this->SyntheticPacketNumber = 0;
+	this->SymbolicLink.clear();
 	this->Type = XI_DEVICE_TYPE_NOT_CONNECTED;
 }
 
@@ -126,15 +155,7 @@ bool DeviceState::Ds3GetPacketNumber(_In_ PDS3_RAW_INPUT_REPORT Report, _Inout_ 
 	if (this->Type != XI_DEVICE_TYPE_DS3)
 		return false;
 
-	//
-	// Only increment when a change happened
-	// 
-	if (!DS3_RAW_IS_IDLE(Report))
-	{
-		this->SyntheticPacketNumber++;
-		memcpy(&this->LastReport, Report, sizeof(DS3_RAW_INPUT_REPORT));
-	}
-
+	ReportMapper::UpdateSyntheticPacketNumber(*Report, this->LastReport, this->SyntheticPacketNumber);
 	*PacketNumber = this->SyntheticPacketNumber;
 
 	return true;

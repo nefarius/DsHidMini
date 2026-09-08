@@ -1,4 +1,4 @@
-﻿#include "GlobalState.h"
+#include "GlobalState.h"
 #include <devpkey.h>
 #include <hidclass.h>
 #include "UniUtil.h"
@@ -6,37 +6,6 @@
 #include <winreg/WinReg.hpp>
 
 #include "DsHidMini/dshmguid.h"
-
-SHORT GlobalState::ScaleDsToXi(UCHAR value, BOOLEAN invert)
-{
-	auto scopedSpan = TRACE_SCOPED_SPAN("");
-
-	auto intValue = value - 0x80;
-	if (intValue == -128)
-		intValue = -127;
-
-	const auto wtfValue = intValue * 258.00787401574803149606299212599f; // what the fuck?
-
-	return static_cast<short>(invert ? -wtfValue : wtfValue);
-}
-
-float GlobalState::ClampAxis(float value)
-{
-	auto scopedSpan = TRACE_SCOPED_SPAN("");
-
-	if (value > 1.0f)
-		return 1.0f;
-	if (value < -1.0f)
-		return -1.0f;
-	return value;
-}
-
-float GlobalState::ToAxis(UCHAR value)
-{
-	auto scopedSpan = TRACE_SCOPED_SPAN("");
-
-	return ClampAxis((((value & 0xFF) - 0x7F) * 2) / 254.0f);
-}
 
 std::optional<std::vector<std::wstring>> GlobalState::GetSymbolicLinksForDeviceInterfaceClass(const GUID* InterfaceGuid)
 {
@@ -126,9 +95,7 @@ std::optional<std::wstring> GlobalState::InterfaceIdToInstanceId(const std::wstr
 	if (ret != CR_SUCCESS)
 		return std::nullopt;
 
-	std::wstring instanceId{ reinterpret_cast<PWSTR>(instanceIdBuf), reinterpret_cast<PWSTR>(instanceIdBuf + instanceIdBytes) };
-
-	return instanceId;
+	return std::wstring(reinterpret_cast<PWSTR>(instanceIdBuf));
 }
 
 std::optional<std::vector<std::wstring>> GlobalState::GetDeviceChildren(const std::wstring& ParentDeviceId)
@@ -161,6 +128,9 @@ std::optional<std::vector<std::wstring>> GlobalState::GetDeviceChildren(const st
 		return std::nullopt;
 
 	const auto childrenIdBuf = static_cast<PBYTE>(calloc(childrenIdBytes, 1));
+
+	if (childrenIdBuf == nullptr)
+		return std::nullopt;
 
 	ScopeCleanup freeBuffer = [childrenIdBuf]
 	{

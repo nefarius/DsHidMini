@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 //
 // Dead-Zone value to stop jittering
@@ -15,6 +15,7 @@
 
 #define SXS_MODE_GET_FEATURE_REPORT_ID	0xF2
 #define SXS_MODE_GET_FEATURE_BUFFER_LEN	0x40
+#define DSHM_HID_DEVICE_MODE_SXS		0x03
 #define DS3_DEVICES_MAX					8
 #define XUSB_DEVICES_MAX				DS3_DEVICES_MAX
 #define LOGGER_NAME						"XInputBridge"
@@ -40,13 +41,7 @@ DEFINE_GUID(XUSB_INTERFACE_CLASS_GUID,
 // 
 
 #if defined(SCPLIB_ENABLE_TELEMETRY)
-#define LOG_INFO(_body_, ...)	GlobalState::GetLogger(__FUNCTION__)->Info(std::format(_body_, __VA_ARGS__))
-#define LOG_WARN(_body_, ...)	GlobalState::GetLogger(__FUNCTION__)->Warn(std::format(_body_, __VA_ARGS__))
-#define LOG_ERROR(_body_, ...)	GlobalState::GetLogger(__FUNCTION__)->Error(std::format(_body_, __VA_ARGS__))
-
-#define TRACE_SPAN(_name_, ...)			GlobalState::GetTracer()->StartSpan(__FUNCTION__ _name_, { __VA_ARGS__ })
-#define TRACE_SPAN_END(_span_)			(_span_)->End()
-#define TRACE_SCOPED_SPAN(_name_, ...)	trace::Scope(GlobalState::GetTracer()->StartSpan(__FUNCTION__ _name_, { __VA_ARGS__ }))
+#error SCPLIB_ENABLE_TELEMETRY is not supported after OpenTelemetry was removed from XInputBridge.
 #else
 #define LOG_INFO(_body_, ...)
 #define LOG_WARN(_body_, ...)
