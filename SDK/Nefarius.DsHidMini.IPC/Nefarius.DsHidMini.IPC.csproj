@@ -45,4 +45,8 @@
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="ControlApp.Tests" />
+  </ItemGroup>
+
 </Project>

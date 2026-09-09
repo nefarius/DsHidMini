@@ -315,6 +315,9 @@ public partial class DsHidMiniInterop
 
     /// <summary>
     ///     Overwrites the player slot indicator (player LEDs) of the given device.
+    ///     The change is volatile: Automatic LED authority is handed to the application
+    ///     for the rest of the session so driver battery refreshes do not overwrite it.
+    ///     Returns <c>STATUS_ACCESS_DENIED</c> when LED authority is configured as Driver.
     /// </summary>
     /// <param name="deviceIndex">The one-based device index.</param>
     /// <param name="playerIndex">The player index to set to. Valid values include 1 to 7.</param>
@@ -454,6 +457,150 @@ public partial class DsHidMiniInterop
                     IndicatorsOffStatus = reply.IndicatorsOffStatus,
                     ShutdownStatus = reply.ShutdownStatus
                 };
+            }
+
+            throw new DsHidMiniInteropUnexpectedReplyException(ref reply.Header);
+        }
+        finally
+        {
+            _commandMutex.ReleaseMutex();
+        }
+    }
+
+    /// <summary>
+    ///     Sets rumble motor strengths on a device. Values are processed through the driver's
+    ///     existing rescale, alternative-mode, keep-alive, and Navigation-controller rules.
+    ///     The change is volatile and is not written to the JSON configuration.
+    /// </summary>
+    /// <param name="deviceIndex">The one-based device index.</param>
+    /// <param name="largeMotor">Heavy / left motor strength (0-255).</param>
+    /// <param name="smallMotor">Light / right motor strength (0-255).</param>
+    /// <returns>The NTSTATUS returned by the driver.</returns>
+    /// <exception cref="DsHidMiniInteropUnavailableException">
+    ///     Driver IPC unavailable, make sure that at least one compatible
+    ///     controller is connected and operational.
+    /// </exception>
+    /// <exception cref="DsHidMiniInteropInvalidDeviceIndexException">
+    ///     The <paramref name="deviceIndex" /> was outside the valid range 1..255.
+    /// </exception>
+    /// <exception cref="DsHidMiniInteropConcurrencyException">A different thread is currently performing a data exchange.</exception>
+    /// <exception cref="DsHidMiniInteropReplyTimeoutException">The driver didn't respond within an expected period.</exception>
+    /// <exception cref="DsHidMiniInteropUnexpectedReplyException">The driver returned unexpected or malformed data.</exception>
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
+    public unsafe UInt32 SetRumble(int deviceIndex, byte largeMotor, byte smallMotor)
+    {
+        if (_commandMutex is null || _cmdView is null)
+        {
+            throw new DsHidMiniInteropUnavailableException();
+        }
+
+        ValidateDeviceIndex(deviceIndex);
+
+        AcquireCommandLock();
+
+        try
+        {
+            ref DSHM_IPC_MSG_SET_RUMBLE_REQUEST request =
+                ref Unsafe.AsRef<DSHM_IPC_MSG_SET_RUMBLE_REQUEST>(_cmdView);
+
+            request.Header.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
+            request.Header.Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DEVICE;
+            request.Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_SET_RUMBLE;
+            request.Header.TargetIndex = (uint)deviceIndex;
+            request.Header.Size = (uint)Marshal.SizeOf<DSHM_IPC_MSG_SET_RUMBLE_REQUEST>();
+
+            request.LargeMotor = largeMotor;
+            request.SmallMotor = smallMotor;
+
+            if (!SendAndWait())
+            {
+                throw new DsHidMiniInteropReplyTimeoutException();
+            }
+
+            ref DSHM_IPC_MSG_SET_RUMBLE_REPLY reply =
+                ref Unsafe.AsRef<DSHM_IPC_MSG_SET_RUMBLE_REPLY>(_cmdView);
+
+            if (reply.Header is
+                {
+                    Type: DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_REPLY,
+                    Target: DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_CLIENT,
+                    Command.Device: DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_SET_RUMBLE
+                }
+                && reply.Header.TargetIndex == deviceIndex
+                && reply.Header.Size == Marshal.SizeOf<DSHM_IPC_MSG_SET_RUMBLE_REPLY>())
+            {
+                return reply.NtStatus;
+            }
+
+            throw new DsHidMiniInteropUnexpectedReplyException(ref reply.Header);
+        }
+        finally
+        {
+            _commandMutex.ReleaseMutex();
+        }
+    }
+
+    /// <summary>
+    ///     Enables or disables alternative rumble mode for the current session only.
+    ///     The persisted JSON configuration is not updated; a driver config reload
+    ///     restores the file value.
+    /// </summary>
+    /// <param name="deviceIndex">The one-based device index.</param>
+    /// <param name="enabled"><see langword="true" /> to enable alternative rumble mode.</param>
+    /// <returns>The NTSTATUS returned by the driver.</returns>
+    /// <exception cref="DsHidMiniInteropUnavailableException">
+    ///     Driver IPC unavailable, make sure that at least one compatible
+    ///     controller is connected and operational.
+    /// </exception>
+    /// <exception cref="DsHidMiniInteropInvalidDeviceIndexException">
+    ///     The <paramref name="deviceIndex" /> was outside the valid range 1..255.
+    /// </exception>
+    /// <exception cref="DsHidMiniInteropConcurrencyException">A different thread is currently performing a data exchange.</exception>
+    /// <exception cref="DsHidMiniInteropReplyTimeoutException">The driver didn't respond within an expected period.</exception>
+    /// <exception cref="DsHidMiniInteropUnexpectedReplyException">The driver returned unexpected or malformed data.</exception>
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
+    public unsafe UInt32 SetAlternateRumbleMode(int deviceIndex, bool enabled)
+    {
+        if (_commandMutex is null || _cmdView is null)
+        {
+            throw new DsHidMiniInteropUnavailableException();
+        }
+
+        ValidateDeviceIndex(deviceIndex);
+
+        AcquireCommandLock();
+
+        try
+        {
+            ref DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REQUEST request =
+                ref Unsafe.AsRef<DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REQUEST>(_cmdView);
+
+            request.Header.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
+            request.Header.Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DEVICE;
+            request.Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_SET_ALTERNATE_RUMBLE_MODE;
+            request.Header.TargetIndex = (uint)deviceIndex;
+            request.Header.Size = (uint)Marshal.SizeOf<DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REQUEST>();
+
+            request.IsEnabled = enabled ? (byte)1 : (byte)0;
+
+            if (!SendAndWait())
+            {
+                throw new DsHidMiniInteropReplyTimeoutException();
+            }
+
+            ref DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REPLY reply =
+                ref Unsafe.AsRef<DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REPLY>(_cmdView);
+
+            if (reply.Header is
+                {
+                    Type: DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_REPLY,
+                    Target: DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_CLIENT,
+                    Command.Device: DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_SET_ALTERNATE_RUMBLE_MODE
+                }
+                && reply.Header.TargetIndex == deviceIndex
+                && reply.Header.Size == Marshal.SizeOf<DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REPLY>())
+            {
+                return reply.NtStatus;
             }
 
             throw new DsHidMiniInteropUnexpectedReplyException(ref reply.Header);

@@ -156,3 +156,66 @@ internal struct DSHM_IPC_MSG_USB_POWER_OFF_REPLY
     /// </summary>
     public UInt32 ShutdownStatus;
 }
+
+/// <summary>
+///     Updates rumble motor strengths on a given device.
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+internal struct DSHM_IPC_MSG_SET_RUMBLE_REQUEST
+{
+    public DSHM_IPC_MSG_HEADER Header;
+
+    /// <summary>
+    ///     Heavy / left motor strength (0-255).
+    /// </summary>
+    public byte LargeMotor;
+
+    /// <summary>
+    ///     Light / right motor strength (0-255).
+    /// </summary>
+    public byte SmallMotor;
+}
+
+/// <summary>
+///     Reply to <see cref="DSHM_IPC_MSG_SET_RUMBLE_REQUEST" />.
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+internal struct DSHM_IPC_MSG_SET_RUMBLE_REPLY
+{
+    public DSHM_IPC_MSG_HEADER Header;
+
+    public UInt32 NtStatus;
+}
+
+/// <summary>
+///     Toggles alternative rumble mode for a given device (volatile).
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+internal struct DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REQUEST
+{
+    public DSHM_IPC_MSG_HEADER Header;
+
+    /// <summary>
+    ///     Non-zero enables alternative rumble mode.
+    /// </summary>
+    public byte IsEnabled;
+}
+
+/// <summary>
+///     Reply to <see cref="DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REQUEST" />.
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+internal struct DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REPLY
+{
+    public DSHM_IPC_MSG_HEADER Header;
+
+    public UInt32 NtStatus;
+}

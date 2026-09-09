@@ -464,3 +464,81 @@ DsLed_AdvanceChargingAnimation(
 
 	FuncExitNoReturn(TRACE_LED);
 }
+
+//
+// Console / XInput-style player-index to LED flags. Indices 5-7 light the
+// extra combinations the hardware uses once four physical LEDs are exhausted.
+// 
+_Use_decl_annotations_
+BOOLEAN
+DsLed_PlayerIndexToFlags(
+	_In_ BYTE PlayerIndex,
+	_Out_ PUCHAR Flags
+)
+{
+	static const UCHAR map[] =
+	{
+		0x00,
+		DS3_LED_1,
+		DS3_LED_2,
+		DS3_LED_3,
+		DS3_LED_4,
+		DS3_LED_1 | DS3_LED_4,
+		DS3_LED_2 | DS3_LED_4,
+		DS3_LED_3 | DS3_LED_4
+	};
+
+	if (PlayerIndex < 1 || PlayerIndex > 7)
+	{
+		*Flags = 0x00;
+		return FALSE;
+	}
+
+	*Flags = map[PlayerIndex];
+	return TRUE;
+}
+
+//
+// IPC player-index write: hand Automatic authority to the application so
+// DsLed_Refresh cannot immediately overwrite the requested slot, then
+// mutate and enqueue under one hold of OutputReport.Lock.
+// 
+_Use_decl_annotations_
+NTSTATUS
+DsLed_ApplyIpcPlayerIndex(
+	_In_ PDEVICE_CONTEXT Context,
+	_In_ BYTE PlayerIndex
+)
+{
+	FuncEntry(TRACE_LED);
+
+	UCHAR flags;
+	NTSTATUS status = STATUS_INVALID_PARAMETER;
+
+	if (!DsLed_PlayerIndexToFlags(PlayerIndex, &flags))
+	{
+		FuncExit(TRACE_LED, "status=%!STATUS!", status);
+		return status;
+	}
+
+	if (Context->Configuration.LEDSettings.Authority == DsLEDAuthorityDriver)
+	{
+		status = STATUS_ACCESS_DENIED;
+		FuncExit(TRACE_LED, "status=%!STATUS!", status);
+		return status;
+	}
+
+	static const DS_LED staticEffect = DS3_LED_EFFECT_STATIC;
+
+	WdfWaitLockAcquire(Context->OutputReport.Lock, NULL);
+
+	Context->OutputReport.Mode = Ds3OutputReportModeWriteReportPassThrough;
+	DsLedSetFlagsAndEffectsLocked(Context, flags, &staticEffect);
+	status = DSHM_SendOutputReportUnlocked(Context, Ds3OutputReportSourceIpc);
+
+	WdfWaitLockRelease(Context->OutputReport.Lock);
+
+	FuncExit(TRACE_LED, "status=%!STATUS!", status);
+
+	return status;
+}

@@ -132,3 +132,27 @@ VOID
 DsLed_ApplyCustomPatternLocked(
 	_In_ PDEVICE_CONTEXT Context
 );
+
+//
+// Maps a player index (1-7) to the DS3 LED flags byte used by the console
+// and by XInput-style extra-player encodings (5 = 1+4, 6 = 2+4, 7 = 3+4).
+// Returns FALSE when PlayerIndex is outside 1-7; Flags is then set to 0.
+// 
+BOOLEAN
+DsLed_PlayerIndexToFlags(
+	_In_ BYTE PlayerIndex,
+	_Out_ PUCHAR Flags
+);
+
+//
+// Applies an IPC player-index override: marks LEDs application-owned for
+// Automatic authority, writes the matching static LED pattern, and sends
+// the report under one hold of Context->OutputReport.Lock. Returns
+// STATUS_INVALID_PARAMETER for an out-of-range index and STATUS_ACCESS_DENIED
+// when LED authority is Driver (configuration owns the indicators).
+// 
+NTSTATUS
+DsLed_ApplyIpcPlayerIndex(
+	_In_ PDEVICE_CONTEXT Context,
+	_In_ BYTE PlayerIndex
+);
