@@ -73,23 +73,23 @@ public static class JsonDshmUserData
         {
             File.WriteAllText(tempPath, JsonConvert.SerializeObject(configuration, Formatting.Indented, settings),
                 Encoding.UTF8);
-            File.Move(tempPath, configPath, overwrite: true);
-        }
-        catch
-        {
             try
             {
-                if (File.Exists(tempPath))
-                {
-                    File.Delete(tempPath);
-                }
+                File.Move(tempPath, configPath, overwrite: true);
             }
-            catch (Exception cleanupEx) when (cleanupEx is IOException or UnauthorizedAccessException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                Log.Logger.Debug(cleanupEx, "Failed to delete temporary User Data file {TempPath}.", tempPath);
+                // ProgramData ACLs and in-use destinations can deny delete/replace while still
+                // allowing an in-place overwrite of the existing file.
+                Log.Logger.Warning(ex,
+                    "Atomic replace of User Data file {ConfigPath} failed. Falling back to in-place overwrite.",
+                    configPath);
+                OverwriteExistingFile(tempPath, configPath);
             }
-
-            throw;
+        }
+        finally
+        {
+            TryDeleteTemporaryFile(tempPath);
         }
     }
 
@@ -139,5 +139,28 @@ public static class JsonDshmUserData
         T config = new();
         Save(fileNameWithoutExtension, config, userDataDir);
         return config;
+    }
+
+    private static void OverwriteExistingFile(string sourcePath, string destinationPath)
+    {
+        using FileStream source = File.OpenRead(sourcePath);
+        using FileStream destination = new(destinationPath, FileMode.Open, FileAccess.Write, FileShare.Read);
+        destination.SetLength(0);
+        source.CopyTo(destination);
+    }
+
+    private static void TryDeleteTemporaryFile(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch (Exception cleanupEx) when (cleanupEx is IOException or UnauthorizedAccessException)
+        {
+            Log.Logger.Debug(cleanupEx, "Failed to delete temporary User Data file {TempPath}.", path);
+        }
     }
 }

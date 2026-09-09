@@ -1,4 +1,6 @@
 using System.IO;
+using System.Security.AccessControl;
+using System.Security.Principal;
 
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig;
@@ -159,6 +161,56 @@ public class ConfigMigrationAndLifecycleTests : IDisposable
     }
 
     [Fact]
+    public void UserDataSave_WhenDeleteIsDenied_OverwritesExistingFile()
+    {
+        DshmConfigLocations locations = new(UserDir, DriverDir);
+        DshmConfigManagerUserData userData = DshmConfigManagerUserData.Load(locations);
+        userData.SchemaVersion = DshmConfigManagerUserData.CurrentSchemaVersion;
+        userData.AutoRestartOnHidModeMismatch = true;
+        userData.Save(locations);
+
+        userData.AutoRestartOnHidModeMismatch = false;
+        using (DenyFileReplacement(locations.UserDataFilePath))
+        {
+            string accessSddl = GetAccessSddl(locations.UserDataFilePath);
+            Assert.True(HasExplicitDeleteDenial(locations.UserDataFilePath));
+            userData.Save(locations);
+            Assert.Equal(accessSddl, GetAccessSddl(locations.UserDataFilePath));
+            Assert.True(HasExplicitDeleteDenial(locations.UserDataFilePath));
+        }
+
+        DshmConfigManagerUserData reloaded = DshmConfigManagerUserData.Load(locations);
+        Assert.False(reloaded.AutoRestartOnHidModeMismatch);
+        Assert.False(File.Exists(locations.UserDataFilePath + ".tmp"));
+    }
+
+    [Fact]
+    public void SaveChangesAndUpdate_WhenUserDataWriteFails_RestoresMemoryAndReportsFailure()
+    {
+        DshmConfigLocations locations = new(UserDir, DriverDir);
+        DshmConfigManagerUserData userData = DshmConfigManagerUserData.Load(locations);
+        userData.SchemaVersion = DshmConfigManagerUserData.CurrentSchemaVersion;
+        userData.AutoRestartOnHidModeMismatch = true;
+        userData.Save(locations);
+        string original = File.ReadAllText(locations.UserDataFilePath);
+
+        DshmConfigManager manager = new(userData, locations);
+        manager.AutoRestartOnHidModeMismatch = false;
+
+        File.SetAttributes(locations.UserDataFilePath, FileAttributes.ReadOnly);
+        try
+        {
+            Assert.False(manager.SaveChangesAndUpdateDsHidMiniConfigFile());
+            Assert.True(manager.AutoRestartOnHidModeMismatch);
+            Assert.Equal(original, File.ReadAllText(locations.UserDataFilePath));
+        }
+        finally
+        {
+            File.SetAttributes(locations.UserDataFilePath, FileAttributes.Normal);
+        }
+    }
+
+    [Fact]
     public void UserData_CorruptFile_IsBackedUp()
     {
         string userFile = Path.Combine(UserDir, "DshmUserData.json");
@@ -173,6 +225,81 @@ public class ConfigMigrationAndLifecycleTests : IDisposable
 
     private DshmConfigManager CreateManager() =>
         new(new DshmConfigLocations(UserDir, DriverDir));
+
+    private static string GetAccessSddl(string path) =>
+        new FileInfo(path).GetAccessControl().GetSecurityDescriptorSddlForm(AccessControlSections.Access);
+
+    private static bool HasExplicitDeleteDenial(string path)
+    {
+        SecurityIdentifier user = CurrentUserSid();
+        AuthorizationRuleCollection rules = new FileInfo(path)
+            .GetAccessControl()
+            .GetAccessRules(includeExplicit: true, includeInherited: false, typeof(SecurityIdentifier));
+
+        return rules
+            .OfType<FileSystemAccessRule>()
+            .Any(rule =>
+                rule.IdentityReference.Equals(user)
+                && rule.AccessControlType == AccessControlType.Deny
+                && rule.FileSystemRights.HasFlag(FileSystemRights.Delete));
+    }
+
+    private static RestoreReplacementDenial DenyFileReplacement(string path)
+    {
+        FileInfo file = new(path);
+        DirectoryInfo directory = file.Directory
+                                  ?? throw new InvalidOperationException("User data file has no parent directory.");
+        FileSecurity originalFile = file.GetAccessControl();
+        DirectorySecurity originalDirectory = directory.GetAccessControl();
+        SecurityIdentifier user = CurrentUserSid();
+
+        FileSecurity fileSecurity = file.GetAccessControl();
+        fileSecurity.AddAccessRule(new FileSystemAccessRule(
+            user,
+            FileSystemRights.Delete,
+            AccessControlType.Deny));
+        file.SetAccessControl(fileSecurity);
+
+        // File.Move can still replace a file through DELETE_CHILD on the parent directory.
+        DirectorySecurity directorySecurity = directory.GetAccessControl();
+        directorySecurity.AddAccessRule(new FileSystemAccessRule(
+            user,
+            FileSystemRights.DeleteSubdirectoriesAndFiles,
+            AccessControlType.Deny));
+        directory.SetAccessControl(directorySecurity);
+
+        return new RestoreReplacementDenial(file, originalFile, directory, originalDirectory);
+    }
+
+    private static SecurityIdentifier CurrentUserSid() =>
+        WindowsIdentity.GetCurrent().User
+        ?? throw new InvalidOperationException("Current Windows user SID is unavailable.");
+
+    private sealed class RestoreReplacementDenial : IDisposable
+    {
+        private readonly FileInfo _file;
+        private readonly FileSecurity _originalFile;
+        private readonly DirectoryInfo _directory;
+        private readonly DirectorySecurity _originalDirectory;
+
+        public RestoreReplacementDenial(
+            FileInfo file,
+            FileSecurity originalFile,
+            DirectoryInfo directory,
+            DirectorySecurity originalDirectory)
+        {
+            _file = file;
+            _originalFile = originalFile;
+            _directory = directory;
+            _originalDirectory = originalDirectory;
+        }
+
+        public void Dispose()
+        {
+            _file.SetAccessControl(_originalFile);
+            _directory.SetAccessControl(_originalDirectory);
+        }
+    }
 }
 
 public class UserDataLocationMigrationTests : IDisposable
