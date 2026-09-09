@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Configuration.c" />
+    <ClCompile Include="Configuration.Json.c" />
     <ClCompile Include="Device.c" />
     <ClCompile Include="Driver.c" />
     <ClCompile Include="Ds3.c" />
@@ -47,6 +48,7 @@
     <ClInclude Include="..\include\DsHidMini\ScpTypes.h" />
     <ClInclude Include="..\include\DsHidMini\dshmguid.h" />
     <ClInclude Include="Configuration.h" />
+    <ClInclude Include="Configuration.Json.h" />
     <ClInclude Include="Device.h" />
     <ClInclude Include="Driver.h" />
     <ClInclude Include="Ds3.h" />
@@ -183,7 +185,7 @@
       <WppEnabled>true</WppEnabled>
       <WppRecorderEnabled>true</WppRecorderEnabled>
       <WppScanConfigurationData Condition="'%(ClCompile.ScanConfigurationData)' == ''">trace.h</WppScanConfigurationData>
-      <PreprocessorDefinitions>_WIN64;_AMD64_;AMD64;%(PreprocessorDefinitions);DMF_USER_MODE</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WIN64;_AMD64_;AMD64;%(PreprocessorDefinitions);DMF_USER_MODE;CJSON_NESTING_LIMIT=32</PreprocessorDefinitions>
       <WarningLevel>Level3</WarningLevel>
       <AdditionalIncludeDirectories>$(SolutionDir)include;$(DmfRootPath)\DMF\Modules.Library;$(DmfRootPath)\DMF\Framework;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -203,7 +205,7 @@
       <WppEnabled>true</WppEnabled>
       <WppRecorderEnabled>true</WppRecorderEnabled>
       <WppScanConfigurationData Condition="'%(ClCompile.ScanConfigurationData)' == ''">trace.h</WppScanConfigurationData>
-      <PreprocessorDefinitions>_WIN64;_AMD64_;AMD64;%(PreprocessorDefinitions);DMF_USER_MODE</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WIN64;_AMD64_;AMD64;%(PreprocessorDefinitions);DMF_USER_MODE;CJSON_NESTING_LIMIT=32</PreprocessorDefinitions>
       <WarningLevel>Level3</WarningLevel>
       <AdditionalIncludeDirectories>$(SolutionDir)include;$(DmfRootPath)\DMF\Modules.Library;$(DmfRootPath)\DMF\Framework;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -226,6 +228,7 @@
       <WppEnabled>true</WppEnabled>
       <WppRecorderEnabled>true</WppRecorderEnabled>
       <WppScanConfigurationData Condition="'%(ClCompile.ScanConfigurationData)' == ''">trace.h</WppScanConfigurationData>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);DMF_USER_MODE;CJSON_NESTING_LIMIT=32</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)include;$(DmfRootPath)\DMF\Modules.Library;$(DmfRootPath)\DMF\Framework;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -241,6 +244,7 @@
       <WppEnabled>true</WppEnabled>
       <WppRecorderEnabled>true</WppRecorderEnabled>
       <WppScanConfigurationData Condition="'%(ClCompile.ScanConfigurationData)' == ''">trace.h</WppScanConfigurationData>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);DMF_USER_MODE;CJSON_NESTING_LIMIT=32</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)include;$(DmfRootPath)\DMF\Modules.Library;$(DmfRootPath)\DMF\Framework;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>

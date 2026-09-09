@@ -249,6 +249,11 @@ jobs:
         shell: cmd
         run: dotnet test .\ControlApp.Tests\ControlApp.Tests.csproj --configuration Release --no-restore
 
+      - name: 'Test config parser'
+        if: matrix.platform == 'x64'
+        shell: cmd
+        run: .\build.cmd TestConfigParser --target-platform x64
+
       - name: 'Build'
         shell: cmd
         run: .\build.cmd Compile ${{ matrix.platform == 'x64' && 'PublishControlApp' || '' }} --target-platform ${{ matrix.platform }} ${{ steps.dmf-cache.outputs.cache-hit == 'true' && '--skip BuildDmf' || '' }}

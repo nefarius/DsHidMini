@@ -30,12 +30,14 @@
         "BuildSetup",
         "Clean",
         "Compile",
+        "CompileConfigParserTests",
         "CompileXInputBridge",
         "DownloadCiArtifacts",
         "HardwareTestXInputBridge",
         "PublishControlApp",
         "Restore",
         "SignProductionBinaries",
+        "TestConfigParser",
         "TestXInputBridge"
       ]
     },
