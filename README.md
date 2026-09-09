@@ -5,7 +5,7 @@
 
 ---
 
-# <img src="assets/FireShock.png" align="left" alt="DsHidMini logo" />DsHidMini
+# <img src="assets/FireShock.png" align="left" alt="DsHidMini logo" height="140" />DsHidMini
 
 [![Build status](https://github.com/nefarius/DsHidMini/actions/workflows/build.yml/badge.svg)](https://github.com/nefarius/DsHidMini/actions/workflows/build.yml) [![GitHub All Releases](https://img.shields.io/github/downloads/nefarius/DsHidMini/total)](https://somsubhra.github.io/github-release-stats/?username=nefarius&repository=DsHidMini) ![GitHub issues](https://img.shields.io/github/issues/nefarius/DsHidMini) [![Discord](https://img.shields.io/discord/346756263763378176.svg)](https://discord.nefarius.at/) [![Website](https://img.shields.io/website-up-down-green-red/https/docs.nefarius.at.svg?label=docs.nefarius.at)](https://docs.nefarius.at/)
 
