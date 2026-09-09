@@ -1125,7 +1125,17 @@ DsDevice_HotReloadEventCallback(
 			"Reloading configuration"
 		);
 
-		ConfigLoadForDevice(pDevCtx, TRUE);
+		const NTSTATUS reloadStatus = ConfigLoadForDevice(pDevCtx, TRUE);
+		if (!NT_SUCCESS(reloadStatus))
+		{
+			TraceWarning(
+				TRACE_DEVICE,
+				"Configuration hot-reload failed with status %!STATUS!, keeping the previous configuration",
+				reloadStatus
+			);
+			WdfWaitLockRelease(pDevCtx->ConfigurationDirectoryWatcherLock);
+			break;
+		}
 
 		TraceVerbose(
 			TRACE_DEVICE,
@@ -1188,7 +1198,7 @@ void DsDevice_RegisterHotReloadListener(PDEVICE_CONTEXT Context)
 
 		if (sprintf_s(
 			configPath,
-			MAX_PATH / sizeof(WCHAR),
+			ARRAYSIZE(configPath),
 			"%s\\%s",
 			programDataPath,
 			CONFIG_SUB_DIR_NAME

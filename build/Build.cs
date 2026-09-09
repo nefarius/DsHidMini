@@ -495,6 +495,112 @@ class Build : NukeBuild
             }
         });
 
+    IEnumerable<(Configuration config, MSBuildTargetPlatform platform)> ConfigParserTestBuildCombinations()
+    {
+        if (IsLocalBuild && string.IsNullOrWhiteSpace(TargetPlatform))
+        {
+            return
+            [
+                (Configuration.Debug, MSBuildTargetPlatform.x64),
+                (Configuration.Release, MSBuildTargetPlatform.x64)
+            ];
+        }
+
+        if (string.IsNullOrWhiteSpace(TargetPlatform))
+        {
+            throw new InvalidOperationException(
+                "TargetPlatform must be set on CI, e.g. --target-platform x64.");
+        }
+
+        if (string.Equals(TargetPlatform, "x86", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(TargetPlatform, "Win32", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(TargetPlatform, "ARM64", StringComparison.OrdinalIgnoreCase))
+        {
+            return
+            [
+                (Configuration, MSBuildTargetPlatform.x64)
+            ];
+        }
+
+        return [(Configuration, (MSBuildTargetPlatform)TargetPlatform)];
+    }
+
+    AbsolutePath ResolveConfigParserTestsPath(Configuration configuration, MSBuildTargetPlatform platform)
+    {
+        string platformName = platform.ToString();
+        string[] candidates =
+        [
+            configuration == Configuration.Debug
+                ? RootDirectory / "bin" / "Debug" / platformName / "ConfigParser.Tests.exe"
+                : RootDirectory / "bin" / platformName / "ConfigParser.Tests.exe"
+        ];
+
+        return candidates.Select(path => (AbsolutePath)path).FirstOrDefault(path => path.FileExists())
+               ?? (AbsolutePath)candidates[0];
+    }
+
+    void BuildConfigParserTestsProject(Configuration configuration, MSBuildTargetPlatform platform)
+    {
+        AbsolutePath project = RootDirectory / "ConfigParser.Tests" / "ConfigParser.Tests.vcxproj";
+        Log.Information("Building ConfigParser.Tests {Configuration} | {Platform}", configuration, platform);
+        MSBuildTasks.MSBuild(s => s
+            .SetProcessToolPath(MSBuildPath)
+            .SetTargetPath(project)
+            .SetTargets("Rebuild")
+            .SetConfiguration(configuration)
+            .SetTargetPlatform(platform)
+            .SetMaxCpuCount(Environment.ProcessorCount)
+            .SetNodeReuse(IsLocalBuild)
+            .SetVerbosity(MSBuildVerbosity.Minimal)
+            .SetProperty("SolutionDir", RootDirectory.ToString().TrimEnd('\\', '/') + "\\"));
+    }
+
+    /// <summary>
+    /// Build the host-runnable native JSON config parser tests.
+    /// </summary>
+    [UsedImplicitly]
+    public Target CompileConfigParserTests => _ => _
+        .Executes(() =>
+        {
+            foreach ((Configuration config, MSBuildTargetPlatform platform) in ConfigParserTestBuildCombinations())
+            {
+                if (string.Equals(platform.ToString(), "ARM64", StringComparison.OrdinalIgnoreCase))
+                {
+                    Log.Information("Skipping ConfigParser.Tests compile on ARM64 in this environment");
+                    continue;
+                }
+
+                BuildConfigParserTestsProject(config, platform);
+            }
+        });
+
+    /// <summary>
+    /// Run native DsHidMini.json parser regressions.
+    /// </summary>
+    [UsedImplicitly]
+    public Target TestConfigParser => _ => _
+        .DependsOn(CompileConfigParserTests)
+        .Executes(() =>
+        {
+            foreach ((Configuration config, MSBuildTargetPlatform platform) in ConfigParserTestBuildCombinations())
+            {
+                if (string.Equals(platform.ToString(), "ARM64", StringComparison.OrdinalIgnoreCase))
+                {
+                    Log.Information("Skipping ConfigParser.Tests on ARM64 in this environment");
+                    continue;
+                }
+
+                AbsolutePath tester = ResolveConfigParserTestsPath(config, platform);
+                if (!tester.FileExists())
+                {
+                    throw new InvalidOperationException($"ConfigParser.Tests not found at {tester}");
+                }
+
+                Log.Information("Running {Tester}", tester);
+                ProcessTasks.StartProcess(tester).AssertZeroExitCode();
+            }
+        });
+
     /// <summary>
     /// Run XInputBridge synthetic self-tests for each built host-runnable platform.
     /// </summary>
