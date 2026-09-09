@@ -176,6 +176,8 @@ static class ReleaseStaging
         }
 
         string destination = DriversDirectory(artifactsRoot);
+        RequireDriverLayout(packages[0]);
+
         if (Directory.Exists(destination))
         {
             Directory.Delete(destination, recursive: true);

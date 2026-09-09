@@ -74,6 +74,13 @@ static class ReleasePipelineTests
         AssertTrue(File.Exists(Path.Combine(artifacts, "drivers", "dshidmini.inf")), "inf staged");
         AssertTrue(File.Exists(Path.Combine(artifacts, "drivers", "x64", "dshidmini.dll")), "x64 staged");
         AssertTrue(!ReleaseStaging.TryStageMicrosoftDrivers(Path.Combine(scope.Root, "empty"), artifacts), "missing drivers");
+
+        string badDownload = Path.Combine(scope.Root, "bad-download");
+        Directory.CreateDirectory(Path.Combine(badDownload, "dshidmini-microsoft-drivers"));
+        File.WriteAllText(Path.Combine(badDownload, "dshidmini-microsoft-drivers", "dshidmini.inf"), "inf");
+        AssertThrows(() => ReleaseStaging.TryStageMicrosoftDrivers(badDownload, artifacts), "invalid source");
+        AssertTrue(File.Exists(Path.Combine(artifacts, "drivers", "dshidmini.inf")), "previous drivers kept");
+        AssertTrue(File.Exists(Path.Combine(artifacts, "drivers", "x64", "dshidmini.dll")), "previous x64 kept");
     }
 
     static void TestUniquePackageDetection()

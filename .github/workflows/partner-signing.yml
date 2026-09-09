@@ -304,6 +304,7 @@ jobs:
         with:
           name: dshidmini-partner-signed
           if-no-files-found: error
+          overwrite: true
           path: partner-signed/*
 
       - name: 'Upload signing result'
@@ -311,6 +312,7 @@ jobs:
         with:
           name: partner-signing-result
           if-no-files-found: error
+          overwrite: true
           path: partner-signing-result.json
 
       - name: 'Mirror signed Partner files'
@@ -382,6 +384,7 @@ jobs:
         with:
           name: dshidmini-microsoft-drivers
           if-no-files-found: error
+          overwrite: true
           path: artifacts/drivers/**
 
       - name: 'Upload release metadata for retry runs'
@@ -390,4 +393,5 @@ jobs:
         with:
           name: release-metadata
           if-no-files-found: error
+          overwrite: true
           path: artifacts/release-metadata.json
