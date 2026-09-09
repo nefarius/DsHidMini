@@ -1177,6 +1177,26 @@ VOID DS3_SET_BOTH_RUMBLE_STRENGTH(
 	DS3_PROCESS_RUMBLE_STRENGTH(Context);
 }
 
+_Use_decl_annotations_
+NTSTATUS
+DSHM_SetIpcRumble(
+	_In_ PDEVICE_CONTEXT Context,
+	_In_ UCHAR LargeValue,
+	_In_ UCHAR SmallValue
+)
+{
+	NTSTATUS status;
+
+	WdfWaitLockAcquire(Context->OutputReport.Lock, NULL);
+
+	DS3_SET_BOTH_RUMBLE_STRENGTH(Context, LargeValue, SmallValue);
+	status = DSHM_SendOutputReportUnlocked(Context, Ds3OutputReportSourceIpc);
+
+	WdfWaitLockRelease(Context->OutputReport.Lock);
+
+	return status;
+}
+
 VOID DS3_PROCESS_RUMBLE_STRENGTH(
 	PDEVICE_CONTEXT Context
 )

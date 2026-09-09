@@ -98,6 +98,14 @@ typedef enum
 	// Sends the console USB power-off sequence (zero output report + disable)
 	// 
 	DSHM_IPC_MSG_CMD_DEVICE_USB_POWER_OFF,
+	//
+	// Updates rumble motor strengths (volatile, not persisted)
+	// 
+	DSHM_IPC_MSG_CMD_DEVICE_SET_RUMBLE,
+	//
+	// Enables or disables alternative rumble mode at runtime
+	// 
+	DSHM_IPC_MSG_CMD_DEVICE_SET_ALTERNATE_RUMBLE_MODE,
 } DSHM_IPC_MSG_CMD_DEVICE;
 
 //
@@ -222,6 +230,61 @@ typedef struct _DSHM_IPC_MSG_USB_POWER_OFF_REPLY
 
 } DSHM_IPC_MSG_USB_POWER_OFF_REPLY, *PDSHM_IPC_MSG_USB_POWER_OFF_REPLY;
 
+//
+// Updates rumble motor strengths on a given device
+// 
+typedef struct _DSHM_IPC_MSG_SET_RUMBLE_REQUEST
+{
+	DSHM_IPC_MSG_HEADER Header;
+
+	//
+	// Heavy / left motor strength (0-255)
+	// 
+	UCHAR LargeMotor;
+
+	//
+	// Light / right motor strength (0-255)
+	// 
+	UCHAR SmallMotor;
+
+} DSHM_IPC_MSG_SET_RUMBLE_REQUEST, *PDSHM_IPC_MSG_SET_RUMBLE_REQUEST;
+
+//
+// Reply to struct _DSHM_IPC_MSG_SET_RUMBLE_REQUEST
+// 
+typedef struct _DSHM_IPC_MSG_SET_RUMBLE_REPLY
+{
+	DSHM_IPC_MSG_HEADER Header;
+
+	NTSTATUS NtStatus;
+
+} DSHM_IPC_MSG_SET_RUMBLE_REPLY, *PDSHM_IPC_MSG_SET_RUMBLE_REPLY;
+
+//
+// Toggles alternative rumble mode for a given device (volatile)
+// 
+typedef struct _DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REQUEST
+{
+	DSHM_IPC_MSG_HEADER Header;
+
+	//
+	// TRUE enables alternative rumble mode; FALSE restores normal processing
+	// 
+	BOOLEAN IsEnabled;
+
+} DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REQUEST, *PDSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REQUEST;
+
+//
+// Reply to struct _DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REQUEST
+// 
+typedef struct _DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REPLY
+{
+	DSHM_IPC_MSG_HEADER Header;
+
+	NTSTATUS NtStatus;
+
+} DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REPLY, *PDSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REPLY;
+
 typedef
 _Function_class_(EVT_DSHM_IPC_DispatchDeviceMessage)
 _IRQL_requires_same_
@@ -306,7 +369,7 @@ DSHM_IPC_MSG_SET_PLAYER_INDEX_RESPONSE_INIT(
 
 	Message->Header.Type = DSHM_IPC_MSG_TYPE_REQUEST_REPLY;
 	Message->Header.Target = DSHM_IPC_MSG_TARGET_CLIENT;
-	Message->Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO;
+	Message->Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE_SET_PLAYER_INDEX;
 	Message->Header.TargetIndex = DeviceIndex;
 	Message->Header.Size = size;
 
@@ -333,6 +396,46 @@ DSHM_IPC_MSG_USB_POWER_OFF_RESPONSE_INIT(
 
 	Message->IndicatorsOffStatus = IndicatorsOffStatus;
 	Message->ShutdownStatus = ShutdownStatus;
+}
+
+VOID
+FORCEINLINE
+DSHM_IPC_MSG_SET_RUMBLE_RESPONSE_INIT(
+	_Inout_ PDSHM_IPC_MSG_SET_RUMBLE_REPLY Message,
+	_In_ UINT32 DeviceIndex,
+	_In_ NTSTATUS Status
+)
+{
+	const UINT32 size = sizeof(DSHM_IPC_MSG_SET_RUMBLE_REPLY);
+	RtlZeroMemory(Message, size);
+
+	Message->Header.Type = DSHM_IPC_MSG_TYPE_REQUEST_REPLY;
+	Message->Header.Target = DSHM_IPC_MSG_TARGET_CLIENT;
+	Message->Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE_SET_RUMBLE;
+	Message->Header.TargetIndex = DeviceIndex;
+	Message->Header.Size = size;
+
+	Message->NtStatus = Status;
+}
+
+VOID
+FORCEINLINE
+DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_RESPONSE_INIT(
+	_Inout_ PDSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REPLY Message,
+	_In_ UINT32 DeviceIndex,
+	_In_ NTSTATUS Status
+)
+{
+	const UINT32 size = sizeof(DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REPLY);
+	RtlZeroMemory(Message, size);
+
+	Message->Header.Type = DSHM_IPC_MSG_TYPE_REQUEST_REPLY;
+	Message->Header.Target = DSHM_IPC_MSG_TARGET_CLIENT;
+	Message->Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE_SET_ALTERNATE_RUMBLE_MODE;
+	Message->Header.TargetIndex = DeviceIndex;
+	Message->Header.Size = size;
+
+	Message->NtStatus = Status;
 }
 
 

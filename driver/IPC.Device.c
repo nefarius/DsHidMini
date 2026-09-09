@@ -18,6 +18,20 @@ DSHM_EvtDispatchDeviceMessage(
 
 	if (MessageHeader->Command.Device == DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO)
 	{
+		if (MessageHeader->Size < sizeof(DSHM_IPC_MSG_PAIR_TO_REQUEST))
+		{
+			DSHM_IPC_MSG_PAIR_TO_RESPONSE_INIT(
+				(PDSHM_IPC_MSG_PAIR_TO_REPLY)MessageHeader,
+				MessageHeader->TargetIndex,
+				STATUS_INVALID_USER_BUFFER,
+				STATUS_INVALID_USER_BUFFER
+			);
+
+			status = STATUS_SUCCESS;
+			FuncExit(TRACE_IPC, "status=%!STATUS!", status);
+			return status;
+		}
+
 		const PDSHM_IPC_MSG_PAIR_TO_REQUEST request = (PDSHM_IPC_MSG_PAIR_TO_REQUEST)MessageHeader;
 
 		TraceVerbose(
@@ -59,12 +73,26 @@ DSHM_EvtDispatchDeviceMessage(
 	}
 	else if (MessageHeader->Command.Device == DSHM_IPC_MSG_CMD_DEVICE_SET_PLAYER_INDEX)
 	{
-		// TODO: implement me!
+		NTSTATUS applyStatus = STATUS_INVALID_USER_BUFFER;
+
+		if (MessageHeader->Size >= sizeof(DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST))
+		{
+			const PDSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST request =
+				(PDSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST)MessageHeader;
+
+			TraceVerbose(
+				TRACE_IPC,
+				"Received player-index request: %d",
+				request->PlayerIndex
+			);
+
+			applyStatus = DsLed_ApplyIpcPlayerIndex(DeviceContext, request->PlayerIndex);
+		}
 
 		DSHM_IPC_MSG_SET_PLAYER_INDEX_RESPONSE_INIT(
 			(PDSHM_IPC_MSG_SET_PLAYER_INDEX_REPLY)MessageHeader,
 			MessageHeader->TargetIndex,
-			STATUS_NOT_IMPLEMENTED
+			applyStatus
 		);
 
 		status = STATUS_SUCCESS;
@@ -74,7 +102,12 @@ DSHM_EvtDispatchDeviceMessage(
 		NTSTATUS indicatorsOffStatus = STATUS_NOT_SUPPORTED;
 		NTSTATUS shutdownStatus = STATUS_NOT_SUPPORTED;
 
-		if (DeviceContext->ConnectionType != DsDeviceConnectionTypeUsb)
+		if (MessageHeader->Size < sizeof(DSHM_IPC_MSG_USB_POWER_OFF_REQUEST))
+		{
+			indicatorsOffStatus = STATUS_INVALID_USER_BUFFER;
+			shutdownStatus = STATUS_INVALID_USER_BUFFER;
+		}
+		else if (DeviceContext->ConnectionType != DsDeviceConnectionTypeUsb)
 		{
 			TraceWarning(
 				TRACE_IPC,
@@ -122,6 +155,72 @@ DSHM_EvtDispatchDeviceMessage(
 			MessageHeader->TargetIndex,
 			indicatorsOffStatus,
 			shutdownStatus
+		);
+
+		status = STATUS_SUCCESS;
+	}
+	else if (MessageHeader->Command.Device == DSHM_IPC_MSG_CMD_DEVICE_SET_RUMBLE)
+	{
+		NTSTATUS applyStatus = STATUS_INVALID_USER_BUFFER;
+
+		if (MessageHeader->Size >= sizeof(DSHM_IPC_MSG_SET_RUMBLE_REQUEST))
+		{
+			const PDSHM_IPC_MSG_SET_RUMBLE_REQUEST request =
+				(PDSHM_IPC_MSG_SET_RUMBLE_REQUEST)MessageHeader;
+
+			TraceVerbose(
+				TRACE_IPC,
+				"Received rumble request: large=%d small=%d",
+				request->LargeMotor,
+				request->SmallMotor
+			);
+
+			applyStatus = DSHM_SetIpcRumble(
+				DeviceContext,
+				request->LargeMotor,
+				request->SmallMotor
+			);
+		}
+
+		DSHM_IPC_MSG_SET_RUMBLE_RESPONSE_INIT(
+			(PDSHM_IPC_MSG_SET_RUMBLE_REPLY)MessageHeader,
+			MessageHeader->TargetIndex,
+			applyStatus
+		);
+
+		status = STATUS_SUCCESS;
+	}
+	else if (MessageHeader->Command.Device == DSHM_IPC_MSG_CMD_DEVICE_SET_ALTERNATE_RUMBLE_MODE)
+	{
+		NTSTATUS applyStatus = STATUS_INVALID_USER_BUFFER;
+
+		if (MessageHeader->Size >= sizeof(DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REQUEST))
+		{
+			const PDSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REQUEST request =
+				(PDSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REQUEST)MessageHeader;
+
+			//
+			// Volatile only: do not persist to JSON. A config hot-reload
+			// restores AlternativeMode.IsEnabled from disk. Hold the output
+			// lock so this cannot tear against DS3_PROCESS_RUMBLE_STRENGTH.
+			// 
+			WdfWaitLockAcquire(DeviceContext->OutputReport.Lock, NULL);
+			DeviceContext->RumbleControlState.AltMode.IsEnabled = request->IsEnabled ? TRUE : FALSE;
+			const BOOLEAN isEnabled = DeviceContext->RumbleControlState.AltMode.IsEnabled;
+			WdfWaitLockRelease(DeviceContext->OutputReport.Lock);
+			applyStatus = STATUS_SUCCESS;
+
+			TraceVerbose(
+				TRACE_IPC,
+				"Alternate rumble mode is now %!BOOLEAN!",
+				isEnabled
+			);
+		}
+
+		DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_RESPONSE_INIT(
+			(PDSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REPLY)MessageHeader,
+			MessageHeader->TargetIndex,
+			applyStatus
 		);
 
 		status = STATUS_SUCCESS;

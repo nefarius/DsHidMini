@@ -104,5 +104,15 @@ internal enum DSHM_IPC_MSG_CMD_DEVICE : UInt32
     /// <summary>
     ///     Sends the console USB power-off sequence (zero output report + disable)
     /// </summary>
-    DSHM_IPC_MSG_CMD_DEVICE_USB_POWER_OFF
+    DSHM_IPC_MSG_CMD_DEVICE_USB_POWER_OFF,
+
+    /// <summary>
+    ///     Updates rumble motor strengths (volatile, not persisted)
+    /// </summary>
+    DSHM_IPC_MSG_CMD_DEVICE_SET_RUMBLE,
+
+    /// <summary>
+    ///     Enables or disables alternative rumble mode at runtime
+    /// </summary>
+    DSHM_IPC_MSG_CMD_DEVICE_SET_ALTERNATE_RUMBLE_MODE
 }

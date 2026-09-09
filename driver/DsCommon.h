@@ -254,7 +254,12 @@ typedef enum
 	//
 	// Request came from XINPUTHID.SYS
 	// 
-	Ds3OutputReportSourceXInputHID
+	Ds3OutputReportSourceXInputHID,
+
+	//
+	// Request came from a non-HID IPC client (issue #379)
+	// 
+	Ds3OutputReportSourceIpc
 } DS_OUTPUT_REPORT_SOURCE, * PDS_OUTPUT_REPORT_SOURCE;
 
 //

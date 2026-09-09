@@ -145,6 +145,19 @@ VOID DS3_PROCESS_RUMBLE_STRENGTH(
 	PDEVICE_CONTEXT Context
 );
 
+//
+// Writes rumble caches through DS3_PROCESS_RUMBLE_STRENGTH and enqueues the
+// output report under one hold of Context->OutputReport.Lock (issue #379).
+// 
+_Must_inspect_result_
+_Success_(return == STATUS_SUCCESS)
+NTSTATUS
+DSHM_SetIpcRumble(
+	_In_ PDEVICE_CONTEXT Context,
+	_In_ UCHAR LargeValue,
+	_In_ UCHAR SmallValue
+);
+
 typedef enum
 {
 	// Class-Specific Requests

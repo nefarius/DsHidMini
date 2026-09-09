@@ -1,9 +1,12 @@
-﻿// See https://aka.ms/new-console-template for more information
+// See https://aka.ms/new-console-template for more information
 
 using System.Diagnostics;
 
 using Nefarius.DsHidMini.IPC;
 #if INPUT_TEST
+using Nefarius.DsHidMini.IPC.Models.Public;
+#endif
+#if RUNTIME_OUTPUT_TEST
 using Nefarius.DsHidMini.IPC.Models.Public;
 #endif
 
@@ -38,6 +41,15 @@ do
             {
                 Console.WriteLine("Cross pressed");
             }
+#elif RUNTIME_OUTPUT_TEST
+            // Volatile runtime output (issue #379). Rebuild without this define
+            // for the default ping throughput loop.
+            uint playerStatus = ipc.SetPlayerIndex(1, 1);
+            uint rumbleStatus = ipc.SetRumble(1, 0x40, 0x00);
+            uint altStatus = ipc.SetAlternateRumbleMode(1, false);
+            Console.WriteLine(
+                $"SetPlayerIndex=0x{playerStatus:X} SetRumble=0x{rumbleStatus:X} SetAlternateRumbleMode=0x{altStatus:X} flags={Ds3PlayerLeds.TryGetFlags(1, out byte flags) && flags == Ds3PlayerLeds.Led1}");
+            break;
 #else
             ipc.SendPing();
 #endif
@@ -49,6 +61,8 @@ do
 
 #if INPUT_TEST
         Console.WriteLine($"Read {executionCount} input reports in one second.");
+#elif RUNTIME_OUTPUT_TEST
+        Console.WriteLine("Sent one volatile LED/rumble/alternate-mode command set.");
 #else
         Console.WriteLine($"Executed {executionCount} PINGs in one second.");
 #endif
