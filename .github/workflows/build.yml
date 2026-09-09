@@ -149,7 +149,7 @@ jobs:
         id: version
         shell: pwsh
         run: |
-          $buildVersion = "3.5.$([int]$env:BUILD_VERSION_OFFSET + ${{ github.run_number }}).0"
+          $buildVersion = "3.6.$([int]$env:BUILD_VERSION_OFFSET + ${{ github.run_number }}).0"
           echo "BUILD_VERSION=$buildVersion" >> $env:GITHUB_ENV
           echo "build-version=$buildVersion" >> $env:GITHUB_OUTPUT
           Write-Output "Building version $buildVersion"

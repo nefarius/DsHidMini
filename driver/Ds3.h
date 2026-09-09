@@ -227,6 +227,17 @@ NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device);
 
 NTSTATUS DsUsb_Ds3PairAndVerify(_In_ WDFDEVICE Device, _Out_opt_ PNTSTATUS ReadStatus);
 
+NTSTATUS DsUsb_Ds3PairToAddressAndVerify(
+	_In_ WDFDEVICE Device,
+	_In_ BD_ADDR NewHostAddress,
+	_Out_opt_ PNTSTATUS ReadStatus
+);
+
+NTSTATUS DsUsb_Ds3PairToActiveRadioAndVerify(
+	_In_ WDFDEVICE Device,
+	_Out_opt_ PNTSTATUS ReadStatus
+);
+
 NTSTATUS DsBth_Ds3SixaxisInit(PDEVICE_CONTEXT Context);
 
 NTSTATUS DsUsb_Ds3RequestHostAddress(WDFDEVICE Device);

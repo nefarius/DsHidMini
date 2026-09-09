@@ -274,7 +274,7 @@ public sealed partial class DsHidMiniInterop : IDisposable
     ///     Reads the driver's one-based IPC slot for a device when available (see <see cref="DsHidMiniDriver.IpcSlotIndexProperty" />).
     /// </summary>
     /// <returns>The slot index, or <see langword="null" /> if the property is missing (older driver) or invalid.</returns>
-    private static int? TryGetIpcSlotIndex(PnPDevice device)
+    public static int? TryGetIpcSlotIndex(PnPDevice device)
     {
         uint slot;
         try

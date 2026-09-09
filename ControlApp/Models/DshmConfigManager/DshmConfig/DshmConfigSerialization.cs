@@ -113,7 +113,6 @@ internal static class DshmConfigSerialization
                                  ?? ReadEnum<HidDeviceMode>(element, "HIDDeviceMode");
         settings.AutoRestartOnHidModeMismatch = ReadBool(element, "AutoRestartOnHidModeMismatch");
         settings.DevicePairingMode = ReadEnum<DevicePairingMode>(element, "DevicePairingMode");
-        settings.PairOnHotReload = ReadBool(element, "PairOnHotReload");
         settings.CustomPairingAddress = ReadString(element, "CustomPairingAddress");
         settings.UsbOutputReportTransport = ReadEnum<UsbOutputReportTransport>(element, "UsbOutputReportTransport");
         settings.BluetoothOutputReportTransport =

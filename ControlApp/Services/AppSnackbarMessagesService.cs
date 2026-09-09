@@ -211,6 +211,28 @@ public class AppSnackbarMessagesService
         );
     }
 
+    public void ShowPairingSucceededMessage()
+    {
+        _snackbarService.Show(
+            "Controller paired",
+            "The host address was written and verified.",
+            ControlAppearance.Success,
+            new SymbolIcon(SymbolRegular.CheckmarkCircle24),
+            TimeSpan.FromSeconds(5)
+        );
+    }
+
+    public void ShowPairingFailedMessage(string detail)
+    {
+        _snackbarService.Show(
+            "Failed to pair controller",
+            detail,
+            ControlAppearance.Danger,
+            new SymbolIcon(SymbolRegular.DismissCircle24),
+            TimeSpan.FromSeconds(8)
+        );
+    }
+
     public void ShowPowerCyclingDeviceMessage(bool isWireless, bool isAppElevated, bool reconnectionResult)
     {
         if (!isWireless && !isAppElevated)

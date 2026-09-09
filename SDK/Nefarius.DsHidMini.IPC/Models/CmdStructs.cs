@@ -219,3 +219,104 @@ internal struct DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REPLY
 
     public UInt32 NtStatus;
 }
+
+/// <summary>
+///     One DS3 LED effect block for IPC. The reserved byte keeps
+///     <see cref="BasePortionDuration" /> naturally aligned.
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+internal struct DSHM_IPC_LED_EFFECT
+{
+    public byte TotalDuration;
+    public byte Reserved;
+    public ushort BasePortionDuration;
+    public byte OffPortionMultiplier;
+    public byte OnPortionMultiplier;
+}
+
+/// <summary>
+///     Pair a given device to the active local Bluetooth radio.
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+internal struct DSHM_IPC_MSG_PAIR_TO_CURRENT_HOST_REQUEST
+{
+    public DSHM_IPC_MSG_HEADER Header;
+}
+
+/// <summary>
+///     Reply to <see cref="DSHM_IPC_MSG_PAIR_TO_CURRENT_HOST_REQUEST" />.
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+internal struct DSHM_IPC_MSG_PAIR_TO_CURRENT_HOST_REPLY
+{
+    public DSHM_IPC_MSG_HEADER Header;
+
+    public UInt32 WriteStatus;
+
+    public UInt32 ReadStatus;
+}
+
+/// <summary>
+///     Disconnect a currently wireless device from the host radio.
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+internal struct DSHM_IPC_MSG_DISCONNECT_BLUETOOTH_REQUEST
+{
+    public DSHM_IPC_MSG_HEADER Header;
+}
+
+/// <summary>
+///     Reply to <see cref="DSHM_IPC_MSG_DISCONNECT_BLUETOOTH_REQUEST" />.
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+internal struct DSHM_IPC_MSG_DISCONNECT_BLUETOOTH_REPLY
+{
+    public DSHM_IPC_MSG_HEADER Header;
+
+    public UInt32 NtStatus;
+}
+
+/// <summary>
+///     Apply a full volatile LED pattern (flags + four independent effects).
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+internal struct DSHM_IPC_MSG_SET_LED_PATTERN_REQUEST
+{
+    public DSHM_IPC_MSG_HEADER Header;
+
+    public byte Flags;
+
+    public byte Reserved0;
+    public byte Reserved1;
+    public byte Reserved2;
+
+    public DSHM_IPC_LED_EFFECT Player1;
+    public DSHM_IPC_LED_EFFECT Player2;
+    public DSHM_IPC_LED_EFFECT Player3;
+    public DSHM_IPC_LED_EFFECT Player4;
+}
+
+/// <summary>
+///     Reply to <see cref="DSHM_IPC_MSG_SET_LED_PATTERN_REQUEST" />.
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+internal struct DSHM_IPC_MSG_SET_LED_PATTERN_REPLY
+{
+    public DSHM_IPC_MSG_HEADER Header;
+
+    public UInt32 NtStatus;
+}

@@ -45,21 +45,33 @@ DSHM_EvtDispatchDeviceMessage(
 			request->Address.Address[5]
 		);
 
-		// TODO: this changes state for runtime settings, improve
-		DeviceContext->Configuration.DevicePairingMode = DsDevicePairingModeCustom;
-		RtlCopyMemory(&DeviceContext->Configuration.CustomHostAddress, &request->Address, sizeof(BD_ADDR));
+		NTSTATUS writeStatus = STATUS_NOT_SUPPORTED;
+		NTSTATUS readStatus = STATUS_NOT_SUPPORTED;
 
-		const WDFDEVICE device = WdfObjectContextGetObject(DeviceContext);
-
-		NTSTATUS readStatus = STATUS_UNSUCCESSFUL;
-		const NTSTATUS writeStatus = DsUsb_Ds3PairAndVerify(device, &readStatus);
-		if (!NT_SUCCESS(readStatus))
+		if (DeviceContext->ConnectionType != DsDeviceConnectionTypeUsb)
 		{
-			TraceError(
+			TraceWarning(
 				TRACE_IPC,
-				"DsUsb_Ds3RequestHostAddress failed with status %!STATUS!",
-				readStatus
+				"Pair-to-address requested for a non-USB device"
 			);
+		}
+		else
+		{
+			const WDFDEVICE device = WdfObjectContextGetObject(DeviceContext);
+
+			writeStatus = DsUsb_Ds3PairToAddressAndVerify(
+				device,
+				request->Address,
+				&readStatus
+			);
+			if (!NT_SUCCESS(readStatus))
+			{
+				TraceError(
+					TRACE_IPC,
+					"Pair-to-address verify failed with status %!STATUS!",
+					readStatus
+				);
+			}
 		}
 
 		DSHM_IPC_MSG_PAIR_TO_RESPONSE_INIT(
@@ -219,6 +231,124 @@ DSHM_EvtDispatchDeviceMessage(
 
 		DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_RESPONSE_INIT(
 			(PDSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REPLY)MessageHeader,
+			MessageHeader->TargetIndex,
+			applyStatus
+		);
+
+		status = STATUS_SUCCESS;
+	}
+	else if (MessageHeader->Command.Device == DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO_CURRENT_HOST)
+	{
+		NTSTATUS writeStatus = STATUS_INVALID_USER_BUFFER;
+		NTSTATUS readStatus = STATUS_INVALID_USER_BUFFER;
+
+		if (MessageHeader->Size < sizeof(DSHM_IPC_MSG_PAIR_TO_CURRENT_HOST_REQUEST))
+		{
+			writeStatus = STATUS_INVALID_USER_BUFFER;
+			readStatus = STATUS_INVALID_USER_BUFFER;
+		}
+		else if (DeviceContext->ConnectionType != DsDeviceConnectionTypeUsb)
+		{
+			writeStatus = STATUS_NOT_SUPPORTED;
+			readStatus = STATUS_NOT_SUPPORTED;
+			TraceWarning(
+				TRACE_IPC,
+				"Pair-to-current-host requested for a non-USB device"
+			);
+		}
+		else
+		{
+			const WDFDEVICE device = WdfObjectContextGetObject(DeviceContext);
+
+			writeStatus = DsUsb_Ds3PairToActiveRadioAndVerify(device, &readStatus);
+			if (!NT_SUCCESS(readStatus))
+			{
+				TraceError(
+					TRACE_IPC,
+					"Pair-to-current-host verify failed with status %!STATUS!",
+					readStatus
+				);
+			}
+		}
+
+		DSHM_IPC_MSG_PAIR_TO_CURRENT_HOST_RESPONSE_INIT(
+			(PDSHM_IPC_MSG_PAIR_TO_CURRENT_HOST_REPLY)MessageHeader,
+			MessageHeader->TargetIndex,
+			writeStatus,
+			readStatus
+		);
+
+		status = STATUS_SUCCESS;
+	}
+	else if (MessageHeader->Command.Device == DSHM_IPC_MSG_CMD_DEVICE_DISCONNECT_BLUETOOTH)
+	{
+		NTSTATUS applyStatus = STATUS_INVALID_USER_BUFFER;
+
+		if (MessageHeader->Size >= sizeof(DSHM_IPC_MSG_DISCONNECT_BLUETOOTH_REQUEST))
+		{
+			if (DeviceContext->ConnectionType != DsDeviceConnectionTypeBth)
+			{
+				applyStatus = STATUS_NOT_SUPPORTED;
+				TraceWarning(
+					TRACE_IPC,
+					"Bluetooth disconnect requested for a non-wireless device"
+				);
+			}
+			else
+			{
+				applyStatus = DsBth_SendDisconnectRequest(DeviceContext);
+			}
+		}
+
+		DSHM_IPC_MSG_DISCONNECT_BLUETOOTH_RESPONSE_INIT(
+			(PDSHM_IPC_MSG_DISCONNECT_BLUETOOTH_REPLY)MessageHeader,
+			MessageHeader->TargetIndex,
+			applyStatus
+		);
+
+		status = STATUS_SUCCESS;
+	}
+	else if (MessageHeader->Command.Device == DSHM_IPC_MSG_CMD_DEVICE_SET_LED_PATTERN)
+	{
+		NTSTATUS applyStatus = STATUS_INVALID_USER_BUFFER;
+
+		if (MessageHeader->Size >= sizeof(DSHM_IPC_MSG_SET_LED_PATTERN_REQUEST))
+		{
+			const PDSHM_IPC_MSG_SET_LED_PATTERN_REQUEST request =
+				(PDSHM_IPC_MSG_SET_LED_PATTERN_REQUEST)MessageHeader;
+			DS_LED effects[4];
+
+			effects[0].TotalDuration = request->Player1.TotalDuration;
+			effects[0].BasePortionDuration = request->Player1.BasePortionDuration;
+			effects[0].OffPortionMultiplier = request->Player1.OffPortionMultiplier;
+			effects[0].OnPortionMultiplier = request->Player1.OnPortionMultiplier;
+
+			effects[1].TotalDuration = request->Player2.TotalDuration;
+			effects[1].BasePortionDuration = request->Player2.BasePortionDuration;
+			effects[1].OffPortionMultiplier = request->Player2.OffPortionMultiplier;
+			effects[1].OnPortionMultiplier = request->Player2.OnPortionMultiplier;
+
+			effects[2].TotalDuration = request->Player3.TotalDuration;
+			effects[2].BasePortionDuration = request->Player3.BasePortionDuration;
+			effects[2].OffPortionMultiplier = request->Player3.OffPortionMultiplier;
+			effects[2].OnPortionMultiplier = request->Player3.OnPortionMultiplier;
+
+			effects[3].TotalDuration = request->Player4.TotalDuration;
+			effects[3].BasePortionDuration = request->Player4.BasePortionDuration;
+			effects[3].OffPortionMultiplier = request->Player4.OffPortionMultiplier;
+			effects[3].OnPortionMultiplier = request->Player4.OnPortionMultiplier;
+
+			TraceVerbose(
+				TRACE_IPC,
+				"Received LED pattern request: flags=0x%02X",
+				request->Flags
+			);
+
+			applyStatus = DsLed_ApplyIpcPattern(DeviceContext, request->Flags, effects);
+		}
+
+		DSHM_IPC_MSG_SET_LED_PATTERN_RESPONSE_INIT(
+			(PDSHM_IPC_MSG_SET_LED_PATTERN_REPLY)MessageHeader,
 			MessageHeader->TargetIndex,
 			applyStatus
 		);

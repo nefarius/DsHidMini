@@ -31,6 +31,7 @@ public class DriverConfigContractTests
         Assert.Null(root["Global"]!["DisableAutoPairing"]);
         Assert.Null(root["Global"]!["IsQuickDisconnectComboEnabled"]);
         Assert.Null(root["Global"]!["IsOutputDeduplicatorEnabled"]);
+        Assert.Null(root["Global"]!["PairOnHotReload"]);
         Assert.Equal("XInput", root["Global"]!["HidDeviceMode"]!.GetValue<string>());
     }
 
@@ -168,6 +169,25 @@ public class DriverConfigContractTests
         DeviceSettings restored = new();
         DshmManagerToDriverConversion.ConvertDriverFormatToDeviceSettings(parsed.Global, restored);
         Assert.Equal(transport, restored.OutputReport.BluetoothOutputReportTransport);
+    }
+
+    [Fact]
+    public void Deserialize_LegacyPairOnHotReload_IsIgnored()
+    {
+        const string json = """
+            {
+              "Global": {
+                "HidDeviceMode": "XInput",
+                "DevicePairingMode": "Auto",
+                "PairOnHotReload": true
+              },
+              "Devices": {}
+            }
+            """;
+
+        DshmConfiguration parsed = DshmConfigSerialization.Deserialize(json);
+        Assert.Equal(DevicePairingMode.Auto, parsed.Global.DevicePairingMode);
+        Assert.Null(parsed.Global.GetType().GetProperty("PairOnHotReload"));
     }
 
     [Fact]

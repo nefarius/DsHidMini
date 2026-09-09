@@ -1,6 +1,7 @@
 ﻿using Nefarius.DsHidMini.ControlApp.Models.Util;
+using Nefarius.DsHidMini.IPC;
 using Nefarius.DsHidMini.IPC.Models.Drivers;
-using Nefarius.Utilities.Bluetooth;
+using Nefarius.DsHidMini.IPC.Models.Public;
 using Nefarius.Utilities.DeviceManagement.Extensions;
 using Nefarius.Utilities.DeviceManagement.PnP;
 
@@ -73,11 +74,31 @@ public class DshmDevMan
         {
             try
             {
-                HostRadio hostRadio = new();
-                string deviceAddress = device.GetProperty<string>(DsHidMiniDriver.DeviceAddressProperty)!.ToUpper();
-                Log.Logger.Debug("Instructing BT host on disconnecting device of MAC {DeviceAddress}", deviceAddress);
-                hostRadio.DisconnectRemoteDevice(deviceAddress);
-                return true;
+                int? slot = DsHidMiniInterop.TryGetIpcSlotIndex(device);
+                if (slot is not int deviceIndex)
+                {
+                    Log.Logger.Warning(
+                        "Wireless disconnect skipped for '{InstanceId}': no readable IPC slot.",
+                        device.InstanceId);
+                    return false;
+                }
+
+                if (!DsHidMiniInterop.IsAvailable)
+                {
+                    Log.Logger.Warning(
+                        "Wireless disconnect skipped for '{InstanceId}': driver IPC is not available.",
+                        device.InstanceId);
+                    return false;
+                }
+
+                using DsHidMiniInterop interop = new();
+                uint status = interop.DisconnectBluetoothDevice(deviceIndex);
+                Log.Logger.Debug(
+                    "IPC Bluetooth disconnect for '{InstanceId}' slot {Slot}: 0x{Status:X}",
+                    device.InstanceId,
+                    deviceIndex,
+                    status);
+                return PowerOffUsbResult.IsNtSuccess(status);
             }
             catch (Exception ex)
             {

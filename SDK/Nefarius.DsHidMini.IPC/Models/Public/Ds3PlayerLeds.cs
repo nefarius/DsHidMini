@@ -18,6 +18,9 @@ public static class Ds3PlayerLeds
     /// <summary>Physical LED 4 bit.</summary>
     public const byte Led4 = 0x10;
 
+    /// <summary>Explicit all-off marker used by the hardware and custom patterns.</summary>
+    public const byte LedOff = 0x20;
+
     /// <summary>
     ///     Maps a player index (1-7) to the DS3 LED flags byte. Indices 5-7 use the
     ///     extra combinations the hardware uses once four physical LEDs are exhausted.

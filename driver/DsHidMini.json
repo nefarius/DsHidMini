@@ -3,7 +3,6 @@
     "HidDeviceMode": "DS4Windows",
     "AutoRestartOnHidModeMismatch": true,
     "DevicePairingMode": "Auto",
-    "PairOnHotReload": false,
     "BluetoothOutputReportTransport": "Control",
     "IsOutputRateControlEnabled": true,
     "OutputRateControlPeriodMs": 150,
@@ -367,7 +366,6 @@
     "44D832809FCD": {
       "HidDeviceMode": "SDF",
       "DevicePairingMode": "Auto",
-      "PairOnHotReload": false,
       "IsOutputRateControlEnabled": true,
       "OutputRateControlPeriodMs": 150,
       "IsOutputDeduplicatorEnabled": false,
@@ -384,7 +382,6 @@
     "0019C1637EA0": {
       "HidDeviceMode": "GPJ",
       "DevicePairingMode": "Auto",
-      "PairOnHotReload": false,
       "IsOutputRateControlEnabled": true,
       "OutputRateControlPeriodMs": 150,
       "IsOutputDeduplicatorEnabled": false,

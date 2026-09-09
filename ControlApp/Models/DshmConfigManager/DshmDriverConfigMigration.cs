@@ -184,7 +184,6 @@ internal static class DshmDriverConfigMigration
             {
                 DevicePairingMode =
                     DshmManagerToDriverConversion.PairingModeManagerToDriver[device.BluetoothPairingMode],
-                PairOnHotReload = device.PairOnHotReload,
                 CustomPairingAddress = device.BluetoothPairingMode == BluetoothPairingMode.Custom
                     ? MacAddressFormatter.Normalize(device.PairingAddress)
                     : null

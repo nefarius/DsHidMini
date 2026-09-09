@@ -106,6 +106,18 @@ typedef enum
 	// Enables or disables alternative rumble mode at runtime
 	// 
 	DSHM_IPC_MSG_CMD_DEVICE_SET_ALTERNATE_RUMBLE_MODE,
+	//
+	// Pair a given device to the active local Bluetooth radio
+	// 
+	DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO_CURRENT_HOST,
+	//
+	// Disconnect a currently wireless device from the host radio
+	// 
+	DSHM_IPC_MSG_CMD_DEVICE_DISCONNECT_BLUETOOTH,
+	//
+	// Apply a full volatile LED pattern (flags + four effect blocks)
+	// 
+	DSHM_IPC_MSG_CMD_DEVICE_SET_LED_PATTERN,
 } DSHM_IPC_MSG_CMD_DEVICE;
 
 //
@@ -285,6 +297,98 @@ typedef struct _DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REPLY
 
 } DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REPLY, *PDSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REPLY;
 
+//
+// One DS3 LED effect block for IPC. Explicit reserved byte keeps the
+// USHORT naturally aligned so C and C# Sequential layouts stay 6 bytes.
+// 
+typedef struct _DSHM_IPC_LED_EFFECT
+{
+	UCHAR TotalDuration;
+	UCHAR Reserved;
+	USHORT BasePortionDuration;
+	UCHAR OffPortionMultiplier;
+	UCHAR OnPortionMultiplier;
+
+} DSHM_IPC_LED_EFFECT, *PDSHM_IPC_LED_EFFECT;
+
+//
+// Pair a given device to the active local Bluetooth radio (no address payload)
+// 
+typedef struct _DSHM_IPC_MSG_PAIR_TO_CURRENT_HOST_REQUEST
+{
+	DSHM_IPC_MSG_HEADER Header;
+
+} DSHM_IPC_MSG_PAIR_TO_CURRENT_HOST_REQUEST, *PDSHM_IPC_MSG_PAIR_TO_CURRENT_HOST_REQUEST;
+
+//
+// Reply to struct _DSHM_IPC_MSG_PAIR_TO_CURRENT_HOST_REQUEST
+// 
+typedef struct _DSHM_IPC_MSG_PAIR_TO_CURRENT_HOST_REPLY
+{
+	DSHM_IPC_MSG_HEADER Header;
+
+	NTSTATUS WriteStatus;
+
+	NTSTATUS ReadStatus;
+
+} DSHM_IPC_MSG_PAIR_TO_CURRENT_HOST_REPLY, *PDSHM_IPC_MSG_PAIR_TO_CURRENT_HOST_REPLY;
+
+//
+// Disconnect a currently wireless device from the host radio
+// 
+typedef struct _DSHM_IPC_MSG_DISCONNECT_BLUETOOTH_REQUEST
+{
+	DSHM_IPC_MSG_HEADER Header;
+
+} DSHM_IPC_MSG_DISCONNECT_BLUETOOTH_REQUEST, *PDSHM_IPC_MSG_DISCONNECT_BLUETOOTH_REQUEST;
+
+//
+// Reply to struct _DSHM_IPC_MSG_DISCONNECT_BLUETOOTH_REQUEST
+// 
+typedef struct _DSHM_IPC_MSG_DISCONNECT_BLUETOOTH_REPLY
+{
+	DSHM_IPC_MSG_HEADER Header;
+
+	NTSTATUS NtStatus;
+
+} DSHM_IPC_MSG_DISCONNECT_BLUETOOTH_REPLY, *PDSHM_IPC_MSG_DISCONNECT_BLUETOOTH_REPLY;
+
+//
+// Apply a full volatile LED pattern (flags + four independent effects)
+// 
+typedef struct _DSHM_IPC_MSG_SET_LED_PATTERN_REQUEST
+{
+	DSHM_IPC_MSG_HEADER Header;
+
+	//
+	// DS3 LED flags byte (DS3_LED_1..4 and/or DS3_LED_OFF). Reserved bits
+	// are rejected by the driver.
+	// 
+	UCHAR Flags;
+
+	//
+	// Pad so Player1 starts on a 4-byte boundary (header is 20 bytes).
+	// 
+	UCHAR Reserved[3];
+
+	DSHM_IPC_LED_EFFECT Player1;
+	DSHM_IPC_LED_EFFECT Player2;
+	DSHM_IPC_LED_EFFECT Player3;
+	DSHM_IPC_LED_EFFECT Player4;
+
+} DSHM_IPC_MSG_SET_LED_PATTERN_REQUEST, *PDSHM_IPC_MSG_SET_LED_PATTERN_REQUEST;
+
+//
+// Reply to struct _DSHM_IPC_MSG_SET_LED_PATTERN_REQUEST
+// 
+typedef struct _DSHM_IPC_MSG_SET_LED_PATTERN_REPLY
+{
+	DSHM_IPC_MSG_HEADER Header;
+
+	NTSTATUS NtStatus;
+
+} DSHM_IPC_MSG_SET_LED_PATTERN_REPLY, *PDSHM_IPC_MSG_SET_LED_PATTERN_REPLY;
+
 typedef
 _Function_class_(EVT_DSHM_IPC_DispatchDeviceMessage)
 _IRQL_requires_same_
@@ -432,6 +536,68 @@ DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_RESPONSE_INIT(
 	Message->Header.Type = DSHM_IPC_MSG_TYPE_REQUEST_REPLY;
 	Message->Header.Target = DSHM_IPC_MSG_TARGET_CLIENT;
 	Message->Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE_SET_ALTERNATE_RUMBLE_MODE;
+	Message->Header.TargetIndex = DeviceIndex;
+	Message->Header.Size = size;
+
+	Message->NtStatus = Status;
+}
+
+VOID
+FORCEINLINE
+DSHM_IPC_MSG_PAIR_TO_CURRENT_HOST_RESPONSE_INIT(
+	_Inout_ PDSHM_IPC_MSG_PAIR_TO_CURRENT_HOST_REPLY Message,
+	_In_ UINT32 DeviceIndex,
+	_In_ NTSTATUS WriteStatus,
+	_In_ NTSTATUS ReadStatus
+)
+{
+	const UINT32 size = sizeof(DSHM_IPC_MSG_PAIR_TO_CURRENT_HOST_REPLY);
+	RtlZeroMemory(Message, size);
+
+	Message->Header.Type = DSHM_IPC_MSG_TYPE_REQUEST_REPLY;
+	Message->Header.Target = DSHM_IPC_MSG_TARGET_CLIENT;
+	Message->Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO_CURRENT_HOST;
+	Message->Header.TargetIndex = DeviceIndex;
+	Message->Header.Size = size;
+
+	Message->WriteStatus = WriteStatus;
+	Message->ReadStatus = ReadStatus;
+}
+
+VOID
+FORCEINLINE
+DSHM_IPC_MSG_DISCONNECT_BLUETOOTH_RESPONSE_INIT(
+	_Inout_ PDSHM_IPC_MSG_DISCONNECT_BLUETOOTH_REPLY Message,
+	_In_ UINT32 DeviceIndex,
+	_In_ NTSTATUS Status
+)
+{
+	const UINT32 size = sizeof(DSHM_IPC_MSG_DISCONNECT_BLUETOOTH_REPLY);
+	RtlZeroMemory(Message, size);
+
+	Message->Header.Type = DSHM_IPC_MSG_TYPE_REQUEST_REPLY;
+	Message->Header.Target = DSHM_IPC_MSG_TARGET_CLIENT;
+	Message->Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE_DISCONNECT_BLUETOOTH;
+	Message->Header.TargetIndex = DeviceIndex;
+	Message->Header.Size = size;
+
+	Message->NtStatus = Status;
+}
+
+VOID
+FORCEINLINE
+DSHM_IPC_MSG_SET_LED_PATTERN_RESPONSE_INIT(
+	_Inout_ PDSHM_IPC_MSG_SET_LED_PATTERN_REPLY Message,
+	_In_ UINT32 DeviceIndex,
+	_In_ NTSTATUS Status
+)
+{
+	const UINT32 size = sizeof(DSHM_IPC_MSG_SET_LED_PATTERN_REPLY);
+	RtlZeroMemory(Message, size);
+
+	Message->Header.Type = DSHM_IPC_MSG_TYPE_REQUEST_REPLY;
+	Message->Header.Target = DSHM_IPC_MSG_TARGET_CLIENT;
+	Message->Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE_SET_LED_PATTERN;
 	Message->Header.TargetIndex = DeviceIndex;
 	Message->Header.Size = size;
 
