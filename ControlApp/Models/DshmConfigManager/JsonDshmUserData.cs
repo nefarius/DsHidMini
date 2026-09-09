@@ -84,7 +84,7 @@ public static class JsonDshmUserData
                 Log.Logger.Warning(ex,
                     "Atomic replace of User Data file {ConfigPath} failed. Falling back to in-place overwrite.",
                     configPath);
-                File.Copy(tempPath, configPath, overwrite: true);
+                OverwriteExistingFile(tempPath, configPath);
             }
         }
         finally
@@ -139,6 +139,14 @@ public static class JsonDshmUserData
         T config = new();
         Save(fileNameWithoutExtension, config, userDataDir);
         return config;
+    }
+
+    private static void OverwriteExistingFile(string sourcePath, string destinationPath)
+    {
+        using FileStream source = File.OpenRead(sourcePath);
+        using FileStream destination = new(destinationPath, FileMode.Open, FileAccess.Write, FileShare.Read);
+        destination.SetLength(0);
+        source.CopyTo(destination);
     }
 
     private static void TryDeleteTemporaryFile(string path)

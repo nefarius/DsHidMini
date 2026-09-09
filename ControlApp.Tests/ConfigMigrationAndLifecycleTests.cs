@@ -170,9 +170,13 @@ public class ConfigMigrationAndLifecycleTests : IDisposable
         userData.Save(locations);
 
         userData.AutoRestartOnHidModeMismatch = false;
-        using (DenyFileDelete(locations.UserDataFilePath))
+        using (DenyFileReplacement(locations.UserDataFilePath))
         {
+            string accessSddl = GetAccessSddl(locations.UserDataFilePath);
+            Assert.True(HasExplicitDeleteDenial(locations.UserDataFilePath));
             userData.Save(locations);
+            Assert.Equal(accessSddl, GetAccessSddl(locations.UserDataFilePath));
+            Assert.True(HasExplicitDeleteDenial(locations.UserDataFilePath));
         }
 
         DshmConfigManagerUserData reloaded = DshmConfigManagerUserData.Load(locations);
@@ -222,35 +226,78 @@ public class ConfigMigrationAndLifecycleTests : IDisposable
     private DshmConfigManager CreateManager() =>
         new(new DshmConfigLocations(UserDir, DriverDir));
 
-    private static RestoreFileSecurity DenyFileDelete(string path)
+    private static string GetAccessSddl(string path) =>
+        new FileInfo(path).GetAccessControl().GetSecurityDescriptorSddlForm(AccessControlSections.Access);
+
+    private static bool HasExplicitDeleteDenial(string path)
     {
-        FileInfo info = new(path);
-        FileSecurity original = info.GetAccessControl();
-        FileSecurity modified = info.GetAccessControl();
-        SecurityIdentifier user = WindowsIdentity.GetCurrent().User
-                                  ?? throw new InvalidOperationException("Current Windows user SID is unavailable.");
-        modified.AddAccessRule(new FileSystemAccessRule(
+        SecurityIdentifier user = CurrentUserSid();
+        AuthorizationRuleCollection rules = new FileInfo(path)
+            .GetAccessControl()
+            .GetAccessRules(includeExplicit: true, includeInherited: false, typeof(SecurityIdentifier));
+
+        return rules
+            .OfType<FileSystemAccessRule>()
+            .Any(rule =>
+                rule.IdentityReference.Equals(user)
+                && rule.AccessControlType == AccessControlType.Deny
+                && rule.FileSystemRights.HasFlag(FileSystemRights.Delete));
+    }
+
+    private static RestoreReplacementDenial DenyFileReplacement(string path)
+    {
+        FileInfo file = new(path);
+        DirectoryInfo directory = file.Directory
+                                  ?? throw new InvalidOperationException("User data file has no parent directory.");
+        FileSecurity originalFile = file.GetAccessControl();
+        DirectorySecurity originalDirectory = directory.GetAccessControl();
+        SecurityIdentifier user = CurrentUserSid();
+
+        FileSecurity fileSecurity = file.GetAccessControl();
+        fileSecurity.AddAccessRule(new FileSystemAccessRule(
             user,
             FileSystemRights.Delete,
             AccessControlType.Deny));
-        info.SetAccessControl(modified);
-        return new RestoreFileSecurity(info, original);
+        file.SetAccessControl(fileSecurity);
+
+        // File.Move can still replace a file through DELETE_CHILD on the parent directory.
+        DirectorySecurity directorySecurity = directory.GetAccessControl();
+        directorySecurity.AddAccessRule(new FileSystemAccessRule(
+            user,
+            FileSystemRights.DeleteSubdirectoriesAndFiles,
+            AccessControlType.Deny));
+        directory.SetAccessControl(directorySecurity);
+
+        return new RestoreReplacementDenial(file, originalFile, directory, originalDirectory);
     }
 
-    private sealed class RestoreFileSecurity : IDisposable
-    {
-        private readonly FileInfo _info;
-        private readonly FileSecurity _original;
+    private static SecurityIdentifier CurrentUserSid() =>
+        WindowsIdentity.GetCurrent().User
+        ?? throw new InvalidOperationException("Current Windows user SID is unavailable.");
 
-        public RestoreFileSecurity(FileInfo info, FileSecurity original)
+    private sealed class RestoreReplacementDenial : IDisposable
+    {
+        private readonly FileInfo _file;
+        private readonly FileSecurity _originalFile;
+        private readonly DirectoryInfo _directory;
+        private readonly DirectorySecurity _originalDirectory;
+
+        public RestoreReplacementDenial(
+            FileInfo file,
+            FileSecurity originalFile,
+            DirectoryInfo directory,
+            DirectorySecurity originalDirectory)
         {
-            _info = info;
-            _original = original;
+            _file = file;
+            _originalFile = originalFile;
+            _directory = directory;
+            _originalDirectory = originalDirectory;
         }
 
         public void Dispose()
         {
-            _info.SetAccessControl(_original);
+            _file.SetAccessControl(_originalFile);
+            _directory.SetAccessControl(_originalDirectory);
         }
     }
 }
