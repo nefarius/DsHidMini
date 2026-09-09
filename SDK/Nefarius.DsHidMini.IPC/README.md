@@ -119,6 +119,7 @@ if (gotReport)
 | Member | Description |
 |--------|-------------|
 | **`static bool IsAvailable`** | `true` if the driver’s shared memory is present (at least one device active). Check this before constructing. |
+| **`static int? TryGetIpcSlotIndex(PnPDevice device)`** | Reads the driver’s one-based IPC slot from `DsHidMiniDriver.IpcSlotIndexProperty`. Returns `null` when the property is missing or outside 1…255. |
 | **`DsHidMiniInterop()`** | Connects to the driver IPC. Throws if not available. Subscribes to device arrival/removal for reconnection. |
 | **`void Dispose()`** | Releases mapped views, file mapping, and events. Implement `IDisposable` and dispose when done. |
 | **`void Reconnect()`** | Re-opens mutex, events, and shared memory (e.g. after all devices were removed). Throws if still no device. |
@@ -141,7 +142,7 @@ All device-indexed APIs use a **one-based** device index (see [Device index](#de
 
 - **Valid range:** `1` … `255` (inclusive).  
 - **Meaning:** The index is the driver’s **IPC slot** (`SlotIndex`): shared HID memory, per-slot wait events (`Global\DsHidMiniHidReportEvent` + index), and IPC `TargetIndex` all use this same one-based value.  
-- **Discovery:** Read the read-only device property **`DsHidMiniDriver.IpcSlotIndexProperty`** (`DEVPROP_TYPE_UINT32`, same value the driver publishes after claiming a slot). Enumerate DsHidMini device interfaces and query this property per `PnPDevice`—do **not** assume SetupAPI / `CM_Get_Device_Interface_List` ordering matches slot order (e.g. after a middle device disconnects, remaining devices may occupy non-contiguous slots such as `1` and `3`).  
+- **Discovery:** Use **`DsHidMiniInterop.TryGetIpcSlotIndex(PnPDevice)`**, which reads the read-only device property **`DsHidMiniDriver.IpcSlotIndexProperty`** (`DEVPROP_TYPE_UINT32`, same value the driver publishes after claiming a slot). Enumerate DsHidMini device interfaces and query this property per `PnPDevice`—do **not** assume SetupAPI / `CM_Get_Device_Interface_List` ordering matches slot order (e.g. after a middle device disconnects, remaining devices may occupy non-contiguous slots such as `1` and `3`).  
 - **Older drivers:** If the property is absent, fall back to your own mapping; ordering-only heuristics may be wrong when slots are not contiguous.  
 - **Invalid index:** APIs throw `DsHidMiniInteropInvalidDeviceIndexException` if `deviceIndex` is ≤ 0 or &gt; 255.
 

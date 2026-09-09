@@ -808,7 +808,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             return;
         }
 
-        int? slot = TryGetIpcSlotIndex();
+        int? slot = DsHidMiniInterop.TryGetIpcSlotIndex(Device);
         if (slot is not int deviceIndex)
         {
             Log.Logger.Warning(
@@ -857,26 +857,6 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         }
     }
 
-    private int? TryGetIpcSlotIndex()
-    {
-        uint slot;
-        try
-        {
-            slot = Device.GetProperty<uint>(DsHidMiniDriver.IpcSlotIndexProperty);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
-
-        if (slot is < 1 or > byte.MaxValue)
-        {
-            return null;
-        }
-
-        return (int)slot;
-    }
-
     [RelayCommand]
     private async Task PairNow()
     {
@@ -896,7 +876,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             return;
         }
 
-        int? slot = TryGetIpcSlotIndex();
+        int? slot = DsHidMiniInterop.TryGetIpcSlotIndex(Device);
         if (slot is not int deviceIndex)
         {
             Log.Logger.Warning(

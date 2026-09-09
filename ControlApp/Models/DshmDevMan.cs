@@ -74,7 +74,7 @@ public class DshmDevMan
         {
             try
             {
-                int? slot = TryGetIpcSlotIndex(device);
+                int? slot = DsHidMiniInterop.TryGetIpcSlotIndex(device);
                 if (slot is not int deviceIndex)
                 {
                     Log.Logger.Warning(
@@ -119,26 +119,6 @@ public class DshmDevMan
             Log.Logger.Error(e, "Failed to power cycle device's USB port");
             return false;
         }
-    }
-
-    private static int? TryGetIpcSlotIndex(PnPDevice device)
-    {
-        uint slot;
-        try
-        {
-            slot = device.GetProperty<uint>(DsHidMiniDriver.IpcSlotIndexProperty);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
-
-        if (slot is < 1 or > byte.MaxValue)
-        {
-            return null;
-        }
-
-        return (int)slot;
     }
 
     public event EventHandler? ConnectedDeviceListUpdated;
