@@ -679,3 +679,15 @@ jobs:
           webhook-url: ${{ secrets.WEBHOOK_URL }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           artifact-name: dshidmini-partner-submission
+
+  partner-signing:
+    name: 'Partner Center signing'
+    needs: [version, partner-cab]
+    if: needs.version.outputs.is-release == 'true'
+    permissions:
+      contents: read
+      actions: read
+    secrets: inherit
+    uses: ./.github/workflows/partner-signing.yml
+    with:
+      source-run-id: ${{ github.run_id }}

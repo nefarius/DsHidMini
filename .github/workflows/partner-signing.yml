@@ -1,0 +1,397 @@
+name: 'Partner Center signing'
+
+on:
+  workflow_call:
+    inputs:
+      source-run-id:
+        description: 'Build workflow run ID that produced the EV-signed partner CAB'
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      source-run-id:
+        description: 'Build workflow run ID that produced the EV-signed partner CAB'
+        required: true
+        type: string
+
+concurrency:
+  group: partner-signing-${{ inputs.source-run-id }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+  DOTNET_NOLOGO: 'true'
+  SOURCE_RUN_ID: ${{ inputs.source-run-id }}
+  SDCM_PROFILES__DEFAULT__TENANTID: ${{ secrets.SDCM_PROFILES__DEFAULT__TENANTID }}
+  SDCM_PROFILES__DEFAULT__CLIENTID: ${{ secrets.SDCM_PROFILES__DEFAULT__CLIENTID }}
+  SDCM_PROFILES__DEFAULT__KEY: ${{ secrets.SDCM_PROFILES__DEFAULT__KEY }}
+
+jobs:
+  create:
+    name: 'Create Partner product'
+    runs-on: windows-2022
+    outputs:
+      product-id: ${{ steps.create.outputs.product-id }}
+      submission-id: ${{ steps.create.outputs.submission-id }}
+      setup-version: ${{ steps.create.outputs.setup-version }}
+      driver-version: ${{ steps.create.outputs.driver-version }}
+      tag: ${{ steps.create.outputs.tag }}
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: 'Require Partner Center credentials'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (-not $env:SOURCE_RUN_ID) { throw 'source-run-id is required.' }
+          if ($env:SOURCE_RUN_ID -notmatch '^\d+$') { throw "source-run-id must be a numeric run ID. Got: '$env:SOURCE_RUN_ID'." }
+          if (-not $env:SDCM_PROFILES__DEFAULT__TENANTID) { throw 'Repository secret SDCM_PROFILES__DEFAULT__TENANTID is not set.' }
+          if (-not $env:SDCM_PROFILES__DEFAULT__CLIENTID) { throw 'Repository secret SDCM_PROFILES__DEFAULT__CLIENTID is not set.' }
+          if (-not $env:SDCM_PROFILES__DEFAULT__KEY) { throw 'Repository secret SDCM_PROFILES__DEFAULT__KEY is not set.' }
+
+      - name: 'Download release metadata'
+        uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: release-metadata
+          path: metadata
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ env.SOURCE_RUN_ID }}
+
+      - uses: ./.github/actions/setup-sdcm
+
+      - name: 'Create product and submission'
+        id: create
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . .\build\PartnerSigning.ps1
+
+          $metadataPath = Get-ChildItem -LiteralPath metadata -Recurse -Filter 'release-metadata.json' |
+            Select-Object -First 1 -ExpandProperty FullName
+          if (-not $metadataPath) { throw 'release-metadata.json was not downloaded from the source run.' }
+          $metadata = Get-Content -LiteralPath $metadataPath -Raw | ConvertFrom-Json
+          if (-not $metadata.setupVersion -or -not $metadata.driverVersion -or -not $metadata.tag) {
+            throw 'release-metadata.json is missing tag, setupVersion, or driverVersion.'
+          }
+
+          $productName = "DsHidMini $($metadata.setupVersion) $($metadata.driverVersion)"
+          $announcement = (Get-Date).ToUniversalTime().ToString('s')
+          $productPath = Join-Path $pwd 'partner-product.json'
+          $submissionPath = Join-Path $pwd 'partner-submission.json'
+          Write-Utf8NoBomJson (New-PartnerProductPayload -ProductName $productName -AnnouncementDate $announcement) $productPath
+          Write-Utf8NoBomJson (New-PartnerSubmissionPayload -Name "$($productName) submission") $submissionPath
+
+          $productJson = Invoke-Sdcm product create --input $productPath
+          $productId = Get-SdcmEntityId -Json ($productJson | Out-String)
+          $submissionJson = Invoke-Sdcm submission create --product-id $productId --input $submissionPath
+          $submissionId = Get-SdcmEntityId -Json ($submissionJson | Out-String)
+          $portalUrl = Get-PartnerPortalUrl -ProductId $productId
+
+          $checkpoint = [ordered]@{
+            schemaVersion = 1
+            sourceRunId = [int64]$env:SOURCE_RUN_ID
+            signingRunId = [int64]'${{ github.run_id }}'
+            tag = [string]$metadata.tag
+            setupVersion = [string]$metadata.setupVersion
+            driverVersion = [string]$metadata.driverVersion
+            productId = $productId
+            submissionId = $submissionId
+            portalUrl = $portalUrl
+            productName = $productName
+          }
+          Write-Utf8NoBomJson $checkpoint 'partner-signing-checkpoint.json'
+
+          'product-id=' + $productId >> $env:GITHUB_OUTPUT
+          'submission-id=' + $submissionId >> $env:GITHUB_OUTPUT
+          'setup-version=' + $metadata.setupVersion >> $env:GITHUB_OUTPUT
+          'driver-version=' + $metadata.driverVersion >> $env:GITHUB_OUTPUT
+          'tag=' + $metadata.tag >> $env:GITHUB_OUTPUT
+
+          $summary = @(
+            "Created Partner Center product ``$productName``"
+            "- Product ID: ``$productId``"
+            "- Submission ID: ``$submissionId``"
+            "- Portal: $portalUrl"
+          ) -join [Environment]::NewLine
+          $summary >> $env:GITHUB_STEP_SUMMARY
+          Write-Output $summary
+
+      - name: 'Upload checkpoint'
+        uses: actions/upload-artifact@v7
+        with:
+          name: partner-signing-checkpoint
+          if-no-files-found: error
+          path: partner-signing-checkpoint.json
+
+  upload:
+    name: 'Upload and commit'
+    needs: create
+    runs-on: windows-2022
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: 'Download checkpoint'
+        uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: partner-signing-checkpoint
+          path: checkpoint
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Download partner CAB'
+        uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: dshidmini-partner-submission
+          path: submission
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ env.SOURCE_RUN_ID }}
+
+      - uses: ./.github/actions/setup-sdcm
+
+      - name: 'Upload and commit when needed'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . .\build\PartnerSigning.ps1
+
+          $checkpointPath = Get-ChildItem -LiteralPath checkpoint -Recurse -Filter 'partner-signing-checkpoint.json' |
+            Select-Object -First 1 -ExpandProperty FullName
+          if (-not $checkpointPath) { throw 'partner-signing-checkpoint.json is missing.' }
+          $checkpoint = Get-Content -LiteralPath $checkpointPath -Raw | ConvertFrom-Json
+          $productId = '${{ needs.create.outputs.product-id }}'
+          $submissionId = '${{ needs.create.outputs.submission-id }}'
+          if (-not $productId) { $productId = [string]$checkpoint.productId }
+          if (-not $submissionId) { $submissionId = [string]$checkpoint.submissionId }
+          if (-not $productId -or -not $submissionId) { throw 'Product or submission ID is missing.' }
+
+          $cab = Get-ChildItem -LiteralPath submission -Recurse -File -Filter 'dshidmini_*.cab' |
+            Select-Object -First 1
+          if (-not $cab) { throw 'EV-signed partner CAB was not downloaded from the source run.' }
+
+          $listed = Invoke-Sdcm submission list --product-id $productId --submission-id $submissionId
+          $submission = ConvertFrom-SdcmJson -Json ($listed | Out-String)
+          if ($submission -is [System.Array]) { $submission = $submission | Select-Object -First 1 }
+          $progress = Get-PartnerSubmissionProgress -Submission $submission
+          Write-Output "Submission progress: $progress"
+
+          if ($progress -eq 'Failed') {
+            throw "Partner Center already failed product $productId submission $submissionId. Dispatch this workflow against the same source run to create a new product."
+          }
+
+          if (Test-PartnerSubmissionNeedsUpload -Submission $submission) {
+            Write-Output "Uploading $($cab.FullName)"
+            Invoke-Sdcm submission upload --product-id $productId --submission-id $submissionId --package $cab.FullName
+          }
+          else {
+            Write-Output 'Upload skipped; submission has already advanced past package upload.'
+          }
+
+          $listed = Invoke-Sdcm submission list --product-id $productId --submission-id $submissionId
+          $submission = ConvertFrom-SdcmJson -Json ($listed | Out-String)
+          if ($submission -is [System.Array]) { $submission = $submission | Select-Object -First 1 }
+          if (Test-PartnerSubmissionNeedsCommit -Submission $submission) {
+            Write-Output 'Committing submission'
+            Invoke-Sdcm submission commit --product-id $productId --submission-id $submissionId
+          }
+          else {
+            Write-Output 'Commit skipped; submission is already committed or in progress.'
+          }
+
+          "Portal: $(Get-PartnerPortalUrl -ProductId $productId)" >> $env:GITHUB_STEP_SUMMARY
+
+  wait:
+    name: 'Wait and download'
+    needs: [create, upload]
+    runs-on: windows-2022
+    timeout-minutes: 90
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: 'Download checkpoint'
+        uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: partner-signing-checkpoint
+          path: checkpoint
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: ./.github/actions/setup-sdcm
+
+      - name: 'Wait, download, and extract signed files'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . .\build\PartnerSigning.ps1
+
+          $checkpointPath = Get-ChildItem -LiteralPath checkpoint -Recurse -Filter 'partner-signing-checkpoint.json' |
+            Select-Object -First 1 -ExpandProperty FullName
+          $checkpoint = Get-Content -LiteralPath $checkpointPath -Raw | ConvertFrom-Json
+          $productId = '${{ needs.create.outputs.product-id }}'
+          $submissionId = '${{ needs.create.outputs.submission-id }}'
+          if (-not $productId) { $productId = [string]$checkpoint.productId }
+          if (-not $submissionId) { $submissionId = [string]$checkpoint.submissionId }
+
+          $listed = Invoke-Sdcm submission list --product-id $productId --submission-id $submissionId
+          $submission = ConvertFrom-SdcmJson -Json ($listed | Out-String)
+          if ($submission -is [System.Array]) { $submission = $submission | Select-Object -First 1 }
+          $progress = Get-PartnerSubmissionProgress -Submission $submission
+          Write-Output "Submission progress: $progress"
+
+          if ($progress -eq 'Failed') {
+            throw "Partner Center failed product $productId submission $submissionId."
+          }
+          if ($progress -eq 'Created') {
+            throw 'Submission is not committed. Re-run the upload job before waiting.'
+          }
+          if ($progress -ne 'Completed') {
+            Invoke-Sdcm submission wait --product-id $productId --submission-id $submissionId --wait-timeout 3600
+          }
+          else {
+            Write-Output 'Submission already completed; downloading without waiting.'
+          }
+
+          $downloadZip = Join-Path $pwd 'hdc-download.zip'
+          Invoke-Sdcm submission download --product-id $productId --submission-id $submissionId --output-file $downloadZip
+          $extractDir = Join-Path $pwd 'hdc-extracted'
+          New-Item -ItemType Directory -Force -Path $extractDir | Out-Null
+          Expand-Archive -LiteralPath $downloadZip -DestinationPath $extractDir -Force
+
+          $pair = Find-PartnerSignedPackagePair -Root $extractDir
+
+          $stage = Join-Path $pwd 'partner-signed'
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          Copy-Item -LiteralPath $pair.SignedZip -Destination (Join-Path $stage $pair.SignedName)
+          Copy-Item -LiteralPath $pair.InitialCab -Destination (Join-Path $stage $pair.InitialName)
+
+          $result = [ordered]@{
+            schemaVersion = 1
+            sourceRunId = [int64]$env:SOURCE_RUN_ID
+            signingRunId = [int64]'${{ github.run_id }}'
+            tag = [string]$checkpoint.tag
+            setupVersion = [string]$checkpoint.setupVersion
+            driverVersion = [string]$checkpoint.driverVersion
+            productId = $productId
+            submissionId = $submissionId
+            portalUrl = Get-PartnerPortalUrl -ProductId $productId
+            signedZip = $pair.SignedName
+            initialCab = $pair.InitialName
+            packageId = $pair.Id
+          }
+          Write-Utf8NoBomJson $result 'partner-signing-result.json'
+
+          $summary = @(
+            "Downloaded Partner Center signed files for $($checkpoint.tag)"
+            "- $($pair.SignedName)"
+            "- $($pair.InitialName)"
+            "- Portal: $($result.portalUrl)"
+          ) -join [Environment]::NewLine
+          $summary >> $env:GITHUB_STEP_SUMMARY
+          Write-Output $summary
+
+      - name: 'Upload signed Partner files'
+        uses: actions/upload-artifact@v7
+        with:
+          name: dshidmini-partner-signed
+          if-no-files-found: error
+          overwrite: true
+          path: partner-signed/*
+
+      - name: 'Upload signing result'
+        uses: actions/upload-artifact@v7
+        with:
+          name: partner-signing-result
+          if-no-files-found: error
+          overwrite: true
+          path: partner-signing-result.json
+
+      - name: 'Mirror signed Partner files'
+        uses: nefarius/AppVeyorArtifactsReceiver@master
+        with:
+          webhook-url: ${{ secrets.WEBHOOK_URL }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          artifact-name: dshidmini-partner-signed
+
+  ingest:
+    name: 'Validate Microsoft package'
+    needs: [create, wait]
+    runs-on: windows-2022
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: 'Download signed Partner files'
+        uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: dshidmini-partner-signed
+          path: partner-signed
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Download release metadata'
+        uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: release-metadata
+          path: metadata
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ env.SOURCE_RUN_ID }}
+
+      - name: 'Setup .NET'
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: 'Restore local .NET tools'
+        run: dotnet tool restore
+
+      - name: 'Ingest and validate attested drivers'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . .\build\PartnerSigning.ps1
+
+          $pair = Find-PartnerSignedPackagePair -Root (Join-Path $pwd 'partner-signed')
+          $metadataPath = Get-ChildItem -LiteralPath metadata -Recurse -Filter 'release-metadata.json' |
+            Select-Object -First 1 -ExpandProperty FullName
+          if (-not $metadataPath) { throw 'release-metadata.json was not downloaded from the source run.' }
+
+          $artifacts = Join-Path $pwd 'artifacts'
+          New-Item -ItemType Directory -Force -Path $artifacts | Out-Null
+          Copy-Item -LiteralPath $metadataPath -Destination (Join-Path $artifacts 'release-metadata.json') -Force
+
+          & .\build.cmd IngestMicrosoftPackage --microsoft-package-path $pair.SignedZip --artifacts-path $artifacts
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+          if (-not (Test-Path -LiteralPath (Join-Path $artifacts 'drivers\dshidmini.inf'))) {
+            throw 'IngestMicrosoftPackage did not produce artifacts/drivers/dshidmini.inf.'
+          }
+
+          "Ingested $($pair.SignedName) into artifacts/drivers" >> $env:GITHUB_STEP_SUMMARY
+
+      - name: 'Upload attested drivers'
+        uses: actions/upload-artifact@v7
+        with:
+          name: dshidmini-microsoft-drivers
+          if-no-files-found: error
+          overwrite: true
+          path: artifacts/drivers/**
+
+      - name: 'Upload release metadata for retry runs'
+        if: github.run_id != inputs.source-run-id
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-metadata
+          if-no-files-found: error
+          overwrite: true
+          path: artifacts/release-metadata.json

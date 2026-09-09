@@ -19,7 +19,8 @@ partial class Build
 
     /// <summary>
     /// Downloads the tagged-run artifacts needed to continue a release: signed ControlApp,
-    /// the EV-signed partner submission CAB, and release-metadata.json. Does not sign anything.
+    /// the EV-signed partner submission CAB, release-metadata.json, and the Microsoft-attested
+    /// driver package when Partner Center signing has finished. Does not sign anything.
     /// </summary>
     [UsedImplicitly]
     public Target DownloadCiArtifacts => _ => _
@@ -28,7 +29,7 @@ partial class Build
             if (string.IsNullOrWhiteSpace(RunId))
             {
                 throw new InvalidOperationException(
-                    "DownloadCiArtifacts requires RunId (the numeric GitHub Actions run ID from the Build workflow URL).");
+                    "DownloadCiArtifacts requires RunId (the numeric GitHub Actions run ID from the Build or Partner signing workflow URL).");
             }
 
             if (!long.TryParse(RunId, out long parsedRunId) || parsedRunId <= 0)
@@ -45,26 +46,51 @@ partial class Build
 
             Directory.CreateDirectory(downloadDir);
 
-            string[] patterns = ["release-metadata", "control-app", "dshidmini-partner-submission"];
-            foreach (string pattern in patterns)
+            DownloadRunArtifact(parsedRunId, downloadDir, "release-metadata", required: true);
+            string metadataFile = ReleaseStaging.FindExistingFile(downloadDir, ReleaseStaging.MetadataFileName)
+                                  ?? throw new InvalidOperationException(
+                                      "Downloaded artifacts are missing release-metadata.json. Use a tagged Build workflow run.");
+            ReleaseMetadata sourceMetadata = ReleaseStaging.ReadMetadata(metadataFile);
+            long sourceRunId = sourceMetadata.RunId;
+            if (sourceRunId != parsedRunId)
             {
-                ProcessTasks.StartProcess("gh",
-                        $"run download {RunId} --repo nefarius/DsHidMini --dir \"{downloadDir}\" --pattern \"{pattern}\"")
-                    .AssertZeroExitCode();
+                Log.Information(
+                    "Requested run {RunId} is a Partner signing retry; ControlApp and the partner CAB come from source run {SourceRunId}",
+                    parsedRunId, sourceRunId);
+            }
+
+            long payloadRunId = sourceRunId > 0 ? sourceRunId : parsedRunId;
+            DownloadRunArtifact(payloadRunId, downloadDir, "control-app", required: true);
+            DownloadRunArtifact(payloadRunId, downloadDir, "dshidmini-partner-submission", required: true);
+            DownloadRunArtifact(parsedRunId, downloadDir, "dshidmini-microsoft-drivers", required: false);
+            if (payloadRunId != parsedRunId)
+            {
+                DownloadRunArtifact(payloadRunId, downloadDir, "dshidmini-microsoft-drivers", required: false);
             }
 
             ReleaseStaging.ArrangeDownloadedArtifacts(downloadDir, artifactsDir);
             ReleaseMetadata metadata = ReleaseStaging.ReadMetadata(ReleaseStaging.MetadataPath(artifactsDir));
-            if (metadata.RunId != parsedRunId)
+            if (metadata.RunId != parsedRunId && metadata.RunId != sourceRunId)
             {
                 throw new InvalidOperationException(
-                    $"Downloaded metadata runId {metadata.RunId} does not match requested RunId {parsedRunId}.");
+                    $"Downloaded metadata runId {metadata.RunId} does not match requested RunId {parsedRunId} or source run {sourceRunId}.");
             }
 
+            bool stagedDrivers = ReleaseStaging.TryStageMicrosoftDrivers(downloadDir, artifactsDir);
             Log.Information("Staged release {Tag} / driver {DriverVersion} from run {RunId}",
                 metadata.Tag, metadata.DriverVersion, metadata.RunId);
             Log.Information("Partner CAB is in {Submission}", ReleaseStaging.SubmissionDirectory(artifactsDir));
-            Log.Information("Next: submit that CAB to Partner Center, then IngestMicrosoftPackage.");
+            if (stagedDrivers)
+            {
+                Log.Information("Microsoft-attested drivers are in {Drivers}",
+                    ReleaseStaging.DriversDirectory(artifactsDir));
+                Log.Information("Next: StageIgfilter, then ValidateSetupInputs / BuildSetup.");
+            }
+            else
+            {
+                Log.Information(
+                    "Microsoft-attested drivers are not on this run yet. Wait for Partner Center signing or ingest a downloaded Signed_*.zip.");
+            }
         });
 
     /// <summary>
@@ -189,17 +215,38 @@ partial class Build
     public Target TestReleasePipeline => _ => _
         .Executes(() =>
         {
-            AbsolutePath tests = RootDirectory / "build" / "ReleaseVersion.Tests.ps1";
             string shell = ToolPathResolver.TryGetEnvironmentExecutable("pwsh.exe")
                            ?? ToolPathResolver.TryGetEnvironmentExecutable("pwsh")
                            ?? TryGetPathExecutable("pwsh")
                            ?? "powershell";
-            ProcessTasks.StartProcess(shell, $"-NoProfile -File \"{tests}\"")
-                .AssertZeroExitCode();
+            foreach (string testFile in new[] { "ReleaseVersion.Tests.ps1", "PartnerSigning.Tests.ps1" })
+            {
+                AbsolutePath tests = RootDirectory / "build" / testFile;
+                ProcessTasks.StartProcess(shell, $"-NoProfile -File \"{tests}\"")
+                    .AssertZeroExitCode();
+            }
 
             ReleasePipelineTests.Run();
             Log.Information("Release pipeline tests passed");
         });
+
+    static void DownloadRunArtifact(long runId, string downloadDir, string pattern, bool required)
+    {
+            var process = ProcessTasks.StartProcess("gh",
+                $"run download {runId} --repo nefarius/DsHidMini --dir \"{downloadDir}\" --pattern \"{pattern}\"");
+            process.WaitForExit();
+            if (process.ExitCode == 0)
+            {
+                return;
+            }
+
+            if (required)
+            {
+                throw new InvalidOperationException($"Failed to download '{pattern}' from GitHub Actions run {runId}.");
+            }
+
+            Log.Information("Optional artifact {Pattern} is not on run {RunId}", pattern, runId);
+        }
 
     static string TryGetPathExecutable(string name)
     {

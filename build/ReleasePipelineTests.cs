@@ -10,6 +10,7 @@ static class ReleasePipelineTests
     {
         TestMetadataRoundTrip();
         TestArrangeDownloadedArtifacts();
+        TestStageMicrosoftDrivers();
         TestUniquePackageDetection();
         TestIngestFromDirectoryAndZip();
         TestIgfilterStaging();
@@ -61,6 +62,25 @@ static class ReleasePipelineTests
         metadata.Files.PartnerCab.Sha256 = new string('0', 64);
         ReleaseStaging.WriteMetadata(Path.Combine(download, "release-metadata", ReleaseStaging.MetadataFileName), metadata);
         AssertThrows(() => ReleaseStaging.ArrangeDownloadedArtifacts(download, artifacts), "hash mismatch");
+    }
+
+    static void TestStageMicrosoftDrivers()
+    {
+        using TempScope scope = new();
+        string download = Path.Combine(scope.Root, "download");
+        string artifacts = Path.Combine(scope.Root, "artifacts");
+        WriteDriverPackage(Path.Combine(download, "dshidmini-microsoft-drivers"));
+        AssertTrue(ReleaseStaging.TryStageMicrosoftDrivers(download, artifacts), "drivers staged");
+        AssertTrue(File.Exists(Path.Combine(artifacts, "drivers", "dshidmini.inf")), "inf staged");
+        AssertTrue(File.Exists(Path.Combine(artifacts, "drivers", "x64", "dshidmini.dll")), "x64 staged");
+        AssertTrue(!ReleaseStaging.TryStageMicrosoftDrivers(Path.Combine(scope.Root, "empty"), artifacts), "missing drivers");
+
+        string badDownload = Path.Combine(scope.Root, "bad-download");
+        Directory.CreateDirectory(Path.Combine(badDownload, "dshidmini-microsoft-drivers"));
+        File.WriteAllText(Path.Combine(badDownload, "dshidmini-microsoft-drivers", "dshidmini.inf"), "inf");
+        AssertThrows(() => ReleaseStaging.TryStageMicrosoftDrivers(badDownload, artifacts), "invalid source");
+        AssertTrue(File.Exists(Path.Combine(artifacts, "drivers", "dshidmini.inf")), "previous drivers kept");
+        AssertTrue(File.Exists(Path.Combine(artifacts, "drivers", "x64", "dshidmini.dll")), "previous x64 kept");
     }
 
     static void TestUniquePackageDetection()
