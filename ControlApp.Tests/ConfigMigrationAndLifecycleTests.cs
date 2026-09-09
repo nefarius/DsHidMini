@@ -1,4 +1,6 @@
 using System.IO;
+using System.Security.AccessControl;
+using System.Security.Principal;
 
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig;
@@ -159,6 +161,52 @@ public class ConfigMigrationAndLifecycleTests : IDisposable
     }
 
     [Fact]
+    public void UserDataSave_WhenDeleteIsDenied_OverwritesExistingFile()
+    {
+        DshmConfigLocations locations = new(UserDir, DriverDir);
+        DshmConfigManagerUserData userData = DshmConfigManagerUserData.Load(locations);
+        userData.SchemaVersion = DshmConfigManagerUserData.CurrentSchemaVersion;
+        userData.AutoRestartOnHidModeMismatch = true;
+        userData.Save(locations);
+
+        userData.AutoRestartOnHidModeMismatch = false;
+        using (DenyFileDelete(locations.UserDataFilePath))
+        {
+            userData.Save(locations);
+        }
+
+        DshmConfigManagerUserData reloaded = DshmConfigManagerUserData.Load(locations);
+        Assert.False(reloaded.AutoRestartOnHidModeMismatch);
+        Assert.False(File.Exists(locations.UserDataFilePath + ".tmp"));
+    }
+
+    [Fact]
+    public void SaveChangesAndUpdate_WhenUserDataWriteFails_RestoresMemoryAndReportsFailure()
+    {
+        DshmConfigLocations locations = new(UserDir, DriverDir);
+        DshmConfigManagerUserData userData = DshmConfigManagerUserData.Load(locations);
+        userData.SchemaVersion = DshmConfigManagerUserData.CurrentSchemaVersion;
+        userData.AutoRestartOnHidModeMismatch = true;
+        userData.Save(locations);
+        string original = File.ReadAllText(locations.UserDataFilePath);
+
+        DshmConfigManager manager = new(userData, locations);
+        manager.AutoRestartOnHidModeMismatch = false;
+
+        File.SetAttributes(locations.UserDataFilePath, FileAttributes.ReadOnly);
+        try
+        {
+            Assert.False(manager.SaveChangesAndUpdateDsHidMiniConfigFile());
+            Assert.True(manager.AutoRestartOnHidModeMismatch);
+            Assert.Equal(original, File.ReadAllText(locations.UserDataFilePath));
+        }
+        finally
+        {
+            File.SetAttributes(locations.UserDataFilePath, FileAttributes.Normal);
+        }
+    }
+
+    [Fact]
     public void UserData_CorruptFile_IsBackedUp()
     {
         string userFile = Path.Combine(UserDir, "DshmUserData.json");
@@ -173,6 +221,38 @@ public class ConfigMigrationAndLifecycleTests : IDisposable
 
     private DshmConfigManager CreateManager() =>
         new(new DshmConfigLocations(UserDir, DriverDir));
+
+    private static RestoreFileSecurity DenyFileDelete(string path)
+    {
+        FileInfo info = new(path);
+        FileSecurity original = info.GetAccessControl();
+        FileSecurity modified = info.GetAccessControl();
+        SecurityIdentifier user = WindowsIdentity.GetCurrent().User
+                                  ?? throw new InvalidOperationException("Current Windows user SID is unavailable.");
+        modified.AddAccessRule(new FileSystemAccessRule(
+            user,
+            FileSystemRights.Delete,
+            AccessControlType.Deny));
+        info.SetAccessControl(modified);
+        return new RestoreFileSecurity(info, original);
+    }
+
+    private sealed class RestoreFileSecurity : IDisposable
+    {
+        private readonly FileInfo _info;
+        private readonly FileSecurity _original;
+
+        public RestoreFileSecurity(FileInfo info, FileSecurity original)
+        {
+            _info = info;
+            _original = original;
+        }
+
+        public void Dispose()
+        {
+            _info.SetAccessControl(_original);
+        }
+    }
 }
 
 public class UserDataLocationMigrationTests : IDisposable

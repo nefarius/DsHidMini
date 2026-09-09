@@ -137,9 +137,21 @@ public class DshmConfigManager
     public bool SaveChangesAndUpdateDsHidMiniConfigFile()
     {
         string userDataPath = _locations.UserDataFilePath;
-        string? previousUserJson = File.Exists(userDataPath) ? File.ReadAllText(userDataPath) : null;
+        string? previousUserJson = null;
+        try
+        {
+            previousUserJson = File.Exists(userDataPath) ? File.ReadAllText(userDataPath) : null;
+            _userData.Save(_locations);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Log.Logger.Error(ex,
+                "Failed to persist ControlApp user data to {UserDataPath}.",
+                userDataPath);
+            RestoreUserDataMemory(previousUserJson);
+            return false;
+        }
 
-        _userData.Save(_locations);
         bool updated = ApplySettings();
         if (!updated)
         {
