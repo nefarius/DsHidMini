@@ -295,7 +295,7 @@ jobs:
         run: makecab.exe /f .\DsHidMini_${{ matrix.platform }}.ddf
 
       - name: 'Upload artifacts'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dshidmini-${{ matrix.platform }}
           if-no-files-found: error
@@ -477,7 +477,7 @@ jobs:
           }
 
       - name: 'Upload ControlApp'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: control-app
           if-no-files-found: error
@@ -660,14 +660,14 @@ jobs:
           Write-Output $json
 
       - name: 'Upload partner submission CAB'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dshidmini-partner-submission
           if-no-files-found: error
           path: ${{ env.PARTNER_CAB }}
 
       - name: 'Upload release metadata'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-metadata
           if-no-files-found: error
