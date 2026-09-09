@@ -12,6 +12,10 @@ inputs:
   github-token:
     description: 'Token with actions:read permission'
     required: true
+  run-id:
+    description: 'Workflow run that owns the artifact. Defaults to the current run.'
+    required: false
+    default: ''
 
 runs:
   using: 'composite'
@@ -25,7 +29,7 @@ runs:
         path: ${{ inputs.path }}
         github-token: ${{ inputs.github-token }}
         repository: ${{ github.repository }}
-        run-id: ${{ github.run_id }}
+        run-id: ${{ inputs.run-id != '' && inputs.run-id || github.run_id }}
 
     - name: 'Wait before attempt 2'
       if: steps.attempt-1.outcome == 'failure'
@@ -42,7 +46,7 @@ runs:
         path: ${{ inputs.path }}
         github-token: ${{ inputs.github-token }}
         repository: ${{ github.repository }}
-        run-id: ${{ github.run_id }}
+        run-id: ${{ inputs.run-id != '' && inputs.run-id || github.run_id }}
 
     - name: 'Wait before attempt 3'
       if: steps.attempt-2.outcome == 'failure'
@@ -57,4 +61,4 @@ runs:
         path: ${{ inputs.path }}
         github-token: ${{ inputs.github-token }}
         repository: ${{ github.repository }}
-        run-id: ${{ github.run_id }}
+        run-id: ${{ inputs.run-id != '' && inputs.run-id || github.run_id }}

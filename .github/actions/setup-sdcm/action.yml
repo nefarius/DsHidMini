@@ -1,0 +1,19 @@
+name: 'Setup SDCM'
+description: 'Install .NET 10 and pin Nefarius.Tools.SDCM for Partner Center automation'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Setup .NET'
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: 'Install SDCM'
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Stop'
+        dotnet tool install -g Nefarius.Tools.SDCM --version 1.0.0-pre003
+        $tools = Join-Path $env:USERPROFILE '.dotnet\tools'
+        echo $tools >> $env:GITHUB_PATH
+        Write-Output "Installed Nefarius.Tools.SDCM 1.0.0-pre003"

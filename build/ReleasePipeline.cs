@@ -160,6 +160,59 @@ static class ReleaseStaging
         }
     }
 
+    public static bool TryStageMicrosoftDrivers(string downloadDir, string artifactsRoot)
+    {
+        IReadOnlyList<string> packages = FindStagedMicrosoftDriverPackages(downloadDir);
+        if (packages.Count == 0)
+        {
+            return false;
+        }
+
+        if (packages.Count > 1)
+        {
+            throw new InvalidOperationException(
+                "Multiple dshidmini driver packages were found; refusing to guess. Packages:" +
+                Environment.NewLine + string.Join(Environment.NewLine, packages));
+        }
+
+        string destination = DriversDirectory(artifactsRoot);
+        if (Directory.Exists(destination))
+        {
+            Directory.Delete(destination, recursive: true);
+        }
+
+        CopyDirectory(packages[0], destination);
+        RequireDriverLayout(destination);
+        return true;
+    }
+
+    static IReadOnlyList<string> FindStagedMicrosoftDriverPackages(string root)
+    {
+        if (!Directory.Exists(root))
+        {
+            return [];
+        }
+
+        string preferred = Path.Combine(root, "dshidmini-microsoft-drivers");
+        if (File.Exists(Path.Combine(preferred, "dshidmini.inf")))
+        {
+            return [Path.GetFullPath(preferred)];
+        }
+
+        IReadOnlyList<string> named = FindDriverPackages(root);
+        if (named.Count > 0)
+        {
+            return named;
+        }
+
+        return Directory.GetFiles(root, "dshidmini.inf", SearchOption.AllDirectories)
+            .Select(Path.GetDirectoryName)
+            .Where(directory => !string.IsNullOrWhiteSpace(directory))
+            .Select(Path.GetFullPath)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
     public static IReadOnlyList<string> FindDriverPackages(string root)
     {
         if (!Directory.Exists(root))
