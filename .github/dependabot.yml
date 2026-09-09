@@ -1,11 +1,34 @@
 version: 2
 
 updates:
-  - package-ecosystem: "nuget"
-    directory: "/ControlApp"
+  - package-ecosystem: nuget
+    directories:
+      - /ControlApp
+      - /ControlApp.Tests
+      - /SDK/Nefarius.DsHidMini.IPC
+      - /ipctest
+      - /build
+      - /setup
     schedule:
-      interval: "weekly"
-  - package-ecosystem: "nuget"
-    directory: "/SDK"
+      interval: weekly
+    groups:
+      nuget-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directories:
+      - /
+      - /.github/actions/*
     schedule:
-      interval: "weekly"
+      interval: weekly
+    groups:
+      github-actions-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
