@@ -13,6 +13,7 @@ updates:
       interval: weekly
     groups:
       nuget-minor-and-patch:
+        group-by: dependency-name
         patterns:
           - "*"
         update-types:
