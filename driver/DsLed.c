@@ -413,13 +413,13 @@ DsLed_AdvanceChargingAnimation(
 		}
 
 		//
-		// Navigation has one LED; charging is a slow flash, not the
-		// four-LED USB chase used on DualShock 3 (issue #48).
+		// Navigation charging is a self-sustaining slow flash applied once
+		// on status change. Re-sending here would restart the pad's flash
+		// cycle. USB input no longer ticks this function for Navigation;
+		// keep the branch as a defensive no-send.
 		// 
 		if (Context->DeviceType == DsDeviceTypeNavigation)
 		{
-			DsLedApplyBatteryIndicatorLocked(Context, FALSE);
-			(void)DSHM_SendOutputReportUnlocked(Context, Ds3OutputReportSourceDriverLowPriority);
 			break;
 		}
 

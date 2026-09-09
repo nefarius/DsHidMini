@@ -870,8 +870,14 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	// not actively drawing charge current (issue #365), so any change away
 	// from Charging needs the same LED refresh as a Charged transition
 	// gets.
+	//
+	// Navigation has one LED and uses a self-sustaining slow flash. The
+	// one-second chase tick would re-send the same report and restart the
+	// pad's flash cycle into a permanent on-phase. Let it fall through to
+	// the on-change refresh instead.
 	// 
-	if (battery == DsBatteryStatusCharging)
+	if (battery == DsBatteryStatusCharging &&
+		pDevCtx->DeviceType != DsDeviceTypeNavigation)
 	{
 		if (pDevCtx->Connection.Usb.ChargingCycleTimestamp.QuadPart == 0)
 		{
