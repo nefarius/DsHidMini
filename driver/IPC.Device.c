@@ -201,15 +201,19 @@ DSHM_EvtDispatchDeviceMessage(
 
 			//
 			// Volatile only: do not persist to JSON. A config hot-reload
-			// restores AlternativeMode.IsEnabled from disk.
+			// restores AlternativeMode.IsEnabled from disk. Hold the output
+			// lock so this cannot tear against DS3_PROCESS_RUMBLE_STRENGTH.
 			// 
+			WdfWaitLockAcquire(DeviceContext->OutputReport.Lock, NULL);
 			DeviceContext->RumbleControlState.AltMode.IsEnabled = request->IsEnabled ? TRUE : FALSE;
+			const BOOLEAN isEnabled = DeviceContext->RumbleControlState.AltMode.IsEnabled;
+			WdfWaitLockRelease(DeviceContext->OutputReport.Lock);
 			applyStatus = STATUS_SUCCESS;
 
 			TraceVerbose(
 				TRACE_IPC,
 				"Alternate rumble mode is now %!BOOLEAN!",
-				DeviceContext->RumbleControlState.AltMode.IsEnabled
+				isEnabled
 			);
 		}
 
