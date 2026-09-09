@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 static class ReleaseStaging
 {
@@ -140,20 +141,22 @@ static class ReleaseStaging
         File.Copy(cab, cabDest, overwrite: true);
 
         ReleaseMetadata parsed = ReadMetadata(MetadataPath(artifactsRoot));
-        if (parsed.Files?.PartnerCab != null)
+        if (parsed.Files?.PartnerCab is not { } partnerCab)
         {
-            string actualHash = Sha256File(cabDest);
-            if (!string.Equals(actualHash, parsed.Files.PartnerCab.Sha256, StringComparison.OrdinalIgnoreCase))
-            {
-                throw new InvalidOperationException(
-                    $"Partner CAB hash mismatch. Metadata has {parsed.Files.PartnerCab.Sha256}, file is {actualHash}.");
-            }
+            throw new InvalidOperationException("Release metadata is missing files.partnerCab.");
+        }
 
-            if (!string.Equals(Path.GetFileName(cabDest), parsed.Files.PartnerCab.Name, StringComparison.OrdinalIgnoreCase))
-            {
-                throw new InvalidOperationException(
-                    $"Partner CAB name mismatch. Metadata has {parsed.Files.PartnerCab.Name}, file is {Path.GetFileName(cabDest)}.");
-            }
+        string actualHash = Sha256File(cabDest);
+        if (!string.Equals(actualHash, partnerCab.Sha256, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"Partner CAB hash mismatch. Metadata has {partnerCab.Sha256}, file is {actualHash}.");
+        }
+
+        if (!string.Equals(Path.GetFileName(cabDest), partnerCab.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"Partner CAB name mismatch. Metadata has {partnerCab.Name}, file is {Path.GetFileName(cabDest)}.");
         }
     }
 
@@ -217,11 +220,15 @@ static class ReleaseStaging
             };
             using Process process = Process.Start(info)
                                     ?? throw new InvalidOperationException("Failed to start expand.exe.");
+            Task<string> standardOutput = process.StandardOutput.ReadToEndAsync();
+            Task<string> standardError = process.StandardError.ReadToEndAsync();
             process.WaitForExit();
+            _ = standardOutput.GetAwaiter().GetResult();
+            string error = standardError.GetAwaiter().GetResult();
             if (process.ExitCode != 0)
             {
                 throw new InvalidOperationException(
-                    $"expand.exe failed ({process.ExitCode}) for {archivePath}: {process.StandardError.ReadToEnd()}");
+                    $"expand.exe failed ({process.ExitCode}) for {archivePath}: {error}");
             }
 
             return;
@@ -502,10 +509,36 @@ static class ReleaseStaging
 
     public static IReadOnlyList<string> ParseIssuedTo(string signToolOutput)
     {
-        return Regex.Matches(signToolOutput, @"Issued to:\s*(.+)")
-            .Select(match => match.Groups[1].Value.Trim())
-            .Where(value => !string.IsNullOrWhiteSpace(value))
-            .ToList();
+        if (string.IsNullOrWhiteSpace(signToolOutput))
+        {
+            return [];
+        }
+
+        List<string> subjects = [];
+        string[] sections = Regex.Split(signToolOutput, @"Signing Certificate Chain:\s*", RegexOptions.IgnoreCase);
+        for (int i = 1; i < sections.Length; i++)
+        {
+            string section = sections[i];
+            int timestampIndex = section.IndexOf("Timestamp Verified by:", StringComparison.OrdinalIgnoreCase);
+            if (timestampIndex >= 0)
+            {
+                section = section[..timestampIndex];
+            }
+
+            Match match = Regex.Match(section, @"Issued to:\s*(.+)");
+            if (!match.Success)
+            {
+                continue;
+            }
+
+            string value = match.Groups[1].Value.Trim();
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                subjects.Add(value);
+            }
+        }
+
+        return subjects;
     }
 
     public static void RequireDualDriverSigners(IReadOnlyList<string> issuedTo, string file)
@@ -638,6 +671,16 @@ sealed class ReleaseMetadata
         if (RunId <= 0)
         {
             throw new InvalidOperationException("Release metadata runId is missing.");
+        }
+
+        if (Files?.PartnerCab is not { } partnerCab)
+        {
+            throw new InvalidOperationException("Release metadata is missing files.partnerCab.");
+        }
+
+        if (string.IsNullOrWhiteSpace(partnerCab.Name) || string.IsNullOrWhiteSpace(partnerCab.Sha256))
+        {
+            throw new InvalidOperationException("Release metadata files.partnerCab must include name and sha256.");
         }
     }
 }

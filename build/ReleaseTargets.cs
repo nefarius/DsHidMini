@@ -15,6 +15,8 @@ partial class Build
 {
     AbsolutePath ReleaseDownloadDirectory => ResolvedArtifactsPath / "ci";
 
+    SetupInputReport _validatedSetupInputs;
+
     /// <summary>
     /// Downloads the tagged-run artifacts needed to continue a release: signed ControlApp,
     /// the EV-signed partner submission CAB, and release-metadata.json. Does not sign anything.
@@ -124,17 +126,17 @@ partial class Build
     public Target ValidateSetupInputs => _ => _
         .Executes(() =>
         {
-            SetupInputReport report = ReleaseStaging.ValidateSetupInputs(
+            _validatedSetupInputs = ReleaseStaging.ValidateSetupInputs(
                 ResolvedArtifactsPath,
                 SetupVersion,
                 requireSignatures: true,
                 verifyTool: CaptureSignTool);
 
             Log.Information("Setup inputs are valid for {SetupVersion} (driver {DriverVersion}, tag {Tag}, run {RunId})",
-                report.ResolvedSetupVersion,
-                report.DriverVersion,
-                report.Metadata.Tag,
-                report.Metadata.RunId);
+                _validatedSetupInputs.ResolvedSetupVersion,
+                _validatedSetupInputs.DriverVersion,
+                _validatedSetupInputs.Metadata.Tag,
+                _validatedSetupInputs.Metadata.RunId);
         });
 
     /// <summary>
@@ -145,11 +147,8 @@ partial class Build
         .DependsOn(ValidateSetupInputs)
         .Executes(() =>
         {
-            SetupInputReport report = ReleaseStaging.ValidateSetupInputs(
-                ResolvedArtifactsPath,
-                SetupVersion,
-                requireSignatures: true,
-                verifyTool: CaptureSignTool);
+            SetupInputReport report = _validatedSetupInputs
+                ?? throw new InvalidOperationException("Setup inputs were not validated.");
 
             string setupVersion = report.ResolvedSetupVersion;
             AbsolutePath setupProject = RootDirectory / "setup" / "DsHidMini.Installer.csproj";
@@ -193,6 +192,7 @@ partial class Build
             AbsolutePath tests = RootDirectory / "build" / "ReleaseVersion.Tests.ps1";
             string shell = ToolPathResolver.TryGetEnvironmentExecutable("pwsh.exe")
                            ?? ToolPathResolver.TryGetEnvironmentExecutable("pwsh")
+                           ?? TryGetPathExecutable("pwsh")
                            ?? "powershell";
             ProcessTasks.StartProcess(shell, $"-NoProfile -File \"{tests}\"")
                 .AssertZeroExitCode();
@@ -200,6 +200,18 @@ partial class Build
             ReleasePipelineTests.Run();
             Log.Information("Release pipeline tests passed");
         });
+
+    static string TryGetPathExecutable(string name)
+    {
+        try
+        {
+            return ToolPathResolver.GetPathExecutable(name);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
 
     string CaptureSignTool(string arguments)
     {

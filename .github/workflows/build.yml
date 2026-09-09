@@ -56,11 +56,13 @@ jobs:
       - name: 'Resolve driver and setup versions'
         id: resolve
         shell: pwsh
+        env:
+          RELEASE_REF: ${{ github.ref }}
         run: |
           $ErrorActionPreference = 'Stop'
           . ./build/ReleaseVersion.ps1
           $version = ConvertTo-DsHidMiniReleaseVersion `
-            -Ref '${{ github.ref }}' `
+            -Ref $env:RELEASE_REF `
             -RunNumber ${{ github.run_number }} `
             -BuildVersionOffset ([int]$env:BUILD_VERSION_OFFSET)
           Write-DsHidMiniReleaseVersionOutputs -Version $version -GitHubOutput $env:GITHUB_OUTPUT
@@ -390,7 +392,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: 'Sign ControlApp'
-        uses: nefarius/SignRelay@v1.0.0-pre010
+        uses: nefarius/SignRelay@7ba3699f7ad863d66d4d69cbf31828753d24d525
         with:
           server: ${{ env.SIGN_RELAY_SERVER }}
           token: ${{ env.SIGN_RELAY_CI_TOKEN }}
@@ -398,7 +400,7 @@ jobs:
           files: bin/ControlApp.exe
 
       - name: 'Sign XInput DLLs'
-        uses: nefarius/SignRelay@v1.0.0-pre010
+        uses: nefarius/SignRelay@7ba3699f7ad863d66d4d69cbf31828753d24d525
         with:
           server: ${{ env.SIGN_RELAY_SERVER }}
           token: ${{ env.SIGN_RELAY_CI_TOKEN }}
@@ -553,7 +555,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: 'Sign driver DLLs'
-        uses: nefarius/SignRelay@v1.0.0-pre010
+        uses: nefarius/SignRelay@7ba3699f7ad863d66d4d69cbf31828753d24d525
         with:
           server: ${{ env.SIGN_RELAY_SERVER }}
           token: ${{ env.SIGN_RELAY_CI_TOKEN }}
@@ -598,7 +600,7 @@ jobs:
           Write-Output "Created disk1\$cabName"
 
       - name: 'Sign partner CAB'
-        uses: nefarius/SignRelay@v1.0.0-pre010
+        uses: nefarius/SignRelay@7ba3699f7ad863d66d4d69cbf31828753d24d525
         with:
           server: ${{ env.SIGN_RELAY_SERVER }}
           token: ${{ env.SIGN_RELAY_CI_TOKEN }}

@@ -32,6 +32,12 @@ static class ReleasePipelineTests
         path = Path.Combine(scope.Root, "bad.json");
         ReleaseStaging.WriteMetadata(path, metadata);
         AssertThrows(() => ReleaseStaging.ReadMetadata(path), "four-part metadata tag");
+
+        metadata.Tag = "v3.6.0";
+        metadata.Files = null;
+        path = Path.Combine(scope.Root, "no-cab.json");
+        ReleaseStaging.WriteMetadata(path, metadata);
+        AssertThrows(() => ReleaseStaging.ReadMetadata(path), "missing partnerCab");
     }
 
     static void TestArrangeDownloadedArtifacts()
@@ -129,10 +135,25 @@ static class ReleasePipelineTests
     static void TestSignatureParser()
     {
         const string output = """
-            Issued to: Nefarius Software Solutions e.U.
-            Issued to: Microsoft Windows Hardware Compatibility Publisher
+            Signing Certificate Chain:
+                Issued to: Nefarius Software Solutions e.U.
+                Issued by: Intermediate CA
+                    Issued to: Intermediate CA
+                    Issued by: Root CA
+            The signature is timestamped: Thu Jan 01 00:00:00 2026
+            Timestamp Verified by:
+                Issued to: Timestamp Authority
+                Issued by: Timestamp Root
+            Signing Certificate Chain:
+                Issued to: Microsoft Windows Hardware Compatibility Publisher
+                Issued by: Microsoft Windows Third Party Component CA 2014
+                    Issued to: Microsoft Windows Third Party Component CA 2014
+                    Issued by: Microsoft Root Certificate Authority 2010
             """;
         var issued = ReleaseStaging.ParseIssuedTo(output);
+        AssertEqual(string.Join("|", issued),
+            "Nefarius Software Solutions e.U.|Microsoft Windows Hardware Compatibility Publisher",
+            nameof(TestSignatureParser));
         ReleaseStaging.RequireDualDriverSigners(issued, "dshidmini.dll");
         ReleaseStaging.RequirePublisherSigner(issued, "ControlApp.exe");
 
