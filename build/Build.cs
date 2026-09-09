@@ -15,7 +15,7 @@ using Nuke.Common.Tooling;
 
 using Serilog;
 
-class Build : NukeBuild
+partial class Build : NukeBuild
 {
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
@@ -26,17 +26,20 @@ class Build : NukeBuild
     [Parameter("Target platform for BuildDmf on CI (x64, ARM64 or x86). Not needed for local builds.")]
     readonly string TargetPlatform = "";
 
-    [Parameter("GitHub Actions run ID for DownloadCiArtifacts artifact download")]
-    readonly string BuildVersion = "";
+    [Parameter("GitHub Actions run ID used by DownloadCiArtifacts")]
+    readonly string RunId = "";
 
-    [Parameter("Output path for DownloadCiArtifacts artifacts. Default: ./artifacts")]
+    [Parameter("Output path for release staging. Default: ./artifacts")]
     readonly string ArtifactsPath = "./artifacts";
 
-    [Parameter("Skip signing in DownloadCiArtifacts")]
-    readonly bool NoSigning;
-
-    [Parameter("Setup version for BuildSetup (e.g. 3.0.0)")]
+    [Parameter("Three-part setup version for BuildSetup (e.g. 3.6.0). Defaults to release-metadata.json when omitted.")]
     readonly string SetupVersion = "";
+
+    [Parameter("Path to the Microsoft-attested driver package (zip, cab, or extracted directory)")]
+    readonly string MicrosoftPackagePath = "";
+
+    [Parameter("Path to the maintainer-supplied igfilter packages (directory containing nssmkig_x64 and nssmkig_ARM64)")]
+    readonly string IgfilterPath = "";
 
     [Parameter("Path to signtool.exe. When not set, Nefarius.Tools.WDKWhere is used to run signtool.")]
     readonly string SignToolPath = "";
@@ -214,8 +217,8 @@ class Build : NukeBuild
 
                     settings = settings
                         .SetTargetPlatform((MSBuildTargetPlatform)TargetPlatform)
-                        // Partner Portal submissions require an unsigned driver DLL. Force this
-                        // at the MSBuild command line so CI never inherits a local test signature.
+                        // Compile produces unsigned driver DLLs. The partner-cab job EV-signs
+                        // those binaries immediately before packing the submission CAB.
                         .SetProperty("SignMode", "Off");
                 }
 
@@ -285,120 +288,6 @@ class Build : NukeBuild
             });
 
             Log.Information("ControlApp published to {PublishOutput}", publishOutput);
-        });
-
-    /// <summary>
-    /// Download GitHub Actions build artifacts (ARM64, x64, x86) for a tagged run and optionally sign CABs, EXEs,
-    /// and driver/XInput DLLs. Requires BuildVersion (a GitHub Actions run ID) and the "gh" CLI to be authenticated
-    /// (run "gh auth login" once). Use --NoSigning to skip signing.
-    /// </summary>
-    [UsedImplicitly]
-    public Target DownloadCiArtifacts => _ => _
-        .Executes(() =>
-        {
-            if (string.IsNullOrWhiteSpace(BuildVersion))
-            {
-                throw new InvalidOperationException(
-                    "DownloadCiArtifacts requires BuildVersion (a GitHub Actions run ID, see the \"Build\" workflow run URL).");
-            }
-
-            string artifactsDir = ResolvedArtifactsPath;
-            Directory.CreateDirectory(artifactsDir);
-
-            ProcessTasks.StartProcess("gh",
-                    $"run download {BuildVersion} --repo nefarius/DsHidMini --dir \"{artifactsDir}\" --pattern \"dshidmini-*\"")
-                .AssertZeroExitCode();
-
-            if (!NoSigning)
-            {
-                string[] patterns = ["*.cab", "*.exe", "dshidmini.dll", "XInput1_3.dll"];
-                List<string> existingFiles = patterns
-                    .SelectMany(pattern => Directory.GetFiles(artifactsDir, pattern, SearchOption.AllDirectories))
-                    .ToList();
-
-                if (existingFiles.Count > 0)
-                {
-                    InvokeSignTool(
-                        $"sign /v /n \"{SignCertName}\" /tr {SignTimestampUrl} /fd sha256 /td sha256 {string.Join(" ", existingFiles.Select(f => $"\"{f}\""))}");
-                }
-                else
-                {
-                    Log.Warning("No files found to sign under {ArtifactsDir}", artifactsDir);
-                }
-            }
-
-            Log.Information("Helper job names for sign portal:");
-            Log.Information("DsHidMini ARM64 v{BuildVersion} {Date:dd.MM.yyyy}", BuildVersion, DateTime.Now);
-            Log.Information("DsHidMini x64 v{BuildVersion} {Date:dd.MM.yyyy}", BuildVersion, DateTime.Now);
-        });
-
-    /// <summary>
-    /// Sign driver DLLs (append signature) under artifacts/drivers.
-    /// </summary>
-    [UsedImplicitly]
-    public Target SignProductionBinaries => _ => _
-        .Executes(() =>
-        {
-            string artifactsDir = ResolvedArtifactsPath;
-            string[] patterns =
-            [
-                Path.Combine(artifactsDir, "drivers", "ARM64", "*.dll"),
-                Path.Combine(artifactsDir, "drivers", "x64", "*.dll")
-            ];
-            List<string> files = new();
-            foreach (string pattern in patterns)
-            {
-                string dir = Path.GetDirectoryName(pattern)!;
-                if (Directory.Exists(dir))
-                {
-                    files.AddRange(Directory.GetFiles(dir, Path.GetFileName(pattern)));
-                }
-            }
-
-            if (files.Count == 0)
-            {
-                Log.Warning("No driver DLLs found under {ArtifactsPath}", artifactsDir);
-                return;
-            }
-
-            InvokeSignTool(
-                $"sign /v /as /n \"{SignCertName}\" /tr {SignTimestampUrl} /fd sha256 /td sha256 {string.Join(" ", files.Select(f => $"\"{f}\""))}");
-        });
-
-    /// <summary>
-    /// Build setup MSI and sign it. Requires SetupVersion (e.g. 3.0.0).
-    /// </summary>
-    [UsedImplicitly]
-    public Target BuildSetup => _ => _
-        .Executes(() =>
-        {
-            if (string.IsNullOrWhiteSpace(SetupVersion))
-            {
-                throw new InvalidOperationException("BuildSetup requires SetupVersion.");
-            }
-
-            AbsolutePath setupProject = RootDirectory / "setup" / "DsHidMini.Installer.csproj";
-            if (!File.Exists(setupProject))
-            {
-                throw new InvalidOperationException($"Setup project not found at {setupProject}");
-            }
-
-            DotNetTasks.DotNetBuild(s => s
-                .SetProjectFile(setupProject)
-                .SetConfiguration(Configuration.Release)
-                .SetProperty("SetupVersion", SetupVersion));
-
-            string msiName = $"Nefarius_DsHidMini_Drivers_x64_arm64_v{SetupVersion}.msi";
-            AbsolutePath msiInSetup = RootDirectory / "setup" / msiName;
-            AbsolutePath msiInBin = RootDirectory / "setup" / "bin" / "Release" / "net48" / msiName;
-            AbsolutePath msiPath = File.Exists(msiInSetup) ? msiInSetup : msiInBin;
-            if (!File.Exists(msiPath))
-            {
-                throw new InvalidOperationException($"MSI not found: {msiInSetup} or {msiInBin}");
-            }
-
-            InvokeSignTool(
-                $"sign /v /n \"{SignCertName}\" /tr {SignTimestampUrl} /fd sha256 /td sha256 \"{msiPath}\"");
         });
 
     IEnumerable<(Configuration config, MSBuildTargetPlatform platform)> XInputBridgeBuildCombinations()

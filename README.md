@@ -49,7 +49,7 @@ See the [issue tracker](https://github.com/nefarius/DsHidMini/issues) for known 
 |------|--------------|
 | [driver/](driver/README.md) | UMDF driver: HID modes, USB/Bth, config, build (WDK, DMF) |
 | [XInputBridge/](XInputBridge/README.md) | XInput proxy DLL (`XInput1_3.dll`), extended API for DS3 pressure data |
-| [setup/](setup/README.md) | MSI installer (WixSharp), release packaging |
+| [setup/](setup/README.md) | MSI installer (WixSharp). Release procedure: [docs/RELEASE.md](docs/RELEASE.md) |
 | [ControlApp/](ControlApp/) | Configuration app (WPF) |
 | [DSHMC/](DSHMC/) | **Deprecated** legacy control utility. Use [ControlApp/](ControlApp/) |
 | [docs/](docs/README.md) | R&D notes; official docs at [docs.nefarius.at](https://docs.nefarius.at/projects/DsHidMini/) |
@@ -58,7 +58,7 @@ For **how the driver works** (UMDF, DMF, config) and **build prerequisites** (Vi
 
 ### Building
 
-From the repo root, run `build.cmd` or open `dshidmini.sln` in Visual Studio. Driver and bridge build steps are in [driver/README.md](driver/README.md) and [XInputBridge/README.md](XInputBridge/README.md).
+From the repo root, run `build.cmd` or open `dshidmini.sln` in Visual Studio. Driver and bridge build steps are in [driver/README.md](driver/README.md) and [XInputBridge/README.md](XInputBridge/README.md). Tagged production releases (Partner Center CAB, attested drivers, MSI) are documented in [docs/RELEASE.md](docs/RELEASE.md).
 
 ## Licensing
 

@@ -1,44 +1,8 @@
 # DsHidMini setup
 
-This project generates an MSI package containing x64 and ARM64 driver editions using [WixSharp](https://github.com/oleg-shilo/wixsharp).
+WixSharp MSI that installs the dual-architecture DsHidMini driver, `igfilter`, ControlApp, nefcon, and the vicius-based updater.
 
-## Create a production release
-
-Commands/scripts are to be run from solution root directory.
-
-- Tag a release and let it build on CI (the "Build" GitHub Actions workflow)
-- Authenticate the GitHub CLI once with `gh auth login` (needs `repo` scope)
-- Use  
-  ```PowerShell
-  nuke download-ci-artifacts -buildversion "<workflow-run-id>"
-  ```  
-  to download the tagged release (the run ID is the numeric ID in the workflow run URL)
-- Submit the partner CAB (`dshidmini-partner-submission` artifact) to MS Partner Portal for signing. Tick both x64 and ARM64; the CAB is one dual-arch package
-- Extract the signed package. Copy the contents of the `dshidmini` folder (not the folder itself) into `.\artifacts\drivers` so the layout is:
-
-  ```text
-  artifacts/drivers/
-    dshidmini.inf
-    dshidmini.cat
-    x64/dshidmini.dll
-    ARM64/dshidmini.dll
-  ```
-
-  The catalog is bound to the dual-arch INF. Do not split it back into per-arch INFs.
-- Run  
-  ```PowerShell
-  nuke sign-production-binaries
-  ```  
-  to add EV signatures to binaries
-- Run  
-  ```PowerShell
-  nuke build-setup -setupversion "3.6.0"
-  ```   
-  to build and sign an MSI with the given version
-- Make public GitHub release
-  - Create tag for setup `setup-v3.6.0`
-- ???
-- Profit!
+Production releases are **not** built from this folder in Visual Studio. Follow [docs/RELEASE.md](../docs/RELEASE.md): tag `vMAJOR.MINOR.PATCH`, submit the partner CAB to Microsoft, ingest the signed package, then run `.\build.cmd BuildSetup`.
 
 ## Components
 
@@ -48,7 +12,21 @@ Software auto-updater. Custom build of [vicius](https://github.com/nefarius/vici
 
 ### `nefcon\...`
 
-[Driver installation helper utility](https://github.com/nefarius/nefcon).
+[Driver installation helper](https://github.com/nefarius/nefcon) used to install `igfilter`.
+
+## Staged inputs
+
+`BuildSetup` / `InstallScript` require this layout (created by the release targets, gitignored):
+
+```text
+artifacts/drivers/{dshidmini.inf,dshidmini.cat,x64/dshidmini.dll,ARM64/dshidmini.dll}
+artifacts/igfilter/nssmkig_{x64,ARM64}/{igfilter.inf,nssmkig.sys}
+artifacts/bin/ControlApp.exe
+```
+
+`igfilter` is a maintainer-supplied external payload. It is not produced by this repository.
+
+Building `DsHidMini.Installer.csproj` without `GenerateMsi=true` only compiles the generator. MSI emission is gated on `.\build.cmd BuildSetup`.
 
 ## 3rd party credits
 

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -15,7 +15,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <SetupVersion Condition="'$(SetupVersion)' == ''">3.0.0</SetupVersion>
+    <SetupVersion Condition="'$(SetupVersion)' == ''"></SetupVersion>
+    <GenerateMsi Condition="'$(GenerateMsi)' == ''">false</GenerateMsi>
   </PropertyGroup>
 
   <Target Name="GenerateBuildVariableFile" BeforeTargets="BeforeBuild">
@@ -51,7 +52,8 @@
         <PackageReference Include="WixSharp-wix4.WPF" Version="2.4.0.1" />
     </ItemGroup>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(GenerateMsi)' == 'true'">
+    <Error Condition="'$(SetupVersion)' == ''" Text="SetupVersion is required when GenerateMsi=true (use .\build.cmd BuildSetup --setup-version X.Y.Z)." />
     <Exec Command="cd .\&#xD;&#xA;set ide=true&#xD;&#xA;&quot;$(TargetPath)&quot;" />
   </Target>
 </Project>
