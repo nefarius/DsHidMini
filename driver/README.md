@@ -37,10 +37,9 @@ Designed for **Windows 10** version 1809 or newer (**x64**, **ARM64**). Dependen
 
 ### Prerequisites
 
-- [Visual Studio 2022](https://learn.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk#download-icon-step-1-install-visual-studio-2022)
-- [Windows 11 22H2 SDK](https://learn.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk#download-icon-step-2-install-windows-11-version-22h2-sdk)
-- [Windows 11 22H2 WDK](https://learn.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk#download-icon-step-3-install-windows-11-version-22h2-wdk)
-- [Driver Module Framework (DMF)](https://github.com/microsoft/DMF) **v1.1.83** or newer, cloned as a sibling of the DsHidMini repo and built (e.g. build `DmfU` for Release/Debug, x64 and Win32 as needed)
+- Visual Studio 2026 (MSBuild 18). CI uses the `windows-2025-vs2026` image
+- Windows SDK and WDK **10.0.28000** (the pair installed by the Build workflow)
+- [Driver Module Framework (DMF)](https://github.com/microsoft/DMF) via the `DMF/` submodule (`nefarius` branch). `.\build.cmd Compile` builds `DmfU` automatically
 
 ### Building
 
@@ -48,7 +47,7 @@ Open the solution (e.g. `dshidmini.sln` in the repo root) in Visual Studio and b
 
 ## Installation
 
-Pre-built binaries and installation steps are on the [releases page](https://github.com/nefarius/DsHidMini/releases) and in the [main README](../../README.md#installation). Do not install a self-built driver unless you are testing or developing; use signed builds from the project.
+Pre-built binaries and installation steps are on the [releases page](https://github.com/nefarius/DsHidMini/releases) and in the [main README](../../README.md#installation). Do not install a self-built driver unless you are testing or developing; use signed builds from the project. Maintainers producing those builds: [docs/RELEASE.md](../docs/RELEASE.md).
 
 ## Documentation
 

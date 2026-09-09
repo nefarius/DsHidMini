@@ -46,7 +46,15 @@ internal class InstallScript
     /// </remarks>
     private static void Main()
     {
+        RequireStagedInputs();
+
         // grab main app version
+        if (string.IsNullOrWhiteSpace(BuildVariables.SetupVersion))
+        {
+            throw new InvalidOperationException(
+                "SetupVersion is empty. Build the MSI with .\\build.cmd BuildSetup --setup-version X.Y.Z.");
+        }
+
         Version version = Version.Parse(BuildVariables.SetupVersion);
         const string driverPath = @"..\artifacts\drivers\x64\dshidmini.dll";
         Version driverVersion = Version.Parse(FileVersionInfo.GetVersionInfo(driverPath).FileVersion);
@@ -208,6 +216,39 @@ internal class InstallScript
         project.ResolveWildCards();
 
         project.BuildMsi();
+    }
+
+    /// <summary>
+    /// Fails with an actionable list when the release-staging contract is incomplete.
+    /// </summary>
+    private static void RequireStagedInputs()
+    {
+        string[] required =
+        [
+            @"..\artifacts\drivers\dshidmini.inf",
+            @"..\artifacts\drivers\dshidmini.cat",
+            @"..\artifacts\drivers\x64\dshidmini.dll",
+            @"..\artifacts\drivers\ARM64\dshidmini.dll",
+            @"..\artifacts\igfilter\nssmkig_x64\igfilter.inf",
+            @"..\artifacts\igfilter\nssmkig_x64\nssmkig.sys",
+            @"..\artifacts\igfilter\nssmkig_ARM64\igfilter.inf",
+            @"..\artifacts\igfilter\nssmkig_ARM64\nssmkig.sys",
+            @"..\artifacts\bin\ControlApp.exe",
+            @"nefcon\x64\nefconc.exe",
+            @"nefcon\ARM64\nefconc.exe",
+            @"nefarius_DsHidMini_Updater.exe"
+        ];
+
+        string[] missing = required.Where(path => !System.IO.File.Exists(path)).ToArray();
+        if (missing.Length == 0)
+        {
+            return;
+        }
+
+        throw new InvalidOperationException(
+            "MSI inputs are missing. Stage a tagged release with DownloadCiArtifacts, " +
+            "IngestMicrosoftPackage, and StageIgfilter before BuildSetup." + Environment.NewLine +
+            string.Join(Environment.NewLine, missing.Select(path => "Missing: " + path)));
     }
 
     /// <summary>

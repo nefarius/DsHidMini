@@ -15,7 +15,6 @@ on:
   pull_request:
     branches:
       - master
-  workflow_dispatch:
 
 concurrency:
   group: build-${{ github.ref }}
@@ -35,13 +34,49 @@ env:
   VCPKG_BINARY_SOURCES: 'clear'
 
 jobs:
+  version:
+    name: 'Resolve version'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      is-release: ${{ steps.resolve.outputs.is-release }}
+      tag: ${{ steps.resolve.outputs.tag }}
+      setup-version: ${{ steps.resolve.outputs.setup-version }}
+      driver-version: ${{ steps.resolve.outputs.driver-version }}
+      revision: ${{ steps.resolve.outputs.revision }}
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            build
+
+      - name: 'Resolve driver and setup versions'
+        id: resolve
+        shell: pwsh
+        env:
+          RELEASE_REF: ${{ github.ref }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . ./build/ReleaseVersion.ps1
+          $version = ConvertTo-DsHidMiniReleaseVersion `
+            -Ref $env:RELEASE_REF `
+            -RunNumber ${{ github.run_number }} `
+            -BuildVersionOffset ([int]$env:BUILD_VERSION_OFFSET)
+          Write-DsHidMiniReleaseVersionOutputs -Version $version -GitHubOutput $env:GITHUB_OUTPUT
+          Write-Output "is-release=$($version.IsRelease) tag=$($version.Tag) setup=$($version.SetupVersion) driver=$($version.DriverVersion)"
+
   build:
     name: 'Platform: ${{ matrix.platform }}'
+    needs: version
     # VS 2026 / MSBuild 18 is required by .NET SDK 10.0.2xx+ (windows-2022 is MSBuild 17.14).
     runs-on: windows-2025-vs2026
     permissions:
       contents: read
     env:
+      BUILD_VERSION: ${{ needs.version.outputs.driver-version }}
       # Secrets can't be referenced directly in `if:` conditions, only in `env:`/`with:`,
       # so promote it here and check env.VCPKG_NUGET_TOKEN in the step below instead.
       VCPKG_NUGET_TOKEN: ${{ secrets.VCPKG_NUGET_TOKEN }}
@@ -50,7 +85,7 @@ jobs:
       matrix:
         platform: [x64, ARM64, x86]
     outputs:
-      build-version: ${{ steps.version.outputs.build-version }}
+      build-version: ${{ needs.version.outputs.driver-version }}
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v4
@@ -144,15 +179,6 @@ jobs:
             throw 'Kit installers finished but UMDF/km headers were not found.'
           }
           Write-Output "WDK installed ($($present.Name))."
-
-      - name: 'Compute build version'
-        id: version
-        shell: pwsh
-        run: |
-          $buildVersion = "3.6.$([int]$env:BUILD_VERSION_OFFSET + ${{ github.run_number }}).0"
-          echo "BUILD_VERSION=$buildVersion" >> $env:GITHUB_ENV
-          echo "build-version=$buildVersion" >> $env:GITHUB_OUTPUT
-          Write-Output "Building version $buildVersion"
 
       - name: 'Bootstrap vcpkg'
         shell: cmd
@@ -254,6 +280,11 @@ jobs:
         shell: cmd
         run: .\build.cmd TestConfigParser --target-platform x64
 
+      - name: 'Test release pipeline'
+        if: matrix.platform == 'x64'
+        shell: cmd
+        run: .\build.cmd TestReleasePipeline
+
       - name: 'Build'
         shell: cmd
         run: .\build.cmd Compile ${{ matrix.platform == 'x64' && 'PublishControlApp' || '' }} --target-platform ${{ matrix.platform }} ${{ steps.dmf-cache.outputs.cache-hit == 'true' && '--skip BuildDmf' || '' }}
@@ -279,8 +310,8 @@ jobs:
 
   control-app:
     name: 'Sign and mirror ControlApp and XInput'
-    needs: build
-    if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
+    needs: [version, build]
+    if: needs.version.outputs.is-release == 'true'
     runs-on: windows-2022
     permissions:
       contents: read
@@ -361,7 +392,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: 'Sign ControlApp'
-        uses: nefarius/SignRelay@master
+        uses: nefarius/SignRelay@7ba3699f7ad863d66d4d69cbf31828753d24d525
         with:
           server: ${{ env.SIGN_RELAY_SERVER }}
           token: ${{ env.SIGN_RELAY_CI_TOKEN }}
@@ -369,11 +400,12 @@ jobs:
           files: bin/ControlApp.exe
 
       - name: 'Sign XInput DLLs'
-        uses: nefarius/SignRelay@master
+        uses: nefarius/SignRelay@7ba3699f7ad863d66d4d69cbf31828753d24d525
         with:
           server: ${{ env.SIGN_RELAY_SERVER }}
           token: ${{ env.SIGN_RELAY_CI_TOKEN }}
           in-place: true
+          skip-tool-install: true
           files: |
             bin/x64/XInput1_3.dll
             bin/x86/XInput1_3.dll
@@ -460,14 +492,16 @@ jobs:
 
   partner-cab:
     name: 'Partner Portal CAB'
-    needs: [build, control-app]
-    if: github.event_name == 'workflow_dispatch'
+    needs: [version, build]
+    if: needs.version.outputs.is-release == 'true'
     runs-on: windows-2022
     permissions:
       contents: read
       actions: read
     env:
-      BUILD_VERSION: ${{ needs.build.outputs.build-version }}
+      BUILD_VERSION: ${{ needs.version.outputs.driver-version }}
+      SETUP_VERSION: ${{ needs.version.outputs.setup-version }}
+      RELEASE_TAG: ${{ needs.version.outputs.tag }}
       SIGN_RELAY_SERVER: ${{ vars.SIGN_RELAY_SERVER }}
       SIGN_RELAY_CI_TOKEN: ${{ secrets.SIGN_RELAY_CI_TOKEN }}
     steps:
@@ -521,7 +555,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: 'Sign driver DLLs'
-        uses: nefarius/SignRelay@master
+        uses: nefarius/SignRelay@7ba3699f7ad863d66d4d69cbf31828753d24d525
         with:
           server: ${{ env.SIGN_RELAY_SERVER }}
           token: ${{ env.SIGN_RELAY_CI_TOKEN }}
@@ -566,7 +600,7 @@ jobs:
           Write-Output "Created disk1\$cabName"
 
       - name: 'Sign partner CAB'
-        uses: nefarius/SignRelay@v1.0.0-pre010
+        uses: nefarius/SignRelay@7ba3699f7ad863d66d4d69cbf31828753d24d525
         with:
           server: ${{ env.SIGN_RELAY_SERVER }}
           token: ${{ env.SIGN_RELAY_CI_TOKEN }}
@@ -591,12 +625,53 @@ jobs:
           }
           Write-Output "Signed: $cab (Status=$($sig.Status); Subject=$($sig.SignerCertificate.Subject))"
 
+      - name: 'Write release metadata'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $cab = $env:PARTNER_CAB
+          $sha = (Get-FileHash -LiteralPath $cab -Algorithm SHA256).Hash.ToLowerInvariant()
+          $metadata = [ordered]@{
+            schemaVersion = 1
+            tag = $env:RELEASE_TAG
+            setupVersion = $env:SETUP_VERSION
+            driverVersion = $env:BUILD_VERSION
+            commit = '${{ github.sha }}'
+            runId = [int64]'${{ github.run_id }}'
+            repository = '${{ github.repository }}'
+            publisherSubject = 'Nefarius Software Solutions e.U.'
+            artifacts = [ordered]@{
+              partnerSubmission = 'dshidmini-partner-submission'
+              controlApp = 'control-app'
+              platforms = @('dshidmini-x64', 'dshidmini-ARM64', 'dshidmini-x86')
+              metadata = 'release-metadata'
+            }
+            files = [ordered]@{
+              partnerCab = [ordered]@{
+                name = [IO.Path]::GetFileName($cab)
+                sha256 = $sha
+              }
+            }
+          }
+          $json = $metadata | ConvertTo-Json -Depth 6
+          $out = 'release-metadata.json'
+          [IO.File]::WriteAllText((Join-Path $pwd $out), $json, [Text.UTF8Encoding]::new($false))
+          echo "RELEASE_METADATA=$out" >> $env:GITHUB_ENV
+          Write-Output $json
+
       - name: 'Upload partner submission CAB'
         uses: actions/upload-artifact@v4
         with:
           name: dshidmini-partner-submission
           if-no-files-found: error
           path: ${{ env.PARTNER_CAB }}
+
+      - name: 'Upload release metadata'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-metadata
+          if-no-files-found: error
+          path: ${{ env.RELEASE_METADATA }}
 
       - name: 'Mirror partner submission CAB'
         uses: nefarius/AppVeyorArtifactsReceiver@master

@@ -34,11 +34,14 @@
         "CompileXInputBridge",
         "DownloadCiArtifacts",
         "HardwareTestXInputBridge",
+        "IngestMicrosoftPackage",
         "PublishControlApp",
         "Restore",
-        "SignProductionBinaries",
+        "StageIgfilter",
         "TestConfigParser",
-        "TestXInputBridge"
+        "TestReleasePipeline",
+        "TestXInputBridge",
+        "ValidateSetupInputs"
       ]
     },
     "Verbosity": {
@@ -114,11 +117,7 @@
       "properties": {
         "ArtifactsPath": {
           "type": "string",
-          "description": "Output path for DownloadCiArtifacts artifacts. Default: ./artifacts"
-        },
-        "BuildVersion": {
-          "type": "string",
-          "description": "GitHub Actions run ID for DownloadCiArtifacts artifact download"
+          "description": "Output path for release staging. Default: ./artifacts"
         },
         "Configuration": {
           "type": "string",
@@ -128,13 +127,21 @@
             "Release"
           ]
         },
-        "NoSigning": {
-          "type": "boolean",
-          "description": "Skip signing in DownloadCiArtifacts"
+        "IgfilterPath": {
+          "type": "string",
+          "description": "Path to the maintainer-supplied igfilter packages (directory containing nssmkig_x64 and nssmkig_ARM64)"
+        },
+        "MicrosoftPackagePath": {
+          "type": "string",
+          "description": "Path to the Microsoft-attested driver package (zip, cab, or extracted directory)"
+        },
+        "RunId": {
+          "type": "string",
+          "description": "GitHub Actions run ID used by DownloadCiArtifacts"
         },
         "SetupVersion": {
           "type": "string",
-          "description": "Setup version for BuildSetup (e.g. 3.0.0)"
+          "description": "Three-part setup version for BuildSetup (e.g. 3.6.0). Defaults to release-metadata.json when omitted"
         },
         "SignToolPath": {
           "type": "string",
