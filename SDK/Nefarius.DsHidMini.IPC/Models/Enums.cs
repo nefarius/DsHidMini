@@ -114,5 +114,20 @@ internal enum DSHM_IPC_MSG_CMD_DEVICE : UInt32
     /// <summary>
     ///     Enables or disables alternative rumble mode at runtime
     /// </summary>
-    DSHM_IPC_MSG_CMD_DEVICE_SET_ALTERNATE_RUMBLE_MODE
+    DSHM_IPC_MSG_CMD_DEVICE_SET_ALTERNATE_RUMBLE_MODE,
+
+    /// <summary>
+    ///     Pair a given device to the active local Bluetooth radio
+    /// </summary>
+    DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO_CURRENT_HOST,
+
+    /// <summary>
+    ///     Disconnect a currently wireless device from the host radio
+    /// </summary>
+    DSHM_IPC_MSG_CMD_DEVICE_DISCONNECT_BLUETOOTH,
+
+    /// <summary>
+    ///     Apply a full volatile LED pattern (flags + four effect blocks)
+    /// </summary>
+    DSHM_IPC_MSG_CMD_DEVICE_SET_LED_PATTERN
 }

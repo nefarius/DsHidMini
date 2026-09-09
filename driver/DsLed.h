@@ -156,3 +156,26 @@ DsLed_ApplyIpcPlayerIndex(
 	_In_ PDEVICE_CONTEXT Context,
 	_In_ BYTE PlayerIndex
 );
+
+//
+// Returns TRUE when Flags uses only the documented DS3 LED bits
+// (DS3_LED_1..4 and DS3_LED_OFF). Zero (all off) is valid.
+// 
+BOOLEAN
+DsLed_AreIpcFlagsValid(
+	_In_ UCHAR Flags
+);
+
+//
+// Applies an IPC LED pattern: marks LEDs application-owned for Automatic
+// authority, writes flags plus four independent effect blocks, and sends
+// the report under one hold of Context->OutputReport.Lock. Returns
+// STATUS_INVALID_PARAMETER for reserved flag bits and STATUS_ACCESS_DENIED
+// when LED authority is Driver.
+// 
+NTSTATUS
+DsLed_ApplyIpcPattern(
+	_In_ PDEVICE_CONTEXT Context,
+	_In_ UCHAR Flags,
+	_In_ const DS_LED Effects[4]
+);

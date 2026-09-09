@@ -47,8 +47,12 @@ do
             uint playerStatus = ipc.SetPlayerIndex(1, 1);
             uint rumbleStatus = ipc.SetRumble(1, 0x40, 0x00);
             uint altStatus = ipc.SetAlternateRumbleMode(1, false);
+            uint ledStatus = Ds3LedPattern.TryFromPlayerIndex(1, out Ds3LedPattern pattern)
+                ? ipc.SetLedPattern(1, pattern)
+                : 0xC000000D;
+            SetHostResult pairResult = ipc.PairToCurrentHost(1);
             Console.WriteLine(
-                $"SetPlayerIndex=0x{playerStatus:X} SetRumble=0x{rumbleStatus:X} SetAlternateRumbleMode=0x{altStatus:X} flags={Ds3PlayerLeds.TryGetFlags(1, out byte flags) && flags == Ds3PlayerLeds.Led1}");
+                $"SetPlayerIndex=0x{playerStatus:X} SetRumble=0x{rumbleStatus:X} SetAlternateRumbleMode=0x{altStatus:X} SetLedPattern=0x{ledStatus:X} PairToCurrentHost={pairResult} flags={Ds3PlayerLeds.TryGetFlags(1, out byte flags) && flags == Ds3PlayerLeds.Led1}");
             break;
 #else
             ipc.SendPing();
@@ -62,7 +66,7 @@ do
 #if INPUT_TEST
         Console.WriteLine($"Read {executionCount} input reports in one second.");
 #elif RUNTIME_OUTPUT_TEST
-        Console.WriteLine("Sent one volatile LED/rumble/alternate-mode command set.");
+        Console.WriteLine("Sent one volatile LED/rumble/alternate-mode/pairing command set.");
 #else
         Console.WriteLine($"Executed {executionCount} PINGs in one second.");
 #endif

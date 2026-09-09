@@ -566,12 +566,6 @@ static void ConfigNodeParse(
 		EventWriteOverrideSettingUInt(ParentNode->string, "DevicePairingMode", pCfg->DevicePairingMode);
 	}
 
-	if ((pNode = cJSON_GetObjectItem(ParentNode, "PairOnHotReload")))
-	{
-		pCfg->PairOnHotReload = (BOOLEAN)cJSON_IsTrue(pNode);
-		EventWriteOverrideSettingUInt(ParentNode->string, "PairOnHotReload", pCfg->PairOnHotReload);
-	}
-
 	if ((pNode = cJSON_GetObjectItem(ParentNode, "CustomPairingAddress")))
 	{
 		char* eptr; // not used
@@ -1065,7 +1059,6 @@ ConfigSetDefaults(
 
 	Config->HidDeviceMode = DsHidMiniDeviceModeXInputHIDCompatible;
 	Config->DevicePairingMode = DsDevicePairingModeAuto;
-	Config->PairOnHotReload = FALSE;
 	Config->AutoRestartOnHidModeMismatch = TRUE;
 	Config->UsbOutputReportTransport = DsUsbOutputReportTransportAuto;
 	Config->BluetoothOutputReportTransport = DsBluetoothOutputReportTransportControl;

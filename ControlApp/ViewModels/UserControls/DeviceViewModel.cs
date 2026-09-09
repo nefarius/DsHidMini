@@ -338,8 +338,14 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             _pairingMode = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsCustomPairingAddressVisible));
+            OnPropertyChanged(nameof(CanPairNow));
         }
     }
+
+    /// <summary>
+    ///     Pair Now is available when the device can be paired and pairing is not disabled.
+    /// </summary>
+    public bool CanPairNow => SupportsBluetoothPairing && PairingMode != BluetoothPairingMode.Disabled;
 
 
     /// <summary>
@@ -872,51 +878,100 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    private async Task TriggerPairingOnHotReload()
+    private async Task PairNow()
     {
+        if (!CanPairNow)
+        {
+            _appSnackbarMessagesService.ShowPairingFailedMessage(
+                "Pairing is disabled for this controller.");
+            return;
+        }
+
         _deviceUserData.BluetoothPairingMode = PairingMode;
         _deviceUserData.PairingAddress = MacAddressFormatter.Normalize(CustomPairingAddress);
 
-        try
+        if (!_dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile())
         {
-            _deviceUserData.PairOnHotReload = true;
-            if (!_dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile())
+            _appSnackbarMessagesService.ShowDsHidMiniConfigurationUpdateFailedMessage();
+            return;
+        }
+
+        int? slot = TryGetIpcSlotIndex();
+        if (slot is not int deviceIndex)
+        {
+            Log.Logger.Warning(
+                "Pairing skipped for '{DeviceAddress}': no readable IPC slot.",
+                DeviceAddress);
+            _appSnackbarMessagesService.ShowPairingFailedMessage(
+                "The driver did not report an IPC slot for this device.");
+            return;
+        }
+
+        if (!DsHidMiniInterop.IsAvailable)
+        {
+            _appSnackbarMessagesService.ShowPairingFailedMessage(
+                "Driver IPC is not available. Confirm the controller is still connected.");
+            return;
+        }
+
+        PhysicalAddress? customHostAddress = null;
+        if (PairingMode == BluetoothPairingMode.Custom)
+        {
+            try
             {
-                _appSnackbarMessagesService.ShowDsHidMiniConfigurationUpdateFailedMessage();
+                customHostAddress = ParsePairingAddress();
+            }
+            catch (FormatException ex)
+            {
+                _appSnackbarMessagesService.ShowPairingFailedMessage(ex.Message);
                 return;
             }
-
-            await ShowPairingDialog();
         }
-        finally
+
+        try
         {
-            _deviceUserData.PairOnHotReload = false;
-            if (!_dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile())
+            SetHostResult result = await Task.Run(() =>
             {
-                _appSnackbarMessagesService.ShowDsHidMiniConfigurationUpdateFailedMessage();
+                using DsHidMiniInterop interop = new();
+                return customHostAddress is not null
+                    ? interop.SetHostAddress(deviceIndex, customHostAddress)
+                    : interop.PairToCurrentHost(deviceIndex);
+            });
+
+            Log.Logger.Information(
+                "Pairing for '{DeviceAddress}' slot {Slot}: {Result}",
+                DeviceAddress,
+                deviceIndex,
+                result);
+
+            if (result.Succeeded)
+            {
+                _appSnackbarMessagesService.ShowPairingSucceededMessage();
             }
+            else
+            {
+                _appSnackbarMessagesService.ShowPairingFailedMessage(result.ToString());
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Error(ex, "Pairing failed for '{DeviceAddress}'", DeviceAddress);
+            _appSnackbarMessagesService.ShowPairingFailedMessage(ex.Message);
         }
 
         OnPropertyChanged(nameof(HostAddress));
         OnPropertyChanged(nameof(LastPairingStatusIcon));
     }
 
-    private async Task ShowPairingDialog()
+    private PhysicalAddress ParsePairingAddress()
     {
-        ContentDialogResult result = await _contentDialogService.ShowSimpleDialogAsync(
-            new SimpleContentDialogCreateOptions
-            {
-                Title = "Manual pairing triggered",
-                Content = """
-                          Pairing was requested.
+        string normalized = MacAddressFormatter.Normalize(CustomPairingAddress);
+        if (normalized.Length != 12)
+        {
+            throw new FormatException("Custom pairing address must be a 12-digit Bluetooth MAC.");
+        }
 
-                          Wait 2 or 5 seconds before hitting ok to check for results.
-                          """,
-                //PrimaryButtonText = "Ok",
-                //SecondaryButtonText = "Don't Save",
-                CloseButtonText = "OK"
-            }
-        );
+        return PhysicalAddress.Parse(normalized);
     }
 
     [RelayCommand]

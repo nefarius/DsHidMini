@@ -542,3 +542,103 @@ DsLed_ApplyIpcPlayerIndex(
 
 	return status;
 }
+
+//
+// IPC LED-pattern write: same authority hand-off as player-index, but
+// applies four independent effect blocks like a custom pattern.
+// 
+_Use_decl_annotations_
+BOOLEAN
+DsLed_AreIpcFlagsValid(
+	_In_ UCHAR Flags
+)
+{
+	const UCHAR validMask = DS3_LED_1 | DS3_LED_2 | DS3_LED_3 | DS3_LED_4 | DS3_LED_OFF;
+
+	return (Flags & ~validMask) == 0;
+}
+
+_Use_decl_annotations_
+NTSTATUS
+DsLed_ApplyIpcPattern(
+	_In_ PDEVICE_CONTEXT Context,
+	_In_ UCHAR Flags,
+	_In_ const DS_LED Effects[4]
+)
+{
+	FuncEntry(TRACE_LED);
+
+	NTSTATUS status = STATUS_INVALID_PARAMETER;
+
+	if (!DsLed_AreIpcFlagsValid(Flags))
+	{
+		FuncExit(TRACE_LED, "status=%!STATUS!", status);
+		return status;
+	}
+
+	if (Context->Configuration.LEDSettings.Authority == DsLEDAuthorityDriver)
+	{
+		status = STATUS_ACCESS_DENIED;
+		FuncExit(TRACE_LED, "status=%!STATUS!", status);
+		return status;
+	}
+
+	WdfWaitLockAcquire(Context->OutputReport.Lock, NULL);
+
+	Context->OutputReport.Mode = Ds3OutputReportModeWriteReportPassThrough;
+
+	const UCHAR clamped = DsLedClampFlagsForDevice(Context, Flags);
+
+	DsLed_SetFlags(Context, clamped);
+
+	DsLed_SetEffect(
+		Context,
+		0,
+		Effects[0].TotalDuration,
+		Effects[0].BasePortionDuration,
+		Effects[0].OffPortionMultiplier,
+		Effects[0].OnPortionMultiplier
+	);
+
+	if (Context->DeviceType == DsDeviceTypeNavigation)
+	{
+		DsLed_SetEffect(Context, 1, 0, 0, 0, 0);
+		DsLed_SetEffect(Context, 2, 0, 0, 0, 0);
+		DsLed_SetEffect(Context, 3, 0, 0, 0, 0);
+	}
+	else
+	{
+		DsLed_SetEffect(
+			Context,
+			1,
+			Effects[1].TotalDuration,
+			Effects[1].BasePortionDuration,
+			Effects[1].OffPortionMultiplier,
+			Effects[1].OnPortionMultiplier
+		);
+		DsLed_SetEffect(
+			Context,
+			2,
+			Effects[2].TotalDuration,
+			Effects[2].BasePortionDuration,
+			Effects[2].OffPortionMultiplier,
+			Effects[2].OnPortionMultiplier
+		);
+		DsLed_SetEffect(
+			Context,
+			3,
+			Effects[3].TotalDuration,
+			Effects[3].BasePortionDuration,
+			Effects[3].OffPortionMultiplier,
+			Effects[3].OnPortionMultiplier
+		);
+	}
+
+	status = DSHM_SendOutputReportUnlocked(Context, Ds3OutputReportSourceIpc);
+
+	WdfWaitLockRelease(Context->OutputReport.Lock);
+
+	FuncExit(TRACE_LED, "status=%!STATUS!", status);
+
+	return status;
+}

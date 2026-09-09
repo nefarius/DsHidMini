@@ -610,4 +610,240 @@ public partial class DsHidMiniInterop
             _commandMutex.ReleaseMutex();
         }
     }
+
+    /// <summary>
+    ///     Pairs the given device to the active local Bluetooth radio.
+    ///     Does not persist pairing mode or overwrite the JSON host address.
+    ///     Wired devices only.
+    /// </summary>
+    /// <param name="deviceIndex">The one-based device index.</param>
+    /// <returns>A <see cref="SetHostResult" /> containing write/read NTSTATUS values.</returns>
+    /// <exception cref="DsHidMiniInteropUnavailableException">
+    ///     Driver IPC unavailable, make sure that at least one compatible
+    ///     controller is connected and operational.
+    /// </exception>
+    /// <exception cref="DsHidMiniInteropInvalidDeviceIndexException">
+    ///     The <paramref name="deviceIndex" /> was outside the valid range 1..255.
+    /// </exception>
+    /// <exception cref="DsHidMiniInteropConcurrencyException">A different thread is currently performing a data exchange.</exception>
+    /// <exception cref="DsHidMiniInteropReplyTimeoutException">The driver didn't respond within an expected period.</exception>
+    /// <exception cref="DsHidMiniInteropUnexpectedReplyException">The driver returned unexpected or malformed data.</exception>
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
+    public unsafe SetHostResult PairToCurrentHost(int deviceIndex)
+    {
+        if (_commandMutex is null || _cmdView is null)
+        {
+            throw new DsHidMiniInteropUnavailableException();
+        }
+
+        ValidateDeviceIndex(deviceIndex);
+
+        AcquireCommandLock();
+
+        try
+        {
+            ref DSHM_IPC_MSG_PAIR_TO_CURRENT_HOST_REQUEST request =
+                ref Unsafe.AsRef<DSHM_IPC_MSG_PAIR_TO_CURRENT_HOST_REQUEST>(_cmdView);
+
+            request.Header.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
+            request.Header.Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DEVICE;
+            request.Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO_CURRENT_HOST;
+            request.Header.TargetIndex = (uint)deviceIndex;
+            request.Header.Size = (uint)Marshal.SizeOf<DSHM_IPC_MSG_PAIR_TO_CURRENT_HOST_REQUEST>();
+
+            if (!SendAndWait())
+            {
+                throw new DsHidMiniInteropReplyTimeoutException();
+            }
+
+            ref DSHM_IPC_MSG_PAIR_TO_CURRENT_HOST_REPLY reply =
+                ref Unsafe.AsRef<DSHM_IPC_MSG_PAIR_TO_CURRENT_HOST_REPLY>(_cmdView);
+
+            if (reply.Header is
+                {
+                    Type: DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_REPLY,
+                    Target: DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_CLIENT,
+                    Command.Device: DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_PAIR_TO_CURRENT_HOST
+                }
+                && reply.Header.TargetIndex == deviceIndex
+                && reply.Header.Size == Marshal.SizeOf<DSHM_IPC_MSG_PAIR_TO_CURRENT_HOST_REPLY>())
+            {
+                return new SetHostResult { WriteStatus = reply.WriteStatus, ReadStatus = reply.ReadStatus };
+            }
+
+            throw new DsHidMiniInteropUnexpectedReplyException(ref reply.Header);
+        }
+        finally
+        {
+            _commandMutex.ReleaseMutex();
+        }
+    }
+
+    /// <summary>
+    ///     Disconnects a currently wireless device from the host radio.
+    ///     Wired devices return <c>STATUS_NOT_SUPPORTED</c>.
+    /// </summary>
+    /// <param name="deviceIndex">The one-based device index.</param>
+    /// <returns>The NTSTATUS returned by the driver.</returns>
+    /// <exception cref="DsHidMiniInteropUnavailableException">
+    ///     Driver IPC unavailable, make sure that at least one compatible
+    ///     controller is connected and operational.
+    /// </exception>
+    /// <exception cref="DsHidMiniInteropInvalidDeviceIndexException">
+    ///     The <paramref name="deviceIndex" /> was outside the valid range 1..255.
+    /// </exception>
+    /// <exception cref="DsHidMiniInteropConcurrencyException">A different thread is currently performing a data exchange.</exception>
+    /// <exception cref="DsHidMiniInteropReplyTimeoutException">The driver didn't respond within an expected period.</exception>
+    /// <exception cref="DsHidMiniInteropUnexpectedReplyException">The driver returned unexpected or malformed data.</exception>
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
+    public unsafe UInt32 DisconnectBluetoothDevice(int deviceIndex)
+    {
+        if (_commandMutex is null || _cmdView is null)
+        {
+            throw new DsHidMiniInteropUnavailableException();
+        }
+
+        ValidateDeviceIndex(deviceIndex);
+
+        AcquireCommandLock();
+
+        try
+        {
+            ref DSHM_IPC_MSG_DISCONNECT_BLUETOOTH_REQUEST request =
+                ref Unsafe.AsRef<DSHM_IPC_MSG_DISCONNECT_BLUETOOTH_REQUEST>(_cmdView);
+
+            request.Header.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
+            request.Header.Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DEVICE;
+            request.Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_DISCONNECT_BLUETOOTH;
+            request.Header.TargetIndex = (uint)deviceIndex;
+            request.Header.Size = (uint)Marshal.SizeOf<DSHM_IPC_MSG_DISCONNECT_BLUETOOTH_REQUEST>();
+
+            if (!SendAndWait())
+            {
+                throw new DsHidMiniInteropReplyTimeoutException();
+            }
+
+            ref DSHM_IPC_MSG_DISCONNECT_BLUETOOTH_REPLY reply =
+                ref Unsafe.AsRef<DSHM_IPC_MSG_DISCONNECT_BLUETOOTH_REPLY>(_cmdView);
+
+            if (reply.Header is
+                {
+                    Type: DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_REPLY,
+                    Target: DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_CLIENT,
+                    Command.Device: DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_DISCONNECT_BLUETOOTH
+                }
+                && reply.Header.TargetIndex == deviceIndex
+                && reply.Header.Size == Marshal.SizeOf<DSHM_IPC_MSG_DISCONNECT_BLUETOOTH_REPLY>())
+            {
+                return reply.NtStatus;
+            }
+
+            throw new DsHidMiniInteropUnexpectedReplyException(ref reply.Header);
+        }
+        finally
+        {
+            _commandMutex.ReleaseMutex();
+        }
+    }
+
+    /// <summary>
+    ///     Applies a full LED pattern (flags plus four independent effect blocks).
+    ///     The change is volatile: Automatic LED authority is handed to the application
+    ///     for the rest of the session. Returns <c>STATUS_ACCESS_DENIED</c> when LED
+    ///     authority is configured as Driver, and <c>STATUS_INVALID_PARAMETER</c> for
+    ///     reserved flag bits.
+    /// </summary>
+    /// <param name="deviceIndex">The one-based device index.</param>
+    /// <param name="pattern">The flags and per-LED effects to apply.</param>
+    /// <returns>The NTSTATUS returned by the driver.</returns>
+    /// <exception cref="DsHidMiniInteropUnavailableException">
+    ///     Driver IPC unavailable, make sure that at least one compatible
+    ///     controller is connected and operational.
+    /// </exception>
+    /// <exception cref="DsHidMiniInteropInvalidDeviceIndexException">
+    ///     The <paramref name="deviceIndex" /> was outside the valid range 1..255.
+    /// </exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    ///     <paramref name="pattern" /> uses reserved LED flag bits.
+    /// </exception>
+    /// <exception cref="DsHidMiniInteropConcurrencyException">A different thread is currently performing a data exchange.</exception>
+    /// <exception cref="DsHidMiniInteropReplyTimeoutException">The driver didn't respond within an expected period.</exception>
+    /// <exception cref="DsHidMiniInteropUnexpectedReplyException">The driver returned unexpected or malformed data.</exception>
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
+    public unsafe UInt32 SetLedPattern(int deviceIndex, Ds3LedPattern pattern)
+    {
+        if (_commandMutex is null || _cmdView is null)
+        {
+            throw new DsHidMiniInteropUnavailableException();
+        }
+
+        ValidateDeviceIndex(deviceIndex);
+
+        if (!Ds3LedPattern.AreFlagsValid(pattern.Flags))
+        {
+            throw new ArgumentOutOfRangeException(nameof(pattern),
+                "LED flags may only use the documented DS3 LED bits (1-4 and off).");
+        }
+
+        AcquireCommandLock();
+
+        try
+        {
+            ref DSHM_IPC_MSG_SET_LED_PATTERN_REQUEST request =
+                ref Unsafe.AsRef<DSHM_IPC_MSG_SET_LED_PATTERN_REQUEST>(_cmdView);
+
+            request.Header.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
+            request.Header.Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DEVICE;
+            request.Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_SET_LED_PATTERN;
+            request.Header.TargetIndex = (uint)deviceIndex;
+            request.Header.Size = (uint)Marshal.SizeOf<DSHM_IPC_MSG_SET_LED_PATTERN_REQUEST>();
+
+            request.Flags = pattern.Flags;
+            request.Reserved0 = 0;
+            request.Reserved1 = 0;
+            request.Reserved2 = 0;
+            request.Player1 = ToIpcLedEffect(pattern.Player1);
+            request.Player2 = ToIpcLedEffect(pattern.Player2);
+            request.Player3 = ToIpcLedEffect(pattern.Player3);
+            request.Player4 = ToIpcLedEffect(pattern.Player4);
+
+            if (!SendAndWait())
+            {
+                throw new DsHidMiniInteropReplyTimeoutException();
+            }
+
+            ref DSHM_IPC_MSG_SET_LED_PATTERN_REPLY reply =
+                ref Unsafe.AsRef<DSHM_IPC_MSG_SET_LED_PATTERN_REPLY>(_cmdView);
+
+            if (reply.Header is
+                {
+                    Type: DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_REPLY,
+                    Target: DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_CLIENT,
+                    Command.Device: DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_SET_LED_PATTERN
+                }
+                && reply.Header.TargetIndex == deviceIndex
+                && reply.Header.Size == Marshal.SizeOf<DSHM_IPC_MSG_SET_LED_PATTERN_REPLY>())
+            {
+                return reply.NtStatus;
+            }
+
+            throw new DsHidMiniInteropUnexpectedReplyException(ref reply.Header);
+        }
+        finally
+        {
+            _commandMutex.ReleaseMutex();
+        }
+    }
+
+    private static DSHM_IPC_LED_EFFECT ToIpcLedEffect(Ds3LedEffect effect)
+    {
+        return new DSHM_IPC_LED_EFFECT
+        {
+            TotalDuration = effect.TotalDuration,
+            Reserved = 0,
+            BasePortionDuration = effect.BasePortionDuration,
+            OffPortionMultiplier = effect.OffPortionMultiplier,
+            OnPortionMultiplier = effect.OnPortionMultiplier
+        };
+    }
 }

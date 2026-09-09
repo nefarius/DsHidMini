@@ -12,6 +12,11 @@ public struct SetHostResult
     /// </summary>
     public UInt32 ReadStatus;
 
+    /// <summary>
+    ///     <see langword="true" /> when both the pairing write and the verify read succeeded.
+    /// </summary>
+    public bool Succeeded => PowerOffUsbResult.IsNtSuccess(WriteStatus) && PowerOffUsbResult.IsNtSuccess(ReadStatus);
+
     public override string ToString()
     {
         return $"Pairing result: 0x{WriteStatus:X}, query result: 0x{ReadStatus:X}";

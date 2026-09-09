@@ -1,7 +1,5 @@
 ﻿using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 
-using Newtonsoft.Json;
-
 namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 
 public class DeviceData
@@ -16,9 +14,6 @@ public class DeviceData
     public Guid GuidOfProfileToUse { get; set; } = ProfileData.DefaultGuid;
     public BluetoothPairingMode BluetoothPairingMode { get; set; } = BluetoothPairingMode.Auto;
     public string? PairingAddress { get; set; } = "";
-
-    [JsonIgnore] // PairOnHotReload should only be enabled temporarely to prevent pairing requests from being repeteadly sent on hot-reload
-    public bool PairOnHotReload { get; set; } = false;
 
     public SettingsModes SettingsMode { get; set; } = SettingsModes.Global;
 

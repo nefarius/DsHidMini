@@ -14,7 +14,6 @@ public class DshmDeviceSettings
     public bool? AutoRestartOnHidModeMismatch { get; set; }
 
     public DevicePairingMode? DevicePairingMode { get; set; }
-    public bool? PairOnHotReload { get; set; }
     public string? CustomPairingAddress { get; set; }
     public UsbOutputReportTransport? UsbOutputReportTransport { get; set; }
     public BluetoothOutputReportTransport? BluetoothOutputReportTransport { get; set; }

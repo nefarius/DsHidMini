@@ -624,11 +624,6 @@ typedef struct _DS_DRIVER_CONFIGURATION
 	UCHAR CustomHostAddress[6];
 
 	//
-	// When set, the pairing process will occur after hot-reloading configurations
-	//
-	BOOLEAN PairOnHotReload;
-
-	//
 	// Which USB transport to use for output reports (LEDs/rumble). Can't be
 	// altered at runtime; only evaluated once during PrepareHardware.
 	// 

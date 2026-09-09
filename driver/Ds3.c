@@ -713,6 +713,134 @@ NTSTATUS DS3_GetActiveRadioAddress(BD_ADDR* Address)
 }
 
 //
+// Sends a pairing write for an already-resolved host address. Does not
+// consult or mutate DevicePairingMode / CustomHostAddress.
+// 
+static
+NTSTATUS
+DsUsb_Ds3PairToSpecifiedHost(
+	_In_ WDFDEVICE Device,
+	_In_ BD_ADDR NewHostAddress
+)
+{
+	NTSTATUS status = STATUS_UNSUCCESSFUL;
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+
+	FuncEntry(TRACE_DS3);
+
+	do
+	{
+		if (!pDevCtx->SupportsBluetoothAddressReports)
+		{
+			//
+			// This device never reported its own Bluetooth MAC (see issue
+			// #321), so it cannot meaningfully be paired to a host either;
+			// the address the console/host would store against is not one
+			// this device recognizes. Callers already tolerate this status.
+			// 
+			TraceInformation(
+				TRACE_DS3,
+				"Device does not support Bluetooth address reports, skipping pairing"
+			);
+			status = STATUS_NOT_SUPPORTED;
+			break;
+		}
+
+		//
+		// Don't issue request when addresses already match
+		// 
+		if (RtlCompareMemory(
+				&NewHostAddress,
+				&pDevCtx->HostAddress.Address[0],
+				sizeof(BD_ADDR)
+			) == sizeof(BD_ADDR)
+			)
+		{
+			TraceInformation(
+				TRACE_DS3,
+				"Device's current host address equals desired new address, skipping"
+			);
+
+			EventWriteAlreadyPaired(pDevCtx->DeviceAddressString);
+
+			status = STATUS_SUCCESS;
+			break;
+		}
+
+		if (!NT_SUCCESS(status = DsUsb_Ds3SendPairingRequest(Device, NewHostAddress)))
+		{
+			TraceError(
+				TRACE_DS3,
+				"DsUsb_Ds3SendPairingRequest failed with status %!STATUS!",
+				status
+			);
+			break;
+		}
+
+		status = STATUS_SUCCESS;
+
+	} while (FALSE);
+
+	FuncExit(TRACE_DS3, "status=%!STATUS!", status);
+
+	return status;
+}
+
+//
+// Re-reads the host address after a pairing write (or skip). Shared by
+// configured, explicit-address, and active-radio pairing paths.
+// 
+static
+NTSTATUS
+DsUsb_Ds3VerifyAfterPair(
+	_In_ WDFDEVICE Device,
+	_In_ NTSTATUS WriteStatus,
+	_Out_opt_ PNTSTATUS ReadStatus
+)
+{
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+
+	if (WriteStatus == STATUS_NOT_SUPPORTED || !pDevCtx->SupportsBluetoothAddressReports)
+	{
+		WDF_DEVICE_PROPERTY_DATA propertyData;
+		NTSTATUS notSupportedStatus = STATUS_NOT_SUPPORTED;
+
+		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RO_LastHostRequestStatus);
+		propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+		propertyData.Lcid = LOCALE_NEUTRAL;
+
+		(VOID)WdfDeviceAssignProperty(
+			Device,
+			&propertyData,
+			DEVPROP_TYPE_NTSTATUS,
+			sizeof(NTSTATUS),
+			&notSupportedStatus
+		);
+
+		if (ReadStatus)
+		{
+			*ReadStatus = STATUS_NOT_SUPPORTED;
+		}
+
+		return WriteStatus;
+	}
+
+	if (NT_SUCCESS(WriteStatus))
+	{
+		Sleep(DS3_PAIRING_VERIFY_DELAY_MS);
+	}
+
+	const NTSTATUS readStatus = DsUsb_Ds3RequestHostAddress(Device);
+
+	if (ReadStatus)
+	{
+		*ReadStatus = readStatus;
+	}
+
+	return WriteStatus;
+}
+
+//
 // Pairs DS3 to current BT host or to user defined host address, depending on current pairing mode
 // 
 NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
@@ -727,12 +855,6 @@ NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 	{
 		if (!pDevCtx->SupportsBluetoothAddressReports)
 		{
-			//
-			// This device never reported its own Bluetooth MAC (see issue
-			// #321), so it cannot meaningfully be paired to a host either;
-			// the address the console/host would store against is not one
-			// this device recognizes. Callers already tolerate this status.
-			// 
 			TraceInformation(
 				TRACE_DS3,
 				"Device does not support Bluetooth address reports, skipping pairing"
@@ -758,7 +880,7 @@ NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 				"Pairing device to active radio host address"
 			);
 
-			if (!NT_SUCCESS(DS3_GetActiveRadioAddress(&newHostAddress)))
+			if (!NT_SUCCESS(status = DS3_GetActiveRadioAddress(&newHostAddress)))
 			{
 				TraceError(
 					TRACE_DS3,
@@ -768,9 +890,6 @@ NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 			}
 		}
 
-		//
-		// Use configured custom mac address if in custom mode
-		//
 		if (pDevCtx->Configuration.DevicePairingMode == DsDevicePairingModeCustom)
 		{
 			TraceInformation(
@@ -778,47 +897,14 @@ NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 				"Pairing device to user defined MAC address"
 			);
 
-			for (int i = 0; i < sizeof(BD_ADDR); i++)
-			{
-				newHostAddress.Address[i] = pDevCtx->Configuration.CustomHostAddress[i];
-			}
-		}
-
-		//
-		// Don't issue request when addresses already match
-		// 
-		if (RtlCompareMemory(
+			RtlCopyMemory(
 				&newHostAddress,
-				&pDevCtx->HostAddress.Address[0],
+				pDevCtx->Configuration.CustomHostAddress,
 				sizeof(BD_ADDR)
-			) == sizeof(BD_ADDR)
-			)
-		{
-			TraceInformation(
-				TRACE_DS3,
-				"Device's current host address equals desired new address, skipping"
 			);
-
-			EventWriteAlreadyPaired(pDevCtx->DeviceAddressString);
-
-			status = STATUS_SUCCESS;
-			break;
 		}
 
-		//
-		// Send pairing request
-		//
-		if (!NT_SUCCESS(status = DsUsb_Ds3SendPairingRequest(Device, newHostAddress)))
-		{
-			TraceError(
-				TRACE_DS3,
-				"DsUsb_Ds3SendPairingRequest failed with status %!STATUS!",
-				status
-			);
-			break;
-		}
-
-		status = STATUS_SUCCESS;
+		status = DsUsb_Ds3PairToSpecifiedHost(Device, newHostAddress);
 
 	} while (FALSE);
 
@@ -829,69 +915,77 @@ NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 
 //
 // Pairs to the configured host (or skips it, see DsUsb_Ds3PairToNewHost) and
-// then re-reads the host address to verify/reflect the outcome, waiting a
-// short delay in between. The PS3 itself leaves 27-75 ms between its SET
-// Feature 0xF5 and the verifying GET Feature 0xF5 across capture samples;
-// mirrored here as a single fixed delay so a freshly-paired device has
-// settled before being read back. Used by every call site that used to
-// call DsUsb_Ds3PairToNewHost followed by DsUsb_Ds3RequestHostAddress
-// directly, so the delay only needs to live in one place. See issue #321.
+// then re-reads the host address to verify/reflect the outcome. See issue #321.
 // 
 NTSTATUS DsUsb_Ds3PairAndVerify(_In_ WDFDEVICE Device, _Out_opt_ PNTSTATUS ReadStatus)
 {
 	FuncEntry(TRACE_DS3);
 
-	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	const NTSTATUS writeStatus = DsUsb_Ds3VerifyAfterPair(
+		Device,
+		DsUsb_Ds3PairToNewHost(Device),
+		ReadStatus
+	);
 
-	const NTSTATUS writeStatus = DsUsb_Ds3PairToNewHost(Device);
+	FuncExit(TRACE_DS3, "writeStatus=%!STATUS!", writeStatus);
 
-	//
-	// A device that never reported its own Bluetooth MAC (see issue #321)
-	// doesn't support the host-address feature report either; skip the
-	// verify read so we don't emit a spurious failed-host-request trace
-	// and event for an expected, already-logged condition, and keep
-	// reporting the not-supported status instead of overwriting it with
-	// whatever the (equally unsupported) read attempt would have failed
-	// with.
-	// 
-	if (writeStatus == STATUS_NOT_SUPPORTED || !pDevCtx->SupportsBluetoothAddressReports)
+	return writeStatus;
+}
+
+_Use_decl_annotations_
+NTSTATUS
+DsUsb_Ds3PairToAddressAndVerify(
+	_In_ WDFDEVICE Device,
+	_In_ BD_ADDR NewHostAddress,
+	_Out_opt_ PNTSTATUS ReadStatus
+)
+{
+	FuncEntry(TRACE_DS3);
+
+	const NTSTATUS writeStatus = DsUsb_Ds3VerifyAfterPair(
+		Device,
+		DsUsb_Ds3PairToSpecifiedHost(Device, NewHostAddress),
+		ReadStatus
+	);
+
+	FuncExit(TRACE_DS3, "writeStatus=%!STATUS!", writeStatus);
+
+	return writeStatus;
+}
+
+_Use_decl_annotations_
+NTSTATUS
+DsUsb_Ds3PairToActiveRadioAndVerify(
+	_In_ WDFDEVICE Device,
+	_Out_opt_ PNTSTATUS ReadStatus
+)
+{
+	BD_ADDR newHostAddress = { 0 };
+
+	FuncEntry(TRACE_DS3);
+
+	const NTSTATUS radioStatus = DS3_GetActiveRadioAddress(&newHostAddress);
+	if (!NT_SUCCESS(radioStatus))
 	{
-		WDF_DEVICE_PROPERTY_DATA propertyData;
-		NTSTATUS notSupportedStatus = STATUS_NOT_SUPPORTED;
-
-		WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RO_LastHostRequestStatus);
-		propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
-		propertyData.Lcid = LOCALE_NEUTRAL;
-
-		(VOID)WdfDeviceAssignProperty(
-			Device,
-			&propertyData,
-			DEVPROP_TYPE_NTSTATUS,
-			sizeof(NTSTATUS),
-			&notSupportedStatus
+		TraceError(
+			TRACE_DS3,
+			"Failed to get active radio host address"
 		);
 
 		if (ReadStatus)
 		{
-			*ReadStatus = STATUS_NOT_SUPPORTED;
+			*ReadStatus = radioStatus;
 		}
 
-		FuncExit(TRACE_DS3, "writeStatus=%!STATUS!", writeStatus);
-
-		return writeStatus;
+		FuncExit(TRACE_DS3, "writeStatus=%!STATUS!", radioStatus);
+		return radioStatus;
 	}
 
-	if (NT_SUCCESS(writeStatus))
-	{
-		Sleep(DS3_PAIRING_VERIFY_DELAY_MS);
-	}
-
-	const NTSTATUS readStatus = DsUsb_Ds3RequestHostAddress(Device);
-
-	if (ReadStatus)
-	{
-		*ReadStatus = readStatus;
-	}
+	const NTSTATUS writeStatus = DsUsb_Ds3PairToAddressAndVerify(
+		Device,
+		newHostAddress,
+		ReadStatus
+	);
 
 	FuncExit(TRACE_DS3, "writeStatus=%!STATUS!", writeStatus);
 

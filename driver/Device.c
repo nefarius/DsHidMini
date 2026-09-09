@@ -1135,17 +1135,6 @@ DsDevice_HotReloadEventCallback(
 		WdfWaitLockRelease(pDevCtx->ConfigurationDirectoryWatcherLock);
 
 		//
-		// If PairOnHotReload is enabled and not in disabled pairing mode then attempt pairing process followed by requesting currently set host address
-		//
-		if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb
-			&& pDevCtx->Configuration.PairOnHotReload
-			&& pDevCtx->Configuration.DevicePairingMode != DsDevicePairingModeDisabled)
-		{
-			WDFDEVICE wdfDev = DMF_ParentDeviceGet(pDevCtx->DsHidMiniModule);
-			DsUsb_Ds3PairAndVerify(wdfDev, NULL);
-		}
-
-		//
 		// Restore the Automatic authority hand-off for this reload before
 		// recomputing LED state: without this, OutputReport.Mode would stay
 		// latched at whatever an application last wrote (or its power-up

@@ -354,7 +354,6 @@ public class DshmManagerToDriverConversion
         merged.AutoRestartOnHidModeMismatch =
             overlay.AutoRestartOnHidModeMismatch ?? merged.AutoRestartOnHidModeMismatch;
         merged.DevicePairingMode = overlay.DevicePairingMode ?? merged.DevicePairingMode;
-        merged.PairOnHotReload = overlay.PairOnHotReload ?? merged.PairOnHotReload;
         merged.CustomPairingAddress = overlay.CustomPairingAddress ?? merged.CustomPairingAddress;
         merged.UsbOutputReportTransport = overlay.UsbOutputReportTransport ?? merged.UsbOutputReportTransport;
         merged.BluetoothOutputReportTransport =
@@ -569,7 +568,6 @@ public class DshmManagerToDriverConversion
         clone.HidDeviceMode = source.HidDeviceMode;
         clone.AutoRestartOnHidModeMismatch = source.AutoRestartOnHidModeMismatch;
         clone.DevicePairingMode = source.DevicePairingMode;
-        clone.PairOnHotReload = source.PairOnHotReload;
         clone.CustomPairingAddress = source.CustomPairingAddress;
         clone.UsbOutputReportTransport = source.UsbOutputReportTransport;
         clone.BluetoothOutputReportTransport = source.BluetoothOutputReportTransport;

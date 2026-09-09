@@ -272,10 +272,10 @@
                             <ui:Button
                                 Margin="10,0,0,0"
                                 VerticalAlignment="Stretch"
-                                Command="{Binding TriggerPairingOnHotReloadCommand}"
+                                Command="{Binding PairNowCommand}"
                                 Content="Pair now"
                                 DockPanel.Dock="Right"
-                                IsEnabled="{Binding SupportsBluetoothPairing}" />
+                                IsEnabled="{Binding CanPairNow}" />
 
                             <ComboBox
                                 x:Name="PairingModeComboBox"
