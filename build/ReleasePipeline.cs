@@ -562,6 +562,11 @@ static class ReleaseStaging
         return report;
     }
 
+    public static void ValidateGeneratedMsi(string msiPath)
+    {
+        SetupMsiContract.ValidateGeneratedMsi(msiPath);
+    }
+
     public static IReadOnlyList<string> ParseIssuedTo(string signToolOutput)
     {
         if (string.IsNullOrWhiteSpace(signToolOutput))

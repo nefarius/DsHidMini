@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -16,6 +17,10 @@ static class ReleasePipelineTests
         TestIgfilterStaging();
         TestSetupValidationWithoutSignatures();
         TestSignatureParser();
+        TestSetupMsiContractAcceptsControlAppPayload();
+        TestSetupMsiContractRejectsMissingControlApp();
+        TestSetupMsiContractRejectsMissingShortcut();
+        TestSetupMsiContractRejectsMissingDotNetPrerequisite();
         Console.WriteLine("ReleasePipeline fixture tests passed");
     }
 
@@ -188,6 +193,110 @@ static class ReleasePipelineTests
             () => ReleaseStaging.RequireDualDriverSigners(["Microsoft Windows Hardware Compatibility Publisher"], "dshidmini.dll"),
             "microsoft-only rejected");
     }
+
+    static void TestSetupMsiContractAcceptsControlAppPayload()
+    {
+        IReadOnlyList<string> errors = SetupMsiContract.Validate(ValidSetupMsiContents());
+        AssertTrue(errors.Count == 0, nameof(TestSetupMsiContractAcceptsControlAppPayload));
+        AssertTrue(
+            SetupMsiContract.ContainsMsiName(["CONTRO~1.EXE|ControlApp.exe"], SetupMsiContract.ControlAppFileName),
+            "decodes MSI long file name");
+        AssertEqual(
+            SetupMsiContract.DecodeMsiName("DSHIDM~1|DsHidMini Control App"),
+            SetupMsiContract.ControlAppShortcutName,
+            "decodes MSI long shortcut name");
+    }
+
+    static void TestSetupMsiContractRejectsMissingControlApp()
+    {
+        SetupMsiContents contents = ValidSetupMsiContents() with { FileNames = ["dshidmini.dll"] };
+        IReadOnlyList<string> errors = SetupMsiContract.Validate(contents);
+        AssertTrue(errors.Any(error => error.Contains(SetupMsiContract.ControlAppFileName, StringComparison.Ordinal)),
+            nameof(TestSetupMsiContractRejectsMissingControlApp));
+    }
+
+    static void TestSetupMsiContractRejectsMissingShortcut()
+    {
+        SetupMsiContents contents = ValidSetupMsiContents() with { ShortcutNames = ["Unrelated"] };
+        IReadOnlyList<string> errors = SetupMsiContract.Validate(contents);
+        AssertTrue(
+            errors.Any(error => error.Contains(SetupMsiContract.ControlAppShortcutName, StringComparison.Ordinal)),
+            nameof(TestSetupMsiContractRejectsMissingShortcut));
+    }
+
+    static void TestSetupMsiContractRejectsMissingDotNetPrerequisite()
+    {
+        SetupMsiContents missingAction = ValidSetupMsiContents() with { CustomActions = [] };
+        AssertTrue(
+            SetupMsiContract.Validate(missingAction)
+                .Any(error => error.Contains(SetupMsiContract.DotNetRuntimeCustomAction, StringComparison.Ordinal)),
+            "missing custom action");
+
+        SetupMsiContents missingCondition = ValidSetupMsiContents() with
+        {
+            SequenceEntries =
+            [
+                new SetupMsiSequenceEntry
+                {
+                    Table = "InstallExecuteSequence",
+                    Action = SetupMsiContract.DotNetRuntimeCustomAction,
+                    Condition = "Installed"
+                }
+            ]
+        };
+        AssertTrue(
+            SetupMsiContract.Validate(missingCondition)
+                .Any(error => error.Contains(SetupMsiContract.NotInstalledCondition, StringComparison.Ordinal)),
+            "missing NOT Installed condition");
+
+        SetupMsiContents staleRuntimeError = ValidSetupMsiContents() with
+        {
+            Errors =
+            [
+                new SetupMsiError
+                {
+                    Id = SetupMsiContract.DotNetRuntimeErrorId,
+                    Message = "The .NET 9 Desktop Runtime (x64) is required by DsHidMini Control App."
+                }
+            ]
+        };
+        AssertTrue(
+            SetupMsiContract.Validate(staleRuntimeError)
+                .Any(error => error.Contains(SetupMsiContract.DotNetRuntimeErrorHint, StringComparison.Ordinal)),
+            "stale .NET 9 error text");
+    }
+
+    static SetupMsiContents ValidSetupMsiContents() => new()
+    {
+        FileNames = ["CONTRO~1.EXE|ControlApp.exe"],
+        ShortcutNames = ["DSHIDM~1|DsHidMini Control App"],
+        CustomActions =
+        [
+            new SetupMsiCustomAction
+            {
+                Id = SetupMsiContract.DotNetRuntimeCustomAction,
+                Source = "ActionRuntime.dll",
+                Target = SetupMsiContract.DotNetRuntimeCustomAction
+            }
+        ],
+        SequenceEntries =
+        [
+            new SetupMsiSequenceEntry
+            {
+                Table = "InstallExecuteSequence",
+                Action = SetupMsiContract.DotNetRuntimeCustomAction,
+                Condition = SetupMsiContract.NotInstalledCondition
+            }
+        ],
+        Errors =
+        [
+            new SetupMsiError
+            {
+                Id = SetupMsiContract.DotNetRuntimeErrorId,
+                Message = "The .NET 10 Desktop Runtime (x64) is required by DsHidMini Control App."
+            }
+        ]
+    };
 
     static ReleaseMetadata SampleMetadata() => new()
     {

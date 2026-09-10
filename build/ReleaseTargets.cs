@@ -198,6 +198,10 @@ partial class Build
                 throw new InvalidOperationException($"MSI not found: {msiInSetup} or {msiInBin}");
             }
 
+            ReleaseStaging.ValidateGeneratedMsi(msiPath);
+            Log.Information(
+                "Generated MSI includes ControlApp.exe, the Start Menu shortcut, and the .NET 10 Desktop prerequisite");
+
             InvokeSignTool(
                 $"sign /v /n \"{SignCertName}\" /tr {SignTimestampUrl} /fd sha256 /td sha256 \"{msiPath}\"");
             ReleaseStaging.RequirePublisherSigner(
