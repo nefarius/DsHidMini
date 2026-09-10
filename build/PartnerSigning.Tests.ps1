@@ -43,6 +43,7 @@ Assert-Equal $product.requestedSignatures[0] 'WINDOWS_v100_X64_RS5_FULL' 'x64 RS
 Assert-Equal $product.requestedSignatures[1] 'WINDOWS_v100_ARM64_RS5_FULL' 'ARM64 RS5 signature'
 
 Assert-Equal (Get-SdcmEntityId -Json '{"id": 1152921505701840714, "name": "x"}') '1152921505701840714' 'entity id stays a string'
+Assert-Equal (Get-SdcmEntityId -Json '{"id": "1152921505701840714", "name": "x"}') '1152921505701840714' 'quoted entity id stays a string'
 
 $submission = New-PartnerSubmissionPayload -Name 'DsHidMini 3.6.0.2145'
 Assert-Equal $submission.type 'initial' 'submission type'

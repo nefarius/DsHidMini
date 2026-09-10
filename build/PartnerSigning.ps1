@@ -239,9 +239,13 @@ function Get-SdcmEntityId {
         [string] $Json
     )
 
-    $match = [regex]::Match($Json, '"id"\s*:\s*(\d+)')
+    # sdcm --output json re-serializes Hardware Dev Center ids with
+    # LongToStringJsonConverter, so the value is a quoted string. The raw API
+    # uses an unquoted number. Accept both so the id stays a string.
+    $match = [regex]::Match($Json, '"id"\s*:\s*"?(\d+)"?')
     if (-not $match.Success) {
-        throw 'sdcm JSON is missing an id field.'
+        $preview = if ($Json.Length -gt 500) { $Json.Substring(0, 500) + '...' } else { $Json }
+        throw "sdcm JSON is missing an id field.`n$preview"
     }
 
     return $match.Groups[1].Value
