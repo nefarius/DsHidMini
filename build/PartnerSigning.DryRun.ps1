@@ -155,7 +155,15 @@ $verb = $verbs[1]
 Add-Content -LiteralPath $logPath -Value "$noun $verb"
 
 function Write-SubmissionJson([switch] $AsArray) {
-    $downloads = @($state.downloads | ForEach-Object { @{ type = $_; url = "https://example.invalid/$_" } })
+    $downloads = @($state.downloads | ForEach-Object {
+        $url = "https://example.invalid/$_"
+        if ($_ -eq 'initialPackage') {
+            $cab = Join-Path (Split-Path -Parent $statePath) 'initial-package.cab'
+            if (-not (Test-Path -LiteralPath $cab)) { Set-Content -LiteralPath $cab -Value 'initial-package' }
+            $url = ([Uri]$cab).AbsoluteUri
+        }
+        @{ type = $_; url = $url }
+    })
     $submission = [ordered]@{
         id             = $state.submissionId
         productId      = $state.productId
@@ -252,9 +260,7 @@ switch ("$noun $verb") {
         if (Test-Path -LiteralPath $target) { Remove-Item -LiteralPath $target -Force }
         $stage = Join-Path ([IO.Path]::GetTempPath()) ('sdcm-mock-' + [guid]::NewGuid().ToString('N'))
         New-Item -ItemType Directory -Path $stage | Out-Null
-        $pkg = $state.submissionId
-        Set-Content -LiteralPath (Join-Path $stage "Signed_$pkg.zip") -Value 'signed-package'
-        Set-Content -LiteralPath (Join-Path $stage "Initial_$pkg.cab") -Value 'initial-package'
+        Set-Content -LiteralPath (Join-Path $stage 'dshidmini.sys') -Value 'signed-package'
         Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $target
         Remove-Item -LiteralPath $stage -Recurse -Force
         exit 0
@@ -428,6 +434,14 @@ try {
     Assert-Equal $result.tag 'v3.6.1.2202' 'fresh: result records the tag'
     Assert-True (Test-Path -LiteralPath (Join-Path $fresh.Sandbox "partner-signed/Signed_$($fresh.SubmissionId).zip")) 'fresh: signed zip staged'
     Assert-True (Test-Path -LiteralPath (Join-Path $fresh.Sandbox "partner-signed/Initial_$($fresh.SubmissionId).cab")) 'fresh: initial cab staged'
+    Assert-Equal (Measure-Call $fresh.Calls 'submission get') 1 'fresh: get used for the initialPackage url'
+    $unwrapped = Join-Path $fresh.Sandbox 'hdc-extracted'
+    New-Item -ItemType Directory -Force -Path $unwrapped | Out-Null
+    Expand-Archive -LiteralPath (Join-Path $fresh.Sandbox "partner-signed/Signed_$($fresh.SubmissionId).zip") -DestinationPath $unwrapped -Force
+    $unwrappedNames = @(Get-ChildItem -LiteralPath $unwrapped -Recurse -File | ForEach-Object { $_.Name })
+    Assert-True ($unwrappedNames -contains 'dshidmini.sys') 'fresh: signed zip contains driver files'
+    Assert-True ($unwrappedNames -notcontains "Signed_$($fresh.SubmissionId).zip") 'fresh: signed zip is not a wrapper'
+    Assert-True ($unwrappedNames -notcontains "Initial_$($fresh.SubmissionId).cab") 'fresh: signed zip has no initial cab'
 
     # Resuming a submission Hardware Dev Center is already processing must not
     # open a second product, and must not upload or commit again.
@@ -442,7 +456,7 @@ try {
     Assert-Equal (Measure-Call $processing.Calls 'submission upload') 0 'processing: upload skipped'
     Assert-Equal (Measure-Call $processing.Calls 'submission commit') 0 'processing: commit skipped'
     Assert-Equal (Measure-Call $processing.Calls 'submission wait') 1 'processing: waited once'
-    Assert-Equal (Measure-Call $processing.Calls 'submission get') 1 'processing: get used to resume'
+    Assert-Equal (Measure-Call $processing.Calls 'submission get') 2 'processing: get used to resume and to fetch initialPackage'
     Assert-Equal (Measure-Call $processing.Calls 'submission list') 0 'processing: does not use deprecated list'
     Assert-Equal $processing.ProductId '13872423721100346' 'processing: keeps the requested product id'
     Assert-Equal $processing.SubmissionId '1152921505701853745' 'processing: keeps the requested submission id'

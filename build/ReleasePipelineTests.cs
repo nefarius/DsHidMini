@@ -156,19 +156,23 @@ static class ReleasePipelineTests
     {
         const string output = """
             Signing Certificate Chain:
-                Issued to: Nefarius Software Solutions e.U.
-                Issued by: Intermediate CA
-                    Issued to: Intermediate CA
-                    Issued by: Root CA
+                Issued to: DigiCert Assured ID Root CA
+                Issued by: DigiCert Assured ID Root CA
+                    Issued to: DigiCert Trusted G4 Code Signing RSA4096 SHA384 2021 CA1
+                    Issued by: DigiCert Assured ID Root CA
+                        Issued to: Nefarius Software Solutions e.U.
+                        Issued by: DigiCert Trusted G4 Code Signing RSA4096 SHA384 2021 CA1
             The signature is timestamped: Thu Jan 01 00:00:00 2026
             Timestamp Verified by:
                 Issued to: Timestamp Authority
                 Issued by: Timestamp Root
             Signing Certificate Chain:
-                Issued to: Microsoft Windows Hardware Compatibility Publisher
-                Issued by: Microsoft Windows Third Party Component CA 2014
+                Issued to: Microsoft Root Certificate Authority 2010
+                Issued by: Microsoft Root Certificate Authority 2010
                     Issued to: Microsoft Windows Third Party Component CA 2014
                     Issued by: Microsoft Root Certificate Authority 2010
+                        Issued to: Microsoft Windows Hardware Compatibility Publisher
+                        Issued by: Microsoft Windows Third Party Component CA 2014
             """;
         var issued = ReleaseStaging.ParseIssuedTo(output);
         AssertEqual(string.Join("|", issued),

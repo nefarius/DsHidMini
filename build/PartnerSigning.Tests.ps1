@@ -117,13 +117,23 @@ $getJson = @'
   "productId": "13872423721100346",
   "name": "DsHidMini 3.6.1 3.6.1.2202 submission",
   "type": "initial",
-  "commitStatus": "commitComplete"
+  "commitStatus": "commitComplete",
+  "downloads": {
+    "items": [
+      { "type": "initialPackage", "url": "https://example.invalid/initial.cab" },
+      { "type": "signedPackage", "url": "https://example.invalid/signed.zip" }
+    ],
+    "messages": []
+  }
 }
 '@
 $fromGet = ConvertFrom-SdcmJson -Json $getJson
 Assert-True ($fromGet.id -is [string]) 'get id is a string'
 Assert-Equal $fromGet.id '1152921505701853745' 'get JSON keeps quoted id'
 Assert-Equal (Get-SdcmEntityId -Json $getJson) '1152921505701853745' 'get JSON entity id'
+Assert-Equal (Get-SdcmSubmissionDownloadUrl -Submission $fromGet -Type 'initialPackage') 'https://example.invalid/initial.cab' 'get JSON initialPackage url'
+Assert-Equal (Get-SdcmSubmissionDownloadUrl -Submission $fromGet -Type 'signedPackage') 'https://example.invalid/signed.zip' 'get JSON signedPackage url'
+Assert-Equal (Get-SdcmSubmissionDownloadUrl -Submission $fromGet -Type 'certificationReport') $null 'missing download type is null'
 
 $temp = Join-Path ([IO.Path]::GetTempPath()) ("dshm-partner-" + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $temp | Out-Null
@@ -150,6 +160,12 @@ try {
     Set-Content -LiteralPath (Join-Path $temp "Signed_42.zip") -Value 'signed'
     Set-Content -LiteralPath (Join-Path $temp "Initial_42.cab") -Value 'initial'
     Assert-Throws { Find-PartnerSignedPackagePair -Root $temp } 'multiple pairs rejected'
+
+    $blobSrc = Join-Path $temp 'portal-initial.cab'
+    $blobDst = Join-Path $temp 'copied-initial.cab'
+    Set-Content -LiteralPath $blobSrc -Value 'portal-initial'
+    Save-SdcmBlob -Url ([Uri]$blobSrc).AbsoluteUri -Path $blobDst
+    Assert-Equal (Get-Content -LiteralPath $blobDst -Raw).Trim() 'portal-initial' 'file URI blob copy'
 }
 finally {
     Remove-Item -LiteralPath $temp -Recurse -Force

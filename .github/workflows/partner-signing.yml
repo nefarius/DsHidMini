@@ -318,18 +318,8 @@ jobs:
             throw "Submission $submissionId is not ready to download (progress=$progress). Hardware Dev Center has not published a signed package yet."
           }
 
-          $downloadZip = Join-Path $pwd 'hdc-download.zip'
-          Invoke-Sdcm submission download --product-id $productId --submission-id $submissionId --output-file $downloadZip --overwrite
-          $extractDir = Join-Path $pwd 'hdc-extracted'
-          New-Item -ItemType Directory -Force -Path $extractDir | Out-Null
-          Expand-Archive -LiteralPath $downloadZip -DestinationPath $extractDir -Force
-
-          $pair = Find-PartnerSignedPackagePair -Root $extractDir
-
           $stage = Join-Path $pwd 'partner-signed'
-          New-Item -ItemType Directory -Force -Path $stage | Out-Null
-          Copy-Item -LiteralPath $pair.SignedZip -Destination (Join-Path $stage $pair.SignedName)
-          Copy-Item -LiteralPath $pair.InitialCab -Destination (Join-Path $stage $pair.InitialName)
+          $pair = Save-SdcmSubmissionPackagePair -ProductId $productId -SubmissionId $submissionId -Destination $stage
 
           $result = [ordered]@{
             schemaVersion = 1

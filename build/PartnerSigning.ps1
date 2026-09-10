@@ -217,7 +217,9 @@ function Find-PartnerSignedPackagePair {
         Where-Object { $_.Name -match $script:PartnerInitialNamePattern })
 
     if ($signed.Count -eq 0 -or $initial.Count -eq 0) {
-        throw "Partner download is missing Signed_<id>.zip and/or Initial_<id>.cab under $Root."
+        $found = @(Get-ChildItem -LiteralPath $Root -Recurse -File | ForEach-Object { $_.Name })
+        $preview = if ($found.Count -eq 0) { '(empty)' } else { $found -join ', ' }
+        throw "Partner download is missing Signed_<id>.zip and/or Initial_<id>.cab under $Root. Found: $preview"
     }
 
     $pairs = foreach ($zip in $signed) {
@@ -247,6 +249,98 @@ function Find-PartnerSignedPackagePair {
     }
 
     return $pairs[0]
+}
+
+function Get-SdcmSubmissionDownloadUrl {
+    [CmdletBinding()]
+    param(
+        $Submission,
+        [Parameter(Mandatory = $true)]
+        [string] $Type
+    )
+
+    if (-not $Submission -or -not $Submission.PSObject.Properties['downloads'] -or $null -eq $Submission.downloads) {
+        return $null
+    }
+
+    $downloads = $Submission.downloads
+    if (-not $downloads.PSObject.Properties['items'] -or $null -eq $downloads.items) {
+        return $null
+    }
+
+    foreach ($item in @($downloads.items)) {
+        $itemType = Get-PartnerSubmissionProperty -Object $item -Names @('type')
+        if ($itemType -and $itemType.Equals($Type, [StringComparison]::OrdinalIgnoreCase)) {
+            return Get-PartnerSubmissionProperty -Object $item -Names @('url')
+        }
+    }
+
+    return $null
+}
+
+function Save-SdcmBlob {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Url,
+
+        [Parameter(Mandatory = $true)]
+        [string] $Path
+    )
+
+    $directory = Split-Path -Parent $Path
+    if ($directory -and -not (Test-Path -LiteralPath $directory)) {
+        New-Item -ItemType Directory -Force -Path $directory | Out-Null
+    }
+
+    $uri = [Uri]$Url
+    if ($uri.IsFile) {
+        Copy-Item -LiteralPath $uri.LocalPath -Destination $Path -Force
+    }
+    else {
+        Invoke-WebRequest -Uri $Url -OutFile $Path
+    }
+
+    if (-not (Test-Path -LiteralPath $Path) -or (Get-Item -LiteralPath $Path).Length -eq 0) {
+        throw "Download produced an empty file: $Path"
+    }
+}
+
+function Save-SdcmSubmissionPackagePair {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $ProductId,
+
+        [Parameter(Mandatory = $true)]
+        [string] $SubmissionId,
+
+        [Parameter(Mandatory = $true)]
+        [string] $Destination
+    )
+
+    if ($SubmissionId -notmatch '^\d+$') {
+        throw "submission-id must be numeric. Got: '$SubmissionId'."
+    }
+
+    New-Item -ItemType Directory -Force -Path $Destination | Out-Null
+    $signedPath = Join-Path $Destination "Signed_$SubmissionId.zip"
+    $initialPath = Join-Path $Destination "Initial_$SubmissionId.cab"
+
+    Write-Host "Downloading signedPackage to $signedPath"
+    $null = Invoke-Sdcm submission download --product-id $ProductId --submission-id $SubmissionId --output-file $signedPath --overwrite
+
+    $got = Invoke-Sdcm submission get --product-id $ProductId --submission-id $SubmissionId
+    $submission = ConvertFrom-SdcmJson -Json $got
+    $initialUrl = Get-SdcmSubmissionDownloadUrl -Submission $submission -Type 'initialPackage'
+    if (-not $initialUrl) {
+        throw "Submission $SubmissionId has a signed package but no initialPackage download URL."
+    }
+
+    Write-Host "Downloading initialPackage to $initialPath"
+    Save-SdcmBlob -Url $initialUrl -Path $initialPath
+
+    return Find-PartnerSignedPackagePair -Root $Destination
 }
 
 function Get-SdcmEntityId {
