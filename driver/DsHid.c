@@ -752,9 +752,65 @@ VOID DS3_RAW_TO_DS4WINDOWS_HID_INPUT_REPORT(
 	}
 }
 
+//
+// Xbox / xinputhid.sys Battery Strength encoding:
+//   0x80 = wired (power cord)
+//   0x84 = empty / dying / unknown
+//   0x85 = low
+//   0x86 = medium
+//   0x87 = high / full
+// Sony reports 0xEE+ for charge state; the low bit distinguishes
+// charging (even) from charged (odd), including Navigation variants.
+//
+static
+UCHAR
+DSHM_MapBatteryToXInputHidStrength(
+	_In_ UCHAR RawStatus,
+	_In_ BOOLEAN IsWired
+)
+{
+	DS_BATTERY_STATUS status;
+
+	if (IsWired)
+	{
+		return 0x80;
+	}
+
+	if (RawStatus >= DsBatteryStatusCharging)
+	{
+		status = (RawStatus & 0x01) != 0
+			? DsBatteryStatusCharged
+			: DsBatteryStatusCharging;
+	}
+	else
+	{
+		status = RawStatus <= DsBatteryStatusFull
+			? (DS_BATTERY_STATUS)RawStatus
+			: DsBatteryStatusNone;
+	}
+
+	switch (status)
+	{
+	case DsBatteryStatusLow:
+		return 0x85;
+	case DsBatteryStatusMedium:
+	case DsBatteryStatusCharging:
+		return 0x86;
+	case DsBatteryStatusHigh:
+	case DsBatteryStatusFull:
+	case DsBatteryStatusCharged:
+		return 0x87;
+	case DsBatteryStatusDying:
+	case DsBatteryStatusNone:
+	default:
+		return 0x84;
+	}
+}
+
 VOID DS3_RAW_TO_XINPUTHID_HID_INPUT_REPORT(
 	_In_ const PDS3_RAW_INPUT_REPORT Input,
 	_Out_ PXINPUT_HID_INPUT_REPORT Output,
+	_In_ const BOOLEAN IsWired,
 	_In_ const PDS_THUMB_SETTINGS ThumbSettings,
 	_In_ const PDS_FLIP_AXIS_SETTINGS FlipAxis
 )
@@ -859,4 +915,9 @@ VOID DS3_RAW_TO_XINPUTHID_HID_INPUT_REPORT(
 	}
 
 	Output->GD_GamePadSystemControlSystemMainMenu = Input->Buttons.Individual.PS;
+
+	Output->GEN_GamePadBatteryStrength = DSHM_MapBatteryToXInputHidStrength(
+		Input->BatteryStatus,
+		IsWired
+	);
 }
