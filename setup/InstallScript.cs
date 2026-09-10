@@ -108,7 +108,7 @@ internal class InstallScript
                     new FileShortcut("DsHidMini Control App",
                         @"%ProgramMenu%\Nefarius Software Solutions\DsHidMini"))
             ),
-            // check for .NET 9 Desktop Runtime before any files are laid down
+            // check for .NET 10 Desktop Runtime before any files are laid down
             new ManagedAction(CustomActions.CheckDotNetRuntime, Return.check,
                 When.Before,
                 Step.LaunchConditions,
@@ -122,10 +122,10 @@ internal class InstallScript
             new Error("9000",
                 "Driver installation succeeded but a reboot is required to be fully operational. " +
                 "After the setup is finished, please reboot the system before using the software."),
-            // .NET 9 Desktop Runtime missing
+            // .NET 10 Desktop Runtime missing
             new Error("9001",
-                "The .NET 9 Desktop Runtime (x64) is required by DsHidMini Control App. " +
-                "Please download and install it from https://dotnet.microsoft.com/download/dotnet/9.0 " +
+                "The .NET 10 Desktop Runtime (x64) is required by DsHidMini Control App. " +
+                "Please download and install it from https://dotnet.microsoft.com/download/dotnet/10.0 " +
                 "and then re-run this installer."),
             // install BthPS3
             new ManagedAction(CustomActions.InstallBthPS3, Return.check,
@@ -266,7 +266,7 @@ internal class InstallScript
 public static class CustomActions
 {
     /// <summary>
-    ///     Verifies that the .NET 9 Desktop Runtime (x64) is installed before setup proceeds.
+    ///     Verifies that the .NET 10 Desktop Runtime (x64) is installed before setup proceeds.
     ///     Aborts the install with a user-facing message when the runtime is absent.
     /// </summary>
     /// <remarks>
@@ -278,6 +278,7 @@ public static class CustomActions
     [CustomAction]
     public static ActionResult CheckDotNetRuntime(Session session)
     {
+        const int requiredMajor = 10;
         string runtimeDir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
             "dotnet", "shared", "Microsoft.WindowsDesktop.App");
@@ -291,11 +292,11 @@ public static class CustomActions
                 foreach (string versionDir in Directory.GetDirectories(runtimeDir))
                 {
                     string dirName = Path.GetFileName(versionDir);
-                    // strip pre-release suffix (e.g. "9.0.0-preview.3") before parsing
+                    // strip pre-release suffix (e.g. "10.0.0-preview.3") before parsing
                     int dashIndex = dirName.IndexOf('-');
                     string numericPart = dashIndex >= 0 ? dirName.Substring(0, dashIndex) : dirName;
                     if (Version.TryParse(numericPart, out Version? installedVersion) &&
-                        installedVersion.Major >= 9)
+                        installedVersion.Major >= requiredMajor)
                     {
                         session.Log($".NET Desktop Runtime {installedVersion} found - prerequisite satisfied.");
                         return ActionResult.Success;
@@ -305,10 +306,10 @@ public static class CustomActions
         }
         catch (Exception ex)
         {
-            session.Log($"Failed to probe .NET 9 Desktop Runtime directory: {ex}");
+            session.Log($"Failed to probe .NET {requiredMajor} Desktop Runtime directory: {ex}");
         }
 
-        session.Log(".NET 9 Desktop Runtime not found, aborting installation.");
+        session.Log($".NET {requiredMajor} Desktop Runtime not found, aborting installation.");
 
         Record record = new(1);
         record[1] = "9001";

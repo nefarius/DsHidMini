@@ -190,7 +190,12 @@ Output:
 setup\Nefarius_DsHidMini_Drivers_x64_arm64_v3.6.0.msi
 ```
 
-The target EV-signs the MSI, verifies the publisher signature, and logs the SHA-256. Building `setup/DsHidMini.Installer.csproj` without `GenerateMsi=true` only compiles; it does not emit an MSI.
+`BuildSetup` opens the generated MSI read-only and requires `ControlApp.exe` in the `File` table, the `DsHidMini Control App` Start Menu shortcut, and the `CheckDotNetRuntime` custom action sequenced with `NOT Installed` plus Error `9001` mentioning the .NET 10 Desktop Runtime. The target then EV-signs the MSI, verifies the publisher signature, and logs the SHA-256. Building `setup/DsHidMini.Installer.csproj` without `GenerateMsi=true` only compiles; it does not emit an MSI.
+
+Clean-VM smoke checks before publishing:
+
+- Windows x64 (and ARM64 if available) with the .NET 10 Desktop Runtime (x64) already installed: MSI installs the driver, `ControlApp.exe` is under Program Files, the Start Menu shortcut launches ControlApp.
+- The same machine family **without** that runtime: setup aborts with Error 9001 and does not leave a partial driver install.
 
 ### 7. Publish
 
@@ -232,6 +237,7 @@ gh release create setup-v3.6.0 `
 | DLL missing publisher signer | Microsoft package is not from this pipeline's EV-signed CAB |
 | `StageIgfilter` cannot find `nssmkig_ARM64` | Source tree is incomplete or named differently |
 | MSI build missing files | `ValidateSetupInputs` was skipped or staging was cleaned |
+| `BuildSetup` ControlApp packaging contract failed | Generated MSI omitted `ControlApp.exe`, the Start Menu shortcut, or the .NET 10 Desktop prerequisite |
 | `BuildSetup` SetupVersion mismatch | Typed `3.6.1` against a `v3.6.0` run |
 
 ## Related code
