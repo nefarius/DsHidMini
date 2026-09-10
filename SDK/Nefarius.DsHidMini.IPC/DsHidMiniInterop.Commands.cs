@@ -109,6 +109,140 @@ public partial class DsHidMiniInterop
     }
 
     /// <summary>
+    ///     Attempts to read the current <see cref="DsMotionSnapshot" /> for a device slot.
+    /// </summary>
+    /// <remarks>
+    ///     Uses the same per-slot HID wait event as <see cref="GetRawInputReport" />.
+    ///     When the connected driver has no motion region (older builds), this
+    ///     returns <see langword="false" />. Check <see cref="HasMotionTelemetry" />.
+    /// </remarks>
+    /// <param name="deviceIndex">The one-based device index.</param>
+    /// <param name="snapshot">Receives a stable seqlock copy when the method returns true.</param>
+    /// <param name="timeout">Optional timeout to wait for a snapshot update. Default invocation returns immediately.</param>
+    /// <returns>
+    ///     TRUE if <paramref name="snapshot" /> was filled, FALSE if motion telemetry
+    ///     is unavailable, the slot is empty, or a timeout expired.
+    /// </returns>
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
+    public unsafe bool GetMotionSnapshot(int deviceIndex, out DsMotionSnapshot snapshot, TimeSpan? timeout = null)
+    {
+        snapshot = default;
+
+        if (!HasMotionTelemetry || _motionView is null)
+        {
+            return false;
+        }
+
+        ValidateDeviceIndex(deviceIndex);
+
+        nuint byteOffset = (nuint)((deviceIndex - 1) * Marshal.SizeOf<DsMotionSnapshot>());
+        void* pMessage = (byte*)_motionView.Value + byteOffset;
+        ref DsMotionSnapshot message = ref Unsafe.AsRef<DsMotionSnapshot>(pMessage);
+
+        if (timeout.HasValue)
+        {
+            EventWaitHandle waitEvent;
+            try
+            {
+                waitEvent = GetOrOpenHidReportWaitEvent(deviceIndex);
+            }
+            catch (WaitHandleCannotBeOpenedException)
+            {
+                return false;
+            }
+
+            Stopwatch waitClock = Stopwatch.StartNew();
+            TimeSpan waitBudget = timeout.Value < TimeSpan.Zero ? TimeSpan.Zero : timeout.Value;
+            while (true)
+            {
+                int sequence = Volatile.Read(ref message.SequenceNumber);
+                if ((sequence & 1) == 0
+                    && sequence != 0
+                    && (!_lastSeenMotionSequences.TryGetValue(deviceIndex, out int lastSeen) || sequence != lastSeen))
+                {
+                    return TryCopyMotionSnapshot(deviceIndex, ref message, waitBudget - waitClock.Elapsed, out snapshot);
+                }
+
+                if (message.SlotIndex == 0)
+                {
+                    return false;
+                }
+
+                TimeSpan waitRemaining = waitBudget - waitClock.Elapsed;
+                if (waitRemaining <= TimeSpan.Zero)
+                {
+                    return false;
+                }
+
+                if ((sequence & 1) == 0
+                    && _lastSeenMotionSequences.TryGetValue(deviceIndex, out lastSeen)
+                    && sequence == lastSeen)
+                {
+                    Thread.Sleep((int)Math.Min(waitRemaining.TotalMilliseconds, 1));
+                }
+                else
+                {
+                    waitEvent.WaitOne(waitRemaining);
+                }
+            }
+        }
+
+        return TryCopyMotionSnapshot(deviceIndex, ref message, timeout: null, out snapshot);
+    }
+
+    private bool TryCopyMotionSnapshot(
+        int deviceIndex,
+        ref DsMotionSnapshot message,
+        TimeSpan? timeout,
+        out DsMotionSnapshot snapshot
+    )
+    {
+        Stopwatch? copyClock = timeout.HasValue ? Stopwatch.StartNew() : null;
+        TimeSpan copyBudget = timeout.GetValueOrDefault();
+        bool allowOneAttempt = timeout.HasValue && copyBudget <= TimeSpan.Zero;
+
+        while (true)
+        {
+            if (copyClock is not null && !allowOneAttempt && copyClock.Elapsed >= copyBudget)
+            {
+                snapshot = default;
+                return false;
+            }
+
+            allowOneAttempt = false;
+
+            int first = Volatile.Read(ref message.SequenceNumber);
+            if ((first & 1) != 0)
+            {
+                Thread.Yield();
+                continue;
+            }
+
+            if (message.SlotIndex == 0)
+            {
+                snapshot = default;
+                return false;
+            }
+
+            if (message.SlotIndex != deviceIndex)
+            {
+                throw new DsHidMiniInteropUnexpectedReplyException();
+            }
+
+            DsMotionSnapshot copy = message;
+            int second = Volatile.Read(ref message.SequenceNumber);
+            if (first != second)
+            {
+                continue;
+            }
+
+            snapshot = copy;
+            _lastSeenMotionSequences[deviceIndex] = first;
+            return true;
+        }
+    }
+
+    /// <summary>
     ///     Copies a stable HID slot snapshot using the driver seqlock.
     /// </summary>
     private bool TryCopyRawInputReport(

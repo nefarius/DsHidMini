@@ -30,6 +30,7 @@
     <ClCompile Include="DsHidMiniDrv.c" />
     <ClCompile Include="DsIdentification.c" />
     <ClCompile Include="DsLed.c" />
+    <ClCompile Include="DsMotion.c" />
     <ClCompile Include="DsUsb.c" />
     <ClCompile Include="HID.FeatureReport.c" />
     <ClCompile Include="HID.Reports.c" />
@@ -59,6 +60,7 @@
     <ClInclude Include="DsIdentification.h" />
     <ClInclude Include="DsInternal.h" />
     <ClInclude Include="DsLed.h" />
+    <ClInclude Include="DsMotion.h" />
     <ClInclude Include="DsUsb.h" />
     <ClInclude Include="HID.ReportHandlers.h" />
     <ClInclude Include="HID\01_SDF_Col1_GamePad.h" />

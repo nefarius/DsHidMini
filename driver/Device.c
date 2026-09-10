@@ -250,6 +250,8 @@ void DsHidMini_DeviceCleanup(
 				RtlZeroMemory(pHIDBuffer->AlignmentPadding, sizeof(pHIDBuffer->AlignmentPadding));
 				InterlockedIncrement(&pHIDBuffer->SequenceNumber);
 			}
+
+			DsMotion_PublishOrClearIpcSnapshot(deviceContext, TRUE);
 		}
 		WdfWaitLockRelease(driverContext->IpcLock);
 
@@ -566,6 +568,8 @@ DsDevice_InitContext(
 	WDF_TIMER_CONFIG timerCfg;
 
 	FuncEntry(TRACE_DEVICE);
+
+	DsMotion_Initialize(&pDevCtx->Motion);
 
 	WdfWaitLockAcquire(pDrvCtx->SlotsLock, NULL);
 	{

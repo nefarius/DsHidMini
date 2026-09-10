@@ -51,6 +51,11 @@ DSHM_ParseInputReport(
 				SetEvent(DeviceContext->IPC.InputReportWaitHandle);
 			}
 
+			if (pDrvCtx->IPC.IsEnabled && pDrvCtx->IPC.SharedRegions.Motion.Buffer != NULL)
+			{
+				DsMotion_PublishOrClearIpcSnapshot(DeviceContext, FALSE);
+			}
+
 			WdfWaitLockRelease(pDrvCtx->IpcLock);
 		}
 	}

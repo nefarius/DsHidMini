@@ -29,6 +29,7 @@ static NTSTATUS DSHM_IPC_CreateResources(
 
 	PUCHAR pCmdBuf = NULL;
 	PUCHAR pHIDBuf = NULL;
+	PUCHAR pMotionBuf = NULL;
 	HANDLE hReadEvent = NULL;
 	HANDLE hWriteEvent = NULL;
 	HANDLE hMapFile = NULL;
@@ -43,12 +44,13 @@ static NTSTATUS DSHM_IPC_CreateResources(
 
 	DWORD cmdRegionSize = pageSize;
 	DWORD hidRegionSize = pageSize;
-	DWORD totalRegionSize = cmdRegionSize + hidRegionSize;
+	DWORD motionRegionSize = pageSize;
+	DWORD totalRegionSize = cmdRegionSize + hidRegionSize + motionRegionSize;
 
 	TraceVerbose(
 		TRACE_IPC,
-		"pageSize = %d, cmdRegionSize = %d, hidRegionSize = %d, totalRegionSize = %d",
-		pageSize, cmdRegionSize, hidRegionSize, totalRegionSize
+		"pageSize = %d, cmdRegionSize = %d, hidRegionSize = %d, motionRegionSize = %d, totalRegionSize = %d",
+		pageSize, cmdRegionSize, hidRegionSize, motionRegionSize, totalRegionSize
 	);	
 
 	SECURITY_ATTRIBUTES sa = { 0 };
@@ -191,6 +193,25 @@ static NTSTATUS DSHM_IPC_CreateResources(
 		goto exitFailure;
 	}
 
+	pMotionBuf = MapViewOfFile(
+		hMapFile,
+		FILE_MAP_ALL_ACCESS,
+		0,
+		pageSize * 2,
+		motionRegionSize
+	);
+
+	if (pMotionBuf == NULL)
+	{
+		lastError = GetLastError();
+		TraceError(
+			TRACE_IPC,
+			"Could not map view of file MOTION REGION (%!WINERROR!).",
+			lastError
+		);
+		goto exitFailure;
+	}
+
 	context->IPC.DispatchThreadTermination = hThreadTermination;
 	context->IPC.MapFile = hMapFile;
 	context->IPC.ConnectMutex = hMutex;
@@ -202,6 +223,9 @@ static NTSTATUS DSHM_IPC_CreateResources(
 
 	context->IPC.SharedRegions.HID.Buffer = pHIDBuf;
 	context->IPC.SharedRegions.HID.BufferSize = hidRegionSize;
+
+	context->IPC.SharedRegions.Motion.Buffer = pMotionBuf;
+	context->IPC.SharedRegions.Motion.BufferSize = motionRegionSize;
 
 	// 
 	// Start thread now that context is initialized at its minimum requirement
@@ -233,6 +257,8 @@ static NTSTATUS DSHM_IPC_CreateResources(
 		context->IPC.SharedRegions.Commands.BufferSize = 0;
 		context->IPC.SharedRegions.HID.Buffer = NULL;
 		context->IPC.SharedRegions.HID.BufferSize = 0;
+		context->IPC.SharedRegions.Motion.Buffer = NULL;
+		context->IPC.SharedRegions.Motion.BufferSize = 0;
 		goto exitFailure;
 	}
 
@@ -259,6 +285,9 @@ exitFailure:
 
 	if (pHIDBuf)
 		UnmapViewOfFile(pHIDBuf);
+
+	if (pMotionBuf)
+		UnmapViewOfFile(pMotionBuf);
 
 	if (hReadEvent)
 		CloseHandle(hReadEvent);
@@ -306,6 +335,9 @@ static void DSHM_IPC_DestroyResources(
 	if (context->IPC.SharedRegions.HID.Buffer)
 		UnmapViewOfFile(context->IPC.SharedRegions.HID.Buffer);
 
+	if (context->IPC.SharedRegions.Motion.Buffer)
+		UnmapViewOfFile(context->IPC.SharedRegions.Motion.Buffer);
+
 	if (context->IPC.MapFile)
 		CloseHandle(context->IPC.MapFile);
 
@@ -324,6 +356,8 @@ static void DSHM_IPC_DestroyResources(
 	context->IPC.SharedRegions.Commands.BufferSize = 0;
 	context->IPC.SharedRegions.HID.Buffer = NULL;
 	context->IPC.SharedRegions.HID.BufferSize = 0;
+	context->IPC.SharedRegions.Motion.Buffer = NULL;
+	context->IPC.SharedRegions.Motion.BufferSize = 0;
 	context->IPC.MapFile = NULL;
 	context->IPC.ReadEvent = NULL;
 	context->IPC.WriteEvent = NULL;

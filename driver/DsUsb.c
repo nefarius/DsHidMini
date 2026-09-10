@@ -612,15 +612,30 @@ NTSTATUS DsUsb_PrepareHardware(WDFDEVICE Device)
 		}
 
 		//
+		// Soft-read EEPROM page 0xA0 (Feature 0xEF) after address/pairing
+		// discovery and before the first output report. Failure must not
+		// abort PrepareHardware; DsMotion keeps the documented nominal
+		// fallback in that case (issue #217).
+		// 
+		DsMotion_TryLoadUsbCalibration(Device);
+
+		//
 		// Send initial output report. The PS3 itself sends an all-zero,
 		// 48-byte report over the control endpoint before it ever enables
 		// streaming (Feature 0xF4) - mirrored here (instead of the historical
 		// interrupt-OUT write) so devices without an OUT pipe get exactly the
 		// same treatment a genuine pad already receives from a real console
-		// (see issue #321 and docs/PS3_USB_STARTUP.md).
+		// (see issue #321 and docs/PS3_USB_STARTUP.md). Overlay the Sony
+		// gyro cal byte when this pad's path uses hardware trim.
 		// 
 		{
 			UCHAR zeroOutputReport[48] = { 0 };
+
+			DsMotion_OverlayCalByteOnUnified(
+				pDevCtx,
+				zeroOutputReport,
+				ARRAYSIZE(zeroOutputReport)
+			);
 
 			if (!NT_SUCCESS(status = DsUsb_Ds3SendOutputReportControl(
 				pDevCtx,

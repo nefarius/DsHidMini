@@ -170,6 +170,33 @@
                                                 </ui:Button>
                                             </Viewbox>
 
+                                            <!--  Motion viewer (issue #217)  -->
+                                            <Viewbox Margin="0" DockPanel.Dock="Left">
+                                                <ui:Button
+                                                    Width="50"
+                                                    Height="50"
+                                                    Padding="5"
+                                                    HorizontalAlignment="Stretch"
+                                                    VerticalAlignment="Stretch"
+                                                    HorizontalContentAlignment="Stretch"
+                                                    Command="{Binding OpenMotionViewerCommand}"
+                                                    FontStyle="Normal"
+                                                    IsEnabled="{Binding CanOpenMotionViewer}"
+                                                    ToolTip="{Binding MotionViewerToolTip}"
+                                                    ToolTipService.InitialShowDelay="200">
+                                                    <ui:Button.Content>
+                                                        <Viewbox>
+                                                            <ui:SymbolIcon
+                                                                Margin="0"
+                                                                HorizontalAlignment="Center"
+                                                                FontSize="28"
+                                                                Foreground="White"
+                                                                Symbol="Cube24" />
+                                                        </Viewbox>
+                                                    </ui:Button.Content>
+                                                </ui:Button>
+                                            </Viewbox>
+
                                             <!--  Power cycle/Reconnect button  -->
                                             <Viewbox Margin="0" DockPanel.Dock="Left">
                                                 <ui:Button

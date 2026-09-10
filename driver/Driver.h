@@ -126,6 +126,16 @@ typedef struct _DSHM_DRIVER_CONTEXT
 				// 
 				size_t BufferSize;
 			} HID;
+
+			//
+			// High-frequency motion telemetry (issue #217). Mapped at
+			// 2 * allocation granularity so older SDKs keep working.
+			// 
+			struct
+			{
+				PUCHAR Buffer;
+				size_t BufferSize;
+			} Motion;
 		} SharedRegions;
 
 		//

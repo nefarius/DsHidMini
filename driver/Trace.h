@@ -16,6 +16,7 @@
         WPP_DEFINE_BIT(TRACE_CONFIG)                                   \
         WPP_DEFINE_BIT(TRACE_IPC)                                      \
         WPP_DEFINE_BIT(TRACE_LED)                                      \
+        WPP_DEFINE_BIT(TRACE_MOTION)                                   \
         )                                                              \
 
 #define WPP_FLAG_LEVEL_LOGGER(flag, level)                              \

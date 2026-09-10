@@ -1,6 +1,7 @@
 #pragma once
 #include <DmfModule.h>
 #include "DsIdentification.h"
+#include "DsMotion.h"
 
 
 EXTERN_C_START
@@ -322,6 +323,13 @@ typedef struct _DEVICE_CONTEXT
 		// 
 		BOOLEAN IdentificationPresent;
 		DS_IDENTIFICATION_INFO Identification;
+
+	//
+	// Motion calibration, gyro tracker, and last corrected sample.
+	// Seeded with nominal values; USB PrepareHardware may replace them
+	// from EEPROM page 0xA0. See docs/MOTION.md and issue #217.
+	// 
+	DS_MOTION_STATE Motion;
 
 	//
 	// Current reported battery status
