@@ -86,6 +86,7 @@ Assert-True (-not (Test-SdcmSubmissionNeedsCommit -Status $processing)) 'process
 $completed = New-TestStatus -Progress 'completed' -CommitStatus 'commitComplete' -State 'completed' -Step 'finalizeIngestion' -HasSignedPackage $true
 Assert-Equal (Get-SdcmSubmissionProgress -Status $completed) 'completed' 'completed progress'
 Assert-True (-not (Test-SdcmSubmissionNeedsUpload -Status $completed)) 'completed skips upload'
+Assert-True (-not (Test-SdcmSubmissionNeedsCommit -Status $completed)) 'completed skips commit'
 
 $failed = New-TestStatus -Progress 'failed' -CommitStatus 'commitFailed' -State 'failed' -Step 'validation'
 Assert-Equal (Get-SdcmSubmissionProgress -Status $failed) 'failed' 'failed progress'
