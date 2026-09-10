@@ -128,9 +128,10 @@ internal static class XInputSlotResolver
         // Capture generation before resolving to prevent stale writes after InvalidateResolutionCache
         long generationSnapshot = Interlocked.Read(ref _cacheGeneration);
 
+        IReadOnlyList<XinputHidChild> xinputHidChildren = EnumerateXinputHidChildren();
         if (TryResolveViaXusbContainer(dshmDevice, out userIndex)
-            || TryResolveViaXinputHidChild(dshmDevice, out userIndex)
-            || TryResolveViaUniqueOccupiedXinputSlot(dshmDevice, out userIndex))
+            || TryResolveViaXinputHidChild(dshmDevice, xinputHidChildren, out userIndex)
+            || TryResolveViaUniqueOccupiedXinputSlot(dshmDevice, xinputHidChildren, out userIndex))
         {
             if (Interlocked.Read(ref _cacheGeneration) == generationSnapshot)
             {
@@ -182,20 +183,39 @@ internal static class XInputSlotResolver
         return false;
     }
 
-    private static bool TryResolveViaXinputHidChild(PnPDevice dshmDevice, out byte userIndex)
+    private readonly record struct XinputHidChild(string Path, string ParentInstanceId);
+
+    private static List<XinputHidChild> EnumerateXinputHidChildren()
     {
-        userIndex = InvalidXInputUserId;
+        List<XinputHidChild> children = [];
         foreach (string hidPath in EnumeratePresentDeviceInterfacePaths(HidDeviceInterfaceGuid))
         {
             if (!TryGetDeviceInstanceIdFromInterfacePath(hidPath, out string? hidInstanceId)
                 || !IsXInputHidInstanceId(hidInstanceId)
                 || !TryGetParentInstanceId(hidInstanceId, out string? parentId)
-                || !InstanceIdsEqual(parentId, dshmDevice.InstanceId))
+                || parentId is null)
             {
                 continue;
             }
 
-            if (TrySymlinkToUserIndex(hidPath, out byte idx) && idx != InvalidXInputUserId)
+            children.Add(new XinputHidChild(hidPath, parentId));
+        }
+
+        return children;
+    }
+
+    private static bool TryResolveViaXinputHidChild(PnPDevice dshmDevice,
+        IReadOnlyList<XinputHidChild> xinputHidChildren, out byte userIndex)
+    {
+        userIndex = InvalidXInputUserId;
+        foreach (XinputHidChild child in xinputHidChildren)
+        {
+            if (!InstanceIdsEqual(child.ParentInstanceId, dshmDevice.InstanceId))
+            {
+                continue;
+            }
+
+            if (TrySymlinkToUserIndex(child.Path, out byte idx) && idx != InvalidXInputUserId)
             {
                 userIndex = idx;
                 return true;
@@ -205,10 +225,13 @@ internal static class XInputSlotResolver
         return false;
     }
 
-    private static bool TryResolveViaUniqueOccupiedXinputSlot(PnPDevice dshmDevice, out byte userIndex)
+    private static bool TryResolveViaUniqueOccupiedXinputSlot(PnPDevice dshmDevice,
+        IReadOnlyList<XinputHidChild> xinputHidChildren, out byte userIndex)
     {
         userIndex = InvalidXInputUserId;
-        if (!HasXInputHidChild(dshmDevice))
+        int xinputDshmDeviceCount = CountXinputModeDshmDevices(xinputHidChildren);
+        if (xinputDshmDeviceCount != 1
+            || !HasXInputHidChild(dshmDevice, xinputHidChildren))
         {
             return false;
         }
@@ -235,14 +258,22 @@ internal static class XInputSlotResolver
         return true;
     }
 
-    private static bool HasXInputHidChild(PnPDevice dshmDevice)
+    private static int CountXinputModeDshmDevices(IReadOnlyList<XinputHidChild> xinputHidChildren)
     {
-        foreach (string hidPath in EnumeratePresentDeviceInterfacePaths(HidDeviceInterfaceGuid))
+        HashSet<string> parents = new(StringComparer.OrdinalIgnoreCase);
+        foreach (XinputHidChild child in xinputHidChildren)
         {
-            if (TryGetDeviceInstanceIdFromInterfacePath(hidPath, out string? hidInstanceId)
-                && IsXInputHidInstanceId(hidInstanceId)
-                && TryGetParentInstanceId(hidInstanceId, out string? parentId)
-                && InstanceIdsEqual(parentId, dshmDevice.InstanceId))
+            parents.Add(child.ParentInstanceId);
+        }
+
+        return parents.Count;
+    }
+
+    private static bool HasXInputHidChild(PnPDevice dshmDevice, IReadOnlyList<XinputHidChild> xinputHidChildren)
+    {
+        foreach (XinputHidChild child in xinputHidChildren)
+        {
+            if (InstanceIdsEqual(child.ParentInstanceId, dshmDevice.InstanceId))
             {
                 return true;
             }
