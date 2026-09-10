@@ -130,17 +130,20 @@ Restart point: rerun the same command; it replaces `artifacts/ci` and restages C
 
 ### 3. Partner Center signing (CI)
 
-The `partner-signing` jobs create a new versioned Attestation product named `DsHidMini <setupVersion> <driverVersion>` and request exactly:
+The `partner-signing` jobs create a new versioned Attestation product named `DsHidMini <setupVersion> <driverVersion>`, or resume one named by the `product-id` / `submission-id` inputs, and request exactly:
 
 - `WINDOWS_v100_X64_RS5_FULL` (Windows 10 Client version 1809 Client x64 (RS5))
 - `WINDOWS_v100_ARM64_RS5_FULL` (Windows 10 Client version 1809 Client ARM64 (RS5))
 
 They upload the EV-signed combined CAB, wait up to 60 minutes, download `Signed_<id>.zip` plus `Initial_<id>.cab`, mirror that pair to buildbot, then ingest and signature-check the signed zip.
 
-Retry without rebuilding:
+Retry without rebuilding. Every fresh run opens another Partner Center product, so prefer the resume path:
 
-- **Re-run failed jobs** on the same workflow run resumes after the last successful job (`create` / `upload` / `wait` / `ingest`). Upload/commit is status-aware and will not blindly re-upload a submission that already advanced.
-- **workflow_dispatch** of `Partner Center signing` with the original Build run ID creates a fresh product/submission from the already-built CAB. Use this after Hardware Dev Center rejects or fails a submission.
+- **Re-run failed jobs** on the same workflow run resumes after the last successful job (`create` / `upload` / `wait` / `ingest`). Upload/commit is status-aware and will not blindly re-upload a submission that already advanced. A re-run replays the commit the run started from, so a fix to `build/PartnerSigning.ps1` or to the workflow is **not** picked up; dispatch instead.
+- **workflow_dispatch** with the original Build run ID plus `product-id` and `submission-id` resumes that existing submission using the current branch's scripts. This is how a script fix reaches a submission Hardware Dev Center is already processing, without opening another product.
+- **workflow_dispatch** with the original Build run ID and no `product-id` / `submission-id` creates a fresh product and submission from the already-built CAB. Use this only once Hardware Dev Center has rejected or failed a submission.
+
+Before changing that automation, run `.\build.cmd TestReleasePipeline`. It runs the workflow's own `create` / `upload` / `wait` scripts against a mock `sdcm` and asserts which sdcm verbs each stage calls, so submission-state bugs surface locally instead of consuming a product.
 
 This project's verified behavior: Microsoft **adds** its signature to the already EV-signed DLLs and replaces the catalog. If a returned DLL has only a Microsoft signer, stop and investigate; do not continue to MSI.
 
@@ -208,6 +211,7 @@ gh release create setup-v3.6.0 `
 - Split the returned dual-arch INF/CAT into x64-only and ARM64-only packages.
 - EV-sign driver DLLs again after Microsoft returns them.
 - Use a four-part `v*` tag to start a release. `workflow_dispatch` on Partner Center signing is only for retrying attestation from an existing Build run.
+- Dispatch Partner Center signing to debug the automation. Each fresh run opens a Partner Center product; resume the existing submission or run `.\build.cmd TestReleasePipeline` instead.
 - Treat `artifacts/` as source-controlled input; it is gitignored staging.
 
 ## Troubleshooting
@@ -220,6 +224,8 @@ gh release create setup-v3.6.0 `
 | `create` job auth exit 2 | `SDCM_PROFILES__DEFAULT__*` secrets missing or invalid |
 | `wait` job exit 7 | Hardware Dev Center rejected the submission; dispatch a new signing run |
 | `wait` job exit 9 | `--wait-timeout` 3600 elapsed; re-run failed jobs to resume the wait |
+| `wait` job: submission is still commitPending | The commit never landed; re-run the `upload` job before the wait |
+| `create` job: product-id and submission-id must be supplied together | Resume needs both ids, or neither |
 | Missing `Signed_<id>.zip` / `Initial_<id>.cab` pair | Downloaded the wrapper or submission CAB instead of the portal pair |
 | Multiple `dshidmini` packages | Point `MicrosoftPackagePath` at the zip or the single package folder |
 | DLL missing Microsoft signer | Downloaded the submission CAB instead of the dashboard's signed package |
@@ -236,6 +242,7 @@ gh release create setup-v3.6.0 `
 | [`build/ReleasePipeline.cs`](../build/ReleasePipeline.cs) | Staging, ingest, validation |
 | [`build/ReleaseTargets.cs`](../build/ReleaseTargets.cs) | NUKE entry points |
 | [`build/PartnerSigning.ps1`](../build/PartnerSigning.ps1) | SDCM payloads, submission progress, Signed_/Initial_ pair checks |
+| [`build/PartnerSigning.DryRun.ps1`](../build/PartnerSigning.DryRun.ps1) | Offline dry run of the signing workflow against a mock sdcm |
 | [`.github/workflows/partner-signing.yml`](../.github/workflows/partner-signing.yml) | Retryable Partner Center submit / wait / ingest |
 | [`build/New-PartnerSubmissionInf.ps1`](../build/New-PartnerSubmissionInf.ps1) | Dual-arch INF for the submission CAB |
 | [`DsHidMini_combined.ddf`](../DsHidMini_combined.ddf) | Partner CAB layout (`dshidmini/` not at CAB root; includes PDBs) |
