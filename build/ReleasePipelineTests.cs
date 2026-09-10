@@ -21,6 +21,7 @@ static class ReleasePipelineTests
         TestSetupMsiContractRejectsMissingControlApp();
         TestSetupMsiContractRejectsMissingShortcut();
         TestSetupMsiContractRejectsMissingDotNetPrerequisite();
+        TestSetupMsiContractRejectsNearMatchAndUiOnlyRuntimeAction();
         Console.WriteLine("ReleasePipeline fixture tests passed");
     }
 
@@ -264,6 +265,52 @@ static class ReleasePipelineTests
             SetupMsiContract.Validate(staleRuntimeError)
                 .Any(error => error.Contains(SetupMsiContract.DotNetRuntimeErrorHint, StringComparison.Ordinal)),
             "stale .NET 9 error text");
+    }
+
+    static void TestSetupMsiContractRejectsNearMatchAndUiOnlyRuntimeAction()
+    {
+        SetupMsiContents nearMatch = ValidSetupMsiContents() with
+        {
+            CustomActions =
+            [
+                new SetupMsiCustomAction
+                {
+                    Id = "CheckDotNetRuntimeProbe",
+                    Source = "ActionRuntime.dll",
+                    Target = SetupMsiContract.DotNetRuntimeCustomAction
+                }
+            ],
+            SequenceEntries =
+            [
+                new SetupMsiSequenceEntry
+                {
+                    Table = "InstallExecuteSequence",
+                    Action = "CheckDotNetRuntimeProbe",
+                    Condition = SetupMsiContract.NotInstalledCondition
+                }
+            ]
+        };
+        AssertTrue(
+            SetupMsiContract.Validate(nearMatch)
+                .Any(error => error.Contains(SetupMsiContract.DotNetRuntimeCustomAction, StringComparison.Ordinal)),
+            "near-match custom action");
+
+        SetupMsiContents uiOnly = ValidSetupMsiContents() with
+        {
+            SequenceEntries =
+            [
+                new SetupMsiSequenceEntry
+                {
+                    Table = "InstallUISequence",
+                    Action = SetupMsiContract.DotNetRuntimeCustomAction,
+                    Condition = SetupMsiContract.NotInstalledCondition
+                }
+            ]
+        };
+        AssertTrue(
+            SetupMsiContract.Validate(uiOnly)
+                .Any(error => error.Contains("InstallExecuteSequence", StringComparison.Ordinal)),
+            "UI-only sequence");
     }
 
     static SetupMsiContents ValidSetupMsiContents() => new()

@@ -44,34 +44,23 @@ static class SetupMsiContract
             errors.Add($"Shortcut table is missing '{ControlAppShortcutName}'.");
         }
 
-        IReadOnlyList<SetupMsiCustomAction> runtimeActions = contents.CustomActions
-            .Where(action =>
-                ContainsIgnoreCase(action.Id, DotNetRuntimeCustomAction) ||
-                ContainsIgnoreCase(action.Source, DotNetRuntimeCustomAction) ||
-                ContainsIgnoreCase(action.Target, DotNetRuntimeCustomAction))
-            .ToArray();
+        bool hasRuntimeAction = contents.CustomActions.Any(action =>
+            string.Equals(action.Id, DotNetRuntimeCustomAction, StringComparison.OrdinalIgnoreCase));
 
-        if (runtimeActions.Count == 0)
+        if (!hasRuntimeAction)
         {
             errors.Add($"CustomAction table is missing {DotNetRuntimeCustomAction}.");
         }
 
-        HashSet<string> runtimeActionIds = new(
-            runtimeActions.Select(action => action.Id).Where(id => !string.IsNullOrWhiteSpace(id)),
-            StringComparer.OrdinalIgnoreCase);
-        if (runtimeActionIds.Count == 0)
-        {
-            runtimeActionIds.Add(DotNetRuntimeCustomAction);
-        }
-
         bool sequenced = contents.SequenceEntries.Any(entry =>
-            runtimeActionIds.Contains(entry.Action) &&
+            string.Equals(entry.Table, "InstallExecuteSequence", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(entry.Action, DotNetRuntimeCustomAction, StringComparison.OrdinalIgnoreCase) &&
             ContainsIgnoreCase(entry.Condition, NotInstalledCondition));
 
         if (!sequenced)
         {
             errors.Add(
-                $"{DotNetRuntimeCustomAction} is missing from InstallExecuteSequence/InstallUISequence " +
+                $"{DotNetRuntimeCustomAction} is missing from InstallExecuteSequence " +
                 $"with condition '{NotInstalledCondition}'.");
         }
 
