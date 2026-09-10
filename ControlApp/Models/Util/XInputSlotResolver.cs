@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 
 using Windows.Win32;
@@ -88,7 +88,14 @@ internal static class XInputSlotResolver
     ///     Returns the XInput user index (0-3) for this DsHidMini device, or false if it cannot be determined.
     ///     Call only when the device is in XInput HID mode.
     /// </summary>
-    internal static bool TryGetXInputUserIndex(PnPDevice dshmDevice, out byte userIndex)
+    /// <param name="dshmDevice">The DsHidMini PnP device to resolve.</param>
+    /// <param name="userIndex">Receives the XInput user index (0-3) on success.</param>
+    /// <param name="ignoreNegativeCache">
+    ///     When true, skip the short-lived miss cache so a scheduled retry can re-query PnP/XUSB.
+    ///     Successful slot entries and cache-generation guards stay in effect.
+    /// </param>
+    internal static bool TryGetXInputUserIndex(PnPDevice dshmDevice, out byte userIndex,
+        bool ignoreNegativeCache = false)
     {
         userIndex = InvalidXInputUserId;
         if (!TryGetBaseContainerId(dshmDevice.InstanceId, out Guid dshmContainer))
@@ -102,7 +109,8 @@ internal static class XInputSlotResolver
             return true;
         }
 
-        if (NegativeResolutionExpiryByBaseContainer.TryGetValue(dshmContainer, out DateTime negUntil)
+        if (!ignoreNegativeCache
+            && NegativeResolutionExpiryByBaseContainer.TryGetValue(dshmContainer, out DateTime negUntil)
             && DateTime.UtcNow < negUntil)
         {
             return false;
