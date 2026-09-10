@@ -580,13 +580,15 @@ static class ReleaseStaging
                 section = section[..timestampIndex];
             }
 
-            Match match = Regex.Match(section, @"Issued to:\s*(.+)");
-            if (!match.Success)
+            // signtool /v prints each chain root-first. The leaf (the actual signer)
+            // is the last Issued to in the section.
+            MatchCollection matches = Regex.Matches(section, @"Issued to:\s*(.+)");
+            if (matches.Count == 0)
             {
                 continue;
             }
 
-            string value = match.Groups[1].Value.Trim();
+            string value = matches[^1].Groups[1].Value.Trim();
             if (!string.IsNullOrWhiteSpace(value))
             {
                 subjects.Add(value);
