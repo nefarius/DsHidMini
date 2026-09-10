@@ -57,7 +57,7 @@
             </TextBlock>
 
             <TextBlock Margin="0, 10, 0, 10">
-                <Hyperlink NavigateUri="https://docs.nefarius.at/projects/DsHidMini/v3/How-to-Install/" RequestNavigate="Hyperlink_OnRequestNavigate">
+                <Hyperlink NavigateUri="https://docs.nefarius.at/projects/DsHidMini/v3/Welcome/Installation-Successful/" RequestNavigate="Hyperlink_OnRequestNavigate">
                     Open documentation
                 </Hyperlink>
             </TextBlock>
