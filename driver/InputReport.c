@@ -213,6 +213,7 @@ DSHM_ParseInputReport(
 			Report,
 			// ReSharper disable once CppRedundantCastExpression
 			(PXINPUT_HID_INPUT_REPORT)ModuleDeviceContext->InputReport,
+			(DeviceContext->ConnectionType == DsDeviceConnectionTypeUsb) ? TRUE : FALSE,
 			&DeviceContext->Configuration.ThumbSettings,
 			&DeviceContext->Configuration.FlipAxis
 		);
