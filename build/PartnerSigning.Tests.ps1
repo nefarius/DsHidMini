@@ -54,6 +54,12 @@ Assert-Equal (Get-PartnerSubmissionProgress -Submission $created) 'Created' 'cre
 Assert-True (Test-PartnerSubmissionNeedsUpload -Submission $created) 'created needs upload'
 Assert-True (Test-PartnerSubmissionNeedsCommit -Submission $created) 'created needs commit'
 
+$idle = [pscustomobject]@{
+    commitStatus   = 'commitPending'
+    workflowStatus = [pscustomobject]@{ state = 'notStarted'; currentStep = '' }
+}
+Assert-Equal (Get-PartnerSubmissionProgress -Submission $idle) 'Created' 'notStarted stays created'
+
 $submitted = [pscustomobject]@{
     commitStatus    = 'commitSucceeded'
     workflowStatus  = [pscustomobject]@{ state = 'inProgress'; currentStep = 'finalizeIngestion' }
@@ -61,6 +67,30 @@ $submitted = [pscustomobject]@{
 Assert-Equal (Get-PartnerSubmissionProgress -Submission $submitted) 'Submitted' 'submitted progress'
 Assert-True (-not (Test-PartnerSubmissionNeedsUpload -Submission $submitted)) 'submitted skips upload'
 Assert-True (-not (Test-PartnerSubmissionNeedsCommit -Submission $submitted)) 'submitted skips commit'
+
+$processing = [pscustomobject]@{
+    commitStatus   = 'commitComplete'
+    workflowStatus = [pscustomobject]@{ state = 'notStarted'; currentStep = 'Processing' }
+}
+Assert-Equal (Get-PartnerSubmissionProgress -Submission $processing) 'Submitted' 'portal Processing is submitted'
+Assert-True (-not (Test-PartnerSubmissionNeedsCommit -Submission $processing)) 'processing skips commit'
+
+$sdcmListJson = @'
+[
+  {
+    "id": "1152921505701853745",
+    "commitStatus": "commitComplete",
+    "workflowStatus": {
+      "currentStep": "Processing",
+      "state": "notStarted"
+    }
+  }
+]
+'@
+$fromSdcm = ConvertFrom-SdcmJson -Json $sdcmListJson
+Assert-Equal $fromSdcm.id '1152921505701853745' 'list array unwraps quoted id'
+Assert-Equal (Get-PartnerSubmissionProgress -Submission $fromSdcm) 'Submitted' 'sdcm list JSON is submitted'
+Assert-True ((Get-PartnerSubmissionProgressSummary -Submission $fromSdcm) -like '*Submitted*') 'progress summary includes Submitted'
 
 $completed = [pscustomobject]@{
     workflowStatus = [pscustomobject]@{ state = 'completed' }

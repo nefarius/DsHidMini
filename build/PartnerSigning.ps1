@@ -86,6 +86,27 @@ function Get-PartnerPortalUrl {
     "https://partner.microsoft.com/dashboard/hardware/driver/$ProductId"
 }
 
+function Get-PartnerSubmissionProperty {
+    [CmdletBinding()]
+    param(
+        $Object,
+        [string[]] $Names
+    )
+
+    if ($null -eq $Object) {
+        return $null
+    }
+
+    foreach ($name in $Names) {
+        $property = $Object.PSObject.Properties[$name]
+        if ($property -and $null -ne $property.Value -and -not [string]::IsNullOrWhiteSpace([string]$property.Value)) {
+            return [string]$property.Value
+        }
+    }
+
+    return $null
+}
+
 function Get-PartnerSubmissionWorkflowState {
     [CmdletBinding()]
     param($Submission)
@@ -107,13 +128,30 @@ function Get-PartnerSubmissionWorkflowState {
         return $workflow
     }
 
-    foreach ($name in @('state', 'currentState', 'status')) {
-        if ($workflow.PSObject.Properties[$name] -and $workflow.$name) {
-            return [string]$workflow.$name
-        }
+    return Get-PartnerSubmissionProperty -Object $workflow -Names @('state', 'currentState', 'status', 'currentStep')
+}
+
+function Get-PartnerSubmissionWorkflowStep {
+    [CmdletBinding()]
+    param($Submission)
+
+    if ($null -eq $Submission -or -not $Submission.PSObject.Properties['workflowStatus']) {
+        return $null
     }
 
-    return $null
+    $workflow = $Submission.workflowStatus
+    if ($null -eq $workflow -or $workflow -is [string]) {
+        return $null
+    }
+
+    return Get-PartnerSubmissionProperty -Object $workflow -Names @('currentStep')
+}
+
+function Get-PartnerSubmissionCommitStatus {
+    [CmdletBinding()]
+    param($Submission)
+
+    return Get-PartnerSubmissionProperty -Object $Submission -Names @('commitStatus')
 }
 
 function Get-PartnerSubmissionProgress {
@@ -121,10 +159,8 @@ function Get-PartnerSubmissionProgress {
     param($Submission)
 
     $workflow = Get-PartnerSubmissionWorkflowState -Submission $Submission
-    $commit = $null
-    if ($Submission -and $Submission.PSObject.Properties['commitStatus'] -and $Submission.commitStatus) {
-        $commit = [string]$Submission.commitStatus
-    }
+    $step = Get-PartnerSubmissionWorkflowStep -Submission $Submission
+    $commit = Get-PartnerSubmissionCommitStatus -Submission $Submission
 
     $downloadTypes = @()
     if ($Submission -and $Submission.PSObject.Properties['downloads'] -and $Submission.downloads -and
@@ -136,35 +172,64 @@ function Get-PartnerSubmissionProgress {
         )
     }
 
+    $signals = @($commit, $workflow, $step) | Where-Object { $_ }
+
     $failed = @(
         'failed', 'failure', 'cancelled', 'canceled', 'commitFailed'
     )
-    if ($workflow -and ($failed -contains $workflow)) {
-        return 'Failed'
-    }
-    if ($commit -and ($failed -contains $commit)) {
-        return 'Failed'
+    foreach ($signal in $signals) {
+        if ($failed -contains $signal) {
+            return 'Failed'
+        }
     }
 
-    $completed = @('completed', 'complete', 'succeeded', 'success')
+    $completed = @('completed', 'complete', 'succeeded', 'success', 'published')
     if ($workflow -and ($completed -contains $workflow)) {
+        return 'Completed'
+    }
+    if ($step -and ($completed -contains $step)) {
         return 'Completed'
     }
     if ($downloadTypes -contains 'signedPackage') {
         return 'Completed'
     }
 
+    $pendingCommit = @('commitPending', 'pending')
+    $idleWorkflow = @('notStarted', 'notstarted', 'none', 'unknown')
     $submitted = @(
-        'inProgress', 'inprogress', 'commitSucceeded', 'commitInProgress', 'finalizeIngestion'
+        'inProgress', 'inprogress', 'processing', 'started', 'running',
+        'commitSucceeded', 'commitInProgress', 'commitComplete', 'commitStarted',
+        'finalizeIngestion', 'preprocess', 'preProcess'
     )
-    if ($commit -and ($submitted -contains $commit)) {
-        return 'Submitted'
+
+    foreach ($signal in $signals) {
+        if ($submitted -contains $signal) {
+            return 'Submitted'
+        }
     }
-    if ($workflow -and ($submitted -contains $workflow)) {
+
+    $commitIsActive = $commit -and -not ($pendingCommit -contains $commit)
+    $workflowIsActive = $workflow -and -not ($idleWorkflow -contains $workflow)
+    $stepIsActive = $step -and -not ($idleWorkflow -contains $step)
+    if ($commitIsActive -or $workflowIsActive -or $stepIsActive) {
         return 'Submitted'
     }
 
     return 'Created'
+}
+
+function Get-PartnerSubmissionProgressSummary {
+    [CmdletBinding()]
+    param($Submission)
+
+    $progress = Get-PartnerSubmissionProgress -Submission $Submission
+    $commit = Get-PartnerSubmissionCommitStatus -Submission $Submission
+    $workflow = Get-PartnerSubmissionWorkflowState -Submission $Submission
+    $step = Get-PartnerSubmissionWorkflowStep -Submission $Submission
+    if (-not $commit) { $commit = '-' }
+    if (-not $workflow) { $workflow = '-' }
+    if (-not $step) { $step = '-' }
+    return "Submission progress: $progress (commitStatus=$commit; state=$workflow; currentStep=$step)"
 }
 
 function Test-PartnerSubmissionNeedsUpload {
@@ -251,23 +316,39 @@ function Get-SdcmEntityId {
     return $match.Groups[1].Value
 }
 
+function ConvertTo-SdcmJsonText {
+    [CmdletBinding()]
+    param($Json)
+
+    if ($null -eq $Json) {
+        return ''
+    }
+    if ($Json -is [string]) {
+        return $Json
+    }
+
+    return (@($Json) | ForEach-Object { [string]$_ }) -join [Environment]::NewLine
+}
+
 function ConvertFrom-SdcmJson {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [string] $Json
+        $Json
     )
 
-    if ([string]::IsNullOrWhiteSpace($Json)) {
+    $text = ConvertTo-SdcmJsonText -Json $Json
+    if ([string]::IsNullOrWhiteSpace($text)) {
         throw 'sdcm returned empty JSON.'
     }
 
-    $parsed = $Json | ConvertFrom-Json
-    if ($parsed -is [System.Array]) {
-        if ($parsed.Count -eq 1) {
-            return $parsed[0]
+    $parsed = $text | ConvertFrom-Json
+    if ($parsed -is [System.Collections.IList] -and $parsed -isnot [string]) {
+        $items = @($parsed)
+        if ($items.Count -eq 1) {
+            return $items[0]
         }
-        return $parsed
+        return $items
     }
 
     return $parsed

@@ -178,10 +178,10 @@ jobs:
           if (-not $cab) { throw 'EV-signed partner CAB was not downloaded from the source run.' }
 
           $listed = Invoke-Sdcm submission list --product-id $productId --submission-id $submissionId
-          $submission = ConvertFrom-SdcmJson -Json ($listed | Out-String)
+          $submission = ConvertFrom-SdcmJson -Json $listed
           if ($submission -is [System.Array]) { $submission = $submission | Select-Object -First 1 }
           $progress = Get-PartnerSubmissionProgress -Submission $submission
-          Write-Output "Submission progress: $progress"
+          Write-Output (Get-PartnerSubmissionProgressSummary -Submission $submission)
 
           if ($progress -eq 'Failed') {
             throw "Partner Center already failed product $productId submission $submissionId. Dispatch this workflow against the same source run to create a new product."
@@ -196,8 +196,9 @@ jobs:
           }
 
           $listed = Invoke-Sdcm submission list --product-id $productId --submission-id $submissionId
-          $submission = ConvertFrom-SdcmJson -Json ($listed | Out-String)
+          $submission = ConvertFrom-SdcmJson -Json $listed
           if ($submission -is [System.Array]) { $submission = $submission | Select-Object -First 1 }
+          Write-Output (Get-PartnerSubmissionProgressSummary -Submission $submission)
           if (Test-PartnerSubmissionNeedsCommit -Submission $submission) {
             Write-Output 'Committing submission'
             Invoke-Sdcm submission commit --product-id $productId --submission-id $submissionId
@@ -243,16 +244,18 @@ jobs:
           if (-not $submissionId) { $submissionId = [string]$checkpoint.submissionId }
 
           $listed = Invoke-Sdcm submission list --product-id $productId --submission-id $submissionId
-          $submission = ConvertFrom-SdcmJson -Json ($listed | Out-String)
+          $submission = ConvertFrom-SdcmJson -Json $listed
           if ($submission -is [System.Array]) { $submission = $submission | Select-Object -First 1 }
           $progress = Get-PartnerSubmissionProgress -Submission $submission
-          Write-Output "Submission progress: $progress"
+          Write-Output (Get-PartnerSubmissionProgressSummary -Submission $submission)
 
           if ($progress -eq 'Failed') {
             throw "Partner Center failed product $productId submission $submissionId."
           }
           if ($progress -eq 'Created') {
-            throw 'Submission is not committed. Re-run the upload job before waiting.'
+            $preview = ConvertTo-SdcmJsonText -Json $listed
+            if ($preview.Length -gt 1500) { $preview = $preview.Substring(0, 1500) + '...' }
+            throw "Submission is not committed. Re-run the upload job before waiting.`n$preview"
           }
           if ($progress -ne 'Completed') {
             Invoke-Sdcm submission wait --product-id $productId --submission-id $submissionId --wait-timeout 3600
