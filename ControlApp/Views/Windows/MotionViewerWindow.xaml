@@ -8,7 +8,7 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="{Binding Title}"
     Width="980"
-    Height="640"
+    Height="720"
     MinWidth="820"
     MinHeight="520"
     d:DesignHeight="640"
@@ -28,61 +28,66 @@
                 <ColumnDefinition Width="16" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <DockPanel Grid.Column="0" LastChildFill="True">
-                <StackPanel DockPanel.Dock="Top">
-                    <ui:TextBlock
-                        FontTypography="Subtitle"
-                        Text="Live readout" />
-                    <ui:InfoBar
-                        Margin="0,8,0,8"
-                        IsClosable="False"
-                        IsOpen="True"
-                        Message="{Binding StatusText}"
-                        Severity="{Binding StatusSeverity}" />
-                    <ui:TextBlock Margin="0,4,0,0" Text="{Binding PathText}" />
-                    <ui:TextBlock Margin="0,12,0,0" Text="Raw accel X Y Z" />
-                    <ui:TextBlock Text="{Binding RawAccelText}" />
-                    <ui:TextBlock Margin="0,8,0,0" Text="Calibrated accel" />
-                    <ui:TextBlock Text="{Binding CalAccelText}" />
-                    <ui:TextBlock Margin="0,8,0,0" Text="Acceleration" />
-                    <ui:TextBlock Text="{Binding AccelGText}" />
-                    <ui:TextBlock Margin="0,8,0,0" Text="Raw / calibrated gyro" />
-                    <ui:TextBlock Text="{Binding RawGyroText}" />
-                    <ui:TextBlock Text="{Binding CalGyroText}" />
-                    <ui:TextBlock Text="{Binding GyroDpsText}" />
-                    <ui:TextBlock Margin="0,8,0,0" Text="EEPROM calibration" />
-                    <ui:TextBlock TextWrapping="Wrap" Text="{Binding EepromText}" />
-                    <ui:TextBlock Margin="0,8,0,0" Text="Tracker" />
-                    <ui:TextBlock Text="{Binding TrackerText}" />
-                    <ui:TextBlock Margin="0,8,0,0" Text="Sample" />
-                    <ui:TextBlock Text="{Binding SampleText}" />
-                    <ui:TextBlock
-                        Margin="0,12,0,0"
-                        TextWrapping="Wrap"
-                        Text="{Binding YawNote}" />
-                </StackPanel>
-                <StackPanel
-                    Margin="0,16,0,0"
-                    DockPanel.Dock="Bottom"
-                    Orientation="Horizontal">
-                    <ui:Button
-                        Margin="0,0,8,0"
-                        Command="{Binding RecenterCommand}"
-                        Content="Recenter" />
-                    <ui:Button Command="{Binding TogglePauseCommand}">
-                        <ui:Button.Style>
-                            <Style BasedOn="{StaticResource {x:Type ui:Button}}" TargetType="ui:Button">
-                                <Setter Property="Content" Value="Pause" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsPaused}" Value="True">
-                                        <Setter Property="Content" Value="Resume" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ui:Button.Style>
-                    </ui:Button>
-                </StackPanel>
-            </DockPanel>
+            <ScrollViewer
+                Grid.Column="0"
+                HorizontalScrollBarVisibility="Disabled"
+                VerticalScrollBarVisibility="Auto">
+                <DockPanel LastChildFill="True">
+                    <StackPanel DockPanel.Dock="Top">
+                        <ui:TextBlock
+                            FontTypography="Subtitle"
+                            Text="Live readout" />
+                        <ui:InfoBar
+                            Margin="0,8,0,8"
+                            IsClosable="False"
+                            IsOpen="True"
+                            Message="{Binding StatusText}"
+                            Severity="{Binding StatusSeverity}" />
+                        <ui:TextBlock Margin="0,4,0,0" Text="{Binding PathText}" />
+                        <ui:TextBlock Margin="0,12,0,0" Text="Raw accel X Y Z" />
+                        <ui:TextBlock Text="{Binding RawAccelText}" />
+                        <ui:TextBlock Margin="0,8,0,0" Text="Calibrated accel" />
+                        <ui:TextBlock Text="{Binding CalAccelText}" />
+                        <ui:TextBlock Margin="0,8,0,0" Text="Acceleration" />
+                        <ui:TextBlock Text="{Binding AccelGText}" />
+                        <ui:TextBlock Margin="0,8,0,0" Text="Raw / calibrated gyro" />
+                        <ui:TextBlock Text="{Binding RawGyroText}" />
+                        <ui:TextBlock Text="{Binding CalGyroText}" />
+                        <ui:TextBlock Text="{Binding GyroDpsText}" />
+                        <ui:TextBlock Margin="0,8,0,0" Text="EEPROM calibration" />
+                        <ui:TextBlock TextWrapping="Wrap" Text="{Binding EepromText}" />
+                        <ui:TextBlock Margin="0,8,0,0" Text="Tracker" />
+                        <ui:TextBlock Text="{Binding TrackerText}" />
+                        <ui:TextBlock Margin="0,8,0,0" Text="Sample" />
+                        <ui:TextBlock Text="{Binding SampleText}" />
+                        <ui:TextBlock
+                            Margin="0,12,0,0"
+                            TextWrapping="Wrap"
+                            Text="{Binding YawNote}" />
+                    </StackPanel>
+                    <StackPanel
+                        Margin="0,16,0,0"
+                        DockPanel.Dock="Bottom"
+                        Orientation="Horizontal">
+                        <ui:Button
+                            Margin="0,0,8,0"
+                            Command="{Binding RecenterCommand}"
+                            Content="Recenter" />
+                        <ui:Button Command="{Binding TogglePauseCommand}">
+                            <ui:Button.Style>
+                                <Style BasedOn="{StaticResource {x:Type ui:Button}}" TargetType="ui:Button">
+                                    <Setter Property="Content" Value="Pause" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsPaused}" Value="True">
+                                            <Setter Property="Content" Value="Resume" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ui:Button.Style>
+                        </ui:Button>
+                    </StackPanel>
+                </DockPanel>
+            </ScrollViewer>
             <h:HelixViewport3D
                 x:Name="Viewport"
                 Grid.Column="2"
