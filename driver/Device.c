@@ -226,32 +226,38 @@ void DsHidMini_DeviceCleanup(
 	WdfWaitLockAcquire(driverContext->SlotsLock, NULL);
 	{
 		CLEAR_SLOT(driverContext, deviceContext->SlotIndex);
-		if (driverContext->IPC.IsEnabled)
+		driverContext->IPC.DeviceDispatchers.Callbacks[deviceContext->SlotIndex] = NULL;
+		driverContext->IPC.DeviceDispatchers.Contexts[deviceContext->SlotIndex] = NULL;
+
+		WdfWaitLockAcquire(driverContext->IpcLock, NULL);
 		{
-			driverContext->IPC.DeviceDispatchers.Callbacks[deviceContext->SlotIndex] = NULL;
-			driverContext->IPC.DeviceDispatchers.Contexts[deviceContext->SlotIndex] = NULL;
-
-			const size_t offset = (sizeof(IPC_HID_INPUT_REPORT_MESSAGE) * (deviceContext->SlotIndex - 1));
-			const PIPC_HID_INPUT_REPORT_MESSAGE pHIDBuffer = (PIPC_HID_INPUT_REPORT_MESSAGE)(
-				driverContext->IPC.SharedRegions.HID.Buffer + offset);
-
-			//
-			// Seqlock: odd generation while the payload is cleared, then the
-			// next even generation. SequenceNumber is left intact so a later
-			// occupant of this slot continues the counter.
-			// 
-			InterlockedIncrement(&pHIDBuffer->SequenceNumber);
-			pHIDBuffer->SlotIndex = 0;
-			RtlZeroMemory(&pHIDBuffer->InputReport, sizeof(DS3_RAW_INPUT_REPORT));
-			RtlZeroMemory(pHIDBuffer->AlignmentPadding, sizeof(pHIDBuffer->AlignmentPadding));
-			InterlockedIncrement(&pHIDBuffer->SequenceNumber);
-
-			if (deviceContext->IPC.InputReportWaitHandle != NULL)
+			if (driverContext->IPC.IsEnabled &&
+				driverContext->IPC.SharedRegions.HID.Buffer != NULL &&
+				deviceContext->SlotIndex >= 1)
 			{
-				SetEvent(deviceContext->IPC.InputReportWaitHandle);
-				CloseHandle(deviceContext->IPC.InputReportWaitHandle);
-				deviceContext->IPC.InputReportWaitHandle = NULL;
+				const size_t offset = (sizeof(IPC_HID_INPUT_REPORT_MESSAGE) * (deviceContext->SlotIndex - 1));
+				const PIPC_HID_INPUT_REPORT_MESSAGE pHIDBuffer = (PIPC_HID_INPUT_REPORT_MESSAGE)(
+					driverContext->IPC.SharedRegions.HID.Buffer + offset);
+
+				//
+				// Seqlock: odd generation while the payload is cleared, then the
+				// next even generation. SequenceNumber is left intact so a later
+				// occupant of this slot continues the counter.
+				// 
+				InterlockedIncrement(&pHIDBuffer->SequenceNumber);
+				pHIDBuffer->SlotIndex = 0;
+				RtlZeroMemory(&pHIDBuffer->InputReport, sizeof(DS3_RAW_INPUT_REPORT));
+				RtlZeroMemory(pHIDBuffer->AlignmentPadding, sizeof(pHIDBuffer->AlignmentPadding));
+				InterlockedIncrement(&pHIDBuffer->SequenceNumber);
 			}
+		}
+		WdfWaitLockRelease(driverContext->IpcLock);
+
+		if (deviceContext->IPC.InputReportWaitHandle != NULL)
+		{
+			SetEvent(deviceContext->IPC.InputReportWaitHandle);
+			CloseHandle(deviceContext->IPC.InputReportWaitHandle);
+			deviceContext->IPC.InputReportWaitHandle = NULL;
 		}
 	}
 	WdfWaitLockRelease(driverContext->SlotsLock);
@@ -580,11 +586,8 @@ DsDevice_InitContext(
 				);
 
 				pDevCtx->SlotIndex = slotIndex;
-				if (pDrvCtx->IPC.IsEnabled)
-				{
-					pDrvCtx->IPC.DeviceDispatchers.Callbacks[slotIndex] = DSHM_EvtDispatchDeviceMessage;
-					pDrvCtx->IPC.DeviceDispatchers.Contexts[slotIndex] = pDevCtx;
-				}
+				pDrvCtx->IPC.DeviceDispatchers.Callbacks[slotIndex] = DSHM_EvtDispatchDeviceMessage;
+				pDrvCtx->IPC.DeviceDispatchers.Contexts[slotIndex] = pDevCtx;
 				break;
 			}
 		}

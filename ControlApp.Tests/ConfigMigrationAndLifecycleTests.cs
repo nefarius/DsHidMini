@@ -60,7 +60,58 @@ public class ConfigMigrationAndLifecycleTests : IDisposable
         Assert.True(File.Exists(manager.LastMigrationResult.BackupPath));
         Assert.NotEmpty(manager.LastMigrationResult.Warnings);
         Assert.Equal(SettingsContext.DS4W, manager.GlobalProfile.Settings.HidMode.SettingsContext);
+        Assert.True(manager.IPCEnabled);
         Assert.NotEmpty(Directory.GetFiles(UserDir, "DshmUserData.json"));
+    }
+
+    [Fact]
+    public void NativeSample_Import_MissingIpcEnabled_DefaultsTrue()
+    {
+        File.WriteAllText(Path.Combine(DriverDir, "DsHidMini.json"), """
+            {
+              "Global": { "HidDeviceMode": "XInput" },
+              "Devices": {}
+            }
+            """);
+
+        DshmConfigManager manager = CreateManager();
+
+        Assert.True(manager.LastMigrationResult.Succeeded);
+        Assert.True(manager.IPCEnabled);
+    }
+
+    [Fact]
+    public void NativeSample_Import_IpcEnabledFalse_IsPreserved()
+    {
+        File.WriteAllText(Path.Combine(DriverDir, "DsHidMini.json"), """
+            {
+              "IPCEnabled": false,
+              "Global": { "HidDeviceMode": "XInput" },
+              "Devices": {}
+            }
+            """);
+
+        DshmConfigManager manager = CreateManager();
+
+        Assert.True(manager.LastMigrationResult.Succeeded);
+        Assert.False(manager.IPCEnabled);
+    }
+
+    [Fact]
+    public void NativeSample_Import_MixedCaseIpcEnabledFalse_IsPreserved()
+    {
+        File.WriteAllText(Path.Combine(DriverDir, "DsHidMini.json"), """
+            {
+              "ipcEnabled": false,
+              "Global": { "HidDeviceMode": "XInput" },
+              "Devices": {}
+            }
+            """);
+
+        DshmConfigManager manager = CreateManager();
+
+        Assert.True(manager.LastMigrationResult.Succeeded);
+        Assert.False(manager.IPCEnabled);
     }
 
     [Fact]
@@ -154,10 +205,12 @@ public class ConfigMigrationAndLifecycleTests : IDisposable
 
         DshmConfigManager manager = new(userData, locations);
         manager.AutoRestartOnHidModeMismatch = false;
+        manager.IPCEnabled = false;
 
         Assert.False(manager.SaveChangesAndUpdateDsHidMiniConfigFile());
         Assert.Equal(original, File.ReadAllText(locations.UserDataFilePath));
         Assert.True(manager.AutoRestartOnHidModeMismatch);
+        Assert.True(manager.IPCEnabled);
     }
 
     [Fact]

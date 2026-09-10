@@ -133,12 +133,15 @@ TEST(Parse_CanonicalSample_LoadsGlobalAndDeviceOverlay)
     CHAR* json = ReadSiblingFile("DsHidMini.json");
     DS_DRIVER_CONFIGURATION parsed;
     DS_CONFIG_RUMBLE_DERIVED rumble;
+    BOOLEAN ipcEnabled = FALSE;
 
     EXPECT(json != NULL);
     EXPECT_STATUS(
         ConfigParseJsonDocument(json, strlen(json), "44D832809FCD", FALSE, NULL, &parsed, &rumble, NULL),
         STATUS_SUCCESS
     );
+    EXPECT_STATUS(ConfigParseIpcEnabled(json, strlen(json), &ipcEnabled, NULL), STATUS_SUCCESS);
+    EXPECT(ipcEnabled == TRUE);
     EXPECT(parsed.HidDeviceMode == DsHidMiniDeviceModeSDF);
     EXPECT(parsed.DevicePairingMode == DsDevicePairingModeAuto);
     EXPECT(parsed.BluetoothOutputReportTransport == DsBluetoothOutputReportTransportControl);
@@ -530,6 +533,64 @@ TEST(Parse_NullDeviceNode_IsIgnored)
     return 0;
 }
 
+TEST(Parse_IpcEnabled_MissingDefaultsTrue)
+{
+    BOOLEAN enabled = FALSE;
+
+    EXPECT_STATUS(ConfigParseIpcEnabled("{}", 2, &enabled, NULL), STATUS_SUCCESS);
+    EXPECT(enabled == TRUE);
+    return 0;
+}
+
+TEST(Parse_IpcEnabled_True)
+{
+    BOOLEAN enabled = FALSE;
+    const CHAR* json = "{\"IPCEnabled\":true,\"Global\":{}}";
+
+    EXPECT_STATUS(ConfigParseIpcEnabled(json, strlen(json), &enabled, NULL), STATUS_SUCCESS);
+    EXPECT(enabled == TRUE);
+    return 0;
+}
+
+TEST(Parse_IpcEnabled_False)
+{
+    BOOLEAN enabled = TRUE;
+    const CHAR* json = "{\"IPCEnabled\":false,\"Global\":{}}";
+
+    EXPECT_STATUS(ConfigParseIpcEnabled(json, strlen(json), &enabled, NULL), STATUS_SUCCESS);
+    EXPECT(enabled == FALSE);
+    return 0;
+}
+
+TEST(Parse_IpcEnabled_InvalidType_LeavesOutputUntouched)
+{
+    BOOLEAN enabled = FALSE;
+    const CHAR* json = "{\"IPCEnabled\":\"yes\",\"Global\":{}}";
+
+    EXPECT_STATUS(ConfigParseIpcEnabled(json, strlen(json), &enabled, NULL), STATUS_DATA_ERROR);
+    EXPECT(enabled == FALSE);
+    return 0;
+}
+
+TEST(Parse_IpcEnabled_InvalidDocument_LeavesOutputUntouched)
+{
+    BOOLEAN enabled = TRUE;
+
+    EXPECT_STATUS(ConfigParseIpcEnabled("{ not-json", 10, &enabled, NULL), STATUS_DATA_ERROR);
+    EXPECT(enabled == TRUE);
+    return 0;
+}
+
+TEST(Parse_IpcEnabled_Duplicate_LeavesOutputUntouched)
+{
+    BOOLEAN enabled = FALSE;
+    const CHAR* json = "{\"IPCEnabled\":true,\"IPCEnabled\":false}";
+
+    EXPECT_STATUS(ConfigParseIpcEnabled(json, strlen(json), &enabled, NULL), STATUS_DATA_ERROR);
+    EXPECT(enabled == FALSE);
+    return 0;
+}
+
 TEST(DeriveRumble_InvalidRange_DisallowsRescale)
 {
     DS_DRIVER_CONFIGURATION config;
@@ -570,6 +631,12 @@ int main(void)
     RUN(Parse_HugeNumber_IsIgnored);
     RUN(Parse_DevicesArray_DoesNotCrash);
     RUN(Parse_NullDeviceNode_IsIgnored);
+    RUN(Parse_IpcEnabled_MissingDefaultsTrue);
+    RUN(Parse_IpcEnabled_True);
+    RUN(Parse_IpcEnabled_False);
+    RUN(Parse_IpcEnabled_InvalidType_LeavesOutputUntouched);
+    RUN(Parse_IpcEnabled_InvalidDocument_LeavesOutputUntouched);
+    RUN(Parse_IpcEnabled_Duplicate_LeavesOutputUntouched);
     RUN(DeriveRumble_InvalidRange_DisallowsRescale);
 
     printf("%d passed, %d failed\n", g_passed, g_failed);

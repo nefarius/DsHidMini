@@ -116,6 +116,8 @@ internal static class DshmDriverConfigMigration
                 userData.AutoRestartOnHidModeMismatch = autoRestart;
             }
 
+            userData.IPCEnabled = driverConfig.IPCEnabled;
+
             userData.Devices.AddRange(importedDevices);
             userData.SchemaVersion = DshmConfigManagerUserData.CurrentSchemaVersion;
             if (!TrySaveUserData(userData, locations, out string? saveError))
@@ -151,6 +153,7 @@ internal static class DshmDriverConfigMigration
         ProfileData globalProfile = ResolveGlobalProfile(userData);
 
         DshmConfiguration configuration = new();
+        configuration.IPCEnabled = userData.IPCEnabled;
         DshmManagerToDriverConversion.ConvertDeviceSettingsToDriverFormat(globalProfile.Settings,
             configuration.Global);
         configuration.Global.AutoRestartOnHidModeMismatch = userData.AutoRestartOnHidModeMismatch;

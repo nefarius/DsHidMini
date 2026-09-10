@@ -48,33 +48,15 @@
                 Text="When enabled, a Retro Fighters Defender Bluetooth Edition detected in DualShock 4 mode is switched into PS3 (DualShock 3) mode automatically, instead of requiring the 'Switch to PS3 mode' button on the Devices page."
                 TextWrapping="Wrap" />
 
-            <ui:TextBlock
-                Margin="0,28,0,8"
-                FontTypography="Subtitle"
-                Text="Experimental driver IPC" />
-            <ui:InfoBar
-                Title="{Binding ViewModel.DriverIpc.StatusTitle}"
-                IsClosable="False"
-                IsOpen="True"
-                Message="{Binding ViewModel.DriverIpc.StatusMessage}"
-                Severity="{Binding ViewModel.DriverIpc.Severity}" />
+            <CheckBox
+                Margin="0,16,0,8"
+                Content="Enable driver IPC"
+                IsChecked="{Binding ViewModel.IPCEnabled, Mode=TwoWay}" />
             <TextBlock
-                Margin="0,12,0,12"
+                MaxWidth="600"
                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                Text="{Binding ViewModel.DriverIpc.StateDisplay, StringFormat=Registry state: {0}}" />
-            <StackPanel Margin="0,0,0,8" Orientation="Horizontal">
-                <ui:Button
-                    Margin="0,0,8,0"
-                    Command="{Binding ViewModel.EnableDriverIpcCommand}"
-                    Content="Enable"
-                    IsEnabled="{Binding ViewModel.DriverIpc.CanEnable}" />
-                <ui:Button
-                    Margin="0,0,8,0"
-                    Command="{Binding ViewModel.DisableDriverIpcCommand}"
-                    Content="Disable"
-                    IsEnabled="{Binding ViewModel.DriverIpc.CanDisable}" />
-                <ui:Button Command="{Binding ViewModel.RefreshDriverIpcCommand}" Content="Refresh" />
-            </StackPanel>
+                Text="When enabled (default), DsHidMini exposes shared-memory IPC for pairing, power-off, and similar ControlApp commands. Changes apply immediately without reloading the driver."
+                TextWrapping="Wrap" />
 
             <ui:TextBlock
                 Margin="0,28,0,8"

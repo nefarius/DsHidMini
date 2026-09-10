@@ -605,6 +605,8 @@ DSHM_IPC_MSG_SET_LED_PATTERN_RESPONSE_INIT(
 }
 
 
-NTSTATUS InitIPC(void);
+NTSTATUS DSHM_IPC_Reconcile(
+	_In_ BOOLEAN Enabled
+);
 
 void DestroyIPC(void);

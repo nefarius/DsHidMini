@@ -85,7 +85,6 @@ public partial class App
             services.AddSingleton<DshmDevMan>();
             services.AddSingleton<DshmConfigManager>();
             services.AddSingleton<BthPS3StatusService>();
-            services.AddSingleton<DshmIpcStatusService>();
             services.AddSingleton<DefenderBtStatusService>();
 
             services.AddSingleton<DevicesPage>();

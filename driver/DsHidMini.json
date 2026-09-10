@@ -1,4 +1,5 @@
 {
+  "IPCEnabled": true,
   "Global": {
     "HidDeviceMode": "DS4Windows",
     "AutoRestartOnHidModeMismatch": true,

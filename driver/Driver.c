@@ -2,6 +2,23 @@
 #include "Driver.tmh"
 
 
+static VOID CALLBACK
+DsDriver_HotReloadEventCallback(
+	_In_ PVOID lpParameter,
+	_In_ BOOLEAN TimerOrWaitFired
+);
+
+static void
+DsDriver_RegisterConfigWatcher(
+	_In_ PDSHM_DRIVER_CONTEXT Context
+);
+
+static void
+DsDriver_UnregisterConfigWatcher(
+	_In_ PDSHM_DRIVER_CONTEXT Context,
+	_In_ BOOLEAN WaitForCallback
+);
+
 #pragma code_seg("INIT")
 NTSTATUS
 DriverEntry(
@@ -48,13 +65,6 @@ DriverEntry(
 		return status;
 	}
 
-	if (!NT_SUCCESS(status = InitIPC()))
-	{
-		TraceEvents(TRACE_LEVEL_ERROR, TRACE_DRIVER, "InitIPC failed with status %!STATUS!", status);
-		WPP_CLEANUP(DriverObject);
-		return status;
-	}
-
 	const PDSHM_DRIVER_CONTEXT context = DriverGetContext(driver);
 
 	if (!NT_SUCCESS(status = WdfWaitLockCreate(WDF_NO_OBJECT_ATTRIBUTES, &context->SlotsLock)))
@@ -64,17 +74,230 @@ DriverEntry(
 		return status;
 	}
 
+	if (!NT_SUCCESS(status = WdfWaitLockCreate(WDF_NO_OBJECT_ATTRIBUTES, &context->IpcLock)))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR, TRACE_DRIVER, "WdfWaitLockCreate (IpcLock) failed with status %!STATUS!", status);
+		WPP_CLEANUP(DriverObject);
+		return status;
+	}
+
+	BOOLEAN ipcEnabled = TRUE;
+	const NTSTATUS loadStatus = ConfigLoadIpcEnabled(&ipcEnabled);
+	if (!NT_SUCCESS(loadStatus))
+	{
+		TraceEvents(
+			TRACE_LEVEL_WARNING,
+			TRACE_DRIVER,
+			"ConfigLoadIpcEnabled failed with status %!STATUS!, defaulting IPC to enabled",
+			loadStatus
+		);
+		ipcEnabled = TRUE;
+	}
+
+	if (!NT_SUCCESS(status = DSHM_IPC_Reconcile(ipcEnabled)))
+	{
+		TraceEvents(TRACE_LEVEL_ERROR, TRACE_DRIVER, "DSHM_IPC_Reconcile failed with status %!STATUS!", status);
+		WPP_CLEANUP(DriverObject);
+		return status;
+	}
+
+	DsDriver_RegisterConfigWatcher(context);
+
 	TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Exit");
 
 	return status;
 }
 #pragma code_seg()
 
+static VOID CALLBACK
+DsDriver_HotReloadEventCallback(
+	_In_ PVOID lpParameter,
+	_In_ BOOLEAN TimerOrWaitFired
+)
+{
+	UNREFERENCED_PARAMETER(TimerOrWaitFired);
+
+	const PDSHM_DRIVER_CONTEXT context = (PDSHM_DRIVER_CONTEXT)lpParameter;
+	BOOLEAN ipcEnabled = TRUE;
+	const BOOL rearmed = FindNextChangeNotification(context->ConfigurationDirectoryWatcherEvent);
+
+	if (!rearmed)
+	{
+		const DWORD error = GetLastError();
+		TraceEvents(
+			TRACE_LEVEL_ERROR,
+			TRACE_DRIVER,
+			"FindNextChangeNotification failed with error %!WINERROR!, disabling the IPC config watcher",
+			error
+		);
+		EventWriteFailedWithWin32Error(__FUNCTION__, L"FindNextChangeNotification", error);
+	}
+
+	Sleep(100);
+
+	const NTSTATUS loadStatus = ConfigLoadIpcEnabled(&ipcEnabled);
+	if (!NT_SUCCESS(loadStatus))
+	{
+		TraceEvents(
+			TRACE_LEVEL_WARNING,
+			TRACE_DRIVER,
+			"IPCEnabled hot-reload failed with status %!STATUS!, keeping the previous IPC state",
+			loadStatus
+		);
+	}
+	else
+	{
+		const NTSTATUS reconcileStatus = DSHM_IPC_Reconcile(ipcEnabled);
+		if (!NT_SUCCESS(reconcileStatus))
+		{
+			TraceEvents(
+				TRACE_LEVEL_WARNING,
+				TRACE_DRIVER,
+				"DSHM_IPC_Reconcile failed with status %!STATUS! during hot-reload",
+				reconcileStatus
+			);
+		}
+	}
+
+	if (!rearmed)
+	{
+		DsDriver_UnregisterConfigWatcher(context, FALSE);
+	}
+}
+
+static void
+DsDriver_RegisterConfigWatcher(
+	_In_ PDSHM_DRIVER_CONTEXT Context
+)
+{
+	CHAR programDataPath[MAX_PATH];
+	CHAR configPath[MAX_PATH];
+
+	do
+	{
+		const DWORD envChars = GetEnvironmentVariableA(
+			CONFIG_ENV_VAR_NAME,
+			programDataPath,
+			MAX_PATH
+		);
+
+		if (envChars == 0)
+		{
+			break;
+		}
+
+		if (envChars >= MAX_PATH)
+		{
+			TraceEvents(
+				TRACE_LEVEL_ERROR,
+				TRACE_DRIVER,
+				"ProgramData environment variable exceeds MAX_PATH, skipping IPC config watcher"
+			);
+			break;
+		}
+
+		if (sprintf_s(
+			configPath,
+			ARRAYSIZE(configPath),
+			"%s\\%s",
+			programDataPath,
+			CONFIG_SUB_DIR_NAME
+		) == -1)
+		{
+			break;
+		}
+
+		if (GetFileAttributesA(configPath) == INVALID_FILE_ATTRIBUTES)
+		{
+			if (!CreateDirectoryA(configPath, NULL))
+			{
+				const DWORD error = GetLastError();
+				if (error != ERROR_ALREADY_EXISTS)
+				{
+					TraceEvents(
+						TRACE_LEVEL_WARNING,
+						TRACE_DRIVER,
+						"CreateDirectoryA(%s) failed with error %!WINERROR!",
+						configPath,
+						error
+					);
+					break;
+				}
+			}
+		}
+
+		Context->ConfigurationDirectoryWatcherEvent = FindFirstChangeNotificationA(
+			configPath,
+			FALSE,
+			FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_FILE_NAME
+		);
+
+		if (Context->ConfigurationDirectoryWatcherEvent == NULL)
+		{
+			const DWORD error = GetLastError();
+			TraceEvents(
+				TRACE_LEVEL_ERROR,
+				TRACE_DRIVER,
+				"FindFirstChangeNotificationA failed with error %!WINERROR!",
+				error
+			);
+			EventWriteFailedWithWin32Error(__FUNCTION__, L"FindFirstChangeNotificationA", error);
+			break;
+		}
+
+		const BOOL ret = RegisterWaitForSingleObject(
+			&Context->ConfigurationDirectoryWatcherWaitHandle,
+			Context->ConfigurationDirectoryWatcherEvent,
+			DsDriver_HotReloadEventCallback,
+			Context,
+			INFINITE,
+			WT_EXECUTELONGFUNCTION
+		);
+
+		if (!ret)
+		{
+			const DWORD error = GetLastError();
+			TraceEvents(
+				TRACE_LEVEL_ERROR,
+				TRACE_DRIVER,
+				"RegisterWaitForSingleObject failed with error %!WINERROR!",
+				error
+			);
+			EventWriteFailedWithWin32Error(__FUNCTION__, L"RegisterWaitForSingleObject", error);
+			FindCloseChangeNotification(Context->ConfigurationDirectoryWatcherEvent);
+			Context->ConfigurationDirectoryWatcherEvent = NULL;
+		}
+	} while (FALSE);
+}
+
+static void
+DsDriver_UnregisterConfigWatcher(
+	_In_ PDSHM_DRIVER_CONTEXT Context,
+	_In_ BOOLEAN WaitForCallback
+)
+{
+	if (Context->ConfigurationDirectoryWatcherWaitHandle)
+	{
+		UnregisterWaitEx(
+			Context->ConfigurationDirectoryWatcherWaitHandle,
+			WaitForCallback ? INVALID_HANDLE_VALUE : NULL
+		);
+		Context->ConfigurationDirectoryWatcherWaitHandle = NULL;
+	}
+
+	if (Context->ConfigurationDirectoryWatcherEvent)
+	{
+		FindCloseChangeNotification(Context->ConfigurationDirectoryWatcherEvent);
+		Context->ConfigurationDirectoryWatcherEvent = NULL;
+	}
+}
+
 #pragma code_seg("PAGED")
 void dshidminiEvtDriverContextCleanup(WDFOBJECT DriverObject)
 {
-	UNREFERENCED_PARAMETER(DriverObject);
+	const PDSHM_DRIVER_CONTEXT context = DriverGetContext(DriverObject);
 
+	DsDriver_UnregisterConfigWatcher(context, TRUE);
 	DestroyIPC();
 
 	WPP_CLEANUP(WdfDriverWdmGetDriverObject( (WDFDRIVER) DriverObject));

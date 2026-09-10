@@ -306,6 +306,24 @@ internal static class DshmConfigSerialization
         return false;
     }
 
+    private static bool TryGetPropertyOrdinalIgnoreCase(JsonElement element, string name, out JsonElement value)
+    {
+        if (element.ValueKind == JsonValueKind.Object)
+        {
+            foreach (JsonProperty property in element.EnumerateObject())
+            {
+                if (string.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase))
+                {
+                    value = property.Value;
+                    return true;
+                }
+            }
+        }
+
+        value = default;
+        return false;
+    }
+
     private static TEnum? ReadEnum<TEnum>(JsonElement element, string name) where TEnum : struct, Enum
     {
         if (!TryGetProperty(element, name, out JsonElement value) || value.ValueKind != JsonValueKind.String)
@@ -395,6 +413,11 @@ internal static class DshmConfigSerialization
             JsonElement root = document.RootElement;
             DshmConfiguration configuration = new();
 
+            if (TryGetPropertyOrdinalIgnoreCase(root, "IPCEnabled", out JsonElement ipcEnabled))
+            {
+                configuration.IPCEnabled = ipcEnabled.GetBoolean();
+            }
+
             if (TryGetProperty(root, "Global", out JsonElement global))
             {
                 configuration.Global = ParseDeviceSettings(global);
@@ -419,6 +442,7 @@ internal static class DshmConfigSerialization
         public override void Write(Utf8JsonWriter writer, DshmConfiguration instance, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
+            writer.WriteBoolean("IPCEnabled", instance.IPCEnabled);
             writer.WritePropertyName(nameof(instance.Global));
             JsonSerializer.Serialize(writer, instance.Global, options);
 

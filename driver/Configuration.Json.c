@@ -59,9 +59,10 @@ ConfigIsIntegralInRange(
 }
 
 static const cJSON*
-ConfigGetUniqueItem(
+ConfigLookupUniqueItem(
 	_In_opt_ const cJSON* Object,
-	_In_z_ const CHAR* Name
+	_In_z_ const CHAR* Name,
+	_Out_opt_ PINT MatchCount
 )
 {
 	const cJSON* match = NULL;
@@ -69,6 +70,11 @@ ConfigGetUniqueItem(
 
 	if (!cJSON_IsObject(Object) || Name == NULL)
 	{
+		if (MatchCount)
+		{
+			*MatchCount = 0;
+		}
+
 		return NULL;
 	}
 
@@ -79,6 +85,11 @@ ConfigGetUniqueItem(
 			count++;
 			match = child;
 		}
+	}
+
+	if (MatchCount)
+	{
+		*MatchCount = count;
 	}
 
 	if (count == 0)
@@ -97,6 +108,15 @@ ConfigGetUniqueItem(
 	}
 
 	return match;
+}
+
+static const cJSON*
+ConfigGetUniqueItem(
+	_In_opt_ const cJSON* Object,
+	_In_z_ const CHAR* Name
+)
+{
+	return ConfigLookupUniqueItem(Object, Name, NULL);
 }
 
 static const cJSON*
@@ -1318,35 +1338,28 @@ ConfigDeriveRumbleState(
 	}
 }
 
-_Use_decl_annotations_
-NTSTATUS
-ConfigParseJsonDocument(
-	const CHAR* Json,
-	SIZE_T Length,
-	const CHAR* DeviceAddress,
-	BOOLEAN IsHotReload,
-	const DS_DRIVER_CONFIGURATION* Current,
-	PDS_DRIVER_CONFIGURATION Parsed,
-	PDS_CONFIG_RUMBLE_DERIVED RumbleDerived,
-	PSIZE_T ErrorOffset
+static NTSTATUS
+ConfigParseRootObject(
+	_In_reads_bytes_(Length) const CHAR* Json,
+	_In_ SIZE_T Length,
+	_Outptr_ cJSON** Root,
+	_Out_opt_ PSIZE_T ErrorOffset
 )
 {
-	NTSTATUS status = STATUS_DATA_ERROR;
-	cJSON* root = NULL;
 	const CHAR* parseEnd = NULL;
-	DS_DRIVER_CONFIGURATION candidate;
-	const cJSON* globalNode = NULL;
-	const cJSON* devicesNode = NULL;
+	cJSON* root = NULL;
 
 	if (ErrorOffset)
 	{
 		*ErrorOffset = 0;
 	}
 
-	if (Parsed == NULL || RumbleDerived == NULL)
+	if (Root == NULL)
 	{
 		return STATUS_INVALID_PARAMETER;
 	}
+
+	*Root = NULL;
 
 	if (Json == NULL || Length == 0 || Length > CONFIG_JSON_MAX_BYTES)
 	{
@@ -1412,6 +1425,100 @@ ConfigParseJsonDocument(
 		);
 		cJSON_Delete(root);
 		return STATUS_DATA_ERROR;
+	}
+
+	*Root = root;
+	return STATUS_SUCCESS;
+}
+
+_Use_decl_annotations_
+NTSTATUS
+ConfigParseIpcEnabled(
+	const CHAR* Json,
+	SIZE_T Length,
+	PBOOLEAN Enabled,
+	PSIZE_T ErrorOffset
+)
+{
+	NTSTATUS status;
+	cJSON* root = NULL;
+	const cJSON* ipcNode = NULL;
+	BOOLEAN enabled = TRUE;
+
+	if (Enabled == NULL)
+	{
+		return STATUS_INVALID_PARAMETER;
+	}
+
+	status = ConfigParseRootObject(Json, Length, &root, ErrorOffset);
+	if (!NT_SUCCESS(status))
+	{
+		return status;
+	}
+
+	{
+		int matchCount = 0;
+
+		ipcNode = ConfigLookupUniqueItem(root, "IPCEnabled", &matchCount);
+		if (matchCount > 1)
+		{
+			TraceError(
+				TRACE_CONFIG,
+				"Duplicate configuration key IPCEnabled"
+			);
+			cJSON_Delete(root);
+			return STATUS_DATA_ERROR;
+		}
+	}
+
+	if (ipcNode != NULL)
+	{
+		if (!cJSON_IsBool(ipcNode))
+		{
+			TraceError(
+				TRACE_CONFIG,
+				"Configuration value IPCEnabled is not a boolean"
+			);
+			cJSON_Delete(root);
+			return STATUS_DATA_ERROR;
+		}
+
+		enabled = (BOOLEAN)cJSON_IsTrue(ipcNode);
+	}
+
+	*Enabled = enabled;
+	cJSON_Delete(root);
+	return STATUS_SUCCESS;
+}
+
+_Use_decl_annotations_
+NTSTATUS
+ConfigParseJsonDocument(
+	const CHAR* Json,
+	SIZE_T Length,
+	const CHAR* DeviceAddress,
+	BOOLEAN IsHotReload,
+	const DS_DRIVER_CONFIGURATION* Current,
+	PDS_DRIVER_CONFIGURATION Parsed,
+	PDS_CONFIG_RUMBLE_DERIVED RumbleDerived,
+	PSIZE_T ErrorOffset
+)
+{
+	NTSTATUS status;
+	cJSON* root = NULL;
+	DS_DRIVER_CONFIGURATION candidate;
+	const cJSON* globalNode = NULL;
+	const cJSON* devicesNode = NULL;
+
+	if (Parsed == NULL || RumbleDerived == NULL)
+	{
+		return STATUS_INVALID_PARAMETER;
+	}
+
+	status = ConfigParseRootObject(Json, Length, &root, ErrorOffset);
+	if (!NT_SUCCESS(status))
+	{
+		return status;
 	}
 
 	ConfigSetDefaults(&candidate);

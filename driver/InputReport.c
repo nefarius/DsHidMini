@@ -20,30 +20,39 @@ DSHM_ParseInputReport(
 	const WDFDRIVER driver = WdfGetDriver();
 	const PDSHM_DRIVER_CONTEXT pDrvCtx = DriverGetContext(driver);
 
-	if (pDrvCtx->IPC.IsEnabled)
 	{
-		/*
-		 * Offset calculation puts each devices' input report copy
-		 * in their respective position in the memory region, like:
-		 *   1st device: (sizeof(IPC_HID_INPUT_REPORT_MESSAGE) * 0) = 0
-		 *   2nd device: (sizeof(IPC_HID_INPUT_REPORT_MESSAGE) * 1) = 60
-		 *   3rd device: (sizeof(IPC_HID_INPUT_REPORT_MESSAGE) * 2) = 120
-		 * and so on
-		 */
-		const size_t offset = (sizeof(IPC_HID_INPUT_REPORT_MESSAGE) * (DeviceContext->SlotIndex - 1));
-		const PIPC_HID_INPUT_REPORT_MESSAGE pHIDBuffer = (PIPC_HID_INPUT_REPORT_MESSAGE)(pDrvCtx->IPC.SharedRegions.HID.Buffer +
-			offset);
+		LONGLONG timeout = 0;
 
-		// odd generation: readers must retry until the snapshot is stable
-		InterlockedIncrement(&pHIDBuffer->SequenceNumber);
-		ResetEvent(DeviceContext->IPC.InputReportWaitHandle);
+		if (WdfWaitLockAcquire(pDrvCtx->IpcLock, &timeout) == STATUS_SUCCESS)
+		{
+			if (pDrvCtx->IPC.IsEnabled && pDrvCtx->IPC.SharedRegions.HID.Buffer != NULL)
+			{
+				/*
+				 * Offset calculation puts each devices' input report copy
+				 * in their respective position in the memory region, like:
+				 *   1st device: (sizeof(IPC_HID_INPUT_REPORT_MESSAGE) * 0) = 0
+				 *   2nd device: (sizeof(IPC_HID_INPUT_REPORT_MESSAGE) * 1) = 60
+				 *   3rd device: (sizeof(IPC_HID_INPUT_REPORT_MESSAGE) * 2) = 120
+				 * and so on
+				 */
+				const size_t offset = (sizeof(IPC_HID_INPUT_REPORT_MESSAGE) * (DeviceContext->SlotIndex - 1));
+				const PIPC_HID_INPUT_REPORT_MESSAGE pHIDBuffer = (PIPC_HID_INPUT_REPORT_MESSAGE)(pDrvCtx->IPC.SharedRegions.HID.Buffer +
+					offset);
 
-		pHIDBuffer->SlotIndex = DeviceContext->SlotIndex;
-		RtlCopyMemory(&pHIDBuffer->InputReport, Report, sizeof(DS3_RAW_INPUT_REPORT));
+				// odd generation: readers must retry until the snapshot is stable
+				InterlockedIncrement(&pHIDBuffer->SequenceNumber);
+				ResetEvent(DeviceContext->IPC.InputReportWaitHandle);
 
-		// even generation: snapshot is complete; wake every waiter
-		InterlockedIncrement(&pHIDBuffer->SequenceNumber);
-		SetEvent(DeviceContext->IPC.InputReportWaitHandle);
+				pHIDBuffer->SlotIndex = DeviceContext->SlotIndex;
+				RtlCopyMemory(&pHIDBuffer->InputReport, Report, sizeof(DS3_RAW_INPUT_REPORT));
+
+				// even generation: snapshot is complete; wake every waiter
+				InterlockedIncrement(&pHIDBuffer->SequenceNumber);
+				SetEvent(DeviceContext->IPC.InputReportWaitHandle);
+			}
+
+			WdfWaitLockRelease(pDrvCtx->IpcLock);
+		}
 	}
 
 #pragma endregion

@@ -26,6 +26,8 @@ internal class DshmConfigManagerUserData
 
     public bool AutoRestartOnHidModeMismatch { get; set; } = true;
 
+    public bool IPCEnabled { get; set; } = true;
+
     public List<ProfileData> Profiles { get; } = new();
 
     public List<DeviceData> Devices { get; } = new();
@@ -67,6 +69,7 @@ internal class DshmConfigManagerUserData
         SchemaVersion = source.SchemaVersion;
         GlobalProfileGuid = source.GlobalProfileGuid;
         AutoRestartOnHidModeMismatch = source.AutoRestartOnHidModeMismatch;
+        IPCEnabled = source.IPCEnabled;
         ReplaceProfiles(source.Profiles);
         ReplaceDevices(source.Devices);
     }
