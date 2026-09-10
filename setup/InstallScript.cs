@@ -36,7 +36,7 @@ internal class InstallScript
 {
     public const string ProductName = "Nefarius DsHidMini Driver";
 
-    public static Uri OnlineDocumentationUrl = new("https://docs.nefarius.at/projects/DsHidMini/v3/How-to-Install/");
+    public static Uri InstallationSuccessfulUrl = new("https://docs.nefarius.at/projects/DsHidMini/v3/Welcome/Installation-Successful/");
 
     /// <summary>
     /// Builds and emits the MSI installer for the Nefarius DsHidMini drivers and packaged artifacts.
@@ -137,8 +137,8 @@ internal class InstallScript
                 When.After,
                 Step.InstallFinalize,
                 Condition.NOT_Installed),
-            // open online documentation
-            new ManagedAction(CustomActions.OpenOnlineDocumentation, Return.check,
+            // open installation-successful page
+            new ManagedAction(CustomActions.OpenInstallationSuccessfulPage, Return.check,
                 When.After,
                 Step.InstallFinalize,
                 Condition.NOT_Installed),
@@ -456,23 +456,23 @@ public static class CustomActions
     }
 
     /// <summary>
-    ///     Open online documentation in default browser.
+    ///     Open the installation-successful page in the default browser.
     /// <summary>
-    /// Opens the product's online documentation URL in the user's default browser.
+    /// Opens the installation-successful URL in the user's default browser.
     /// </summary>
     /// <param name="session">The current MSI session used for logging.</param>
     /// <returns>`ActionResult.Success` to indicate the custom action completed; if launching the URL fails the exception is logged and the action still returns `ActionResult.Success`.</returns>
     [CustomAction]
-    public static ActionResult OpenOnlineDocumentation(Session session)
+    public static ActionResult OpenInstallationSuccessfulPage(Session session)
     {
         try
         {
-            Process.Start(InstallScript.OnlineDocumentationUrl.ToString());
+            Process.Start(InstallScript.InstallationSuccessfulUrl.ToString());
         }
         catch (Exception ex)
         {
             session.Log(
-                $"Online documentation launch failed, exception: {ex}");
+                $"Installation-successful page launch failed, exception: {ex}");
         }
 
         return ActionResult.Success;

@@ -53,7 +53,7 @@ public partial class OnlineDocumentationDialog : WpfDialog, IWpfDialog
     {
         try
         {
-            Process.Start(InstallScript.OnlineDocumentationUrl.ToString());
+            Process.Start(InstallScript.InstallationSuccessfulUrl.ToString());
         }
         catch
         {
