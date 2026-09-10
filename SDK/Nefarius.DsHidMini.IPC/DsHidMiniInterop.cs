@@ -44,6 +44,7 @@ public sealed partial class DsHidMiniInterop : IDisposable
     private SafeFileHandle? _fileMapping;
     private MEMORY_MAPPED_VIEW_ADDRESS? _hidView;
     private MEMORY_MAPPED_VIEW_ADDRESS? _motionView;
+    private readonly ReaderWriterLockSlim _motionViewLock = new();
 
     private readonly ConcurrentDictionary<int, EventWaitHandle> _inputReportWaitEvents = new();
     private readonly ConcurrentDictionary<int, int> _lastSeenSequences = new();
@@ -104,10 +105,18 @@ public sealed partial class DsHidMiniInterop : IDisposable
             PInvoke.UnmapViewOfFile(_hidView.Value);
         }
 
-        if (_motionView.HasValue)
+        _motionViewLock.EnterWriteLock();
+        try
         {
-            PInvoke.UnmapViewOfFile(_motionView.Value);
-            _motionView = null;
+            if (_motionView.HasValue)
+            {
+                PInvoke.UnmapViewOfFile(_motionView.Value);
+                _motionView = null;
+            }
+        }
+        finally
+        {
+            _motionViewLock.ExitWriteLock();
         }
 
         _fileMapping?.Dispose();
@@ -187,15 +196,23 @@ public sealed partial class DsHidMiniInterop : IDisposable
             // drivers only expose two regions; MapViewOfFile then fails and
             // GetMotionSnapshot returns false.
             //
-            MEMORY_MAPPED_VIEW_ADDRESS motionView = PInvoke.MapViewOfFile(
-                _fileMapping,
-                FILE_MAP.FILE_MAP_READ,
-                0,
-                systemInfo.dwAllocationGranularity * 2,
-                systemInfo.dwAllocationGranularity
-            );
+            _motionViewLock.EnterWriteLock();
+            try
+            {
+                MEMORY_MAPPED_VIEW_ADDRESS motionView = PInvoke.MapViewOfFile(
+                    _fileMapping,
+                    FILE_MAP.FILE_MAP_READ,
+                    0,
+                    systemInfo.dwAllocationGranularity * 2,
+                    systemInfo.dwAllocationGranularity
+                );
 
-            _motionView = IsNullMappedView(motionView) ? null : motionView;
+                _motionView = IsNullMappedView(motionView) ? null : motionView;
+            }
+            finally
+            {
+                _motionViewLock.ExitWriteLock();
+            }
         }
         catch (FileNotFoundException)
         {
@@ -345,7 +362,21 @@ public sealed partial class DsHidMiniInterop : IDisposable
     ///     <see langword="true" /> when this client mapped the driver's motion
     ///     telemetry region. Older drivers leave this <see langword="false" />.
     /// </summary>
-    public bool HasMotionTelemetry => _motionView is { } view && !IsNullMappedView(view);
+    public bool HasMotionTelemetry
+    {
+        get
+        {
+            _motionViewLock.EnterReadLock();
+            try
+            {
+                return _motionView is { } view && !IsNullMappedView(view);
+            }
+            finally
+            {
+                _motionViewLock.ExitReadLock();
+            }
+        }
+    }
 
     private void DisposeInputReportWaitHandles()
     {

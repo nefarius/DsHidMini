@@ -15,10 +15,13 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
     private readonly MotionOrientationEstimator _estimator;
     private readonly CancellationTokenSource _cts = new();
     private readonly object _interopLock = new();
+    private readonly object _shutdownLock = new();
     private DsHidMiniInterop? _interop;
     private Task? _pumpTask;
+    private Task? _shutdownTask;
     private int _uiGeneration;
     private bool _disposed;
+    private const int SnapshotMissBudget = 10;
 
     public MotionViewerViewModel(int deviceIndex, string deviceTitle)
     {
@@ -124,6 +127,7 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
                 return;
             }
 
+            int misses = 0;
             while (!_cts.IsCancellationRequested)
             {
                 DsMotionSnapshot snapshot = default;
@@ -143,11 +147,25 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
                     return;
                 }
 
-                if (!got || snapshot.SlotIndex == 0)
+                if (got && snapshot.SlotIndex == 0)
                 {
                     PublishUnavailable("The controller disconnected or its IPC slot is empty.");
                     return;
                 }
+
+                if (!got)
+                {
+                    misses++;
+                    if (misses >= SnapshotMissBudget)
+                    {
+                        PublishUnavailable("The controller disconnected or its IPC slot is empty.");
+                        return;
+                    }
+
+                    continue;
+                }
+
+                misses = 0;
 
                 if (!IsPaused)
                 {
@@ -156,7 +174,13 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
 
                 int generation = Interlocked.Increment(ref _uiGeneration);
                 DsMotionSnapshot copy = snapshot;
-                await Application.Current.Dispatcher.InvokeAsync(() =>
+                var dispatcher = Application.Current?.Dispatcher;
+                if (dispatcher is null)
+                {
+                    return;
+                }
+
+                await dispatcher.InvokeAsync(() =>
                 {
                     if (_disposed || generation != Volatile.Read(ref _uiGeneration))
                     {
@@ -213,14 +237,40 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
 
     public void Dispose()
     {
-        if (_disposed)
+        _ = ShutdownAsync();
+    }
+
+    internal Task ShutdownAsync()
+    {
+        lock (_shutdownLock)
         {
-            return;
+            if (_shutdownTask is not null)
+            {
+                return _shutdownTask;
+            }
+
+            _disposed = true;
+            IsSessionCancelled = true;
+            _cts.Cancel();
+            _shutdownTask = CompleteShutdownAsync();
+            return _shutdownTask;
+        }
+    }
+
+    private async Task CompleteShutdownAsync()
+    {
+        Task? pump = _pumpTask;
+        if (pump is not null)
+        {
+            try
+            {
+                await pump.ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+            }
         }
 
-        _disposed = true;
-        IsSessionCancelled = true;
-        _cts.Cancel();
         lock (_interopLock)
         {
             _interop?.Dispose();

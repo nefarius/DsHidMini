@@ -127,67 +127,75 @@ public partial class DsHidMiniInterop
     public unsafe bool GetMotionSnapshot(int deviceIndex, out DsMotionSnapshot snapshot, TimeSpan? timeout = null)
     {
         snapshot = default;
-
-        if (!HasMotionTelemetry || _motionView is null)
+        _motionViewLock.EnterReadLock();
+        try
         {
-            return false;
-        }
-
-        ValidateDeviceIndex(deviceIndex);
-
-        nuint byteOffset = (nuint)((deviceIndex - 1) * Marshal.SizeOf<DsMotionSnapshot>());
-        void* pMessage = (byte*)_motionView.Value + byteOffset;
-        ref DsMotionSnapshot message = ref Unsafe.AsRef<DsMotionSnapshot>(pMessage);
-
-        if (timeout.HasValue)
-        {
-            EventWaitHandle waitEvent;
-            try
-            {
-                waitEvent = GetOrOpenHidReportWaitEvent(deviceIndex);
-            }
-            catch (WaitHandleCannotBeOpenedException)
+            if (_motionView is null || IsNullMappedView(_motionView))
             {
                 return false;
             }
 
-            Stopwatch waitClock = Stopwatch.StartNew();
-            TimeSpan waitBudget = timeout.Value < TimeSpan.Zero ? TimeSpan.Zero : timeout.Value;
-            while (true)
+            ValidateDeviceIndex(deviceIndex);
+
+            nuint byteOffset = (nuint)((deviceIndex - 1) * Marshal.SizeOf<DsMotionSnapshot>());
+            void* pMessage = (byte*)_motionView.Value + byteOffset;
+            ref DsMotionSnapshot message = ref Unsafe.AsRef<DsMotionSnapshot>(pMessage);
+
+            if (timeout.HasValue)
             {
-                int sequence = Volatile.Read(ref message.SequenceNumber);
-                if ((sequence & 1) == 0
-                    && sequence != 0
-                    && (!_lastSeenMotionSequences.TryGetValue(deviceIndex, out int lastSeen) || sequence != lastSeen))
+                EventWaitHandle waitEvent;
+                try
                 {
-                    return TryCopyMotionSnapshot(deviceIndex, ref message, waitBudget - waitClock.Elapsed, out snapshot);
+                    waitEvent = GetOrOpenHidReportWaitEvent(deviceIndex);
                 }
-
-                if (message.SlotIndex == 0)
+                catch (WaitHandleCannotBeOpenedException)
                 {
                     return false;
                 }
 
-                TimeSpan waitRemaining = waitBudget - waitClock.Elapsed;
-                if (waitRemaining <= TimeSpan.Zero)
+                Stopwatch waitClock = Stopwatch.StartNew();
+                TimeSpan waitBudget = timeout.Value < TimeSpan.Zero ? TimeSpan.Zero : timeout.Value;
+                while (true)
                 {
-                    return false;
-                }
+                    int sequence = Volatile.Read(ref message.SequenceNumber);
+                    if ((sequence & 1) == 0
+                        && sequence != 0
+                        && (!_lastSeenMotionSequences.TryGetValue(deviceIndex, out int lastSeen) || sequence != lastSeen))
+                    {
+                        return TryCopyMotionSnapshot(deviceIndex, ref message, waitBudget - waitClock.Elapsed, out snapshot);
+                    }
 
-                if ((sequence & 1) == 0
-                    && _lastSeenMotionSequences.TryGetValue(deviceIndex, out lastSeen)
-                    && sequence == lastSeen)
-                {
-                    Thread.Sleep((int)Math.Min(waitRemaining.TotalMilliseconds, 1));
-                }
-                else
-                {
-                    waitEvent.WaitOne(waitRemaining);
+                    if (message.SlotIndex == 0)
+                    {
+                        return false;
+                    }
+
+                    TimeSpan waitRemaining = waitBudget - waitClock.Elapsed;
+                    if (waitRemaining <= TimeSpan.Zero)
+                    {
+                        return false;
+                    }
+
+                    if ((sequence & 1) == 0
+                        && _lastSeenMotionSequences.TryGetValue(deviceIndex, out lastSeen)
+                        && sequence == lastSeen)
+                    {
+                        Thread.Sleep((int)Math.Min(waitRemaining.TotalMilliseconds, 1));
+                    }
+                    else
+                    {
+                        waitEvent.WaitOne(waitRemaining);
+                    }
                 }
             }
-        }
 
-        return TryCopyMotionSnapshot(deviceIndex, ref message, timeout: null, out snapshot);
+            return TryCopyMotionSnapshot(deviceIndex, ref message, timeout: null, out snapshot);
+
+        }
+        finally
+        {
+            _motionViewLock.ExitReadLock();
+        }
     }
 
     private bool TryCopyMotionSnapshot(

@@ -460,6 +460,50 @@ DsMotion_Initialize(
 
 static
 BOOLEAN
+DsMotion_IsValidAccelCal(
+	_In_ USHORT Zero,
+	_In_ USHORT OneG
+)
+{
+	INT32 span;
+
+	if (Zero > 1023 || OneG > 1023)
+	{
+		return FALSE;
+	}
+
+	//
+	// zero == oneG is Sony's documented passthrough for blank EEPROM.
+	// Any other pair must have a span large enough that
+	// ((raw - zero) * 1024 / span) * 113 stays inside INT32 for a
+	// 16-bit raw reading.
+	//
+	if (Zero == OneG)
+	{
+		return TRUE;
+	}
+
+	span = (INT32)Zero - (INT32)OneG;
+	if (span < 0)
+	{
+		span = -span;
+	}
+
+	return span >= 4;
+}
+
+static
+BOOLEAN
+DsMotion_IsValidGyroCal(
+	_In_ USHORT Zero,
+	_In_ USHORT CalByte
+)
+{
+	return Zero <= 1023 && CalByte <= 255;
+}
+
+static
+BOOLEAN
 DsMotion_ParseEepromPage(
 	_In_reads_(BufferLength) const UCHAR* Buffer,
 	_In_ ULONG BufferLength,
@@ -486,14 +530,39 @@ DsMotion_ParseEepromPage(
 
 	payload = &Buffer[DS_MOTION_EEPROM_PAYLOAD_OFFSET];
 
-	for (i = 0; i < 3; i++)
 	{
-		Motion->Accel[i].Zero = (USHORT)((payload[i * 4] << 8) | payload[i * 4 + 1]);
-		Motion->Accel[i].OneG = (USHORT)((payload[i * 4 + 2] << 8) | payload[i * 4 + 3]);
+		USHORT accelZero[3];
+		USHORT accelOneG[3];
+		USHORT gyroZero;
+		USHORT gyroCal;
+
+		for (i = 0; i < 3; i++)
+		{
+			accelZero[i] = (USHORT)((payload[i * 4] << 8) | payload[i * 4 + 1]);
+			accelOneG[i] = (USHORT)((payload[i * 4 + 2] << 8) | payload[i * 4 + 3]);
+			if (!DsMotion_IsValidAccelCal(accelZero[i], accelOneG[i]))
+			{
+				return FALSE;
+			}
+		}
+
+		gyroZero = (USHORT)((payload[12] << 8) | payload[13]);
+		gyroCal = (USHORT)((payload[14] << 8) | payload[15]);
+		if (!DsMotion_IsValidGyroCal(gyroZero, gyroCal))
+		{
+			return FALSE;
+		}
+
+		for (i = 0; i < 3; i++)
+		{
+			Motion->Accel[i].Zero = accelZero[i];
+			Motion->Accel[i].OneG = accelOneG[i];
+		}
+
+		Motion->Gyro.Zero = gyroZero;
+		Motion->Gyro.OneG = gyroCal;
 	}
 
-	Motion->Gyro.Zero = (USHORT)((payload[12] << 8) | payload[13]);
-	Motion->Gyro.OneG = (USHORT)((payload[14] << 8) | payload[15]);
 	return TRUE;
 }
 
@@ -828,18 +897,25 @@ DsMotion_PublishOrClearIpcSnapshot(
 
 	slot = (PIPC_MOTION_SNAPSHOT_MESSAGE)(pDrvCtx->IPC.SharedRegions.Motion.Buffer + offset);
 	{
-		const LONG sequence = InterlockedIncrement(&slot->SequenceNumber);
+		IPC_MOTION_SNAPSHOT_MESSAGE staging;
+
+		(void)InterlockedIncrement(&slot->SequenceNumber);
 
 		if (Clear)
 		{
-			RtlZeroMemory(slot, sizeof(*slot));
+			RtlZeroMemory(&staging, sizeof(staging));
 		}
 		else
 		{
-			DsMotion_FillIpcSnapshot(Context, slot);
+			DsMotion_FillIpcSnapshot(Context, &staging);
 		}
 
-		slot->SequenceNumber = sequence;
+		slot->SlotIndex = staging.SlotIndex;
+		RtlCopyMemory(
+			&slot->Version,
+			&staging.Version,
+			sizeof(staging) - FIELD_OFFSET(IPC_MOTION_SNAPSHOT_MESSAGE, Version)
+		);
 	}
 
 	InterlockedIncrement(&slot->SequenceNumber);

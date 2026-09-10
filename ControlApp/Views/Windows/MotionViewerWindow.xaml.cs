@@ -21,10 +21,10 @@ public partial class MotionViewerWindow
         InitializeComponent();
         BuildPadModel();
         viewModel.PoseChanged += OnPoseChanged;
-        Closed += (_, _) =>
+        Closed += async (_, _) =>
         {
             viewModel.PoseChanged -= OnPoseChanged;
-            viewModel.Dispose();
+            await viewModel.ShutdownAsync();
         };
         viewModel.Start();
     }
