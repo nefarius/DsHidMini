@@ -715,6 +715,9 @@ DSHM_ProcessHidInputReport(
 	}
 
 	DMF_CONTEXT_DsHidMini* pModCtx = DMF_CONTEXT_GET(dmfModule);
+	BOOLEAN calByteChanged = FALSE;
+
+	DsMotion_ProcessInputReport(Context, Report, &calByteChanged);
 
 	//
 	// Handle special case of SIXAXIS.SYS emulation. This writes into
@@ -722,6 +725,7 @@ DSHM_ProcessHidInputReport(
 	// held above (see DMF_ModuleReference(dmfModule) further up); this is
 	// moved here from the USB/Bluetooth receive callbacks, which used to
 	// touch this without holding any reference on [DsHidMini].
+	// Motion fields are the calibrated, host-order Sony values (issue #217).
 	// 
 	if (Context->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
 	{
@@ -731,10 +735,21 @@ DSHM_ProcessHidInputReport(
 			sizeof(DS3_RAW_INPUT_REPORT)
 		);
 
-		pModCtx->GetFeatureReport.AccelerometerX = 0x03FF - _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerX);
-		pModCtx->GetFeatureReport.AccelerometerY = _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerY);
-		pModCtx->GetFeatureReport.AccelerometerZ = _byteswap_ushort(pModCtx->GetFeatureReport.AccelerometerZ);
-		pModCtx->GetFeatureReport.Gyroscope = _byteswap_ushort(pModCtx->GetFeatureReport.Gyroscope);
+		if (Context->Motion.HasSample)
+		{
+			pModCtx->GetFeatureReport.AccelerometerX = (USHORT)Context->Motion.Sample.CalAccelX;
+			pModCtx->GetFeatureReport.AccelerometerY = (USHORT)Context->Motion.Sample.CalAccelY;
+			pModCtx->GetFeatureReport.AccelerometerZ = (USHORT)Context->Motion.Sample.CalAccelZ;
+			pModCtx->GetFeatureReport.Gyroscope = Context->Motion.Sample.CalGyro;
+		}
+	}
+
+	if (calByteChanged && Context->OutputReport.Lock != NULL)
+	{
+		WdfWaitLockAcquire(Context->OutputReport.Lock, NULL);
+		DsMotion_ApplyOutputCalByte(Context);
+		(void)DSHM_SendOutputReportUnlocked(Context, Ds3OutputReportSourceDriverLowPriority);
+		WdfWaitLockRelease(Context->OutputReport.Lock);
 	}
 
 	if (NT_SUCCESS(DMF_ModuleReference(pModCtx->DmfModuleVirtualHidMini)))

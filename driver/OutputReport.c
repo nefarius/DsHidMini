@@ -149,6 +149,13 @@ DSHM_SendOutputReportUnlocked(
 			}
 		}
 
+		//
+		// Re-apply the Sony gyro cal byte last. On SIXAXIS / HW_CAL pads it
+		// occupies the large-motor slots, so rumble or LED writes must not
+		// be the last mutation of those bytes (issue #217).
+		// 
+		DsMotion_ApplyOutputCalByte(Context);
+
 		// 
 		// Timestamp arrival
 		//

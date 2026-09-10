@@ -26,6 +26,18 @@ public static bool IsAvailable { get; }
 
 [Boolean](https://learn.microsoft.com/dotnet/api/system.boolean)<br>
 
+### <a id="properties-hasmotiontelemetry"/>**HasMotionTelemetry**
+
+`true` when this client mapped the driver’s motion telemetry region. Older drivers leave this `false`.
+
+```csharp
+public bool HasMotionTelemetry { get; }
+```
+
+#### Property Value
+
+[Boolean](https://learn.microsoft.com/dotnet/api/system.boolean)<br>
+
 ## Constructors
 
 ### <a id="constructors-.ctor"/>**DsHidMiniInterop()**
@@ -96,6 +108,33 @@ If `timeout` is null, this method returns the last known input report copy immed
  When `timeout` is set, the implementation waits on the driver's per-slot named manual-reset event
  (same DACL as other IPC objects); it does not require administrator elevation. Multiple clients can wait on the
  same slot without splitting wakeups.
+
+### <a id="methods-getmotionsnapshot"/>**GetMotionSnapshot(Int32, out DsMotionSnapshot, Nullable&lt;TimeSpan&gt;)**
+
+Attempts to read the current [DsMotionSnapshot](./nefarius.dshidmini.ipc.models.public.dsmotionsnapshot.md) for a device slot.
+
+```csharp
+public bool GetMotionSnapshot(int deviceIndex, out DsMotionSnapshot snapshot, Nullable<TimeSpan> timeout)
+```
+
+#### Parameters
+
+`deviceIndex` [Int32](https://learn.microsoft.com/dotnet/api/system.int32)<br>
+The one-based device index.
+
+`snapshot` [DsMotionSnapshot](./nefarius.dshidmini.ipc.models.public.dsmotionsnapshot.md)<br>
+Receives a stable seqlock copy when the method returns true.
+
+`timeout` [Nullable](https://learn.microsoft.com/dotnet/api/system.nullable-1)<[TimeSpan](https://learn.microsoft.com/dotnet/api/system.timespan)><br>
+Optional timeout to wait for a snapshot update. Default invocation returns immediately.
+
+#### Returns
+
+TRUE if `snapshot` was filled, FALSE if motion telemetry is unavailable, the slot is empty, or a timeout expires.
+
+**Remarks:**
+
+Uses the same per-slot HID wait event as [GetRawInputReport](./nefarius.dshidmini.ipc.dshidminiinterop.md#methods-getrawinputreport). When the connected driver has no motion region, this returns `false`. Check [HasMotionTelemetry](./nefarius.dshidmini.ipc.dshidminiinterop.md#properties-hasmotiontelemetry).
 
 ### <a id="methods-reconnect"/>**Reconnect()**
 

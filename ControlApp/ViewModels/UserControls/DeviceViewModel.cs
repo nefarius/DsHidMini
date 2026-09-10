@@ -10,6 +10,8 @@ using Nefarius.DsHidMini.ControlApp.Models.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.Util;
 using Nefarius.DsHidMini.ControlApp.Models.Util.Web;
 using Nefarius.DsHidMini.ControlApp.Services;
+using Nefarius.DsHidMini.ControlApp.ViewModels.Windows;
+using Nefarius.DsHidMini.ControlApp.Views.Windows;
 using Nefarius.DsHidMini.IPC;
 using Nefarius.DsHidMini.IPC.Models.Drivers;
 using Nefarius.DsHidMini.IPC.Models.Public;
@@ -44,6 +46,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     ];
 
     private readonly DeviceData _deviceUserData;
+    private MotionViewerWindow? _motionViewer;
 
     // ------------------------------------------------------ FIELDS
 
@@ -612,6 +615,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     {
         Interlocked.Increment(ref _xInputSlotRefreshGeneration);
         _batteryQuery.Dispose();
+        CloseMotionViewer();
         GC.SuppressFinalize(this);
     }
 
@@ -1022,6 +1026,58 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         }
 
         return PhysicalAddress.Parse(normalized);
+    }
+
+    public bool CanOpenMotionViewer =>
+        DsHidMiniInterop.IsAvailable && DsHidMiniInterop.TryGetIpcSlotIndex(Device) is not null;
+
+    public string MotionViewerToolTip =>
+        CanOpenMotionViewer
+            ? "Open a live motion readout and diagnostic 3D pose for this controller."
+            : "Motion viewer needs driver IPC and a published device slot.";
+
+    [RelayCommand]
+    private void OpenMotionViewer()
+    {
+        if (_motionViewer is { IsVisible: true })
+        {
+            _motionViewer.Activate();
+            return;
+        }
+
+        int? slot = DsHidMiniInterop.TryGetIpcSlotIndex(Device);
+        if (slot is not int deviceIndex)
+        {
+            _appSnackbarMessagesService.ShowMotionViewerFailedMessage(
+                "The driver did not report an IPC slot for this device.");
+            return;
+        }
+
+        if (!DsHidMiniInterop.IsAvailable)
+        {
+            _appSnackbarMessagesService.ShowMotionViewerFailedMessage(
+                "Driver IPC is not available. Confirm the controller is still connected.");
+            return;
+        }
+
+        MotionViewerViewModel viewer = new(deviceIndex, DeviceAddressFriendly ?? DeviceAddress);
+        _motionViewer = new MotionViewerWindow(viewer)
+        {
+            Owner = Application.Current.MainWindow
+        };
+        _motionViewer.Closed += (_, _) => _motionViewer = null;
+        _motionViewer.Show();
+    }
+
+    private void CloseMotionViewer()
+    {
+        if (_motionViewer is null)
+        {
+            return;
+        }
+
+        _motionViewer.Close();
+        _motionViewer = null;
     }
 
     [RelayCommand]

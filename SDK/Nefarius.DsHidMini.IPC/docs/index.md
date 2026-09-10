@@ -30,6 +30,10 @@
 
 - [DS3_RAW_INPUT_REPORT](./nefarius.dshidmini.ipc.models.public.ds3_raw_input_report.md)
 
+- [DsMotionSnapshot](./nefarius.dshidmini.ipc.models.public.dsmotionsnapshot.md)
+
+- [DsMotionSnapshotFlags](./nefarius.dshidmini.ipc.models.public.dsmotionsnapshotflags.md)
+
 - [SetHostResult](./nefarius.dshidmini.ipc.models.public.sethostresult.md)
 
 - [WDF_USB_CONTROL_SETUP_PACKET](./nefarius.dshidmini.ipc.models.public.wdf_usb_control_setup_packet.md)

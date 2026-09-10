@@ -167,6 +167,17 @@ public class AppSnackbarMessagesService
         );
     }
 
+    public void ShowMotionViewerFailedMessage(string detail)
+    {
+        _snackbarService.Show(
+            "Motion viewer unavailable",
+            detail,
+            ControlAppearance.Danger,
+            new SymbolIcon(SymbolRegular.DismissCircle24),
+            TimeSpan.FromSeconds(8)
+        );
+    }
+
     public void ShowUsbPowerOffFailedMessage(string detail)
     {
         _snackbarService.Show(

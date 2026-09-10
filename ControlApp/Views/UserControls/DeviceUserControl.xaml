@@ -169,6 +169,14 @@
                                     Text="{Binding IdentificationMotionPath}" />
                             </DockPanel>
                             <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                                <ui:Button
+                                    DockPanel.Dock="Left"
+                                    Command="{Binding OpenMotionViewerCommand}"
+                                    Content="Motion viewer"
+                                    IsEnabled="{Binding CanOpenMotionViewer}"
+                                    ToolTip="{Binding MotionViewerToolTip}" />
+                            </DockPanel>
+                            <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
                                 <ui:TextBlock
                                     DockPanel.Dock="Left"
                                     Style="{StaticResource MyKey_InfoDescriptionTextbox}"

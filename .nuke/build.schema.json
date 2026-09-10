@@ -39,6 +39,7 @@
         "Restore",
         "StageIgfilter",
         "TestConfigParser",
+        "TestControlApp",
         "TestReleasePipeline",
         "TestXInputBridge",
         "ValidateSetupInputs"

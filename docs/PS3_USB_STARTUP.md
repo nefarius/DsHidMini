@@ -24,8 +24,8 @@ Identical across all three consoles and all six samples:
    has: `SET_REPORT Feature 0xF5` (pairing request), then a verifying
    `GET_REPORT Feature 0xF5` 27-75 ms later (varies by sample).
 6. `0xEF` / `0xF8` calibration-page reads (motion sensor calibration data;
-   not emulated by DsHidMini, see below; page layout and semantics in
-   [`MOTION.md`](MOTION.md#calibration-eeprom-feature-0xef-0xf8-0xf7)).
+   DsHidMini now soft-reads page `0xA0` via Feature `0xEF` on USB start, see
+   [`MOTION.md`](MOTION.md#what-dshidmini-does-today); `0xF8` is still unused).
 7. **`SET_REPORT Output 0x01` on EP0 (control endpoint), 48 bytes, no report
    ID, all zeros.** This is the pre-enable output report and the reason
    DsHidMini now sends an equivalent EP0 report during
@@ -49,9 +49,10 @@ Identical across all three consoles and all six samples:
 13. On unplug/disable: `SET_REPORT Feature 0xF4 42 0B 00 00`, preceded by
     one more all-zero EP0 report (same shape as step 7).
 
-No `SET_IDLE`, `0xEF`, `0xF7`, or `0xF8` traffic is emulated by DsHidMini;
-they are documented here only so future quirk work does not need to
-re-derive them from the pcaps.
+No `SET_IDLE`, `0xF7`, or `0xF8` traffic is emulated by DsHidMini. Feature
+`0xEF` page `0xA0` is soft-read on USB start for motion calibration (failure
+does not abort `PrepareHardware`). They remain documented here so future
+quirk work does not need to re-derive them from the pcaps.
 
 ## Report layouts
 

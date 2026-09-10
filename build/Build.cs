@@ -464,6 +464,25 @@ partial class Build : NukeBuild
         });
 
     /// <summary>
+    /// Run ControlApp / IPC managed tests (motion ABI, orientation, config).
+    /// </summary>
+    [UsedImplicitly]
+    public Target TestControlApp => _ => _
+        .Executes(() =>
+        {
+            AbsolutePath project = RootDirectory / "ControlApp.Tests" / "ControlApp.Tests.csproj";
+            if (!File.Exists(project))
+            {
+                throw new InvalidOperationException($"ControlApp.Tests project not found at {project}");
+            }
+
+            DotNetTasks.DotNetTest(s => s
+                .SetProjectFile(project)
+                .SetConfiguration(Configuration)
+                .SetLoggers("console;verbosity=minimal"));
+        });
+
+    /// <summary>
     /// Run native DsHidMini.json parser regressions.
     /// </summary>
     [UsedImplicitly]

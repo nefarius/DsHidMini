@@ -29,14 +29,15 @@ Connect your .NET application to DsHidMini via shared memory and named synchroni
 
 DsHidMini is a Windows kernel-mode driver that enables SIXAXIS/DualShock 3 (and compatible) controllers to work as HID or XInput devices. This library is the **client-side SDK** that talks to the driver over:
 
-- **Shared memory** — command channel and HID input report data
+- **Shared memory** — command channel, HID input report data, and (on current drivers) a third allocation-granularity-aligned motion telemetry region. Older drivers expose only the first two regions; this SDK keeps mapping those unchanged.
 - **Named events and mutex** — request/response synchronization
 
 Use it from a .NET Standard 2.0 consumer or a .NET 10 Windows application (desktop, service, or tray tool) to:
 
 | Capability | Description |
 |------------|-------------|
-| **Read raw input** | Poll or wait for `DS3_RAW_INPUT_REPORT` (buttons, sticks, pressure, motion) |
+| **Read raw input** | Poll or wait for `DS3_RAW_INPUT_REPORT` (buttons, sticks, pressure, raw motion bytes) |
+| **Read motion telemetry** | Poll or wait for `DsMotionSnapshot` (calibrated accel/gyro, EEPROM pairs, tracker state). Older drivers without the third shared-memory region return `false`. |
 | **Pair to host** | Set the Bluetooth host address the controller pairs to (`SetHostAddress`) or pair to the active local radio (`PairToCurrentHost`) |
 | **Player index** | Set the player LED slot (1–7) with `SetPlayerIndex` (volatile) |
 | **LED pattern** | Apply flags plus four independent effect blocks with `SetLedPattern` (volatile) |
@@ -123,7 +124,9 @@ if (gotReport)
 | **`DsHidMiniInterop()`** | Connects to the driver IPC. Throws if not available. Subscribes to device arrival/removal for reconnection. |
 | **`void Dispose()`** | Releases mapped views, file mapping, and events. Implement `IDisposable` and dispose when done. |
 | **`void Reconnect()`** | Re-opens mutex, events, and shared memory (e.g. after all devices were removed). Throws if still no device. |
+| **`bool HasMotionTelemetry`** | `true` when this client mapped the driver’s motion region. `false` on older drivers. |
 | **`bool GetRawInputReport(int deviceIndex, ref DS3_RAW_INPUT_REPORT report, TimeSpan? timeout)`** | Fills `report` with the last or next raw HID report. Use `timeout: null` for immediate read; use e.g. `TimeSpan.FromMilliseconds(20)` for event-based waiting on the driver’s named per-slot manual-reset event (`Global\DsHidMiniHidReportEvent` + index). Multiple clients can wait on the same slot. Returns `false` if the slot is empty, or if a timeout was requested and no wait object exists for that slot (nothing connected there). |
+| **`bool GetMotionSnapshot(int deviceIndex, out DsMotionSnapshot snapshot, TimeSpan? timeout)`** | Fills `snapshot` with the last or next seqlock-protected motion telemetry. Uses the same per-slot wait event as `GetRawInputReport`. Returns `false` when the driver has no motion region, the slot is empty, or a timeout expires. |
 | **`void SendPing()`** | Sends a ping to the driver and waits for a reply (liveness check). |
 | **`SetHostResult SetHostAddress(int deviceIndex, PhysicalAddress hostAddress)`** | Writes the new Bluetooth host address (pairing). Does not persist pairing mode. Returns write/read NTSTATUS in `SetHostResult`. |
 | **`SetHostResult PairToCurrentHost(int deviceIndex)`** | Pairs the device to the active local Bluetooth radio. Wired devices only; does not persist pairing mode. |
@@ -156,7 +159,15 @@ All device-indexed APIs use a **one-based** device index (see [Device index](#de
 - **Sticks:** `LeftThumbX/Y`, `RightThumbX/Y` (0x00 = min, 0x80 = center, 0xFF = max).  
 - **Pressure:** `report.Pressure.Values` — per-button pressure (Up, Down, Left, Right, L1, R1, L2, R2, Triangle, Circle, Cross, Square).  
 - **Battery:** `BatteryStatus` (see `DsBatteryStatus` in API docs).  
-- **Motion:** `AccelerometerX/Y/Z`, `Gyroscope`.
+- **Motion:** `AccelerometerX/Y/Z`, `Gyroscope` as raw big-endian device bytes. Prefer `GetMotionSnapshot` for calibrated values.
+
+### `DsMotionSnapshot` (calibrated motion)
+
+- **Layout:** 80-byte `Pack = 1` struct, version `DsMotionSnapshot.CurrentVersion` (`1`). Must stay in sync with driver `IPC_MOTION_SNAPSHOT_MESSAGE`.
+- **Flags:** `Available`, `Fallback` (nominal 512/399), `HardwareCal`, `Tracker`.
+- **Calibration:** EEPROM `AccelZero*` / `AccelOneG*` pairs, `GyroZero`, `GyroEepromCal`, live `CalByte`, `ZeroRef`, `MotionPath`.
+- **Samples:** raw and Sony-corrected axes, milli-g, milli-deg/s, `SampleIndex`, QPC timestamp.
+- **Compatibility:** mapping the third region is optional. `HasMotionTelemetry` is `false` and `GetMotionSnapshot` returns `false` against older drivers.
 
 ### `SetHostResult` (pairing result)
 
