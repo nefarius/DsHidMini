@@ -13,7 +13,7 @@ runs:
       shell: pwsh
       run: |
         $ErrorActionPreference = 'Stop'
-        dotnet tool install -g Nefarius.Tools.SDCM --version 1.0.0-pre003
+        dotnet tool install -g Nefarius.Tools.SDCM --version 1.0.0-pre004
         $tools = Join-Path $env:USERPROFILE '.dotnet\tools'
         echo $tools >> $env:GITHUB_PATH
-        Write-Output "Installed Nefarius.Tools.SDCM 1.0.0-pre003"
+        Write-Output "Installed Nefarius.Tools.SDCM 1.0.0-pre004"

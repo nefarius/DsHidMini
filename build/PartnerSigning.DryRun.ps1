@@ -119,8 +119,9 @@ function Invoke-Block {
 
 # ---------------------------------------------------------------------------
 # Mock sdcm: a state machine over the documented Submission resource. Ids come
-# back quoted, `submission list` wraps the entity in an array, and the verbs
-# reject out-of-order calls the way the real tool does.
+# back quoted. `submission get` returns one object; `submission status` returns
+# the normalized progress document. Verbs reject out-of-order calls the way
+# the real tool does.
 # ---------------------------------------------------------------------------
 $mockScript = @'
 #Requires -Version 7.0
@@ -140,11 +141,13 @@ function Read-Option([string] $Name) {
     return $cliArgs[$idx + 1]
 }
 
-# Every option sdcm is invoked with here takes a value, so skipping the token
-# after each --option leaves just the noun/verb pair.
+$flags = @('--overwrite', '--wait-metadata', '--verbose', '-v')
 $verbs = New-Object System.Collections.Generic.List[string]
 for ($i = 0; $i -lt $cliArgs.Count; $i++) {
-    if ($cliArgs[$i] -like '--*') { $i++; continue }
+    if ($cliArgs[$i] -like '--*' -or $cliArgs[$i] -eq '-v') {
+        if ($flags -notcontains $cliArgs[$i]) { $i++ }
+        continue
+    }
     $verbs.Add($cliArgs[$i])
 }
 $noun = $verbs[0]
@@ -167,6 +170,21 @@ function Write-SubmissionJson([switch] $AsArray) {
         downloads      = [ordered]@{ items = $downloads; messages = @() }
     }
     if ($AsArray) { ConvertTo-Json @($submission) -Depth 8 } else { ConvertTo-Json $submission -Depth 8 }
+}
+
+function Write-StatusJson {
+    $failed = ($state.state -eq 'failed') -or ($state.commitStatus -eq 'commitFailed')
+    $signed = $state.downloads -contains 'signedPackage'
+    $ready = $signed -or ($state.state -eq 'completed' -and $state.step -eq 'finalizeIngestion')
+    $progress = if ($failed) { 'failed' } elseif ($ready) { 'completed' } elseif ($state.commitStatus -eq 'CommitPending') { 'created' } else { 'processing' }
+    ConvertTo-Json ([ordered]@{
+        progress         = $progress
+        commitStatus     = $state.commitStatus
+        state            = $state.state
+        currentStep      = $state.step
+        hasSignedPackage = [bool]$signed
+    }) -Depth 8
+    if ($failed) { exit 7 }
 }
 
 switch ("$noun $verb") {
@@ -192,6 +210,14 @@ switch ("$noun $verb") {
     }
     'submission list' {
         Write-SubmissionJson -AsArray
+        exit 0
+    }
+    'submission get' {
+        Write-SubmissionJson
+        exit 0
+    }
+    'submission status' {
+        Write-StatusJson
         exit 0
     }
     'submission upload' {
@@ -221,7 +247,9 @@ switch ("$noun $verb") {
     'submission download' {
         if ($state.downloads -notcontains 'signedPackage') { Write-Error 'no signedPackage available'; exit 5 }
         $target = Read-Option '--output-file'
-        if (Test-Path -LiteralPath $target) { Write-Error 'destination exists'; exit 4 }
+        $overwrite = $cliArgs -contains '--overwrite'
+        if ((Test-Path -LiteralPath $target) -and -not $overwrite) { Write-Error 'destination exists'; exit 4 }
+        if (Test-Path -LiteralPath $target) { Remove-Item -LiteralPath $target -Force }
         $stage = Join-Path ([IO.Path]::GetTempPath()) ('sdcm-mock-' + [guid]::NewGuid().ToString('N'))
         New-Item -ItemType Directory -Path $stage | Out-Null
         $pkg = $state.submissionId
@@ -253,7 +281,7 @@ $env:PATH = "$mockBin$([IO.Path]::PathSeparator)$env:PATH"
 # ---------------------------------------------------------------------------
 $blocks = Get-WorkflowPwshBlocks -Path $workflowPath
 $createBlock = Select-Block -Blocks $blocks -Signature 'RESUME_PRODUCT_ID'
-$uploadBlock = Select-Block -Blocks $blocks -Signature 'Test-PartnerSubmissionNeedsUpload'
+$uploadBlock = Select-Block -Blocks $blocks -Signature 'Test-SdcmSubmissionNeedsUpload'
 $waitBlock = Select-Block -Blocks $blocks -Signature 'partner-signing-result.json'
 
 function New-Sandbox([string] $Name) {
@@ -313,7 +341,7 @@ function Measure-Call([string[]] $Calls, [string] $Call) {
 }
 
 function Invoke-Pipeline {
-    param([string] $Name, [hashtable] $SeedState, [hashtable] $Overrides = @{})
+    param([string] $Name, [hashtable] $SeedState, [hashtable] $Overrides = @{}, [int] $ExpectedWaitExitCode = 0)
 
     Write-Host ''
     Write-Host "=== $Name ==="
@@ -345,8 +373,8 @@ function Invoke-Pipeline {
     if ($upload.ExitCode -ne 0) { Write-Host $upload.Output }
 
     $wait = Invoke-Block -Body $waitBlock -WorkDir $sandbox -Variables $variables -Substitutions $substitutions
-    Assert-Equal $wait.ExitCode 0 "${Name}: wait step succeeds"
-    if ($wait.ExitCode -ne 0) { Write-Host $wait.Output }
+    Assert-Equal $wait.ExitCode $ExpectedWaitExitCode "${Name}: wait step exit $ExpectedWaitExitCode"
+    if ($wait.ExitCode -ne $ExpectedWaitExitCode) { Write-Host $wait.Output }
 
     $calls = Get-SdcmCalls $sandbox
     Write-Host "sdcm calls: $($calls -join ' | ')"
@@ -391,6 +419,8 @@ try {
     Assert-Equal (Measure-Call $fresh.Calls 'submission commit') 1 'fresh: submission committed exactly once'
     Assert-Equal (Measure-Call $fresh.Calls 'submission wait') 1 'fresh: waited once'
     Assert-Equal (Measure-Call $fresh.Calls 'submission download') 1 'fresh: downloaded once'
+    Assert-Equal (Measure-Call $fresh.Calls 'submission list') 0 'fresh: does not use deprecated list'
+    Assert-True ((Measure-Call $fresh.Calls 'submission status') -ge 2) 'fresh: status is the progress source'
     $result = Get-Content -LiteralPath (Join-Path $fresh.Sandbox 'partner-signing-result.json') -Raw | ConvertFrom-Json
     Assert-Equal $result.productId $fresh.ProductId 'fresh: result records the product id'
     Assert-Equal $result.submissionId $fresh.SubmissionId 'fresh: result records the submission id'
@@ -412,6 +442,8 @@ try {
     Assert-Equal (Measure-Call $processing.Calls 'submission upload') 0 'processing: upload skipped'
     Assert-Equal (Measure-Call $processing.Calls 'submission commit') 0 'processing: commit skipped'
     Assert-Equal (Measure-Call $processing.Calls 'submission wait') 1 'processing: waited once'
+    Assert-Equal (Measure-Call $processing.Calls 'submission get') 1 'processing: get used to resume'
+    Assert-Equal (Measure-Call $processing.Calls 'submission list') 0 'processing: does not use deprecated list'
     Assert-Equal $processing.ProductId '13872423721100346' 'processing: keeps the requested product id'
     Assert-Equal $processing.SubmissionId '1152921505701853745' 'processing: keeps the requested submission id'
 
@@ -440,6 +472,18 @@ try {
     Assert-Equal (Measure-Call $completed.Calls 'submission wait') 0 'completed: wait skipped'
     Assert-Equal (Measure-Call $completed.Calls 'submission download') 1 'completed: downloaded once'
     Assert-True ($completed.WaitOutput -like '*already completed*') 'completed: skip is reported'
+
+    # progress=completed is not enough; download only when a signed package exists.
+    $completedNoSigned = Invoke-Pipeline -Name 'completed without signed package' -ExpectedWaitExitCode 1 -Overrides @{
+        RESUME_PRODUCT_ID = '13872423721100350'; RESUME_SUBMISSION_ID = '1152921505701853749'
+    } -SeedState @{
+        productId = '13872423721100350'; submissionId = '1152921505701853749'; commitStatus = 'commitComplete'
+        state = 'completed'; step = 'finalizeIngestion'
+        downloads = @('initialPackage'); uploaded = $true
+    }
+    Assert-Equal (Measure-Call $completedNoSigned.Calls 'submission wait') 0 'completed-no-signed: wait skipped'
+    Assert-Equal (Measure-Call $completedNoSigned.Calls 'submission download') 0 'completed-no-signed: download not attempted'
+    Assert-True ($completedNoSigned.WaitOutput -like '*not ready to download*') 'completed-no-signed: refusal names the missing package'
 
     # A failed submission must be refused up front instead of burning the rest
     # of the pipeline.
