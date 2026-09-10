@@ -226,7 +226,7 @@ gh release create setup-v3.6.0 `
 | `wait` job exit 9 | `--wait-timeout` 3600 elapsed; re-run failed jobs to resume the wait |
 | `wait` job: submission is still commitPending | The commit never landed; re-run the `upload` job before the wait |
 | `create` job: product-id and submission-id must be supplied together | Resume needs both ids, or neither |
-| Missing `Signed_<id>.zip` / `Initial_<id>.cab` pair | Downloaded the wrapper or submission CAB instead of the portal pair |
+| Missing `Signed_<id>.zip` / `Initial_<id>.cab` pair | Expanded `signedPackage` (driver files) instead of keeping it as `Signed_<id>.zip` and downloading `initialPackage` separately |
 | Multiple `dshidmini` packages | Point `MicrosoftPackagePath` at the zip or the single package folder |
 | DLL missing Microsoft signer | Downloaded the submission CAB instead of the dashboard's signed package |
 | DLL missing publisher signer | Microsoft package is not from this pipeline's EV-signed CAB |
