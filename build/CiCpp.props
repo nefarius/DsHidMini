@@ -1,0 +1,4 @@
+<Project>
+  <Import Project="SilenceExperimentalCoroutines.props" />
+  <Import Project="WdkNuget.props" />
+</Project>

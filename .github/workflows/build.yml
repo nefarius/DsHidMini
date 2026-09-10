@@ -99,87 +99,6 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      # windows-2025-vs2026 ships a WDK VS extension and SDK 26100, but not the
-      # WDK headers/libs (ntifs.h, UMDF). See runner-images#14263.
-      # The 26100 WDK MSI exits 0 on this image without laying down UMDF files
-      # (it is the VS 2022 kit). Install the VS 2026 pair: SDK + WDK 28000.
-      - name: 'Cache Windows kit installer layouts'
-        id: kits-layout
-        uses: actions/cache@v6
-        with:
-          path: |
-            sdk-layout
-            wdk-layout
-          key: windows-kits-28000-v1
-
-      - name: 'Download SDK and WDK installer layouts'
-        if: steps.kits-layout.outputs.cache-hit != 'true'
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          function Invoke-KitLayout([string]$Uri, [string]$Name, [string]$Layout) {
-            $bootstrapper = Join-Path $env:RUNNER_TEMP $Name
-            Write-Output "Downloading $Name ..."
-            Invoke-WebRequest -Uri $Uri -OutFile $bootstrapper -UseBasicParsing
-            New-Item -ItemType Directory -Force -Path $Layout | Out-Null
-            $proc = Start-Process -FilePath $bootstrapper -ArgumentList '/layout', $Layout, '/quiet', '/ceip', 'off' -Wait -PassThru
-            if ($proc.ExitCode -notin 0, 3010) {
-              throw "$Name /layout failed with exit $($proc.ExitCode)"
-            }
-          }
-          Invoke-KitLayout 'https://go.microsoft.com/fwlink/?linkid=2366211' 'winsdksetup.exe' (Join-Path $env:GITHUB_WORKSPACE 'sdk-layout')
-          # Official current WDK for VS 2026 (10.0.28000.*).
-          Invoke-KitLayout 'https://go.microsoft.com/fwlink/?LinkId=2371554' 'wdksetup.exe' (Join-Path $env:GITHUB_WORKSPACE 'wdk-layout')
-
-      - name: 'Install SDK 28000 and WDK 28000'
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $inc = 'C:\Program Files (x86)\Windows Kits\10\Include'
-          function Test-WdkHeaders {
-            Get-ChildItem $inc -Directory -ErrorAction SilentlyContinue |
-              Where-Object {
-                (Test-Path (Join-Path $_.FullName 'wdf\umdf')) -or
-                (Test-Path (Join-Path $_.FullName 'km\ntifs.h'))
-              } |
-              Select-Object -First 1
-          }
-          $present = Test-WdkHeaders
-          if ($present) {
-            Write-Output "WDK already present ($($present.Name))."
-            return
-          }
-
-          $sdkSetup = Join-Path $env:GITHUB_WORKSPACE 'sdk-layout\winsdksetup.exe'
-          $wdkSetup = Join-Path $env:GITHUB_WORKSPACE 'wdk-layout\wdksetup.exe'
-          if (-not (Test-Path -LiteralPath $sdkSetup)) { throw "SDK layout missing: $sdkSetup" }
-          if (-not (Test-Path -LiteralPath $wdkSetup)) { throw "WDK layout missing: $wdkSetup" }
-
-          Write-Output 'Installing Windows SDK 28000...'
-          $sdkArgs = @(
-            '/features',
-            'OptionId.DesktopCPPx86', 'OptionId.DesktopCPPx64', 'OptionId.DesktopCPParm64',
-            'OptionId.UWPCPP',
-            '/quiet', '/norestart', '/ceip', 'off'
-          )
-          $proc = Start-Process -FilePath $sdkSetup -ArgumentList $sdkArgs -Wait -PassThru
-          Write-Output "SDK installer exit $($proc.ExitCode)"
-          if ($proc.ExitCode -notin 0, 3010) { throw "SDK install failed with exit $($proc.ExitCode)" }
-
-          Write-Output 'Installing WDK 28000...'
-          $proc = Start-Process -FilePath $wdkSetup -ArgumentList '/features', '+', '/quiet', '/norestart', '/ceip', 'off' -Wait -PassThru
-          Write-Output "WDK installer exit $($proc.ExitCode)"
-          if ($proc.ExitCode -notin 0, 3010) { throw "WDK install failed with exit $($proc.ExitCode)" }
-
-          $present = Test-WdkHeaders
-          if (-not $present) {
-            Write-Output 'Include tree after install:'
-            Get-ChildItem $inc -Recurse -Depth 2 -ErrorAction SilentlyContinue |
-              Select-Object -ExpandProperty FullName
-            throw 'Kit installers finished but UMDF/km headers were not found.'
-          }
-          Write-Output "WDK installed ($($present.Name))."
-
       - name: 'Bootstrap vcpkg'
         shell: cmd
         run: .\XInputBridge\vcpkg\bootstrap-vcpkg.bat -disableMetrics
@@ -197,6 +116,32 @@ jobs:
           echo "vcpkg-sha=$vcpkgSha" >> $env:GITHUB_OUTPUT
           echo "image-version=$imageVersion" >> $env:GITHUB_OUTPUT
           Write-Output "DMF $dmfSha / vcpkg $vcpkgSha (ImageVersion=$imageVersion)"
+
+      # windows-2025-vs2026 ships a WDK VS extension and SDK 26100, but not the
+      # WDK headers/libs (ntifs.h, UMDF). See runner-images#14263. x64/ARM64
+      # restore the 28000 WDK+SDK NuGet packages instead of running the MSI
+      # installers. x86 does not build the driver or DMF and uses the image SDK.
+      - name: 'Setup NuGet'
+        if: matrix.platform != 'x86'
+        uses: NuGet/setup-nuget@v2
+
+      - name: 'Cache WDK NuGet packages'
+        if: matrix.platform != 'x86'
+        id: wdk-nuget
+        uses: actions/cache@v6
+        with:
+          path: packages
+          key: wdk-nuget-v1-${{ hashFiles('build/wdk-packages.config') }}-${{ steps.cache-keys.outputs.image-version }}
+
+      - name: 'Restore WDK NuGet packages'
+        if: matrix.platform != 'x86' && steps.wdk-nuget.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # nuget.exe only accepts the filename packages.config
+          $config = Join-Path $env:RUNNER_TEMP 'packages.config'
+          Copy-Item -LiteralPath 'build\wdk-packages.config' -Destination $config -Force
+          nuget restore $config -PackagesDirectory packages -NonInteractive
 
       - name: 'Cache NuGet packages'
         uses: actions/cache@v6
@@ -261,33 +206,22 @@ jobs:
           dotnet vpatch --stamp-version "%BUILD_VERSION%" --target-file ".\XInputBridge\XInputBridge.rc" --resource.file-version --resource.product-version
 
       - name: 'Restore managed projects'
-        # msbuild's /t:Rebuild over the whole solution does not implicitly restore SDK-style
-        # projects; these two dotnet restore calls also transitively restore the SDK project
-        # referenced by both. Mirrors appveyor.yml's former before_build steps.
+        # PublishControlApp and ControlApp.Tests run on x64 only. ARM64/x86 no longer
+        # solution-build ControlApp, installer, or ipctest.
+        if: matrix.platform == 'x64'
         shell: cmd
         run: |
           dotnet restore .\ControlApp\
           dotnet restore .\ControlApp.Tests\
-          dotnet restore .\ipctest\
 
       - name: 'Test ControlApp'
         if: matrix.platform == 'x64'
         shell: cmd
         run: dotnet test .\ControlApp.Tests\ControlApp.Tests.csproj --configuration Release --no-restore
 
-      - name: 'Test config parser'
-        if: matrix.platform == 'x64'
-        shell: cmd
-        run: .\build.cmd TestConfigParser --target-platform x64
-
-      - name: 'Test release pipeline'
-        if: matrix.platform == 'x64'
-        shell: cmd
-        run: .\build.cmd TestReleasePipeline
-
       - name: 'Build'
         shell: cmd
-        run: .\build.cmd Compile ${{ matrix.platform == 'x64' && 'PublishControlApp' || '' }} --target-platform ${{ matrix.platform }} ${{ steps.dmf-cache.outputs.cache-hit == 'true' && '--skip BuildDmf' || '' }}
+        run: .\build.cmd ${{ matrix.platform == 'x64' && 'TestConfigParser TestReleasePipeline Compile PublishControlApp' || 'Compile' }} --target-platform ${{ matrix.platform }} ${{ steps.dmf-cache.outputs.cache-hit == 'true' && '--skip BuildDmf' || '' }}
 
       - name: 'Pack driver CAB'
         if: matrix.platform != 'x86'

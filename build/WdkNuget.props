@@ -1,0 +1,29 @@
+<Project>
+  <!-- WDK/SDK 28000 from NuGet. No-op when packages/ is absent so a local MSI WDK still works.
+       Imported only for the driver project (by name) or when NUKE sets DsHidMiniImportWdkNuget
+       (DMF): ForceImportBeforeCppTargets runs before DMF sets PlatformToolset. -->
+  <PropertyGroup>
+    <DsHidMiniWdkKitVersion Condition="'$(DsHidMiniWdkKitVersion)' == ''">10.0.28000.2526</DsHidMiniWdkKitVersion>
+    <DsHidMiniWdkPackagesDir Condition="'$(DsHidMiniWdkPackagesDir)' == ''">$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\packages'))</DsHidMiniWdkPackagesDir>
+    <DsHidMiniUseWdkNuget Condition="'$(DsHidMiniImportWdkNuget)' == 'true' or '$(MSBuildProjectName)' == 'dshidmini'">true</DsHidMiniUseWdkNuget>
+  </PropertyGroup>
+
+  <Import Project="$(DsHidMiniWdkPackagesDir)\Microsoft.Windows.WDK.x64.$(DsHidMiniWdkKitVersion)\build\native\Microsoft.Windows.WDK.x64.props"
+          Condition="'$(DsHidMiniUseWdkNuget)' == 'true' and '$(Platform)' == 'x64' and Exists('$(DsHidMiniWdkPackagesDir)\Microsoft.Windows.WDK.x64.$(DsHidMiniWdkKitVersion)\build\native\Microsoft.Windows.WDK.x64.props')" />
+  <Import Project="$(DsHidMiniWdkPackagesDir)\Microsoft.Windows.WDK.arm64.$(DsHidMiniWdkKitVersion)\build\native\Microsoft.Windows.WDK.arm64.props"
+          Condition="'$(DsHidMiniUseWdkNuget)' == 'true' and '$(Platform)' == 'ARM64' and Exists('$(DsHidMiniWdkPackagesDir)\Microsoft.Windows.WDK.arm64.$(DsHidMiniWdkKitVersion)\build\native\Microsoft.Windows.WDK.arm64.props')" />
+  <Import Project="$(DsHidMiniWdkPackagesDir)\Microsoft.Windows.SDK.CPP.x64.$(DsHidMiniWdkKitVersion)\build\native\Microsoft.Windows.SDK.cpp.x64.props"
+          Condition="'$(DsHidMiniUseWdkNuget)' == 'true' and '$(Platform)' == 'x64' and Exists('$(DsHidMiniWdkPackagesDir)\Microsoft.Windows.SDK.CPP.x64.$(DsHidMiniWdkKitVersion)\build\native\Microsoft.Windows.SDK.cpp.x64.props')" />
+  <Import Project="$(DsHidMiniWdkPackagesDir)\Microsoft.Windows.SDK.CPP.arm64.$(DsHidMiniWdkKitVersion)\build\native\Microsoft.Windows.SDK.cpp.arm64.props"
+          Condition="'$(DsHidMiniUseWdkNuget)' == 'true' and '$(Platform)' == 'ARM64' and Exists('$(DsHidMiniWdkPackagesDir)\Microsoft.Windows.SDK.CPP.arm64.$(DsHidMiniWdkKitVersion)\build\native\Microsoft.Windows.SDK.cpp.arm64.props')" />
+  <Import Project="$(DsHidMiniWdkPackagesDir)\Microsoft.Windows.SDK.CPP.$(DsHidMiniWdkKitVersion)\build\native\Microsoft.Windows.SDK.cpp.props"
+          Condition="'$(DsHidMiniUseWdkNuget)' == 'true' and Exists('$(DsHidMiniWdkPackagesDir)\Microsoft.Windows.SDK.CPP.$(DsHidMiniWdkKitVersion)\build\native\Microsoft.Windows.SDK.cpp.props')" />
+
+  <!-- WDK NuGet sets WDKContentRoot to ...\c without a trailing slash. The kit
+       targets then concatenate $(WDKContentRoot)build\... into ...\cbuild\... -->
+  <PropertyGroup Condition="'$(DsHidMiniUseWdkNuget)' == 'true'">
+    <WDKContentRoot Condition="'$(WDKContentRoot)' != '' and !HasTrailingSlash('$(WDKContentRoot)')">$(WDKContentRoot)\</WDKContentRoot>
+    <WindowsSdkDir Condition="'$(WindowsSdkDir)' != '' and !HasTrailingSlash('$(WindowsSdkDir)')">$(WindowsSdkDir)\</WindowsSdkDir>
+    <WindowsSdkDir_10 Condition="'$(WindowsSdkDir_10)' != '' and !HasTrailingSlash('$(WindowsSdkDir_10)')">$(WindowsSdkDir_10)\</WindowsSdkDir_10>
+  </PropertyGroup>
+</Project>

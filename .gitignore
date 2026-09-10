@@ -350,6 +350,7 @@ healthchecksdb
 /vcpkg-archives
 /wdk-layout
 /sdk-layout
+/packages
 **/*.g.wxs
 /XInputBridge/exports
 **/*_OTEL

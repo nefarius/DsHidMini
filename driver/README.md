@@ -38,7 +38,7 @@ Designed for **Windows 10** version 1809 or newer (**x64**, **ARM64**). Dependen
 ### Prerequisites
 
 - Visual Studio 2026 (MSBuild 18). CI uses the `windows-2025-vs2026` image
-- Windows SDK and WDK **10.0.28000** (the pair installed by the Build workflow)
+- Windows SDK and WDK **10.0.28000**. Local builds use the classic MSI pair; CI restores `Microsoft.Windows.WDK.*` / `Microsoft.Windows.SDK.CPP*` 10.0.28000.2526 via [build/wdk-packages.config](../build/wdk-packages.config)
 - [Driver Module Framework (DMF)](https://github.com/microsoft/DMF) via the `DMF/` submodule (`nefarius` branch). `.\build.cmd Compile` builds `DmfU` automatically
 
 ### Building

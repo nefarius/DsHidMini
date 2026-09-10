@@ -52,7 +52,28 @@ partial class Build : NukeBuild
 
     AbsolutePath DmfSolution => Solution.Directory / "DMF/Dmf.sln";
 
+    AbsolutePath CppForceImport => RootDirectory / "build" / "CiCpp.props";
+
     AbsolutePath ResolvedArtifactsPath => (AbsolutePath)Path.GetFullPath(Path.Combine(RootDirectory, ArtifactsPath));
+
+    /// <summary>
+    /// CI builds only the native artifacts that job uploads. ControlApp is published separately
+    /// on x64; installer/ipctest/SDK are not CI outputs. Local builds still Rebuild the solution.
+    /// </summary>
+    IEnumerable<(AbsolutePath project, MSBuildTargetPlatform platform)> CiCompileProjects()
+    {
+        MSBuildTargetPlatform platform = string.Equals(TargetPlatform, "x86", StringComparison.OrdinalIgnoreCase)
+            ? MSBuildTargetPlatform.Win32
+            : (MSBuildTargetPlatform)TargetPlatform;
+
+        if (!string.Equals(TargetPlatform, "x86", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(TargetPlatform, "Win32", StringComparison.OrdinalIgnoreCase))
+        {
+            yield return (RootDirectory / "driver" / "dshidmini.vcxproj", platform);
+        }
+
+        yield return (RootDirectory / "XInputBridge" / "XInputBridge.vcxproj", platform);
+    }
 
     /// <summary>
     /// Version stamp propagated from CI (BUILD_VERSION env var, set from github.run_number). Empty for local builds.
@@ -179,8 +200,10 @@ partial class Build : NukeBuild
                     .SetNodeReuse(IsLocalBuild)
                     .SetVerbosity(MSBuildVerbosity.Minimal)
                     // VS 2026's STL errors on DMF's /await experimental coroutine modules unless silenced.
-                    .SetProperty("ForceImportBeforeCppTargets",
-                        RootDirectory / "build" / "SilenceExperimentalCoroutines.props")
+                    // DsHidMiniImportWdkNuget: DMF sets PlatformToolset after Default.props, so
+                    // WdkNuget.props cannot key off the toolset and must be opted in here.
+                    .SetProperty("ForceImportBeforeCppTargets", CppForceImport)
+                    .SetProperty("DsHidMiniImportWdkNuget", "true")
                 );
             }
         });
@@ -191,6 +214,48 @@ partial class Build : NukeBuild
         {
             Logging.Level = LogLevel.Normal;
 
+            if (!IsLocalBuild)
+            {
+                if (string.IsNullOrWhiteSpace(TargetPlatform))
+                {
+                    throw new InvalidOperationException(
+                        "TargetPlatform must be set on CI, e.g. --target-platform x64.");
+                }
+
+                foreach ((AbsolutePath project, MSBuildTargetPlatform platform) in CiCompileProjects())
+                {
+                    Log.Information("Building {Project} {Configuration} | {Platform}", project.Name, Configuration, platform);
+                    MSBuildTasks.MSBuild(s =>
+                    {
+                        MSBuildSettings settings = s
+                            .SetProcessToolPath(MSBuildPath)
+                            .SetTargetPath(project)
+                            .SetTargets("Build")
+                            .SetConfiguration(Configuration)
+                            .SetTargetPlatform(platform)
+                            .SetMaxCpuCount(Environment.ProcessorCount)
+                            .SetNodeReuse(false)
+                            .SetVerbosity(MSBuildVerbosity.Minimal)
+                            .SetProperty("ForceImportBeforeCppTargets", CppForceImport)
+                            .SetProperty("SignMode", "Off")
+                            .SetProperty("SolutionDir", RootDirectory.ToString().TrimEnd('\\', '/') + "\\");
+
+                        if (!string.IsNullOrWhiteSpace(BuildVersionStamp))
+                        {
+                            settings = settings
+                                .SetProperty("Version", BuildVersionStamp)
+                                .SetProperty("AssemblyVersion", BuildVersionStamp)
+                                .SetProperty("FileVersion", BuildVersionStamp)
+                                .SetProperty("InformationalVersion", BuildVersionStamp);
+                        }
+
+                        return settings;
+                    });
+                }
+
+                return;
+            }
+
             MSBuildTasks.MSBuild(s =>
             {
                 MSBuildSettings settings = s
@@ -200,38 +265,13 @@ partial class Build : NukeBuild
                     .SetConfiguration(Configuration)
                     .SetMaxCpuCount(Environment.ProcessorCount)
                     .SetNodeReuse(IsLocalBuild)
-                    .SetVerbosity(MSBuildVerbosity.Minimal);
+                    .SetVerbosity(MSBuildVerbosity.Minimal)
+                    .SetProperty("ForceImportBeforeCppTargets", CppForceImport);
 
-                // On CI, MSBuild must be told the solution platform explicitly. AppVeyor's "platform:" matrix
-                // axis set a $env:PLATFORM variable that MSBuild picks up implicitly for the unset Platform
-                // property; GitHub Actions has no such variable, so without this MSBuild falls back to
-                // "Any CPU", which dshidmini.sln maps to a Release|x64 build of the driver project for every
-                // leg (including x86), pulling in a DMF x64 lib that BuildDmf never produced for that leg.
-                if (!IsLocalBuild)
-                {
-                    if (string.IsNullOrWhiteSpace(TargetPlatform))
-                    {
-                        throw new InvalidOperationException(
-                            "TargetPlatform must be set on CI, e.g. --target-platform x64.");
-                    }
+                string noWarn =
+                    "CS0219;CS1587;CS1591;CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8619;CS8622;CS8625;CS8629;CS8765;CS8767;CS8981";
+                settings = settings.SetProperty("NoWarn", noWarn.Replace(";", "%3B"));
 
-                    settings = settings
-                        .SetTargetPlatform((MSBuildTargetPlatform)TargetPlatform)
-                        // Compile produces unsigned driver DLLs. The partner-cab job EV-signs
-                        // those binaries immediately before packing the submission CAB.
-                        .SetProperty("SignMode", "Off");
-                }
-
-                // Aggressively silence C# warnings for local Nuke builds (nullability, CS8981, XML docs, etc.)
-                if (IsLocalBuild)
-                {
-                    string noWarn =
-                        "CS0219;CS1587;CS1591;CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8619;CS8622;CS8625;CS8629;CS8765;CS8767;CS8981";
-                    settings = settings.SetProperty("NoWarn", noWarn.Replace(";", "%3B"));
-                }
-
-                // Stamps managed projects (ControlApp, SDK, ipctest, installer) with the CI build version,
-                // replacing AppVeyor's dotnet_csproj auto-patching. C++ projects ignore unknown properties.
                 if (!string.IsNullOrWhiteSpace(BuildVersionStamp))
                 {
                     settings = settings

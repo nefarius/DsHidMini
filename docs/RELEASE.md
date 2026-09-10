@@ -24,7 +24,7 @@ Non-tag CI (master / pull request) stamps binaries `0.0.0.(2000 + run_number)` a
 Local machine:
 
 - Windows, `gh` authenticated (`gh auth login`, `repo` scope)
-- Visual Studio 2026 / MSBuild 18 and Windows SDK/WDK 10.0.28000 (same pair CI installs)
+- Visual Studio 2026 / MSBuild 18 and Windows SDK/WDK 10.0.28000 (classic MSI pair locally; CI restores the matching WDK NuGet packages)
 - EV code-signing certificate whose subject contains `Nefarius Software Solutions e.U.`
 - SignTool on PATH via WDK, or pass `--sign-tool-path`
 - Maintainer-supplied `igfilter` packages (private; not built or downloaded by this repository)
