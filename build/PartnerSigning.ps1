@@ -4,17 +4,12 @@ Set-StrictMode -Version Latest
 $script:PartnerSignedNamePattern = '^Signed_(\d+)\.zip$'
 $script:PartnerInitialNamePattern = '^Initial_(\d+)\.cab$'
 
-# Hardware Dev Center submission vocabulary. commitStatus is documented as
-# commitPending / commitComplete / commitFailed, but the API reference shows
-# 'CommitPending' while the service returns 'commitPending', so every comparison
-# below is case-insensitive. workflowStatus.state is one of notStarted, started,
-# failed, completed and describes *the current step only*; currentStep walks
-# packageInfoValidation, preparation, scanning, validation, catalogCreation,
-# manualReview, signing, finalizeIngestion.
-$script:PartnerCommitPending = 'commitPending'
-$script:PartnerCommitFailed = 'commitFailed'
-$script:PartnerWorkflowFinalStep = 'finalizeIngestion'
-$script:PartnerSignedPackageType = 'signedPackage'
+# sdcm 1.0.0-pre004 owns the Hardware Dev Center state machine. progress is
+# created | processing | completed | failed. state describes currentStep only.
+$script:SdcmProgressCreated = 'created'
+$script:SdcmProgressProcessing = 'processing'
+$script:SdcmProgressCompleted = 'completed'
+$script:SdcmProgressFailed = 'failed'
 
 function Invoke-Sdcm {
     [CmdletBinding()]
@@ -119,141 +114,49 @@ function Get-PartnerSubmissionProperty {
     return $null
 }
 
-function Test-PartnerValueEquals {
+function Get-SdcmSubmissionStatus {
     [CmdletBinding()]
     param(
-        [string] $Value,
         [Parameter(Mandatory = $true)]
-        [string] $Expected
+        [string] $ProductId,
+
+        [Parameter(Mandatory = $true)]
+        [string] $SubmissionId
     )
 
-    if ([string]::IsNullOrWhiteSpace($Value)) {
-        return $false
+    # Failed submissions still emit the status document, then exit 7.
+    $json = & sdcm --output json --auth client-secret submission status --product-id $ProductId --submission-id $SubmissionId
+    $exitCode = $LASTEXITCODE
+    if ($exitCode -notin 0, 7) {
+        throw "sdcm submission status --product-id $ProductId --submission-id $SubmissionId failed with exit code $exitCode"
     }
-
-    return [string]::Equals($Value.Trim(), $Expected, [StringComparison]::OrdinalIgnoreCase)
+    return ConvertFrom-SdcmJson -Json $json
 }
 
-function Get-PartnerSubmissionWorkflow {
+function Get-SdcmSubmissionProgress {
     [CmdletBinding()]
-    param($Submission)
+    param($Status)
 
-    if ($null -eq $Submission -or -not $Submission.PSObject.Properties['workflowStatus']) {
-        return $null
+    $progress = Get-PartnerSubmissionProperty -Object $Status -Names @('progress')
+    if (-not $progress) {
+        return $script:SdcmProgressCreated
     }
 
-    return $Submission.workflowStatus
+    return $progress.Trim().ToLowerInvariant()
 }
 
-function Get-PartnerSubmissionWorkflowState {
+function Get-SdcmSubmissionProgressSummary {
     [CmdletBinding()]
-    param($Submission)
+    param($Status)
 
-    $workflow = Get-PartnerSubmissionWorkflow -Submission $Submission
-    if ($null -eq $workflow) {
-        return $null
+    $progress = Get-SdcmSubmissionProgress -Status $Status
+    $commit = Get-PartnerSubmissionProperty -Object $Status -Names @('commitStatus')
+    $state = Get-PartnerSubmissionProperty -Object $Status -Names @('state')
+    $step = Get-PartnerSubmissionProperty -Object $Status -Names @('currentStep')
+    $signed = $false
+    if ($Status -and $Status.PSObject.Properties['hasSignedPackage'] -and $null -ne $Status.hasSignedPackage) {
+        $signed = [bool]$Status.hasSignedPackage
     }
-    if ($workflow -is [string]) {
-        return $workflow
-    }
-
-    return Get-PartnerSubmissionProperty -Object $workflow -Names @('state', 'currentState', 'status')
-}
-
-function Get-PartnerSubmissionWorkflowStep {
-    [CmdletBinding()]
-    param($Submission)
-
-    $workflow = Get-PartnerSubmissionWorkflow -Submission $Submission
-    if ($null -eq $workflow -or $workflow -is [string]) {
-        return $null
-    }
-
-    return Get-PartnerSubmissionProperty -Object $workflow -Names @('currentStep')
-}
-
-function Get-PartnerSubmissionCommitStatus {
-    [CmdletBinding()]
-    param($Submission)
-
-    return Get-PartnerSubmissionProperty -Object $Submission -Names @('commitStatus')
-}
-
-function Test-PartnerSubmissionHasSignedPackage {
-    [CmdletBinding()]
-    param($Submission)
-
-    if ($null -eq $Submission -or -not $Submission.PSObject.Properties['downloads']) {
-        return $false
-    }
-
-    $downloads = $Submission.downloads
-    if ($null -eq $downloads -or -not $downloads.PSObject.Properties['items'] -or -not $downloads.items) {
-        return $false
-    }
-
-    foreach ($item in @($downloads.items)) {
-        if ($null -eq $item -or -not $item.PSObject.Properties['type']) {
-            continue
-        }
-        if (Test-PartnerValueEquals -Value ([string]$item.type) -Expected $script:PartnerSignedPackageType) {
-            return $true
-        }
-    }
-
-    return $false
-}
-
-function Get-PartnerSubmissionProgress {
-    [CmdletBinding()]
-    param($Submission)
-
-    $commit = Get-PartnerSubmissionCommitStatus -Submission $Submission
-    $state = Get-PartnerSubmissionWorkflowState -Submission $Submission
-    $step = Get-PartnerSubmissionWorkflowStep -Submission $Submission
-
-    if ((Test-PartnerValueEquals -Value $commit -Expected $script:PartnerCommitFailed) -or
-        (Test-PartnerValueEquals -Value $state -Expected 'failed')) {
-        return 'Failed'
-    }
-
-    # A downloadable signedPackage is the only unambiguous completion signal.
-    # state applies to currentStep, so 'completed' on an intermediate step such
-    # as scanning must not be read as the whole submission being done.
-    if (Test-PartnerSubmissionHasSignedPackage -Submission $Submission) {
-        return 'Completed'
-    }
-    if ((Test-PartnerValueEquals -Value $state -Expected 'completed') -and
-        (Test-PartnerValueEquals -Value $step -Expected $script:PartnerWorkflowFinalStep)) {
-        return 'Completed'
-    }
-
-    # Anything other than commitPending means the submission already belongs to
-    # Hardware Dev Center and must not be uploaded or committed again. Treating
-    # unrecognised values as committed keeps an undocumented in-flight status
-    # from triggering a second upload.
-    if ($commit -and -not (Test-PartnerValueEquals -Value $commit -Expected $script:PartnerCommitPending)) {
-        return 'Submitted'
-    }
-    # Fallback for a submission that reports no commitStatus at all: the
-    # workflow only leaves notStarted once Hardware Dev Center owns the package.
-    if ((Test-PartnerValueEquals -Value $state -Expected 'started') -or
-        (Test-PartnerValueEquals -Value $state -Expected 'completed')) {
-        return 'Submitted'
-    }
-
-    return 'Created'
-}
-
-function Get-PartnerSubmissionProgressSummary {
-    [CmdletBinding()]
-    param($Submission)
-
-    $progress = Get-PartnerSubmissionProgress -Submission $Submission
-    $commit = Get-PartnerSubmissionCommitStatus -Submission $Submission
-    $state = Get-PartnerSubmissionWorkflowState -Submission $Submission
-    $step = Get-PartnerSubmissionWorkflowStep -Submission $Submission
-    $signed = Test-PartnerSubmissionHasSignedPackage -Submission $Submission
     if (-not $commit) { $commit = '-' }
     if (-not $state) { $state = '-' }
     if (-not $step) { $step = '-' }
@@ -261,20 +164,18 @@ function Get-PartnerSubmissionProgressSummary {
     return "Submission progress: $progress (commitStatus=$commit; state=$state; currentStep=$step; signedPackage=$signed)"
 }
 
-function Test-PartnerSubmissionNeedsUpload {
+function Test-SdcmSubmissionNeedsUpload {
     [CmdletBinding()]
-    param($Submission)
+    param($Status)
 
-    $progress = Get-PartnerSubmissionProgress -Submission $Submission
-    return $progress -eq 'Created'
+    return (Get-SdcmSubmissionProgress -Status $Status) -eq $script:SdcmProgressCreated
 }
 
-function Test-PartnerSubmissionNeedsCommit {
+function Test-SdcmSubmissionNeedsCommit {
     [CmdletBinding()]
-    param($Submission)
+    param($Status)
 
-    $progress = Get-PartnerSubmissionProgress -Submission $Submission
-    return $progress -eq 'Created'
+    return (Get-SdcmSubmissionProgress -Status $Status) -eq $script:SdcmProgressCreated
 }
 
 function Find-PartnerSignedPackagePair {
@@ -333,10 +234,6 @@ function Get-SdcmEntityId {
         $Json
     )
 
-    # sdcm --output json re-serializes Hardware Dev Center ids as quoted strings
-    # via LongToStringJsonConverter, while the raw API uses unquoted numbers.
-    # Parse the document instead of pattern matching so a nested id can never be
-    # mistaken for the entity's own id.
     $entity = ConvertFrom-SdcmJson -Json $Json
     if ($entity -is [System.Collections.IList] -and $entity -isnot [string]) {
         $entity = @($entity) | Select-Object -First 1
@@ -363,8 +260,6 @@ function ConvertTo-SdcmJsonText {
         return $Json
     }
 
-    # String arrays are already JSON text (sdcm / command output). Join them.
-    # PSCustomObject and hashtable values must be serialized, not display-stringed.
     $items = @($Json)
     $allStrings = $true
     foreach ($item in $items) {

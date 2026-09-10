@@ -34,44 +34,23 @@ function Assert-Throws([scriptblock] $Action, [string] $Name) {
     Write-Output "PASS $Name"
 }
 
-# Builds a submission shaped like the Hardware Dashboard API's Submission
-# resource, so the state table below is exercised against real field names and
-# real documented values rather than invented ones.
-function New-TestSubmission {
+function New-TestStatus {
     [CmdletBinding()]
     param(
+        [string] $Progress,
         [string] $CommitStatus = '',
         [string] $State = '',
         [string] $Step = '',
-        [string[]] $DownloadTypes = @()
+        [bool] $HasSignedPackage = $false
     )
 
-    $submission = [ordered]@{
-        id        = '1152921505701853745'
-        productId = '13872423721100346'
-        name      = 'DsHidMini 3.6.1 3.6.1.2202 submission'
-        type      = 'initial'
+    return [pscustomobject]@{
+        progress         = $Progress
+        commitStatus     = $CommitStatus
+        state            = $State
+        currentStep      = $Step
+        hasSignedPackage = $HasSignedPackage
     }
-    if ($CommitStatus) {
-        $submission['commitStatus'] = $CommitStatus
-    }
-    if ($State -or $Step) {
-        $submission['workflowStatus'] = [pscustomobject]@{
-            currentStep = $Step
-            state       = $State
-            messages    = @()
-        }
-    }
-    if ($DownloadTypes.Count -gt 0) {
-        $submission['downloads'] = [pscustomobject]@{
-            items    = @($DownloadTypes | ForEach-Object {
-                [pscustomobject]@{ type = $_; url = "https://example.invalid/$_" }
-            })
-            messages = @()
-        }
-    }
-
-    return [pscustomobject]$submission
 }
 
 $product = New-PartnerProductPayload -ProductName 'DsHidMini 3.6.0 3.6.0.2145' -AnnouncementDate '2026-09-09T00:00:00'
@@ -86,115 +65,58 @@ $submission = New-PartnerSubmissionPayload -Name 'DsHidMini 3.6.0.2145'
 Assert-Equal $submission.type 'initial' 'submission type'
 Assert-Equal (Get-PartnerPortalUrl -ProductId '123') 'https://partner.microsoft.com/dashboard/hardware/driver/123' 'portal url'
 
-# The raw API returns ids as numbers; sdcm re-serializes them as quoted strings.
 Assert-Equal (Get-SdcmEntityId -Json '{"id": 1152921505701840714, "name": "x"}') '1152921505701840714' 'entity id stays a string'
 Assert-Equal (Get-SdcmEntityId -Json '{"id": "1152921505701840714", "name": "x"}') '1152921505701840714' 'quoted entity id stays a string'
 Assert-Equal (Get-SdcmEntityId -Json '{"sharedProductId": "1152921504607010608", "id": "14631253285588838"}') '14631253285588838' 'sharedProductId is not mistaken for id'
 Assert-Equal (Get-SdcmEntityId -Json '{"productId": "13872423721100346", "id": "1152921505701853745"}') '1152921505701853745' 'productId is not mistaken for id'
-Assert-Equal (Get-SdcmEntityId -Json @('[', '  { "id": "42" }', ']')) '42' 'single-element array output unwraps'
 Assert-Equal (Get-SdcmEntityId -Json ([pscustomobject]@{ id = '1152921505701840714'; name = 'x' })) '1152921505701840714' 'PSCustomObject entity id'
 Assert-Throws { Get-SdcmEntityId -Json '{"name": "x"}' } 'missing id throws'
 Assert-Throws { Get-SdcmEntityId -Json '' } 'empty sdcm output throws'
 
-# workflowStatus.state is the state of workflowStatus.currentStep, not of the
-# submission as a whole, so every step/state combination has to be classified
-# explicitly. Documented states: notStarted, started, failed, completed.
-# Documented steps: packageInfoValidation, preparation, scanning, validation,
-# catalogCreation, manualReview, signing, finalizeIngestion.
-$progressCases = @(
-    @{ Name = 'fresh submission is Created'; Commit = 'CommitPending'; State = 'notStarted'; Step = 'packageInfoValidation'; Downloads = @('initialPackage'); Expected = 'Created' }
-    @{ Name = 'commitPending without workflow is Created'; Commit = 'commitPending'; State = ''; Step = ''; Downloads = @(); Expected = 'Created' }
-    @{ Name = 'submission with no status at all is Created'; Commit = ''; State = ''; Step = ''; Downloads = @(); Expected = 'Created' }
-    @{ Name = 'initialPackage alone is not completion'; Commit = 'CommitPending'; State = 'notStarted'; Step = ''; Downloads = @('initialPackage'); Expected = 'Created' }
-    @{ Name = 'committed but not yet started is Submitted'; Commit = 'commitComplete'; State = 'notStarted'; Step = 'packageInfoValidation'; Downloads = @('initialPackage'); Expected = 'Submitted' }
-    @{ Name = 'scanning in progress is Submitted'; Commit = 'commitComplete'; State = 'started'; Step = 'scanning'; Downloads = @('initialPackage'); Expected = 'Submitted' }
-    @{ Name = 'completed intermediate step is still Submitted'; Commit = 'commitComplete'; State = 'completed'; Step = 'scanning'; Downloads = @('initialPackage'); Expected = 'Submitted' }
-    @{ Name = 'manual review is Submitted'; Commit = 'commitComplete'; State = 'started'; Step = 'manualReview'; Downloads = @('initialPackage'); Expected = 'Submitted' }
-    @{ Name = 'signing is Submitted'; Commit = 'commitComplete'; State = 'started'; Step = 'signing'; Downloads = @('initialPackage'); Expected = 'Submitted' }
-    @{ Name = 'undocumented in-flight commit status is Submitted'; Commit = 'commitInProgress'; State = 'notStarted'; Step = ''; Downloads = @(); Expected = 'Submitted' }
-    @{ Name = 'started workflow without commitStatus is Submitted'; Commit = ''; State = 'started'; Step = 'validation'; Downloads = @(); Expected = 'Submitted' }
-    @{ Name = 'completed final step is Completed'; Commit = 'commitComplete'; State = 'completed'; Step = 'finalizeIngestion'; Downloads = @(); Expected = 'Completed' }
-    @{ Name = 'signedPackage download is Completed'; Commit = 'commitComplete'; State = 'started'; Step = 'signing'; Downloads = @('initialPackage', 'signedPackage'); Expected = 'Completed' }
-    @{ Name = 'failed workflow state is Failed'; Commit = 'commitComplete'; State = 'failed'; Step = 'validation'; Downloads = @('initialPackage'); Expected = 'Failed' }
-    @{ Name = 'commitFailed is Failed'; Commit = 'commitFailed'; State = 'notStarted'; Step = 'preparation'; Downloads = @(); Expected = 'Failed' }
-    @{ Name = 'failure wins over a signed package'; Commit = 'commitFailed'; State = 'failed'; Step = 'signing'; Downloads = @('signedPackage'); Expected = 'Failed' }
-)
+$created = New-TestStatus -Progress 'created' -CommitStatus 'CommitPending' -State 'notStarted' -Step 'packageInfoValidation'
+Assert-Equal (Get-SdcmSubmissionProgress -Status $created) 'created' 'created progress'
+Assert-True (Test-SdcmSubmissionNeedsUpload -Status $created) 'created needs upload'
+Assert-True (Test-SdcmSubmissionNeedsCommit -Status $created) 'created needs commit'
 
-foreach ($case in $progressCases) {
-    $candidate = New-TestSubmission -CommitStatus $case.Commit -State $case.State -Step $case.Step -DownloadTypes $case.Downloads
-    Assert-Equal (Get-PartnerSubmissionProgress -Submission $candidate) $case.Expected $case.Name
+$processing = New-TestStatus -Progress 'processing' -CommitStatus 'commitComplete' -State 'started' -Step 'scanning'
+Assert-Equal (Get-SdcmSubmissionProgress -Status $processing) 'processing' 'processing progress'
+Assert-True (-not (Test-SdcmSubmissionNeedsUpload -Status $processing)) 'processing skips upload'
+Assert-True (-not (Test-SdcmSubmissionNeedsCommit -Status $processing)) 'processing skips commit'
+
+$completed = New-TestStatus -Progress 'completed' -CommitStatus 'commitComplete' -State 'completed' -Step 'finalizeIngestion' -HasSignedPackage $true
+Assert-Equal (Get-SdcmSubmissionProgress -Status $completed) 'completed' 'completed progress'
+Assert-True (-not (Test-SdcmSubmissionNeedsUpload -Status $completed)) 'completed skips upload'
+
+$failed = New-TestStatus -Progress 'failed' -CommitStatus 'commitFailed' -State 'failed' -Step 'validation'
+Assert-Equal (Get-SdcmSubmissionProgress -Status $failed) 'failed' 'failed progress'
+
+$statusJson = @'
+{
+  "progress": "processing",
+  "commitStatus": "commitComplete",
+  "state": "started",
+  "currentStep": "scanning",
+  "hasSignedPackage": false
 }
-
-# Upload and commit must fire exactly once, for a submission that is still ours.
-$fresh = New-TestSubmission -CommitStatus 'CommitPending' -State 'notStarted' -Step 'packageInfoValidation' -DownloadTypes @('initialPackage')
-Assert-True (Test-PartnerSubmissionNeedsUpload -Submission $fresh) 'fresh submission needs upload'
-Assert-True (Test-PartnerSubmissionNeedsCommit -Submission $fresh) 'fresh submission needs commit'
-
-$committed = New-TestSubmission -CommitStatus 'commitComplete' -State 'notStarted' -Step 'packageInfoValidation' -DownloadTypes @('initialPackage')
-Assert-True (-not (Test-PartnerSubmissionNeedsUpload -Submission $committed)) 'committed submission skips upload'
-Assert-True (-not (Test-PartnerSubmissionNeedsCommit -Submission $committed)) 'committed submission skips commit'
-
-$processing = New-TestSubmission -CommitStatus 'commitComplete' -State 'started' -Step 'scanning' -DownloadTypes @('initialPackage')
-Assert-True (-not (Test-PartnerSubmissionNeedsUpload -Submission $processing)) 'processing submission skips upload'
-Assert-True (-not (Test-PartnerSubmissionNeedsCommit -Submission $processing)) 'processing submission skips commit'
-
-# `sdcm submission list --submission-id` wraps the entity in an array and quotes
-# every id, which is what the workflow actually has to parse.
-$sdcmListJson = @'
-[
-  {
-    "id": "1152921505701853745",
-    "productId": "13872423721100346",
-    "name": "DsHidMini 3.6.1 3.6.1.2202 submission",
-    "type": "initial",
-    "commitStatus": "commitComplete",
-    "workflowStatus": {
-      "currentStep": "scanning",
-      "state": "started",
-      "messages": []
-    },
-    "downloads": {
-      "items": [
-        { "type": "initialPackage", "url": "https://example.invalid/initial" }
-      ],
-      "messages": []
-    }
-  }
-]
 '@
-$fromSdcm = ConvertFrom-SdcmJson -Json $sdcmListJson
-Assert-True ($fromSdcm.id -is [string]) 'list array id is a string'
-Assert-Equal $fromSdcm.id '1152921505701853745' 'list array unwraps quoted id'
-Assert-Equal (Get-PartnerSubmissionProgress -Submission $fromSdcm) 'Submitted' 'sdcm list JSON is Submitted'
-Assert-True ((Get-PartnerSubmissionProgressSummary -Submission $fromSdcm) -like '*Submitted*') 'progress summary includes Submitted'
-Assert-True ((Get-PartnerSubmissionProgressSummary -Submission $fromSdcm) -like '*currentStep=scanning*') 'progress summary includes the current step'
+$fromStatus = ConvertFrom-SdcmJson -Json $statusJson
+Assert-Equal (Get-SdcmSubmissionProgress -Status $fromStatus) 'processing' 'status JSON is processing'
+Assert-True ((Get-SdcmSubmissionProgressSummary -Status $fromStatus) -like '*processing*') 'status summary includes processing'
+Assert-True ((Get-SdcmSubmissionProgressSummary -Status $fromStatus) -like '*currentStep=scanning*') 'status summary includes the current step'
 
-$sdcmCompletedJson = @'
-[
-  {
-    "id": "1152921505701853745",
-    "productId": "13872423721100346",
-    "commitStatus": "commitComplete",
-    "workflowStatus": {
-      "currentStep": "finalizeIngestion",
-      "state": "completed",
-      "messages": []
-    },
-    "downloads": {
-      "items": [
-        { "type": "initialPackage", "url": "https://example.invalid/initial" },
-        { "type": "signedPackage", "url": "https://example.invalid/signed" },
-        { "type": "certificationReport", "url": "https://example.invalid/report" }
-      ],
-      "messages": []
-    }
-  }
-]
+$getJson = @'
+{
+  "id": "1152921505701853745",
+  "productId": "13872423721100346",
+  "name": "DsHidMini 3.6.1 3.6.1.2202 submission",
+  "type": "initial",
+  "commitStatus": "commitComplete"
+}
 '@
-$completedFromSdcm = ConvertFrom-SdcmJson -Json $sdcmCompletedJson
-Assert-Equal (Get-PartnerSubmissionProgress -Submission $completedFromSdcm) 'Completed' 'sdcm completed JSON is Completed'
-Assert-True (Test-PartnerSubmissionHasSignedPackage -Submission $completedFromSdcm) 'signed package detected'
-Assert-True (-not (Test-PartnerSubmissionHasSignedPackage -Submission $fromSdcm)) 'no signed package while processing'
+$fromGet = ConvertFrom-SdcmJson -Json $getJson
+Assert-True ($fromGet.id -is [string]) 'get id is a string'
+Assert-Equal $fromGet.id '1152921505701853745' 'get JSON keeps quoted id'
+Assert-Equal (Get-SdcmEntityId -Json $getJson) '1152921505701853745' 'get JSON entity id'
 
 $temp = Join-Path ([IO.Path]::GetTempPath()) ("dshm-partner-" + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $temp | Out-Null

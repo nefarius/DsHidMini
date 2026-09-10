@@ -113,16 +113,15 @@ jobs:
             $productId = $resumeProductId
             $submissionId = $resumeSubmissionId
 
-            $listed = Invoke-Sdcm submission list --product-id $productId --submission-id $submissionId
-            $submission = ConvertFrom-SdcmJson -Json $listed
-            if ($submission -is [System.Array]) { $submission = $submission | Select-Object -First 1 }
-            $resumedId = Get-SdcmEntityId -Json $listed
+            $got = Invoke-Sdcm submission get --product-id $productId --submission-id $submissionId
+            $resumedId = Get-SdcmEntityId -Json $got
             if ($resumedId -ne $submissionId) {
               throw "Partner Center returned submission $resumedId for requested submission $submissionId."
             }
+            $status = Get-SdcmSubmissionStatus -ProductId $productId -SubmissionId $submissionId
             Write-Output "Resuming Partner Center product $productId submission $submissionId"
-            Write-Output (Get-PartnerSubmissionProgressSummary -Submission $submission)
-            if ((Get-PartnerSubmissionProgress -Submission $submission) -eq 'Failed') {
+            Write-Output (Get-SdcmSubmissionProgressSummary -Status $status)
+            if ((Get-SdcmSubmissionProgress -Status $status) -eq 'failed') {
               throw "Submission $submissionId already failed. Dispatch without product-id/submission-id to create a new product."
             }
           }
@@ -228,17 +227,15 @@ jobs:
             Select-Object -First 1
           if (-not $cab) { throw 'EV-signed partner CAB was not downloaded from the source run.' }
 
-          $listed = Invoke-Sdcm submission list --product-id $productId --submission-id $submissionId
-          $submission = ConvertFrom-SdcmJson -Json $listed
-          if ($submission -is [System.Array]) { $submission = $submission | Select-Object -First 1 }
-          $progress = Get-PartnerSubmissionProgress -Submission $submission
-          Write-Output (Get-PartnerSubmissionProgressSummary -Submission $submission)
+          $status = Get-SdcmSubmissionStatus -ProductId $productId -SubmissionId $submissionId
+          $progress = Get-SdcmSubmissionProgress -Status $status
+          Write-Output (Get-SdcmSubmissionProgressSummary -Status $status)
 
-          if ($progress -eq 'Failed') {
+          if ($progress -eq 'failed') {
             throw "Partner Center already failed product $productId submission $submissionId. Dispatch this workflow against the same source run, without product-id/submission-id, to create a new product."
           }
 
-          if (Test-PartnerSubmissionNeedsUpload -Submission $submission) {
+          if (Test-SdcmSubmissionNeedsUpload -Status $status) {
             Write-Output "Uploading $($cab.FullName)"
             Invoke-Sdcm submission upload --product-id $productId --submission-id $submissionId --package $cab.FullName
           }
@@ -246,11 +243,9 @@ jobs:
             Write-Output 'Upload skipped; submission has already advanced past package upload.'
           }
 
-          $listed = Invoke-Sdcm submission list --product-id $productId --submission-id $submissionId
-          $submission = ConvertFrom-SdcmJson -Json $listed
-          if ($submission -is [System.Array]) { $submission = $submission | Select-Object -First 1 }
-          Write-Output (Get-PartnerSubmissionProgressSummary -Submission $submission)
-          if (Test-PartnerSubmissionNeedsCommit -Submission $submission) {
+          $status = Get-SdcmSubmissionStatus -ProductId $productId -SubmissionId $submissionId
+          Write-Output (Get-SdcmSubmissionProgressSummary -Status $status)
+          if (Test-SdcmSubmissionNeedsCommit -Status $status) {
             Write-Output 'Committing submission'
             Invoke-Sdcm submission commit --product-id $productId --submission-id $submissionId
           }
@@ -294,21 +289,19 @@ jobs:
           if (-not $productId) { $productId = [string]$checkpoint.productId }
           if (-not $submissionId) { $submissionId = [string]$checkpoint.submissionId }
 
-          $listed = Invoke-Sdcm submission list --product-id $productId --submission-id $submissionId
-          $submission = ConvertFrom-SdcmJson -Json $listed
-          if ($submission -is [System.Array]) { $submission = $submission | Select-Object -First 1 }
-          $progress = Get-PartnerSubmissionProgress -Submission $submission
-          Write-Output (Get-PartnerSubmissionProgressSummary -Submission $submission)
+          $status = Get-SdcmSubmissionStatus -ProductId $productId -SubmissionId $submissionId
+          $progress = Get-SdcmSubmissionProgress -Status $status
+          Write-Output (Get-SdcmSubmissionProgressSummary -Status $status)
 
-          if ($progress -eq 'Failed') {
+          if ($progress -eq 'failed') {
             throw "Partner Center failed product $productId submission $submissionId."
           }
-          if ($progress -eq 'Created') {
-            $preview = ConvertTo-SdcmJsonText -Json $listed
+          if ($progress -eq 'created') {
+            $preview = ConvertTo-SdcmJsonText -Json $status
             if ($preview.Length -gt 1500) { $preview = $preview.Substring(0, 1500) + '...' }
-            throw "Submission $submissionId is still commitPending, so Hardware Dev Center has nothing to process. Re-run the upload job before waiting.`n$preview"
+            throw "Submission $submissionId is still created (commitPending), so Hardware Dev Center has nothing to process. Re-run the upload job before waiting.`n$preview"
           }
-          if ($progress -ne 'Completed') {
+          if ($progress -ne 'completed') {
             Invoke-Sdcm submission wait --product-id $productId --submission-id $submissionId --wait-timeout 3600
           }
           else {
@@ -316,9 +309,7 @@ jobs:
           }
 
           $downloadZip = Join-Path $pwd 'hdc-download.zip'
-          # sdcm refuses to overwrite an existing destination file.
-          if (Test-Path -LiteralPath $downloadZip) { Remove-Item -LiteralPath $downloadZip -Force }
-          Invoke-Sdcm submission download --product-id $productId --submission-id $submissionId --output-file $downloadZip
+          Invoke-Sdcm submission download --product-id $productId --submission-id $submissionId --output-file $downloadZip --overwrite
           $extractDir = Join-Path $pwd 'hdc-extracted'
           New-Item -ItemType Directory -Force -Path $extractDir | Out-Null
           Expand-Archive -LiteralPath $downloadZip -DestinationPath $extractDir -Force

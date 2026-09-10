@@ -143,7 +143,7 @@ Retry without rebuilding. Every fresh run opens another Partner Center product, 
 - **workflow_dispatch** with the original Build run ID plus `product-id` and `submission-id` resumes that existing submission using the current branch's scripts. This is how a script fix reaches a submission Hardware Dev Center is already processing, without opening another product.
 - **workflow_dispatch** with the original Build run ID and no `product-id` / `submission-id` creates a fresh product and submission from the already-built CAB. Use this only once Hardware Dev Center has rejected or failed a submission.
 
-Before changing that automation, run `.\build.cmd TestReleasePipeline`. It runs the workflow's own `create` / `upload` / `wait` scripts against a mock `sdcm` and asserts which sdcm verbs each stage calls, so submission-state bugs surface locally instead of consuming a product.
+Before changing that automation, run `.\build.cmd TestReleasePipeline`. It runs the workflow's own `create` / `upload` / `wait` scripts against a mock `sdcm` 1.0.0-pre004 (`submission get` / `status` / `--overwrite`) and asserts which verbs each stage calls, so submission-state bugs surface locally instead of consuming a product.
 
 This project's verified behavior: Microsoft **adds** its signature to the already EV-signed DLLs and replaces the catalog. If a returned DLL has only a Microsoft signer, stop and investigate; do not continue to MSI.
 
@@ -241,7 +241,7 @@ gh release create setup-v3.6.0 `
 | [`build/ReleaseVersion.ps1`](../build/ReleaseVersion.ps1) | Tag parse and four-part version |
 | [`build/ReleasePipeline.cs`](../build/ReleasePipeline.cs) | Staging, ingest, validation |
 | [`build/ReleaseTargets.cs`](../build/ReleaseTargets.cs) | NUKE entry points |
-| [`build/PartnerSigning.ps1`](../build/PartnerSigning.ps1) | SDCM payloads, submission progress, Signed_/Initial_ pair checks |
+| [`build/PartnerSigning.ps1`](../build/PartnerSigning.ps1) | SDCM payloads, `submission status` wrappers, Signed_/Initial_ pair checks |
 | [`build/PartnerSigning.DryRun.ps1`](../build/PartnerSigning.DryRun.ps1) | Offline dry run of the signing workflow against a mock sdcm |
 | [`.github/workflows/partner-signing.yml`](../.github/workflows/partner-signing.yml) | Retryable Partner Center submit / wait / ingest |
 | [`build/New-PartnerSubmissionInf.ps1`](../build/New-PartnerSubmissionInf.ps1) | Dual-arch INF for the submission CAB |
