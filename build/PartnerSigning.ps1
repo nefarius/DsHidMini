@@ -363,7 +363,21 @@ function ConvertTo-SdcmJsonText {
         return $Json
     }
 
-    return (@($Json) | ForEach-Object { [string]$_ }) -join [Environment]::NewLine
+    # String arrays are already JSON text (sdcm / command output). Join them.
+    # PSCustomObject and hashtable values must be serialized, not display-stringed.
+    $items = @($Json)
+    $allStrings = $true
+    foreach ($item in $items) {
+        if ($item -isnot [string]) {
+            $allStrings = $false
+            break
+        }
+    }
+    if ($allStrings) {
+        return $items -join [Environment]::NewLine
+    }
+
+    return ConvertTo-Json -InputObject $Json -Depth 8
 }
 
 function ConvertFrom-SdcmJson {

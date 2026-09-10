@@ -92,6 +92,7 @@ Assert-Equal (Get-SdcmEntityId -Json '{"id": "1152921505701840714", "name": "x"}
 Assert-Equal (Get-SdcmEntityId -Json '{"sharedProductId": "1152921504607010608", "id": "14631253285588838"}') '14631253285588838' 'sharedProductId is not mistaken for id'
 Assert-Equal (Get-SdcmEntityId -Json '{"productId": "13872423721100346", "id": "1152921505701853745"}') '1152921505701853745' 'productId is not mistaken for id'
 Assert-Equal (Get-SdcmEntityId -Json @('[', '  { "id": "42" }', ']')) '42' 'single-element array output unwraps'
+Assert-Equal (Get-SdcmEntityId -Json ([pscustomobject]@{ id = '1152921505701840714'; name = 'x' })) '1152921505701840714' 'PSCustomObject entity id'
 Assert-Throws { Get-SdcmEntityId -Json '{"name": "x"}' } 'missing id throws'
 Assert-Throws { Get-SdcmEntityId -Json '' } 'empty sdcm output throws'
 
@@ -162,6 +163,7 @@ $sdcmListJson = @'
 ]
 '@
 $fromSdcm = ConvertFrom-SdcmJson -Json $sdcmListJson
+Assert-True ($fromSdcm.id -is [string]) 'list array id is a string'
 Assert-Equal $fromSdcm.id '1152921505701853745' 'list array unwraps quoted id'
 Assert-Equal (Get-PartnerSubmissionProgress -Submission $fromSdcm) 'Submitted' 'sdcm list JSON is Submitted'
 Assert-True ((Get-PartnerSubmissionProgressSummary -Submission $fromSdcm) -like '*Submitted*') 'progress summary includes Submitted'
