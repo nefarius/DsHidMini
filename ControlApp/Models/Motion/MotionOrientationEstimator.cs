@@ -3,12 +3,18 @@ using Nefarius.DsHidMini.IPC.Models.Public;
 namespace Nefarius.DsHidMini.ControlApp.Models.Motion;
 
 /// <summary>
-///     Diagnostic pad pose: smoothed gravity for pitch/roll, integrated yaw from
-///     the single SIXAXIS gyro. Yaw drifts; call <see cref="Recenter" /> to zero it.
+///     Diagnostic pad pose: smoothed gravity for pitch (USB/trigger edge) and
+///     roll (left/right grips), integrated yaw from
+///     the single SIXAXIS gyro. Rest bias below
+///     <see cref="DefaultYawRestDeadzoneDps" /> is ignored. Call
+///     <see cref="Recenter" /> to zero accumulated yaw.
 /// </summary>
 internal sealed class MotionOrientationEstimator
 {
+    public const double DefaultYawRestDeadzoneDps = 4.0;
+
     private readonly double _smoothing;
+    private readonly double _yawRestDeadzoneDps;
     private bool _hasGravity;
     private bool _hasTiming;
     private ulong _lastQpc;
@@ -17,10 +23,14 @@ internal sealed class MotionOrientationEstimator
     private double _smoothZ;
     private uint _lastSampleIndex;
 
-    public MotionOrientationEstimator(double qpcFrequency, double smoothing = 0.18)
+    public MotionOrientationEstimator(
+        double qpcFrequency,
+        double smoothing = 0.18,
+        double yawRestDeadzoneDps = DefaultYawRestDeadzoneDps)
     {
         QpcFrequency = qpcFrequency > 0 ? qpcFrequency : 10_000_000;
         _smoothing = Math.Clamp(smoothing, 0.01, 1.0);
+        _yawRestDeadzoneDps = Math.Max(0, yawRestDeadzoneDps);
     }
 
     public double QpcFrequency { get; }
@@ -91,15 +101,21 @@ internal sealed class MotionOrientationEstimator
         double az = _smoothZ / 1000.0;
         double horiz = Math.Sqrt((ay * ay) + (az * az));
 
-        PitchDegrees = Math.Atan2(-ax, horiz) * (180.0 / Math.PI);
-        RollDegrees = Math.Atan2(ay, -az) * (180.0 / Math.PI);
+        // Aviation/gamepad frame: USB/trigger edge is the nose (pitch from Y),
+        // grips are the wings (roll from X). Sony +1 g is axis-up.
+        PitchDegrees = Math.Atan2(ay, -az) * (180.0 / Math.PI);
+        RollDegrees = Math.Atan2(-ax, horiz) * (180.0 / Math.PI);
 
         if (_hasTiming && snapshot.TimestampQpc > _lastQpc)
         {
             double dt = (snapshot.TimestampQpc - _lastQpc) / QpcFrequency;
             if (dt > 0 && dt < 0.25)
             {
-                YawDegrees += (snapshot.GyroMilliDps / 1000.0) * dt;
+                double dps = snapshot.GyroMilliDps / 1000.0;
+                if (Math.Abs(dps) >= _yawRestDeadzoneDps)
+                {
+                    YawDegrees += dps * dt;
+                }
             }
         }
 

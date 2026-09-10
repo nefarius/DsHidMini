@@ -60,6 +60,8 @@
                         <ui:TextBlock Text="{Binding TrackerText}" />
                         <ui:TextBlock Margin="0,8,0,0" Text="Sample" />
                         <ui:TextBlock Text="{Binding SampleText}" />
+                        <ui:TextBlock Margin="0,8,0,0" Text="Pitch / roll / yaw" />
+                        <ui:TextBlock Text="{Binding PoseText}" />
                         <ui:TextBlock
                             Margin="0,12,0,0"
                             TextWrapping="Wrap"

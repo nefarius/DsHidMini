@@ -32,21 +32,30 @@ public class MotionOrientationTests
     }
 
     [Fact]
-    public void RightGripDown_PitchesNegative()
+    public void RightGripDown_RollsNegative()
     {
         MotionOrientationEstimator estimator = new(1_000_000, smoothing: 1.0);
         estimator.Update(Sample(1000, 0, 0, 0, 1, 1_000_000));
+
+        Assert.True(estimator.RollDegrees < -80);
+    }
+
+    [Fact]
+    public void UsbPortDown_PitchesNegative()
+    {
+        MotionOrientationEstimator estimator = new(1_000_000, smoothing: 1.0);
+        estimator.Update(Sample(0, -1000, 0, 0, 1, 1_000_000));
 
         Assert.True(estimator.PitchDegrees < -80);
     }
 
     [Fact]
-    public void TriggerEdgeDown_RollsNegative()
+    public void UsbPortUp_PitchesPositive()
     {
         MotionOrientationEstimator estimator = new(1_000_000, smoothing: 1.0);
-        estimator.Update(Sample(0, -1000, 0, 0, 1, 1_000_000));
+        estimator.Update(Sample(0, 1000, 0, 0, 1, 1_000_000));
 
-        Assert.True(estimator.RollDegrees < -80);
+        Assert.True(estimator.PitchDegrees > 80);
     }
 
     [Fact]
@@ -65,11 +74,13 @@ public class MotionOrientationTests
         MotionOrientationEstimator estimator = new(1_000_000, smoothing: 1.0);
         estimator.Update(Sample(0, -1000, 0, 90_000, 1, 0));
         estimator.Update(Sample(0, -1000, 0, 90_000, 2, 100_000));
+        double pitch = estimator.PitchDegrees;
         double roll = estimator.RollDegrees;
 
         estimator.Recenter();
 
         Assert.Equal(0, estimator.YawDegrees);
+        Assert.Equal(pitch, estimator.PitchDegrees);
         Assert.Equal(roll, estimator.RollDegrees);
     }
 
@@ -94,5 +105,25 @@ public class MotionOrientationTests
         estimator.Update(Sample(0, 0, -1000, 90_000, 2, 200_000));
 
         Assert.Equal(yaw, estimator.YawDegrees);
+    }
+
+    [Fact]
+    public void RestGyroBias_BelowDeadzone_DoesNotIntegrateYaw()
+    {
+        MotionOrientationEstimator estimator = new(1_000_000, smoothing: 1.0);
+        estimator.Update(Sample(0, 0, -1000, 2_000, 1, 0));
+        estimator.Update(Sample(0, 0, -1000, 2_000, 2, 100_000));
+
+        Assert.Equal(0, estimator.YawDegrees);
+    }
+
+    [Fact]
+    public void TurnRate_AboveDeadzone_IntegratesYaw()
+    {
+        MotionOrientationEstimator estimator = new(1_000_000, smoothing: 1.0);
+        estimator.Update(Sample(0, 0, -1000, 10_000, 1, 0));
+        estimator.Update(Sample(0, 0, -1000, 10_000, 2, 100_000));
+
+        Assert.InRange(estimator.YawDegrees, 0.99, 1.01);
     }
 }

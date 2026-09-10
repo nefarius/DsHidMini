@@ -3,15 +3,16 @@ using System.Windows.Media.Media3D;
 
 using HelixToolkit.Wpf;
 
+using Nefarius.DsHidMini.ControlApp.Models.Motion;
 using Nefarius.DsHidMini.ControlApp.ViewModels.Windows;
 
 namespace Nefarius.DsHidMini.ControlApp.Views.Windows;
 
 public partial class MotionViewerWindow
 {
-    private readonly AxisAngleRotation3D _pitch = new(new Vector3D(0, 0, 1), 0);
-    private readonly AxisAngleRotation3D _roll = new(new Vector3D(1, 0, 0), 0);
-    private readonly AxisAngleRotation3D _yaw = new(new Vector3D(0, 1, 0), 0);
+    private readonly AxisAngleRotation3D _pitch = CreateRotation(MotionViewerRotation.Pitch(0));
+    private readonly AxisAngleRotation3D _roll = CreateRotation(MotionViewerRotation.Roll(0));
+    private readonly AxisAngleRotation3D _yaw = CreateRotation(MotionViewerRotation.Yaw(0));
     private readonly MotionViewerViewModel _viewModel;
 
     public MotionViewerWindow(MotionViewerViewModel viewModel)
@@ -29,11 +30,25 @@ public partial class MotionViewerWindow
         viewModel.Start();
     }
 
+    private static AxisAngleRotation3D CreateRotation(MotionViewerAxisAngle mapped)
+    {
+        return new AxisAngleRotation3D(
+            new Vector3D(mapped.AxisX, mapped.AxisY, mapped.AxisZ),
+            mapped.AngleDegrees);
+    }
+
     private void OnPoseChanged(object? sender, EventArgs e)
     {
-        _yaw.Angle = _viewModel.Estimator.YawDegrees;
-        _pitch.Angle = _viewModel.Estimator.PitchDegrees;
-        _roll.Angle = _viewModel.Estimator.RollDegrees;
+        MotionViewerRotation.FromEuler(
+            _viewModel.Estimator.PitchDegrees,
+            _viewModel.Estimator.RollDegrees,
+            _viewModel.Estimator.YawDegrees,
+            out MotionViewerAxisAngle pitch,
+            out MotionViewerAxisAngle roll,
+            out MotionViewerAxisAngle yaw);
+        _pitch.Angle = pitch.AngleDegrees;
+        _roll.Angle = roll.AngleDegrees;
+        _yaw.Angle = yaw.AngleDegrees;
     }
 
     private void BuildPadModel()
