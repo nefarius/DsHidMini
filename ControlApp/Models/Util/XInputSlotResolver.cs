@@ -12,13 +12,20 @@ using Nefarius.Utilities.DeviceManagement.PnP;
 namespace Nefarius.DsHidMini.ControlApp.Models.Util;
 
 /// <summary>
-///     Resolves the Windows XInput user index (0-3) for a DsHidMini device in XInput HID mode by matching the
-///     controller's XUSB interface (via PnP base container ID) and issuing the same LED IOCTL as XInputBridge
-///     GlobalState::SymlinkToUserIndex.
+///     Resolves the Windows XInput user index (0-3) for a DsHidMini device in XInput HID mode.
+///     USB typically exposes an XUSB interface that can be matched by PnP container ID (same LED IOCTL as
+///     XInputBridge). Bluetooth XInput HID devices often have no XUSB interface and only the machine-wide
+///     container ID, so resolution also walks HID children and, when unique, the occupied XInput slots.
 /// </summary>
 internal static class XInputSlotResolver
 {
     private const byte InvalidXInputUserId = 0xFF;
+
+    /// <summary>
+    ///     Windows reports this container for devices that are not part of a unique physical device group
+    ///     (typical for BTHPS3 Bluetooth stacks). It must not be used to pair siblings.
+    /// </summary>
+    private static readonly Guid LocalMachineContainerId = Guid.Parse("00000000-0000-0000-FFFF-FFFFFFFFFFFF");
 
     /// <summary>
     ///     Short-lived negative cache to avoid hammering PnP/XUSB on repeated misses without permanently
@@ -32,9 +39,11 @@ internal static class XInputSlotResolver
     // Same IOCTL (0x8000E008) as XInputBridge GlobalState::SymlinkToUserIndex.
     private const uint IoctlXusbGetLedState = 0x8000E008;
 
-    private static readonly ConcurrentDictionary<Guid, byte> ResolutionCacheByBaseContainer = new();
+    private static readonly ConcurrentDictionary<string, byte> ResolutionCacheByInstanceId =
+        new(StringComparer.OrdinalIgnoreCase);
 
-    private static readonly ConcurrentDictionary<Guid, DateTime> NegativeResolutionExpiryByBaseContainer = new();
+    private static readonly ConcurrentDictionary<string, DateTime> NegativeResolutionExpiryByInstanceId =
+        new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     ///     Cache-generation token incremented when caches are invalidated to prevent stale writes after a clear.
@@ -44,8 +53,11 @@ internal static class XInputSlotResolver
     /// <summary>
     ///     XUSB device interface class GUID (see XInputBridge/Macros.h).
     /// </summary>
-    private static readonly Guid XusbInterfaceClassGuid =
+    internal static readonly Guid XusbDeviceInterfaceGuid =
         Guid.Parse("{EC87F1E3-C13B-4100-B5F7-8B84D54260CB}");
+
+    private static readonly Guid HidDeviceInterfaceGuid =
+        Guid.Parse("{4D1E55B2-F16F-11CF-88CB-001111000030}");
 
     private static SetupApiWrapper.DevPropKey ToDevPropKey(DevicePropertyKey key) =>
         new(key.CategoryGuid, key.PropertyIdentifier);
@@ -80,8 +92,8 @@ internal static class XInputSlotResolver
     public static void InvalidateResolutionCache()
     {
         Interlocked.Increment(ref _cacheGeneration);
-        ResolutionCacheByBaseContainer.Clear();
-        NegativeResolutionExpiryByBaseContainer.Clear();
+        ResolutionCacheByInstanceId.Clear();
+        NegativeResolutionExpiryByInstanceId.Clear();
     }
 
     /// <summary>
@@ -98,19 +110,16 @@ internal static class XInputSlotResolver
         bool ignoreNegativeCache = false)
     {
         userIndex = InvalidXInputUserId;
-        if (!TryGetBaseContainerId(dshmDevice.InstanceId, out Guid dshmContainer))
-        {
-            return false;
-        }
+        string instanceId = dshmDevice.InstanceId;
 
-        if (ResolutionCacheByBaseContainer.TryGetValue(dshmContainer, out byte cached))
+        if (ResolutionCacheByInstanceId.TryGetValue(instanceId, out byte cached))
         {
             userIndex = cached;
             return true;
         }
 
         if (!ignoreNegativeCache
-            && NegativeResolutionExpiryByBaseContainer.TryGetValue(dshmContainer, out DateTime negUntil)
+            && NegativeResolutionExpiryByInstanceId.TryGetValue(instanceId, out DateTime negUntil)
             && DateTime.UtcNow < negUntil)
         {
             return false;
@@ -119,14 +128,46 @@ internal static class XInputSlotResolver
         // Capture generation before resolving to prevent stale writes after InvalidateResolutionCache
         long generationSnapshot = Interlocked.Read(ref _cacheGeneration);
 
-        foreach (string xusbPath in EnumeratePresentXusbDeviceInterfacePaths())
+        if (TryResolveViaXusbContainer(dshmDevice, out userIndex)
+            || TryResolveViaXinputHidChild(dshmDevice, out userIndex)
+            || TryResolveViaUniqueOccupiedXinputSlot(dshmDevice, out userIndex))
+        {
+            if (Interlocked.Read(ref _cacheGeneration) == generationSnapshot)
+            {
+                NegativeResolutionExpiryByInstanceId.TryRemove(instanceId, out _);
+                ResolutionCacheByInstanceId[instanceId] = userIndex;
+            }
+
+            return true;
+        }
+
+        if (Interlocked.Read(ref _cacheGeneration) == generationSnapshot)
+        {
+            NegativeResolutionExpiryByInstanceId[instanceId] = DateTime.UtcNow.Add(NegativeResolutionCacheTtl);
+        }
+
+        userIndex = InvalidXInputUserId;
+        return false;
+    }
+
+    private static bool TryResolveViaXusbContainer(PnPDevice dshmDevice, out byte userIndex)
+    {
+        userIndex = InvalidXInputUserId;
+        if (!TryGetBaseContainerId(dshmDevice.InstanceId, out Guid dshmContainer)
+            || !IsUniqueContainerId(dshmContainer))
+        {
+            return false;
+        }
+
+        foreach (string xusbPath in EnumeratePresentDeviceInterfacePaths(XusbDeviceInterfaceGuid))
         {
             if (!TryGetDeviceInstanceIdFromInterfacePath(xusbPath, out string? xusbInstanceId))
             {
                 continue;
             }
 
-            if (!TryGetBaseContainerId(xusbInstanceId, out Guid xusbContainer) || xusbContainer != dshmContainer)
+            if (!TryGetBaseContainerId(xusbInstanceId, out Guid xusbContainer)
+                || xusbContainer != dshmContainer)
             {
                 continue;
             }
@@ -134,32 +175,154 @@ internal static class XInputSlotResolver
             if (TrySymlinkToUserIndex(xusbPath, out byte idx) && idx != InvalidXInputUserId)
             {
                 userIndex = idx;
-                // Only write to cache if generation hasn't changed (no InvalidateResolutionCache since we started)
-                if (Interlocked.Read(ref _cacheGeneration) == generationSnapshot)
-                {
-                    NegativeResolutionExpiryByBaseContainer.TryRemove(dshmContainer, out _);
-                    ResolutionCacheByBaseContainer[dshmContainer] = idx;
-                }
                 return true;
             }
         }
 
-        // Only write negative cache if generation hasn't changed
-        if (Interlocked.Read(ref _cacheGeneration) == generationSnapshot)
-        {
-            NegativeResolutionExpiryByBaseContainer[dshmContainer] = DateTime.UtcNow.Add(NegativeResolutionCacheTtl);
-        }
         return false;
     }
 
+    private static bool TryResolveViaXinputHidChild(PnPDevice dshmDevice, out byte userIndex)
+    {
+        userIndex = InvalidXInputUserId;
+        foreach (string hidPath in EnumeratePresentDeviceInterfacePaths(HidDeviceInterfaceGuid))
+        {
+            if (!TryGetDeviceInstanceIdFromInterfacePath(hidPath, out string? hidInstanceId)
+                || !IsXInputHidInstanceId(hidInstanceId)
+                || !TryGetParentInstanceId(hidInstanceId, out string? parentId)
+                || !InstanceIdsEqual(parentId, dshmDevice.InstanceId))
+            {
+                continue;
+            }
+
+            if (TrySymlinkToUserIndex(hidPath, out byte idx) && idx != InvalidXInputUserId)
+            {
+                userIndex = idx;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TryResolveViaUniqueOccupiedXinputSlot(PnPDevice dshmDevice, out byte userIndex)
+    {
+        userIndex = InvalidXInputUserId;
+        if (!HasXInputHidChild(dshmDevice))
+        {
+            return false;
+        }
+
+        int occupiedCount = 0;
+        byte occupiedIndex = InvalidXInputUserId;
+        for (byte i = 0; i < 4; i++)
+        {
+            if (!TryIsXinputSlotOccupied(i))
+            {
+                continue;
+            }
+
+            occupiedCount++;
+            occupiedIndex = i;
+        }
+
+        if (occupiedCount != 1)
+        {
+            return false;
+        }
+
+        userIndex = occupiedIndex;
+        return true;
+    }
+
+    private static bool HasXInputHidChild(PnPDevice dshmDevice)
+    {
+        foreach (string hidPath in EnumeratePresentDeviceInterfacePaths(HidDeviceInterfaceGuid))
+        {
+            if (TryGetDeviceInstanceIdFromInterfacePath(hidPath, out string? hidInstanceId)
+                && IsXInputHidInstanceId(hidInstanceId)
+                && TryGetParentInstanceId(hidInstanceId, out string? parentId)
+                && InstanceIdsEqual(parentId, dshmDevice.InstanceId))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsUniqueContainerId(Guid containerId) =>
+        containerId != Guid.Empty && containerId != LocalMachineContainerId;
+
+    private static bool IsXInputHidInstanceId(string instanceId) =>
+        instanceId.Contains("VID_045E", StringComparison.OrdinalIgnoreCase)
+        && instanceId.Contains("PID_02FF", StringComparison.OrdinalIgnoreCase);
+
+    private static bool InstanceIdsEqual(string? left, string? right) =>
+        !string.IsNullOrEmpty(left)
+        && !string.IsNullOrEmpty(right)
+        && string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
+
+    private static bool TryGetParentInstanceId(string instanceId, out string? parentId)
+    {
+        parentId = null;
+        try
+        {
+            PnPDevice device = PnPDevice.GetDeviceByInstanceId(instanceId);
+            parentId = device.GetProperty<string>(DevicePropertyKey.Device_Parent);
+            return !string.IsNullOrEmpty(parentId);
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    private static bool TryIsXinputSlotOccupied(byte userIndex)
+    {
+        try
+        {
+            return XInputGetState(userIndex, out _) == 0;
+        }
+        catch (DllNotFoundException)
+        {
+            return false;
+        }
+        catch (EntryPointNotFoundException)
+        {
+            return false;
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct XinputGamepad
+    {
+        public ushort Buttons;
+        public byte LeftTrigger;
+        public byte RightTrigger;
+        public short ThumbLX;
+        public short ThumbLY;
+        public short ThumbRX;
+        public short ThumbRY;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct XinputState
+    {
+        public uint PacketNumber;
+        public XinputGamepad Gamepad;
+    }
+
+    [DllImport("xinput1_4.dll", EntryPoint = "XInputGetState")]
+    private static extern uint XInputGetState(uint userIndex, out XinputState state);
+
     /// <summary>
-    ///     Yields symbolic link paths for all present device interfaces of class <see cref="XusbInterfaceClassGuid" />.
+    ///     Yields symbolic link paths for all present device interfaces of the given class.
     /// </summary>
-    /// <returns>Device interface paths (e.g. for use with <see cref="TrySymlinkToUserIndex" />).</returns>
-    private static IEnumerable<string> EnumeratePresentXusbDeviceInterfacePaths()
+    private static IEnumerable<string> EnumeratePresentDeviceInterfacePaths(Guid interfaceClassGuid)
     {
         uint lenChars = 0;
-        Guid g = XusbInterfaceClassGuid;
+        Guid g = interfaceClassGuid;
         SetupApiWrapper.ConfigManagerResult r = SetupApiWrapper.CM_Get_Device_Interface_List_SizeW(
             ref lenChars,
             ref g,

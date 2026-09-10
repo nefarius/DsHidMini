@@ -30,11 +30,17 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
 
     private int _xInputSlotRefreshGeneration;
 
+    /// <summary>
+    ///     Backoff after an XInput miss. Wireless XUSB interfaces and LED slot assignment
+    ///     often appear several seconds after the DsHidMini device itself.
+    /// </summary>
     private static readonly TimeSpan[] XInputSlotRetryDelays =
     [
         TimeSpan.FromMilliseconds(250),
         TimeSpan.FromMilliseconds(500),
-        TimeSpan.FromSeconds(1)
+        TimeSpan.FromSeconds(1),
+        TimeSpan.FromSeconds(2),
+        TimeSpan.FromSeconds(4)
     ];
 
     private readonly DeviceData _deviceUserData;
@@ -672,6 +678,11 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(BluetoothOutputReportTransport));
         await RefreshXInputSlotLabelAsync();
     }
+
+    /// <summary>
+    ///     Re-resolves the XInput player slot without reloading the rest of the device settings.
+    /// </summary>
+    internal Task RefreshXInputSlotAsync() => RefreshXInputSlotLabelAsync();
 
     private async Task RefreshXInputSlotLabelAsync()
     {
