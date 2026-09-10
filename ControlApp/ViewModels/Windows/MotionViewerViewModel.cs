@@ -80,8 +80,11 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
     private string _sampleText = "—";
 
     [ObservableProperty]
+    private string _poseText = "—";
+
+    [ObservableProperty]
     private string _yawNote =
-        "Yaw is integrated from the single SIXAXIS gyro and will drift. Use Recenter after holding the pad still.";
+        "Yaw is integrated from the single SIXAXIS gyro and will drift during turns. Rest bias below a few deg/s is ignored. Use Recenter after a large heading change.";
 
     public CancellationToken SessionToken => _cts.Token;
 
@@ -96,6 +99,7 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
     private void Recenter()
     {
         _estimator.Recenter();
+        RefreshPoseText();
         PoseChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -218,6 +222,13 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
             $"X {snapshot.AccelZeroX}/{snapshot.AccelOneGX}  Y {snapshot.AccelZeroY}/{snapshot.AccelOneGY}  Z {snapshot.AccelZeroZ}/{snapshot.AccelOneGZ}  G {snapshot.GyroZero}/{snapshot.GyroEepromCal}";
         TrackerText = $"zero {snapshot.ZeroRef}  cal 0x{snapshot.CalByte:X2}  tracker {(snapshot.HasTracker ? "on" : "off")}";
         SampleText = $"#{snapshot.SampleIndex}  QPC {snapshot.TimestampQpc}";
+        RefreshPoseText();
+    }
+
+    private void RefreshPoseText()
+    {
+        PoseText =
+            $"{_estimator.PitchDegrees:0.0}  {_estimator.RollDegrees:0.0}  {_estimator.YawDegrees:0.0} deg";
     }
 
     private void PublishUnavailable(string message)
