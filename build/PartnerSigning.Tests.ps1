@@ -89,6 +89,12 @@ Assert-True (-not (Test-SdcmSubmissionNeedsUpload -Status $completed)) 'complete
 
 $failed = New-TestStatus -Progress 'failed' -CommitStatus 'commitFailed' -State 'failed' -Step 'validation'
 Assert-Equal (Get-SdcmSubmissionProgress -Status $failed) 'failed' 'failed progress'
+Assert-Equal (Get-SdcmSubmissionProgress -Status (New-TestStatus -Progress 'Completed')) 'completed' 'progress is case-insensitive'
+Assert-True (Test-SdcmSubmissionHasSignedPackage -Status $completed) 'completed reports a signed package'
+Assert-True (-not (Test-SdcmSubmissionHasSignedPackage -Status $processing)) 'processing has no signed package'
+Assert-Throws { Get-SdcmSubmissionProgress -Status ([pscustomobject]@{ commitStatus = 'CommitPending' }) } 'missing progress throws'
+Assert-Throws { Get-SdcmSubmissionProgress -Status (New-TestStatus -Progress '') } 'empty progress throws'
+Assert-Throws { Get-SdcmSubmissionProgress -Status (New-TestStatus -Progress 'unknown') } 'unknown progress throws'
 
 $statusJson = @'
 {

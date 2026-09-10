@@ -303,9 +303,19 @@ jobs:
           }
           if ($progress -ne 'completed') {
             Invoke-Sdcm submission wait --product-id $productId --submission-id $submissionId --wait-timeout 3600
+            $status = Get-SdcmSubmissionStatus -ProductId $productId -SubmissionId $submissionId
+            $progress = Get-SdcmSubmissionProgress -Status $status
+            Write-Output (Get-SdcmSubmissionProgressSummary -Status $status)
+            if ($progress -eq 'failed') {
+              throw "Partner Center failed product $productId submission $submissionId."
+            }
           }
           else {
             Write-Output 'Submission already completed; downloading without waiting.'
+          }
+
+          if ($progress -ne 'completed' -or -not (Test-SdcmSubmissionHasSignedPackage -Status $status)) {
+            throw "Submission $submissionId is not ready to download (progress=$progress). Hardware Dev Center has not published a signed package yet."
           }
 
           $downloadZip = Join-Path $pwd 'hdc-download.zip'

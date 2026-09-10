@@ -341,7 +341,7 @@ function Measure-Call([string[]] $Calls, [string] $Call) {
 }
 
 function Invoke-Pipeline {
-    param([string] $Name, [hashtable] $SeedState, [hashtable] $Overrides = @{})
+    param([string] $Name, [hashtable] $SeedState, [hashtable] $Overrides = @{}, [int] $ExpectedWaitExitCode = 0)
 
     Write-Host ''
     Write-Host "=== $Name ==="
@@ -373,8 +373,8 @@ function Invoke-Pipeline {
     if ($upload.ExitCode -ne 0) { Write-Host $upload.Output }
 
     $wait = Invoke-Block -Body $waitBlock -WorkDir $sandbox -Variables $variables -Substitutions $substitutions
-    Assert-Equal $wait.ExitCode 0 "${Name}: wait step succeeds"
-    if ($wait.ExitCode -ne 0) { Write-Host $wait.Output }
+    Assert-Equal $wait.ExitCode $ExpectedWaitExitCode "${Name}: wait step exit $ExpectedWaitExitCode"
+    if ($wait.ExitCode -ne $ExpectedWaitExitCode) { Write-Host $wait.Output }
 
     $calls = Get-SdcmCalls $sandbox
     Write-Host "sdcm calls: $($calls -join ' | ')"
@@ -472,6 +472,18 @@ try {
     Assert-Equal (Measure-Call $completed.Calls 'submission wait') 0 'completed: wait skipped'
     Assert-Equal (Measure-Call $completed.Calls 'submission download') 1 'completed: downloaded once'
     Assert-True ($completed.WaitOutput -like '*already completed*') 'completed: skip is reported'
+
+    # progress=completed is not enough; download only when a signed package exists.
+    $completedNoSigned = Invoke-Pipeline -Name 'completed without signed package' -ExpectedWaitExitCode 1 -Overrides @{
+        RESUME_PRODUCT_ID = '13872423721100350'; RESUME_SUBMISSION_ID = '1152921505701853749'
+    } -SeedState @{
+        productId = '13872423721100350'; submissionId = '1152921505701853749'; commitStatus = 'commitComplete'
+        state = 'completed'; step = 'finalizeIngestion'
+        downloads = @('initialPackage'); uploaded = $true
+    }
+    Assert-Equal (Measure-Call $completedNoSigned.Calls 'submission wait') 0 'completed-no-signed: wait skipped'
+    Assert-Equal (Measure-Call $completedNoSigned.Calls 'submission download') 0 'completed-no-signed: download not attempted'
+    Assert-True ($completedNoSigned.WaitOutput -like '*not ready to download*') 'completed-no-signed: refusal names the missing package'
 
     # A failed submission must be refused up front instead of burning the rest
     # of the pipeline.

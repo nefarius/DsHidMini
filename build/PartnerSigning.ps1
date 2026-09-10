@@ -139,10 +139,32 @@ function Get-SdcmSubmissionProgress {
 
     $progress = Get-PartnerSubmissionProperty -Object $Status -Names @('progress')
     if (-not $progress) {
-        return $script:SdcmProgressCreated
+        throw 'sdcm submission status is missing progress.'
     }
 
-    return $progress.Trim().ToLowerInvariant()
+    $normalized = $progress.Trim().ToLowerInvariant()
+    $allowed = @(
+        $script:SdcmProgressCreated
+        $script:SdcmProgressProcessing
+        $script:SdcmProgressCompleted
+        $script:SdcmProgressFailed
+    )
+    if ($normalized -notin $allowed) {
+        throw "sdcm submission status reported unexpected progress '$progress'."
+    }
+
+    return $normalized
+}
+
+function Test-SdcmSubmissionHasSignedPackage {
+    [CmdletBinding()]
+    param($Status)
+
+    if (-not $Status -or -not $Status.PSObject.Properties['hasSignedPackage'] -or $null -eq $Status.hasSignedPackage) {
+        return $false
+    }
+
+    return [bool]$Status.hasSignedPackage
 }
 
 function Get-SdcmSubmissionProgressSummary {
