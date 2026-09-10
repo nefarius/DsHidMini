@@ -188,6 +188,21 @@ public class DriverConfigContractTests
     }
 
     [Fact]
+    public void Deserialize_MixedCaseIpcEnabledFalse_IsPreserved()
+    {
+        const string json = """
+            {
+              "ipcEnabled": false,
+              "Global": { "HidDeviceMode": "XInput" },
+              "Devices": {}
+            }
+            """;
+
+        DshmConfiguration parsed = DshmConfigSerialization.Deserialize(json);
+        Assert.False(parsed.IPCEnabled);
+    }
+
+    [Fact]
     public void RoundTrip_IpcEnabledFalse_IsPreserved()
     {
         DshmConfiguration config = new() { IPCEnabled = false };

@@ -581,6 +581,16 @@ TEST(Parse_IpcEnabled_InvalidDocument_LeavesOutputUntouched)
     return 0;
 }
 
+TEST(Parse_IpcEnabled_Duplicate_LeavesOutputUntouched)
+{
+    BOOLEAN enabled = FALSE;
+    const CHAR* json = "{\"IPCEnabled\":true,\"IPCEnabled\":false}";
+
+    EXPECT_STATUS(ConfigParseIpcEnabled(json, strlen(json), &enabled, NULL), STATUS_DATA_ERROR);
+    EXPECT(enabled == FALSE);
+    return 0;
+}
+
 TEST(DeriveRumble_InvalidRange_DisallowsRescale)
 {
     DS_DRIVER_CONFIGURATION config;
@@ -626,6 +636,7 @@ int main(void)
     RUN(Parse_IpcEnabled_False);
     RUN(Parse_IpcEnabled_InvalidType_LeavesOutputUntouched);
     RUN(Parse_IpcEnabled_InvalidDocument_LeavesOutputUntouched);
+    RUN(Parse_IpcEnabled_Duplicate_LeavesOutputUntouched);
     RUN(DeriveRumble_InvalidRange_DisallowsRescale);
 
     printf("%d passed, %d failed\n", g_passed, g_failed);

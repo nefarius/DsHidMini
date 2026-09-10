@@ -15,7 +15,8 @@ DsDriver_RegisterConfigWatcher(
 
 static void
 DsDriver_UnregisterConfigWatcher(
-	_In_ PDSHM_DRIVER_CONTEXT Context
+	_In_ PDSHM_DRIVER_CONTEXT Context,
+	_In_ BOOLEAN WaitForCallback
 );
 
 #pragma code_seg("INIT")
@@ -118,8 +119,19 @@ DsDriver_HotReloadEventCallback(
 
 	const PDSHM_DRIVER_CONTEXT context = (PDSHM_DRIVER_CONTEXT)lpParameter;
 	BOOLEAN ipcEnabled = TRUE;
+	const BOOL rearmed = FindNextChangeNotification(context->ConfigurationDirectoryWatcherEvent);
 
-	FindNextChangeNotification(context->ConfigurationDirectoryWatcherEvent);
+	if (!rearmed)
+	{
+		const DWORD error = GetLastError();
+		TraceEvents(
+			TRACE_LEVEL_ERROR,
+			TRACE_DRIVER,
+			"FindNextChangeNotification failed with error %!WINERROR!, disabling the IPC config watcher",
+			error
+		);
+		EventWriteFailedWithWin32Error(__FUNCTION__, L"FindNextChangeNotification", error);
+	}
 
 	Sleep(100);
 
@@ -132,18 +144,24 @@ DsDriver_HotReloadEventCallback(
 			"IPCEnabled hot-reload failed with status %!STATUS!, keeping the previous IPC state",
 			loadStatus
 		);
-		return;
+	}
+	else
+	{
+		const NTSTATUS reconcileStatus = DSHM_IPC_Reconcile(ipcEnabled);
+		if (!NT_SUCCESS(reconcileStatus))
+		{
+			TraceEvents(
+				TRACE_LEVEL_WARNING,
+				TRACE_DRIVER,
+				"DSHM_IPC_Reconcile failed with status %!STATUS! during hot-reload",
+				reconcileStatus
+			);
+		}
 	}
 
-	const NTSTATUS reconcileStatus = DSHM_IPC_Reconcile(ipcEnabled);
-	if (!NT_SUCCESS(reconcileStatus))
+	if (!rearmed)
 	{
-		TraceEvents(
-			TRACE_LEVEL_WARNING,
-			TRACE_DRIVER,
-			"DSHM_IPC_Reconcile failed with status %!STATUS! during hot-reload",
-			reconcileStatus
-		);
+		DsDriver_UnregisterConfigWatcher(context, FALSE);
 	}
 }
 
@@ -157,12 +175,24 @@ DsDriver_RegisterConfigWatcher(
 
 	do
 	{
-		if (GetEnvironmentVariableA(
+		const DWORD envChars = GetEnvironmentVariableA(
 			CONFIG_ENV_VAR_NAME,
 			programDataPath,
 			MAX_PATH
-		) == 0)
+		);
+
+		if (envChars == 0)
 		{
+			break;
+		}
+
+		if (envChars >= MAX_PATH)
+		{
+			TraceEvents(
+				TRACE_LEVEL_ERROR,
+				TRACE_DRIVER,
+				"ProgramData environment variable exceeds MAX_PATH, skipping IPC config watcher"
+			);
 			break;
 		}
 
@@ -199,7 +229,7 @@ DsDriver_RegisterConfigWatcher(
 		Context->ConfigurationDirectoryWatcherEvent = FindFirstChangeNotificationA(
 			configPath,
 			FALSE,
-			FILE_NOTIFY_CHANGE_LAST_WRITE
+			FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_FILE_NAME
 		);
 
 		if (Context->ConfigurationDirectoryWatcherEvent == NULL)
@@ -242,12 +272,16 @@ DsDriver_RegisterConfigWatcher(
 
 static void
 DsDriver_UnregisterConfigWatcher(
-	_In_ PDSHM_DRIVER_CONTEXT Context
+	_In_ PDSHM_DRIVER_CONTEXT Context,
+	_In_ BOOLEAN WaitForCallback
 )
 {
 	if (Context->ConfigurationDirectoryWatcherWaitHandle)
 	{
-		UnregisterWaitEx(Context->ConfigurationDirectoryWatcherWaitHandle, INVALID_HANDLE_VALUE);
+		UnregisterWaitEx(
+			Context->ConfigurationDirectoryWatcherWaitHandle,
+			WaitForCallback ? INVALID_HANDLE_VALUE : NULL
+		);
 		Context->ConfigurationDirectoryWatcherWaitHandle = NULL;
 	}
 
@@ -263,7 +297,7 @@ void dshidminiEvtDriverContextCleanup(WDFOBJECT DriverObject)
 {
 	const PDSHM_DRIVER_CONTEXT context = DriverGetContext(DriverObject);
 
-	DsDriver_UnregisterConfigWatcher(context);
+	DsDriver_UnregisterConfigWatcher(context, TRUE);
 	DestroyIPC();
 
 	WPP_CLEANUP(WdfDriverWdmGetDriverObject( (WDFDRIVER) DriverObject));

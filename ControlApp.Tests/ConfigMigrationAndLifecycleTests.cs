@@ -98,6 +98,23 @@ public class ConfigMigrationAndLifecycleTests : IDisposable
     }
 
     [Fact]
+    public void NativeSample_Import_MixedCaseIpcEnabledFalse_IsPreserved()
+    {
+        File.WriteAllText(Path.Combine(DriverDir, "DsHidMini.json"), """
+            {
+              "ipcEnabled": false,
+              "Global": { "HidDeviceMode": "XInput" },
+              "Devices": {}
+            }
+            """);
+
+        DshmConfigManager manager = CreateManager();
+
+        Assert.True(manager.LastMigrationResult.Succeeded);
+        Assert.False(manager.IPCEnabled);
+    }
+
+    [Fact]
     public void SparseDeviceOverlay_UsesGlobalMode()
     {
         File.WriteAllText(Path.Combine(DriverDir, "DsHidMini.json"), """

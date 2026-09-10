@@ -25,6 +25,7 @@ static NTSTATUS DSHM_IPC_CreateResources(
 	FuncEntry(TRACE_IPC);
 
 	NTSTATUS status = STATUS_SUCCESS;
+	DWORD lastError = ERROR_SUCCESS;
 
 	PUCHAR pCmdBuf = NULL;
 	PUCHAR pHIDBuf = NULL;
@@ -67,10 +68,11 @@ static NTSTATUS DSHM_IPC_CreateResources(
 		NULL
 	))
 	{
+		lastError = GetLastError();
 		TraceError(
 			TRACE_IPC,
 			"ConvertStringSecurityDescriptorToSecurityDescriptor failed with error: %!WINERROR!",
-			GetLastError()
+			lastError
 		);
 		goto exitFailure;
 	}
@@ -80,10 +82,11 @@ static NTSTATUS DSHM_IPC_CreateResources(
 	hMutex = CreateMutexA(&sa, FALSE, DSHM_IPC_MUTEX_NAME);
 	if (hMutex == NULL)
 	{
+		lastError = GetLastError();
 		TraceError(
 			TRACE_IPC,
 			"Could not create mutex (%!WINERROR!).",
-			GetLastError()
+			lastError
 		);
 		goto exitFailure;
 	}
@@ -91,10 +94,11 @@ static NTSTATUS DSHM_IPC_CreateResources(
 	hReadEvent = CreateEventA(&sa, FALSE, FALSE, DSHM_IPC_READ_EVENT_NAME);
 	if (hReadEvent == NULL)
 	{
+		lastError = GetLastError();
 		TraceError(
 			TRACE_IPC,
 			"Could not create READ event (%!WINERROR!).",
-			GetLastError()
+			lastError
 		);
 		goto exitFailure;
 	}
@@ -102,10 +106,11 @@ static NTSTATUS DSHM_IPC_CreateResources(
 	hWriteEvent = CreateEventA(&sa, FALSE, FALSE, DSHM_IPC_WRITE_EVENT_NAME);
 	if (hWriteEvent == NULL)
 	{
+		lastError = GetLastError();
 		TraceError(
 			TRACE_IPC,
 			"Could not create WRITE event (%!WINERROR!).",
-			GetLastError()
+			lastError
 		);
 		goto exitFailure;
 	}
@@ -113,10 +118,11 @@ static NTSTATUS DSHM_IPC_CreateResources(
 	hThreadTermination = CreateEventA(&sa, FALSE, FALSE, NULL);
 	if (hThreadTermination == NULL)
 	{
+		lastError = GetLastError();
 		TraceError(
 			TRACE_IPC,
 			"Could not create event (%!WINERROR!).",
-			GetLastError()
+			lastError
 		);
 		goto exitFailure;
 	}
@@ -133,10 +139,11 @@ static NTSTATUS DSHM_IPC_CreateResources(
 
 	if (hMapFile == NULL)
 	{
+		lastError = GetLastError();
 		TraceError(
 			TRACE_IPC,
 			"Could not create file mapping object (%!WINERROR!).",
-			GetLastError()
+			lastError
 		);
 		goto exitFailure;
 	}
@@ -152,10 +159,11 @@ static NTSTATUS DSHM_IPC_CreateResources(
 
 	if (pCmdBuf == NULL)
 	{
+		lastError = GetLastError();
 		TraceError(
 			TRACE_IPC,
 			"Could not map view of file CMD REGION (%!WINERROR!).",
-			GetLastError()
+			lastError
 		);
 		goto exitFailure;
 	}
@@ -174,10 +182,11 @@ static NTSTATUS DSHM_IPC_CreateResources(
 
 	if (pHIDBuf == NULL)
 	{
+		lastError = GetLastError();
 		TraceError(
 			TRACE_IPC,
 			"Could not map view of file HID REGION (%!WINERROR!).",
-			GetLastError()
+			lastError
 		);
 		goto exitFailure;
 	}
@@ -208,10 +217,11 @@ static NTSTATUS DSHM_IPC_CreateResources(
 
 	if (hThread == NULL)
 	{
+		lastError = GetLastError();
 		TraceError(
 			TRACE_IPC,
 			"Could not create dispatch thread (%!WINERROR!).",
-			GetLastError()
+			lastError
 		);
 
 		context->IPC.DispatchThreadTermination = NULL;
@@ -270,8 +280,7 @@ exitFailure:
 
 	if (NT_SUCCESS(status))
 	{
-		const DWORD error = GetLastError();
-		status = error ? NTSTATUS_FROM_WIN32(error) : STATUS_UNSUCCESSFUL;
+		status = lastError ? NTSTATUS_FROM_WIN32(lastError) : STATUS_UNSUCCESSFUL;
 	}
 
 	FuncExit(TRACE_IPC, "status=%!STATUS!", status);

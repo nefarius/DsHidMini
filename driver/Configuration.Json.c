@@ -59,9 +59,10 @@ ConfigIsIntegralInRange(
 }
 
 static const cJSON*
-ConfigGetUniqueItem(
+ConfigLookupUniqueItem(
 	_In_opt_ const cJSON* Object,
-	_In_z_ const CHAR* Name
+	_In_z_ const CHAR* Name,
+	_Out_opt_ PINT MatchCount
 )
 {
 	const cJSON* match = NULL;
@@ -69,6 +70,11 @@ ConfigGetUniqueItem(
 
 	if (!cJSON_IsObject(Object) || Name == NULL)
 	{
+		if (MatchCount)
+		{
+			*MatchCount = 0;
+		}
+
 		return NULL;
 	}
 
@@ -79,6 +85,11 @@ ConfigGetUniqueItem(
 			count++;
 			match = child;
 		}
+	}
+
+	if (MatchCount)
+	{
+		*MatchCount = count;
 	}
 
 	if (count == 0)
@@ -97,6 +108,15 @@ ConfigGetUniqueItem(
 	}
 
 	return match;
+}
+
+static const cJSON*
+ConfigGetUniqueItem(
+	_In_opt_ const cJSON* Object,
+	_In_z_ const CHAR* Name
+)
+{
+	return ConfigLookupUniqueItem(Object, Name, NULL);
 }
 
 static const cJSON*
@@ -1436,7 +1456,21 @@ ConfigParseIpcEnabled(
 		return status;
 	}
 
-	ipcNode = ConfigGetUniqueItem(root, "IPCEnabled");
+	{
+		int matchCount = 0;
+
+		ipcNode = ConfigLookupUniqueItem(root, "IPCEnabled", &matchCount);
+		if (matchCount > 1)
+		{
+			TraceError(
+				TRACE_CONFIG,
+				"Duplicate configuration key IPCEnabled"
+			);
+			cJSON_Delete(root);
+			return STATUS_DATA_ERROR;
+		}
+	}
+
 	if (ipcNode != NULL)
 	{
 		if (!cJSON_IsBool(ipcNode))
