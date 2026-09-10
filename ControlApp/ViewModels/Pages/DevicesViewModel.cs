@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Threading;
 
 using Nefarius.DsHidMini.ControlApp.Models;
@@ -63,6 +63,7 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
         _dshmConfigManager = dshmConfigManager;
         _appSnackbarMessagesService = appSnackbarMessagesService;
         _dshmDevMan.ConnectedDeviceListUpdated += OnConnectedDevicesListUpdated;
+        _dshmDevMan.XInputInterfacesUpdated += OnXInputInterfacesUpdated;
         _dshmConfigManager.DshmConfigurationUpdated += OnDshmConfigUpdated;
         _contentDialogService = contentDialogService;
         _addressValidator = addressValidator;
@@ -112,6 +113,24 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
     private void OnConnectedDevicesListUpdated(object? obj, EventArgs? eventArgs)
     {
         RefreshDevicesList();
+    }
+
+    private void OnXInputInterfacesUpdated(object? obj, EventArgs? eventArgs)
+    {
+        Application.Current?.Dispatcher.BeginInvoke(new Action(async void () =>
+        {
+            try
+            {
+                foreach (DeviceViewModel device in Devices.ToList())
+                {
+                    await device.RefreshXInputSlotAsync();
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Logger.Error(e, "Error refreshing XInput slots after XUSB change");
+            }
+        }));
     }
 
     [RelayCommand]

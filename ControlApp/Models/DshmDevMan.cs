@@ -1,4 +1,6 @@
-﻿using Nefarius.DsHidMini.ControlApp.Models.Util;
+using System.Threading;
+
+using Nefarius.DsHidMini.ControlApp.Models.Util;
 using Nefarius.DsHidMini.IPC;
 using Nefarius.DsHidMini.IPC.Models.Drivers;
 using Nefarius.DsHidMini.IPC.Models.Public;
@@ -9,7 +11,11 @@ namespace Nefarius.DsHidMini.ControlApp.Models;
 
 public class DshmDevMan
 {
+    private static readonly TimeSpan XusbRefreshDebounce = TimeSpan.FromMilliseconds(250);
+
     private DeviceNotificationListener? _listener;
+    private DeviceNotificationListener? _xusbListener;
+    private CancellationTokenSource? _xusbRefreshCts;
     //private readonly HostRadio _hostRadio;
 
     public List<PnPDevice> Devices { get; } = new();
@@ -27,6 +33,11 @@ public class DshmDevMan
         _listener.DeviceRemoved += OnListenerDevicesRemovedOrAdded;
         _listener.StartListen(DsHidMiniDriver.DeviceInterfaceGuid);
 
+        _xusbListener = new DeviceNotificationListener();
+        _xusbListener.DeviceArrived += OnXusbInterfaceChanged;
+        _xusbListener.DeviceRemoved += OnXusbInterfaceChanged;
+        _xusbListener.StartListen(XInputSlotResolver.XusbDeviceInterfaceGuid);
+
         UpdateConnectedDshmDevicesList();
     }
 
@@ -34,6 +45,12 @@ public class DshmDevMan
     {
         Log.Logger.Information("Stopping detection of DsHidMini devices");
         Devices.Clear();
+        _xusbRefreshCts?.Cancel();
+        _xusbRefreshCts?.Dispose();
+        _xusbRefreshCts = null;
+        _xusbListener?.StopListen();
+        _xusbListener?.Dispose();
+        _xusbListener = null;
         _listener?.StopListen();
         _listener?.Dispose();
         _listener = null;
@@ -43,6 +60,45 @@ public class DshmDevMan
     {
         Log.Logger.Information("DsHidMini devices added or removed. Updating device list");
         UpdateConnectedDshmDevicesList();
+    }
+
+    private void OnXusbInterfaceChanged(DeviceEventArgs e)
+    {
+        QueueXusbInterfaceRefresh();
+    }
+
+    /// <summary>
+    ///     Coalesces XUSB arrive/remove bursts (common on Bluetooth) and then asks the UI to
+    ///     re-resolve player slots without rebuilding the DsHidMini device list.
+    /// </summary>
+    private void QueueXusbInterfaceRefresh()
+    {
+        CancellationTokenSource cts = new();
+        CancellationTokenSource? previous = Interlocked.Exchange(ref _xusbRefreshCts, cts);
+        previous?.Cancel();
+        previous?.Dispose();
+
+        CancellationToken token = cts.Token;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(XusbRefreshDebounce, token).ConfigureAwait(false);
+            }
+            catch (TaskCanceledException)
+            {
+                return;
+            }
+
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+
+            Log.Logger.Debug("XUSB interfaces changed. Refreshing XInput slot resolution.");
+            XInputSlotResolver.InvalidateResolutionCache();
+            XInputInterfacesUpdated?.Invoke(this, EventArgs.Empty);
+        }, token);
     }
 
     private void UpdateConnectedDshmDevicesList()
@@ -122,4 +178,9 @@ public class DshmDevMan
     }
 
     public event EventHandler? ConnectedDeviceListUpdated;
+
+    /// <summary>
+    ///     Raised after XUSB interfaces appear or disappear so existing devices can retry slot lookup.
+    /// </summary>
+    public event EventHandler? XInputInterfacesUpdated;
 }

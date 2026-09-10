@@ -30,6 +30,19 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
 
     private int _xInputSlotRefreshGeneration;
 
+    /// <summary>
+    ///     Backoff after an XInput miss. Wireless XUSB interfaces and LED slot assignment
+    ///     often appear several seconds after the DsHidMini device itself.
+    /// </summary>
+    private static readonly TimeSpan[] XInputSlotRetryDelays =
+    [
+        TimeSpan.FromMilliseconds(250),
+        TimeSpan.FromMilliseconds(500),
+        TimeSpan.FromSeconds(1),
+        TimeSpan.FromSeconds(2),
+        TimeSpan.FromSeconds(4)
+    ];
+
     private readonly DeviceData _deviceUserData;
 
     // ------------------------------------------------------ FIELDS
@@ -597,6 +610,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
+        Interlocked.Increment(ref _xInputSlotRefreshGeneration);
         _batteryQuery.Dispose();
         GC.SuppressFinalize(this);
     }
@@ -665,6 +679,11 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         await RefreshXInputSlotLabelAsync();
     }
 
+    /// <summary>
+    ///     Re-resolves the XInput player slot without reloading the rest of the device settings.
+    /// </summary>
+    internal Task RefreshXInputSlotAsync() => RefreshXInputSlotLabelAsync();
+
     private async Task RefreshXInputSlotLabelAsync()
     {
         int refreshGeneration = Interlocked.Increment(ref _xInputSlotRefreshGeneration);
@@ -678,11 +697,70 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         }
 
         PnPDevice device = Device;
-        (bool ok, byte userIndex) = await Task.Run(() =>
+        (bool ok, byte userIndex) = await ResolveXInputUserIndexAsync(device, ignoreNegativeCache: false);
+        if (await TryApplyXInputSlotResultAsync(refreshGeneration, ok, userIndex))
         {
-            bool success = XInputSlotResolver.TryGetXInputUserIndex(device, out byte idx);
+            return;
+        }
+
+        _ = RetryXInputSlotLabelAsync(refreshGeneration, device);
+    }
+
+    private async Task RetryXInputSlotLabelAsync(int refreshGeneration, PnPDevice device)
+    {
+        try
+        {
+            foreach (TimeSpan delay in XInputSlotRetryDelays)
+            {
+                await Task.Delay(delay);
+                if (refreshGeneration != _xInputSlotRefreshGeneration)
+                {
+                    return;
+                }
+
+                (bool ok, byte userIndex) = await ResolveXInputUserIndexAsync(device, ignoreNegativeCache: true);
+                if (await TryApplyXInputSlotResultAsync(refreshGeneration, ok, userIndex))
+                {
+                    return;
+                }
+            }
+
+            await ApplyXInputSlotLabelsAsync(refreshGeneration, "Unavailable", "XInput: Unavailable");
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Warning(ex, "XInput slot retry failed for device '{Address}'", DeviceAddress);
+        }
+    }
+
+    private static Task<(bool ok, byte userIndex)> ResolveXInputUserIndexAsync(PnPDevice device,
+        bool ignoreNegativeCache)
+    {
+        return Task.Run(() =>
+        {
+            bool success = XInputSlotResolver.TryGetXInputUserIndex(device, out byte idx, ignoreNegativeCache);
             return (success, idx);
         });
+    }
+
+    private async Task<bool> TryApplyXInputSlotResultAsync(int refreshGeneration, bool ok, byte userIndex)
+    {
+        if (!ok)
+        {
+            return false;
+        }
+
+        await ApplyXInputSlotLabelsAsync(refreshGeneration, $"Player {userIndex + 1}",
+            $"XInput: Player {userIndex + 1}");
+        return true;
+    }
+
+    private async Task ApplyXInputSlotLabelsAsync(int refreshGeneration, string detail, string banner)
+    {
+        if (Application.Current is null)
+        {
+            return;
+        }
 
         await Application.Current.Dispatcher.InvokeAsync(() =>
         {
@@ -699,16 +777,8 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             }
 
             OnPropertyChanged(nameof(IsXInputHidMode));
-            if (ok)
-            {
-                XInputSlotDetail = $"Player {userIndex + 1}";
-                XInputSlotBanner = $"XInput: Player {userIndex + 1}";
-            }
-            else
-            {
-                XInputSlotDetail = "Unavailable";
-                XInputSlotBanner = "XInput: Unavailable";
-            }
+            XInputSlotDetail = detail;
+            XInputSlotBanner = banner;
         });
     }
 
