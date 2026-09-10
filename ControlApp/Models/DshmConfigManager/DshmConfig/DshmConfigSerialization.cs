@@ -395,6 +395,11 @@ internal static class DshmConfigSerialization
             JsonElement root = document.RootElement;
             DshmConfiguration configuration = new();
 
+            if (TryGetProperty(root, "IPCEnabled", out JsonElement ipcEnabled))
+            {
+                configuration.IPCEnabled = ipcEnabled.GetBoolean();
+            }
+
             if (TryGetProperty(root, "Global", out JsonElement global))
             {
                 configuration.Global = ParseDeviceSettings(global);
@@ -419,6 +424,7 @@ internal static class DshmConfigSerialization
         public override void Write(Utf8JsonWriter writer, DshmConfiguration instance, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
+            writer.WriteBoolean("IPCEnabled", instance.IPCEnabled);
             writer.WritePropertyName(nameof(instance.Global));
             JsonSerializer.Serialize(writer, instance.Global, options);
 

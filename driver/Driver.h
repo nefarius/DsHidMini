@@ -56,7 +56,8 @@ typedef struct _DSHM_DRIVER_CONTEXT
 	struct
 	{
 		//
-		// Whether the IPC module is enabled or not
+		// Whether IPC resources are currently live. Driven at runtime by
+		// the root-level IPCEnabled value in DsHidMini.json (default on).
 		// 
 		ULONG IsEnabled;
 
@@ -147,6 +148,21 @@ typedef struct _DSHM_DRIVER_CONTEXT
 	// Lock protecting access to Slots
 	// 
 	WDFWAITLOCK SlotsLock;
+
+	//
+	// Lock protecting IPC resource create/teardown and HID-region copies
+	// 
+	WDFWAITLOCK IpcLock;
+
+	//
+	// Driver-scoped directory change notification for DsHidMini.json
+	// 
+	HANDLE ConfigurationDirectoryWatcherEvent;
+
+	//
+	// Wait handle for the driver-scoped config watcher
+	// 
+	HANDLE ConfigurationDirectoryWatcherWaitHandle;
 } DSHM_DRIVER_CONTEXT, * PDSHM_DRIVER_CONTEXT;
 
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DSHM_DRIVER_CONTEXT, DriverGetContext)

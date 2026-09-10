@@ -23,6 +23,7 @@ public class DriverConfigContractTests
         string json = SerializeDefaultProfile(SettingsContext.XInput);
         JsonNode root = JsonNode.Parse(json)!;
 
+        Assert.True(root["IPCEnabled"]!.GetValue<bool>());
         Assert.NotNull(root["Global"]);
         Assert.NotNull(root["Devices"]);
         Assert.IsType<JsonObject>(root["Devices"]);
@@ -106,6 +107,7 @@ public class DriverConfigContractTests
         string sample = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", "DsHidMini.json"));
         DshmConfiguration parsed = DshmConfigSerialization.Deserialize(sample);
 
+        Assert.True(parsed.IPCEnabled);
         Assert.Equal(HidDeviceMode.DS4Windows, parsed.Global.HidDeviceMode);
         Assert.True(parsed.Global.AutoRestartOnHidModeMismatch);
         Assert.Equal(DevicePairingMode.Auto, parsed.Global.DevicePairingMode);
@@ -169,6 +171,32 @@ public class DriverConfigContractTests
         DeviceSettings restored = new();
         DshmManagerToDriverConversion.ConvertDriverFormatToDeviceSettings(parsed.Global, restored);
         Assert.Equal(transport, restored.OutputReport.BluetoothOutputReportTransport);
+    }
+
+    [Fact]
+    public void Deserialize_MissingIpcEnabled_DefaultsTrue()
+    {
+        const string json = """
+            {
+              "Global": { "HidDeviceMode": "XInput" },
+              "Devices": {}
+            }
+            """;
+
+        DshmConfiguration parsed = DshmConfigSerialization.Deserialize(json);
+        Assert.True(parsed.IPCEnabled);
+    }
+
+    [Fact]
+    public void RoundTrip_IpcEnabledFalse_IsPreserved()
+    {
+        DshmConfiguration config = new() { IPCEnabled = false };
+        string json = DshmConfigSerialization.Serialize(config);
+        JsonNode root = JsonNode.Parse(json)!;
+        Assert.False(root["IPCEnabled"]!.GetValue<bool>());
+
+        DshmConfiguration parsed = DshmConfigSerialization.Deserialize(json);
+        Assert.False(parsed.IPCEnabled);
     }
 
     [Fact]

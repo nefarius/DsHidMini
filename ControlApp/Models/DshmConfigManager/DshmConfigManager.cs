@@ -64,6 +64,12 @@ public class DshmConfigManager
         set => _userData.AutoRestartOnHidModeMismatch = value;
     }
 
+    public bool IPCEnabled
+    {
+        get => _userData.IPCEnabled;
+        set => _userData.IPCEnabled = value;
+    }
+
     public event EventHandler<DshmUpdatedEventArgs>? DshmConfigurationUpdated;
 
     public event EventHandler? GlobalProfileUpdated;

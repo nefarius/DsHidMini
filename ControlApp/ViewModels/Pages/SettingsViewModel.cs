@@ -20,18 +20,14 @@ public partial class SettingsViewModel : ObservableObject, INavigationAware
     public SettingsViewModel(
         DshmConfigManager dshmConfigManager,
         BthPS3StatusService bthPs3,
-        DshmIpcStatusService driverIpc,
         AppSnackbarMessagesService appSnackbarMessagesService)
     {
         _dshmConfigManager = dshmConfigManager;
         BthPs3 = bthPs3;
-        DriverIpc = driverIpc;
         _appSnackbarMessagesService = appSnackbarMessagesService;
     }
 
     public BthPS3StatusService BthPs3 { get; }
-
-    public DshmIpcStatusService DriverIpc { get; }
 
     /// <summary>
     ///     When enabled (default), the driver requests a self restart on a HID mode mismatch instead of requiring a
@@ -51,6 +47,30 @@ public partial class SettingsViewModel : ObservableObject, INavigationAware
             if (!_dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile())
             {
                 Log.Logger.Error("Failed to persist AutoRestartOnHidModeMismatch.");
+            }
+
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>
+    ///     When enabled (default), the driver exposes shared-memory IPC. Changes apply at runtime
+    ///     without a driver reload.
+    /// </summary>
+    public bool IPCEnabled
+    {
+        get => _dshmConfigManager.IPCEnabled;
+        set
+        {
+            if (_dshmConfigManager.IPCEnabled == value)
+            {
+                return;
+            }
+
+            _dshmConfigManager.IPCEnabled = value;
+            if (!_dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile())
+            {
+                Log.Logger.Error("Failed to persist IPCEnabled.");
             }
 
             OnPropertyChanged();
@@ -122,7 +142,6 @@ public partial class SettingsViewModel : ObservableObject, INavigationAware
         }
 
         BthPs3.Refresh();
-        DriverIpc.Refresh();
 
         return Task.CompletedTask;
     }
@@ -187,35 +206,4 @@ public partial class SettingsViewModel : ObservableObject, INavigationAware
         }
     }
 
-    [RelayCommand]
-    private void RefreshDriverIpc()
-    {
-        DriverIpc.Refresh();
-    }
-
-    [RelayCommand]
-    private void EnableDriverIpc()
-    {
-        if (DriverIpc.TrySetEnabled(true))
-        {
-            _appSnackbarMessagesService.ShowDriverIpcEnabledMessage();
-        }
-        else
-        {
-            _appSnackbarMessagesService.ShowDriverIpcChangeFailedMessage();
-        }
-    }
-
-    [RelayCommand]
-    private void DisableDriverIpc()
-    {
-        if (DriverIpc.TrySetEnabled(false))
-        {
-            _appSnackbarMessagesService.ShowDriverIpcDisabledMessage();
-        }
-        else
-        {
-            _appSnackbarMessagesService.ShowDriverIpcChangeFailedMessage();
-        }
-    }
 }

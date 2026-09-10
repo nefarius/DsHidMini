@@ -6,19 +6,25 @@ static DWORD WINAPI DSHM_IPC_ClientDispatchProc(
 	_In_ LPVOID lpParameter
 );
 
+static NTSTATUS DSHM_IPC_CreateResources(
+	_In_ PDSHM_DRIVER_CONTEXT context
+);
+
+static void DSHM_IPC_DestroyResources(
+	_In_ PDSHM_DRIVER_CONTEXT context
+);
+
 //
-// Sets up direct driver process IPC for sideband communication
+// Sets up direct driver process IPC for sideband communication.
+// Caller must hold IpcLock. On success IPC.IsEnabled is set.
 // 
-NTSTATUS InitIPC(void)
+static NTSTATUS DSHM_IPC_CreateResources(
+	_In_ PDSHM_DRIVER_CONTEXT context
+)
 {
 	FuncEntry(TRACE_IPC);
 
-	DECLARE_CONST_UNICODE_STRING(valNameIPCEnaabled, L"IPCEnabled");
-
-	const WDFDRIVER driver = WdfGetDriver();
-	const PDSHM_DRIVER_CONTEXT context = DriverGetContext(driver);
-	WDFKEY hKeyParameters = NULL;
-	NTSTATUS status;
+	NTSTATUS status = STATUS_SUCCESS;
 
 	PUCHAR pCmdBuf = NULL;
 	PUCHAR pHIDBuf = NULL;
@@ -28,48 +34,7 @@ NTSTATUS InitIPC(void)
 	HANDLE hMutex = NULL;
 	HANDLE hThread = NULL;
 	HANDLE hThreadTermination = NULL;
-
-	if (!NT_SUCCESS(status = WdfDriverOpenParametersRegistryKey(
-		driver,
-		KEY_READ,
-		WDF_NO_OBJECT_ATTRIBUTES,
-		&hKeyParameters
-	)))
-	{
-		TraceError(
-			TRACE_IPC,
-			"WdfDriverOpenParametersRegistryKey failed with status %!STATUS!",
-			status
-		);
-		goto exitFailure;
-	}
-
-	if (!NT_SUCCESS(status = WdfRegistryQueryULong(
-		hKeyParameters,
-		&valNameIPCEnaabled,
-		&context->IPC.IsEnabled
-	)))
-	{
-		TraceError(
-			TRACE_IPC,
-			"WdfRegistryQueryULong failed with status %!STATUS!",
-			status
-		);
-		goto exitFailure;
-	}
-
-	//
-	// Feature disabled in registry
-	// 
-	if (!context->IPC.IsEnabled)
-	{
-		TraceInformation(
-			TRACE_IPC,
-			"IPC feature disabled, aborting initialization"
-		);
-		status = STATUS_DEVICE_FEATURE_NOT_SUPPORTED;
-		goto exitFailure;
-	}
+	PSECURITY_DESCRIPTOR pSD = NULL;
 
 	SYSTEM_INFO sysInfo;
     GetSystemInfo(&sysInfo);
@@ -85,22 +50,9 @@ NTSTATUS InitIPC(void)
 		pageSize, cmdRegionSize, hidRegionSize, totalRegionSize
 	);	
 
-	SECURITY_DESCRIPTOR sd = { 0 };
-
-	if (!InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION))
-	{
-		TraceError(
-			TRACE_IPC,
-			"InitializeSecurityDescriptor failed with error: %!WINERROR!",
-			GetLastError()
-		);
-		goto exitFailure;
-	}
-
 	SECURITY_ATTRIBUTES sa = { 0 };
 	sa.nLength = sizeof(sa);
 	sa.bInheritHandle = TRUE;
-	sa.lpSecurityDescriptor = &sd;
 
 	CHAR* szSD = "D:" // Discretionary ACL
 	"(D;OICI;GA;;;BG)" // Deny access to Built-in Guests
@@ -111,7 +63,7 @@ NTSTATUS InitIPC(void)
 	if (!ConvertStringSecurityDescriptorToSecurityDescriptorA(
 		szSD,
 		SDDL_REVISION_1,
-		&sa.lpSecurityDescriptor,
+		&pSD,
 		NULL
 	))
 	{
@@ -122,6 +74,8 @@ NTSTATUS InitIPC(void)
 		);
 		goto exitFailure;
 	}
+
+	sa.lpSecurityDescriptor = pSD;
 
 	hMutex = CreateMutexA(&sa, FALSE, DSHM_IPC_MUTEX_NAME);
 	if (hMutex == NULL)
@@ -259,21 +213,36 @@ NTSTATUS InitIPC(void)
 			"Could not create dispatch thread (%!WINERROR!).",
 			GetLastError()
 		);
+
+		context->IPC.DispatchThreadTermination = NULL;
+		context->IPC.MapFile = NULL;
+		context->IPC.ConnectMutex = NULL;
+		context->IPC.ReadEvent = NULL;
+		context->IPC.WriteEvent = NULL;
+		context->IPC.SharedRegions.Commands.Buffer = NULL;
+		context->IPC.SharedRegions.Commands.BufferSize = 0;
+		context->IPC.SharedRegions.HID.Buffer = NULL;
+		context->IPC.SharedRegions.HID.BufferSize = 0;
 		goto exitFailure;
 	}
 
 	context->IPC.DispatchThread = hThread;
+	context->IPC.IsEnabled = 1;
 
-	if (hKeyParameters)
-		WdfRegistryClose(hKeyParameters);
+	if (pSD)
+	{
+		LocalFree(pSD);
+	}
 
 	FuncExitNoReturn(TRACE_IPC);
 
 	return STATUS_SUCCESS;
 
 exitFailure:
-	if (hKeyParameters)
-		WdfRegistryClose(hKeyParameters);
+	if (pSD)
+	{
+		LocalFree(pSD);
+	}
 
 	if (pCmdBuf)
 		UnmapViewOfFile(pCmdBuf);
@@ -299,26 +268,21 @@ exitFailure:
 	if (hThreadTermination)
 		CloseHandle(hThreadTermination);
 
-	status = NT_SUCCESS(status) ? status : NTSTATUS_FROM_WIN32(GetLastError());
+	if (NT_SUCCESS(status))
+	{
+		const DWORD error = GetLastError();
+		status = error ? NTSTATUS_FROM_WIN32(error) : STATUS_UNSUCCESSFUL;
+	}
 
 	FuncExit(TRACE_IPC, "status=%!STATUS!", status);
 
 	return status;
 }
 
-//
-// Frees IPC resources
-// 
-void DestroyIPC(void)
+static void DSHM_IPC_DestroyResources(
+	_In_ PDSHM_DRIVER_CONTEXT context
+)
 {
-	FuncEntry(TRACE_IPC);
-
-	const WDFDRIVER driver = WdfGetDriver();
-	const PDSHM_DRIVER_CONTEXT context = DriverGetContext(driver);
-
-	//
-	// Thread running; signal termination, wait on exit, free resources
-	// 
 	if (context->IPC.DispatchThread && context->IPC.DispatchThreadTermination)
 	{
 		SetEvent(context->IPC.DispatchThreadTermination);
@@ -344,6 +308,71 @@ void DestroyIPC(void)
 
 	if (context->IPC.ConnectMutex)
 		CloseHandle(context->IPC.ConnectMutex);
+
+	context->IPC.DispatchThread = NULL;
+	context->IPC.DispatchThreadTermination = NULL;
+	context->IPC.SharedRegions.Commands.Buffer = NULL;
+	context->IPC.SharedRegions.Commands.BufferSize = 0;
+	context->IPC.SharedRegions.HID.Buffer = NULL;
+	context->IPC.SharedRegions.HID.BufferSize = 0;
+	context->IPC.MapFile = NULL;
+	context->IPC.ReadEvent = NULL;
+	context->IPC.WriteEvent = NULL;
+	context->IPC.ConnectMutex = NULL;
+	context->IPC.IsEnabled = 0;
+}
+
+NTSTATUS DSHM_IPC_Reconcile(
+	_In_ BOOLEAN Enabled
+)
+{
+	FuncEntry(TRACE_IPC);
+
+	const WDFDRIVER driver = WdfGetDriver();
+	const PDSHM_DRIVER_CONTEXT context = DriverGetContext(driver);
+	NTSTATUS status = STATUS_SUCCESS;
+
+	WdfWaitLockAcquire(context->IpcLock, NULL);
+	{
+		if (Enabled)
+		{
+			if (!context->IPC.IsEnabled)
+			{
+				TraceInformation(TRACE_IPC, "Enabling IPC resources");
+				status = DSHM_IPC_CreateResources(context);
+			}
+		}
+		else if (context->IPC.IsEnabled)
+		{
+			TraceInformation(TRACE_IPC, "Disabling IPC resources");
+			DSHM_IPC_DestroyResources(context);
+		}
+	}
+	WdfWaitLockRelease(context->IpcLock);
+
+	FuncExit(TRACE_IPC, "status=%!STATUS!", status);
+
+	return status;
+}
+
+void DestroyIPC(void)
+{
+	FuncEntry(TRACE_IPC);
+
+	const WDFDRIVER driver = WdfGetDriver();
+	const PDSHM_DRIVER_CONTEXT context = DriverGetContext(driver);
+
+	if (context->IpcLock)
+	{
+		WdfWaitLockAcquire(context->IpcLock, NULL);
+	}
+
+	DSHM_IPC_DestroyResources(context);
+
+	if (context->IpcLock)
+	{
+		WdfWaitLockRelease(context->IpcLock);
+	}
 
 	FuncExitNoReturn(TRACE_IPC);
 }

@@ -112,7 +112,7 @@ This compiles the solution (if needed) and publishes the ControlApp to the solut
 - **App version** — Displayed in the title bar / settings.
 - **Automatically restart devices on HID mode mismatch** — Driver self-restart when the loaded HID mode does not match the mode Windows already probed.
 - **Minimize to tray** — When enabled, Minimize and Close hide ControlApp to the notification area; use the tray icon to reopen or Exit to quit.
-- **Experimental driver IPC** — Check, enable, or disable the driver’s `IPCEnabled` registry flag. Changing it requires Administrator rights and a reboot or driver reload.
+- **Enable driver IPC** — Persist the driver-wide `IPCEnabled` flag in `DsHidMini.json`. The driver applies the change at runtime without a reload.
 - **Application configuration** — Stored in %AppData%; see [Configuration](#configuration).
 
 ---

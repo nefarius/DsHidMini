@@ -142,6 +142,8 @@ public class DshmHidModeSettings
 /// </summary>
 public class DshmConfiguration
 {
+    public bool IPCEnabled { get; set; } = true;
+
     public DshmDeviceSettings Global { get; set; } = new();
     public List<DshmDeviceData> Devices { get; set; } = new();
 

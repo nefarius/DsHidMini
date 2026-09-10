@@ -14,6 +14,10 @@
 #define STATUS_DATA_ERROR ((NTSTATUS)0xC000003EL)
 #endif
 
+#ifndef NT_SUCCESS
+#define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -74,6 +78,19 @@ ConfigParseJsonDocument(
 	_In_opt_ const DS_DRIVER_CONFIGURATION* Current,
 	_Out_ PDS_DRIVER_CONFIGURATION Parsed,
 	_Out_ PDS_CONFIG_RUMBLE_DERIVED RumbleDerived,
+	_Out_opt_ PSIZE_T ErrorOffset
+);
+
+//
+// Reads the root-level IPCEnabled gate. Missing or omitted defaults to TRUE.
+// A present non-boolean value fails and leaves Enabled untouched.
+// 
+_Must_inspect_result_
+NTSTATUS
+ConfigParseIpcEnabled(
+	_In_reads_bytes_(Length) const CHAR* Json,
+	_In_ SIZE_T Length,
+	_Out_ PBOOLEAN Enabled,
 	_Out_opt_ PSIZE_T ErrorOffset
 );
 

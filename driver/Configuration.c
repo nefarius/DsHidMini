@@ -2,11 +2,10 @@
 #include "Configuration.Json.h"
 #include "Configuration.tmh"
 
-_Must_inspect_result_
-NTSTATUS
-ConfigLoadForDevice(
-	_Inout_ PDEVICE_CONTEXT Context,
-	_In_opt_ BOOLEAN IsHotReload
+static NTSTATUS
+ConfigReadJsonFile(
+	_Outptr_result_bytebuffer_maybenull_(*Length) PCHAR* Content,
+	_Out_ PSIZE_T Length
 )
 {
 	NTSTATUS status = STATUS_SUCCESS;
@@ -16,16 +15,9 @@ ConfigLoadForDevice(
 	PCHAR content = NULL;
 	SIZE_T contentLength = 0;
 	LARGE_INTEGER size = { 0 };
-	DS_DRIVER_CONFIGURATION parsed;
-	DS_CONFIG_RUMBLE_DERIVED rumbleDerived;
-	SIZE_T parseOffset = 0;
 
-	FuncEntry(TRACE_CONFIG);
-
-	if (!IsHotReload)
-	{
-		ConfigSetDefaults(&Context->Configuration);
-	}
+	*Content = NULL;
+	*Length = 0;
 
 	do
 	{
@@ -64,7 +56,8 @@ ConfigLoadForDevice(
 			configFilePath
 		);
 
-		hFile = CreateFileA(configFilePath,
+		hFile = CreateFileA(
+			configFilePath,
 			GENERIC_READ,
 			FILE_SHARE_READ,
 			NULL,
@@ -85,7 +78,14 @@ ConfigLoadForDevice(
 			);
 			EventWriteFailedWithWin32Error(__FUNCTION__, L"Reading configuration file", error);
 
-			status = STATUS_ACCESS_DENIED;
+			if (error == ERROR_FILE_NOT_FOUND || error == ERROR_PATH_NOT_FOUND)
+			{
+				status = STATUS_NOT_FOUND;
+			}
+			else
+			{
+				status = STATUS_ACCESS_DENIED;
+			}
 			break;
 		}
 
@@ -156,6 +156,53 @@ ConfigLoadForDevice(
 				contentLength
 			);
 			status = STATUS_UNSUCCESSFUL;
+			break;
+		}
+
+		*Content = content;
+		*Length = contentLength;
+		content = NULL;
+	} while (FALSE);
+
+	if (content)
+	{
+		free(content);
+	}
+
+	if (hFile != INVALID_HANDLE_VALUE)
+	{
+		CloseHandle(hFile);
+	}
+
+	return status;
+}
+
+_Must_inspect_result_
+NTSTATUS
+ConfigLoadForDevice(
+	_Inout_ PDEVICE_CONTEXT Context,
+	_In_opt_ BOOLEAN IsHotReload
+)
+{
+	NTSTATUS status = STATUS_SUCCESS;
+	PCHAR content = NULL;
+	SIZE_T contentLength = 0;
+	DS_DRIVER_CONFIGURATION parsed;
+	DS_CONFIG_RUMBLE_DERIVED rumbleDerived;
+	SIZE_T parseOffset = 0;
+
+	FuncEntry(TRACE_CONFIG);
+
+	if (!IsHotReload)
+	{
+		ConfigSetDefaults(&Context->Configuration);
+	}
+
+	do
+	{
+		status = ConfigReadJsonFile(&content, &contentLength);
+		if (!NT_SUCCESS(status))
+		{
 			break;
 		}
 
@@ -241,12 +288,81 @@ ConfigLoadForDevice(
 		free(content);
 	}
 
-	if (hFile != INVALID_HANDLE_VALUE)
-	{
-		CloseHandle(hFile);
-	}
-
 	FuncExit(TRACE_CONFIG, "status=%!STATUS!", status);
 
 	return status;
+}
+
+_Must_inspect_result_
+NTSTATUS
+ConfigLoadIpcEnabled(
+	_Out_ PBOOLEAN Enabled
+)
+{
+	NTSTATUS status;
+	PCHAR content = NULL;
+	SIZE_T contentLength = 0;
+	SIZE_T parseOffset = 0;
+	BOOLEAN enabled = TRUE;
+
+	FuncEntry(TRACE_CONFIG);
+
+	if (Enabled == NULL)
+	{
+		FuncExit(TRACE_CONFIG, "status=%!STATUS!", STATUS_INVALID_PARAMETER);
+		return STATUS_INVALID_PARAMETER;
+	}
+
+	status = ConfigReadJsonFile(&content, &contentLength);
+	if (status == STATUS_NOT_FOUND)
+	{
+		*Enabled = TRUE;
+		TraceInformation(
+			TRACE_CONFIG,
+			"Configuration file not found, defaulting IPCEnabled to TRUE"
+		);
+		FuncExit(TRACE_CONFIG, "status=%!STATUS!", STATUS_SUCCESS);
+		return STATUS_SUCCESS;
+	}
+
+	if (!NT_SUCCESS(status))
+	{
+		FuncExit(TRACE_CONFIG, "status=%!STATUS!", status);
+		return status;
+	}
+
+	status = ConfigParseIpcEnabled(
+		content,
+		contentLength,
+		&enabled,
+		&parseOffset
+	);
+
+	if (content)
+	{
+		free(content);
+	}
+
+	if (!NT_SUCCESS(status))
+	{
+		TraceError(
+			TRACE_CONFIG,
+			"IPCEnabled parsing failed at offset %Iu",
+			parseOffset
+		);
+		FuncExit(TRACE_CONFIG, "status=%!STATUS!", status);
+		return status;
+	}
+
+	*Enabled = enabled;
+
+	TraceVerbose(
+		TRACE_CONFIG,
+		"IPCEnabled = %!BOOLEAN!",
+		enabled
+	);
+
+	FuncExit(TRACE_CONFIG, "status=%!STATUS!", STATUS_SUCCESS);
+
+	return STATUS_SUCCESS;
 }
