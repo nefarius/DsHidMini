@@ -4,6 +4,18 @@ Set-StrictMode -Version Latest
 $script:PartnerSignedNamePattern = '^Signed_(\d+)\.zip$'
 $script:PartnerInitialNamePattern = '^Initial_(\d+)\.cab$'
 
+# Hardware Dev Center submission vocabulary. commitStatus is documented as
+# commitPending / commitComplete / commitFailed, but the API reference shows
+# 'CommitPending' while the service returns 'commitPending', so every comparison
+# below is case-insensitive. workflowStatus.state is one of notStarted, started,
+# failed, completed and describes *the current step only*; currentStep walks
+# packageInfoValidation, preparation, scanning, validation, catalogCreation,
+# manualReview, signing, finalizeIngestion.
+$script:PartnerCommitPending = 'commitPending'
+$script:PartnerCommitFailed = 'commitFailed'
+$script:PartnerWorkflowFinalStep = 'finalizeIngestion'
+$script:PartnerSignedPackageType = 'signedPackage'
+
 function Invoke-Sdcm {
     [CmdletBinding()]
     param(
@@ -107,31 +119,22 @@ function Get-PartnerSubmissionProperty {
     return $null
 }
 
-function Get-PartnerSubmissionWorkflowState {
+function Test-PartnerValueEquals {
     [CmdletBinding()]
-    param($Submission)
+    param(
+        [string] $Value,
+        [Parameter(Mandatory = $true)]
+        [string] $Expected
+    )
 
-    if ($null -eq $Submission) {
-        return $null
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return $false
     }
 
-    if (-not $Submission.PSObject.Properties['workflowStatus']) {
-        return $null
-    }
-
-    $workflow = $Submission.workflowStatus
-    if ($null -eq $workflow) {
-        return $null
-    }
-
-    if ($workflow -is [string]) {
-        return $workflow
-    }
-
-    return Get-PartnerSubmissionProperty -Object $workflow -Names @('state', 'currentState', 'status', 'currentStep')
+    return [string]::Equals($Value.Trim(), $Expected, [StringComparison]::OrdinalIgnoreCase)
 }
 
-function Get-PartnerSubmissionWorkflowStep {
+function Get-PartnerSubmissionWorkflow {
     [CmdletBinding()]
     param($Submission)
 
@@ -139,7 +142,29 @@ function Get-PartnerSubmissionWorkflowStep {
         return $null
     }
 
-    $workflow = $Submission.workflowStatus
+    return $Submission.workflowStatus
+}
+
+function Get-PartnerSubmissionWorkflowState {
+    [CmdletBinding()]
+    param($Submission)
+
+    $workflow = Get-PartnerSubmissionWorkflow -Submission $Submission
+    if ($null -eq $workflow) {
+        return $null
+    }
+    if ($workflow -is [string]) {
+        return $workflow
+    }
+
+    return Get-PartnerSubmissionProperty -Object $workflow -Names @('state', 'currentState', 'status')
+}
+
+function Get-PartnerSubmissionWorkflowStep {
+    [CmdletBinding()]
+    param($Submission)
+
+    $workflow = Get-PartnerSubmissionWorkflow -Submission $Submission
     if ($null -eq $workflow -or $workflow -is [string]) {
         return $null
     }
@@ -154,64 +179,66 @@ function Get-PartnerSubmissionCommitStatus {
     return Get-PartnerSubmissionProperty -Object $Submission -Names @('commitStatus')
 }
 
+function Test-PartnerSubmissionHasSignedPackage {
+    [CmdletBinding()]
+    param($Submission)
+
+    if ($null -eq $Submission -or -not $Submission.PSObject.Properties['downloads']) {
+        return $false
+    }
+
+    $downloads = $Submission.downloads
+    if ($null -eq $downloads -or -not $downloads.PSObject.Properties['items'] -or -not $downloads.items) {
+        return $false
+    }
+
+    foreach ($item in @($downloads.items)) {
+        if ($null -eq $item -or -not $item.PSObject.Properties['type']) {
+            continue
+        }
+        if (Test-PartnerValueEquals -Value ([string]$item.type) -Expected $script:PartnerSignedPackageType) {
+            return $true
+        }
+    }
+
+    return $false
+}
+
 function Get-PartnerSubmissionProgress {
     [CmdletBinding()]
     param($Submission)
 
-    $workflow = Get-PartnerSubmissionWorkflowState -Submission $Submission
-    $step = Get-PartnerSubmissionWorkflowStep -Submission $Submission
     $commit = Get-PartnerSubmissionCommitStatus -Submission $Submission
+    $state = Get-PartnerSubmissionWorkflowState -Submission $Submission
+    $step = Get-PartnerSubmissionWorkflowStep -Submission $Submission
 
-    $downloadTypes = @()
-    if ($Submission -and $Submission.PSObject.Properties['downloads'] -and $Submission.downloads -and
-        $Submission.downloads.PSObject.Properties['items'] -and $Submission.downloads.items) {
-        $downloadTypes = @(
-            $Submission.downloads.items |
-                ForEach-Object { $_.type } |
-                Where-Object { $_ }
-        )
+    if ((Test-PartnerValueEquals -Value $commit -Expected $script:PartnerCommitFailed) -or
+        (Test-PartnerValueEquals -Value $state -Expected 'failed')) {
+        return 'Failed'
     }
 
-    $signals = @($commit, $workflow, $step) | Where-Object { $_ }
-
-    $failed = @(
-        'failed', 'failure', 'cancelled', 'canceled', 'commitFailed'
-    )
-    foreach ($signal in $signals) {
-        if ($failed -contains $signal) {
-            return 'Failed'
-        }
-    }
-
-    $completed = @('completed', 'complete', 'succeeded', 'success', 'published')
-    if ($workflow -and ($completed -contains $workflow)) {
+    # A downloadable signedPackage is the only unambiguous completion signal.
+    # state applies to currentStep, so 'completed' on an intermediate step such
+    # as scanning must not be read as the whole submission being done.
+    if (Test-PartnerSubmissionHasSignedPackage -Submission $Submission) {
         return 'Completed'
     }
-    if ($step -and ($completed -contains $step)) {
-        return 'Completed'
-    }
-    if ($downloadTypes -contains 'signedPackage') {
+    if ((Test-PartnerValueEquals -Value $state -Expected 'completed') -and
+        (Test-PartnerValueEquals -Value $step -Expected $script:PartnerWorkflowFinalStep)) {
         return 'Completed'
     }
 
-    $pendingCommit = @('commitPending', 'pending')
-    $idleWorkflow = @('notStarted', 'notstarted', 'none', 'unknown')
-    $submitted = @(
-        'inProgress', 'inprogress', 'processing', 'started', 'running',
-        'commitSucceeded', 'commitInProgress', 'commitComplete', 'commitStarted',
-        'finalizeIngestion', 'preprocess', 'preProcess'
-    )
-
-    foreach ($signal in $signals) {
-        if ($submitted -contains $signal) {
-            return 'Submitted'
-        }
+    # Anything other than commitPending means the submission already belongs to
+    # Hardware Dev Center and must not be uploaded or committed again. Treating
+    # unrecognised values as committed keeps an undocumented in-flight status
+    # from triggering a second upload.
+    if ($commit -and -not (Test-PartnerValueEquals -Value $commit -Expected $script:PartnerCommitPending)) {
+        return 'Submitted'
     }
-
-    $commitIsActive = $commit -and -not ($pendingCommit -contains $commit)
-    $workflowIsActive = $workflow -and -not ($idleWorkflow -contains $workflow)
-    $stepIsActive = $step -and -not ($idleWorkflow -contains $step)
-    if ($commitIsActive -or $workflowIsActive -or $stepIsActive) {
+    # Fallback for a submission that reports no commitStatus at all: the
+    # workflow only leaves notStarted once Hardware Dev Center owns the package.
+    if ((Test-PartnerValueEquals -Value $state -Expected 'started') -or
+        (Test-PartnerValueEquals -Value $state -Expected 'completed')) {
         return 'Submitted'
     }
 
@@ -224,12 +251,14 @@ function Get-PartnerSubmissionProgressSummary {
 
     $progress = Get-PartnerSubmissionProgress -Submission $Submission
     $commit = Get-PartnerSubmissionCommitStatus -Submission $Submission
-    $workflow = Get-PartnerSubmissionWorkflowState -Submission $Submission
+    $state = Get-PartnerSubmissionWorkflowState -Submission $Submission
     $step = Get-PartnerSubmissionWorkflowStep -Submission $Submission
+    $signed = Test-PartnerSubmissionHasSignedPackage -Submission $Submission
     if (-not $commit) { $commit = '-' }
-    if (-not $workflow) { $workflow = '-' }
+    if (-not $state) { $state = '-' }
     if (-not $step) { $step = '-' }
-    return "Submission progress: $progress (commitStatus=$commit; state=$workflow; currentStep=$step)"
+
+    return "Submission progress: $progress (commitStatus=$commit; state=$state; currentStep=$step; signedPackage=$signed)"
 }
 
 function Test-PartnerSubmissionNeedsUpload {
@@ -301,19 +330,26 @@ function Get-SdcmEntityId {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [string] $Json
+        $Json
     )
 
-    # sdcm --output json re-serializes Hardware Dev Center ids with
-    # LongToStringJsonConverter, so the value is a quoted string. The raw API
-    # uses an unquoted number. Accept both so the id stays a string.
-    $match = [regex]::Match($Json, '"id"\s*:\s*"?(\d+)"?')
-    if (-not $match.Success) {
-        $preview = if ($Json.Length -gt 500) { $Json.Substring(0, 500) + '...' } else { $Json }
-        throw "sdcm JSON is missing an id field.`n$preview"
+    # sdcm --output json re-serializes Hardware Dev Center ids as quoted strings
+    # via LongToStringJsonConverter, while the raw API uses unquoted numbers.
+    # Parse the document instead of pattern matching so a nested id can never be
+    # mistaken for the entity's own id.
+    $entity = ConvertFrom-SdcmJson -Json $Json
+    if ($entity -is [System.Collections.IList] -and $entity -isnot [string]) {
+        $entity = @($entity) | Select-Object -First 1
     }
 
-    return $match.Groups[1].Value
+    $id = Get-PartnerSubmissionProperty -Object $entity -Names @('id')
+    if (-not $id -or $id -notmatch '^\d+$') {
+        $preview = ConvertTo-SdcmJsonText -Json $Json
+        if ($preview.Length -gt 500) { $preview = $preview.Substring(0, 500) + '...' }
+        throw "sdcm JSON is missing a numeric id field.`n$preview"
+    }
+
+    return $id
 }
 
 function ConvertTo-SdcmJsonText {

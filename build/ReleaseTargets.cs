@@ -209,7 +209,8 @@ partial class Build
         });
 
     /// <summary>
-    /// Runs non-production release-pipeline unit checks (version parsing and staging fixtures).
+    /// Runs non-production release-pipeline checks: version parsing, staging fixtures, and the
+    /// offline Partner Center signing dry run against a mock sdcm.
     /// </summary>
     [UsedImplicitly]
     public Target TestReleasePipeline => _ => _
@@ -219,7 +220,11 @@ partial class Build
                            ?? ToolPathResolver.TryGetEnvironmentExecutable("pwsh")
                            ?? TryGetPathExecutable("pwsh")
                            ?? "powershell";
-            foreach (string testFile in new[] { "ReleaseVersion.Tests.ps1", "PartnerSigning.Tests.ps1" })
+            foreach (string testFile in new[]
+                     {
+                         "ReleaseVersion.Tests.ps1", "PartnerSigning.Tests.ps1",
+                         "PartnerSigning.DryRun.ps1"
+                     })
             {
                 AbsolutePath tests = RootDirectory / "build" / testFile;
                 ProcessTasks.StartProcess(shell, $"-NoProfile -File \"{tests}\"")

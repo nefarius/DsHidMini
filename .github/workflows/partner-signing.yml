@@ -7,11 +7,27 @@ on:
         description: 'Build workflow run ID that produced the EV-signed partner CAB'
         required: true
         type: string
+      product-id:
+        description: 'Resume this existing Partner Center product instead of creating a new one'
+        required: false
+        type: string
+      submission-id:
+        description: 'Resume this existing submission (requires product-id)'
+        required: false
+        type: string
   workflow_dispatch:
     inputs:
       source-run-id:
         description: 'Build workflow run ID that produced the EV-signed partner CAB'
         required: true
+        type: string
+      product-id:
+        description: 'Resume this existing Partner Center product instead of creating a new one'
+        required: false
+        type: string
+      submission-id:
+        description: 'Resume this existing submission (requires product-id)'
+        required: false
         type: string
 
 concurrency:
@@ -32,7 +48,7 @@ env:
 
 jobs:
   create:
-    name: 'Create Partner product'
+    name: 'Create or resume Partner product'
     runs-on: windows-2022
     outputs:
       product-id: ${{ steps.create.outputs.product-id }}
@@ -66,9 +82,12 @@ jobs:
 
       - uses: ./.github/actions/setup-sdcm
 
-      - name: 'Create product and submission'
+      - name: 'Create or resume product and submission'
         id: create
         shell: pwsh
+        env:
+          RESUME_PRODUCT_ID: ${{ inputs.product-id }}
+          RESUME_SUBMISSION_ID: ${{ inputs.submission-id }}
         run: |
           $ErrorActionPreference = 'Stop'
           . .\build\PartnerSigning.ps1
@@ -82,16 +101,45 @@ jobs:
           }
 
           $productName = "DsHidMini $($metadata.setupVersion) $($metadata.driverVersion)"
-          $announcement = (Get-Date).ToUniversalTime().ToString('s')
-          $productPath = Join-Path $pwd 'partner-product.json'
-          $submissionPath = Join-Path $pwd 'partner-submission.json'
-          Write-Utf8NoBomJson (New-PartnerProductPayload -ProductName $productName -AnnouncementDate $announcement) $productPath
-          Write-Utf8NoBomJson (New-PartnerSubmissionPayload -Name "$($productName) submission") $submissionPath
+          $resumeProductId = "$($env:RESUME_PRODUCT_ID)".Trim()
+          $resumeSubmissionId = "$($env:RESUME_SUBMISSION_ID)".Trim()
+          if ([bool]$resumeProductId -ne [bool]$resumeSubmissionId) {
+            throw 'product-id and submission-id must be supplied together to resume an existing submission.'
+          }
 
-          $productJson = Invoke-Sdcm product create --input $productPath
-          $productId = Get-SdcmEntityId -Json ($productJson | Out-String)
-          $submissionJson = Invoke-Sdcm submission create --product-id $productId --input $submissionPath
-          $submissionId = Get-SdcmEntityId -Json ($submissionJson | Out-String)
+          if ($resumeProductId) {
+            if ($resumeProductId -notmatch '^\d+$') { throw "product-id must be numeric. Got: '$resumeProductId'." }
+            if ($resumeSubmissionId -notmatch '^\d+$') { throw "submission-id must be numeric. Got: '$resumeSubmissionId'." }
+            $productId = $resumeProductId
+            $submissionId = $resumeSubmissionId
+
+            $listed = Invoke-Sdcm submission list --product-id $productId --submission-id $submissionId
+            $submission = ConvertFrom-SdcmJson -Json $listed
+            if ($submission -is [System.Array]) { $submission = $submission | Select-Object -First 1 }
+            $resumedId = Get-SdcmEntityId -Json $listed
+            if ($resumedId -ne $submissionId) {
+              throw "Partner Center returned submission $resumedId for requested submission $submissionId."
+            }
+            Write-Output "Resuming Partner Center product $productId submission $submissionId"
+            Write-Output (Get-PartnerSubmissionProgressSummary -Submission $submission)
+            if ((Get-PartnerSubmissionProgress -Submission $submission) -eq 'Failed') {
+              throw "Submission $submissionId already failed. Dispatch without product-id/submission-id to create a new product."
+            }
+          }
+          else {
+            $announcement = (Get-Date).ToUniversalTime().ToString('s')
+            $productPath = Join-Path $pwd 'partner-product.json'
+            $submissionPath = Join-Path $pwd 'partner-submission.json'
+            Write-Utf8NoBomJson (New-PartnerProductPayload -ProductName $productName -AnnouncementDate $announcement) $productPath
+            Write-Utf8NoBomJson (New-PartnerSubmissionPayload -Name "$($productName) submission") $submissionPath
+
+            $productJson = Invoke-Sdcm product create --input $productPath
+            $productId = Get-SdcmEntityId -Json $productJson
+            $submissionJson = Invoke-Sdcm submission create --product-id $productId --input $submissionPath
+            $submissionId = Get-SdcmEntityId -Json $submissionJson
+            Write-Output "Created Partner Center product $productId submission $submissionId"
+          }
+
           $portalUrl = Get-PartnerPortalUrl -ProductId $productId
 
           $checkpoint = [ordered]@{
@@ -105,6 +153,7 @@ jobs:
             submissionId = $submissionId
             portalUrl = $portalUrl
             productName = $productName
+            resumed = [bool]$resumeProductId
           }
           Write-Utf8NoBomJson $checkpoint 'partner-signing-checkpoint.json'
 
@@ -114,8 +163,9 @@ jobs:
           'driver-version=' + $metadata.driverVersion >> $env:GITHUB_OUTPUT
           'tag=' + $metadata.tag >> $env:GITHUB_OUTPUT
 
+          $verb = if ($resumeProductId) { 'Resumed' } else { 'Created' }
           $summary = @(
-            "Created Partner Center product ``$productName``"
+            "$verb Partner Center product ``$productName``"
             "- Product ID: ``$productId``"
             "- Submission ID: ``$submissionId``"
             "- Portal: $portalUrl"
@@ -128,6 +178,7 @@ jobs:
         with:
           name: partner-signing-checkpoint
           if-no-files-found: error
+          overwrite: true
           path: partner-signing-checkpoint.json
 
   upload:
@@ -184,7 +235,7 @@ jobs:
           Write-Output (Get-PartnerSubmissionProgressSummary -Submission $submission)
 
           if ($progress -eq 'Failed') {
-            throw "Partner Center already failed product $productId submission $submissionId. Dispatch this workflow against the same source run to create a new product."
+            throw "Partner Center already failed product $productId submission $submissionId. Dispatch this workflow against the same source run, without product-id/submission-id, to create a new product."
           }
 
           if (Test-PartnerSubmissionNeedsUpload -Submission $submission) {
@@ -255,7 +306,7 @@ jobs:
           if ($progress -eq 'Created') {
             $preview = ConvertTo-SdcmJsonText -Json $listed
             if ($preview.Length -gt 1500) { $preview = $preview.Substring(0, 1500) + '...' }
-            throw "Submission is not committed. Re-run the upload job before waiting.`n$preview"
+            throw "Submission $submissionId is still commitPending, so Hardware Dev Center has nothing to process. Re-run the upload job before waiting.`n$preview"
           }
           if ($progress -ne 'Completed') {
             Invoke-Sdcm submission wait --product-id $productId --submission-id $submissionId --wait-timeout 3600
@@ -265,6 +316,8 @@ jobs:
           }
 
           $downloadZip = Join-Path $pwd 'hdc-download.zip'
+          # sdcm refuses to overwrite an existing destination file.
+          if (Test-Path -LiteralPath $downloadZip) { Remove-Item -LiteralPath $downloadZip -Force }
           Invoke-Sdcm submission download --product-id $productId --submission-id $submissionId --output-file $downloadZip
           $extractDir = Join-Path $pwd 'hdc-extracted'
           New-Item -ItemType Directory -Force -Path $extractDir | Out-Null
