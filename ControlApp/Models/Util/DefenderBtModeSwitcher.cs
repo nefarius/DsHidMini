@@ -45,8 +45,9 @@ public enum DefenderBtModeSwitchResult
     IgnoredByHardware,
 
     /// <summary>
-    ///     A late probe was ignored and the USB port could not be reset. Replug, or run as administrator so the
-    ///     port can be cycled and the probe retried immediately after re-enumeration.
+    ///     The DualShock 4 identity is gone and no new DualShock 3 appeared: either the USB port cycle failed,
+    ///     or it succeeded without either identity coming back. Reconnect (or run as administrator so the port
+    ///     can be cycled) so the pending probe is retried immediately after re-enumeration.
     /// </summary>
     NeedsReconnect
 }
