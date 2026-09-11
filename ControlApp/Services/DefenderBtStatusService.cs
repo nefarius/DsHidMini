@@ -132,6 +132,7 @@ public partial class DefenderBtStatusService : ObservableObject, IDisposable
         try
         {
             string devicePath = _detectedDevicePath;
+            IReadOnlyList<string> ds3Before = DefenderBtModeSwitcher.ListDualShock3UsbInstanceIds();
             DefenderBtModeSwitchResult sent = DefenderBtModeSwitcher.TrySwitchToPs3Mode(devicePath);
             Log.Logger.Information(
                 "Defender BT PS3 mode-switch probe for {DevicePath} resulted in {Result}",
@@ -142,7 +143,7 @@ public partial class DefenderBtStatusService : ObservableObject, IDisposable
                 return sent;
             }
 
-            if (await WaitForSwitchAsync(LateProbeWait).ConfigureAwait(true))
+            if (await WaitForSwitchAsync(LateProbeWait, ds3Before).ConfigureAwait(true))
             {
                 return DefenderBtModeSwitchResult.Switched;
             }
@@ -155,13 +156,20 @@ public partial class DefenderBtStatusService : ObservableObject, IDisposable
                 return DefenderBtModeSwitchResult.NeedsReconnect;
             }
 
-            if (await WaitForSwitchAsync(ReenumerateWait).ConfigureAwait(true))
+            if (await WaitForSwitchAsync(ReenumerateWait, ds3Before).ConfigureAwait(true))
             {
                 return DefenderBtModeSwitchResult.Switched;
             }
 
-            Volatile.Write(ref _pendingImmediateSwitch, 0);
-            return DefenderBtModeSwitchResult.IgnoredByHardware;
+            if (FindDefenderBtCandidatePath() is not null)
+            {
+                Volatile.Write(ref _pendingImmediateSwitch, 0);
+                return DefenderBtModeSwitchResult.IgnoredByHardware;
+            }
+
+            // Port cycle or unplug left neither identity on the bus. Keep the immediate-retry
+            // latch so the next DualShock 4 arrival is probed without requiring another click.
+            return DefenderBtModeSwitchResult.NeedsReconnect;
         }
         finally
         {
@@ -282,7 +290,7 @@ public partial class DefenderBtStatusService : ObservableObject, IDisposable
         return null;
     }
 
-    private async Task<bool> WaitForSwitchAsync(TimeSpan timeout)
+    private async Task<bool> WaitForSwitchAsync(TimeSpan timeout, IReadOnlyList<string> ds3Before)
     {
         TimeSpan poll = TimeSpan.FromMilliseconds(100);
         TimeSpan elapsed = TimeSpan.Zero;
@@ -298,16 +306,17 @@ public partial class DefenderBtStatusService : ObservableObject, IDisposable
                 continue;
             }
 
-            if (DefenderBtModeSwitcher.IsDualShock3UsbPresent())
+            if (DefenderBtModeSwitcher.HasNewlyAppearedDualShock3Usb(ds3Before))
             {
                 Volatile.Write(ref _pendingImmediateSwitch, 0);
                 return true;
             }
 
-            // Port cycle drops 05C4 briefly before it reappears. Keep waiting unless a DS3 showed up.
+            // Port cycle drops 05C4 briefly before it reappears. Keep waiting unless a new DS3 showed up.
         }
 
-        return FindDefenderBtCandidatePath() is null && DefenderBtModeSwitcher.IsDualShock3UsbPresent();
+        return FindDefenderBtCandidatePath() is null &&
+               DefenderBtModeSwitcher.HasNewlyAppearedDualShock3Usb(ds3Before);
     }
 
     /// <summary>

@@ -35,7 +35,7 @@ public enum DefenderBtModeSwitchResult
     Failed,
 
     /// <summary>
-    ///     The DualShock 4 identity disappeared and a DualShock 3 USB identity is present.
+    ///     The DualShock 4 identity disappeared and a new DualShock 3 USB identity appeared.
     /// </summary>
     Switched,
 
@@ -144,23 +144,62 @@ public static class DefenderBtModeSwitcher
     }
 
     /// <summary>
-    ///     True if a DualShock 3 USB identity (<c>VID_054C&amp;PID_0268</c>) is present on the bus.
+    ///     True if <paramref name="instanceId" /> is a DualShock 3 USB identity (<c>VID_054C&amp;PID_0268</c>).
     /// </summary>
-    public static bool IsDualShock3UsbPresent()
+    internal static bool IsDualShock3UsbInstanceId(string? instanceId)
     {
+        return instanceId is not null &&
+               instanceId.Contains("VID_054C", StringComparison.OrdinalIgnoreCase) &&
+               instanceId.Contains("PID_0268", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    ///     Instance IDs of DualShock 3 USB identities currently on the bus. Snapshot this before a switch
+    ///     attempt so a pre-existing <c>054C:0268</c> is not mistaken for the Defender re-enumerating.
+    /// </summary>
+    public static IReadOnlyList<string> ListDualShock3UsbInstanceIds()
+    {
+        List<string> instanceIds = [];
         int instance = 0;
         while (Devcon.FindByInterfaceGuid(
                    DeviceInterfaceIds.UsbDevice, out string? _, out string? instanceId, instance++))
         {
-            if (instanceId is not null &&
-                instanceId.Contains("VID_054C", StringComparison.OrdinalIgnoreCase) &&
-                instanceId.Contains("PID_0268", StringComparison.OrdinalIgnoreCase))
+            if (IsDualShock3UsbInstanceId(instanceId))
+            {
+                instanceIds.Add(instanceId);
+            }
+        }
+
+        return instanceIds;
+    }
+
+    /// <summary>
+    ///     True if <paramref name="currentInstanceIds" /> contains a DualShock 3 USB identity that was not in
+    ///     <paramref name="instanceIdsBefore" />.
+    /// </summary>
+    internal static bool HasNewlyAppearedDualShock3Usb(
+        IEnumerable<string> currentInstanceIds,
+        IEnumerable<string> instanceIdsBefore)
+    {
+        HashSet<string> before = new(instanceIdsBefore, StringComparer.OrdinalIgnoreCase);
+        foreach (string instanceId in currentInstanceIds)
+        {
+            if (IsDualShock3UsbInstanceId(instanceId) && !before.Contains(instanceId))
             {
                 return true;
             }
         }
 
         return false;
+    }
+
+    /// <summary>
+    ///     True if a DualShock 3 USB identity has appeared since <paramref name="instanceIdsBefore" /> was
+    ///     captured.
+    /// </summary>
+    public static bool HasNewlyAppearedDualShock3Usb(IEnumerable<string> instanceIdsBefore)
+    {
+        return HasNewlyAppearedDualShock3Usb(ListDualShock3UsbInstanceIds(), instanceIdsBefore);
     }
 
     /// <summary>
