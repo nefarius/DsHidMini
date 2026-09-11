@@ -55,6 +55,11 @@ internal static class DsMotionMath
         return Clamp10(0x3FF - raw);
     }
 
+    public static int TrackedGyro(int raw, int zeroRef)
+    {
+        return Clamp10(NominalZero + zeroRef - raw);
+    }
+
     public static int ToMilliG(int calibrated)
     {
         return ((calibrated - NominalZero) * 1000) / AccelGain;

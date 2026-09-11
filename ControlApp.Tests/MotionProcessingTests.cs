@@ -64,11 +64,21 @@ public class MotionProcessingTests
     }
 
     [Fact]
-    public void HwCalGyro_InvertsRawWithoutSoftwareZero()
+    public void HwCalGyro_SonyHidReport_InvertsRawWithoutSoftwareZero()
     {
-        // DS3-A2 idle 361 with factory cal applied
+        // sixaxis.sys HID report for field-0x07 pads: clamp(0x3FF - raw).
         Assert.Equal(0x3FF - 361, DsMotionMath.HwCalReportedGyro(361));
         Assert.Equal(512, DsMotionMath.HwCalReportedGyro(511));
+    }
+
+    [Fact]
+    public void HwCalGyro_PublishedValue_UsesTrackerZeroRef()
+    {
+        // DS3-A1b at rest: raw 496, tracker zeroRef 496. Sony HID would
+        // publish 527 (~10.7 deg/s); DsHidMini publishes the tracker output.
+        Assert.Equal(527, DsMotionMath.HwCalReportedGyro(496));
+        Assert.Equal(512, DsMotionMath.TrackedGyro(496, 496));
+        Assert.True(DsMotionMath.TrackedGyro(480, 496) > 512);
     }
 
     [Fact]
@@ -104,6 +114,22 @@ public class MotionProcessingTests
         byte sent = tracker.Initial(0, 200);
         Assert.Equal(unchecked((byte)tracker.CalByteRaw), sent);
         Assert.InRange(tracker.CalByteRaw, int.MinValue, int.MaxValue);
+    }
+
+    [Fact]
+    public void Tracker_SubStepRestBias_OutputCentersWithoutCalStep()
+    {
+        SonyGyroTracker tracker = new();
+        tracker.Initial(0x77, 521);
+
+        for (int i = 0; i < 200; i++)
+        {
+            tracker.Runtime(496, out _);
+        }
+
+        Assert.Equal(496, tracker.ZeroRef);
+        Assert.Equal(512, tracker.Output);
+        Assert.Equal(0x77, tracker.CalByte);
     }
 
     [Fact]
