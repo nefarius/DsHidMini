@@ -132,14 +132,34 @@ quirk work does not need to re-derive them from the pcaps.
   Windows-side tool is harmless to real DS4 controllers.
   `2024-05-04_Windows-PC-plugin-capture.pcapng` confirms Windows itself
   never sends `Feature 0x14`, which is the only reason the Defender BT
-  never leaves DS4 mode when plugged into a PC; cycling the controller to
-  DS4 mode (hold Home ~3 s, per the manual) and then replaying the same
-  `0x14` report via `HidD_SetFeature` from user mode is enough to make it
-  re-enumerate as `USB\VID_054C&PID_0268`, which DsHidMini already binds
-  to via the existing `dshidmini.inf` entry. ControlApp's
-  `DefenderBtModeSwitcher` (see issue #282) automates exactly this replay
-  so Bluetooth pairing becomes reachable on Windows without resorting to a
-  PS3-first-pairing + MAC-spoofing workaround.
+  never leaves DS4 mode when plugged into a PC. Replaying that report via
+  `HidD_SetFeature` is the right USB packet (Feature, report ID `0x14`,
+  17 bytes starting `14 02 …`), but a successful `HidD_SetFeature` only
+  means the transfer was ACKed. A live Defender in DS4 mode (`054C:05C4`
+  `bcdDevice 0x0221`) can ACK the report and stay on the bus; GET Feature
+  `0x14` times out (`ERROR_SEM_TIMEOUT` / 121). The PS3 sent the probe a
+  few milliseconds after `SET_IDLE`, before sustained interrupt IN. A
+  late probe from an already-streaming Windows session is often ignored.
+  ControlApp therefore treats disappearance of the DS4 identity plus
+  appearance of `USB\VID_054C&PID_0268` as the only success signal, sends
+  the probe immediately on HID arrival (auto-switch or a pending retry),
+  and cycles the USB port (administrator) when a late button click is
+  ignored so the next enumeration can be probed while it still looks like
+  a PS3 attach. `dshidmini.inf` already binds the DS3 identity.
+  A follow-up on the same capture pads, with `054C:05C4` `REV_0221`
+  Zadig-bound to WinUSB (service `WinUSB`, no HidUsb child, no interrupt
+  IN started), sent the PS3 EP0 sequence with
+  `research/ds3-motion/probe/WinUsbRaw.cs`: `SET_PROTOCOL` (report
+  protocol), `SET_IDLE`, then Feature `0x14` (17 bytes `14 02 00…`).
+  `WinUsb_ControlTransfer` succeeded for that sequence and for the
+  variants Feature `0x14` alone, `SET_PROTOCOL` + `0x14`, and one
+  interrupt IN (64-byte DS4 input starting `01 80 80 80…`) then `0x14`.
+  None of them detached the DualShock 4 identity or produced
+  `USB\VID_054C&PID_0268`. So a late Windows host - even when it owns
+  EP0 and does not start HID polling - is not equivalent to the PS3
+  attach window. The remaining gap is whatever Windows already sent
+  during the original hidusb / Zadig enumeration (and possibly
+  `bcdUSB 2.00` vs the PS3 session), not a mangled `0x14` payload.
 
   The relevant `tshark` filters used against the captures above (run
   locally; see the `analyze_pcap` limitation note below):

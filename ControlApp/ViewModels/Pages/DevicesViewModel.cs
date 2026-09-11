@@ -140,15 +140,23 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
     }
 
     [RelayCommand]
-    private void SwitchDefenderBtToPs3Mode()
+    private async Task SwitchDefenderBtToPs3Mode()
     {
-        if (DefenderBt.TrySwitchToPs3Mode())
+        DefenderBtModeSwitchResult result = await DefenderBt.SwitchToPs3ModeAsync();
+        switch (result)
         {
-            _appSnackbarMessagesService.ShowDefenderBtSwitchedToPs3ModeMessage();
-        }
-        else
-        {
-            _appSnackbarMessagesService.ShowDefenderBtSwitchToPs3ModeFailedMessage();
+            case DefenderBtModeSwitchResult.Switched:
+                _appSnackbarMessagesService.ShowDefenderBtSwitchedToPs3ModeMessage();
+                break;
+            case DefenderBtModeSwitchResult.NeedsReconnect:
+                _appSnackbarMessagesService.ShowDefenderBtSwitchNeedsReconnectMessage();
+                break;
+            case DefenderBtModeSwitchResult.IgnoredByHardware:
+                _appSnackbarMessagesService.ShowDefenderBtSwitchIgnoredByHardwareMessage();
+                break;
+            default:
+                _appSnackbarMessagesService.ShowDefenderBtSwitchToPs3ModeFailedMessage();
+                break;
         }
     }
 

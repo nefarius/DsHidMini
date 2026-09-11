@@ -7,6 +7,9 @@ using Windows.Win32.Storage.FileSystem;
 
 using Microsoft.Win32.SafeHandles;
 
+using Nefarius.Utilities.DeviceManagement.Extensions;
+using Nefarius.Utilities.DeviceManagement.PnP;
+
 namespace Nefarius.DsHidMini.ControlApp.Models.Util;
 
 /// <summary>
@@ -21,15 +24,32 @@ public enum DefenderBtModeSwitchResult
     NotADefenderBt,
 
     /// <summary>
-    ///     The probe report was sent successfully; the device is expected to detach and re-enumerate as a
-    ///     DualShock 3 (<c>USB\VID_054C&amp;PID_0268</c>) shortly after.
+    ///     The probe report was written to the HID stack. This is not proof that the controller switched;
+    ///     a live Defender can ACK Feature 0x14 and stay on <c>054C:05C4</c>.
     /// </summary>
     Sent,
 
     /// <summary>
     ///     A matching device was found but sending the probe report failed.
     /// </summary>
-    Failed
+    Failed,
+
+    /// <summary>
+    ///     The DualShock 4 identity disappeared and a new DualShock 3 USB identity appeared.
+    /// </summary>
+    Switched,
+
+    /// <summary>
+    ///     The probe was delivered but the controller stayed in DualShock 4 mode.
+    /// </summary>
+    IgnoredByHardware,
+
+    /// <summary>
+    ///     The DualShock 4 identity is gone and no new DualShock 3 appeared: either the USB port cycle failed,
+    ///     or it succeeded without either identity coming back. Reconnect (or run as administrator so the port
+    ///     can be cycled) so the pending probe is retried immediately after re-enumeration.
+    /// </summary>
+    NeedsReconnect
 }
 
 /// <summary>
@@ -44,6 +64,13 @@ public enum DefenderBtModeSwitchResult
 ///     periodically sends a real DualShock 4 as well (harmless no-op there), but detection/targeting still
 ///     requires the Defender-specific <see cref="DefenderBtVersionNumber" /> discriminator below (in addition
 ///     to VID/PID) so that a genuine DualShock 4 is never misidentified as, or targeted as, a Defender BT.
+///     <para>
+///         A successful <c>HidD_SetFeature</c> only means the USB SET_REPORT was ACKed. On Windows the
+///         Defender often ignores a late probe after interrupt IN is already streaming; the PS3 sent this
+///         report a few milliseconds after SET_IDLE. Callers must wait for the DualShock 4 identity to
+///         disappear (and preferably for <c>054C:0268</c> to appear) before reporting success, and should
+///         retry immediately after a USB port cycle or replug when a late probe is ignored.
+///     </para>
 /// </remarks>
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 public static class DefenderBtModeSwitcher
@@ -97,6 +124,16 @@ public static class DefenderBtModeSwitcher
     }
 
     /// <summary>
+    ///     True if VID/PID/version match the Defender-BT DualShock 4 identity (not a genuine DualShock 4).
+    /// </summary>
+    internal static bool MatchesDs4Identity(ushort vendorId, ushort productId, ushort versionNumber)
+    {
+        return vendorId == SonyVendorId &&
+               productId == DualShock4ProductId &&
+               versionNumber == DefenderBtVersionNumber;
+    }
+
+    /// <summary>
     ///     True if <paramref name="devicePath" /> points to a HID device currently reporting the Defender-BT
     ///     DualShock 4 identity (VID 0x054C, PID 0x05C4, VersionNumber 0x0221) - not just any DualShock 4.
     /// </summary>
@@ -104,7 +141,66 @@ public static class DefenderBtModeSwitcher
     {
         using SafeFileHandle handle = OpenDevice(devicePath);
         return !handle.IsInvalid && TryGetAttributes(handle, out HIDD_ATTRIBUTES attributes) &&
-               IsDefenderBtCandidate(attributes);
+               MatchesDs4Identity(attributes.VendorID, attributes.ProductID, attributes.VersionNumber);
+    }
+
+    /// <summary>
+    ///     True if <paramref name="instanceId" /> is a DualShock 3 USB identity (<c>VID_054C&amp;PID_0268</c>).
+    /// </summary>
+    internal static bool IsDualShock3UsbInstanceId(string? instanceId)
+    {
+        return instanceId is not null &&
+               instanceId.Contains("VID_054C", StringComparison.OrdinalIgnoreCase) &&
+               instanceId.Contains("PID_0268", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    ///     Instance IDs of DualShock 3 USB identities currently on the bus. Snapshot this before a switch
+    ///     attempt so a pre-existing <c>054C:0268</c> is not mistaken for the Defender re-enumerating.
+    /// </summary>
+    public static IReadOnlyList<string> ListDualShock3UsbInstanceIds()
+    {
+        List<string> instanceIds = [];
+        int instance = 0;
+        while (Devcon.FindByInterfaceGuid(
+                   DeviceInterfaceIds.UsbDevice, out string? _, out string? instanceId, instance++))
+        {
+            if (IsDualShock3UsbInstanceId(instanceId))
+            {
+                instanceIds.Add(instanceId);
+            }
+        }
+
+        return instanceIds;
+    }
+
+    /// <summary>
+    ///     True if <paramref name="currentInstanceIds" /> contains a DualShock 3 USB identity that was not in
+    ///     <paramref name="instanceIdsBefore" />.
+    /// </summary>
+    internal static bool HasNewlyAppearedDualShock3Usb(
+        IEnumerable<string> currentInstanceIds,
+        IEnumerable<string> instanceIdsBefore)
+    {
+        HashSet<string> before = new(instanceIdsBefore, StringComparer.OrdinalIgnoreCase);
+        foreach (string instanceId in currentInstanceIds)
+        {
+            if (IsDualShock3UsbInstanceId(instanceId) && !before.Contains(instanceId))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    ///     True if a DualShock 3 USB identity has appeared since <paramref name="instanceIdsBefore" /> was
+    ///     captured.
+    /// </summary>
+    public static bool HasNewlyAppearedDualShock3Usb(IEnumerable<string> instanceIdsBefore)
+    {
+        return HasNewlyAppearedDualShock3Usb(ListDualShock3UsbInstanceIds(), instanceIdsBefore);
     }
 
     /// <summary>
@@ -116,7 +212,7 @@ public static class DefenderBtModeSwitcher
         using SafeFileHandle handle = OpenDevice(devicePath);
 
         if (handle.IsInvalid || !TryGetAttributes(handle, out HIDD_ATTRIBUTES attributes) ||
-            !IsDefenderBtCandidate(attributes))
+            !MatchesDs4Identity(attributes.VendorID, attributes.ProductID, attributes.VersionNumber))
         {
             return DefenderBtModeSwitchResult.NotADefenderBt;
         }
@@ -143,19 +239,58 @@ public static class DefenderBtModeSwitcher
     }
 
     /// <summary>
-    ///     True if <paramref name="attributes" /> match the Defender BT's known DualShock 4 identity signature
-    ///     (VID/PID plus the Defender-specific <see cref="DefenderBtVersionNumber" />), as opposed to a genuine
-    ///     DualShock 4, which shares the same VID/PID but reports a different version number.
+    ///     Power-cycles the USB hub port that owns <paramref name="hidDevicePath" /> so the next probe can be
+    ///     sent immediately after re-enumeration, matching the PS3's post-SET_IDLE timing.
     /// </summary>
-    private static bool IsDefenderBtCandidate(HIDD_ATTRIBUTES attributes)
+    /// <returns>False if the port could not be cycled (typically missing administrator rights).</returns>
+    public static bool TryCycleUsbPort(string hidDevicePath)
     {
-        return attributes.VendorID == SonyVendorId &&
-               attributes.ProductID == DualShock4ProductId &&
-               attributes.VersionNumber == DefenderBtVersionNumber;
+        try
+        {
+            PnPDevice? hidDevice = PnPDevice.GetDeviceByInterfaceId(hidDevicePath);
+            if (hidDevice is null)
+            {
+                Log.Logger.Warning("Could not resolve HID interface {DevicePath} for USB port cycle", hidDevicePath);
+                return false;
+            }
+
+            IPnPDevice? parent = hidDevice.Parent;
+            if (parent is null || string.IsNullOrEmpty(parent.InstanceId))
+            {
+                Log.Logger.Warning("HID interface {DevicePath} has no USB parent to cycle", hidDevicePath);
+                return false;
+            }
+
+            PnPDevice usbDevice = PnPDevice.GetDeviceByInstanceId(parent.InstanceId);
+            Log.Logger.Information("Cycling USB port for Defender BT parent {InstanceId}", usbDevice.InstanceId);
+            usbDevice.ToUsbPnPDevice().CyclePort();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Warning(ex, "USB port cycle failed for Defender BT candidate {DevicePath}", hidDevicePath);
+            return false;
+        }
     }
 
     private static SafeFileHandle OpenDevice(string devicePath)
     {
+        SafeFileHandle exclusive = PInvoke.CreateFile(
+            devicePath,
+            (uint)(FILE_ACCESS_RIGHTS.FILE_GENERIC_READ | FILE_ACCESS_RIGHTS.FILE_GENERIC_WRITE),
+            0,
+            null,
+            FILE_CREATION_DISPOSITION.OPEN_EXISTING,
+            FILE_FLAGS_AND_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
+            null
+        );
+
+        if (!exclusive.IsInvalid)
+        {
+            return exclusive;
+        }
+
+        exclusive.Dispose();
         return PInvoke.CreateFile(
             devicePath,
             (uint)(FILE_ACCESS_RIGHTS.FILE_GENERIC_READ | FILE_ACCESS_RIGHTS.FILE_GENERIC_WRITE),

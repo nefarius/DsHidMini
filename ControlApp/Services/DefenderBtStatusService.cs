@@ -19,12 +19,29 @@ public partial class DefenderBtStatusService : ObservableObject, IDisposable
     /// </summary>
     private static readonly TimeSpan RescanDebounce = TimeSpan.FromMilliseconds(250);
 
+    /// <summary>
+    ///     How long a late probe is given to make the DualShock 4 identity disappear before we treat it as ignored.
+    /// </summary>
+    private static readonly TimeSpan LateProbeWait = TimeSpan.FromMilliseconds(1500);
+
+    /// <summary>
+    ///     How long to wait after a USB port cycle for either DualShock 3 appearance or a DualShock 4 re-arrival
+    ///     that we can probe again.
+    /// </summary>
+    private static readonly TimeSpan ReenumerateWait = TimeSpan.FromSeconds(4);
+
     private DeviceNotificationListener? _listener;
 
     /// <summary>
     ///     HID device path (symbolic link) of the currently detected Defender BT in DualShock 4 mode, if any.
     /// </summary>
     private string? _detectedDevicePath;
+
+    /// <summary>
+    ///     When set, the next DualShock 4 arrival is probed immediately (no debounce), matching the PS3's
+    ///     post-SET_IDLE timing.
+    /// </summary>
+    private int _pendingImmediateSwitch;
 
     /// <summary>
     ///     Cancellation source for the pending debounced rescan, if any. Re-created (cancelling the previous
@@ -99,38 +116,118 @@ public partial class DefenderBtStatusService : ObservableObject, IDisposable
     }
 
     /// <summary>
-    ///     Sends the PS3 mode-switch probe to the currently detected device, if any. Intended to be called from
-    ///     the UI thread (e.g. a button command), since it toggles <see cref="IsSwitching" />.
+    ///     Sends the PS3 mode-switch probe and, if the controller ignores a late probe, cycles the USB port so
+    ///     the next arrival can be probed immediately. Intended to be called from the UI thread.
     /// </summary>
-    public bool TrySwitchToPs3Mode()
+    public async Task<DefenderBtModeSwitchResult> SwitchToPs3ModeAsync()
     {
         if (_detectedDevicePath is null)
         {
-            return false;
+            return DefenderBtModeSwitchResult.NotADefenderBt;
         }
 
         IsSwitching = true;
+        OnPropertyChanged(nameof(CanSwitch));
 
         try
         {
-            DefenderBtModeSwitchResult result =
-                DefenderBtModeSwitcher.TrySwitchToPs3Mode(_detectedDevicePath);
-
+            string devicePath = _detectedDevicePath;
+            IReadOnlyList<string> ds3Before = DefenderBtModeSwitcher.ListDualShock3UsbInstanceIds();
+            DefenderBtModeSwitchResult sent = DefenderBtModeSwitcher.TrySwitchToPs3Mode(devicePath);
             Log.Logger.Information(
-                "Defender BT PS3 mode-switch attempt for {DevicePath} resulted in {Result}",
-                _detectedDevicePath, result);
+                "Defender BT PS3 mode-switch probe for {DevicePath} resulted in {Result}",
+                devicePath, sent);
 
-            return result == DefenderBtModeSwitchResult.Sent;
+            if (sent != DefenderBtModeSwitchResult.Sent)
+            {
+                return sent;
+            }
+
+            if (await WaitForSwitchAsync(LateProbeWait, ds3Before).ConfigureAwait(true))
+            {
+                return DefenderBtModeSwitchResult.Switched;
+            }
+
+            Volatile.Write(ref _pendingImmediateSwitch, 1);
+            if (!DefenderBtModeSwitcher.TryCycleUsbPort(devicePath))
+            {
+                Log.Logger.Warning(
+                    "Defender BT stayed in DualShock 4 mode after a late probe; USB port cycle failed");
+                return DefenderBtModeSwitchResult.NeedsReconnect;
+            }
+
+            if (await WaitForSwitchAsync(ReenumerateWait, ds3Before).ConfigureAwait(true))
+            {
+                return DefenderBtModeSwitchResult.Switched;
+            }
+
+            if (FindDefenderBtCandidatePath() is not null)
+            {
+                Volatile.Write(ref _pendingImmediateSwitch, 0);
+                return DefenderBtModeSwitchResult.IgnoredByHardware;
+            }
+
+            // Port cycle or unplug left neither identity on the bus. Keep the immediate-retry
+            // latch so the next DualShock 4 arrival is probed without requiring another click.
+            return DefenderBtModeSwitchResult.NeedsReconnect;
         }
         finally
         {
             IsSwitching = false;
+            OnPropertyChanged(nameof(CanSwitch));
         }
     }
 
     private void OnListenerDevicesArrivedOrRemoved(DeviceEventArgs e)
     {
+        if (Volatile.Read(ref _pendingImmediateSwitch) != 0 ||
+            ApplicationConfiguration.Instance.AutoSwitchDefenderBtToPs3Mode)
+        {
+            TrySendImmediateProbe();
+        }
+
         QueueRescan();
+    }
+
+    /// <summary>
+    ///     Sends the probe as soon as a DualShock 4 identity is visible, without waiting for the UI debounce.
+    ///     The PS3 issued Feature 0x14 a few milliseconds after SET_IDLE; a 250 ms delay is already late.
+    /// </summary>
+    private void TrySendImmediateProbe()
+    {
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                string? path = FindDefenderBtCandidatePath();
+                if (path is null)
+                {
+                    return;
+                }
+
+                DefenderBtModeSwitchResult result = DefenderBtModeSwitcher.TrySwitchToPs3Mode(path);
+                Log.Logger.Information(
+                    "Immediate Defender BT PS3 mode-switch probe for {DevicePath} resulted in {Result}",
+                    path, result);
+
+                // One-shot: a failed button click arms this so the next plugin is probed
+                // even when auto-switch is off. Do not clear on a removal-only event.
+                Volatile.Write(ref _pendingImmediateSwitch, 0);
+
+                if (result == DefenderBtModeSwitchResult.Sent)
+                {
+                    Thread.Sleep(50);
+                    if (FindDefenderBtCandidatePath() is { } stillThere)
+                    {
+                        DefenderBtModeSwitcher.TrySwitchToPs3Mode(stillThere);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Warning(ex, "Immediate Defender BT PS3 mode-switch probe failed");
+            }
+        });
     }
 
     /// <summary>
@@ -169,28 +266,12 @@ public partial class DefenderBtStatusService : ObservableObject, IDisposable
     }
 
     /// <summary>
-    ///     Runs on a thread-pool thread: enumerates HID devices, opens/queries each candidate, and - if a match
-    ///     is found and auto-switch is enabled - sends the mode-switch probe, all off the UI thread. Only the
-    ///     final observable state update is marshaled back to the dispatcher, guarded against staleness by
-    ///     <paramref name="generation" />.
+    ///     Runs on a thread-pool thread: enumerates HID devices and opens/queries each candidate. Immediate
+    ///     probes happen in <see cref="TrySendImmediateProbe" /> so this scan only updates UI state.
     /// </summary>
     private void RunScan(int generation)
     {
         string? foundPath = FindDefenderBtCandidatePath();
-
-        if (foundPath is not null && ApplicationConfiguration.Instance.AutoSwitchDefenderBtToPs3Mode)
-        {
-            // A newer scan superseded this one; do not act on a stale result.
-            if (generation != Volatile.Read(ref _scanGeneration))
-            {
-                return;
-            }
-
-            Log.Logger.Information(
-                "AutoSwitchDefenderBtToPs3Mode is enabled, automatically switching detected device");
-            DefenderBtModeSwitcher.TrySwitchToPs3Mode(foundPath);
-        }
-
         Application.Current?.Dispatcher.BeginInvoke(() => ApplyScanResult(generation, foundPath));
     }
 
@@ -207,6 +288,35 @@ public partial class DefenderBtStatusService : ObservableObject, IDisposable
         }
 
         return null;
+    }
+
+    private async Task<bool> WaitForSwitchAsync(TimeSpan timeout, IReadOnlyList<string> ds3Before)
+    {
+        TimeSpan poll = TimeSpan.FromMilliseconds(100);
+        TimeSpan elapsed = TimeSpan.Zero;
+
+        while (elapsed < timeout)
+        {
+            await Task.Delay(poll).ConfigureAwait(true);
+            elapsed += poll;
+
+            bool ds4Gone = FindDefenderBtCandidatePath() is null;
+            if (!ds4Gone)
+            {
+                continue;
+            }
+
+            if (DefenderBtModeSwitcher.HasNewlyAppearedDualShock3Usb(ds3Before))
+            {
+                Volatile.Write(ref _pendingImmediateSwitch, 0);
+                return true;
+            }
+
+            // Port cycle drops 05C4 briefly before it reappears. Keep waiting unless a new DS3 showed up.
+        }
+
+        return FindDefenderBtCandidatePath() is null &&
+               DefenderBtModeSwitcher.HasNewlyAppearedDualShock3Usb(ds3Before);
     }
 
     /// <summary>
@@ -227,7 +337,7 @@ public partial class DefenderBtStatusService : ObservableObject, IDisposable
         {
             StatusTitle = "Retro Fighters Defender BT detected in DualShock 4 mode";
             StatusMessage =
-                "Switch it to PS3 (DualShock 3) mode so DsHidMini can bind to it and Bluetooth pairing becomes available.";
+                "Switch it to PS3 (DualShock 3) mode so DsHidMini can bind to it and Bluetooth pairing becomes available. If a late switch is ignored, the USB port is reset and the probe is retried immediately after re-enumeration.";
             Severity = InfoBarSeverity.Informational;
         }
         else
