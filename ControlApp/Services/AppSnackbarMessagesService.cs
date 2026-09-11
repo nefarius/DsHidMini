@@ -137,8 +137,8 @@ public class AppSnackbarMessagesService
     public void ShowDefenderBtSwitchedToPs3ModeMessage()
     {
         _snackbarService.Show(
-            "Switch to PS3 mode requested",
-            "The controller should detach and reappear as a DualShock 3 in a moment. Use the normal pairing controls once it shows up.",
+            "Switched to PS3 mode",
+            "The controller re-enumerated as a DualShock 3. Use the normal pairing controls once it shows up.",
             ControlAppearance.Success,
             new SymbolIcon(SymbolRegular.CheckmarkCircle24),
             TimeSpan.FromSeconds(5)
@@ -153,6 +153,28 @@ public class AppSnackbarMessagesService
             ControlAppearance.Danger,
             new SymbolIcon(SymbolRegular.DismissCircle24),
             TimeSpan.FromSeconds(5)
+        );
+    }
+
+    public void ShowDefenderBtSwitchNeedsReconnectMessage()
+    {
+        _snackbarService.Show(
+            "PS3 mode switch did not take effect",
+            "The controller stayed in DualShock 4 mode. Unplug and replug it, or restart ControlApp as Administrator so the USB port can be reset and the probe retried immediately.",
+            ControlAppearance.Caution,
+            new SymbolIcon(SymbolRegular.Warning24),
+            TimeSpan.FromSeconds(8)
+        );
+    }
+
+    public void ShowDefenderBtSwitchIgnoredByHardwareMessage()
+    {
+        _snackbarService.Show(
+            "PS3 mode switch ignored by hardware",
+            "The probe was delivered and the USB port was reset, but the controller stayed in DualShock 4 mode. This firmware may not implement the PS3 identity switch.",
+            ControlAppearance.Caution,
+            new SymbolIcon(SymbolRegular.Warning24),
+            TimeSpan.FromSeconds(8)
         );
     }
 

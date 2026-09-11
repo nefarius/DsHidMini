@@ -1107,7 +1107,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
 
                           ➤ If in "To this PC" mode, the PC's bluetooth adapter must be enabled and turned ON for pairing to succeed.
 
-                          ➤ Retro Fighters Defender Bluetooth Edition owners: plug the controller in via USB, then use the "Switch to PS3 mode" button on the Devices page (shown when it's detected in DualShock 4 mode) before pairing.
+                          ➤ Retro Fighters Defender Bluetooth Edition owners: plug the controller in via USB. Prefer enabling "Automatically switch Retro Fighters Defender BT to PS3 mode" in Settings, then replug, so the probe is sent immediately after enumeration. The Devices page button can also reset the USB port and retry. The controller must reappear as a DualShock 3 before pairing.
                           """,
                 PrimaryButtonText = "I need more help!",
                 CloseButtonText = "Close"

@@ -45,7 +45,7 @@
             <TextBlock
                 MaxWidth="600"
                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                Text="When enabled, a Retro Fighters Defender Bluetooth Edition detected in DualShock 4 mode is switched into PS3 (DualShock 3) mode automatically, instead of requiring the 'Switch to PS3 mode' button on the Devices page."
+                Text="When enabled, a Retro Fighters Defender Bluetooth Edition detected in DualShock 4 mode is switched into PS3 (DualShock 3) mode automatically on arrival. Sending the probe immediately after plugin is more reliable than clicking the Devices page button after the pad is already streaming."
                 TextWrapping="Wrap" />
 
             <CheckBox

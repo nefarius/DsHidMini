@@ -107,8 +107,8 @@ public partial class SettingsViewModel : ObservableObject, INavigationAware
 
     /// <summary>
     ///     When enabled, a Retro Fighters Defender Bluetooth Edition detected in DualShock 4 mode is switched
-    ///     into PS3 (DualShock 3) mode automatically instead of requiring the "Switch to PS3 mode" button on the
-    ///     Devices page (see issue #282).
+    ///     into PS3 (DualShock 3) mode immediately on arrival (see issue #282). A late button click is less
+    ///     reliable because the PS3 sent the probe a few milliseconds after SET_IDLE.
     /// </summary>
     public bool AutoSwitchDefenderBtToPs3Mode
     {
