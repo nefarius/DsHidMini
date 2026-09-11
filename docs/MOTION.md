@@ -726,7 +726,7 @@ gyro paths, selected by the flags:
 | --- | --- | --- |
 | `PLAIN_ZERO` set, `HW_CAL` clear | B1, DS3-A1a, DS3-E, both counterfeits | `clamp(512 + eepromZero - raw)` - plain software zero against the EEPROM value, no tracker |
 | `PLAIN_ZERO` clear | SIXAXIS-1, SIXAXIS-2 | `clamp(512 + zeroRef - raw)` with the full auto-zero tracker driving `zeroRef` |
-| `HW_CAL` set | DS3-A1b, DS3-A2 | tracker runs (to keep the **hardware** trim converged and re-send cal bytes), but the reported value is just `clamp(0x3FF - raw)` |
+| `HW_CAL` set | DS3-A1b, DS3-A2 | tracker runs (to keep the **hardware** trim converged and re-send cal bytes). `sixaxis.sys` then reports `clamp(0x3FF - raw)`. DsHidMini publishes `clamp(512 + zeroRef - raw)` only when the tracker is initialized (successful Feature `0xEF` page `0xA0`); after a failed or invalid EEPROM load it publishes `clamp(0x3FF - raw)` |
 
 All three **invert the gyro's sign relative to the raw value**, and the result is
 written back into the report as host-order u16.
@@ -752,16 +752,27 @@ both platforms, so on Linux it is not zeroed either.
   Bluetooth uses the same formulas with the nominal fallback and does **not**
   send hardware cal bytes or attempt `0xEF`.
 - **SIXAXIS.SYS-compatible GetFeature** (`DSHM_ProcessHidInputReport`): the
-  49-byte feature report now carries the calibrated, host-order Sony values.
-  The 12-byte SIXAXIS input report still has no motion fields.
+  49-byte feature report now carries the calibrated, host-order values from
+  `Motion.Sample` (same `CalGyro` as IPC). For `HW_CAL` that is
+  `clamp(512 + zeroRef - raw)` when the tracker is initialized, otherwise
+  `clamp(0x3FF - raw)`. The 12-byte SIXAXIS input report still has no motion
+  fields.
 - **Gyro tracker**: `HW_CAL` and `SIXAXIS` USB pads run the Sony auto-zero
-  tracker (`research/ds3-motion/probe/GyroCal.cs`). When the cal byte steps,
-  the driver re-applies it on the next output report (unified `[5]/[6]` or
-  `[3]/[4]`). Sending the factory byte once is not enough.
+  tracker (`research/ds3-motion/probe/GyroCal.cs`) only after a successful
+  Feature `0xEF` page `0xA0` read. When the cal byte steps, the driver
+  re-applies it on the next output report (unified `[5]/[6]` or `[3]/[4]`).
+  Sending the factory byte once is not enough. For `HW_CAL` with an
+  initialized tracker, DsHidMini also publishes the tracker's software-zeroed
+  output (same formula as `SIXAXIS`) so a rest error below one ~26.4-count
+  cal-byte step — e.g. DS3-A1b's 16-count / ~10.7 deg/s leftover — does not
+  appear as yaw bias. If EEPROM load fails, the tracker stays uninitialized
+  and both IPC and GetFeature fall back to `clamp(0x3FF - raw)`.
 - **IPC**: the existing 60-byte raw HID slot is unchanged. A third
   allocation-granularity-aligned region publishes `IPC_MOTION_SNAPSHOT_MESSAGE`
-  (80 bytes, version 1). `Nefarius.DsHidMini.IPC` maps it when present and
-  exposes `GetMotionSnapshot`.
+  (80 bytes, version 1) from the same `Motion.Sample` (`CalGyro` /
+  `GyroMilliDps` follow the `HW_CAL` tracker-or-`0x3FF` rule above).
+  `Nefarius.DsHidMini.IPC` maps it when present and exposes
+  `GetMotionSnapshot`.
 - **ControlApp**: per-device Motion viewer with numeric readout and a
   diagnostic HelixToolkit pose (gravity pitch/roll, integrated yaw).
 - **DS4Windows-compatible mode** (`driver/DsHid.c`, `DS3_RAW_TO_DS4WINDOWS_HID_INPUT_REPORT`):
@@ -807,8 +818,12 @@ Ordered by how visible they are to an application that expects `sixaxis.sys`:
 7. **Per-class behaviour is not just cosmetic.** The three gyro paths are keyed
    off the `Feature 0x01` calibration field list - *not* the type bytes, which
    SIXAXIS-2 gets wrong. Picking one path for all pads will be wrong for the
-   others. In particular a field-`0x07` DS3 must *not* be software-zeroed on top
-   of its hardware trim.
+   others. A field-`0x07` DS3 still needs the hardware cal-byte tracker for
+   large trim errors (DS3-A2). `sixaxis.sys` then reports `0x3FF - raw` and
+   leaves sub-step residuals in the HID report; DsHidMini publishes
+   `512 + zeroRef - raw` when the tracker is initialized so those residuals
+   do not reach consumers, and `0x3FF - raw` if Feature `0xEF` failed and the
+   tracker was never started.
 8. **DS4Windows mode has no motion at all**, and the DS4 frame mapping is still
    only partly verified: the DS3 source frame is known (X to the left grip, Y to
    the trigger edge, Z down through the buttons) and the gyro is now measured at

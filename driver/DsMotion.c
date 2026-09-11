@@ -766,10 +766,20 @@ DsMotion_ProcessInputReport(
 	switch (motion->Path)
 	{
 	case DsIdentificationMotionPathHwCal:
-		calGyro = DsMotion_Clamp10(0x3FF - raw[3]);
 		if (motion->Tracker.Initialized)
 		{
-			(void)DsMotion_TrackerRuntime(&motion->Tracker, raw[3], &trackerChanged);
+			// Publish the tracker's software-zeroed rate. sixaxis.sys leaves
+			// clamp(0x3FF - raw) in the HID report, so residuals smaller than
+			// one cal-byte step (~26.4 counts) leak as a constant yaw bias.
+			// The tracker already computes TARGET + zeroRef - raw; use it so
+			// IPC, GetFeature, and future mappings see a still pad at rest.
+			// The cal-byte path still runs inside TrackerRuntime for large
+			// hardware-trim errors (DS3-A2).
+			calGyro = DsMotion_TrackerRuntime(&motion->Tracker, raw[3], &trackerChanged);
+		}
+		else
+		{
+			calGyro = DsMotion_Clamp10(0x3FF - raw[3]);
 		}
 		break;
 
