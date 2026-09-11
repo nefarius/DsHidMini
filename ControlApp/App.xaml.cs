@@ -15,6 +15,8 @@ using Nefarius.DsHidMini.ControlApp.Views.Pages;
 using Nefarius.DsHidMini.ControlApp.Views.Windows;
 using Nefarius.Utilities.DeviceManagement.PnP;
 
+using Serilog.Events;
+
 using Wpf.Ui;
 using Wpf.Ui.DependencyInjection;
 
@@ -104,6 +106,10 @@ public partial class App
 #if DEBUG
                 .MinimumLevel.Debug()
 #endif
+                .MinimumLevel.Override("Microsoft.Extensions.Http.DefaultHttpClientFactory",
+                    LogEventLevel.Information)
+                .MinimumLevel.Override("System.Net.Http.HttpClient", LogEventLevel.Warning)
+                .MinimumLevel.Override("Polly", LogEventLevel.Warning)
                 .WriteTo.File(Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
                     "DsHidMini\\Log\\ControlAppLog.txt"))
