@@ -315,6 +315,205 @@ public class DriverConfigContractTests
         Assert.Equal(3.0, parsed.Global.ContextSettings.DeadZoneLeft.PolarValue);
     }
 
+    [Fact]
+    public void Merge_PreservesUnrelatedGlobalNestedDeviceAndUnknownProperties()
+    {
+        const string baseline = """
+            {
+              "IPCEnabled": true,
+              "Global": {
+                "HidDeviceMode": "XInput",
+                "AutoRestartOnHidModeMismatch": true,
+                "BluetoothOutputReportTransport": "Control",
+                "XInput": { "DeadZoneLeft": { "Apply": true, "PolarValue": 3.0 } }
+              },
+              "Devices": {}
+            }
+            """;
+        const string desired = """
+            {
+              "IPCEnabled": true,
+              "Global": {
+                "HidDeviceMode": "XInput",
+                "AutoRestartOnHidModeMismatch": false,
+                "BluetoothOutputReportTransport": "Control",
+                "XInput": { "DeadZoneLeft": { "Apply": true, "PolarValue": 3.0 } }
+              },
+              "Devices": {}
+            }
+            """;
+        const string current = """
+            {
+              "IPCEnabled": true,
+              "Global": {
+                "HidDeviceMode": "DS4Windows",
+                "AutoRestartOnHidModeMismatch": true,
+                "BluetoothOutputReportTransport": "Interrupt",
+                "FutureDriverFlag": true,
+                "XInput": { "DeadZoneLeft": { "Apply": false, "PolarValue": 9.0 }, "UnknownNested": 1 },
+                "DS4Windows": { "CustomBlock": true }
+              },
+              "Devices": {
+                "AABBCCDDEEFF": { "FutureDeviceFlag": 2 }
+              }
+            }
+            """;
+
+        JsonNode merged = JsonNode.Parse(
+            DshmConfigSerialization.MergeDriverConfigJson(baseline, desired, current))!;
+
+        Assert.False(merged["Global"]!["AutoRestartOnHidModeMismatch"]!.GetValue<bool>());
+        Assert.Equal("DS4Windows", merged["Global"]!["HidDeviceMode"]!.GetValue<string>());
+        Assert.Equal("Interrupt", merged["Global"]!["BluetoothOutputReportTransport"]!.GetValue<string>());
+        Assert.True(merged["Global"]!["FutureDriverFlag"]!.GetValue<bool>());
+        Assert.False(merged["Global"]!["XInput"]!["DeadZoneLeft"]!["Apply"]!.GetValue<bool>());
+        Assert.Equal(9.0, merged["Global"]!["XInput"]!["DeadZoneLeft"]!["PolarValue"]!.GetValue<double>());
+        Assert.Equal(1, merged["Global"]!["XInput"]!["UnknownNested"]!.GetValue<int>());
+        Assert.True(merged["Global"]!["DS4Windows"]!["CustomBlock"]!.GetValue<bool>());
+        Assert.Equal(2, merged["Devices"]!["AABBCCDDEEFF"]!["FutureDeviceFlag"]!.GetValue<int>());
+    }
+
+    [Fact]
+    public void Merge_ConflictOnSamePath_ControlAppWins()
+    {
+        const string baseline = """
+            {
+              "Global": { "HidDeviceMode": "XInput" },
+              "Devices": {}
+            }
+            """;
+        const string desired = """
+            {
+              "Global": { "HidDeviceMode": "GPJ" },
+              "Devices": {}
+            }
+            """;
+        const string current = """
+            {
+              "Global": { "HidDeviceMode": "SDF", "FutureDriverFlag": true },
+              "Devices": {}
+            }
+            """;
+
+        JsonNode merged = JsonNode.Parse(
+            DshmConfigSerialization.MergeDriverConfigJson(baseline, desired, current))!;
+
+        Assert.Equal("GPJ", merged["Global"]!["HidDeviceMode"]!.GetValue<string>());
+        Assert.True(merged["Global"]!["FutureDriverFlag"]!.GetValue<bool>());
+    }
+
+    [Fact]
+    public void Merge_AddsAndRemovesPropertiesChangedByApp()
+    {
+        const string baseline = """
+            {
+              "Global": { "HidDeviceMode": "XInput", "ObsoleteFlag": true },
+              "Devices": { "AABBCCDDEEFF": { "DevicePairingMode": "Auto" } }
+            }
+            """;
+        const string desired = """
+            {
+              "Global": { "HidDeviceMode": "XInput", "NewFlag": 4 },
+              "Devices": {}
+            }
+            """;
+        const string current = """
+            {
+              "Global": { "HidDeviceMode": "XInput", "ObsoleteFlag": true, "KeepMe": "yes" },
+              "Devices": { "AABBCCDDEEFF": { "DevicePairingMode": "Custom" }, "112233445566": {} }
+            }
+            """;
+
+        JsonNode merged = JsonNode.Parse(
+            DshmConfigSerialization.MergeDriverConfigJson(baseline, desired, current))!;
+
+        Assert.Null(merged["Global"]!["ObsoleteFlag"]);
+        Assert.Equal(4, merged["Global"]!["NewFlag"]!.GetValue<int>());
+        Assert.Equal("yes", merged["Global"]!["KeepMe"]!.GetValue<string>());
+        Assert.Null(merged["Devices"]!["AABBCCDDEEFF"]);
+        Assert.NotNull(merged["Devices"]!["112233445566"]);
+    }
+
+    [Fact]
+    public void Merge_NoAppChanges_KeepsCurrentDocument()
+    {
+        const string generated = """
+            {
+              "Global": { "HidDeviceMode": "XInput" },
+              "Devices": {}
+            }
+            """;
+        const string current = """
+            {
+              "Global": { "HidDeviceMode": "SXS", "FutureDriverFlag": true },
+              "Devices": { "AABBCCDDEEFF": {} }
+            }
+            """;
+
+        JsonNode merged = JsonNode.Parse(
+            DshmConfigSerialization.MergeDriverConfigJson(generated, generated, current))!;
+
+        Assert.Equal("SXS", merged["Global"]!["HidDeviceMode"]!.GetValue<string>());
+        Assert.True(merged["Global"]!["FutureDriverFlag"]!.GetValue<bool>());
+        Assert.NotNull(merged["Devices"]!["AABBCCDDEEFF"]);
+    }
+
+    [Fact]
+    public void Merge_ArrayReplacement_IsAtomic()
+    {
+        const string baseline = """
+            { "Global": { "Tags": [ "a", "b" ] }, "Devices": {} }
+            """;
+        const string desired = """
+            { "Global": { "Tags": [ "c" ] }, "Devices": {} }
+            """;
+        const string current = """
+            { "Global": { "Tags": [ "a", "manual" ] }, "Devices": {} }
+            """;
+
+        JsonNode merged = JsonNode.Parse(
+            DshmConfigSerialization.MergeDriverConfigJson(baseline, desired, current))!;
+
+        JsonArray tags = merged["Global"]!["Tags"]!.AsArray();
+        Assert.Single(tags);
+        Assert.Equal("c", tags[0]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Merge_IpcEnabledCaseAlias_WritesCanonicalAndReloadReadsUpdatedValue()
+    {
+        const string baseline = """
+            {
+              "IPCEnabled": true,
+              "Global": { "HidDeviceMode": "XInput" },
+              "Devices": {}
+            }
+            """;
+        const string desired = """
+            {
+              "IPCEnabled": false,
+              "Global": { "HidDeviceMode": "XInput" },
+              "Devices": {}
+            }
+            """;
+        const string current = """
+            {
+              "ipcEnabled": true,
+              "Global": { "HidDeviceMode": "XInput" },
+              "Devices": {}
+            }
+            """;
+
+        string mergedJson = DshmConfigSerialization.MergeDriverConfigJson(baseline, desired, current);
+        JsonNode merged = JsonNode.Parse(mergedJson)!;
+
+        Assert.False(merged["IPCEnabled"]!.GetValue<bool>());
+        Assert.Null(merged["ipcEnabled"]);
+
+        DshmConfiguration reloaded = DshmConfigSerialization.Deserialize(mergedJson);
+        Assert.False(reloaded.IPCEnabled);
+    }
+
     private static string SerializeDefaultProfile(SettingsContext context)
     {
         DeviceSettings settings = new();

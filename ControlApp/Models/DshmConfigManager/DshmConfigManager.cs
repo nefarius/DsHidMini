@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 
 using Newtonsoft.Json;
 
@@ -14,6 +14,7 @@ public class DshmConfigManager
 {
     private readonly DshmConfigLocations _locations;
     private readonly DshmConfigManagerUserData _userData;
+    private string? _lastGeneratedDriverJson;
 
     public DshmConfigManager() : this(DshmConfigLocations.Default)
     {
@@ -30,6 +31,8 @@ public class DshmConfigManager
         _locations = locations;
         LastMigrationResult = DshmDriverConfigMigration.TryImportIfNeeded(_userData, _locations);
         FixDevicesWithBlankProfiles();
+        _lastGeneratedDriverJson = DshmConfigSerialization.Serialize(
+            DshmDriverConfigMigration.BuildDriverConfiguration(_userData));
     }
 
     internal DshmDriverConfigMigrationResult LastMigrationResult { get; }
@@ -208,9 +211,18 @@ public class DshmConfigManager
         Log.Information("Updating DsHidMini configuration based on DsHidMini User Data");
         Log.Debug("Building DsHidMini configuration object based on DsHidMini User Data");
         DshmConfiguration dshmConfiguration = DshmDriverConfigMigration.BuildDriverConfiguration(_userData);
+        string desiredJson = DshmConfigSerialization.Serialize(dshmConfiguration);
 
         Log.Logger.Debug("Configuration object built. Applying configuration.");
-        bool updateStatus = dshmConfiguration.ApplyConfiguration(_locations.DriverConfigDirectory);
+        bool updateStatus = DshmConfigSerialization.UpdateDsHidMiniConfigFilePreservingUnrelated(
+            desiredJson,
+            _lastGeneratedDriverJson,
+            _locations.DriverConfigDirectory);
+        if (updateStatus)
+        {
+            _lastGeneratedDriverJson = desiredJson;
+        }
+
         DshmConfigurationUpdated?.Invoke(this, new DshmUpdatedEventArgs { UpdatedSuccessfully = updateStatus });
         return updateStatus;
     }
