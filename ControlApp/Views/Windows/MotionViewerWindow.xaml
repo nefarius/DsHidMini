@@ -69,24 +69,43 @@
                     </StackPanel>
                     <StackPanel
                         Margin="0,16,0,0"
-                        DockPanel.Dock="Bottom"
-                        Orientation="Horizontal">
-                        <ui:Button
-                            Margin="0,0,8,0"
-                            Command="{Binding RecenterCommand}"
-                            Content="Recenter" />
-                        <ui:Button Command="{Binding TogglePauseCommand}">
-                            <ui:Button.Style>
-                                <Style BasedOn="{StaticResource {x:Type ui:Button}}" TargetType="ui:Button">
-                                    <Setter Property="Content" Value="Pause" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsPaused}" Value="True">
-                                            <Setter Property="Content" Value="Resume" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ui:Button.Style>
-                        </ui:Button>
+                        DockPanel.Dock="Bottom">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:Button
+                                Margin="0,0,8,0"
+                                Command="{Binding RecenterCommand}"
+                                Content="Recenter" />
+                            <ui:Button
+                                Margin="0,0,8,0"
+                                Command="{Binding TogglePauseCommand}">
+                                <ui:Button.Style>
+                                    <Style BasedOn="{StaticResource {x:Type ui:Button}}" TargetType="ui:Button">
+                                        <Setter Property="Content" Value="Pause" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsPaused}" Value="True">
+                                                <Setter Property="Content" Value="Resume" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ui:Button.Style>
+                            </ui:Button>
+                            <ui:Button Command="{Binding ToggleRecordingCommand}">
+                                <ui:Button.Style>
+                                    <Style BasedOn="{StaticResource {x:Type ui:Button}}" TargetType="ui:Button">
+                                        <Setter Property="Content" Value="Record" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsRecording}" Value="True">
+                                                <Setter Property="Content" Value="Stop recording" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ui:Button.Style>
+                            </ui:Button>
+                        </StackPanel>
+                        <ui:TextBlock
+                            Margin="0,8,0,0"
+                            Text="{Binding RecordingText}"
+                            TextWrapping="Wrap" />
                     </StackPanel>
                 </DockPanel>
             </ScrollViewer>

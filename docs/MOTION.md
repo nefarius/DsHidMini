@@ -780,7 +780,13 @@ both platforms, so on Linux it is not zeroed either.
   `Nefarius.DsHidMini.IPC` maps it when present and exposes
   `GetMotionSnapshot`.
 - **ControlApp**: per-device Motion viewer with numeric readout and a
-  diagnostic HelixToolkit pose (gravity pitch/roll, integrated yaw).
+  diagnostic HelixToolkit pose. Gravity is a shortest-arc tilt quaternion
+  (no Euler singularity at roll ±90°). Yaw is integrated from the single
+  gyro, weighted by how level the pad is (`-u_z`), so standing on a grip
+  does not accumulate heading. A rest-rate learned on a clean flat rest is
+  frozen and subtracted from samples that already pass the deadzone, so a
+  ~1 deg/s PLAIN_ZERO residual does not ride along during turns. A Record button writes
+  `%ProgramData%\DsHidMini\Log\Motion\motion-slot<N>-<timestamp>.csv`.
 - **DS4Windows-compatible mode** (`driver/DsHid.c`, `DS3_RAW_TO_DS4WINDOWS_HID_INPUT_REPORT`):
   still leaves the DS4 gyro/accel fields at offsets 13-24 zero. Mapping is
   deferred until the axis permutation is verified.
@@ -933,6 +939,20 @@ Headline remaining gaps: Bluetooth EEPROM, DS4 axis mapping, counterfeit freeze 
   Sony's PLAIN_ZERO formula publishes 524 (~8.6 deg/s clockwise) at rest.
   Rotating the pad does not change `RawGyro`. Software-only tracker for
   clone-heuristic `PLAIN_ZERO` only; genuine paths unchanged.
+- 2026-09-12 — Genuine 2E A1: rolling onto a grip made the viewer flip
+  about yaw and left heading offset after returning flat. Display used
+  Euler pitch from `atan2(ay, -az)`, which is undefined when gravity is
+  along X; the single gyro (face-normal) was also integrated as heading
+  while that axis was horizontal. Viewer now uses a tilt quaternion and
+  weights yaw by `-u_z`. Driver tracker unchanged.
+- 2026-09-12 — Same 2E A1 recording (`motion-slot1-20260912-194252.csv`):
+  no `ZeroRef` step on either grip (cause (b) ruled out). Rest `GyroMilliDps`
+  ≈ −1.0 deg/s on this PLAIN_ZERO path; the deadzone hid it at rest, but it
+  rode along whenever the pad was handled (about −9° over 49 s of flat
+  motion). Viewer learns that rest rate on a clean flat rest, freezes it,
+  and subtracts it only from samples that already pass the deadzone (so
+  near-still handling cannot walk the estimate or unmask the other side
+  of the deadzone). Driver unchanged.
 
 ## Open questions
 

@@ -15,8 +15,10 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
     private readonly MotionOrientationEstimator _estimator;
     private readonly CancellationTokenSource _cts = new();
     private readonly object _interopLock = new();
+    private readonly object _recorderLock = new();
     private readonly object _shutdownLock = new();
     private DsHidMiniInterop? _interop;
+    private MotionCsvRecorder? _recorder;
     private Task? _pumpTask;
     private Task? _shutdownTask;
     private int _uiGeneration;
@@ -84,7 +86,13 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
 
     [ObservableProperty]
     private string _yawNote =
-        "Yaw is integrated from the single SIXAXIS gyro and will drift during turns. Rest bias below a few deg/s is ignored. Use Recenter after a large heading change.";
+        "Yaw is integrated from the single SIXAXIS gyro, weighted by how level the pad is, and will drift during turns. A rest-rate learned while the pad sits still is removed from real turns only. Use Recenter after a large heading change.";
+
+    [ObservableProperty]
+    private bool _isRecording;
+
+    [ObservableProperty]
+    private string _recordingText = "";
 
     public CancellationToken SessionToken => _cts.Token;
 
@@ -107,6 +115,31 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
     private void TogglePause()
     {
         IsPaused = !IsPaused;
+    }
+
+    [RelayCommand]
+    private void ToggleRecording()
+    {
+        lock (_recorderLock)
+        {
+            if (_recorder is not null)
+            {
+                StopRecorderUnlocked();
+                return;
+            }
+
+            try
+            {
+                _recorder = MotionCsvRecorder.Start(_deviceIndex);
+                IsRecording = true;
+                RecordingText = $"{_recorder.Path}  (0 rows)";
+            }
+            catch (Exception ex)
+            {
+                IsRecording = false;
+                RecordingText = $"Could not start recording: {ex.Message}";
+            }
+        }
     }
 
     private async Task PumpAsync()
@@ -174,6 +207,18 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
                 if (!IsPaused)
                 {
                     _estimator.Update(snapshot);
+
+                    lock (_recorderLock)
+                    {
+                        try
+                        {
+                            _recorder?.TryWrite(snapshot, _estimator);
+                        }
+                        catch (Exception ex)
+                        {
+                            StopRecorderUnlocked(ex);
+                        }
+                    }
                 }
 
                 int generation = Interlocked.Increment(ref _uiGeneration);
@@ -224,12 +269,78 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
             $"zero {snapshot.ZeroRef}  cal 0x{snapshot.CalByte:X2}  tracker {(snapshot.HasSoftwareZero ? "soft" : snapshot.HasTracker ? "on" : "off")}";
         SampleText = $"#{snapshot.SampleIndex}  QPC {snapshot.TimestampQpc}";
         RefreshPoseText();
+        RefreshRecordingText();
     }
 
     private void RefreshPoseText()
     {
         PoseText =
             $"{_estimator.PitchDegrees:0.0}  {_estimator.RollDegrees:0.0}  {_estimator.YawDegrees:0.0} deg";
+    }
+
+    private void RefreshRecordingText()
+    {
+        lock (_recorderLock)
+        {
+            if (_recorder is null)
+            {
+                return;
+            }
+
+            RecordingText = $"{_recorder.Path}  ({_recorder.RowCount} rows)";
+        }
+    }
+
+    private void StopRecorderUnlocked(Exception? error = null)
+    {
+        if (_recorder is null)
+        {
+            return;
+        }
+
+        string path = _recorder.Path;
+        int rows = _recorder.RowCount;
+        try
+        {
+            _recorder.Dispose();
+        }
+        catch (Exception ex)
+        {
+            error ??= ex;
+        }
+        finally
+        {
+            _recorder = null;
+        }
+
+        PostRecordingState(
+            false,
+            error is null
+                ? $"Saved {rows} rows to {path}"
+                : $"Recording failed: {error.Message}");
+    }
+
+    private void PostRecordingState(bool isRecording, string text)
+    {
+        void Apply()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            IsRecording = isRecording;
+            RecordingText = text;
+        }
+
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher is null || dispatcher.CheckAccess())
+        {
+            Apply();
+            return;
+        }
+
+        dispatcher.BeginInvoke(Apply);
     }
 
     private void PublishUnavailable(string message)
@@ -287,6 +398,11 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
         {
             _interop?.Dispose();
             _interop = null;
+        }
+
+        lock (_recorderLock)
+        {
+            StopRecorderUnlocked();
         }
 
         _cts.Dispose();
