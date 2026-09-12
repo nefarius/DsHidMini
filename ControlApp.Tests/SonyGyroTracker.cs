@@ -39,6 +39,7 @@ internal sealed class SonyGyroTracker
     private int _ringIdx;
     private int _ringSum;
     private int _settleLeft;
+    private bool _softwareOnly;
     private int _zeroRef;
 
     public byte CalByte => unchecked((byte)_calByte);
@@ -53,8 +54,9 @@ internal sealed class SonyGyroTracker
 
     private static int Clamp10(int value) => value < 0 ? 0 : value > 1023 ? 1023 : value;
 
-    public byte Initial(ushort eepromCal, ushort eepromZero)
+    public byte Initial(ushort eepromCal, ushort eepromZero, bool softwareOnly = false)
     {
+        _softwareOnly = softwareOnly;
         _calByte = eepromCal;
         _lastRaw = eepromZero;
         _settleLeft = SettleInitial;
@@ -98,6 +100,13 @@ internal sealed class SonyGyroTracker
 
     private bool Retarget(int restAvg, out int zeroRef, out int calByte)
     {
+        if (_softwareOnly)
+        {
+            zeroRef = restAvg;
+            calByte = _calByte;
+            return false;
+        }
+
         int delta = (Target - restAvg) * 1024;
         if (-StepQ10 <= delta && delta <= StepQ10)
         {

@@ -724,9 +724,10 @@ gyro paths, selected by the flags:
 
 | Flags | Pads | Reported gyro |
 | --- | --- | --- |
-| `PLAIN_ZERO` set, `HW_CAL` clear | B1, DS3-A1a, DS3-E, both counterfeits | `clamp(512 + eepromZero - raw)` - plain software zero against the EEPROM value, no tracker |
+| `PLAIN_ZERO` set, `HW_CAL` clear | B1, DS3-A1a, DS3-E | `clamp(512 + eepromZero - raw)` - plain software zero against the EEPROM value, no tracker. Genuine EEPROM zeros are good to ~1.5 counts |
 | `PLAIN_ZERO` clear | SIXAXIS-1, SIXAXIS-2 | `clamp(512 + zeroRef - raw)` with the full auto-zero tracker driving `zeroRef` |
 | `HW_CAL` set | DS3-A1b, DS3-A2 | tracker runs (to keep the **hardware** trim converged and re-send cal bytes). `sixaxis.sys` then reports `clamp(0x3FF - raw)`. DsHidMini publishes `clamp(512 + zeroRef - raw)` only when the tracker is initialized (successful Feature `0xEF` page `0xA0`); after a failed or invalid EEPROM load it publishes `clamp(0x3FF - raw)` |
+| DsHidMini only: `PLAIN_ZERO` + clone heuristic | Obigben, Fake DS3 | software-only tracker: `clamp(512 + zeroRef - raw)` with `zeroRef` following the observed rest average. The cal byte is never stepped or sent (clones ignore it; PLAIN_ZERO never places it). `sixaxis.sys` would still use the EEPROM formula on these pads |
 
 All three **invert the gyro's sign relative to the raw value**, and the result is
 written back into the report as host-order u16.
@@ -766,7 +767,12 @@ both platforms, so on Linux it is not zeroed either.
   output (same formula as `SIXAXIS`) so a rest error below one ~26.4-count
   cal-byte step — e.g. DS3-A1b's 16-count / ~10.7 deg/s leftover — does not
   appear as yaw bias. If EEPROM load fails, the tracker stays uninitialized
-  and both IPC and GetFeature fall back to `clamp(0x3FF - raw)`.
+  and both IPC and GetFeature fall back to `clamp(0x3FF - raw)`. Clone-heuristic
+  `PLAIN_ZERO` USB pads (Obigben, Fake DS3) seed the same tracker in
+  **software-only** mode on every `0xEF` outcome: `zeroRef` follows rest and
+  the cal byte is never stepped or sent. Genuine `PLAIN_ZERO` pads are
+  unchanged. The Obigben gyro is frozen at ~500, so this only removes the
+  false rest drift; yaw will not follow turns.
 - **IPC**: the existing 60-byte raw HID slot is unchanged. A third
   allocation-granularity-aligned region publishes `IPC_MOTION_SNAPSHOT_MESSAGE`
   (80 bytes, version 1) from the same `Motion.Sample` (`CalGyro` /
@@ -891,12 +897,13 @@ Shipped in this pass:
 3. Accel gain-113 with post-cal X mirror; `zero == oneG` passthrough. Applied to the SIXAXIS GetFeature report and IPC snapshot, not the 12-byte SIXAXIS input report.
 4. Gyro sign inverted; tracker + cal-byte resend on `HW_CAL`/`SIXAXIS` USB pads.
 5. IPC third region + `GetMotionSnapshot`; ControlApp Motion viewer.
+6. Clone-heuristic `PLAIN_ZERO` software-only auto-zero. The Obigben template EEPROM gyro zero of 512 versus a frozen idle of ~500 would otherwise publish `clamp(512 + 512 - 500) = 524` (~8.6 deg/s clockwise) at rest; `zeroRef` follows rest and the cal byte is never sent. Frozen-sensor detection (the Fake DS3) stays deferred.
 
 Still deferred:
 
-6. Counterfeit behavioural detection (frozen sensors). Keep `zero == oneG` as a blank-EEPROM guard only.
-7. DS4Windows motion-field mapping. Source frame is known; permutation + remaining signs still need a reference DS4 capture.
-8. Bluetooth `0xEF` over the BthPS3 HID control channel (unverified). Absolute gyro scale better than ~1.4 counts/(deg/s).
+7. Counterfeit behavioural detection (frozen sensors). Keep `zero == oneG` as a blank-EEPROM guard only.
+8. DS4Windows motion-field mapping. Source frame is known; permutation + remaining signs still need a reference DS4 capture.
+9. Bluetooth `0xEF` over the BthPS3 HID control channel (unverified). Absolute gyro scale better than ~1.4 counts/(deg/s).
 
 Headline remaining gaps: Bluetooth EEPROM, DS4 axis mapping, counterfeit freeze detection, and a turntable gyro scale. Historical discrepancies versus pre-#217 DsHidMini are listed under [Discrepancies](#discrepancies-a-driver-implementation-must-resolve).
 
@@ -921,6 +928,11 @@ Headline remaining gaps: Bluetooth EEPROM, DS4 axis mapping, counterfeit freeze 
 - 2026-09-06 — Sony `sixaxis.sys` decompiled; formula, `0xA0` layout, three gyro paths verified (`386da4c`).
 - 2026-09-06 — eight-pad matrix, measured yaw sign/scale, cal-byte 26.69 (`a8ab908`).
 - 2026-09-06 — research tree persisted under `research/ds3-motion/`.
+- 2026-09-12 — Obigben BB4401 on USB (Feature `0x01` firmware `03 00 05`,
+  `PLAIN_ZERO`, clone heuristic): gyro frozen at ~500, EEPROM zero 512, so
+  Sony's PLAIN_ZERO formula publishes 524 (~8.6 deg/s clockwise) at rest.
+  Rotating the pad does not change `RawGyro`. Software-only tracker for
+  clone-heuristic `PLAIN_ZERO` only; genuine paths unchanged.
 
 ## Open questions
 

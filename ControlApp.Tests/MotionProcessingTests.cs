@@ -147,4 +147,41 @@ public class MotionProcessingTests
 
         Assert.True(everChanged || tracker.ZeroRef != 521);
     }
+
+    [Fact]
+    public void Tracker_SoftwareOnly_ObigbenRestCentersWithoutCalByte()
+    {
+        SonyGyroTracker tracker = new();
+        tracker.Initial(0x00, 512, softwareOnly: true);
+
+        for (int i = 0; i < 200; i++)
+        {
+            tracker.Runtime(500, out _);
+        }
+
+        Assert.Equal(500, tracker.ZeroRef);
+        Assert.Equal(512, tracker.Output);
+        Assert.Equal(0, tracker.CalByteRaw);
+    }
+
+    [Fact]
+    public void Tracker_SoftwareOnly_LargeOffsetCentersWhileStockLeavesResidual()
+    {
+        SonyGyroTracker stock = new();
+        stock.Initial(0x00, 512);
+        SonyGyroTracker soft = new();
+        soft.Initial(0x00, 512, softwareOnly: true);
+
+        for (int i = 0; i < 200; i++)
+        {
+            stock.Runtime(450, out _);
+            soft.Runtime(450, out _);
+        }
+
+        Assert.Equal(450, soft.ZeroRef);
+        Assert.Equal(512, soft.Output);
+        Assert.Equal(0, soft.CalByteRaw);
+        Assert.NotEqual(512, stock.Output);
+        Assert.NotEqual(0, stock.CalByteRaw);
+    }
 }
