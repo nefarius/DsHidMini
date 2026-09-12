@@ -1,5 +1,6 @@
-﻿using System.IO;
+using System.IO;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.Enums;
@@ -64,6 +65,48 @@ internal static class DshmConfigSerialization
     public static bool UpdateDsHidMiniConfigFile(DshmConfiguration dshmConfig, string? directory = null)
     {
         Log.Logger.Debug("Starting serialization of DsHidMini config object and saving to disk");
+        return WriteDriverConfigFile(Serialize(dshmConfig), directory);
+    }
+
+    /// <summary>
+    ///     Applies only the Control App-originated differences between
+    ///     <paramref name="baselineJson" /> and <paramref name="desiredJson" /> onto the current on-disk JSON.
+    ///     Unrelated properties in the current file are preserved. The Control App wins on the same path.
+    ///     A missing file is replaced with <paramref name="desiredJson" />. Malformed current JSON fails without overwrite.
+    /// </summary>
+    public static bool UpdateDsHidMiniConfigFilePreservingUnrelated(
+        string desiredJson,
+        string? baselineJson,
+        string? directory = null)
+    {
+        Log.Logger.Debug("Merging Control App driver-config changes onto the current on-disk file");
+        try
+        {
+            string targetDirectory = directory ?? GetDriverConfigDirectory();
+            string configPath = GetDriverConfigFilePath(targetDirectory);
+            if (!File.Exists(configPath))
+            {
+                return WriteDriverConfigFile(desiredJson, targetDirectory);
+            }
+
+            string currentJson = File.ReadAllText(configPath);
+            string mergedJson = MergeDriverConfigJson(baselineJson, desiredJson, currentJson);
+            return WriteDriverConfigFile(mergedJson, targetDirectory);
+        }
+        catch (Exception e) when (e is JsonException or InvalidOperationException)
+        {
+            Log.Logger.Error(e, "Current DsHidMini configuration is not mergeable. Leaving the file untouched.");
+            return false;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            Log.Logger.Error(e, "Failed to read the current DsHidMini configuration for merge.");
+            return false;
+        }
+    }
+
+    public static bool WriteDriverConfigFile(string json, string? directory = null)
+    {
         try
         {
             string targetDirectory = directory ?? GetDriverConfigDirectory();
@@ -72,7 +115,7 @@ internal static class DshmConfigSerialization
             string tempPath = Path.Combine(targetDirectory, $"{DriverFileName}.{Guid.NewGuid():N}.tmp");
             try
             {
-                File.WriteAllText(tempPath, Serialize(dshmConfig));
+                File.WriteAllText(tempPath, json);
                 File.Move(tempPath, configPath, overwrite: true);
             }
             catch
@@ -87,6 +130,89 @@ internal static class DshmConfigSerialization
         {
             Log.Logger.Error(e, "Serialization or saving to disk failed.");
             return false;
+        }
+    }
+
+    /// <summary>
+    ///     Three-way merge of driver JSON: apply paths that differ from
+    ///     <paramref name="baselineJson" /> to <paramref name="desiredJson" /> onto
+    ///     <paramref name="currentJson" />. Objects recurse; scalars and arrays replace atomically.
+    /// </summary>
+    internal static string MergeDriverConfigJson(string? baselineJson, string desiredJson, string currentJson)
+    {
+        JsonNode desired = ParseObjectRoot(desiredJson, "desired");
+        JsonNode current = ParseObjectRoot(currentJson, "current");
+        JsonNode? baseline = baselineJson is null ? null : ParseObjectRoot(baselineJson, "baseline");
+        JsonNode merged = MergeThreeWay(baseline, desired, current);
+        return merged.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+    }
+
+    private static JsonNode ParseObjectRoot(string json, string role)
+    {
+        JsonNode? node = JsonNode.Parse(json);
+        if (node is not JsonObject)
+        {
+            throw new JsonException($"The {role} driver configuration root must be a JSON object.");
+        }
+
+        return node;
+    }
+
+    internal static JsonNode MergeThreeWay(JsonNode? baseline, JsonNode desired, JsonNode current)
+    {
+        if (JsonNode.DeepEquals(baseline, desired))
+        {
+            return current.DeepClone();
+        }
+
+        if (desired is JsonObject desiredObject &&
+            current is JsonObject currentObject &&
+            (baseline is null || baseline is JsonObject))
+        {
+            JsonObject baselineObject = baseline as JsonObject ?? new JsonObject();
+            JsonObject result = currentObject.DeepClone().AsObject();
+            HashSet<string> keys = new(StringComparer.Ordinal);
+            CollectKeys(keys, baselineObject);
+            CollectKeys(keys, desiredObject);
+            CollectKeys(keys, result);
+
+            foreach (string key in keys)
+            {
+                baselineObject.TryGetPropertyValue(key, out JsonNode? baselineValue);
+                desiredObject.TryGetPropertyValue(key, out JsonNode? desiredValue);
+                result.TryGetPropertyValue(key, out JsonNode? currentValue);
+
+                if (JsonNode.DeepEquals(baselineValue, desiredValue))
+                {
+                    continue;
+                }
+
+                if (desiredValue is null)
+                {
+                    result.Remove(key);
+                    continue;
+                }
+
+                if (baselineValue is JsonObject && desiredValue is JsonObject && currentValue is JsonObject)
+                {
+                    result[key] = MergeThreeWay(baselineValue, desiredValue, currentValue);
+                    continue;
+                }
+
+                result[key] = desiredValue.DeepClone();
+            }
+
+            return result;
+        }
+
+        return desired.DeepClone();
+    }
+
+    private static void CollectKeys(HashSet<string> keys, JsonObject obj)
+    {
+        foreach (KeyValuePair<string, JsonNode?> property in obj)
+        {
+            keys.Add(property.Key);
         }
     }
 

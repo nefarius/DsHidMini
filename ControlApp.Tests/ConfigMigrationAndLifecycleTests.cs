@@ -1,6 +1,7 @@
 using System.IO;
 using System.Security.AccessControl;
 using System.Security.Principal;
+using System.Text.Json.Nodes;
 
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig;
@@ -23,6 +24,7 @@ public class ConfigMigrationAndLifecycleTests : IDisposable
 
     private string UserDir => Path.Combine(_root, "ControlApp");
     private string DriverDir => Path.Combine(_root, "DsHidMini");
+    private string DriverFile => Path.Combine(DriverDir, "DsHidMini.json");
 
     public void Dispose()
     {
@@ -274,6 +276,103 @@ public class ConfigMigrationAndLifecycleTests : IDisposable
 
         Assert.Equal(0, loaded.SchemaVersion);
         Assert.NotEmpty(Directory.GetFiles(UserDir, "DshmUserData.json.corrupt-*"));
+    }
+
+    [Fact]
+    public void ApplySettings_MissingDriverFile_WritesGeneratedDocument()
+    {
+        DshmConfigManager manager = CreateManager();
+        manager.AutoRestartOnHidModeMismatch = false;
+
+        Assert.True(manager.SaveChangesAndUpdateDsHidMiniConfigFile());
+        Assert.True(File.Exists(DriverFile));
+
+        JsonNode root = JsonNode.Parse(File.ReadAllText(DriverFile))!;
+        Assert.False(root["Global"]!["AutoRestartOnHidModeMismatch"]!.GetValue<bool>());
+        Assert.Equal("XInput", root["Global"]!["HidDeviceMode"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void ApplySettings_PreservesUnrelatedManualEdits_AndKeepsThemAcrossLaterApplies()
+    {
+        DshmConfigManager manager = CreateManager();
+        Assert.True(manager.ApplySettings());
+
+        File.WriteAllText(DriverFile, """
+            {
+              "IPCEnabled": true,
+              "Global": {
+                "HidDeviceMode": "DS4Windows",
+                "AutoRestartOnHidModeMismatch": true,
+                "BluetoothOutputReportTransport": "Interrupt",
+                "FutureDriverFlag": true,
+                "DS4Windows": { "UnknownNested": 1 }
+              },
+              "Devices": {
+                "AABBCCDDEEFF": { "FutureDeviceFlag": 2 }
+              }
+            }
+            """);
+
+        manager.AutoRestartOnHidModeMismatch = false;
+        Assert.True(manager.SaveChangesAndUpdateDsHidMiniConfigFile());
+
+        JsonNode first = JsonNode.Parse(File.ReadAllText(DriverFile))!;
+        Assert.False(first["Global"]!["AutoRestartOnHidModeMismatch"]!.GetValue<bool>());
+        Assert.Equal("DS4Windows", first["Global"]!["HidDeviceMode"]!.GetValue<string>());
+        Assert.Equal("Interrupt", first["Global"]!["BluetoothOutputReportTransport"]!.GetValue<string>());
+        Assert.True(first["Global"]!["FutureDriverFlag"]!.GetValue<bool>());
+        Assert.Equal(1, first["Global"]!["DS4Windows"]!["UnknownNested"]!.GetValue<int>());
+        Assert.Equal(2, first["Devices"]!["AABBCCDDEEFF"]!["FutureDeviceFlag"]!.GetValue<int>());
+
+        manager.AutoRestartOnHidModeMismatch = true;
+        Assert.True(manager.SaveChangesAndUpdateDsHidMiniConfigFile());
+
+        JsonNode second = JsonNode.Parse(File.ReadAllText(DriverFile))!;
+        Assert.True(second["Global"]!["AutoRestartOnHidModeMismatch"]!.GetValue<bool>());
+        Assert.Equal("DS4Windows", second["Global"]!["HidDeviceMode"]!.GetValue<string>());
+        Assert.Equal("Interrupt", second["Global"]!["BluetoothOutputReportTransport"]!.GetValue<string>());
+        Assert.True(second["Global"]!["FutureDriverFlag"]!.GetValue<bool>());
+    }
+
+    [Fact]
+    public void ApplySettings_ConflictingManualEdit_ControlAppWins()
+    {
+        DshmConfigManager manager = CreateManager();
+        Assert.True(manager.ApplySettings());
+
+        File.WriteAllText(DriverFile, """
+            {
+              "IPCEnabled": true,
+              "Global": {
+                "HidDeviceMode": "SDF",
+                "AutoRestartOnHidModeMismatch": true
+              },
+              "Devices": {}
+            }
+            """);
+
+        manager.GlobalProfile.Settings.HidMode.SettingsContext = SettingsContext.GPJ;
+        Assert.True(manager.SaveChangesAndUpdateDsHidMiniConfigFile());
+
+        JsonNode root = JsonNode.Parse(File.ReadAllText(DriverFile))!;
+        Assert.Equal("GPJ", root["Global"]!["HidDeviceMode"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void ApplySettings_MalformedDriverJson_LeavesFileUntouchedAndRestoresUserData()
+    {
+        DshmConfigManager manager = CreateManager();
+        Assert.True(manager.ApplySettings());
+        File.WriteAllText(DriverFile, "{ not-json");
+        string originalDriver = File.ReadAllText(DriverFile);
+        string originalUser = File.ReadAllText(Path.Combine(UserDir, "DshmUserData.json"));
+
+        manager.AutoRestartOnHidModeMismatch = false;
+        Assert.False(manager.SaveChangesAndUpdateDsHidMiniConfigFile());
+        Assert.Equal(originalDriver, File.ReadAllText(DriverFile));
+        Assert.Equal(originalUser, File.ReadAllText(Path.Combine(UserDir, "DshmUserData.json")));
+        Assert.True(manager.AutoRestartOnHidModeMismatch);
     }
 
     private DshmConfigManager CreateManager() =>
