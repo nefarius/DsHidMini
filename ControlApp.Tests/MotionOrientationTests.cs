@@ -170,4 +170,152 @@ public class MotionOrientationTests
         double expected = 9.0 * (707.0 / Math.Sqrt((707.0 * 707.0) + (707.0 * 707.0)));
         Assert.InRange(estimator.YawDegrees, expected - 0.05, expected + 0.05);
     }
+
+    [Fact]
+    public void FlatStill_LearnsRestBiasAfterWindow()
+    {
+        MotionOrientationEstimator estimator = LearnRestBias(-1_000, out _);
+
+        Assert.True(estimator.HasRestBias);
+        Assert.InRange(estimator.RestBiasDps, -1.02, -0.98);
+        Assert.Equal(0, estimator.YawDegrees);
+    }
+
+    [Fact]
+    public void LearnedRestBias_IsSubtractedFromTurns()
+    {
+        MotionOrientationEstimator estimator = LearnRestBias(-1_000, out uint index, out ulong qpc);
+
+        estimator.Update(Sample(0, 0, -1000, 5_000, index + 1, qpc + 100_000));
+
+        Assert.InRange(estimator.YawDegrees, 0.59, 0.61);
+    }
+
+    [Fact]
+    public void LearnedRestBias_RestStillDoesNotIntegrateYaw()
+    {
+        MotionOrientationEstimator estimator = LearnRestBias(-1_000, out uint index, out ulong qpc);
+
+        estimator.Update(Sample(0, 0, -1000, -1_000, index + 1, qpc + 100_000));
+
+        Assert.Equal(0, estimator.YawDegrees);
+    }
+
+    [Fact]
+    public void LearnedRestBias_DoesNotUnmaskRateBelowRawDeadzone()
+    {
+        MotionOrientationEstimator estimator = LearnRestBias(-1_000, out uint index, out ulong qpc);
+
+        estimator.Update(Sample(0, 0, -1000, 3_500, index + 1, qpc + 100_000));
+
+        Assert.Equal(0, estimator.YawDegrees);
+    }
+
+    [Fact]
+    public void LearnedRestBias_FrozenAfterLearn()
+    {
+        MotionOrientationEstimator estimator = LearnRestBias(-1_000, out uint index, out ulong qpc);
+        FeedStill(estimator, -1_500, MotionOrientationEstimator.BiasLearnSamples, ref index, ref qpc);
+
+        Assert.InRange(estimator.RestBiasDps, -1.02, -0.98);
+    }
+
+    [Fact]
+    public void RestBiasWindow_RejectsWideRateRange()
+    {
+        MotionOrientationEstimator estimator = new(1_000_000, smoothing: 1.0);
+        uint index = 0;
+        ulong qpc = 0;
+        for (int i = 0; i < MotionOrientationEstimator.BiasLearnSamples; i++)
+        {
+            index++;
+            qpc += 10_000;
+            int milliDps = (i % 2) == 0 ? -1_000 : 1_000;
+            estimator.Update(Sample(0, 0, -1000, milliDps, index, qpc));
+        }
+
+        Assert.False(estimator.HasRestBias);
+    }
+
+    [Fact]
+    public void MotionDuringLearn_ResetsRestBiasWindow()
+    {
+        MotionOrientationEstimator estimator = new(1_000_000, smoothing: 1.0);
+        uint index = 0;
+        ulong qpc = 0;
+        FeedStill(estimator, -1_000, MotionOrientationEstimator.BiasLearnSamples / 2, ref index, ref qpc);
+        index++;
+        qpc += 10_000;
+        estimator.Update(Sample(0, 0, -1000, 20_000, index, qpc));
+        FeedStill(estimator, -1_000, MotionOrientationEstimator.BiasLearnSamples / 2, ref index, ref qpc);
+
+        Assert.False(estimator.HasRestBias);
+    }
+
+    [Fact]
+    public void OnGripStill_DoesNotLearnRestBias()
+    {
+        MotionOrientationEstimator estimator = new(1_000_000, smoothing: 1.0);
+        uint index = 0;
+        ulong qpc = 0;
+        for (int i = 0; i < MotionOrientationEstimator.BiasLearnSamples; i++)
+        {
+            index++;
+            qpc += 10_000;
+            estimator.Update(Sample(1000, 0, 0, -1_000, index, qpc));
+        }
+
+        Assert.False(estimator.HasRestBias);
+    }
+
+    [Fact]
+    public void Recenter_KeepsRestBias()
+    {
+        MotionOrientationEstimator estimator = LearnRestBias(-1_000, out _, out _);
+        estimator.Recenter();
+
+        Assert.True(estimator.HasRestBias);
+        Assert.InRange(estimator.RestBiasDps, -1.02, -0.98);
+        Assert.Equal(0, estimator.YawDegrees);
+    }
+
+    [Fact]
+    public void Reset_ClearsRestBias()
+    {
+        MotionOrientationEstimator estimator = LearnRestBias(-1_000, out _, out _);
+
+        estimator.Reset();
+
+        Assert.False(estimator.HasRestBias);
+        Assert.Equal(0, estimator.RestBiasDps);
+    }
+
+    private static MotionOrientationEstimator LearnRestBias(int milliDps, out uint index)
+    {
+        return LearnRestBias(milliDps, out index, out _);
+    }
+
+    private static MotionOrientationEstimator LearnRestBias(int milliDps, out uint index, out ulong qpc)
+    {
+        MotionOrientationEstimator estimator = new(1_000_000, smoothing: 1.0);
+        index = 0;
+        qpc = 0;
+        FeedStill(estimator, milliDps, MotionOrientationEstimator.BiasLearnSamples, ref index, ref qpc);
+        return estimator;
+    }
+
+    private static void FeedStill(
+        MotionOrientationEstimator estimator,
+        int milliDps,
+        int count,
+        ref uint index,
+        ref ulong qpc)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            index++;
+            qpc += 10_000;
+            estimator.Update(Sample(0, 0, -1000, milliDps, index, qpc));
+        }
+    }
 }

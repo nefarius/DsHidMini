@@ -86,7 +86,7 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
 
     [ObservableProperty]
     private string _yawNote =
-        "Yaw is integrated from the single SIXAXIS gyro, weighted by how level the pad is, and will drift during turns. Rest bias below a few deg/s is ignored. Use Recenter after a large heading change.";
+        "Yaw is integrated from the single SIXAXIS gyro, weighted by how level the pad is, and will drift during turns. A rest-rate learned while the pad sits still is removed from real turns only. Use Recenter after a large heading change.";
 
     [ObservableProperty]
     private bool _isRecording;
