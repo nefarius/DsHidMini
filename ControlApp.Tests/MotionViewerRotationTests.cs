@@ -71,4 +71,25 @@ public class MotionViewerRotationTests
 
         Assert.True(MotionViewerRotation.AlmostEqual(q, expected));
     }
+
+    [Fact]
+    public void ComposeYawThenTilt_GripDownKeepsWorldUp()
+    {
+        MotionViewerQuaternion q = MotionViewerRotation.ComposeYawThenTilt(25, 1, 0, 0);
+        (double x, double y, double z) = Rotate(q, 1, 0, 0);
+
+        Assert.InRange(x, -0.02, 0.02);
+        Assert.InRange(y, -0.02, 0.02);
+        Assert.InRange(z, 0.98, 1.02);
+    }
+
+    private static (double X, double Y, double Z) Rotate(MotionViewerQuaternion q, double x, double y, double z)
+    {
+        MotionViewerQuaternion point = new(x, y, z, 0);
+        MotionViewerQuaternion inverse = new(-q.X, -q.Y, -q.Z, q.W);
+        MotionViewerQuaternion rotated = MotionViewerRotation.Multiply(
+            MotionViewerRotation.Multiply(q, point),
+            inverse);
+        return (rotated.X, rotated.Y, rotated.Z);
+    }
 }

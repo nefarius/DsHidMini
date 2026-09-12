@@ -39,9 +39,53 @@ internal sealed class MotionCsvRecorder : IDisposable
 
     public static string CreateDefaultPath(int slotIndex)
     {
-        string stamp = DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
-        string fileName = $"motion-slot{slotIndex}-{stamp}.csv";
+        return CreateUniquePath(slotIndex, DateTime.Now, ResolveLogDirectory());
+    }
 
+    public static MotionCsvRecorder Start(int slotIndex)
+    {
+        return Start(slotIndex, DateTime.Now, ResolveLogDirectory());
+    }
+
+    internal static string CreateUniquePath(int slotIndex, DateTime stamp, string directory)
+    {
+        Directory.CreateDirectory(directory);
+        for (int n = 0; n < 1000; n++)
+        {
+            string path = FormatPath(directory, slotIndex, stamp, n);
+            if (!File.Exists(path))
+            {
+                return path;
+            }
+        }
+
+        throw new IOException($"Could not allocate a unique motion recording path for slot {slotIndex}.");
+    }
+
+    internal static MotionCsvRecorder Start(int slotIndex, DateTime stamp, string directory)
+    {
+        Directory.CreateDirectory(directory);
+        IOException? last = null;
+        for (int n = 0; n < 1000; n++)
+        {
+            string path = FormatPath(directory, slotIndex, stamp, n);
+            try
+            {
+                FileStream stream = new(path, FileMode.CreateNew, FileAccess.Write, FileShare.Read);
+                StreamWriter writer = new(stream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+                return new MotionCsvRecorder(path, writer);
+            }
+            catch (IOException ex)
+            {
+                last = ex;
+            }
+        }
+
+        throw new IOException("Could not create a unique motion recording file.", last);
+    }
+
+    private static string ResolveLogDirectory()
+    {
         try
         {
             string dir = System.IO.Path.Combine(
@@ -50,17 +94,21 @@ internal sealed class MotionCsvRecorder : IDisposable
                 "Log",
                 "Motion");
             Directory.CreateDirectory(dir);
-            return System.IO.Path.Combine(dir, fileName);
+            return dir;
         }
         catch (Exception)
         {
-            return System.IO.Path.Combine(System.IO.Path.GetTempPath(), fileName);
+            return System.IO.Path.GetTempPath();
         }
     }
 
-    public static MotionCsvRecorder Start(int slotIndex)
+    private static string FormatPath(string directory, int slotIndex, DateTime stamp, int suffix)
     {
-        return new MotionCsvRecorder(CreateDefaultPath(slotIndex));
+        string stampText = stamp.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
+        string fileName = suffix == 0
+            ? $"motion-slot{slotIndex}-{stampText}.csv"
+            : $"motion-slot{slotIndex}-{stampText}-{suffix}.csv";
+        return System.IO.Path.Combine(directory, fileName);
     }
 
     public bool TryWrite(in DsMotionSnapshot snapshot, MotionOrientationEstimator estimator)

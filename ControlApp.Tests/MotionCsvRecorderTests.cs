@@ -110,6 +110,38 @@ public class MotionCsvRecorderTests
         }
     }
 
+    [Fact]
+    public void Start_SameSlotAndTimestamp_UsesDistinctPaths()
+    {
+        string dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"motion-test-{Guid.NewGuid():N}");
+        DateTime stamp = new(2026, 9, 12, 19, 42, 52);
+        string firstPath = "";
+        string secondPath = "";
+        try
+        {
+            Directory.CreateDirectory(dir);
+            using (MotionCsvRecorder first = MotionCsvRecorder.Start(1, stamp, dir))
+            using (MotionCsvRecorder second = MotionCsvRecorder.Start(1, stamp, dir))
+            {
+                firstPath = first.Path;
+                secondPath = second.Path;
+                Assert.NotEqual(first.Path, second.Path);
+                Assert.Contains("motion-slot1-20260912-194252", first.Path, StringComparison.Ordinal);
+                Assert.Contains("motion-slot1-20260912-194252", second.Path, StringComparison.Ordinal);
+            }
+
+            Assert.True(File.Exists(firstPath));
+            Assert.True(File.Exists(secondPath));
+        }
+        finally
+        {
+            if (Directory.Exists(dir))
+            {
+                Directory.Delete(dir, recursive: true);
+            }
+        }
+    }
+
     private static DsMotionSnapshot Available(
         ushort rawX,
         int milliX,

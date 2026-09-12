@@ -73,8 +73,8 @@ internal static class MotionViewerRotation
     }
 
     /// <summary>
-    ///     World heading first (existing <see cref="Yaw" /> sign about Z),
-    ///     then gravity tilt: <c>q_tilt * q_yaw</c>.
+    ///     Gravity tilt first, then world heading about Z. WPF applies the
+    ///     right factor first, so this is <c>q_yaw * q_tilt</c>.
     /// </summary>
     public static MotionViewerQuaternion ComposeYawThenTilt(
         double yawDegrees,
@@ -84,7 +84,7 @@ internal static class MotionViewerRotation
     {
         MotionViewerQuaternion yaw = FromAxisAngle(0, 0, 1, -yawDegrees);
         MotionViewerQuaternion tilt = TiltFromUp(upX, upY, upZ);
-        return Multiply(tilt, yaw);
+        return Multiply(yaw, tilt);
     }
 
     internal static MotionViewerQuaternion FromAxisAngle(

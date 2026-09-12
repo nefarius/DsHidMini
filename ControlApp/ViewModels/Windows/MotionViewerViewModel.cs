@@ -207,11 +207,18 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
                 if (!IsPaused)
                 {
                     _estimator.Update(snapshot);
-                }
 
-                lock (_recorderLock)
-                {
-                    _recorder?.TryWrite(snapshot, _estimator);
+                    lock (_recorderLock)
+                    {
+                        try
+                        {
+                            _recorder?.TryWrite(snapshot, _estimator);
+                        }
+                        catch (Exception ex)
+                        {
+                            StopRecorderUnlocked(ex);
+                        }
+                    }
                 }
 
                 int generation = Interlocked.Increment(ref _uiGeneration);
@@ -284,7 +291,7 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
         }
     }
 
-    private void StopRecorderUnlocked()
+    private void StopRecorderUnlocked(Exception? error = null)
     {
         if (_recorder is null)
         {
@@ -293,10 +300,47 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
 
         string path = _recorder.Path;
         int rows = _recorder.RowCount;
-        _recorder.Dispose();
-        _recorder = null;
-        IsRecording = false;
-        RecordingText = $"Saved {rows} rows to {path}";
+        try
+        {
+            _recorder.Dispose();
+        }
+        catch (Exception ex)
+        {
+            error ??= ex;
+        }
+        finally
+        {
+            _recorder = null;
+        }
+
+        PostRecordingState(
+            false,
+            error is null
+                ? $"Saved {rows} rows to {path}"
+                : $"Recording failed: {error.Message}");
+    }
+
+    private void PostRecordingState(bool isRecording, string text)
+    {
+        void Apply()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            IsRecording = isRecording;
+            RecordingText = text;
+        }
+
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher is null || dispatcher.CheckAccess())
+        {
+            Apply();
+            return;
+        }
+
+        dispatcher.BeginInvoke(Apply);
     }
 
     private void PublishUnavailable(string message)
