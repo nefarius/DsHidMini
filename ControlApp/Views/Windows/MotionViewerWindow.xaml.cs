@@ -10,9 +10,7 @@ namespace Nefarius.DsHidMini.ControlApp.Views.Windows;
 
 public partial class MotionViewerWindow
 {
-    private readonly AxisAngleRotation3D _pitch = CreateRotation(MotionViewerRotation.Pitch(0));
-    private readonly AxisAngleRotation3D _roll = CreateRotation(MotionViewerRotation.Roll(0));
-    private readonly AxisAngleRotation3D _yaw = CreateRotation(MotionViewerRotation.Yaw(0));
+    private readonly QuaternionRotation3D _pose = new(new Quaternion(0, 0, 0, 1));
     private readonly MotionViewerViewModel _viewModel;
 
     public MotionViewerWindow(MotionViewerViewModel viewModel)
@@ -30,25 +28,14 @@ public partial class MotionViewerWindow
         viewModel.Start();
     }
 
-    private static AxisAngleRotation3D CreateRotation(MotionViewerAxisAngle mapped)
-    {
-        return new AxisAngleRotation3D(
-            new Vector3D(mapped.AxisX, mapped.AxisY, mapped.AxisZ),
-            mapped.AngleDegrees);
-    }
-
     private void OnPoseChanged(object? sender, EventArgs e)
     {
-        MotionViewerRotation.FromEuler(
-            _viewModel.Estimator.PitchDegrees,
-            _viewModel.Estimator.RollDegrees,
+        MotionViewerQuaternion q = MotionViewerRotation.ComposeYawThenTilt(
             _viewModel.Estimator.YawDegrees,
-            out MotionViewerAxisAngle pitch,
-            out MotionViewerAxisAngle roll,
-            out MotionViewerAxisAngle yaw);
-        _pitch.Angle = pitch.AngleDegrees;
-        _roll.Angle = roll.AngleDegrees;
-        _yaw.Angle = yaw.AngleDegrees;
+            _viewModel.Estimator.UpX,
+            _viewModel.Estimator.UpY,
+            _viewModel.Estimator.UpZ);
+        _pose.Quaternion = new Quaternion(q.X, q.Y, q.Z, q.W);
     }
 
     private void BuildPadModel()
@@ -87,9 +74,7 @@ public partial class MotionViewerWindow
         });
 
         Transform3DGroup transform = new();
-        transform.Children.Add(new RotateTransform3D(_roll));
-        transform.Children.Add(new RotateTransform3D(_pitch));
-        transform.Children.Add(new RotateTransform3D(_yaw));
+        transform.Children.Add(new RotateTransform3D(_pose));
         PadModel.Transform = transform;
 
         Viewport.Children.Add(new ArrowVisual3D

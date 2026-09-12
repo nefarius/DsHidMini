@@ -126,4 +126,48 @@ public class MotionOrientationTests
 
         Assert.InRange(estimator.YawDegrees, 0.99, 1.01);
     }
+
+    [Fact]
+    public void OnGripNoise_HoldsPitchReadout()
+    {
+        MotionOrientationEstimator estimator = new(1_000_000, smoothing: 1.0);
+        estimator.Update(Sample(0, 0, -1000, 0, 1, 1_000_000));
+        double pitch = estimator.PitchDegrees;
+
+        estimator.Update(Sample(1000, 40, -50, 0, 2, 2_000_000));
+
+        Assert.Equal(pitch, estimator.PitchDegrees);
+        Assert.True(estimator.RollDegrees < -80);
+    }
+
+    [Fact]
+    public void OnGrip_DoesNotIntegrateYaw()
+    {
+        MotionOrientationEstimator estimator = new(1_000_000, smoothing: 1.0);
+        estimator.Update(Sample(1000, 0, 0, 90_000, 1, 0));
+        estimator.Update(Sample(1000, 0, 0, 90_000, 2, 100_000));
+
+        Assert.InRange(estimator.YawDegrees, -0.01, 0.01);
+    }
+
+    [Fact]
+    public void FaceDown_ReversesYawSign()
+    {
+        MotionOrientationEstimator estimator = new(1_000_000, smoothing: 1.0);
+        estimator.Update(Sample(0, 0, 1000, 90_000, 1, 0));
+        estimator.Update(Sample(0, 0, 1000, 90_000, 2, 100_000));
+
+        Assert.InRange(estimator.YawDegrees, -9.1, -8.9);
+    }
+
+    [Fact]
+    public void Tilt45_IntegratesWeightedYaw()
+    {
+        MotionOrientationEstimator estimator = new(1_000_000, smoothing: 1.0);
+        estimator.Update(Sample(707, 0, -707, 90_000, 1, 0));
+        estimator.Update(Sample(707, 0, -707, 90_000, 2, 100_000));
+
+        double expected = 9.0 * (707.0 / Math.Sqrt((707.0 * 707.0) + (707.0 * 707.0)));
+        Assert.InRange(estimator.YawDegrees, expected - 0.05, expected + 0.05);
+    }
 }

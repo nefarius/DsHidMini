@@ -11,24 +11,23 @@ internal readonly record struct MotionViewerAxisAngle(
     double AngleDegrees);
 
 /// <summary>
-///     Maps estimator Euler angles onto the face-on Helix pad: pitch (USB/trigger)
-///     nods about X (negated), roll (grips) banks about Y, yaw spins about the
-///     face normal (negated).
+///     Helix/WPF quaternion (X, Y, Z, W) for the diagnostic pad pose.
+/// </summary>
+internal readonly record struct MotionViewerQuaternion(
+    double X,
+    double Y,
+    double Z,
+    double W)
+{
+    public static MotionViewerQuaternion Identity { get; } = new(0, 0, 0, 1);
+}
+
+/// <summary>
+///     Maps the Sony gravity-up vector and integrated yaw onto the face-on
+///     Helix pad without an Euler singularity at roll ±90°.
 /// </summary>
 internal static class MotionViewerRotation
 {
-    public static MotionViewerAxisAngle Pitch(double pitchDegrees)
-    {
-        // +X is right; right-hand positive nods the USB/trigger edge away
-        // from the camera, so estimator nose-up is a negative Helix angle.
-        return new MotionViewerAxisAngle(1, 0, 0, -pitchDegrees);
-    }
-
-    public static MotionViewerAxisAngle Roll(double rollDegrees)
-    {
-        return new MotionViewerAxisAngle(0, 1, 0, rollDegrees);
-    }
-
     public static MotionViewerAxisAngle Yaw(double yawDegrees)
     {
         // +Z faces the camera; right-hand positive is CCW on screen, so
@@ -36,16 +35,103 @@ internal static class MotionViewerRotation
         return new MotionViewerAxisAngle(0, 0, 1, -yawDegrees);
     }
 
-    public static void FromEuler(
-        double pitchDegrees,
-        double rollDegrees,
-        double yawDegrees,
-        out MotionViewerAxisAngle pitch,
-        out MotionViewerAxisAngle roll,
-        out MotionViewerAxisAngle yaw)
+    /// <summary>
+    ///     Shortest-arc tilt that takes the mapped pad-up vector onto Helix
+    ///     world-up <c>(0, 0, 1)</c>. Pad frame to Helix is
+    ///     <c>M = diag(1, -1, -1)</c>, matching the hardware-verified Euler
+    ///     map (flat = identity, USB-up = <c>R_X(-90)</c>, grip-down =
+    ///     <c>R_Y(-90)</c>). Face-down uses axis X, 180°.
+    /// </summary>
+    public static MotionViewerQuaternion TiltFromUp(double upX, double upY, double upZ)
     {
-        pitch = Pitch(pitchDegrees);
-        roll = Roll(rollDegrees);
-        yaw = Yaw(yawDegrees);
+        double vx = upX;
+        double vy = -upY;
+        double vz = -upZ;
+        double mag = Math.Sqrt((vx * vx) + (vy * vy) + (vz * vz));
+        if (mag < 1e-9)
+        {
+            return MotionViewerQuaternion.Identity;
+        }
+
+        vx /= mag;
+        vy /= mag;
+        vz /= mag;
+
+        // Rotate v onto U0 = (0, 0, 1). axis = v × U0 = (vy, -vx, 0).
+        double dot = vz;
+        if (dot > 0.999999)
+        {
+            return MotionViewerQuaternion.Identity;
+        }
+
+        if (dot < -0.999999)
+        {
+            return new MotionViewerQuaternion(1, 0, 0, 0);
+        }
+
+        return Normalize(vy, -vx, 0, 1.0 + dot);
+    }
+
+    /// <summary>
+    ///     World heading first (existing <see cref="Yaw" /> sign about Z),
+    ///     then gravity tilt: <c>q_tilt * q_yaw</c>.
+    /// </summary>
+    public static MotionViewerQuaternion ComposeYawThenTilt(
+        double yawDegrees,
+        double upX,
+        double upY,
+        double upZ)
+    {
+        MotionViewerQuaternion yaw = FromAxisAngle(0, 0, 1, -yawDegrees);
+        MotionViewerQuaternion tilt = TiltFromUp(upX, upY, upZ);
+        return Multiply(tilt, yaw);
+    }
+
+    internal static MotionViewerQuaternion FromAxisAngle(
+        double axisX,
+        double axisY,
+        double axisZ,
+        double angleDegrees)
+    {
+        double mag = Math.Sqrt((axisX * axisX) + (axisY * axisY) + (axisZ * axisZ));
+        if (mag < 1e-9)
+        {
+            return MotionViewerQuaternion.Identity;
+        }
+
+        double half = angleDegrees * Math.PI / 360.0;
+        double s = Math.Sin(half) / mag;
+        return new MotionViewerQuaternion(axisX * s, axisY * s, axisZ * s, Math.Cos(half));
+    }
+
+    internal static MotionViewerQuaternion Multiply(MotionViewerQuaternion a, MotionViewerQuaternion b)
+    {
+        return new MotionViewerQuaternion(
+            (a.W * b.X) + (a.X * b.W) + (a.Y * b.Z) - (a.Z * b.Y),
+            (a.W * b.Y) - (a.X * b.Z) + (a.Y * b.W) + (a.Z * b.X),
+            (a.W * b.Z) + (a.X * b.Y) - (a.Y * b.X) + (a.Z * b.W),
+            (a.W * b.W) - (a.X * b.X) - (a.Y * b.Y) - (a.Z * b.Z));
+    }
+
+    internal static bool AlmostEqual(
+        MotionViewerQuaternion a,
+        MotionViewerQuaternion b,
+        double epsilon = 1e-6)
+    {
+        // q and -q are the same rotation.
+        double d =
+            (a.X * b.X) + (a.Y * b.Y) + (a.Z * b.Z) + (a.W * b.W);
+        return Math.Abs(Math.Abs(d) - 1.0) <= epsilon;
+    }
+
+    private static MotionViewerQuaternion Normalize(double x, double y, double z, double w)
+    {
+        double mag = Math.Sqrt((x * x) + (y * y) + (z * z) + (w * w));
+        if (mag < 1e-9)
+        {
+            return MotionViewerQuaternion.Identity;
+        }
+
+        return new MotionViewerQuaternion(x / mag, y / mag, z / mag, w / mag);
     }
 }

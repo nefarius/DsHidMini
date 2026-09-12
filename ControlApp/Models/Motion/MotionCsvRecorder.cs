@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.IO;
 using System.Text;
 
 using Nefarius.DsHidMini.IPC.Models.Public;
@@ -87,7 +88,7 @@ internal sealed class MotionCsvRecorder : IDisposable
             ',',
             snapshot.SampleIndex.ToString(inv),
             snapshot.TimestampQpc.ToString(inv),
-            dtMs.ToString("0.###", inv),
+            dtMs.ToString("0.000", inv),
             snapshot.RawAccelX.ToString(inv),
             snapshot.RawAccelY.ToString(inv),
             snapshot.RawAccelZ.ToString(inv),
@@ -104,9 +105,9 @@ internal sealed class MotionCsvRecorder : IDisposable
             snapshot.CalByte.ToString(inv),
             ((ushort)snapshot.Flags).ToString(inv),
             ((byte)snapshot.MotionPath).ToString(inv),
-            estimator.PitchDegrees.ToString("0.###", inv),
-            estimator.RollDegrees.ToString("0.###", inv),
-            estimator.YawDegrees.ToString("0.###", inv)));
+            estimator.PitchDegrees.ToString("0.000", inv),
+            estimator.RollDegrees.ToString("0.000", inv),
+            estimator.YawDegrees.ToString("0.000", inv)));
 
         _hasSample = true;
         _lastSampleIndex = snapshot.SampleIndex;

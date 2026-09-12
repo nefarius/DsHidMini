@@ -33,7 +33,7 @@ public class MotionCsvRecorderTests
             string[] lines = File.ReadAllLines(path);
             Assert.Equal(2, lines.Length);
             Assert.Equal(MotionCsvRecorder.Header, lines[0]);
-            Assert.StartsWith("7,2000000,0,", lines[1], StringComparison.Ordinal);
+            Assert.StartsWith("7,2000000,0.000,", lines[1], StringComparison.Ordinal);
             Assert.Contains(",1500,", lines[1], StringComparison.Ordinal);
         }
         finally
@@ -98,10 +98,8 @@ public class MotionCsvRecorderTests
 
             string row = File.ReadAllLines(path)[2];
             string[] cells = row.Split(',');
-            Assert.Equal("100", cells[2]);
-            Assert.Contains('.', cells[^1]);
-            Assert.DoesNotContain(',', cells[^1]);
-            Assert.Equal("9", cells[^1][..1]);
+            Assert.Equal("100.000", cells[2]);
+            Assert.Equal("9.000", cells[^1]);
         }
         finally
         {

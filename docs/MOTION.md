@@ -780,7 +780,11 @@ both platforms, so on Linux it is not zeroed either.
   `Nefarius.DsHidMini.IPC` maps it when present and exposes
   `GetMotionSnapshot`.
 - **ControlApp**: per-device Motion viewer with numeric readout and a
-  diagnostic HelixToolkit pose (gravity pitch/roll, integrated yaw).
+  diagnostic HelixToolkit pose. Gravity is a shortest-arc tilt quaternion
+  (no Euler singularity at roll ±90°). Yaw is integrated from the single
+  gyro, weighted by how level the pad is (`-u_z`), so standing on a grip
+  does not accumulate heading. A Record button writes
+  `%ProgramData%\DsHidMini\Log\Motion\motion-slot<N>-<timestamp>.csv`.
 - **DS4Windows-compatible mode** (`driver/DsHid.c`, `DS3_RAW_TO_DS4WINDOWS_HID_INPUT_REPORT`):
   still leaves the DS4 gyro/accel fields at offsets 13-24 zero. Mapping is
   deferred until the axis permutation is verified.
@@ -933,6 +937,12 @@ Headline remaining gaps: Bluetooth EEPROM, DS4 axis mapping, counterfeit freeze 
   Sony's PLAIN_ZERO formula publishes 524 (~8.6 deg/s clockwise) at rest.
   Rotating the pad does not change `RawGyro`. Software-only tracker for
   clone-heuristic `PLAIN_ZERO` only; genuine paths unchanged.
+- 2026-09-12 — Genuine 2E A1: rolling onto a grip made the viewer flip
+  about yaw and left heading offset after returning flat. Display used
+  Euler pitch from `atan2(ay, -az)`, which is undefined when gravity is
+  along X; the single gyro (face-normal) was also integrated as heading
+  while that axis was horizontal. Viewer now uses a tilt quaternion and
+  weights yaw by `-u_z`. Driver tracker unchanged.
 
 ## Open questions
 
