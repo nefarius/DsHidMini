@@ -14,6 +14,13 @@ internal static class DshmConfigSerialization
 
     private static readonly string[] ModeBlockNames = ["SDF", "GPJ", "SXS", "DS4Windows", "XInput"];
 
+    private static readonly Dictionary<string, string> CanonicalPropertyNames =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["IPCEnabled"] = "IPCEnabled",
+            ["HidDeviceMode"] = "HidDeviceMode"
+        };
+
     public static JsonSerializerOptions DshmConfigSerializerOptions { get; } = CreateSerializerOptions();
 
     public static string GetDriverConfigDirectory() =>
@@ -172,21 +179,22 @@ internal static class DshmConfigSerialization
             JsonObject baselineObject = baseline as JsonObject ?? new JsonObject();
             JsonObject result = currentObject.DeepClone().AsObject();
             HashSet<string> keys = new(StringComparer.Ordinal);
-            CollectKeys(keys, baselineObject);
-            CollectKeys(keys, desiredObject);
-            CollectKeys(keys, result);
+            CollectCanonicalKeys(keys, baselineObject);
+            CollectCanonicalKeys(keys, desiredObject);
+            CollectCanonicalKeys(keys, result);
 
             foreach (string key in keys)
             {
-                baselineObject.TryGetPropertyValue(key, out JsonNode? baselineValue);
-                desiredObject.TryGetPropertyValue(key, out JsonNode? desiredValue);
-                result.TryGetPropertyValue(key, out JsonNode? currentValue);
+                TryGetByCanonicalName(baselineObject, key, out JsonNode? baselineValue);
+                TryGetByCanonicalName(desiredObject, key, out JsonNode? desiredValue);
+                TryGetByCanonicalName(result, key, out JsonNode? currentValue);
 
                 if (JsonNode.DeepEquals(baselineValue, desiredValue))
                 {
                     continue;
                 }
 
+                RemoveAliasedKeys(result, key);
                 if (desiredValue is null)
                 {
                     result.Remove(key);
@@ -208,11 +216,52 @@ internal static class DshmConfigSerialization
         return desired.DeepClone();
     }
 
-    private static void CollectKeys(HashSet<string> keys, JsonObject obj)
+    private static string CanonicalPropertyName(string key) =>
+        CanonicalPropertyNames.TryGetValue(key, out string? canonical) ? canonical : key;
+
+    private static void CollectCanonicalKeys(HashSet<string> keys, JsonObject obj)
     {
         foreach (KeyValuePair<string, JsonNode?> property in obj)
         {
-            keys.Add(property.Key);
+            keys.Add(CanonicalPropertyName(property.Key));
+        }
+    }
+
+    private static bool TryGetByCanonicalName(JsonObject obj, string canonicalKey, out JsonNode? value)
+    {
+        if (obj.TryGetPropertyValue(canonicalKey, out value))
+        {
+            return true;
+        }
+
+        foreach (KeyValuePair<string, JsonNode?> property in obj)
+        {
+            if (string.Equals(CanonicalPropertyName(property.Key), canonicalKey, StringComparison.Ordinal))
+            {
+                value = property.Value;
+                return true;
+            }
+        }
+
+        value = null;
+        return false;
+    }
+
+    private static void RemoveAliasedKeys(JsonObject obj, string canonicalKey)
+    {
+        List<string> aliases = new();
+        foreach (KeyValuePair<string, JsonNode?> property in obj)
+        {
+            if (!string.Equals(property.Key, canonicalKey, StringComparison.Ordinal) &&
+                string.Equals(CanonicalPropertyName(property.Key), canonicalKey, StringComparison.Ordinal))
+            {
+                aliases.Add(property.Key);
+            }
+        }
+
+        foreach (string alias in aliases)
+        {
+            obj.Remove(alias);
         }
     }
 

@@ -479,6 +479,41 @@ public class DriverConfigContractTests
         Assert.Equal("c", tags[0]!.GetValue<string>());
     }
 
+    [Fact]
+    public void Merge_IpcEnabledCaseAlias_WritesCanonicalAndReloadReadsUpdatedValue()
+    {
+        const string baseline = """
+            {
+              "IPCEnabled": true,
+              "Global": { "HidDeviceMode": "XInput" },
+              "Devices": {}
+            }
+            """;
+        const string desired = """
+            {
+              "IPCEnabled": false,
+              "Global": { "HidDeviceMode": "XInput" },
+              "Devices": {}
+            }
+            """;
+        const string current = """
+            {
+              "ipcEnabled": true,
+              "Global": { "HidDeviceMode": "XInput" },
+              "Devices": {}
+            }
+            """;
+
+        string mergedJson = DshmConfigSerialization.MergeDriverConfigJson(baseline, desired, current);
+        JsonNode merged = JsonNode.Parse(mergedJson)!;
+
+        Assert.False(merged["IPCEnabled"]!.GetValue<bool>());
+        Assert.Null(merged["ipcEnabled"]);
+
+        DshmConfiguration reloaded = DshmConfigSerialization.Deserialize(mergedJson);
+        Assert.False(reloaded.IPCEnabled);
+    }
+
     private static string SerializeDefaultProfile(SettingsContext context)
     {
         DeviceSettings settings = new();
