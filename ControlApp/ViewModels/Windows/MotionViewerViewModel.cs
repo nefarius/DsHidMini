@@ -220,7 +220,8 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
         GyroDpsText = $"{snapshot.GyroMilliDps / 1000.0:0.00} deg/s";
         EepromText =
             $"X {snapshot.AccelZeroX}/{snapshot.AccelOneGX}  Y {snapshot.AccelZeroY}/{snapshot.AccelOneGY}  Z {snapshot.AccelZeroZ}/{snapshot.AccelOneGZ}  G {snapshot.GyroZero}/{snapshot.GyroEepromCal}";
-        TrackerText = $"zero {snapshot.ZeroRef}  cal 0x{snapshot.CalByte:X2}  tracker {(snapshot.HasTracker ? "on" : "off")}";
+        TrackerText =
+            $"zero {snapshot.ZeroRef}  cal 0x{snapshot.CalByte:X2}  tracker {(snapshot.HasSoftwareZero ? "soft" : snapshot.HasTracker ? "on" : "off")}";
         SampleText = $"#{snapshot.SampleIndex}  QPC {snapshot.TimestampQpc}";
         RefreshPoseText();
     }

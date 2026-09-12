@@ -33,9 +33,17 @@ public enum DsMotionSnapshotFlags : ushort
     HardwareCal = 0x0004,
 
     /// <summary>
-    ///     Sony's auto-zero tracker is running (<c>HW_CAL</c> / <c>SIXAXIS</c>).
+    ///     Sony's auto-zero tracker is running (<c>HW_CAL</c> / <c>SIXAXIS</c>
+    ///     hardware trim, or clone-heuristic <c>PLAIN_ZERO</c> software-only).
     /// </summary>
-    Tracker = 0x0008
+    Tracker = 0x0008,
+
+    /// <summary>
+    ///     The tracker is in software-only mode: <c>zeroRef</c> follows rest
+    ///     and the hardware cal byte is never stepped. Used for clone-heuristic
+    ///     <c>PLAIN_ZERO</c> pads whose EEPROM gyro zero is a template.
+    /// </summary>
+    SoftwareZero = 0x0010
 }
 
 /// <summary>
@@ -118,4 +126,6 @@ public struct DsMotionSnapshot
     public bool IsFallback => (Flags & DsMotionSnapshotFlags.Fallback) != 0;
 
     public bool HasTracker => (Flags & DsMotionSnapshotFlags.Tracker) != 0;
+
+    public bool HasSoftwareZero => (Flags & DsMotionSnapshotFlags.SoftwareZero) != 0;
 }

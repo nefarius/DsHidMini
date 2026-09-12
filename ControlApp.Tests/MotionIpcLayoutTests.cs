@@ -46,6 +46,7 @@ public class MotionIpcLayoutTests
         Assert.Equal(0x0002, (int)DsMotionSnapshotFlags.Fallback);
         Assert.Equal(0x0004, (int)DsMotionSnapshotFlags.HardwareCal);
         Assert.Equal(0x0008, (int)DsMotionSnapshotFlags.Tracker);
+        Assert.Equal(0x0010, (int)DsMotionSnapshotFlags.SoftwareZero);
     }
 
     [Fact]

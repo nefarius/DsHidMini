@@ -128,9 +128,7 @@ DsMotion_TrackerRetarget(
 	_Out_ PINT32 CalByte
 )
 {
-	const INT32 delta = (DS_MOTION_TARGET - RestAvg) * 1024;
-
-	if (delta >= -DS_MOTION_GYRO_STEP_Q10 && delta <= DS_MOTION_GYRO_STEP_Q10)
+	if (Tracker->SoftwareOnly)
 	{
 		*ZeroRef = RestAvg;
 		*CalByte = Tracker->CalByte;
@@ -138,10 +136,21 @@ DsMotion_TrackerRetarget(
 	}
 
 	{
-		const INT32 steps = delta / DS_MOTION_GYRO_STEP_Q10;
-		*ZeroRef = RestAvg + DsMotion_Q10(steps * DS_MOTION_GYRO_STEP_Q10);
-		*CalByte = Tracker->CalByte + steps;
-		return TRUE;
+		const INT32 delta = (DS_MOTION_TARGET - RestAvg) * 1024;
+
+		if (delta >= -DS_MOTION_GYRO_STEP_Q10 && delta <= DS_MOTION_GYRO_STEP_Q10)
+		{
+			*ZeroRef = RestAvg;
+			*CalByte = Tracker->CalByte;
+			return FALSE;
+		}
+
+		{
+			const INT32 steps = delta / DS_MOTION_GYRO_STEP_Q10;
+			*ZeroRef = RestAvg + DsMotion_Q10(steps * DS_MOTION_GYRO_STEP_Q10);
+			*CalByte = Tracker->CalByte + steps;
+			return TRUE;
+		}
 	}
 }
 
@@ -344,10 +353,12 @@ VOID
 DsMotion_TrackerInitial(
 	_Inout_ PDS_GYRO_TRACKER Tracker,
 	_In_ USHORT EepromCal,
-	_In_ USHORT EepromZero
+	_In_ USHORT EepromZero,
+	_In_ BOOLEAN SoftwareOnly
 )
 {
 	RtlZeroMemory(Tracker, sizeof(*Tracker));
+	Tracker->SoftwareOnly = SoftwareOnly;
 	Tracker->CalByte = (INT32)EepromCal;
 	Tracker->LastRaw = (INT32)EepromZero;
 	Tracker->SettleLeft = DS_MOTION_SETTLE_INITIAL;
@@ -421,6 +432,37 @@ DsMotion_ResolvePath(
 	}
 
 	return DsIdentificationMotionPathPlainZero;
+}
+
+static
+VOID
+DsMotion_MaybeStartCloneSoftwareZero(
+	_In_ PDEVICE_CONTEXT Context
+)
+{
+	PDS_MOTION_STATE motion = &Context->Motion;
+
+	if (motion->Tracker.Initialized ||
+		motion->Path != DsIdentificationMotionPathPlainZero ||
+		!Context->IdentificationPresent ||
+		!Context->Identification.CloneHeuristic)
+	{
+		return;
+	}
+
+	DsMotion_TrackerInitial(
+		&motion->Tracker,
+		motion->Gyro.OneG,
+		motion->Gyro.Zero,
+		TRUE
+	);
+
+	TraceInformation(
+		TRACE_MOTION,
+		"Clone-heuristic PLAIN_ZERO: software-only gyro tracker seeded (eeprom zero=%u cal=0x%02X)",
+		motion->Gyro.Zero,
+		(UCHAR)motion->Gyro.OneG
+	);
 }
 
 static
@@ -605,6 +647,7 @@ DsMotion_TryLoadUsbCalibration(
 			"SET Feature 0xEF page 0xA0 failed with %!STATUS!; using nominal calibration",
 			status
 		);
+		DsMotion_MaybeStartCloneSoftwareZero(pDevCtx);
 		FuncExitNoReturn(TRACE_MOTION);
 		return;
 	}
@@ -631,6 +674,7 @@ DsMotion_TryLoadUsbCalibration(
 			status,
 			transferred
 		);
+		DsMotion_MaybeStartCloneSoftwareZero(pDevCtx);
 		FuncExitNoReturn(TRACE_MOTION);
 		return;
 	}
@@ -644,11 +688,14 @@ DsMotion_TryLoadUsbCalibration(
 		DsMotion_TrackerInitial(
 			&pDevCtx->Motion.Tracker,
 			pDevCtx->Motion.Gyro.OneG,
-			pDevCtx->Motion.Gyro.Zero
+			pDevCtx->Motion.Gyro.Zero,
+			FALSE
 		);
 		pDevCtx->Motion.SendHardwareCal = TRUE;
 		DsMotion_ApplyOutputCalByte(pDevCtx);
 	}
+
+	DsMotion_MaybeStartCloneSoftwareZero(pDevCtx);
 
 	TraceInformation(
 		TRACE_MOTION,
@@ -796,7 +843,14 @@ DsMotion_ProcessInputReport(
 
 	case DsIdentificationMotionPathPlainZero:
 	default:
-		calGyro = DsMotion_Clamp10(DS_MOTION_TARGET + (INT32)motion->Gyro.Zero - raw[3]);
+		if (motion->Tracker.Initialized)
+		{
+			calGyro = DsMotion_TrackerRuntime(&motion->Tracker, raw[3], &trackerChanged);
+		}
+		else
+		{
+			calGyro = DsMotion_Clamp10(DS_MOTION_TARGET + (INT32)motion->Gyro.Zero - raw[3]);
+		}
 		break;
 	}
 
@@ -878,6 +932,11 @@ DsMotion_FillIpcSnapshot(
 	if (motion->Tracker.Initialized)
 	{
 		flags |= DSHM_IPC_MOTION_FLAG_TRACKER;
+	}
+
+	if (motion->Tracker.Initialized && motion->Tracker.SoftwareOnly)
+	{
+		flags |= DSHM_IPC_MOTION_FLAG_SOFT_ZERO;
 	}
 
 	Snapshot->Flags = flags;

@@ -12,6 +12,7 @@
 #define DSHM_IPC_MOTION_FLAG_FALLBACK        0x0002
 #define DSHM_IPC_MOTION_FLAG_HW_CAL          0x0004
 #define DSHM_IPC_MOTION_FLAG_TRACKER         0x0008
+#define DSHM_IPC_MOTION_FLAG_SOFT_ZERO       0x0010
 
 #define Ds3FeatureEeprom                     0x03EF
 
@@ -46,6 +47,7 @@ typedef struct _DS_GYRO_TRACKER
 	INT32 PendingZero;
 	INT32 PendingTol;
 	BOOLEAN Initialized;
+	BOOLEAN SoftwareOnly;
 } DS_GYRO_TRACKER, *PDS_GYRO_TRACKER;
 
 typedef struct _DS_MOTION_SAMPLE
