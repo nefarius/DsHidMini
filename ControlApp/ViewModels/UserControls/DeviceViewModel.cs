@@ -444,6 +444,19 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             : SymbolRegular.Bluetooth24;
 
     /// <summary>
+    ///     Tooltip for the list-card battery icon.
+    /// </summary>
+    public string BatteryToolTip => $"Battery: {BatteryStatusInText}";
+
+    /// <summary>
+    ///     Tooltip for the list-card USB / wireless status icon.
+    /// </summary>
+    public string ConnectionTypeToolTip =>
+        IsWireless
+            ? "Connected wirelessly via Bluetooth"
+            : "Connected via USB";
+
+    /// <summary>
     ///     Tooltip for the list-card restart / disconnect button.
     /// </summary>
     public string RestartDeviceToolTip =>
@@ -608,6 +621,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             OnPropertyChanged(nameof(BatteryStatus));
             OnPropertyChanged(nameof(BatteryIcon));
             OnPropertyChanged(nameof(BatteryStatusInText));
+            OnPropertyChanged(nameof(BatteryToolTip));
         });
     }
 

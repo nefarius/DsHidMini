@@ -110,6 +110,7 @@
                                 Style="{StaticResource MyKey_StatusSymbol}"
                                 Symbol="Warning24"
                                 ToolTip="This device did not report its own Bluetooth address; a synthesized fallback is shown instead and Bluetooth pairing is unavailable."
+                                ToolTipService.InitialShowDelay="200"
                                 Visibility="{Binding IsDeviceAddressSynthesized, Converter={StaticResource BoolToVis_TV_FH}}" />
 
                             <ui:TextBox
@@ -174,7 +175,8 @@
                                     Command="{Binding OpenMotionViewerCommand}"
                                     Content="Motion viewer"
                                     IsEnabled="{Binding CanOpenMotionViewer}"
-                                    ToolTip="{Binding MotionViewerToolTip}" />
+                                    ToolTip="{Binding MotionViewerToolTip}"
+                                    ToolTipService.InitialShowDelay="200" />
                             </DockPanel>
                             <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
                                 <ui:TextBlock
@@ -188,6 +190,7 @@
                                     Style="{StaticResource MyKey_StatusSymbol}"
                                     Symbol="Warning24"
                                     ToolTip="Feature 0x01 matches a known counterfeit signature (field list 01 02 and byte 0x29 = 0x64). This is a heuristic, not a verdict. The OUI/MAC genuine check is separate."
+                                    ToolTipService.InitialShowDelay="200"
                                     Visibility="{Binding IdentificationCloneHeuristic, Converter={StaticResource BoolToVis_TV_FH}}" />
                                 <ui:TextBlock
                                     HorizontalAlignment="Left"
