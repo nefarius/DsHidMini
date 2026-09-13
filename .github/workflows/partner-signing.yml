@@ -58,7 +58,7 @@ jobs:
       tag: ${{ steps.create.outputs.tag }}
     steps:
       - name: 'Checkout'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
@@ -186,7 +186,7 @@ jobs:
     runs-on: windows-2022
     steps:
       - name: 'Checkout'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
@@ -262,7 +262,7 @@ jobs:
     timeout-minutes: 90
     steps:
       - name: 'Checkout'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
@@ -375,7 +375,7 @@ jobs:
     runs-on: windows-2022
     steps:
       - name: 'Checkout'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
