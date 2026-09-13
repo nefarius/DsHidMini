@@ -128,7 +128,11 @@
                                             </Viewbox>
                                             <!--  Battery  -->
                                             <Viewbox DockPanel.Dock="Left">
-                                                <ui:SymbolIcon FontSize="30" Symbol="{Binding BatteryIcon}">
+                                                <ui:SymbolIcon
+                                                    FontSize="30"
+                                                    Symbol="{Binding BatteryIcon}"
+                                                    ToolTip="{Binding BatteryToolTip}"
+                                                    ToolTipService.InitialShowDelay="200">
                                                     <ui:SymbolIcon.LayoutTransform>
                                                         <RotateTransform Angle="270" />
                                                     </ui:SymbolIcon.LayoutTransform>
@@ -137,7 +141,11 @@
 
                                             <!--  Connection type  -->
                                             <Viewbox Margin="0" DockPanel.Dock="Left">
-                                                <ui:SymbolIcon FontSize="30" Symbol="{Binding ConnectionTypeIcon}" />
+                                                <ui:SymbolIcon
+                                                    FontSize="30"
+                                                    Symbol="{Binding ConnectionTypeIcon}"
+                                                    ToolTip="{Binding ConnectionTypeToolTip}"
+                                                    ToolTipService.InitialShowDelay="200" />
                                             </Viewbox>
 
 

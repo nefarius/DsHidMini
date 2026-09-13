@@ -1,0 +1,25 @@
+---
+description: ControlApp WPF hover tooltips use a 200 ms delay
+globs: ControlApp/**/*.{xaml,cs}
+alwaysApply: false
+---
+
+# ControlApp tooltip delay
+
+Every WPF hover tooltip in `ControlApp/` must show quickly.
+
+- Set `ToolTipService.InitialShowDelay="200"` on every new or modified `ToolTip`.
+- Preserve that delay when editing existing tooltip bindings or literals.
+- Do not rely on the slower WPF default (~400 ms).
+- Native Windows tray `TooltipText` and slider `AutoToolTipPlacement` drag popups are out of scope; they are not WPF hover tooltips and do not expose this delay.
+
+```xml
+<!-- BAD -->
+<ui:SymbolIcon Symbol="{Binding BatteryIcon}" ToolTip="{Binding BatteryToolTip}" />
+
+<!-- GOOD -->
+<ui:SymbolIcon
+    Symbol="{Binding BatteryIcon}"
+    ToolTip="{Binding BatteryToolTip}"
+    ToolTipService.InitialShowDelay="200" />
+```
