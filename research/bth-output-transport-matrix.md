@@ -31,7 +31,7 @@ Interrupt. The default stays Control.
 | BthPS3 version | |
 | Adapter | |
 | Windows | |
-| Date | 2026-09-17 (genuine Sony Interrupt pass) |
+| Date | 2026-09-17 (genuine Sony Interrupt failure) |
 
 ## Recorded results
 
