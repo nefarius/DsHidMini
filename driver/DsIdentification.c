@@ -238,6 +238,14 @@ DsIdentification_Clear(
 	pDevCtx->IdentificationPresent = FALSE;
 	RtlZeroMemory(&pDevCtx->Identification, sizeof(pDevCtx->Identification));
 	DsIdentification_ResetDecodedProperties(Device);
+	DsIdentification_AssignProperty(
+		Device,
+		&DEVPKEY_DsHidMini_RO_IdentificationData,
+		DEVPROP_TYPE_BINARY,
+		0,
+		NULL,
+		L"DEVPKEY_DsHidMini_RO_IdentificationData"
+	);
 }
 
 VOID

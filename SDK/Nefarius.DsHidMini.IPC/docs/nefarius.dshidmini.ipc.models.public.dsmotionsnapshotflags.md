@@ -16,3 +16,4 @@ public enum DsMotionSnapshotFlags : ushort
 | `Fallback` | 0x0002 | Nominal calibration is in effect (EEPROM page `0xA0` was not loaded). |
 | `HardwareCal` | 0x0004 | The driver writes a hardware gyro cal byte on output reports. |
 | `Tracker` | 0x0008 | Sony's auto-zero tracker is running. |
+| `SoftwareZero` | 0x0010 | Software-only tracker: `zeroRef` follows rest and the hardware cal byte is never stepped (clone-heuristic `PLAIN_ZERO`). |
