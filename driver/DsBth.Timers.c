@@ -14,7 +14,8 @@ DsBth_EvtStartupDelayTimerFunc(
 
 	FuncEntry(TRACE_DSBTH);
 
-	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(WdfTimerGetParentObject(Timer));
+	const WDFDEVICE device = WdfTimerGetParentObject(Timer);
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(device);
 
 	//
 	// Wired always wins: if the same MAC is already present over USB, drop
@@ -44,20 +45,29 @@ DsBth_EvtStartupDelayTimerFunc(
 	}
 
 	//
+	// Feature 0x01 then Feature 0xEF page 0xA0, before the first output
+	// and interrupt stream. Serialized under OutputReport.Lock so rumble
+	// or LED writes cannot consume a control-channel reply. Soft-fail keeps
+	// nominal motion calibration (issue #217).
+	//
+	WdfWaitLockAcquire(pDevCtx->OutputReport.Lock, NULL);
+
+	DsBth_TryLoadIdentification(device);
+	DsMotion_TryLoadBluetoothCalibration(device);
+
+	//
 	// Apply LEDs (mode-aware, authority-checked - fixes issue #351 for the
 	// wireless startup path, which used to always use the single-LED
 	// mapping and write regardless of authority), zero rumble strength,
-	// then send - all under one hold of the lock so nothing can copy a
-	// half-updated buffer in between (fixes issue #351/bug 6).
+	// then send - still under the same lock as the feature reads so the
+	// first output can carry the EEPROM cal byte.
 	//
 	// The zero-strength call below also writes an explicit, finite
 	// duration by itself now (DS3_PROCESS_RUMBLE_STRENGTH, issue #356), so
 	// the two 0xFE duration writes that used to precede it - and that were
 	// never restored afterwards, permanently time-capping every wireless
 	// rumble for the rest of the session - are gone.
-	// 
-	WdfWaitLockAcquire(pDevCtx->OutputReport.Lock, NULL);
-
+	//
 	DsLed_ApplyLocked(pDevCtx);
 
 	DS3_SET_BOTH_RUMBLE_STRENGTH(pDevCtx, 0x00, 0x00);

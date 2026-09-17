@@ -318,16 +318,17 @@ typedef struct _DEVICE_CONTEXT
 		BOOLEAN SupportsBluetoothAddressReports;
 
 		//
-		// Feature 0x01 identification decoded at USB PrepareHardware. Present is
-		// FALSE for Bluetooth instances and when GET or parse failed. See issue #50.
+		// Feature 0x01 identification decoded at USB PrepareHardware or
+		// Bluetooth startup. Present is FALSE when GET or parse failed.
+		// See issue #50 and #217.
 		// 
 		BOOLEAN IdentificationPresent;
 		DS_IDENTIFICATION_INFO Identification;
 
 	//
 	// Motion calibration, gyro tracker, and last corrected sample.
-	// Seeded with nominal values; USB PrepareHardware may replace them
-	// from EEPROM page 0xA0. See docs/MOTION.md and issue #217.
+	// Seeded with nominal values; USB PrepareHardware or Bluetooth startup
+	// may replace them from EEPROM page 0xA0. See docs/MOTION.md and issue #217.
 	// 
 	DS_MOTION_STATE Motion;
 

@@ -133,6 +133,11 @@ DsMotion_TryLoadUsbCalibration(
 );
 
 VOID
+DsMotion_TryLoadBluetoothCalibration(
+	_In_ WDFDEVICE Device
+);
+
+VOID
 DsMotion_ProcessInputReport(
 	_In_ PDEVICE_CONTEXT Context,
 	_In_ const PDS3_RAW_INPUT_REPORT Report,

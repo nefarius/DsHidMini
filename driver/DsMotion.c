@@ -608,6 +608,67 @@ DsMotion_ParseEepromPage(
 	return TRUE;
 }
 
+static
+VOID
+DsMotion_FillPageSelect(
+	_Out_writes_(48) PUCHAR Select
+)
+{
+	RtlZeroMemory(Select, 48);
+	Select[4] = 0x03;
+	Select[5] = 0x01;
+	Select[6] = DS_MOTION_EEPROM_PAGE;
+}
+
+static
+VOID
+DsMotion_OnEepromUnavailable(
+	_In_ PDEVICE_CONTEXT Context
+)
+{
+	DsMotion_MaybeStartCloneSoftwareZero(Context);
+}
+
+static
+VOID
+DsMotion_OnEepromLoaded(
+	_In_ PDEVICE_CONTEXT Context
+)
+{
+	Context->Motion.Fallback = FALSE;
+	Context->Motion.Path = DsMotion_ResolvePath(Context);
+
+	if (Context->Motion.Path == DsIdentificationMotionPathHwCal ||
+		Context->Motion.Path == DsIdentificationMotionPathSixaxis)
+	{
+		DsMotion_TrackerInitial(
+			&Context->Motion.Tracker,
+			Context->Motion.Gyro.OneG,
+			Context->Motion.Gyro.Zero,
+			FALSE
+		);
+		Context->Motion.SendHardwareCal = TRUE;
+		DsMotion_ApplyOutputCalByte(Context);
+	}
+
+	DsMotion_MaybeStartCloneSoftwareZero(Context);
+
+	TraceInformation(
+		TRACE_MOTION,
+		"EEPROM 0xA0 X=%u/%u Y=%u/%u Z=%u/%u G=%u/%u path=%d fallback=%!BOOLEAN!",
+		Context->Motion.Accel[0].Zero,
+		Context->Motion.Accel[0].OneG,
+		Context->Motion.Accel[1].Zero,
+		Context->Motion.Accel[1].OneG,
+		Context->Motion.Accel[2].Zero,
+		Context->Motion.Accel[2].OneG,
+		Context->Motion.Gyro.Zero,
+		Context->Motion.Gyro.OneG,
+		Context->Motion.Path,
+		Context->Motion.Fallback
+	);
+}
+
 VOID
 DsMotion_TryLoadUsbCalibration(
 	_In_ WDFDEVICE Device
@@ -622,11 +683,7 @@ DsMotion_TryLoadUsbCalibration(
 	FuncEntry(TRACE_MOTION);
 
 	pDevCtx->Motion.Path = DsMotion_ResolvePath(pDevCtx);
-
-	RtlZeroMemory(select, sizeof(select));
-	select[4] = 0x03;
-	select[5] = 0x01;
-	select[6] = DS_MOTION_EEPROM_PAGE;
+	DsMotion_FillPageSelect(select);
 
 	status = USB_SendControlRequest(
 		pDevCtx,
@@ -647,7 +704,7 @@ DsMotion_TryLoadUsbCalibration(
 			"SET Feature 0xEF page 0xA0 failed with %!STATUS!; using nominal calibration",
 			status
 		);
-		DsMotion_MaybeStartCloneSoftwareZero(pDevCtx);
+		DsMotion_OnEepromUnavailable(pDevCtx);
 		FuncExitNoReturn(TRACE_MOTION);
 		return;
 	}
@@ -674,43 +731,75 @@ DsMotion_TryLoadUsbCalibration(
 			status,
 			transferred
 		);
-		DsMotion_MaybeStartCloneSoftwareZero(pDevCtx);
+		DsMotion_OnEepromUnavailable(pDevCtx);
 		FuncExitNoReturn(TRACE_MOTION);
 		return;
 	}
 
-	pDevCtx->Motion.Fallback = FALSE;
-	pDevCtx->Motion.Path = DsMotion_ResolvePath(pDevCtx);
+	DsMotion_OnEepromLoaded(pDevCtx);
 
-	if (pDevCtx->Motion.Path == DsIdentificationMotionPathHwCal ||
-		pDevCtx->Motion.Path == DsIdentificationMotionPathSixaxis)
+	FuncExitNoReturn(TRACE_MOTION);
+}
+
+VOID
+DsMotion_TryLoadBluetoothCalibration(
+	_In_ WDFDEVICE Device
+)
+{
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	UCHAR select[48];
+	UCHAR page[CONTROL_TRANSFER_BUFFER_LENGTH];
+	ULONG transferred = 0;
+	NTSTATUS status;
+
+	FuncEntry(TRACE_MOTION);
+
+	pDevCtx->Motion.Path = DsMotion_ResolvePath(pDevCtx);
+	DsMotion_FillPageSelect(select);
+
+	status = DsBth_HidControlSetFeature(
+		pDevCtx,
+		0xEF,
+		select,
+		ARRAYSIZE(select)
+	);
+
+	if (!NT_SUCCESS(status))
 	{
-		DsMotion_TrackerInitial(
-			&pDevCtx->Motion.Tracker,
-			pDevCtx->Motion.Gyro.OneG,
-			pDevCtx->Motion.Gyro.Zero,
-			FALSE
+		TraceWarning(
+			TRACE_MOTION,
+			"Bluetooth SET Feature 0xEF page 0xA0 failed with %!STATUS!; using nominal calibration",
+			status
 		);
-		pDevCtx->Motion.SendHardwareCal = TRUE;
-		DsMotion_ApplyOutputCalByte(pDevCtx);
+		DsMotion_OnEepromUnavailable(pDevCtx);
+		FuncExitNoReturn(TRACE_MOTION);
+		return;
 	}
 
-	DsMotion_MaybeStartCloneSoftwareZero(pDevCtx);
-
-	TraceInformation(
-		TRACE_MOTION,
-		"EEPROM 0xA0 X=%u/%u Y=%u/%u Z=%u/%u G=%u/%u path=%d fallback=%!BOOLEAN!",
-		pDevCtx->Motion.Accel[0].Zero,
-		pDevCtx->Motion.Accel[0].OneG,
-		pDevCtx->Motion.Accel[1].Zero,
-		pDevCtx->Motion.Accel[1].OneG,
-		pDevCtx->Motion.Accel[2].Zero,
-		pDevCtx->Motion.Accel[2].OneG,
-		pDevCtx->Motion.Gyro.Zero,
-		pDevCtx->Motion.Gyro.OneG,
-		pDevCtx->Motion.Path,
-		pDevCtx->Motion.Fallback
+	RtlZeroMemory(page, sizeof(page));
+	status = DsBth_HidControlGetFeature(
+		pDevCtx,
+		0xEF,
+		page,
+		ARRAYSIZE(page),
+		&transferred
 	);
+
+	if (!NT_SUCCESS(status) ||
+		!DsMotion_ParseEepromPage(page, transferred, &pDevCtx->Motion))
+	{
+		TraceWarning(
+			TRACE_MOTION,
+			"Bluetooth GET Feature 0xEF page 0xA0 failed (status %!STATUS!, %lu bytes); using nominal calibration",
+			status,
+			transferred
+		);
+		DsMotion_OnEepromUnavailable(pDevCtx);
+		FuncExitNoReturn(TRACE_MOTION);
+		return;
+	}
+
+	DsMotion_OnEepromLoaded(pDevCtx);
 
 	FuncExitNoReturn(TRACE_MOTION);
 }
@@ -722,30 +811,13 @@ DsMotion_ApplyOutputCalByte(
 {
 	PUCHAR raw = NULL;
 	SIZE_T length = 0;
-	const UCHAR cal = DsMotion_CurrentCalByte(&Context->Motion);
-
-	if (!Context->Motion.SendHardwareCal ||
-		Context->ConnectionType != DsDeviceConnectionTypeUsb)
+	if (!Context->Motion.SendHardwareCal)
 	{
 		return;
 	}
 
-	Ds3_GetRawOutputReportBuffer(Context, &raw, &length);
-	if (raw == NULL)
-	{
-		return;
-	}
-
-	if (Context->Motion.Path == DsIdentificationMotionPathHwCal && length > 7)
-	{
-		raw[6] = 0xFF;
-		raw[7] = cal;
-	}
-	else if (Context->Motion.Path == DsIdentificationMotionPathSixaxis && length > 5)
-	{
-		raw[4] = 0xFF;
-		raw[5] = cal;
-	}
+	Ds3_GetUnifiedOutputReportBuffer(Context, &raw, &length);
+	DsMotion_OverlayCalByteOnUnified(Context, raw, (ULONG)length);
 }
 
 VOID

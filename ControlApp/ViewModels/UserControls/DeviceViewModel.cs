@@ -134,7 +134,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         _appSnackbarMessagesService = appSnackbarMessagesService;
         _contentDialogService = contentDialogService;
         _addressValidator = addressValidator;
-        _batteryQuery = new Timer(UpdateBatteryStatus, null, 10000, 10000);
+        _batteryQuery = new Timer(UpdateBatteryStatus, null, 1500, 10000);
         _deviceUserData = _dshmConfigManager.GetDeviceData(DeviceAddress);
         _pairingMode = _deviceUserData.BluetoothPairingMode;
         DeviceCustomsVM.ApplyDeviceCapabilities(DeviceType);
@@ -512,8 +512,8 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         Device.GetProperty<string>(DevicePropertyKey.Device_DriverVersion)!.ToUpperInvariant();
 
     /// <summary>
-    ///     <see langword="true"/> if Feature 0x01 identification was published (USB pads
-    ///     that answered GET). Bluetooth instances do not have this property.
+    ///     <see langword="true"/> if Feature 0x01 identification was published
+    ///     (USB or Bluetooth pads that answered GET).
     /// </summary>
     public bool HasIdentification
     {
@@ -624,7 +624,18 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             OnPropertyChanged(nameof(BatteryIcon));
             OnPropertyChanged(nameof(BatteryStatusInText));
             OnPropertyChanged(nameof(BatteryToolTip));
+            NotifyIdentificationProperties();
         });
+    }
+
+    private void NotifyIdentificationProperties()
+    {
+        OnPropertyChanged(nameof(HasIdentification));
+        OnPropertyChanged(nameof(IdentificationFirmware));
+        OnPropertyChanged(nameof(IdentificationPadType));
+        OnPropertyChanged(nameof(IdentificationMotionPath));
+        OnPropertyChanged(nameof(IdentificationCloneHeuristic));
+        OnPropertyChanged(nameof(IdentificationCloneHeuristicText));
     }
 
     public void Dispose()
@@ -696,6 +707,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(DeviceSettingsStatus));
         OnPropertyChanged(nameof(IsHidModeMismatched));
         OnPropertyChanged(nameof(BluetoothOutputReportTransport));
+        NotifyIdentificationProperties();
         await RefreshXInputSlotLabelAsync();
     }
 

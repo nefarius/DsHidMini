@@ -227,3 +227,82 @@ DsIdentification_AssignDeviceProperties(
 		L"DEVPKEY_DsHidMini_RO_IdentificationCloneHeuristic"
 	);
 }
+
+VOID
+DsIdentification_Clear(
+	_In_ WDFDEVICE Device
+)
+{
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+
+	pDevCtx->IdentificationPresent = FALSE;
+	RtlZeroMemory(&pDevCtx->Identification, sizeof(pDevCtx->Identification));
+	DsIdentification_ResetDecodedProperties(Device);
+	DsIdentification_AssignProperty(
+		Device,
+		&DEVPKEY_DsHidMini_RO_IdentificationData,
+		DEVPROP_TYPE_BINARY,
+		0,
+		NULL,
+		L"DEVPKEY_DsHidMini_RO_IdentificationData"
+	);
+}
+
+VOID
+DsIdentification_PublishFromReport(
+	_In_ WDFDEVICE Device,
+	_In_reads_(ReportLength) const UCHAR* Report,
+	_In_ ULONG ReportLength
+)
+{
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	WDF_DEVICE_PROPERTY_DATA propertyData;
+	ULONG length = ReportLength;
+
+	if (Report == NULL || length == 0)
+	{
+		return;
+	}
+
+	if (length > DS_IDENTIFICATION_REPORT_SIZE)
+	{
+		length = DS_IDENTIFICATION_REPORT_SIZE;
+	}
+
+	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RO_IdentificationData);
+	propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+	propertyData.Lcid = LOCALE_NEUTRAL;
+
+	(void)WdfDeviceAssignProperty(
+		Device,
+		&propertyData,
+		DEVPROP_TYPE_BINARY,
+		length,
+		(PVOID)Report
+	);
+
+	if (DsIdentification_Parse(Report, length, &pDevCtx->Identification))
+	{
+		pDevCtx->IdentificationPresent = TRUE;
+		DsIdentification_AssignDeviceProperties(Device, &pDevCtx->Identification);
+
+		TraceVerbose(
+			TRACE_DSUSB,
+			"Feature 0x01 firmware %02X %02X %02X type %02X path %d clone %!BOOLEAN!",
+			pDevCtx->Identification.Firmware[0],
+			pDevCtx->Identification.Firmware[1],
+			pDevCtx->Identification.Firmware[2],
+			pDevCtx->Identification.PadType,
+			pDevCtx->Identification.MotionPath,
+			pDevCtx->Identification.CloneHeuristic
+		);
+	}
+	else
+	{
+		pDevCtx->IdentificationPresent = FALSE;
+		TraceWarning(
+			TRACE_DSUSB,
+			"Feature 0x01 identification blob could not be parsed"
+		);
+	}
+}

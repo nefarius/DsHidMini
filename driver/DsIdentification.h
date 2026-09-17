@@ -43,3 +43,15 @@ DsIdentification_AssignDeviceProperties(
 	_In_ WDFDEVICE Device,
 	_In_ PDS_IDENTIFICATION_INFO Info
 );
+
+VOID
+DsIdentification_Clear(
+	_In_ WDFDEVICE Device
+);
+
+VOID
+DsIdentification_PublishFromReport(
+	_In_ WDFDEVICE Device,
+	_In_reads_(ReportLength) const UCHAR* Report,
+	_In_ ULONG ReportLength
+);

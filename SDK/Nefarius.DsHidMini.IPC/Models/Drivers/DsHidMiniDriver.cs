@@ -31,7 +31,8 @@ public static class DsHidMiniDriver
         typeof(int));
 
     /// <summary>
-    ///     Raw 64-byte <c>GET Feature 0x01</c> identification blob. USB only; see issue #50.
+    ///     Raw 64-byte <c>GET Feature 0x01</c> identification blob. Published when
+    ///     Feature 0x01 succeeds on USB or Bluetooth; see issue #50 and #217.
     /// </summary>
     public static DevicePropertyKey IdentificationDataProperty => CustomDeviceProperty.CreateCustomDeviceProperty(
         Guid.Parse("{3FECF510-CC94-4FBE-8839-738201F84D59}"), 4,

@@ -34,7 +34,7 @@ internal static class MotionStatusFormatter
         }
 
         return isFallback
-            ? "Using nominal calibration (Bluetooth or EEPROM read fallback)."
-            : "Live USB calibration.";
+            ? "Using nominal calibration (EEPROM page 0xA0 was not loaded)."
+            : "Using factory EEPROM calibration.";
     }
 }
