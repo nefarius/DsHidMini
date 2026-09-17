@@ -222,6 +222,17 @@ public class AppSnackbarMessagesService
         );
     }
 
+    public void ShowPairingSucceededConfigurationNotSavedMessage()
+    {
+        _snackbarService.Show(
+            "Controller paired",
+            "The host address was written, but pairing preferences could not be saved. Run as Administrator to persist them.",
+            ControlAppearance.Caution,
+            new SymbolIcon(SymbolRegular.Warning24),
+            TimeSpan.FromSeconds(8)
+        );
+    }
+
     public void ShowPairingFailedMessage(string detail)
     {
         _snackbarService.Show(
