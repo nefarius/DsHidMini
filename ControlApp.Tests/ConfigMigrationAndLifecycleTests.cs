@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig;
+using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 
 using Xunit;
@@ -373,6 +374,69 @@ public class ConfigMigrationAndLifecycleTests : IDisposable
         Assert.Equal(originalDriver, File.ReadAllText(DriverFile));
         Assert.Equal(originalUser, File.ReadAllText(Path.Combine(UserDir, "DshmUserData.json")));
         Assert.True(manager.AutoRestartOnHidModeMismatch);
+    }
+
+    [Fact]
+    public void ResolveBluetoothTransport_OnDiskGlobalInterrupt_WinsOverUserDataDefault()
+    {
+        DshmConfigManager manager = CreateManager();
+        DeviceData device = manager.GetDeviceData("AABBCCDDEEFF");
+        Assert.Equal(
+            BluetoothOutputReportTransport.Control,
+            manager.ResolveEffectiveSettings(device).OutputReport.BluetoothOutputReportTransport);
+
+        File.WriteAllText(DriverFile, """
+            {
+              "IPCEnabled": true,
+              "Global": {
+                "HidDeviceMode": "XInput",
+                "BluetoothOutputReportTransport": "Interrupt"
+              },
+              "Devices": {}
+            }
+            """);
+
+        Assert.Equal(
+            BluetoothOutputReportTransport.Interrupt,
+            manager.ResolveEffectiveBluetoothOutputReportTransport(device));
+    }
+
+    [Fact]
+    public void ResolveBluetoothTransport_OnDiskDeviceOverride_WinsOverGlobal()
+    {
+        DshmConfigManager manager = CreateManager();
+        DeviceData device = manager.GetDeviceData("AABBCCDDEEFF");
+
+        File.WriteAllText(DriverFile, """
+            {
+              "IPCEnabled": true,
+              "Global": {
+                "HidDeviceMode": "XInput",
+                "BluetoothOutputReportTransport": "Control"
+              },
+              "Devices": {
+                "aa:bb:cc:dd:ee:ff": { "BluetoothOutputReportTransport": "Interrupt" }
+              }
+            }
+            """);
+
+        Assert.Equal(
+            BluetoothOutputReportTransport.Interrupt,
+            manager.ResolveEffectiveBluetoothOutputReportTransport(device));
+    }
+
+    [Fact]
+    public void ResolveBluetoothTransport_UnreadableDriverJson_FallsBackToUserData()
+    {
+        DshmConfigManager manager = CreateManager();
+        DeviceData device = manager.GetDeviceData("AABBCCDDEEFF");
+        device.SettingsMode = SettingsModes.Custom;
+        device.Settings.OutputReport.BluetoothOutputReportTransport = BluetoothOutputReportTransport.Interrupt;
+        File.WriteAllText(DriverFile, "{ not-json");
+
+        Assert.Equal(
+            BluetoothOutputReportTransport.Interrupt,
+            manager.ResolveEffectiveBluetoothOutputReportTransport(device));
     }
 
     private DshmConfigManager CreateManager() =>

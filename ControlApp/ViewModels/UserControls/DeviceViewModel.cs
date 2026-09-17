@@ -177,11 +177,13 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     public SettingsContext ExpectedHidMode => _dshmConfigManager.GetDeviceExpectedHidMode(_deviceUserData);
 
     /// <summary>
-    ///     Configured Bluetooth HID channel used to send output reports (LEDs/rumble).
-    ///     Resolved from custom, profile, or global settings, or the Control default.
+    ///     Bluetooth HID channel used to send output reports (LEDs/rumble).
+    ///     Prefer the current on-disk driver configuration so a manual
+    ///     <c>DsHidMini.json</c> edit is reflected even when ControlApp user data
+    ///     still has the Control default.
     /// </summary>
     public BluetoothOutputReportTransport BluetoothOutputReportTransport =>
-        _dshmConfigManager.ResolveEffectiveSettings(_deviceUserData).OutputReport.BluetoothOutputReportTransport;
+        _dshmConfigManager.ResolveEffectiveBluetoothOutputReportTransport(_deviceUserData);
 
 
     /// <summary>
@@ -958,12 +960,6 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         _deviceUserData.BluetoothPairingMode = PairingMode;
         _deviceUserData.PairingAddress = MacAddressFormatter.Normalize(CustomPairingAddress);
 
-        if (!_dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile())
-        {
-            _appSnackbarMessagesService.ShowDsHidMiniConfigurationUpdateFailedMessage();
-            return;
-        }
-
         int? slot = DsHidMiniInterop.TryGetIpcSlotIndex(Device);
         if (slot is not int deviceIndex)
         {
@@ -998,14 +994,18 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
 
         try
         {
-            SetHostResult result = await Task.Run(() =>
-            {
-                using DsHidMiniInterop interop = new();
-                return customHostAddress is not null
-                    ? interop.SetHostAddress(deviceIndex, customHostAddress)
-                    : interop.PairToCurrentHost(deviceIndex);
-            });
+            PairingRequestWorkflowResult<SetHostResult> outcome = await Task.Run(() =>
+                PairingRequestWorkflow.PersistThenPair(
+                    () => _dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile(),
+                    () =>
+                    {
+                        using DsHidMiniInterop interop = new();
+                        return customHostAddress is not null
+                            ? interop.SetHostAddress(deviceIndex, customHostAddress)
+                            : interop.PairToCurrentHost(deviceIndex);
+                    }));
 
+            SetHostResult result = outcome.PairResult;
             Log.Logger.Information(
                 "Pairing for '{DeviceAddress}' slot {Slot}: {Result}",
                 DeviceAddress,
@@ -1014,7 +1014,14 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
 
             if (result.Succeeded)
             {
-                _appSnackbarMessagesService.ShowPairingSucceededMessage();
+                if (outcome.PersistSucceeded)
+                {
+                    _appSnackbarMessagesService.ShowPairingSucceededMessage();
+                }
+                else
+                {
+                    _appSnackbarMessagesService.ShowPairingSucceededConfigurationNotSavedMessage();
+                }
             }
             else
             {

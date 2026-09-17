@@ -3,7 +3,9 @@ using System.IO;
 using Newtonsoft.Json;
 
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig;
+using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
+using Nefarius.DsHidMini.ControlApp.Models.Util;
 
 namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 
@@ -141,6 +143,33 @@ public class DshmConfigManager
             default:
                 return GlobalProfile.Settings;
         }
+    }
+
+    /// <summary>
+    ///     Bluetooth HID channel the driver is using for this device: on-disk
+    ///     <c>DsHidMini.json</c> (device overlay, then Global), or ControlApp-managed
+    ///     settings when that file cannot be read.
+    /// </summary>
+    public BluetoothOutputReportTransport ResolveEffectiveBluetoothOutputReportTransport(DeviceData device)
+    {
+        if (DshmConfigSerialization.TryReadDriverConfigFile(
+                out DshmConfiguration? configuration,
+                _locations.DriverConfigDirectory)
+            && configuration is not null)
+        {
+            string mac = MacAddressFormatter.Normalize(device.DeviceMac);
+            DshmDeviceData? overlay = configuration.Devices.FirstOrDefault(candidate =>
+                string.Equals(
+                    MacAddressFormatter.Normalize(candidate.DeviceAddress),
+                    mac,
+                    StringComparison.OrdinalIgnoreCase));
+
+            return overlay?.DeviceSettings.BluetoothOutputReportTransport
+                   ?? configuration.Global.BluetoothOutputReportTransport
+                   ?? BluetoothOutputReportTransport.Control;
+        }
+
+        return ResolveEffectiveSettings(device).OutputReport.BluetoothOutputReportTransport;
     }
 
     public bool SaveChangesAndUpdateDsHidMiniConfigFile()
