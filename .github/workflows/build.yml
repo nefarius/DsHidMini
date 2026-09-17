@@ -8,13 +8,21 @@ on:
       - 'v*'
     paths-ignore:
       - '**/*.md'
-      - '**/*.aip'
+      - '.cursor/**'
       - '.vscode/**'
-      - '**/*.json'
-      - 'setup/**'
+      - 'docs/**'
+      - 'research/**/*.csv'
+      - 'research/**/*.txt'
   pull_request:
     branches:
       - master
+    paths-ignore:
+      - '**/*.md'
+      - '.cursor/**'
+      - '.vscode/**'
+      - 'docs/**'
+      - 'research/**/*.csv'
+      - 'research/**/*.txt'
 
 concurrency:
   group: build-${{ github.ref }}
