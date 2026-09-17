@@ -26,13 +26,29 @@
 
 - [DsHidMiniDriver](./nefarius.dshidmini.ipc.models.drivers.dshidminidriver.md)
 
+- [DsIdentification](./nefarius.dshidmini.ipc.models.drivers.dsidentification.md)
+
+- [DsIdentificationInfo](./nefarius.dshidmini.ipc.models.drivers.dsidentificationinfo.md)
+
+- [DsIdentificationMotionPath](./nefarius.dshidmini.ipc.models.drivers.dsidentificationmotionpath.md)
+
+- [DsMotionCalibrationSource](./nefarius.dshidmini.ipc.models.drivers.dsmotioncalibrationsource.md)
+
 ## Namespace Nefarius.DsHidMini.IPC.Models.Public
 
 - [DS3_RAW_INPUT_REPORT](./nefarius.dshidmini.ipc.models.public.ds3_raw_input_report.md)
 
+- [Ds3LedEffect](./nefarius.dshidmini.ipc.models.public.ds3ledeffect.md)
+
+- [Ds3LedPattern](./nefarius.dshidmini.ipc.models.public.ds3ledpattern.md)
+
+- [Ds3PlayerLeds](./nefarius.dshidmini.ipc.models.public.ds3playerleds.md)
+
 - [DsMotionSnapshot](./nefarius.dshidmini.ipc.models.public.dsmotionsnapshot.md)
 
 - [DsMotionSnapshotFlags](./nefarius.dshidmini.ipc.models.public.dsmotionsnapshotflags.md)
+
+- [PowerOffUsbResult](./nefarius.dshidmini.ipc.models.public.poweroffusbresult.md)
 
 - [SetHostResult](./nefarius.dshidmini.ipc.models.public.sethostresult.md)
 

@@ -57,9 +57,8 @@ public sealed partial class DsHidMiniInterop : IDisposable
     ///     Creates a new <see cref="DsHidMiniInterop" /> instance by connecting to the driver IPC mechanism.
     /// </summary>
     /// <exception cref="DsHidMiniInteropUnavailableException">
-    ///     No driver instance is available. Make sure that at least one
-    ///     device is connected and that the driver is installed and working properly. Call <see cref="IsAvailable" /> prior to
-    ///     avoid this exception.
+    ///     One or more required driver IPC objects are unavailable. Make sure the driver is loaded with IPC enabled. Call
+    ///     <see cref="IsAvailable" /> first to avoid this exception.
     /// </exception>
     public DsHidMiniInterop()
     {
@@ -72,7 +71,7 @@ public sealed partial class DsHidMiniInterop : IDisposable
     }
 
     /// <summary>
-    ///     Gets whether driver IPC is available.
+    ///     Gets whether the required command mutex, read/write events, and shared-memory mapping can all be opened.
     /// </summary>
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public static bool IsAvailable
@@ -81,11 +80,17 @@ public sealed partial class DsHidMiniInterop : IDisposable
         {
             try
             {
-                using MemoryMappedFile mmf = MemoryMappedFile.OpenExisting(FileMapName);
+                using Mutex commandMutex = Mutex.OpenExisting(MutexName);
+                using EventWaitHandle readEvent = EventWaitHandle.OpenExisting(ReadEventName);
+                using EventWaitHandle writeEvent = EventWaitHandle.OpenExisting(WriteEventName);
+                using MemoryMappedFile mmf =
+                    MemoryMappedFile.OpenExisting(FileMapName, MemoryMappedFileRights.ReadWrite);
 
                 return true;
             }
-            catch (FileNotFoundException)
+            catch (Exception exception) when (exception is FileNotFoundException
+                                              or WaitHandleCannotBeOpenedException
+                                              or UnauthorizedAccessException)
             {
                 return false;
             }
@@ -132,9 +137,8 @@ public sealed partial class DsHidMiniInterop : IDisposable
     ///     Attempt re-initialization of IPC after all devices got disconnected.
     /// </summary>
     /// <exception cref="DsHidMiniInteropUnavailableException">
-    ///     No driver instance is available. Make sure that at least one
-    ///     device is connected and that the driver is installed and working properly. Call <see cref="IsAvailable" /> prior to
-    ///     avoid this exception.
+    ///     The command mutex, read/write events, or shared-memory mapping are unavailable. Make sure the driver is loaded
+    ///     with IPC enabled.
     /// </exception>
     public void Reconnect()
     {
@@ -148,7 +152,8 @@ public sealed partial class DsHidMiniInterop : IDisposable
             _readEvent = EventWaitHandle.OpenExisting(ReadEventName);
             _writeEvent = EventWaitHandle.OpenExisting(WriteEventName);
         }
-        catch (WaitHandleCannotBeOpenedException)
+        catch (Exception exception) when (exception is WaitHandleCannotBeOpenedException
+                                          or UnauthorizedAccessException)
         {
             throw new DsHidMiniInteropUnavailableException();
         }
@@ -160,6 +165,11 @@ public sealed partial class DsHidMiniInterop : IDisposable
                 new BOOL(false),
                 FileMapName
             );
+
+            if (_fileMapping.IsInvalid)
+            {
+                throw new DsHidMiniInteropUnavailableException();
+            }
 
             _cmdView = PInvoke.MapViewOfFile(
                 _fileMapping,

@@ -3,12 +3,12 @@ using Nefarius.DsHidMini.IPC.Models;
 namespace Nefarius.DsHidMini.IPC.Exceptions;
 
 /// <summary>
-///     Driver IPC unavailable, make sure that at least one compatible controller is connected and operational.
+///     One or more required driver IPC objects are unavailable.
 /// </summary>
 public sealed class DsHidMiniInteropUnavailableException : Exception
 {
     internal DsHidMiniInteropUnavailableException() : base(
-        "Driver IPC unavailable, make sure that at least one compatible controller is connected and operational.")
+        "Driver IPC unavailable; make sure the driver is loaded with IPC enabled.")
     {
     }
 }

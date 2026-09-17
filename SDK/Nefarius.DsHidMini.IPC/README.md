@@ -27,7 +27,9 @@ Connect your .NET application to DsHidMini via shared memory and named synchroni
 
 ## Overview
 
-DsHidMini is a Windows kernel-mode driver that enables SIXAXIS/DualShock 3 (and compatible) controllers to work as HID or XInput devices. This library is the **client-side SDK** that talks to the driver over:
+DsHidMini is a Windows user-mode driver that enables SIXAXIS/DualShock 3,
+Navigation, and compatible controllers to work as HID or XInput devices. This
+library is the **client-side SDK** that communicates with the driver over:
 
 - **Shared memory** — command channel, HID input report data, and (on current drivers) a third allocation-granularity-aligned motion telemetry region. Older drivers expose only the first two regions; this SDK keeps mapping those unchanged.
 - **Named events and mutex** — request/response synchronization
@@ -57,10 +59,12 @@ The SDK handles reconnection when the last device disconnects and the next one a
 |-------------|---------|
 | **.NET** | .NET Standard 2.0 or newer (covers .NET Framework 4.6.2+ and all modern .NET). An explicit `net10.0-windows` build is also shipped. Windows-only at runtime. |
 | **OS** | Windows (named kernel objects and shared memory are Windows-only) |
-| **Driver** | DsHidMini driver installed; at least one compatible controller connected and bound to the driver |
+| **Driver** | DsHidMini installed and loaded with `IPCEnabled` set to `true`; a connected compatible controller is required for device-specific operations |
 | **Elevation** | Not required for normal use. IPC uses named objects (mutex, events, shared memory, and per-device HID wait events) with DACLs that allow authenticated users, including event-based `GetRawInputReport`. |
 
-Before creating a `DsHidMiniInterop` instance, check **`DsHidMiniInterop.IsAvailable`** to avoid throwing when no device is present.
+Before creating a `DsHidMiniInterop` instance, check
+**`DsHidMiniInterop.IsAvailable`** to avoid throwing when the driver IPC
+objects are unavailable.
 
 ---
 
@@ -86,10 +90,10 @@ Install-Package Nefarius.DsHidMini.IPC
 using Nefarius.DsHidMini.IPC;
 using Nefarius.DsHidMini.IPC.Models.Public;
 
-// 1. Check that the driver is present (e.g. at least one controller is connected)
+// 1. Check that all required driver IPC objects are available
 if (!DsHidMiniInterop.IsAvailable)
 {
-    Console.WriteLine("No DsHidMini device found. Connect a controller.");
+    Console.WriteLine("DsHidMini IPC is unavailable. Ensure the driver is loaded and IPC is enabled.");
     return;
 }
 
@@ -119,11 +123,11 @@ if (gotReport)
 
 | Member | Description |
 |--------|-------------|
-| **`static bool IsAvailable`** | `true` if the driver’s shared memory is present (at least one device active). Check this before constructing. |
+| **`static bool IsAvailable`** | `true` if the command mutex, read/write events, and shared-memory mapping can all be opened. This indicates that the driver is loaded with IPC enabled, not that a controller occupies a device slot. Check it before constructing. |
 | **`static int? TryGetIpcSlotIndex(PnPDevice device)`** | Reads the driver’s one-based IPC slot from `DsHidMiniDriver.IpcSlotIndexProperty`. Returns `null` when the property is missing or outside 1…255. |
 | **`DsHidMiniInterop()`** | Connects to the driver IPC. Throws if not available. Subscribes to device arrival/removal for reconnection. |
 | **`void Dispose()`** | Releases mapped views, file mapping, and events. Implement `IDisposable` and dispose when done. |
-| **`void Reconnect()`** | Re-opens mutex, events, and shared memory (e.g. after all devices were removed). Throws if still no device. |
+| **`void Reconnect()`** | Re-opens the required command mutex, read/write events, and shared-memory mapping (e.g. after all devices were removed). Throws `DsHidMiniInteropUnavailableException` if any required object is unavailable. |
 | **`bool HasMotionTelemetry`** | `true` when this client mapped the driver’s motion region. `false` on older drivers. |
 | **`bool GetRawInputReport(int deviceIndex, ref DS3_RAW_INPUT_REPORT report, TimeSpan? timeout)`** | Fills `report` with the last or next raw HID report. Use `timeout: null` for immediate read; use e.g. `TimeSpan.FromMilliseconds(20)` for event-based waiting on the driver’s named per-slot manual-reset event (`Global\DsHidMiniHidReportEvent` + index). Multiple clients can wait on the same slot. Returns `false` if the slot is empty, or if a timeout was requested and no wait object exists for that slot (nothing connected there). |
 | **`bool GetMotionSnapshot(int deviceIndex, out DsMotionSnapshot snapshot, TimeSpan? timeout)`** | Fills `snapshot` with the last or next seqlock-protected motion telemetry. Uses the same per-slot wait event as `GetRawInputReport`. Returns `false` when the driver has no motion region, the slot is empty, or a timeout expires. |
@@ -207,7 +211,7 @@ The SDK uses dedicated exception types so you can handle driver and usage errors
 
 | Exception | When it is thrown |
 |-----------|-------------------|
-| **`DsHidMiniInteropUnavailableException`** | No driver instance (no device connected or driver not loaded). Check `IsAvailable` before constructing or calling APIs. |
+| **`DsHidMiniInteropUnavailableException`** | At least one required driver IPC object is unavailable because the driver is not loaded, IPC is disabled, or the caller cannot open it. Check `IsAvailable` before constructing or calling APIs. |
 | **`DsHidMiniInteropInvalidDeviceIndexException`** | `deviceIndex` not in 1…255. |
 | **`DsHidMiniInteropReplyTimeoutException`** | Driver did not respond within the expected time (e.g. ping or command). |
 | **`DsHidMiniInteropConcurrencyException`** | Another thread is already performing an IPC call; only one at a time is allowed. |
@@ -241,10 +245,16 @@ Includes:
 
 ## Regenerating API docs
 
-To regenerate the `docs/` markdown from the built assembly:
+From the repository root, build the SDK through NUKE:
 
-```bash
-dotnet build -c Release
+```powershell
+.\build.cmd Compile --configuration Release
+```
+
+Then, from this directory, regenerate the `docs/` markdown from the built
+assembly:
+
+```powershell
 dotnet tool install -g Nefarius.Tools.XMLDoc2Markdown
 xmldoc2md .\bin\Release\net10.0-windows\Nefarius.DsHidMini.IPC.dll .\docs\
 ```

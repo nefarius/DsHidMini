@@ -1,11 +1,20 @@
 # XInput Bridge
 
-Drop-in **XInput proxy DLL** for [DsHidMini](../README.md). It replaces `XInput1_3.dll` so games and apps get standard XInput for up to 8 controllers while DsHidMini DualShock 3 pads (in [SXS mode](https://docs.nefarius.at/projects/DsHidMini/HID-Device-Modes-Explained/#sxs)) are handled by the bridge and real Xbox/XInput devices are forwarded to the system `XInput1_3.dll`. The bridge also exposes **XInputGetExtended** for DS3 pressure-sensitive (analog) button and axis data.
+Drop-in **XInput proxy DLL** for [DsHidMini](../README.md). It replaces
+`XInput1_3.dll` so games and apps can use up to eight controllers while
+DsHidMini DualShock 3 pads (in
+[SXS mode](https://docs.nefarius.at/projects/DsHidMini/HID-Device-Modes-Explained/#sxs))
+are handled by the bridge and real Xbox/XInput devices are forwarded to the
+system `XInput1_3.dll`. The bridge also exposes **XInputGetExtended** for DS3
+pressure-sensitive (analog) button and axis data.
 
 ## Overview
 
 - **Role:** Implements the XInput 1.3 API plus selected XInput 1.4 functions (XInput 1.3+ / XInput 1.4–compatible); built as `XInput1_3.dll` so apps load it instead of the system DLL (e.g. via game directory or [x360ce](https://www.x360ce.com/)). Functions such as `XInputWaitForGuideButton`, `XInputCancelGuideButtonWait`, and `XInputPowerOffController` are proxied to the system DLL.
-- **Per–user index:** Each of the 4 XInput “slots” (plus extended handling) is either:
+- **Per-user index:** The bridge maintains eight controller state slots.
+  DsHidMini DS3 devices can occupy bridge indices 0–7, while real XUSB devices
+  retain their native system XInput indices and are forwarded to the system
+  DLL. Each routed index is either:
   - **DsHidMini DS3** (SXS HID device) → bridge reads HID via [HIDAPI](https://github.com/libusb/hidapi), maps to XInput state/rumble and optionally exposes extended data, or
   - **Real XUSB device** → call is proxied to `C:\Windows\System32\XInput1_3.dll`.
 - **Extended API:** `XInputGetExtended` returns a struct (see `include/DsHidMini/ScpTypes.h`) with normalized float values for all DS3 axes and buttons (1.0 = full press / full axis, 0.0 = released / center). Only meaningful for slots occupied by a DsHidMini DS3.
@@ -55,10 +64,14 @@ Dependencies (via [vcpkg](https://vcpkg.io/)): **hidapi**, **winreg**.
 
 ## Build
 
-- **IDE:** Visual Studio 2022 with C++ desktop workload.
+- **Toolchain:** Visual Studio 2026 with MSBuild 18 and the C++ desktop workload.
 - **vcpkg:** Install [vcpkg](https://vcpkg.io/en/docs/getting-started.html), then integrate (e.g. `vcpkg integrate install`). The project uses the vcpkg MSBuild integration; triplets are set in the vcxproj (e.g. `x64-windows-static` for x64).
-- **Solution:** Open the repository solution (e.g. `dshidmini.sln`) and build the **XInputBridge** project. Supported platforms: **Win32**, **x64**, **ARM64**.
-- **NUKE (preferred):** `.\build.cmd CompileXInputBridge` builds the proxy DLL and `scpdlltester`. `.\build.cmd TestXInputBridge` runs synthetic self-tests. `.\build.cmd BenchmarkXInputBridge` records mapping and no-device poll timings. `.\build.cmd AuditXInputBridge` runs all three.
+- **NUKE:** From the repository root, `.\build.cmd CompileXInputBridge` builds
+  the proxy DLL and `scpdlltester`. `.\build.cmd TestXInputBridge` runs
+  synthetic self-tests, `.\build.cmd BenchmarkXInputBridge` records mapping
+  and no-device poll timings, and `.\build.cmd AuditXInputBridge` runs the
+  tests and benchmarks. Supported platforms are **Win32**, **x64**, and
+  **ARM64**.
 
 Output is `XInput1_3.dll`; deploy next to the game executable (or use a loader like x360ce) so the game loads this DLL instead of the system XInput.
 

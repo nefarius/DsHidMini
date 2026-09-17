@@ -5,7 +5,9 @@ The findings a driver can rely on, the implementation checklist and the remainin
 open measurements live in [`docs/MOTION.md`](../../docs/MOTION.md). This folder is
 **not** part of the NUKE / Visual Studio build.
 
-This phase made no driver changes.
+These research artifacts produced the calibration and motion implementation now
+used by the driver, IPC SDK, and ControlApp. The tools in this directory remain
+standalone and are not part of the product build.
 
 ## Layout
 

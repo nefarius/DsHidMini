@@ -1,6 +1,10 @@
 # Physical Interface Device Implementation
 
-To be filled...
+This directory contains the Physical Interface Device (PID) report-descriptor
+fragments and supporting types used to expose DualShock 3 rumble through the
+Windows DirectInput Force Feedback API. `DsHid.c` includes all numbered
+fragments in descriptor order; report handling is implemented in
+`HID.Reports.c` and `OutputReport.c`.
 
 ## Description of files
 

@@ -2,7 +2,8 @@
 
 Namespace: Nefarius.DsHidMini.IPC.Models.Drivers
 
-Hardware family derived from USB/Bluetooth VID and PID. Matches `DS_DEVICE_TYPE` in the driver.
+Hardware family derived from USB/Bluetooth VID and PID. Matches
+ `DS_DEVICE_TYPE` in the driver.
 
 ```csharp
 public enum DsDeviceType

@@ -32,9 +32,7 @@ public partial class DsHidMiniInterop
     /// <param name="timeout">Optional timeout to wait for a report update to arrive. Default invocation returns immediately.</param>
     /// <exception cref="DsHidMiniInteropUnexpectedReplyException">The driver returned unexpected or malformed data.</exception>
     /// <exception cref="DsHidMiniInteropUnavailableException">
-    ///     No driver instance is available. Make sure that at least one
-    ///     device is connected and that the driver is installed and working properly. Call <see cref="IsAvailable" /> prior to
-    ///     avoid this exception.
+    ///     One or more required driver IPC objects are unavailable. Check <see cref="IsAvailable" /> before calling.
     /// </exception>
     /// <returns>
     ///     TRUE if <paramref name="report" /> got filled in or FALSE if the given <paramref name="deviceIndex" /> is not
@@ -317,8 +315,7 @@ public partial class DsHidMiniInterop
     ///     Send a PING to the driver and awaits the reply.
     /// </summary>
     /// <exception cref="DsHidMiniInteropUnavailableException">
-    ///     Driver IPC unavailable, make sure that at least one compatible
-    ///     controller is connected and operational.
+    ///     One or more required driver IPC objects are unavailable.
     /// </exception>
     /// <exception cref="DsHidMiniInteropReplyTimeoutException">The driver didn't respond within an expected period.</exception>
     /// <exception cref="DsHidMiniInteropUnexpectedReplyException">The driver returned unexpected or malformed data.</exception>
@@ -375,8 +372,7 @@ public partial class DsHidMiniInterop
     ///     Writes a new host address to the given device.
     /// </summary>
     /// <exception cref="DsHidMiniInteropUnavailableException">
-    ///     Driver IPC unavailable, make sure that at least one compatible
-    ///     controller is connected and operational.
+    ///     One or more required driver IPC objects are unavailable.
     /// </exception>
     /// <returns>A <see cref="SetHostResult" /> containing success (or error) details.</returns>
     /// <remarks>This is synonymous with "pairing" to a new Bluetooth host.</remarks>
@@ -464,8 +460,7 @@ public partial class DsHidMiniInterop
     /// <param name="deviceIndex">The one-based device index.</param>
     /// <param name="playerIndex">The player index to set to. Valid values include 1 to 7.</param>
     /// <exception cref="DsHidMiniInteropUnavailableException">
-    ///     Driver IPC unavailable, make sure that at least one compatible
-    ///     controller is connected and operational.
+    ///     One or more required driver IPC objects are unavailable.
     /// </exception>
     /// <returns></returns>
     /// <exception cref="DsHidMiniInteropInvalidDeviceIndexException">
@@ -545,8 +540,7 @@ public partial class DsHidMiniInterop
     /// </summary>
     /// <param name="deviceIndex">The one-based device index.</param>
     /// <exception cref="DsHidMiniInteropUnavailableException">
-    ///     Driver IPC unavailable, make sure that at least one compatible
-    ///     controller is connected and operational.
+    ///     One or more required driver IPC objects are unavailable.
     /// </exception>
     /// <exception cref="DsHidMiniInteropInvalidDeviceIndexException">
     ///     The <paramref name="deviceIndex" /> was outside the valid range 1..255.
@@ -619,8 +613,7 @@ public partial class DsHidMiniInterop
     /// <param name="smallMotor">Light / right motor strength (0-255).</param>
     /// <returns>The NTSTATUS returned by the driver.</returns>
     /// <exception cref="DsHidMiniInteropUnavailableException">
-    ///     Driver IPC unavailable, make sure that at least one compatible
-    ///     controller is connected and operational.
+    ///     One or more required driver IPC objects are unavailable.
     /// </exception>
     /// <exception cref="DsHidMiniInteropInvalidDeviceIndexException">
     ///     The <paramref name="deviceIndex" /> was outside the valid range 1..255.
@@ -691,8 +684,7 @@ public partial class DsHidMiniInterop
     /// <param name="enabled"><see langword="true" /> to enable alternative rumble mode.</param>
     /// <returns>The NTSTATUS returned by the driver.</returns>
     /// <exception cref="DsHidMiniInteropUnavailableException">
-    ///     Driver IPC unavailable, make sure that at least one compatible
-    ///     controller is connected and operational.
+    ///     One or more required driver IPC objects are unavailable.
     /// </exception>
     /// <exception cref="DsHidMiniInteropInvalidDeviceIndexException">
     ///     The <paramref name="deviceIndex" /> was outside the valid range 1..255.
@@ -761,8 +753,7 @@ public partial class DsHidMiniInterop
     /// <param name="deviceIndex">The one-based device index.</param>
     /// <returns>A <see cref="SetHostResult" /> containing write/read NTSTATUS values.</returns>
     /// <exception cref="DsHidMiniInteropUnavailableException">
-    ///     Driver IPC unavailable, make sure that at least one compatible
-    ///     controller is connected and operational.
+    ///     One or more required driver IPC objects are unavailable.
     /// </exception>
     /// <exception cref="DsHidMiniInteropInvalidDeviceIndexException">
     ///     The <paramref name="deviceIndex" /> was outside the valid range 1..255.
@@ -828,8 +819,7 @@ public partial class DsHidMiniInterop
     /// <param name="deviceIndex">The one-based device index.</param>
     /// <returns>The NTSTATUS returned by the driver.</returns>
     /// <exception cref="DsHidMiniInteropUnavailableException">
-    ///     Driver IPC unavailable, make sure that at least one compatible
-    ///     controller is connected and operational.
+    ///     One or more required driver IPC objects are unavailable.
     /// </exception>
     /// <exception cref="DsHidMiniInteropInvalidDeviceIndexException">
     ///     The <paramref name="deviceIndex" /> was outside the valid range 1..255.
@@ -899,8 +889,7 @@ public partial class DsHidMiniInterop
     /// <param name="pattern">The flags and per-LED effects to apply.</param>
     /// <returns>The NTSTATUS returned by the driver.</returns>
     /// <exception cref="DsHidMiniInteropUnavailableException">
-    ///     Driver IPC unavailable, make sure that at least one compatible
-    ///     controller is connected and operational.
+    ///     One or more required driver IPC objects are unavailable.
     /// </exception>
     /// <exception cref="DsHidMiniInteropInvalidDeviceIndexException">
     ///     The <paramref name="deviceIndex" /> was outside the valid range 1..255.
