@@ -26,6 +26,20 @@ The NTSTATUS value of the "pairing" or address overwrite action.
 public uint WriteStatus;
 ```
 
+## Properties
+
+### <a id="properties-succeeded"/>**Succeeded**
+
+`true` when both the pairing write and the verify read succeeded.
+
+```csharp
+public bool Succeeded { get; }
+```
+
+#### Property Value
+
+[Boolean](https://learn.microsoft.com/dotnet/api/system.boolean)<br>
+
 ## Methods
 
 ### <a id="methods-tostring"/>**ToString()**

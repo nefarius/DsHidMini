@@ -2,7 +2,7 @@
 
 Namespace: Nefarius.DsHidMini.IPC.Exceptions
 
-Driver IPC unavailable, make sure that at least one compatible controller is connected and operational.
+One or more required driver IPC objects are unavailable.
 
 ```csharp
 public sealed class DsHidMiniInteropUnavailableException : System.Exception, System.Runtime.Serialization.ISerializable
