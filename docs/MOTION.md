@@ -182,12 +182,18 @@ raw 64-byte blob plus the decoded fields as read-only device properties on
 | 9 | `DEVPKEY_DsHidMini_RO_IdentificationPadType` | BYTE (first of offsets 8-11; informational) |
 | 10 | `DEVPKEY_DsHidMini_RO_IdentificationMotionPath` | BYTE (`Unknown` / `PlainZero` / `HwCal` / `Sixaxis`) |
 | 11 | `DEVPKEY_DsHidMini_RO_IdentificationCloneHeuristic` | BOOLEAN |
+| 13 | `DEVPKEY_DsHidMini_RO_MotionCalibrationData` | BINARY 64 (Feature `0xEF` page `0xA0` reply) |
+| 14 | `DEVPKEY_DsHidMini_RO_MotionCalibrationSource` | BYTE (`None` / `LiveUsb` / `CachedFromUsb`) |
 
-Bluetooth instances are queried on the BthPS3 HID control channel during
-wireless startup (after the wired-yield check, before the first output and
-interrupt stream). A GET success with a parse failure still
-keeps the raw blob and leaves the decoded keys unset. Publishing these
-properties does **not** change HID mode, output reports, or rumble.
+Bluetooth is never queried for Feature `0x01` or `0xEF` - no known Bluetooth
+host does this (see [`PS3_USB_STARTUP.md`](PS3_USB_STARTUP.md#bluetooth-has-no-equivalent-read)).
+Instead, `DsBth_EvtStartupDelayTimerFunc` reads back whichever USB instance's
+`IdentificationData` / `MotionCalibrationData` matches this pad's Bluetooth
+MAC (`DsDevice_ReadCachedWiredProperties`, `driver/Device.c`), including a
+USB instance that is currently unplugged. A pad never seen over USB has no
+cache and stays at nominal `512/399` with no wire traffic and no startup
+delay. Publishing these properties does **not** change HID mode, output
+reports, or rumble.
 
 ## Calibration EEPROM: `Feature 0xEF`, `0xF8`, `0xF7`
 
@@ -746,18 +752,31 @@ both platforms, so on Linux it is not zeroed either.
 
 - **USB EEPROM read** (`driver/DsMotion.c`, `DsUsb_PrepareHardware`): after
   `0xF2`/`0xF5` and before the first output report, `SET`/`GET Feature 0xEF`
-  page `0xA0`. Eight big-endian pairs at offset `0x11` are cached. A failed or
-  invalid read does **not** fail device start; the driver keeps nominal
-  `zero=512`, `oneG=399` and sets the IPC fallback flag.
-- **Bluetooth EEPROM read** (`DsBth_EvtStartupDelayTimerFunc`): the same
-  Feature `0x01` then SET/GET Feature `0xEF` page `0xA0` over
-  `IOCTL_BTHPS3_HID_CONTROL_WRITE/READ` (`0x53` SET Feature, `0x43` GET
-  Feature, optional handshake drain, `0xA3` DATA strip). Protocol, timeout,
-  or parse failure keeps the nominal fallback and does **not** fail startup.
+  page `0xA0`. Eight big-endian pairs at offset `0x11` are cached in memory
+  and, on success, persisted as `DEVPKEY_DsHidMini_RO_MotionCalibrationData`
+  on the USB devnode (`DsMotion_LoadCalibrationBuffer`, `Source=LiveUsb`). A
+  failed or invalid read does **not** fail device start; the driver keeps
+  nominal `zero=512`, `oneG=399`, sets the IPC fallback flag, and clears any
+  stale cached blob so a later Bluetooth connect does not pick up a corrupt
+  read.
+- **Bluetooth calibration cache** (`DsBth_EvtStartupDelayTimerFunc`,
+  `DsDevice_ReadCachedWiredProperties` in `driver/Device.c`): no HID traffic
+  at all. The pad's Bluetooth MAC is matched against every USB devnode
+  (present or phantom/unplugged) for `DEVPKEY_Bluetooth_DeviceAddress`, and
+  that instance's cached `IdentificationData` / `MotionCalibrationData` are
+  read back and parsed exactly like a live USB reply
+  (`DsMotion_LoadCalibrationBuffer`, `Source=CachedFromUsb`). A pad never
+  seen over USB has no cache and stays nominal
+  (`DsMotion_OnBluetoothCacheMiss`) with no wire traffic and no startup
+  delay - see
+  [`PS3_USB_STARTUP.md`](PS3_USB_STARTUP.md#bluetooth-has-no-equivalent-read)
+  for why this replaced an earlier (unverified) Bluetooth GET Feature
+  transport.
 - **Canonical processing** on every input report: gain-113 accelerometer
   calibration, X mirrored *after* cal, and one of the three Sony gyro paths
   from the Feature `0x01` field list (`PLAIN_ZERO` / `HW_CAL` / `SIXAXIS`).
-  Bluetooth uses the same formulas once EEPROM and identification load.
+  Bluetooth uses the same formulas once a cache hit loads EEPROM and
+  identification.
 - **SIXAXIS.SYS-compatible GetFeature** (`DSHM_ProcessHidInputReport`): the
   49-byte feature report now carries the calibrated, host-order values from
   `Motion.Sample` (same `CalGyro` as IPC). For `HW_CAL` that is
@@ -766,7 +785,8 @@ both platforms, so on Linux it is not zeroed either.
   fields.
 - **Gyro tracker**: `HW_CAL` and `SIXAXIS` pads run the Sony auto-zero
   tracker (`research/ds3-motion/probe/GyroCal.cs`) only after a successful
-  Feature `0xEF` page `0xA0` read (USB or Bluetooth). When the cal byte steps, the driver
+  Feature `0xEF` page `0xA0` load (USB live read, or Bluetooth cache hit).
+  When the cal byte steps, the driver
   re-applies it on the next output report (unified `[5]/[6]` or `[3]/[4]`).
   Sending the factory byte once is not enough. For `HW_CAL` with an
   initialized tracker, DsHidMini also publishes the tracker's software-zeroed
@@ -855,9 +875,12 @@ Ordered by how visible they are to an application that expects `sixaxis.sys`:
    the other has a dead gyro (frozen 500). Anything that advertises motion to
    applications should notice that the values never change rather than trusting
    page `0xA0`.
-10. **Bluetooth Feature reports use HIDP framing.** `sixaxis.sys` does this over
-    EP0; DsHidMini uses `0x53`/`0x43` on the BthPS3 HID control channel and
-    normalizes replies to the USB GET layout before parsing.
+10. **Bluetooth never answers Feature `0x01`/`0xEF` for any known host.**
+    `sixaxis.sys` and every other implementation checked
+    ([`PS3_USB_STARTUP.md`](PS3_USB_STARTUP.md#bluetooth-has-no-equivalent-read))
+    only read these over USB, during pairing. DsHidMini's Bluetooth instance
+    reads the USB instance's cached values back from device properties
+    instead of asking the pad.
 
 ## Deferred work
 
@@ -874,22 +897,32 @@ The items below were deliberately left out of the current implementation.
 
 ## Status and implementation roadmap
 
-Phase status: **USB and Bluetooth paths implemented** (driver motion
-subsystem, IPC snapshot, ControlApp viewer). Research dumps remain in
-[`research/ds3-motion/`](../research/ds3-motion/README.md).
+Phase status: **USB path implemented and verified; Bluetooth caches the USB
+read instead of querying the pad** (driver motion subsystem, IPC snapshot,
+ControlApp viewer). A Bluetooth gyro-enable experiment (Feature `0xF4`) is
+in progress for pads whose gyro axis stays near-zero over Bluetooth. Research
+dumps remain in [`research/ds3-motion/`](../research/ds3-motion/README.md).
 
 ### Hardware verification checklist
 
-On at least one `PLAIN_ZERO` and one `HW_CAL` pad, USB and Bluetooth:
+On at least one `PLAIN_ZERO` and one `HW_CAL` pad:
 
-- Flat rest centres near 512 after calibration; six accel poses match the sign table.
-- Clockwise-from-above yaw is positive in the corrected gyro / viewer.
-- Tracker-driven cal-byte resend and convergence (`HW_CAL` / `SIXAXIS`).
-- IPC snapshot and ControlApp Motion viewer (Recenter, expected yaw drift).
-- Disconnect / reconnect, and a failed EEPROM read falling back to 512/399.
-- Wireless: Feature `0x01` properties appear, Feature `0xEF` matches that
-  pad's USB calibration, `Fallback` clears, and disconnect during a
-  control request does not hang.
+- USB: flat rest centres near 512 after calibration; six accel poses match
+  the sign table. Clockwise-from-above yaw is positive in the corrected
+  gyro / viewer. Tracker-driven cal-byte resend and convergence (`HW_CAL` /
+  `SIXAXIS`). IPC snapshot and ControlApp Motion viewer (Recenter, expected
+  yaw drift). Disconnect / reconnect, and a failed EEPROM read falling back
+  to 512/399 with the cache cleared.
+- Bluetooth, same pad already connected once over USB: identification and
+  EEPROM appear without any Bluetooth Feature traffic, `MotionCalibrationSource`
+  reads `CachedFromUsb`, `Fallback` clears, and the values match the USB
+  session's `EepromText` line exactly. Gyro at rest reads close to 512
+  (or confirms it does not, pending the `0xF4` experiment - see the session
+  log). Unplugging the USB instance entirely (phantom devnode) must not
+  break the Bluetooth cache read.
+- Bluetooth, a pad never connected over USB: stays nominal 512/399,
+  `MotionCalibrationSource` reads `None`, ControlApp shows the "connect over
+  USB once" hint, and startup has no added delay (no blocking HID reads).
 
 ### Verified (a driver can rely on these)
 
@@ -912,13 +945,15 @@ Shipped in this pass:
 4. Gyro sign inverted; tracker + cal-byte resend on `HW_CAL`/`SIXAXIS` pads.
 5. IPC third region + `GetMotionSnapshot`; ControlApp Motion viewer.
 6. Clone-heuristic `PLAIN_ZERO` software-only auto-zero. The Obigben template EEPROM gyro zero of 512 versus a frozen idle of ~500 would otherwise publish `clamp(512 + 512 - 500) = 524` (~8.6 deg/s clockwise) at rest; `zeroRef` follows rest and the cal byte is never sent. Frozen-sensor detection (the Fake DS3) stays deferred.
-7. Bluetooth `0x01` / `0xEF` over the BthPS3 HID control channel, with the same soft-fail to nominal 512/399. Hardware cal bytes use the unified output payload on both transports.
+7. Bluetooth reads its identification and EEPROM calibration back from the matching USB instance's cached device properties (`DEVPKEY_DsHidMini_RO_IdentificationData` / `_MotionCalibrationData`) instead of querying the pad - no known Bluetooth host does the latter. A pad never connected over USB stays at nominal 512/399 with no added startup delay. Hardware cal bytes use the unified output payload on both transports.
+7a. A gated `SET Feature 0xF4` motion-enable write over Bluetooth (`driver/Ds3.h` `DS3_BTH_MOTION_ENABLE_PAYLOAD_USB` / `_LINUX`), sent once per connect for pads with a cached, non-clone identification, to test whether it is what a near-zero Bluetooth gyro axis needs. Hardware result pending; see the session log.
 
 Still deferred:
 
 8. Counterfeit behavioural detection (frozen sensors). Keep `zero == oneG` as a blank-EEPROM guard only.
 9. DS4Windows motion-field mapping. Source frame is known; permutation + remaining signs still need a reference DS4 capture.
 10. Absolute gyro scale better than ~1.4 counts/(deg/s).
+11. Confirming which `0xF4` payload (if either) fixes a near-zero Bluetooth gyro axis, and whether it is needed on every pad or only some.
 
 Headline remaining gaps: DS4 axis mapping, counterfeit freeze detection, and a turntable gyro scale. Historical discrepancies versus pre-#217 DsHidMini are listed under [Discrepancies](#discrepancies-a-driver-implementation-must-resolve).
 
@@ -931,7 +966,7 @@ Headline remaining gaps: DS4 axis mapping, counterfeit freeze detection, and a t
 | `[3]/[4]` placement on live SIXAXIS | `--wait` + stream before it dies, or HID path (not WinUSB) |
 | SIXAXIS orientation table | Same `--interactive` six poses, needs a live stream |
 | DS3-A1b ~17-count warm-up drift | Leave pad still 30 s, log raw G |
-| Bluetooth HIDP GET framing variants | Live WPP (`TRACE_DSBTH`) if EEPROM fallback stays set on a pad that works on USB |
+| Whether Bluetooth `0xF4` payload `42 03` vs `42 0C` (or neither) fixes a near-zero gyro axis | Motion viewer raw gyro at rest, each build, same pad |
 | Page `0xB0` meaning | Curiosity; unused by Sony |
 | DS4 axis permutation | Reference DS4 capture vs known DS3 frame |
 
@@ -962,15 +997,47 @@ Headline remaining gaps: DS4 axis mapping, counterfeit freeze detection, and a t
   and subtracts it only from samples that already pass the deadzone (so
   near-still handling cannot walk the estimate or unmask the other side
   of the deadzone). Driver unchanged.
-- 2026-09-17 — Bluetooth Feature `0x01` and `0xEF` page `0xA0` over the
-  BthPS3 HID control channel (`0x53` SET / `0x43` GET, handshake drain,
-  `0xA3` strip). Same parse/tracker/cal-byte path as USB; soft-fail keeps
-  nominal 512/399. ControlApp identification panel and motion status are
-  transport-neutral.
+- 2026-09-17 — First Bluetooth motion pass (PR 547) added a `0x53` SET /
+  `0x43` GET Feature transport and re-ran Feature `0x01`/`0xEF` wirelessly,
+  reasoning from a file named `..._Bluetooth_Pairing.txt` in
+  `research/ds3-motion/pcap/`. That file - like every other capture cited in
+  [`PS3_USB_STARTUP.md`](PS3_USB_STARTUP.md) - is a **USB** link-layer trace
+  (`usbll`) of the console pairing a pad over the cable; there is no
+  Bluetooth capture anywhere in this repository. `.\build.cmd Compile` and
+  `.\build.cmd TestControlApp` (281/281) passed for that pass, but it was
+  never checked against a live Bluetooth pad.
+- 2026-09-17 — First live Bluetooth hardware check on a genuine 2E A1:
+  identification appeared, but `Fallback` stayed set (EEPROM never loaded)
+  and the corrected gyro read a fixed ~5, which the tracker's
+  `clamp(512 + zero - raw)` formula turns into a near-full-scale spin
+  regardless of calibration (2E A1's EEPROM gyro zero is 521, so even a
+  perfect load would still spin at `clamp(512 + 521 - 5)`). Accelerometer
+  bytes were correct and matched this pad's EEPROM, ruling out a framing
+  offset error.
+- 2026-09-17 — Root-caused both symptoms and replaced the Bluetooth GET
+  Feature transport. Checked against Linux `hid-sony`
+  (`sixaxis_set_operational_bt`), the USB Host Shield `PS3BT` library, and
+  the clean-room `OpenPuck` DS3 emulator: none of them ever issue
+  `GET_REPORT` for Feature `0x01`/`0xEF` over Bluetooth; the only Bluetooth
+  Feature write any of them send is `SET_REPORT 0xF4`. `EEPROM never loaded`
+  was therefore expected, not a framing bug - no known host performs that
+  read wirelessly at all. Removed the GET-based transport
+  (`DsBth_HidControlGetFeature`, `DsBth_TryLoadIdentification`,
+  `DsMotion_TryLoadBluetoothCalibration`) and replaced it with
+  `DsDevice_ReadCachedWiredProperties` + `DsMotion_LoadCalibrationBuffer`,
+  which read the pad's own USB-cached calibration back from device
+  properties with no wire traffic. Added a gated `SET Feature 0xF4`
+  motion-enable write (payload `42 0C 00 00`, matching what the PS3 sends
+  over USB; `42 03 00 00`, matching Linux/USB-Host-Shield's Bluetooth-only
+  payload, is available via `DS3_BTH_MOTION_ENABLE_PAYLOAD_LINUX` to compare)
+  as the working hypothesis for the raw-gyro-5 symptom.
 - 2026-09-17 — Software verification: `.\build.cmd Compile --target-platform x64`
-  signed `bin\DEBUG\x64\dshidmini.dll`; `.\build.cmd TestControlApp` 281/281.
-  Live Bluetooth DS3 was not attached; HIDP GET framing stays inferred until
-  `TRACE_DSBTH` confirms it on a genuine pad.
+  signed `bin\DEBUG\x64\dshidmini.dll` with no C errors in the changed files.
+  `.\build.cmd TestControlApp` hit the pre-existing `ControlApp.exe` file
+  lock (MSB3027, unrelated to this change - the exe was running); an
+  isolated `dotnet test` into a separate output folder ran the same
+  `ControlApp.Tests.dll` and passed 283/283. Re-running the live hardware
+  check (cache hit, `0xF4` payload result) is still pending.
 
 ## Open questions
 
@@ -995,8 +1062,10 @@ Headline remaining gaps: DS4 axis mapping, counterfeit freeze detection, and a t
   its session while the other pads were stable to under a count. Warm-up is the
   obvious guess and it is the reason its `--calbyte` numbers needed
   re-deriving, but it was not investigated.
-- Confirm live Bluetooth HIDP GET framing on remaining pad families if a
-  wireless EEPROM load stays in fallback while USB succeeds.
+- Whether Bluetooth Feature `0xF4` payload `42 03 00 00` (Linux/USB-Host-Shield),
+  `42 0C 00 00` (the USB value), or neither is what a near-zero Bluetooth gyro
+  axis needs, and whether the answer is pad-specific. See the 2026-09-17
+  session log entries.
 - Do other clone families (Defender BT in DS3 mode, ShanWan) answer `0xEF`
   and with what? Two counterfeits are characterised here; both return the same
   `0200 0180` `0xA0` template but differ in page `0xB0` (592/592 vs 640/640)

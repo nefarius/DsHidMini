@@ -24,9 +24,13 @@ Identical across all three consoles and all six samples:
    has: `SET_REPORT Feature 0xF5` (pairing request), then a verifying
    `GET_REPORT Feature 0xF5` 27-75 ms later (varies by sample).
 6. `0xEF` / `0xF8` calibration-page reads (motion sensor calibration data;
-   DsHidMini now soft-reads page `0xA0` via Feature `0xEF` on USB start and
-   over the BthPS3 HID control channel on wireless start, see
-   [`MOTION.md`](MOTION.md#what-dshidmini-does-today); `0xF8` is still unused).
+   DsHidMini soft-reads page `0xA0` via Feature `0xEF` on USB start and
+   caches it there, see [`MOTION.md`](MOTION.md#what-dshidmini-does-today);
+   `0xF8` is still unused). **This step is USB-only.** Every capture below
+   is a USB link-layer trace; there is no Bluetooth equivalent because the
+   PS3 never revisits `0x01`/`0xEF`/`0xF8`/`0xF7` once a pad is paired - it
+   reads them once over the cable during pairing and never again over the
+   air. See "Bluetooth has no equivalent read" below.
 7. **`SET_REPORT Output 0x01` on EP0 (control endpoint), 48 bytes, no report
    ID, all zeros.** This is the pre-enable output report and the reason
    DsHidMini now sends an equivalent EP0 report during
@@ -51,11 +55,44 @@ Identical across all three consoles and all six samples:
     one more all-zero EP0 report (same shape as step 7).
 
 No `SET_IDLE`, `0xF7`, or `0xF8` traffic is emulated by DsHidMini. Feature
-`0xEF` page `0xA0` is soft-read on USB start and Bluetooth startup for motion
-calibration (failure does not abort device start). They remain documented
-here so future quirk work does not need to re-derive them from the pcaps.
-Wireless uses the same payloads with Bluetooth HID Feature headers
-(`0x53` SET / `0x43` GET) on the BthPS3 control channel.
+`0xEF` page `0xA0` is soft-read on USB start for motion calibration (failure
+does not abort device start) and cached on the USB devnode. They remain
+documented here so future quirk work does not need to re-derive them from
+the pcaps.
+
+### Bluetooth has no equivalent read
+
+An earlier pass of this driver (PR 547 / issue #217) built a Bluetooth
+`0x53` SET / `0x43` GET Feature transport and used it to re-run steps 2 and
+6 wirelessly, on the mistaken assumption that a Bluetooth pcap had shown the
+same reads. It had not: every capture cited in this document, including the
+one literally named `..._Bluetooth_Pairing.txt`, is a **USB** link-layer
+trace of the console pairing a pad over the cable - none of them contain a
+Bluetooth HID transaction. Checked against Linux's `hid-sony`
+(`sixaxis_set_operational_bt`), the USB Host Shield `PS3BT` library, and a
+clean-room DS3 emulator (`OpenPuck`), the only Bluetooth Feature traffic any
+of them ever sends is `SET_REPORT` on `0xF4` (see below); none of them issue
+`GET_REPORT` for `0x01`, `0xEF`, `0xF2`, `0xF5`, `0xF7`, or `0xF8` over
+Bluetooth, and nothing in this repository's captures proves the pad answers
+one. DsHidMini therefore no longer asks a Bluetooth-connected pad for its
+identification or EEPROM; it reads back whichever USB instance last cached
+them for that pad's Bluetooth MAC (`DsDevice_ReadCachedWiredProperties`,
+`driver/Device.c`), matching how the PS3 itself only ever reads them over
+USB, while pairing.
+
+### Bluetooth `0xF4` motion-enable
+
+Linux `hid-sony` and the USB Host Shield library both send `SET_REPORT`
+Feature `0xF4`, payload `42 03 00 00`, right after connecting over
+Bluetooth - a different payload than the USB `42 0C 00 00` in step 10 above.
+DsHidMini's existing post-connect workaround (`DsBth_Ds3SixaxisInit`) already
+sends the `42 03` form, but only as a fallback after 1 second with no input
+report at all; it does not run on every connect and does not explain a
+correctly-streaming pad whose gyro axis alone reads a near-zero constant.
+Whether *some* form of `0xF4` is required for the gyro axis specifically
+(as opposed to the whole input stream) is unconfirmed pending a live capture
+against a genuine pad exhibiting the symptom; see the session log in
+[`MOTION.md`](MOTION.md#session-log).
 
 ## Report layouts
 

@@ -1796,6 +1796,144 @@ DsDevice_IsWiredInstancePresent(
 }
 
 //
+// Reads the cached Feature 0x01 identification and Feature 0xEF page 0xA0
+// EEPROM blobs from the USB devnode matching Context's Bluetooth MAC, so a
+// wireless connect never has to ask the pad for them itself. Neither the PS3
+// nor any known Linux/Windows host issues a Bluetooth GET_REPORT for these
+// features (see docs/PS3_USB_STARTUP.md); the console reads them over USB
+// only, while it still has the pad plugged in for pairing. The USB instance
+// may be phantom (unplugged after its last session) - CM_LOCATE_DEVNODE_PHANTOM
+// still finds it, and its persisted DEVPKEY_DsHidMini_RO_* properties survive
+// unplug/replug. See issue #217.
+// 
+BOOLEAN
+DsDevice_ReadCachedWiredProperties(
+	_In_ PDEVICE_CONTEXT Context,
+	_Out_writes_bytes_to_(IdentificationBufferLength, *IdentificationLength) PUCHAR IdentificationBuffer,
+	_In_ ULONG IdentificationBufferLength,
+	_Out_ PULONG IdentificationLength,
+	_Out_writes_bytes_to_(CalibrationBufferLength, *CalibrationLength) PUCHAR CalibrationBuffer,
+	_In_ ULONG CalibrationBufferLength,
+	_Out_ PULONG CalibrationLength
+)
+{
+	WCHAR expectedAddress[DSHM_DEVICE_ADDRESS_CCH];
+	ULONG listChars = 0;
+	PWSTR list = NULL;
+	BOOLEAN found = FALSE;
+
+	*IdentificationLength = 0;
+	*CalibrationLength = 0;
+
+	DsDevice_FormatCanonicalAddress(Context, expectedAddress, ARRAYSIZE(expectedAddress));
+	if (expectedAddress[0] == L'\0')
+	{
+		return FALSE;
+	}
+
+	if (CM_Get_Device_ID_List_SizeW(
+		&listChars,
+		L"USB",
+		CM_GETIDLIST_FILTER_ENUMERATOR) != CR_SUCCESS
+		|| listChars <= 1)
+	{
+		return FALSE;
+	}
+
+	list = (PWSTR)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, listChars * sizeof(WCHAR));
+	if (list == NULL)
+	{
+		return FALSE;
+	}
+
+	if (CM_Get_Device_ID_ListW(
+		L"USB",
+		list,
+		listChars,
+		CM_GETIDLIST_FILTER_ENUMERATOR) != CR_SUCCESS)
+	{
+		HeapFree(GetProcessHeap(), 0, list);
+		return FALSE;
+	}
+
+	for (PWSTR instanceId = list; *instanceId; instanceId += wcslen(instanceId) + 1)
+	{
+		DEVPROPTYPE propType;
+		WCHAR address[DSHM_DEVICE_ADDRESS_CCH];
+		ULONG size;
+		DEVINST devInst;
+
+		//
+		// PHANTOM allows matching a USB instance that is not currently
+		// plugged in; its persisted properties are still readable.
+		// 
+		if (CM_Locate_DevNodeW(&devInst, instanceId, CM_LOCATE_DEVNODE_PHANTOM) != CR_SUCCESS)
+		{
+			continue;
+		}
+
+		size = sizeof(address);
+		if (CM_Get_DevNode_PropertyW(
+			devInst,
+			&DEVPKEY_Bluetooth_DeviceAddress,
+			&propType,
+			(PBYTE)address,
+			&size,
+			0) != CR_SUCCESS
+			|| propType != DEVPROP_TYPE_STRING)
+		{
+			continue;
+		}
+
+		if (_wcsicmp(address, expectedAddress) != 0)
+		{
+			continue;
+		}
+
+		if (*IdentificationLength == 0)
+		{
+			size = IdentificationBufferLength;
+			if (CM_Get_DevNode_PropertyW(
+				devInst,
+				&DEVPKEY_DsHidMini_RO_IdentificationData,
+				&propType,
+				(PBYTE)IdentificationBuffer,
+				&size,
+				0) == CR_SUCCESS
+				&& propType == DEVPROP_TYPE_BINARY)
+			{
+				*IdentificationLength = size;
+			}
+		}
+
+		if (*CalibrationLength == 0)
+		{
+			size = CalibrationBufferLength;
+			if (CM_Get_DevNode_PropertyW(
+				devInst,
+				&DEVPKEY_DsHidMini_RO_MotionCalibrationData,
+				&propType,
+				(PBYTE)CalibrationBuffer,
+				&size,
+				0) == CR_SUCCESS
+				&& propType == DEVPROP_TYPE_BINARY)
+			{
+				*CalibrationLength = size;
+			}
+		}
+
+		found = (*IdentificationLength > 0) || (*CalibrationLength > 0);
+		if (*IdentificationLength > 0 && *CalibrationLength > 0)
+		{
+			break;
+		}
+	}
+
+	HeapFree(GetProcessHeap(), 0, list);
+	return found;
+}
+
+//
 // Bootstrap required DMF modules
 // 
 #pragma code_seg("PAGED")

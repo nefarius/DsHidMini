@@ -636,4 +636,15 @@ DsDevice_IsWiredInstancePresent(
 	_In_ PDEVICE_CONTEXT Context
 );
 
+BOOLEAN
+DsDevice_ReadCachedWiredProperties(
+	_In_ PDEVICE_CONTEXT Context,
+	_Out_writes_bytes_to_(IdentificationBufferLength, *IdentificationLength) PUCHAR IdentificationBuffer,
+	_In_ ULONG IdentificationBufferLength,
+	_Out_ PULONG IdentificationLength,
+	_Out_writes_bytes_to_(CalibrationBufferLength, *CalibrationLength) PUCHAR CalibrationBuffer,
+	_In_ ULONG CalibrationBufferLength,
+	_Out_ PULONG CalibrationLength
+);
+
 EXTERN_C_END

@@ -31,8 +31,9 @@ public static class DsHidMiniDriver
         typeof(int));
 
     /// <summary>
-    ///     Raw 64-byte <c>GET Feature 0x01</c> identification blob. Published when
-    ///     Feature 0x01 succeeds on USB or Bluetooth; see issue #50 and #217.
+    ///     Raw 64-byte <c>GET Feature 0x01</c> identification blob. Published on a live USB
+    ///     read, or read back on Bluetooth from the matching USB instance's cache - no known
+    ///     Bluetooth host ever queries this feature itself. See issue #50 and #217.
     /// </summary>
     public static DevicePropertyKey IdentificationDataProperty => CustomDeviceProperty.CreateCustomDeviceProperty(
         Guid.Parse("{3FECF510-CC94-4FBE-8839-738201F84D59}"), 4,
@@ -92,6 +93,23 @@ public static class DsHidMiniDriver
     /// </summary>
     public static DevicePropertyKey DeviceTypeProperty => CustomDeviceProperty.CreateCustomDeviceProperty(
         Guid.Parse("{3FECF510-CC94-4FBE-8839-738201F84D59}"), 12,
+        typeof(byte));
+
+    /// <summary>
+    ///     Raw 64-byte <c>GET Feature 0xEF</c> page <c>0xA0</c> EEPROM blob. Only ever written
+    ///     by a live USB read; a Bluetooth instance reads it back from the matching USB
+    ///     instance instead of asking the pad. See issue #217.
+    /// </summary>
+    public static DevicePropertyKey MotionCalibrationDataProperty => CustomDeviceProperty.CreateCustomDeviceProperty(
+        Guid.Parse("{3FECF510-CC94-4FBE-8839-738201F84D59}"), 13,
+        typeof(byte[]));
+
+    /// <summary>
+    ///     How <see cref="MotionCalibrationDataProperty"/> / the IPC motion snapshot's
+    ///     calibration was populated for this device instance. See issue #217.
+    /// </summary>
+    public static DevicePropertyKey MotionCalibrationSourceProperty => CustomDeviceProperty.CreateCustomDeviceProperty(
+        Guid.Parse("{3FECF510-CC94-4FBE-8839-738201F84D59}"), 14,
         typeof(byte));
 
     #endregion
@@ -218,6 +236,35 @@ public enum DsIdentificationMotionPath : byte
     /// </summary>
     [Description("SIXAXIS")]
     Sixaxis = 3
+}
+
+/// <summary>
+///     How a device instance's motion calibration was populated. Bluetooth never asks
+///     the pad for Feature 0x01/0xEF; it reads back whatever the pad's USB instance
+///     cached under <see cref="DsHidMiniDriver.MotionCalibrationDataProperty"/>.
+///     Matches <c>DS_MOTION_CALIBRATION_SOURCE</c> in the driver. See issue #217.
+/// </summary>
+[TypeConverter(typeof(EnumDescriptionTypeConverter))]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+public enum DsMotionCalibrationSource : byte
+{
+    /// <summary>
+    ///     No calibration loaded; nominal 512/399 fallback is in effect.
+    /// </summary>
+    [Description("None (nominal fallback)")]
+    None = 0,
+
+    /// <summary>
+    ///     Read live from the pad over USB this session.
+    /// </summary>
+    [Description("Live USB read")]
+    LiveUsb = 1,
+
+    /// <summary>
+    ///     Read from this pad's cached USB calibration; connected over Bluetooth.
+    /// </summary>
+    [Description("Cached from USB")]
+    CachedFromUsb = 2
 }
 
 /// <summary>
