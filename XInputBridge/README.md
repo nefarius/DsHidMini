@@ -75,6 +75,9 @@ Dependencies (via [vcpkg](https://vcpkg.io/)): **hidapi**, **winreg**.
 
 Output is `XInput1_3.dll`; deploy next to the game executable (or use a loader like x360ce) so the game loads this DLL instead of the system XInput.
 
+> [!TIP]
+> Renaming the bridge DLL to `XInput1_4.dll` is also supported for games and tools that look for that name.
+
 `scpdlltester` defaults to a live pad-0 poll loop. Use `scpdlltester --self-test` or `scpdlltester --bench` for CI-style checks that do not require hardware. Use `scpdlltester --hw-test` when an SXS DualShock 3 is connected to exercise GetState, GetStateEx, GetExtended, rumble, HID latency, and load/unload cycles.
 
 ## Known limitations
