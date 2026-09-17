@@ -22,4 +22,20 @@
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
     </PropertyGroup>
+
+    <!-- Official WDK/SDK NuGet toolchain (microsoft/Windows-driver-samples).
+         Conditional so local machines that already have an installed 28000 kit
+         keep working when packages/ has not been restored. -->
+    <Import Project="$(MSBuildThisFileDirectory)packages\Microsoft.Windows.WDK.x64.10.0.28000.2526\build\native\Microsoft.Windows.WDK.x64.props"
+            Condition="'$(MSBuildProjectExtension)' == '.vcxproj' and Exists('$(MSBuildThisFileDirectory)packages\Microsoft.Windows.WDK.x64.10.0.28000.2526\build\native\Microsoft.Windows.WDK.x64.props') and '$(Platform)' == 'x64'" />
+    <Import Project="$(MSBuildThisFileDirectory)packages\Microsoft.Windows.WDK.arm64.10.0.28000.2526\build\native\Microsoft.Windows.WDK.arm64.props"
+            Condition="'$(MSBuildProjectExtension)' == '.vcxproj' and Exists('$(MSBuildThisFileDirectory)packages\Microsoft.Windows.WDK.arm64.10.0.28000.2526\build\native\Microsoft.Windows.WDK.arm64.props') and '$(Platform)' == 'ARM64'" />
+    <Import Project="$(MSBuildThisFileDirectory)packages\Microsoft.Windows.SDK.CPP.x64.10.0.28000.2526\build\native\Microsoft.Windows.SDK.cpp.x64.props"
+            Condition="'$(MSBuildProjectExtension)' == '.vcxproj' and Exists('$(MSBuildThisFileDirectory)packages\Microsoft.Windows.SDK.CPP.x64.10.0.28000.2526\build\native\Microsoft.Windows.SDK.cpp.x64.props') and '$(Platform)' == 'x64'" />
+    <Import Project="$(MSBuildThisFileDirectory)packages\Microsoft.Windows.SDK.CPP.x86.10.0.28000.2526\build\native\Microsoft.Windows.SDK.cpp.x86.props"
+            Condition="'$(MSBuildProjectExtension)' == '.vcxproj' and Exists('$(MSBuildThisFileDirectory)packages\Microsoft.Windows.SDK.CPP.x86.10.0.28000.2526\build\native\Microsoft.Windows.SDK.cpp.x86.props') and ('$(Platform)' == 'Win32' or '$(Platform)' == 'x86')" />
+    <Import Project="$(MSBuildThisFileDirectory)packages\Microsoft.Windows.SDK.CPP.arm64.10.0.28000.2526\build\native\Microsoft.Windows.SDK.cpp.arm64.props"
+            Condition="'$(MSBuildProjectExtension)' == '.vcxproj' and Exists('$(MSBuildThisFileDirectory)packages\Microsoft.Windows.SDK.CPP.arm64.10.0.28000.2526\build\native\Microsoft.Windows.SDK.cpp.arm64.props') and '$(Platform)' == 'ARM64'" />
+    <Import Project="$(MSBuildThisFileDirectory)packages\Microsoft.Windows.SDK.CPP.10.0.28000.2526\build\native\Microsoft.Windows.SDK.cpp.props"
+            Condition="'$(MSBuildProjectExtension)' == '.vcxproj' and Exists('$(MSBuildThisFileDirectory)packages\Microsoft.Windows.SDK.CPP.10.0.28000.2526\build\native\Microsoft.Windows.SDK.cpp.props')" />
 </Project>
