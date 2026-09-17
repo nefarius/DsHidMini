@@ -1,4 +1,4 @@
-# <img src="https://raw.githubusercontent.com/nefarius/DsHidMini/master/assets/FireShock.png" align="left" /> Nefarius.DsHidMini.IPC
+# <img src="https://raw.githubusercontent.com/nefarius/DsHidMini/master/assets/FireShock.png" align="left" height="140" /> Nefarius.DsHidMini.IPC
 
 ![Requirements](https://img.shields.io/badge/Requires-.NET%20Standard%202.0%2B-blue.svg)
 [![NuGet Version](https://img.shields.io/nuget/v/Nefarius.DsHidMini.IPC)](https://www.nuget.org/packages/Nefarius.DsHidMini.IPC/)
