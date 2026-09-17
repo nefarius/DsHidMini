@@ -226,7 +226,7 @@ public class AppSnackbarMessagesService
     {
         _snackbarService.Show(
             "Controller paired",
-            "The host address was written, but pairing preferences could not be saved. Run as Administrator to persist them.",
+            "The host address was written, but pairing preferences could not be saved. Check that the configuration file is valid and writable.",
             ControlAppearance.Caution,
             new SymbolIcon(SymbolRegular.Warning24),
             TimeSpan.FromSeconds(8)
