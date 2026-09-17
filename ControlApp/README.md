@@ -4,7 +4,9 @@
 ![Platform](https://img.shields.io/badge/Platform-Windows%2010%2B-lightgrey.svg)
 
 **Desktop control application for the DsHidMini driver.**  
-Manage connected SIXAXIS/DualShock 3 (and compatible) controllers, configure HID modes and per-device settings, and maintain DsHidMini profiles—all from a modern WPF UI (WPF-UI / Fluent).
+Manage connected SIXAXIS/DualShock 3, Navigation, and compatible controllers,
+configure HID modes and per-device settings, and maintain DsHidMini
+profiles—all from a modern WPF UI (WPF-UI / Fluent).
 
 ---
 
@@ -22,13 +24,24 @@ Manage connected SIXAXIS/DualShock 3 (and compatible) controllers, configure HID
 
 ## Overview
 
-DsHidMini ControlApp is the official Windows desktop companion for the [DsHidMini](https://github.com/ViGEm/DsHidMini) kernel driver. It uses the [Nefarius.DsHidMini.IPC](https://www.nuget.org/packages/Nefarius.DsHidMini.IPC/) SDK to talk to the driver and provides:
+DsHidMini ControlApp is the official Windows desktop companion for the
+[DsHidMini](https://github.com/nefarius/DsHidMini) user-mode driver. It uses
+the [Nefarius.DsHidMini.IPC](https://www.nuget.org/packages/Nefarius.DsHidMini.IPC/)
+SDK to communicate with the driver and provides:
 
-- **Devices** — View connected controllers, edit per-device settings, pair to a new Bluetooth host, and reconnect devices when the global HID mode changes.
+- **Devices** — View connected controllers and their capabilities, edit
+  per-device settings, pair or disconnect Bluetooth devices, control LEDs and
+  rumble, power off a wired controller, inspect controller identification, and
+  open the live motion viewer.
 - **Profiles** — Manage DsHidMini configuration profiles (including a global default), assign profiles to devices, and edit profile-specific settings.
-- **Settings** — Application options (theme, logging, update check, genuine-controller check) and access to the global profile.
+- **Settings** — HID-mode restart behavior, tray behavior, Defender BT
+  auto-switching, driver IPC, and BthPS3 status/repair. The global profile is
+  available from the main navigation.
 
-Configuration is stored under **%AppData%**; the app does not require administrator rights to run, but some device actions (e.g. full editing, pairing) are available or more reliable when run elevated.
+Application preferences are stored under **%AppData%**. Driver configuration
+and ControlApp profile data are stored under **%ProgramData%\DsHidMini**. The
+app does not require administrator rights to run, but editing shared
+configuration and some device actions require elevation.
 
 ---
 
@@ -38,30 +51,22 @@ Configuration is stored under **%AppData%**; the app does not require administra
 |-------------|---------|
 | **.NET** | .NET 10 Desktop Runtime (x64) |
 | **OS** | Windows 10 or later (targeting `net10.0-windows10.0.17763.0`) |
-| **Driver** | [DsHidMini](https://github.com/ViGEm/DsHidMini) driver installed; at least one compatible controller connected for full functionality |
+| **Driver** | [DsHidMini](https://github.com/nefarius/DsHidMini) driver installed; at least one compatible controller connected for full functionality |
 | **Architecture** | AnyCPU or x64 (NUKE publish uses win-x64) |
 
 ---
 
 ## Building
 
-From the repository root or the `ControlApp` folder:
+Use the repository's NUKE build from the repository root:
 
 ```powershell
-dotnet build
+.\build.cmd Compile
 ```
 
-Release build:
-
-```powershell
-dotnet build -c Release
-```
-
-Solution build (from repo root):
-
-```powershell
-dotnet build ControlAppSolution.sln
-```
+Local builds default to Debug. Pass `--configuration Release` for a release
+build. To run the managed ControlApp and IPC tests, use
+`.\build.cmd TestControlApp`.
 
 ---
 
@@ -73,7 +78,8 @@ Production-ready, single-file, framework-dependent publish for Windows x64 is do
 .\build.ps1 PublishControlApp
 ```
 
-This compiles the solution (if needed) and publishes the ControlApp to the solution `bin` folder. The NUKE task uses:
+This restores and publishes the ControlApp and its project dependencies to the
+repository `bin` folder. The NUKE task uses:
 
 | Option | Value |
 |--------|--------|
@@ -96,9 +102,16 @@ This compiles the solution (if needed) and publishes the ControlApp to the solut
   - **Wireless** — Pairing mode, custom host address, idle timeout, quick-disconnect combo.
   - **Sticks** — Deadzone and polar value.
   - **Rumble** — General on/off, left-motor rescale, alternative rumble mode.
-  - **Output report** — Rate control and deduplication.
+  - **Output report** — Rate control, deduplication, and Bluetooth output transport.
 - **Reconnect** — Reconnect devices when the active HID mode no longer matches the driver config (e.g. after changing the global profile).
-- **Pair to host** — Set the Bluetooth host address the controller pairs to (requires elevation for handle duplication).
+- **Runtime actions** — Pair to a specified or current host, disconnect a
+  wireless controller, apply LED and rumble output, or send the wired USB
+  power-off sequence.
+- **Identification and motion** — Show firmware, controller type, motion path,
+  and clone heuristic data, and display calibrated accelerometer/gyroscope
+  telemetry in a live 3D viewer.
+- **Hardware-aware controls** — Navigation Controllers are treated as
+  one-LED, no-rumble devices and incompatible controls are disabled.
 
 ### Profiles page
 
@@ -108,36 +121,51 @@ This compiles the solution (if needed) and publishes the ControlApp to the solut
 
 ### Settings page
 
-- **Theme** — Light or dark (WPF-UI application theme).
-- **App version** — Displayed in the title bar / settings.
+- **App version** — Displayed in the title bar and About page.
 - **Automatically restart devices on HID mode mismatch** — Driver self-restart when the loaded HID mode does not match the mode Windows already probed.
 - **Minimize to tray** — When enabled, Minimize and Close hide ControlApp to the notification area; use the tray icon to reopen or Exit to quit.
+- **Automatically switch Defender BT** — Detect a Retro Fighters Defender
+  Bluetooth Edition in DS4 mode and switch it to PS3 mode on arrival.
 - **Enable driver IPC** — Persist the driver-wide `IPCEnabled` flag in `DsHidMini.json`. The driver applies the change at runtime without a reload.
+- **BthPS3 status** — Show the installed version and required Bluetooth stack
+  settings, with an elevated repair action when needed.
 - **Application configuration** — Stored in %AppData%; see [Configuration](#configuration).
 
 ---
 
 ## Configuration
 
-Application-level options are stored in **%AppData%** in a JSON file (and optional schema) named **ControlApp** (see `ApplicationConfiguration.GlobalConfigFileName`). The model is in `Models\ApplicationConfiguration.cs`. Examples:
+Application-level options are stored in `%AppData%\ControlApp.json` (see
+`ApplicationConfiguration.GlobalConfigFileName`). The model is in
+`Models\ApplicationConfiguration.cs`. Examples:
 
 | Property | Description | Default |
 |----------|-------------|---------|
-| **IsLoggingEnabled** | Enable log file output | `false` |
 | **IsUpdateCheckEnabled** | Check for updates on startup | `true` |
-| **IsGenuineCheckEnabled** | Validate controller MAC against known OUI list | `true` |
+| **AutoSwitchDefenderBtToPs3Mode** | Switch a detected Retro Fighters Defender Bluetooth Edition from DS4 to PS3 mode | `false` |
 | **HasAcknowledgedDonationDialog** | User has dismissed the donation prompt | `false` |
 | **MinimizeToTray** | Hide to the notification area on Minimize or Close | `false` |
 
-DsHidMini driver configuration (profiles, global profile, per-device profile assignment) is managed by **DshmConfigManager** and persisted via its own user-data store; the ControlApp UI reads and writes that through the same manager.
+The files managed by the app are:
+
+- `%AppData%\ControlApp.json` — application preferences
+- `%ProgramData%\DsHidMini\DsHidMini.json` — configuration consumed by the
+  driver
+- `%ProgramData%\DsHidMini\ControlApp\DshmUserData.json` — profiles, known
+  devices, and ControlApp metadata
 
 ---
 
 ## Elevation and permissions
 
 - The app runs **as invoker** (no mandatory elevation). Normal users can open the app, view devices and profiles, and change application settings.
-- **“Restart as Administrator”** — Shown in the title bar when not elevated; use it to get full device-editing and pairing support (e.g. handle duplication for raw input and pairing) and to change experimental driver IPC.
-- **Device editing** — Some device operations (e.g. pairing to host, or reliable application of certain settings) require the process to have sufficient privileges; restarting as administrator is the supported way to obtain them.
+- **“Restart as Administrator”** — Shown in the title bar when not elevated;
+  use it to enable device/profile editing, device restart and power-cycle
+  actions, and BthPS3 settings repair.
+- **Driver IPC** — The underlying SDK IPC objects allow authenticated users
+  and do not inherently require elevation. The ControlApp still gates its
+  device-editing workflow because saving shared configuration and some device
+  management operations require administrator access.
 
 ---
 

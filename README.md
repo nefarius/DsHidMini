@@ -9,11 +9,12 @@
 
 [![Build status](https://github.com/nefarius/DsHidMini/actions/workflows/build.yml/badge.svg)](https://github.com/nefarius/DsHidMini/actions/workflows/build.yml) [![GitHub All Releases](https://img.shields.io/github/downloads/nefarius/DsHidMini/total)](https://somsubhra.github.io/github-release-stats/?username=nefarius&repository=DsHidMini) ![GitHub issues](https://img.shields.io/github/issues/nefarius/DsHidMini) [![Discord](https://img.shields.io/discord/346756263763378176.svg)](https://discord.nefarius.at/) [![Website](https://img.shields.io/website-up-down-green-red/https/docs.nefarius.at.svg?label=docs.nefarius.at)](https://docs.nefarius.at/)
 
-Virtual HID Mini user-mode driver for Sony DualShock 3 controllers on Windows 10/11.
+Virtual HID Mini user-mode driver for Sony DualShock 3/SIXAXIS and Navigation
+controllers on Windows 10/11.
 
 ## Version 3 (Stable)
 
-Version 3 is the current stable release. Get the latest build from [releases](https://github.com/nefarius/DsHidMini/releases). Highlights: new installer and configuration app, **ARM64** and **Windows 11** support, LED/dead-zone/rumble customization, Xbox One emulation, and more. Support and updates on [Discord](https://discord.nefarius.at/) or [Mastodon](https://fosstodon.org/@Nefarius).
+Version 3 is the current stable release. Get the latest build from [releases](https://github.com/nefarius/DsHidMini/releases). Highlights include a modern installer and configuration app, **ARM64** and **Windows 11** support, calibrated motion telemetry, LED/dead-zone/rumble customization, and Xbox One emulation. Support and updates are available on [Discord](https://discord.nefarius.at/) or [Mastodon](https://fosstodon.org/@Nefarius).
 
 ## Repository activity
 
@@ -25,23 +26,31 @@ Version 3 is the current stable release. Get the latest build from [releases](ht
 
 ## Summary
 
-DsHidMini is a self-contained [user-mode driver](https://docs.microsoft.com/en-us/windows-hardware/drivers/wdf/overview-of-the-umdf) for Windows 10/11 that presents Sony DualShock 3 controllers as configurable, standard-compliant HID devices. Games and apps can use [DirectInput](https://docs.microsoft.com/en-us/previous-versions/windows/desktop/ee416842(v=vs.85)), [Raw Input](https://docs.microsoft.com/en-us/windows/win32/inputdev/raw-input), the [HID API](https://docs.microsoft.com/en-us/windows-hardware/drivers/hid/introduction-to-hid-concepts), or XInput (via the optional [XInput Bridge](XInputBridge/README.md)). The driver supports **USB** and **Bluetooth** (with [BthPS3](https://github.com/nefarius/BthPS3)); a configuration app lets you tune modes and behavior. Full documentation: [docs.nefarius.at/projects/DsHidMini](https://docs.nefarius.at/projects/DsHidMini/).
+DsHidMini is a self-contained [user-mode driver](https://learn.microsoft.com/windows-hardware/drivers/wdf/overview-of-the-umdf) for Windows 10/11 that presents Sony DualShock 3/SIXAXIS and Navigation controllers as configurable, standard-compliant HID devices. Games and apps can use [DirectInput](https://learn.microsoft.com/previous-versions/windows/desktop/ee416842(v=vs.85)), [Raw Input](https://learn.microsoft.com/windows/win32/inputdev/raw-input), the [HID API](https://learn.microsoft.com/windows-hardware/drivers/hid/introduction-to-hid-concepts), or XInput (via the optional [XInput Bridge](XInputBridge/README.md)). The driver supports **USB** and **Bluetooth** through [BthPS3](https://github.com/nefarius/BthPS3); the ControlApp configures modes and device behavior. Full documentation: [docs.nefarius.at/projects/DsHidMini](https://docs.nefarius.at/projects/DsHidMini/).
 
 ## Features
 
-- **Bluetooth** with [BthPS3](https://github.com/nefarius/BthPS3) (v2.0.144+); auto-pairing and idle disconnect (5 min); quick disconnect: **L1 + R1 + PS** for 1+ second
+- **Bluetooth** with [BthPS3](https://github.com/nefarius/BthPS3)
+  (v2.0.144+); configurable pairing, idle disconnect, and quick-disconnect
+  combo (defaults: 5 minutes and **L1 + R1 + PS** held for 1 second)
 - **HID modes:** single Gamepad (including pressure-sensitive buttons), split/multi device, Sony sixaxis emulation, **DualShock 4** (for [DS4Windows](https://github.com/Ryochan7/DS4Windows)), **Xbox / XInput** for modern games
 - **Rumble** exposed as Force Feedback
-- **LED** indicates battery (wired: charging 1–4; wireless: 4 = full, 1 = low)
+- **LEDs** — player-index and bar-graph battery modes, charging animation,
+  custom static/flashing patterns, and application-controlled output
+- **Motion** — calibrated accelerometer and single-axis gyroscope processing,
+  live telemetry, and a ControlApp viewer; Bluetooth reuses calibration cached
+  by the controller's USB instance ([implementation notes](docs/MOTION.md))
+- **Device management** — controller identification and capability reporting,
+  pairing to the current host, Bluetooth disconnect, runtime rumble/LED
+  controls, and wired USB power-off
 - **Compatibility:** [PCSX2](https://pcsx2.net/), [RPCS3](https://rpcs3.net/), [DS4Windows](https://github.com/Ryochan7/DS4Windows) (v2.2.10+), [RetroArch](https://www.retroarch.com/), [x360ce](https://www.x360ce.com/), [Dolphin](https://dolphin-emu.org/), [DuckStation](https://github.com/stenzek/duckstation); see [issue #40](https://github.com/nefarius/DsHidMini/issues/40) for XInput/DS4 notes
 - **Navigation Controller** — supported ([#48](https://github.com/nefarius/DsHidMini/issues/48)); one LED, no rumble; see [docs/NAVIGATION_CONTROLLER.md](docs/NAVIGATION_CONTROLLER.md)
 
-## What's missing
+## Unsupported hardware
 
-See the [issue tracker](https://github.com/nefarius/DsHidMini/issues) for known bugs and in-progress work. Not currently supported (contributions welcome where noted):
-
-- **Motion (SIXAXIS)** — gyro/accelerometer ([#217](https://github.com/nefarius/DsHidMini/issues/217))
-- **Motion Controller** — not in scope
+The PlayStation Move Motion Controller is not in scope. See the
+[issue tracker](https://github.com/nefarius/DsHidMini/issues) for known bugs
+and in-progress work.
 
 ## Repository layout
 
@@ -50,7 +59,8 @@ See the [issue tracker](https://github.com/nefarius/DsHidMini/issues) for known 
 | [driver/](driver/README.md) | UMDF driver: HID modes, USB/Bth, config, build (WDK, DMF) |
 | [XInputBridge/](XInputBridge/README.md) | XInput proxy DLL (`XInput1_3.dll`), extended API for DS3 pressure data |
 | [setup/](setup/README.md) | MSI installer (WixSharp). Release procedure: [docs/RELEASE.md](docs/RELEASE.md) |
-| [ControlApp/](ControlApp/) | Configuration app (WPF) |
+| [ControlApp/](ControlApp/README.md) | Configuration and motion-viewer app (WPF, .NET 10) |
+| [SDK/Nefarius.DsHidMini.IPC/](SDK/Nefarius.DsHidMini.IPC/README.md) | .NET IPC SDK for reports, motion telemetry, and runtime commands |
 | [DSHMC/](DSHMC/) | **Deprecated** legacy control utility. Use [ControlApp/](ControlApp/) |
 | [docs/](docs/README.md) | R&D notes; official docs at [docs.nefarius.at](https://docs.nefarius.at/projects/DsHidMini/) |
 
@@ -58,7 +68,13 @@ For **how the driver works** (UMDF, DMF, config) and **build prerequisites** (Vi
 
 ### Building
 
-From the repo root, run `build.cmd` or open `dshidmini.sln` in Visual Studio. Driver and bridge build steps are in [driver/README.md](driver/README.md) and [XInputBridge/README.md](XInputBridge/README.md). Tagged production releases (Partner Center CAB, attested drivers, MSI) are documented in [docs/RELEASE.md](docs/RELEASE.md).
+From the repository root, run `.\build.cmd Compile`. The NUKE build prepares
+DMF and rebuilds the solution; pass `--configuration Release` for a release
+build. Component-specific targets and tests are documented in
+[driver/README.md](driver/README.md) and
+[XInputBridge/README.md](XInputBridge/README.md). Tagged production releases
+(Partner Center CAB, attested drivers, MSI) are documented in
+[docs/RELEASE.md](docs/RELEASE.md).
 
 ## Licensing
 
