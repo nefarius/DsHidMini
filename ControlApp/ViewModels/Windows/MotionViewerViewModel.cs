@@ -3,6 +3,7 @@ using System.Windows;
 
 using Nefarius.DsHidMini.ControlApp.Models.Motion;
 using Nefarius.DsHidMini.IPC;
+using Nefarius.DsHidMini.IPC.Models.Drivers;
 using Nefarius.DsHidMini.IPC.Models.Public;
 
 using Wpf.Ui.Controls;
@@ -12,6 +13,7 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Windows;
 public sealed partial class MotionViewerViewModel : ObservableObject, IDisposable
 {
     private readonly int _deviceIndex;
+    private readonly DsMotionCalibrationSource _calibrationSource;
     private readonly MotionOrientationEstimator _estimator;
     private readonly CancellationTokenSource _cts = new();
     private readonly object _interopLock = new();
@@ -25,9 +27,13 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
     private bool _disposed;
     private const int SnapshotMissBudget = 10;
 
-    public MotionViewerViewModel(int deviceIndex, string deviceTitle)
+    public MotionViewerViewModel(
+        int deviceIndex,
+        string deviceTitle,
+        DsMotionCalibrationSource calibrationSource = DsMotionCalibrationSource.LiveUsb)
     {
         _deviceIndex = deviceIndex;
+        _calibrationSource = calibrationSource;
         Title = $"Motion viewer — {deviceTitle}";
         _estimator = new MotionOrientationEstimator(Stopwatch.Frequency);
         StatusText = MotionStatusFormatter.StatusText(true, false, false, false);
@@ -254,7 +260,7 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
     {
         IsUnavailable = false;
         StatusSeverity = snapshot.IsFallback ? InfoBarSeverity.Warning : InfoBarSeverity.Informational;
-        StatusText = MotionStatusFormatter.StatusText(true, mapped, snapshot.IsAvailable, snapshot.IsFallback);
+        StatusText = MotionStatusFormatter.StatusText(true, mapped, snapshot.IsAvailable, snapshot.IsFallback, _calibrationSource);
         PathText = MotionStatusFormatter.PathLabel(snapshot.MotionPath);
         RawAccelText = $"{snapshot.RawAccelX}  {snapshot.RawAccelY}  {snapshot.RawAccelZ}";
         CalAccelText = $"{snapshot.CalAccelX}  {snapshot.CalAccelY}  {snapshot.CalAccelZ}";

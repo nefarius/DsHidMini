@@ -19,8 +19,6 @@ extern const UCHAR G_Ds3BthHidOutputReport[];
 #define DS3_BTH_HID_OUTPUT_REPORT_CONTROL_PREFIX	0x52
 #define DS3_BTH_HID_OUTPUT_REPORT_INTERRUPT_PREFIX	0xA2
 #define DS3_BTH_HID_FEATURE_SET_PREFIX				0x53
-#define DS3_BTH_HID_FEATURE_GET_PREFIX				0x43
-#define DS3_BTH_HID_FEATURE_DATA_PREFIX				0xA3
 #define DS3_BTH_HIDP_HANDSHAKE_MASK					0xF0
 #define DS3_BTH_HIDP_HANDSHAKE_SUCCESS				0x00
 
@@ -64,6 +62,18 @@ extern const UCHAR G_Ds3BthHidOutputReport[];
 #define DS3_USB_COMMON_ENABLE		0x42, 0x0C, 0x00, 0x00
 #define DS3_USB_COMMON_DISABLE		0x42, 0x0B, 0x00, 0x00
 #define DS3_BTH_SIXAXIS_ENABLE		0x53, 0xF4, 0x42, 0x03, 0x00, 0x00
+
+//
+// Bluetooth Feature 0xF4 "become operational" payload candidates for the
+// issue #217 gyro-enable experiment (raw gyro reads ~5 on some pads until
+// this is sent). _USB is the byte the PS3 itself sends over USB
+// (DS3_USB_COMMON_ENABLE) and is the default; _LINUX is what hid-sony / the
+// USB Host Shield library send over Bluetooth for SIXAXIS-class pads
+// (matches DS3_BTH_SIXAXIS_ENABLE's payload). Swap which one
+// DsBth_EvtStartupDelayTimerFunc sends to compare on hardware.
+// 
+#define DS3_BTH_MOTION_ENABLE_PAYLOAD_USB	0x42, 0x0C, 0x00, 0x00
+#define DS3_BTH_MOTION_ENABLE_PAYLOAD_LINUX	0x42, 0x03, 0x00, 0x00
 
 //
 // Possible values for button combinations

@@ -72,9 +72,7 @@ DsBth_D0Entry(
 
 #define DS_BTH_FEATURE_TIMEOUT_MS            3000
 #define DS_BTH_FEATURE_HANDSHAKE_TIMEOUT_MS  250
-#define DS_BTH_FEATURE_MAX_DRAIN_READS       4
 #define DS_BTH_FEATURE_MAX_PAYLOAD           64
-#define DS_BTH_FEATURE_RAW_READ_SIZE         80
 
 NTSTATUS
 DsBth_HidControlSetFeature(
@@ -82,18 +80,4 @@ DsBth_HidControlSetFeature(
 	_In_ UCHAR ReportId,
 	_In_reads_bytes_opt_(PayloadLength) const UCHAR* Payload,
 	_In_ ULONG PayloadLength
-);
-
-NTSTATUS
-DsBth_HidControlGetFeature(
-	_In_ PDEVICE_CONTEXT Context,
-	_In_ UCHAR ReportId,
-	_Out_writes_bytes_(BufferLength) PUCHAR Buffer,
-	_In_ ULONG BufferLength,
-	_Out_ PULONG BytesTransferred
-);
-
-VOID
-DsBth_TryLoadIdentification(
-	_In_ WDFDEVICE Device
 );

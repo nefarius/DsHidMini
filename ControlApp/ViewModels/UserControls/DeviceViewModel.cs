@@ -1093,7 +1093,9 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             return;
         }
 
-        MotionViewerViewModel viewer = new(deviceIndex, DeviceAddressFriendly ?? DeviceAddress);
+        var calibrationSource =
+            (DsMotionCalibrationSource)Device.GetProperty<byte>(DsHidMiniDriver.MotionCalibrationSourceProperty);
+        MotionViewerViewModel viewer = new(deviceIndex, DeviceAddressFriendly ?? DeviceAddress, calibrationSource);
         _motionViewer = new MotionViewerWindow(viewer)
         {
             Owner = Application.Current.MainWindow

@@ -39,6 +39,25 @@ public class MotionViewerLifecycleTests
     }
 
     [Fact]
+    public void FallbackStatus_NoCalibrationCache_SuggestsUsbConnect()
+    {
+        string text = MotionStatusFormatter.StatusText(
+            true, true, true, isFallback: true, DsMotionCalibrationSource.None);
+        Assert.Contains("nominal", text, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("USB", text, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void FactoryStatus_CachedFromUsb_MentionsCache()
+    {
+        string text = MotionStatusFormatter.StatusText(
+            true, true, true, isFallback: false, DsMotionCalibrationSource.CachedFromUsb);
+        Assert.Contains("factory EEPROM", text, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("cached", text, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("USB", text, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void MissingTelemetry_MentionsOlderDriver()
     {
         string text = MotionStatusFormatter.StatusText(true, telemetryMapped: false, false, false);

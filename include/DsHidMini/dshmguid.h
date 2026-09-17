@@ -80,3 +80,16 @@ DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RO_IdentificationCloneHeuristic,
 // {3FECF510-CC94-4FBE-8839-738201F84D59}
 DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RO_DeviceType,
 	0x3fecf510, 0xcc94, 0x4fbe, 0x88, 0x39, 0x73, 0x82, 0x1, 0xf8, 0x4d, 0x59, 12); // DEVPROP_TYPE_BYTE
+
+// Raw 64-byte GET Feature 0xEF page 0xA0 EEPROM blob. Only ever written by a live
+// USB read; a Bluetooth instance reads it back from the matching (possibly
+// phantom) USB devnode instead of asking the pad. See issue #217.
+// {3FECF510-CC94-4FBE-8839-738201F84D59}
+DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RO_MotionCalibrationData,
+	0x3fecf510, 0xcc94, 0x4fbe, 0x88, 0x39, 0x73, 0x82, 0x1, 0xf8, 0x4d, 0x59, 13); // DEVPROP_TYPE_BINARY
+
+// DS_MOTION_CALIBRATION_SOURCE: 0 none, 1 live USB read, 2 cached from a USB
+// instance's persisted DEVPKEY_DsHidMini_RO_MotionCalibrationData. See issue #217.
+// {3FECF510-CC94-4FBE-8839-738201F84D59}
+DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RO_MotionCalibrationSource,
+	0x3fecf510, 0xcc94, 0x4fbe, 0x88, 0x39, 0x73, 0x82, 0x1, 0xf8, 0x4d, 0x59, 14); // DEVPROP_TYPE_BYTE

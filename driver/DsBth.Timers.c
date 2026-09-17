@@ -45,15 +45,99 @@ DsBth_EvtStartupDelayTimerFunc(
 	}
 
 	//
-	// Feature 0x01 then Feature 0xEF page 0xA0, before the first output
-	// and interrupt stream. Serialized under OutputReport.Lock so rumble
-	// or LED writes cannot consume a control-channel reply. Soft-fail keeps
-	// nominal motion calibration (issue #217).
+	// No known Bluetooth host - not the PS3, not Linux hid-sony, not the
+	// USB Host Shield library - ever issues GET_REPORT for Feature 0x01 or
+	// 0xEF over the HID control channel; the PS3 itself only reads them
+	// over USB, while pairing (see docs/PS3_USB_STARTUP.md). So instead of
+	// asking the pad, read back whatever its USB instance cached under
+	// DEVPKEY_DsHidMini_RO_IdentificationData / _MotionCalibrationData for
+	// this same Bluetooth MAC. A cache miss (pad never seen over USB) keeps
+	// nominal 512/399 calibration with no wire traffic and no startup
+	// delay. Serialized under OutputReport.Lock, same as before, so this
+	// and the F4 motion-enable write below cannot race the first output
+	// (issue #217).
 	//
 	WdfWaitLockAcquire(pDevCtx->OutputReport.Lock, NULL);
 
-	DsBth_TryLoadIdentification(device);
-	DsMotion_TryLoadBluetoothCalibration(device);
+	DsIdentification_Clear(device);
+
+	{
+		UCHAR identification[DS_IDENTIFICATION_REPORT_SIZE];
+		UCHAR calibration[CONTROL_TRANSFER_BUFFER_LENGTH];
+		ULONG identificationLength = 0;
+		ULONG calibrationLength = 0;
+		const BOOLEAN cacheFound = DsDevice_ReadCachedWiredProperties(
+			pDevCtx,
+			identification,
+			sizeof(identification),
+			&identificationLength,
+			calibration,
+			sizeof(calibration),
+			&calibrationLength
+		);
+
+		if (identificationLength > 0)
+		{
+			DsIdentification_PublishFromReport(device, identification, identificationLength);
+		}
+
+		if (calibrationLength > 0)
+		{
+			if (!DsMotion_LoadCalibrationBuffer(
+				device,
+				calibration,
+				calibrationLength,
+				DsMotionCalibrationSourceCachedFromUsb
+			))
+			{
+				TraceWarning(
+					TRACE_DSBTH,
+					"Cached EEPROM page 0xA0 for %s failed to parse; using nominal calibration",
+					pDevCtx->DeviceAddressString
+				);
+			}
+		}
+		else
+		{
+			DsMotion_OnBluetoothCacheMiss(device);
+		}
+
+		TraceInformation(
+			TRACE_DSBTH,
+			"%s cached calibration for %s (identification=%lu bytes, EEPROM=%lu bytes)",
+			cacheFound ? "Found" : "No",
+			pDevCtx->DeviceAddressString,
+			identificationLength,
+			calibrationLength
+		);
+	}
+
+	//
+	// Gyro-enable experiment (issue #217): raw gyro reads ~5 on some pads
+	// over Bluetooth until this is sent. Gated on cached identification so
+	// it never reaches a pad we cannot recognize, and skipped for the
+	// clone heuristic since those pads' gyros are known frozen regardless.
+	// Swap DS3_BTH_MOTION_ENABLE_PAYLOAD_USB for _LINUX here to compare the
+	// two candidates on hardware; see driver/Ds3.h.
+	// 
+	if (pDevCtx->IdentificationPresent && !pDevCtx->Identification.CloneHeuristic)
+	{
+		static const UCHAR motionEnable[] = { DS3_BTH_MOTION_ENABLE_PAYLOAD_USB };
+
+		if (!NT_SUCCESS(status = DsBth_HidControlSetFeature(
+			pDevCtx,
+			0xF4,
+			motionEnable,
+			ARRAYSIZE(motionEnable)
+		)))
+		{
+			TraceWarning(
+				TRACE_DSBTH,
+				"SET Feature 0xF4 motion-enable failed with %!STATUS!",
+				status
+			);
+		}
+	}
 
 	//
 	// Apply LEDs (mode-aware, authority-checked - fixes issue #351 for the

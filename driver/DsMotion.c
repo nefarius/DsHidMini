@@ -631,6 +631,84 @@ DsMotion_OnEepromUnavailable(
 
 static
 VOID
+DsMotion_AssignDeviceProperty(
+	_In_ WDFDEVICE Device,
+	_In_ const DEVPROPKEY* Key,
+	_In_ DEVPROPTYPE Type,
+	_In_ ULONG Size,
+	_In_opt_ PVOID Buffer,
+	_In_ PCWSTR KeyName
+)
+{
+	WDF_DEVICE_PROPERTY_DATA propertyData;
+	NTSTATUS status;
+
+	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, Key);
+	propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+	propertyData.Lcid = LOCALE_NEUTRAL;
+
+	status = WdfDeviceAssignProperty(
+		Device,
+		&propertyData,
+		Type,
+		Size,
+		Buffer
+	);
+
+	if (!NT_SUCCESS(status))
+	{
+		TraceError(
+			TRACE_MOTION,
+			"WdfDeviceAssignProperty(%ls) failed with %!STATUS!",
+			KeyName,
+			status
+		);
+	}
+}
+
+static
+VOID
+DsMotion_SetCalibrationSource(
+	_In_ WDFDEVICE Device,
+	_In_ DS_MOTION_CALIBRATION_SOURCE Source
+)
+{
+	UCHAR value = (UCHAR)Source;
+
+	DsMotion_AssignDeviceProperty(
+		Device,
+		&DEVPKEY_DsHidMini_RO_MotionCalibrationSource,
+		DEVPROP_TYPE_BYTE,
+		sizeof(UCHAR),
+		&value,
+		L"DEVPKEY_DsHidMini_RO_MotionCalibrationSource"
+	);
+}
+
+static
+VOID
+DsMotion_ClearCalibrationCache(
+	_In_ WDFDEVICE Device
+)
+{
+	//
+	// BufferLength 0 deletes a previously persisted value, same pattern as
+	// DsIdentification_Clear, so a failed USB read cannot leave a stale
+	// cache behind for a later Bluetooth connect to pick up.
+	// 
+	DsMotion_AssignDeviceProperty(
+		Device,
+		&DEVPKEY_DsHidMini_RO_MotionCalibrationData,
+		DEVPROP_TYPE_BINARY,
+		0,
+		NULL,
+		L"DEVPKEY_DsHidMini_RO_MotionCalibrationData"
+	);
+	DsMotion_SetCalibrationSource(Device, DsMotionCalibrationSourceNone);
+}
+
+static
+VOID
 DsMotion_OnEepromLoaded(
 	_In_ PDEVICE_CONTEXT Context
 )
@@ -705,6 +783,7 @@ DsMotion_TryLoadUsbCalibration(
 			status
 		);
 		DsMotion_OnEepromUnavailable(pDevCtx);
+		DsMotion_ClearCalibrationCache(Device);
 		FuncExitNoReturn(TRACE_MOTION);
 		return;
 	}
@@ -722,86 +801,92 @@ DsMotion_TryLoadUsbCalibration(
 		&transferred
 	);
 
-	if (!NT_SUCCESS(status) ||
-		!DsMotion_ParseEepromPage(page, transferred, &pDevCtx->Motion))
-	{
-		TraceWarning(
-			TRACE_MOTION,
-			"GET Feature 0xEF page 0xA0 failed (status %!STATUS!, %lu bytes); using nominal calibration",
-			status,
-			transferred
-		);
-		DsMotion_OnEepromUnavailable(pDevCtx);
-		FuncExitNoReturn(TRACE_MOTION);
-		return;
-	}
-
-	DsMotion_OnEepromLoaded(pDevCtx);
-
-	FuncExitNoReturn(TRACE_MOTION);
-}
-
-VOID
-DsMotion_TryLoadBluetoothCalibration(
-	_In_ WDFDEVICE Device
-)
-{
-	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
-	UCHAR select[48];
-	UCHAR page[CONTROL_TRANSFER_BUFFER_LENGTH];
-	ULONG transferred = 0;
-	NTSTATUS status;
-
-	FuncEntry(TRACE_MOTION);
-
-	pDevCtx->Motion.Path = DsMotion_ResolvePath(pDevCtx);
-	DsMotion_FillPageSelect(select);
-
-	status = DsBth_HidControlSetFeature(
-		pDevCtx,
-		0xEF,
-		select,
-		ARRAYSIZE(select)
-	);
-
 	if (!NT_SUCCESS(status))
 	{
 		TraceWarning(
 			TRACE_MOTION,
-			"Bluetooth SET Feature 0xEF page 0xA0 failed with %!STATUS!; using nominal calibration",
+			"GET Feature 0xEF page 0xA0 failed with %!STATUS!; using nominal calibration",
 			status
 		);
 		DsMotion_OnEepromUnavailable(pDevCtx);
+		DsMotion_ClearCalibrationCache(Device);
 		FuncExitNoReturn(TRACE_MOTION);
 		return;
 	}
 
-	RtlZeroMemory(page, sizeof(page));
-	status = DsBth_HidControlGetFeature(
-		pDevCtx,
-		0xEF,
-		page,
-		ARRAYSIZE(page),
-		&transferred
-	);
-
-	if (!NT_SUCCESS(status) ||
-		!DsMotion_ParseEepromPage(page, transferred, &pDevCtx->Motion))
+	//
+	// Persist this 64-byte reply on the USB devnode (DsMotion_LoadCalibrationBuffer,
+	// Source=LiveUsb) so a Bluetooth connect for the same pad's MAC can read it
+	// back from DsDevice_ReadCachedWiredProperties instead of ever asking the pad
+	// itself - no known Bluetooth host issues GET_REPORT for Feature 0x01/0xEF
+	// (see docs/PS3_USB_STARTUP.md). A parse failure here still clears the cache.
+	// 
+	if (!DsMotion_LoadCalibrationBuffer(Device, page, transferred, DsMotionCalibrationSourceLiveUsb))
 	{
 		TraceWarning(
 			TRACE_MOTION,
-			"Bluetooth GET Feature 0xEF page 0xA0 failed (status %!STATUS!, %lu bytes); using nominal calibration",
-			status,
+			"GET Feature 0xEF page 0xA0 returned %lu bytes but failed to parse; using nominal calibration",
 			transferred
 		);
+	}
+
+	FuncExitNoReturn(TRACE_MOTION);
+}
+
+BOOLEAN
+DsMotion_LoadCalibrationBuffer(
+	_In_ WDFDEVICE Device,
+	_In_reads_(BufferLength) const UCHAR* Buffer,
+	_In_ ULONG BufferLength,
+	_In_ DS_MOTION_CALIBRATION_SOURCE Source
+)
+{
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+
+	if (!DsMotion_ParseEepromPage(Buffer, BufferLength, &pDevCtx->Motion))
+	{
 		DsMotion_OnEepromUnavailable(pDevCtx);
-		FuncExitNoReturn(TRACE_MOTION);
-		return;
+
+		if (Source == DsMotionCalibrationSourceLiveUsb)
+		{
+			DsMotion_ClearCalibrationCache(Device);
+		}
+		else
+		{
+			DsMotion_SetCalibrationSource(Device, DsMotionCalibrationSourceNone);
+		}
+
+		return FALSE;
 	}
 
 	DsMotion_OnEepromLoaded(pDevCtx);
+	DsMotion_SetCalibrationSource(Device, Source);
 
-	FuncExitNoReturn(TRACE_MOTION);
+	if (Source == DsMotionCalibrationSourceLiveUsb)
+	{
+		DsMotion_AssignDeviceProperty(
+			Device,
+			&DEVPKEY_DsHidMini_RO_MotionCalibrationData,
+			DEVPROP_TYPE_BINARY,
+			BufferLength,
+			(PVOID)Buffer,
+			L"DEVPKEY_DsHidMini_RO_MotionCalibrationData"
+		);
+	}
+
+	return TRUE;
+}
+
+VOID
+DsMotion_OnBluetoothCacheMiss(
+	_In_ WDFDEVICE Device
+)
+{
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+
+	pDevCtx->Motion.Path = DsMotion_ResolvePath(pDevCtx);
+	DsMotion_OnEepromUnavailable(pDevCtx);
+	DsMotion_SetCalibrationSource(Device, DsMotionCalibrationSourceNone);
 }
 
 VOID

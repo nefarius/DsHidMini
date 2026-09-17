@@ -16,7 +16,12 @@ internal static class MotionStatusFormatter
         };
     }
 
-    public static string StatusText(bool ipcAvailable, bool telemetryMapped, bool gotSnapshot, bool isFallback)
+    public static string StatusText(
+        bool ipcAvailable,
+        bool telemetryMapped,
+        bool gotSnapshot,
+        bool isFallback,
+        DsMotionCalibrationSource calibrationSource = DsMotionCalibrationSource.LiveUsb)
     {
         if (!ipcAvailable)
         {
@@ -33,8 +38,18 @@ internal static class MotionStatusFormatter
             return "Waiting for a motion sample…";
         }
 
-        return isFallback
-            ? "Using nominal calibration (EEPROM page 0xA0 was not loaded)."
+        if (isFallback)
+        {
+            // Bluetooth never queries the pad for this; a cache miss (never
+            // seen over USB) is the expected reason wireless stays nominal.
+            // See issue #217.
+            return calibrationSource == DsMotionCalibrationSource.None
+                ? "Using nominal calibration. Connect this controller over USB once to cache its factory calibration."
+                : "Using nominal calibration (EEPROM page 0xA0 was not loaded).";
+        }
+
+        return calibrationSource == DsMotionCalibrationSource.CachedFromUsb
+            ? "Using factory EEPROM calibration (cached from USB)."
             : "Using factory EEPROM calibration.";
     }
 }

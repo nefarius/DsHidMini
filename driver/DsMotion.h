@@ -18,6 +18,19 @@
 
 typedef struct _DEVICE_CONTEXT DEVICE_CONTEXT, *PDEVICE_CONTEXT;
 
+//
+// How DS_MOTION_STATE's calibration was populated. Bluetooth never asks the
+// pad for Feature 0x01/0xEF (see docs/PS3_USB_STARTUP.md); it reads back
+// whatever the pad's USB instance cached on DEVPKEY_DsHidMini_RO_MotionCalibrationData.
+// See issue #217.
+// 
+typedef enum _DS_MOTION_CALIBRATION_SOURCE
+{
+	DsMotionCalibrationSourceNone = 0,
+	DsMotionCalibrationSourceLiveUsb = 1,
+	DsMotionCalibrationSourceCachedFromUsb = 2,
+} DS_MOTION_CALIBRATION_SOURCE, *PDS_MOTION_CALIBRATION_SOURCE;
+
 typedef struct _DS_MOTION_AXIS_CAL
 {
 	USHORT Zero;
@@ -132,8 +145,16 @@ DsMotion_TryLoadUsbCalibration(
 	_In_ WDFDEVICE Device
 );
 
+BOOLEAN
+DsMotion_LoadCalibrationBuffer(
+	_In_ WDFDEVICE Device,
+	_In_reads_(BufferLength) const UCHAR* Buffer,
+	_In_ ULONG BufferLength,
+	_In_ DS_MOTION_CALIBRATION_SOURCE Source
+);
+
 VOID
-DsMotion_TryLoadBluetoothCalibration(
+DsMotion_OnBluetoothCacheMiss(
 	_In_ WDFDEVICE Device
 );
 
