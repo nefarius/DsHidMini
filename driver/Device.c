@@ -1890,34 +1890,43 @@ DsDevice_ReadCachedWiredProperties(
 			continue;
 		}
 
-		size = IdentificationBufferLength;
-		if (CM_Get_DevNode_PropertyW(
-			devInst,
-			&DEVPKEY_DsHidMini_RO_IdentificationData,
-			&propType,
-			(PBYTE)IdentificationBuffer,
-			&size,
-			0) == CR_SUCCESS
-			&& propType == DEVPROP_TYPE_BINARY)
+		if (*IdentificationLength == 0)
 		{
-			*IdentificationLength = size;
+			size = IdentificationBufferLength;
+			if (CM_Get_DevNode_PropertyW(
+				devInst,
+				&DEVPKEY_DsHidMini_RO_IdentificationData,
+				&propType,
+				(PBYTE)IdentificationBuffer,
+				&size,
+				0) == CR_SUCCESS
+				&& propType == DEVPROP_TYPE_BINARY)
+			{
+				*IdentificationLength = size;
+			}
 		}
 
-		size = CalibrationBufferLength;
-		if (CM_Get_DevNode_PropertyW(
-			devInst,
-			&DEVPKEY_DsHidMini_RO_MotionCalibrationData,
-			&propType,
-			(PBYTE)CalibrationBuffer,
-			&size,
-			0) == CR_SUCCESS
-			&& propType == DEVPROP_TYPE_BINARY)
+		if (*CalibrationLength == 0)
 		{
-			*CalibrationLength = size;
+			size = CalibrationBufferLength;
+			if (CM_Get_DevNode_PropertyW(
+				devInst,
+				&DEVPKEY_DsHidMini_RO_MotionCalibrationData,
+				&propType,
+				(PBYTE)CalibrationBuffer,
+				&size,
+				0) == CR_SUCCESS
+				&& propType == DEVPROP_TYPE_BINARY)
+			{
+				*CalibrationLength = size;
+			}
 		}
 
 		found = (*IdentificationLength > 0) || (*CalibrationLength > 0);
-		break;
+		if (*IdentificationLength > 0 && *CalibrationLength > 0)
+		{
+			break;
+		}
 	}
 
 	HeapFree(GetProcessHeap(), 0, list);

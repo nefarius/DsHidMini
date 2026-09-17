@@ -1093,8 +1093,20 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             return;
         }
 
-        var calibrationSource =
-            (DsMotionCalibrationSource)Device.GetProperty<byte>(DsHidMiniDriver.MotionCalibrationSourceProperty);
+        DsMotionCalibrationSource calibrationSource = DsMotionCalibrationSource.None;
+        try
+        {
+            calibrationSource =
+                (DsMotionCalibrationSource)Device.GetProperty<byte>(DsHidMiniDriver.MotionCalibrationSourceProperty);
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Warning(
+                ex,
+                "Failed to read motion calibration source of device '{Address}'",
+                DeviceAddress);
+        }
+
         MotionViewerViewModel viewer = new(deviceIndex, DeviceAddressFriendly ?? DeviceAddress, calibrationSource);
         _motionViewer = new MotionViewerWindow(viewer)
         {
