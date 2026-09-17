@@ -23,12 +23,12 @@ public enum DsMotionSnapshotFlags : ushort
 
     /// <summary>
     ///     EEPROM page <c>0xA0</c> was not used. Nominal <c>zero=512</c>,
-    ///     <c>oneG=399</c> are in effect (Bluetooth, or a failed USB read).
+    ///     <c>oneG=399</c> are in effect (failed or skipped Feature 0xEF).
     /// </summary>
     Fallback = 0x0002,
 
     /// <summary>
-    ///     The driver is writing a hardware gyro cal byte on USB output reports.
+    ///     The driver is writing a hardware gyro cal byte on output reports.
     /// </summary>
     HardwareCal = 0x0004,
 

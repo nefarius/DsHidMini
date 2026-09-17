@@ -24,7 +24,8 @@ Identical across all three consoles and all six samples:
    has: `SET_REPORT Feature 0xF5` (pairing request), then a verifying
    `GET_REPORT Feature 0xF5` 27-75 ms later (varies by sample).
 6. `0xEF` / `0xF8` calibration-page reads (motion sensor calibration data;
-   DsHidMini now soft-reads page `0xA0` via Feature `0xEF` on USB start, see
+   DsHidMini now soft-reads page `0xA0` via Feature `0xEF` on USB start and
+   over the BthPS3 HID control channel on wireless start, see
    [`MOTION.md`](MOTION.md#what-dshidmini-does-today); `0xF8` is still unused).
 7. **`SET_REPORT Output 0x01` on EP0 (control endpoint), 48 bytes, no report
    ID, all zeros.** This is the pre-enable output report and the reason
@@ -50,9 +51,11 @@ Identical across all three consoles and all six samples:
     one more all-zero EP0 report (same shape as step 7).
 
 No `SET_IDLE`, `0xF7`, or `0xF8` traffic is emulated by DsHidMini. Feature
-`0xEF` page `0xA0` is soft-read on USB start for motion calibration (failure
-does not abort `PrepareHardware`). They remain documented here so future
-quirk work does not need to re-derive them from the pcaps.
+`0xEF` page `0xA0` is soft-read on USB start and Bluetooth startup for motion
+calibration (failure does not abort device start). They remain documented
+here so future quirk work does not need to re-derive them from the pcaps.
+Wireless uses the same payloads with Bluetooth HID Feature headers
+(`0x53` SET / `0x43` GET) on the BthPS3 control channel.
 
 ## Report layouts
 

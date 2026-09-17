@@ -163,3 +163,475 @@ NTSTATUS DsBth_SelfManagedIoSuspend(WDFDEVICE Device)
 
 	return status;
 }
+
+static
+BOOLEAN
+DsBth_IsDisconnectStatus(
+	_In_ NTSTATUS Status
+)
+{
+	switch (Status)
+	{
+	case STATUS_DEVICE_NOT_CONNECTED:
+	case STATUS_DEVICE_REMOVED:
+	case STATUS_CANCELLED:
+	case STATUS_DELETE_PENDING:
+	case STATUS_NO_SUCH_DEVICE:
+	case STATUS_INVALID_DEVICE_STATE:
+		return TRUE;
+	default:
+		return FALSE;
+	}
+}
+
+static
+NTSTATUS
+DsBth_HidControlWrite(
+	_In_ PDEVICE_CONTEXT Context,
+	_In_reads_bytes_(BufferLength) PVOID Buffer,
+	_In_ size_t BufferLength,
+	_In_ ULONG TimeoutMs
+)
+{
+	NTSTATUS status;
+	size_t bytesWritten = 0;
+
+	if (Context == NULL ||
+		Context->Connection.Bth.HidControl.OutputWriterModule == NULL ||
+		Buffer == NULL ||
+		BufferLength == 0)
+	{
+		return STATUS_INVALID_PARAMETER;
+	}
+
+	status = DMF_DefaultTarget_SendSynchronously(
+		Context->Connection.Bth.HidControl.OutputWriterModule,
+		Buffer,
+		BufferLength,
+		NULL,
+		0,
+		ContinuousRequestTarget_RequestType_Ioctl,
+		IOCTL_BTHPS3_HID_CONTROL_WRITE,
+		TimeoutMs,
+		&bytesWritten
+	);
+
+	if (!NT_SUCCESS(status))
+	{
+		TraceWarning(
+			TRACE_DSBTH,
+			"HID control WRITE failed with %!STATUS! (%lu bytes)",
+			status,
+			(ULONG)bytesWritten
+		);
+	}
+
+	return status;
+}
+
+static
+NTSTATUS
+DsBth_HidControlRead(
+	_In_ PDEVICE_CONTEXT Context,
+	_Out_writes_bytes_(BufferLength) PVOID Buffer,
+	_In_ size_t BufferLength,
+	_Out_ PULONG BytesRead,
+	_In_ ULONG TimeoutMs
+)
+{
+	NTSTATUS status;
+	size_t bytesRead = 0;
+
+	if (BytesRead != NULL)
+	{
+		*BytesRead = 0;
+	}
+
+	if (Context == NULL ||
+		Context->Connection.Bth.HidControl.OutputWriterModule == NULL ||
+		Buffer == NULL ||
+		BufferLength == 0)
+	{
+		return STATUS_INVALID_PARAMETER;
+	}
+
+	status = DMF_DefaultTarget_SendSynchronously(
+		Context->Connection.Bth.HidControl.OutputWriterModule,
+		NULL,
+		0,
+		Buffer,
+		BufferLength,
+		ContinuousRequestTarget_RequestType_Ioctl,
+		IOCTL_BTHPS3_HID_CONTROL_READ,
+		TimeoutMs,
+		&bytesRead
+	);
+
+	if (NT_SUCCESS(status) && BytesRead != NULL)
+	{
+		*BytesRead = (ULONG)bytesRead;
+	}
+	else if (!NT_SUCCESS(status) && !DsBth_IsDisconnectStatus(status))
+	{
+		TraceVerbose(
+			TRACE_DSBTH,
+			"HID control READ completed with %!STATUS! (%lu bytes)",
+			status,
+			(ULONG)bytesRead
+		);
+	}
+
+	return status;
+}
+
+static
+NTSTATUS
+DsBth_DrainHandshake(
+	_In_ PDEVICE_CONTEXT Context
+)
+{
+	UCHAR handshake[8];
+	ULONG transferred = 0;
+	NTSTATUS status;
+
+	RtlZeroMemory(handshake, sizeof(handshake));
+	status = DsBth_HidControlRead(
+		Context,
+		handshake,
+		sizeof(handshake),
+		&transferred,
+		DS_BTH_FEATURE_HANDSHAKE_TIMEOUT_MS
+	);
+
+	if (DsBth_IsDisconnectStatus(status))
+	{
+		return status;
+	}
+
+	if (!NT_SUCCESS(status))
+	{
+		//
+		// Many pads never send a control-channel handshake. Timeout is
+		// expected and must not fail the SET.
+		//
+		return STATUS_SUCCESS;
+	}
+
+	if (transferred == 1 && handshake[0] == DS3_BTH_HIDP_HANDSHAKE_SUCCESS)
+	{
+		TraceVerbose(
+			TRACE_DSBTH,
+			"HID control handshake SUCCESS after SET Feature"
+		);
+		return STATUS_SUCCESS;
+	}
+
+	TraceWarning(
+		TRACE_DSBTH,
+		"Unexpected HID control read after SET Feature (%lu bytes, first=0x%02X)",
+		transferred,
+		handshake[0]
+	);
+	DumpAsHex("BthFeatureHandshake", handshake, transferred);
+	return STATUS_SUCCESS;
+}
+
+static
+NTSTATUS
+DsBth_NormalizeFeatureReply(
+	_In_ UCHAR ReportId,
+	_In_reads_(SourceLength) const UCHAR* Source,
+	_In_ ULONG SourceLength,
+	_Out_writes_(DestLength) PUCHAR Dest,
+	_In_ ULONG DestLength,
+	_Out_ PULONG BytesCopied
+)
+{
+	const UCHAR* payload = Source;
+	ULONG remaining = SourceLength;
+	ULONG copy;
+
+	*BytesCopied = 0;
+
+	if (Source == NULL || Dest == NULL || DestLength == 0)
+	{
+		return STATUS_INVALID_PARAMETER;
+	}
+
+	if (remaining == 0)
+	{
+		return STATUS_BUFFER_TOO_SMALL;
+	}
+
+	if (remaining == 1 && (payload[0] & DS3_BTH_HIDP_HANDSHAKE_MASK) == 0x00)
+	{
+		return STATUS_MORE_PROCESSING_REQUIRED;
+	}
+
+	if (payload[0] == DS3_BTH_HID_FEATURE_DATA_PREFIX)
+	{
+		payload++;
+		remaining--;
+		if (remaining == 0)
+		{
+			return STATUS_BUFFER_TOO_SMALL;
+		}
+	}
+
+	//
+	// USB-style GET Feature buffer: 00 <reportId> ...
+	//
+	if (remaining >= 2 && payload[0] == 0x00 && payload[1] == ReportId)
+	{
+		copy = remaining;
+		if (copy > DestLength)
+		{
+			copy = DestLength;
+		}
+
+		RtlCopyMemory(Dest, payload, copy);
+		*BytesCopied = copy;
+		return STATUS_SUCCESS;
+	}
+
+	//
+	// HIDP payload starting at the report ID. Prepend 00 so parsers
+	// see the same layout as USB_SendControlRequest.
+	//
+	if (payload[0] == ReportId)
+	{
+		if (DestLength < 2)
+		{
+			return STATUS_BUFFER_TOO_SMALL;
+		}
+
+		Dest[0] = 0x00;
+		copy = remaining;
+		if (copy > DestLength - 1)
+		{
+			copy = DestLength - 1;
+		}
+
+		RtlCopyMemory(&Dest[1], payload, copy);
+		*BytesCopied = copy + 1;
+		return STATUS_SUCCESS;
+	}
+
+	return STATUS_INVALID_BUFFER_SIZE;
+}
+
+NTSTATUS
+DsBth_HidControlSetFeature(
+	_In_ PDEVICE_CONTEXT Context,
+	_In_ UCHAR ReportId,
+	_In_reads_bytes_opt_(PayloadLength) const UCHAR* Payload,
+	_In_ ULONG PayloadLength
+)
+{
+	UCHAR packet[2 + DS_BTH_FEATURE_MAX_PAYLOAD];
+	NTSTATUS status;
+
+	FuncEntry(TRACE_DSBTH);
+
+	if (PayloadLength > DS_BTH_FEATURE_MAX_PAYLOAD)
+	{
+		status = STATUS_BUFFER_OVERFLOW;
+		FuncExit(TRACE_DSBTH, "status=%!STATUS!", status);
+		return status;
+	}
+
+	if (PayloadLength > 0 && Payload == NULL)
+	{
+		status = STATUS_INVALID_PARAMETER;
+		FuncExit(TRACE_DSBTH, "status=%!STATUS!", status);
+		return status;
+	}
+
+	RtlZeroMemory(packet, sizeof(packet));
+	packet[0] = DS3_BTH_HID_FEATURE_SET_PREFIX;
+	packet[1] = ReportId;
+	if (PayloadLength > 0)
+	{
+		RtlCopyMemory(&packet[2], Payload, PayloadLength);
+	}
+
+	status = DsBth_HidControlWrite(
+		Context,
+		packet,
+		2 + PayloadLength,
+		DS_BTH_FEATURE_TIMEOUT_MS
+	);
+
+	if (!NT_SUCCESS(status))
+	{
+		FuncExit(TRACE_DSBTH, "status=%!STATUS!", status);
+		return status;
+	}
+
+	status = DsBth_DrainHandshake(Context);
+
+	FuncExit(TRACE_DSBTH, "status=%!STATUS!", status);
+	return status;
+}
+
+NTSTATUS
+DsBth_HidControlGetFeature(
+	_In_ PDEVICE_CONTEXT Context,
+	_In_ UCHAR ReportId,
+	_Out_writes_bytes_(BufferLength) PUCHAR Buffer,
+	_In_ ULONG BufferLength,
+	_Out_ PULONG BytesTransferred
+)
+{
+	UCHAR request[2];
+	UCHAR raw[DS_BTH_FEATURE_RAW_READ_SIZE];
+	ULONG transferred = 0;
+	ULONG attempt;
+	NTSTATUS status = STATUS_IO_TIMEOUT;
+
+	FuncEntry(TRACE_DSBTH);
+
+	if (BytesTransferred != NULL)
+	{
+		*BytesTransferred = 0;
+	}
+
+	if (Buffer == NULL || BufferLength == 0 || BytesTransferred == NULL)
+	{
+		status = STATUS_INVALID_PARAMETER;
+		FuncExit(TRACE_DSBTH, "status=%!STATUS!", status);
+		return status;
+	}
+
+	request[0] = DS3_BTH_HID_FEATURE_GET_PREFIX;
+	request[1] = ReportId;
+
+	status = DsBth_HidControlWrite(
+		Context,
+		request,
+		sizeof(request),
+		DS_BTH_FEATURE_TIMEOUT_MS
+	);
+
+	if (!NT_SUCCESS(status))
+	{
+		FuncExit(TRACE_DSBTH, "status=%!STATUS!", status);
+		return status;
+	}
+
+	for (attempt = 0; attempt < DS_BTH_FEATURE_MAX_DRAIN_READS; attempt++)
+	{
+		RtlZeroMemory(raw, sizeof(raw));
+		transferred = 0;
+		status = DsBth_HidControlRead(
+			Context,
+			raw,
+			sizeof(raw),
+			&transferred,
+			DS_BTH_FEATURE_TIMEOUT_MS
+		);
+
+		if (!NT_SUCCESS(status))
+		{
+			FuncExit(TRACE_DSBTH, "status=%!STATUS!", status);
+			return status;
+		}
+
+		if (transferred == 0)
+		{
+			continue;
+		}
+
+		if (transferred == 1 &&
+			(raw[0] & DS3_BTH_HIDP_HANDSHAKE_MASK) == 0x00)
+		{
+			if (raw[0] != DS3_BTH_HIDP_HANDSHAKE_SUCCESS)
+			{
+				TraceWarning(
+					TRACE_DSBTH,
+					"GET Feature 0x%02X handshake 0x%02X",
+					ReportId,
+					raw[0]
+				);
+				status = STATUS_UNSUCCESSFUL;
+				FuncExit(TRACE_DSBTH, "status=%!STATUS!", status);
+				return status;
+			}
+
+			continue;
+		}
+
+		status = DsBth_NormalizeFeatureReply(
+			ReportId,
+			raw,
+			transferred,
+			Buffer,
+			BufferLength,
+			BytesTransferred
+		);
+
+		if (status == STATUS_MORE_PROCESSING_REQUIRED)
+		{
+			continue;
+		}
+
+		if (!NT_SUCCESS(status))
+		{
+			TraceWarning(
+				TRACE_DSBTH,
+				"GET Feature 0x%02X reply framing rejected (%lu bytes, first=0x%02X)",
+				ReportId,
+				transferred,
+				raw[0]
+			);
+			DumpAsHex("BthFeatureGet", raw, transferred);
+		}
+
+		FuncExit(TRACE_DSBTH, "status=%!STATUS!", status);
+		return status;
+	}
+
+	status = STATUS_IO_TIMEOUT;
+	FuncExit(TRACE_DSBTH, "status=%!STATUS!", status);
+	return status;
+}
+
+VOID
+DsBth_TryLoadIdentification(
+	_In_ WDFDEVICE Device
+)
+{
+	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+	UCHAR report[DS_IDENTIFICATION_REPORT_SIZE];
+	ULONG transferred = 0;
+	NTSTATUS status;
+
+	FuncEntry(TRACE_DSBTH);
+
+	DsIdentification_Clear(Device);
+
+	RtlZeroMemory(report, sizeof(report));
+	status = DsBth_HidControlGetFeature(
+		pDevCtx,
+		0x01,
+		report,
+		sizeof(report),
+		&transferred
+	);
+
+	if (!NT_SUCCESS(status) || transferred == 0)
+	{
+		TraceWarning(
+			TRACE_DSBTH,
+			"GET Feature 0x01 failed with %!STATUS! (%lu bytes); identification not published",
+			status,
+			transferred
+		);
+		FuncExitNoReturn(TRACE_DSBTH);
+		return;
+	}
+
+	DsIdentification_PublishFromReport(Device, report, transferred);
+
+	FuncExitNoReturn(TRACE_DSBTH);
+}

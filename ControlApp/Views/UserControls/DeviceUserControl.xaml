@@ -131,7 +131,7 @@
                                 DockPanel.Dock="Right"
                                 Text="{Binding BatteryStatusInText}" />
                         </DockPanel>
-                        <!--  Feature 0x01 identification (USB only)  -->
+                        <!--  Feature 0x01 identification (USB and Bluetooth)  -->
                         <DockPanel
                             DockPanel.Dock="Top"
                             LastChildFill="False"

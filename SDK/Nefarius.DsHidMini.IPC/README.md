@@ -164,7 +164,7 @@ All device-indexed APIs use a **one-based** device index (see [Device index](#de
 ### `DsMotionSnapshot` (calibrated motion)
 
 - **Layout:** 80-byte `Pack = 1` struct, version `DsMotionSnapshot.CurrentVersion` (`1`). Must stay in sync with driver `IPC_MOTION_SNAPSHOT_MESSAGE`.
-- **Flags:** `Available`, `Fallback` (nominal 512/399), `HardwareCal`, `Tracker`.
+- **Flags:** `Available`, `Fallback` (nominal 512/399 when EEPROM page `0xA0` was not loaded), `HardwareCal`, `Tracker`.
 - **Calibration:** EEPROM `AccelZero*` / `AccelOneG*` pairs, `GyroZero`, `GyroEepromCal`, live `CalByte`, `ZeroRef`, `MotionPath`.
 - **Samples:** raw and Sony-corrected axes, milli-g, milli-deg/s, `SampleIndex`, QPC timestamp.
 - **Compatibility:** mapping the third region is optional. `HasMotionTelemetry` is `false` and `GetMotionSnapshot` returns `false` against older drivers.

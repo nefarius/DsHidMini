@@ -25,6 +25,17 @@ public class MotionViewerLifecycleTests
     {
         string text = MotionStatusFormatter.StatusText(true, true, true, isFallback: true);
         Assert.Contains("nominal", text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Bluetooth", text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("USB", text, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void FactoryStatus_MentionsEepromCalibration()
+    {
+        string text = MotionStatusFormatter.StatusText(true, true, true, isFallback: false);
+        Assert.Contains("factory EEPROM", text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("USB", text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Bluetooth", text, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

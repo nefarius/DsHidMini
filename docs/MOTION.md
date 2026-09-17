@@ -2,7 +2,7 @@
 
 Research notes and implemented behavior for [issue #217](https://github.com/nefarius/DsHidMini/issues/217)
 (motion support). Feature `0x01` is parsed and published as device properties
-(see [What DsHidMini publishes](#what-dshidmini-publishes)). USB motion
+(see [What DsHidMini publishes](#what-dshidmini-publishes)). USB and Bluetooth motion
 calibration, Sony-compatible correction, IPC telemetry, and the ControlApp
 viewer are implemented; see [What DsHidMini does today](#what-dshidmini-does-today).
 
@@ -183,7 +183,9 @@ raw 64-byte blob plus the decoded fields as read-only device properties on
 | 10 | `DEVPKEY_DsHidMini_RO_IdentificationMotionPath` | BYTE (`Unknown` / `PlainZero` / `HwCal` / `Sixaxis`) |
 | 11 | `DEVPKEY_DsHidMini_RO_IdentificationCloneHeuristic` | BOOLEAN |
 
-Bluetooth instances are not queried. A GET success with a parse failure still
+Bluetooth instances are queried on the BthPS3 HID control channel during
+wireless startup (after the wired-yield check, before the first output and
+interrupt stream). A GET success with a parse failure still
 keeps the raw blob and leaves the decoded keys unset. Publishing these
 properties does **not** change HID mode, output reports, or rumble.
 
@@ -747,20 +749,24 @@ both platforms, so on Linux it is not zeroed either.
   page `0xA0`. Eight big-endian pairs at offset `0x11` are cached. A failed or
   invalid read does **not** fail device start; the driver keeps nominal
   `zero=512`, `oneG=399` and sets the IPC fallback flag.
+- **Bluetooth EEPROM read** (`DsBth_EvtStartupDelayTimerFunc`): the same
+  Feature `0x01` then SET/GET Feature `0xEF` page `0xA0` over
+  `IOCTL_BTHPS3_HID_CONTROL_WRITE/READ` (`0x53` SET Feature, `0x43` GET
+  Feature, optional handshake drain, `0xA3` DATA strip). Protocol, timeout,
+  or parse failure keeps the nominal fallback and does **not** fail startup.
 - **Canonical processing** on every input report: gain-113 accelerometer
   calibration, X mirrored *after* cal, and one of the three Sony gyro paths
   from the Feature `0x01` field list (`PLAIN_ZERO` / `HW_CAL` / `SIXAXIS`).
-  Bluetooth uses the same formulas with the nominal fallback and does **not**
-  send hardware cal bytes or attempt `0xEF`.
+  Bluetooth uses the same formulas once EEPROM and identification load.
 - **SIXAXIS.SYS-compatible GetFeature** (`DSHM_ProcessHidInputReport`): the
   49-byte feature report now carries the calibrated, host-order values from
   `Motion.Sample` (same `CalGyro` as IPC). For `HW_CAL` that is
   `clamp(512 + zeroRef - raw)` when the tracker is initialized, otherwise
   `clamp(0x3FF - raw)`. The 12-byte SIXAXIS input report still has no motion
   fields.
-- **Gyro tracker**: `HW_CAL` and `SIXAXIS` USB pads run the Sony auto-zero
+- **Gyro tracker**: `HW_CAL` and `SIXAXIS` pads run the Sony auto-zero
   tracker (`research/ds3-motion/probe/GyroCal.cs`) only after a successful
-  Feature `0xEF` page `0xA0` read. When the cal byte steps, the driver
+  Feature `0xEF` page `0xA0` read (USB or Bluetooth). When the cal byte steps, the driver
   re-applies it on the next output report (unified `[5]/[6]` or `[3]/[4]`).
   Sending the factory byte once is not enough. For `HW_CAL` with an
   initialized tracker, DsHidMini also publishes the tracker's software-zeroed
@@ -768,7 +774,7 @@ both platforms, so on Linux it is not zeroed either.
   cal-byte step — e.g. DS3-A1b's 16-count / ~10.7 deg/s leftover — does not
   appear as yaw bias. If EEPROM load fails, the tracker stays uninitialized
   and both IPC and GetFeature fall back to `clamp(0x3FF - raw)`. Clone-heuristic
-  `PLAIN_ZERO` USB pads (Obigben, Fake DS3) seed the same tracker in
+  `PLAIN_ZERO` pads (Obigben, Fake DS3) seed the same tracker in
   **software-only** mode on every `0xEF` outcome: `zeroRef` follows rest and
   the cal byte is never stepped or sent. Genuine `PLAIN_ZERO` pads are
   unchanged. The Obigben gyro is frozen at ~500, so this only removes the
@@ -790,7 +796,7 @@ both platforms, so on Linux it is not zeroed either.
 - **DS4Windows-compatible mode** (`driver/DsHid.c`, `DS3_RAW_TO_DS4WINDOWS_HID_INPUT_REPORT`):
   still leaves the DS4 gyro/accel fields at offsets 13-24 zero. Mapping is
   deferred until the axis permutation is verified.
-- `0xF8`/`0xF7` are still not sent. Bluetooth `0xEF` is deferred.
+- `0xF8`/`0xF7` are still not sent.
 
 ### Discrepancies a driver implementation must resolve
 
@@ -849,39 +855,41 @@ Ordered by how visible they are to an application that expects `sixaxis.sys`:
    the other has a dead gyro (frozen 500). Anything that advertises motion to
    applications should notice that the values never change rather than trusting
    page `0xA0`.
-10. **Bluetooth is untested.** `sixaxis.sys` does all of this over EP0; the same
-    feature reports would have to travel the BthPS3 HID control channel.
+10. **Bluetooth Feature reports use HIDP framing.** `sixaxis.sys` does this over
+    EP0; DsHidMini uses `0x53`/`0x43` on the BthPS3 HID control channel and
+    normalizes replies to the USB GET layout before parsing.
 
 ## Deferred work
 
 The items below were deliberately left out of the current implementation.
 
-1. Bluetooth `Feature 0xEF` over the BthPS3 HID control channel (untested).
-   Wireless pads currently use the documented nominal fallback.
-2. DS4Windows motion-field mapping: `accel_ds4 = (raw - zero) * 8192 / (zero - oneG)`
+1. DS4Windows motion-field mapping: `accel_ds4 = (raw - zero) * 8192 / (zero - oneG)`
    with the axis permutation checked against a reference DS4; gyro yaw scaled by
    the measured ~1.4 counts per (deg/s) into the DS4 gyro-Y slot (a gain of about
    11.4 for DS4's 16 LSB per deg/s).
-3. Counterfeit behavioural detection: treat "this axis has not changed in N
+2. Counterfeit behavioural detection: treat "this axis has not changed in N
    seconds" as "no sensor". The `zero == oneG` guard remains for a blank EEPROM
    only; both seen counterfeits return a plausible `0200 0180` template.
-4. A turntable measurement of absolute gyro scale (currently ~1.4 counts/(deg/s)).
+3. A turntable measurement of absolute gyro scale (currently ~1.4 counts/(deg/s)).
 
 ## Status and implementation roadmap
 
-Phase status: **USB path implemented** (driver motion subsystem, IPC snapshot,
-ControlApp viewer). Research dumps remain in
+Phase status: **USB and Bluetooth paths implemented** (driver motion
+subsystem, IPC snapshot, ControlApp viewer). Research dumps remain in
 [`research/ds3-motion/`](../research/ds3-motion/README.md).
 
 ### Hardware verification checklist
 
-On at least one `PLAIN_ZERO` and one `HW_CAL` USB pad:
+On at least one `PLAIN_ZERO` and one `HW_CAL` pad, USB and Bluetooth:
 
 - Flat rest centres near 512 after calibration; six accel poses match the sign table.
 - Clockwise-from-above yaw is positive in the corrected gyro / viewer.
 - Tracker-driven cal-byte resend and convergence (`HW_CAL` / `SIXAXIS`).
 - IPC snapshot and ControlApp Motion viewer (Recenter, expected yaw drift).
 - Disconnect / reconnect, and a failed EEPROM read falling back to 512/399.
+- Wireless: Feature `0x01` properties appear, Feature `0xEF` matches that
+  pad's USB calibration, `Fallback` clears, and disconnect during a
+  control request does not hang.
 
 ### Verified (a driver can rely on these)
 
@@ -901,17 +909,18 @@ Shipped in this pass:
 1. USB connect (after `0xF2`/`0xF5`, before first output): `SET Feature 0xEF` page `0xA0` + `GET 0xEF`. Cache the four pairs. Soft-fail to nominal 512/399.
 2. Feature `0x01` field list selects `PLAIN_ZERO` / `HW_CAL` / `SIXAXIS`. Cal byte at unified `[5]/[6]` or `[3]/[4]`.
 3. Accel gain-113 with post-cal X mirror; `zero == oneG` passthrough. Applied to the SIXAXIS GetFeature report and IPC snapshot, not the 12-byte SIXAXIS input report.
-4. Gyro sign inverted; tracker + cal-byte resend on `HW_CAL`/`SIXAXIS` USB pads.
+4. Gyro sign inverted; tracker + cal-byte resend on `HW_CAL`/`SIXAXIS` pads.
 5. IPC third region + `GetMotionSnapshot`; ControlApp Motion viewer.
 6. Clone-heuristic `PLAIN_ZERO` software-only auto-zero. The Obigben template EEPROM gyro zero of 512 versus a frozen idle of ~500 would otherwise publish `clamp(512 + 512 - 500) = 524` (~8.6 deg/s clockwise) at rest; `zeroRef` follows rest and the cal byte is never sent. Frozen-sensor detection (the Fake DS3) stays deferred.
+7. Bluetooth `0x01` / `0xEF` over the BthPS3 HID control channel, with the same soft-fail to nominal 512/399. Hardware cal bytes use the unified output payload on both transports.
 
 Still deferred:
 
-7. Counterfeit behavioural detection (frozen sensors). Keep `zero == oneG` as a blank-EEPROM guard only.
-8. DS4Windows motion-field mapping. Source frame is known; permutation + remaining signs still need a reference DS4 capture.
-9. Bluetooth `0xEF` over the BthPS3 HID control channel (unverified). Absolute gyro scale better than ~1.4 counts/(deg/s).
+8. Counterfeit behavioural detection (frozen sensors). Keep `zero == oneG` as a blank-EEPROM guard only.
+9. DS4Windows motion-field mapping. Source frame is known; permutation + remaining signs still need a reference DS4 capture.
+10. Absolute gyro scale better than ~1.4 counts/(deg/s).
 
-Headline remaining gaps: Bluetooth EEPROM, DS4 axis mapping, counterfeit freeze detection, and a turntable gyro scale. Historical discrepancies versus pre-#217 DsHidMini are listed under [Discrepancies](#discrepancies-a-driver-implementation-must-resolve).
+Headline remaining gaps: DS4 axis mapping, counterfeit freeze detection, and a turntable gyro scale. Historical discrepancies versus pre-#217 DsHidMini are listed under [Discrepancies](#discrepancies-a-driver-implementation-must-resolve).
 
 ### Open measurements
 
@@ -922,7 +931,7 @@ Headline remaining gaps: Bluetooth EEPROM, DS4 axis mapping, counterfeit freeze 
 | `[3]/[4]` placement on live SIXAXIS | `--wait` + stream before it dies, or HID path (not WinUSB) |
 | SIXAXIS orientation table | Same `--interactive` six poses, needs a live stream |
 | DS3-A1b ~17-count warm-up drift | Leave pad still 30 s, log raw G |
-| `0xEF` over Bluetooth | Same SET/GET page `0xA0` via BthPS3 |
+| Bluetooth HIDP GET framing variants | Live WPP (`TRACE_DSBTH`) if EEPROM fallback stays set on a pad that works on USB |
 | Page `0xB0` meaning | Curiosity; unused by Sony |
 | DS4 axis permutation | Reference DS4 capture vs known DS3 frame |
 
@@ -953,6 +962,15 @@ Headline remaining gaps: Bluetooth EEPROM, DS4 axis mapping, counterfeit freeze 
   and subtracts it only from samples that already pass the deadzone (so
   near-still handling cannot walk the estimate or unmask the other side
   of the deadzone). Driver unchanged.
+- 2026-09-17 — Bluetooth Feature `0x01` and `0xEF` page `0xA0` over the
+  BthPS3 HID control channel (`0x53` SET / `0x43` GET, handshake drain,
+  `0xA3` strip). Same parse/tracker/cal-byte path as USB; soft-fail keeps
+  nominal 512/399. ControlApp identification panel and motion status are
+  transport-neutral.
+- 2026-09-17 — Software verification: `.\build.cmd Compile --target-platform x64`
+  signed `bin\DEBUG\x64\dshidmini.dll`; `.\build.cmd TestControlApp` 281/281.
+  Live Bluetooth DS3 was not attached; HIDP GET framing stays inferred until
+  `TRACE_DSBTH` confirms it on a genuine pad.
 
 ## Open questions
 
@@ -977,7 +995,8 @@ Headline remaining gaps: Bluetooth EEPROM, DS4 axis mapping, counterfeit freeze 
   its session while the other pads were stable to under a count. Warm-up is the
   obvious guess and it is the reason its `--calbyte` numbers needed
   re-deriving, but it was not investigated.
-- Does `0xEF` work over Bluetooth (BthPS3 control channel)?
+- Confirm live Bluetooth HIDP GET framing on remaining pad families if a
+  wireless EEPROM load stays in fallback while USB succeeds.
 - Do other clone families (Defender BT in DS3 mode, ShanWan) answer `0xEF`
   and with what? Two counterfeits are characterised here; both return the same
   `0200 0180` `0xA0` template but differ in page `0xB0` (592/592 vs 640/640)

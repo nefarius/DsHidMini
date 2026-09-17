@@ -484,9 +484,7 @@ NTSTATUS DsUsb_PrepareHardware(WDFDEVICE Device)
 		ULONG identificationLength = 0;
 
 		RtlZeroMemory(identification, sizeof(identification));
-		pDevCtx->IdentificationPresent = FALSE;
-		RtlZeroMemory(&pDevCtx->Identification, sizeof(pDevCtx->Identification));
-		DsIdentification_ResetDecodedProperties(Device);
+		DsIdentification_Clear(Device);
 
 		if (NT_SUCCESS(USB_SendControlRequest(
 			pDevCtx,
@@ -500,49 +498,11 @@ NTSTATUS DsUsb_PrepareHardware(WDFDEVICE Device)
 			&identificationLength
 		)))
 		{
-			if (identificationLength > ARRAYSIZE(identification))
-			{
-				identificationLength = ARRAYSIZE(identification);
-			}
-
-			WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RO_IdentificationData);
-			propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
-			propertyData.Lcid = LOCALE_NEUTRAL;
-
-			(void)WdfDeviceAssignProperty(
+			DsIdentification_PublishFromReport(
 				Device,
-				&propertyData,
-				DEVPROP_TYPE_BINARY,
-				identificationLength,
-				identification
-			);
-
-			if (DsIdentification_Parse(
 				identification,
-				identificationLength,
-				&pDevCtx->Identification))
-			{
-				pDevCtx->IdentificationPresent = TRUE;
-				DsIdentification_AssignDeviceProperties(Device, &pDevCtx->Identification);
-
-				TraceVerbose(
-					TRACE_DSUSB,
-					"Feature 0x01 firmware %02X %02X %02X type %02X path %d clone %!BOOLEAN!",
-					pDevCtx->Identification.Firmware[0],
-					pDevCtx->Identification.Firmware[1],
-					pDevCtx->Identification.Firmware[2],
-					pDevCtx->Identification.PadType,
-					pDevCtx->Identification.MotionPath,
-					pDevCtx->Identification.CloneHeuristic
-				);
-			}
-			else
-			{
-				TraceWarning(
-					TRACE_DSUSB,
-					"Feature 0x01 identification blob could not be parsed"
-				);
-			}
+				identificationLength
+			);
 		}
 
 #pragma endregion
