@@ -22,4 +22,8 @@
     <PackageDownload Include="Nefarius.Tools.WDKWhere" Version="[1.5.0]" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\setup\OpenArticleDecision.cs" Link="OpenArticleDecision.cs" />
+  </ItemGroup>
+
 </Project>

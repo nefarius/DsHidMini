@@ -1,6 +1,5 @@
 #nullable enable
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -8,9 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 
 using CliWrap;
 using CliWrap.Buffered;
@@ -20,14 +17,15 @@ using Nefarius.DsHidMini.Setup.Util;
 using Nefarius.Utilities.DeviceManagement.Drivers;
 using Nefarius.Utilities.DeviceManagement.Exceptions;
 using Nefarius.Utilities.DeviceManagement.PnP;
-using Nefarius.Utilities.WixSharp.Util;
 
 using Newtonsoft.Json;
 
 using WixSharp;
+using WixSharp.CommonTasks;
 
 using WixToolset.Dtf.WindowsInstaller;
 
+using Assembly = System.Reflection.Assembly;
 using File = WixSharp.File;
 
 namespace Nefarius.DsHidMini.Setup;
@@ -35,31 +33,28 @@ namespace Nefarius.DsHidMini.Setup;
 internal class InstallScript
 {
     public const string ProductName = "Nefarius DsHidMini Driver";
+    public const string CustomActionManifestName = "ca-support-assemblies.txt";
 
     public static Uri InstallationSuccessfulUrl = new("https://docs.nefarius.at/projects/DsHidMini/v3/Welcome/Installation-Successful/");
 
     /// <summary>
     /// Builds and emits the MSI installer for the Nefarius DsHidMini drivers and packaged artifacts.
     /// </summary>
-    /// <remarks>
-    /// Reads setup, driver, and filter versions from build variables and artifact file metadata; defines installer features and package contents; configures managed actions, custom actions, registry writes, UI dialogs, embedded reference assemblies, and control panel metadata; hooks post-install handling; and finally generates the MSI file.
-    /// </remarks>
     private static void Main()
     {
         RequireStagedInputs();
 
-        // grab main app version
         if (string.IsNullOrWhiteSpace(BuildVariables.SetupVersion))
         {
             throw new InvalidOperationException(
-                "SetupVersion is empty. Build the MSI with .\\build.cmd BuildSetup --setup-version X.Y.Z.");
+                "SetupVersion is empty. Build the MSI through the GitHub Actions setup workflow.");
         }
 
         Version version = Version.Parse(BuildVariables.SetupVersion);
         const string driverPath = @"..\artifacts\drivers\x64\dshidmini.dll";
         Version driverVersion = Version.Parse(FileVersionInfo.GetVersionInfo(driverPath).FileVersion);
 
-        const string filterPath = @"..\artifacts\igfilter\nssmkig_x64\nssmkig.sys";
+        const string filterPath = @"igfilter\nssmkig_x64\nssmkig.sys";
         Version filterVersion = Version.Parse(FileVersionInfo.GetVersionInfo(filterPath).FileVersion);
 
         const string nefconDir = @".\nefcon";
@@ -82,77 +77,90 @@ internal class InstallScript
                           "You need to go through the BthPS3 installation AFTER this installation has finished."
         };
 
-        Feature donationFeature = new("Make a donation", true, true)
+        Feature postInstallArticleFeature = new("Open post-installation article", true, true)
         {
-            Id = "DonationFeature", Description = "Opens the donation page after setup is finished."
+            Id = "PostInstArticle",
+            Description = "When setup has finished successfully, open the post-installation web article."
         };
 
-        //driversFeature.Add(donationFeature);
         driversFeature.Add(bthPs3Feature);
+        driversFeature.Add(postInstallArticleFeature);
         driversFeature.Display = FeatureDisplay.expand;
 
+        string[] customActionAssemblies = GetCustomActionSupportAssemblies();
+
         ManagedProject project = new(ProductName,
-            // included files
             new InstallDir(@"%ProgramFiles%\Nefarius Software Solutions\DsHidMini",
                 new Dir(driversFeature, "nefcon")
                 {
                     Files = new DirFiles(driversFeature, "*.*").GetFiles(nefconDir),
-                    Dirs = WixExt.GetSubDirectories(driversFeature, nefconDir).ToArray()
+                    Dirs = GetSubDirectories(driversFeature, nefconDir)
                 },
                 new Dir(driversFeature, "drivers",
                     new Files(driversFeature, @"..\artifacts\drivers\*.*"),
-                    new Files(driversFeature, @"..\artifacts\igfilter\*.*")
+                    new Files(driversFeature, @".\igfilter\*.*")
                 ),
                 new File(driversFeature, "nefarius_DsHidMini_Updater.exe"),
                 new File(driversFeature, @"..\artifacts\bin\ControlApp.exe",
                     new FileShortcut("DsHidMini Control App",
                         @"%ProgramMenu%\Nefarius Software Solutions\DsHidMini"))
             ),
-            // check for .NET 10 Desktop Runtime before any files are laid down
             new ManagedAction(CustomActions.CheckDotNetRuntime, Return.check,
                 When.Before,
                 Step.LaunchConditions,
-                Condition.NOT_Installed),
-            // install drivers
+                Condition.NOT_Installed)
+            {
+                RefAssemblies = customActionAssemblies
+            },
             new ElevatedManagedAction(CustomActions.InstallDrivers, Return.check,
                 When.After,
                 Step.InstallFiles,
-                Condition.NOT_Installed),
-            // custom reboot prompt message
+                Condition.NOT_Installed)
+            {
+                RefAssemblies = customActionAssemblies
+            },
             new Error("9000",
                 "Driver installation succeeded but a reboot is required to be fully operational. " +
                 "After the setup is finished, please reboot the system before using the software."),
-            // .NET 10 Desktop Runtime missing
             new Error("9001",
                 "The .NET 10 Desktop Runtime (x64) is required by DsHidMini Control App. " +
                 "Please download and install it from https://dotnet.microsoft.com/download/dotnet/10.0 " +
                 "and then re-run this installer."),
-            // install BthPS3
             new ManagedAction(CustomActions.InstallBthPS3, Return.check,
                 When.After,
                 Step.InstallFinalize,
-                Condition.NOT_Installed),
-            // register updater
+                Condition.NOT_Installed)
+            {
+                RefAssemblies = customActionAssemblies
+            },
             new ManagedAction(CustomActions.RegisterUpdater, Return.check,
                 When.After,
                 Step.InstallFinalize,
-                Condition.NOT_Installed),
-            // open installation-successful page
-            new ManagedAction(CustomActions.OpenInstallationSuccessfulPage, Return.check,
+                Condition.NOT_Installed)
+            {
+                RefAssemblies = customActionAssemblies
+            },
+            new ManagedAction(CustomActions.OpenArticle, Return.check,
                 When.After,
                 Step.InstallFinalize,
-                Condition.NOT_Installed),
-            // open donation page
+                Condition.NOT_Installed)
+            {
+                RefAssemblies = customActionAssemblies
+            },
             new ManagedAction(CustomActions.OpenDonationPage, Return.check,
                 When.After,
                 Step.InstallFinalize,
-                Condition.NOT_Installed),
-            // remove updater cleanly
+                Condition.NOT_Installed)
+            {
+                RefAssemblies = customActionAssemblies
+            },
             new ManagedAction(CustomActions.DeregisterUpdater, Return.check,
                 When.Before,
                 Step.RemoveFiles,
-                Condition.Installed),
-            // registry values
+                Condition.Installed)
+            {
+                RefAssemblies = customActionAssemblies
+            },
             new RegKey(driversFeature, RegistryHive.LocalMachine,
                 $@"Software\Nefarius Software Solutions e.U.\{ProductName}",
                 new RegValue("Path", "[INSTALLDIR]") { Win64 = true },
@@ -169,10 +177,16 @@ internal class InstallScript
             GUID = new Guid("25784100-B9AA-4205-8D54-CA53717F6AC5"),
             LicenceFile = "EULA.rtf",
             WildCardDedup = Project.UniqueFileNameDedup,
-            MajorUpgradeStrategy = MajorUpgradeStrategy.Default,
             BannerImage = "DsHidMini.dialog_banner.bmp",
             BackgroundImage = "DsHidMini.dialog_background.bmp",
             CAConfigFile = "CustomActions.config"
+        };
+
+        project.MajorUpgrade = new MajorUpgrade
+        {
+            Schedule = UpgradeSchedule.afterInstallInitialize,
+            DowngradeErrorMessage = "A later version of [ProductName] is already installed. Setup will now exit.",
+            AllowSameVersionUpgrades = true
         };
 
         project.ManagedUI.InstallDialogs.Add<WelcomeDialog>()
@@ -187,21 +201,7 @@ internal class InstallScript
             .Add<ProgressDialog>()
             .Add<ExitDialog>();
 
-        // embed types of Nefarius.Utilities.DeviceManagement
-        project.DefaultRefAssemblies.Add(typeof(Devcon).Assembly.Location);
-        // embed types of CliWrap
-        project.DefaultRefAssemblies.Add(typeof(Cli).Assembly.Location);
-        project.DefaultRefAssemblies.Add(typeof(ValueTask).Assembly.Location);
-        project.DefaultRefAssemblies.Add(typeof(IAsyncDisposable).Assembly.Location);
-        project.DefaultRefAssemblies.Add(typeof(Unsafe).Assembly.Location);
-        project.DefaultRefAssemblies.Add(typeof(BuffersExtensions).Assembly.Location);
-        project.DefaultRefAssemblies.Add(typeof(ArrayPool<>).Assembly.Location);
-        // embed types for web calls
-        project.DefaultRefAssemblies.Add(typeof(WebClient).Assembly.Location);
-        project.DefaultRefAssemblies.Add(typeof(JsonSerializer).Assembly.Location);
-        project.DefaultRefAssemblies.Add(typeof(Binder).Assembly.Location);
-        // Nefarius.Utilities.WixSharp
-        project.DefaultRefAssemblies.Add(typeof(WixExt).Assembly.Location);
+        project.DefaultRefAssemblies.AddRange(customActionAssemblies);
 
         project.AfterInstall += ProjectOnAfterInstall;
 
@@ -211,16 +211,140 @@ internal class InstallScript
         project.ControlPanelInfo.UrlInfoAbout = "https://github.com/nefarius/DsHidMini";
         project.ControlPanelInfo.NoModify = true;
 
-        project.MajorUpgradeStrategy.PreventDowngradingVersions.OnlyDetect = false;
-
         project.ResolveWildCards();
+
+        WixTools.WixDtfPackages = new[]
+        {
+            ("wixtoolset.dtf.customaction", "5.0.2"),
+            ("wixtoolset.dtf.windowsinstaller", "4.0.6"),
+            ("wixtoolset.heat", "*"),
+            ("wixtoolset.mba.core", "*")
+        };
+        WixTools.RestoreDtfPackages();
+
+        string sfxCa = WixTools.SfxCAFor(true);
+        FileVersionInfo sfxCaVersion = FileVersionInfo.GetVersionInfo(sfxCa);
+        Console.WriteLine($"SfxCA.dll: {sfxCaVersion.FileVersion} ({sfxCa})");
+        if (sfxCaVersion.FileMajorPart < 5)
+        {
+            throw new InvalidOperationException(
+                $"SfxCA.dll {sfxCaVersion.FileVersion} at '{sfxCa}' predates the WiX v5 temp-folder fix; " +
+                "non-elevated installs would fail with 1603.");
+        }
 
         project.BuildMsi();
     }
 
     /// <summary>
-    /// Fails with an actionable list when the release-staging contract is incomplete.
+    ///     Assemblies MakeSfxCA must pack beside the deferred custom-action host: the
+    ///     transitive reference closure of this assembly, restricted to files that ship
+    ///     in its own output directory.
     /// </summary>
+    private static string[] GetCustomActionSupportAssemblies()
+    {
+        Assembly root = typeof(CustomActions).Assembly;
+        string directory = Path.GetDirectoryName(root.Location);
+        if (string.IsNullOrEmpty(directory))
+        {
+            throw new InvalidOperationException(
+                "Cannot resolve the custom-action output directory; Assembly.Location is empty.");
+        }
+
+        SortedDictionary<string, string> resolved = new(StringComparer.OrdinalIgnoreCase);
+        Queue<Assembly> pending = new();
+        HashSet<string> visited = new(StringComparer.OrdinalIgnoreCase);
+
+        pending.Enqueue(root);
+        visited.Add(root.GetName().Name);
+
+        while (pending.Count > 0)
+        {
+            foreach (AssemblyName reference in pending.Dequeue().GetReferencedAssemblies())
+            {
+                if (!visited.Add(reference.Name))
+                {
+                    continue;
+                }
+
+                if (IsWixAssembly(reference.Name))
+                {
+                    continue;
+                }
+
+                string path = new[] { ".dll", ".exe" }
+                    .Select(extension => Path.Combine(directory, reference.Name + extension))
+                    .FirstOrDefault(System.IO.File.Exists);
+
+                if (path is null)
+                {
+                    if (IsFrameworkAssembly(reference))
+                    {
+                        continue;
+                    }
+
+                    throw new InvalidOperationException(
+                        $"Custom-action dependency '{reference.FullName}' was not found in " +
+                        $"'{directory}' and is not a framework assembly. Add it to " +
+                        "DsHidMini.Installer.csproj so MakeSfxCA can pack it; a deferred custom " +
+                        "action would otherwise fail at runtime with FileNotFoundException.");
+                }
+
+                resolved[reference.Name] = path;
+                pending.Enqueue(Assembly.LoadFrom(path));
+            }
+        }
+
+        string[] assemblies = resolved.Values.ToArray();
+
+        Console.WriteLine($"Custom-action support assemblies: {assemblies.Length}");
+        foreach (string assembly in assemblies)
+        {
+            Console.WriteLine($"  {Path.GetFileName(assembly)}");
+        }
+
+        WriteCustomActionManifest(assemblies);
+
+        return assemblies;
+    }
+
+    private static bool IsWixAssembly(string name)
+    {
+        return name.StartsWith("WixSharp", StringComparison.OrdinalIgnoreCase) ||
+               name.StartsWith("WixToolset.", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsFrameworkAssembly(AssemblyName reference)
+    {
+        try
+        {
+            return Assembly.ReflectionOnlyLoad(reference.FullName).GlobalAssemblyCache;
+        }
+        catch (Exception exception) when (exception is IOException ||
+                                          exception is BadImageFormatException)
+        {
+            return false;
+        }
+    }
+
+    private static void WriteCustomActionManifest(string[] assemblies)
+    {
+        string path = Path.Combine("obj", CustomActionManifestName);
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
+        System.IO.File.WriteAllLines(path, assemblies.Select(Path.GetFileName));
+        Console.WriteLine($"Custom-action manifest: {Path.GetFullPath(path)}");
+    }
+
+    private static Dir[] GetSubDirectories(Feature feature, string directory)
+    {
+        return Directory.GetDirectories(directory)
+            .Select(subDirectory =>
+            {
+                string name = Path.GetFileName(subDirectory);
+                return new Dir(feature, name, new Files(feature, Path.Combine(subDirectory, "*.*")));
+            })
+            .ToArray();
+    }
+
     private static void RequireStagedInputs()
     {
         string[] required =
@@ -229,10 +353,10 @@ internal class InstallScript
             @"..\artifacts\drivers\dshidmini.cat",
             @"..\artifacts\drivers\x64\dshidmini.dll",
             @"..\artifacts\drivers\ARM64\dshidmini.dll",
-            @"..\artifacts\igfilter\nssmkig_x64\igfilter.inf",
-            @"..\artifacts\igfilter\nssmkig_x64\nssmkig.sys",
-            @"..\artifacts\igfilter\nssmkig_ARM64\igfilter.inf",
-            @"..\artifacts\igfilter\nssmkig_ARM64\nssmkig.sys",
+            @"igfilter\nssmkig_x64\igfilter.inf",
+            @"igfilter\nssmkig_x64\nssmkig.sys",
+            @"igfilter\nssmkig_ARM64\igfilter.inf",
+            @"igfilter\nssmkig_ARM64\nssmkig.sys",
             @"..\artifacts\bin\ControlApp.exe",
             @"nefcon\x64\nefconc.exe",
             @"nefcon\ARM64\nefconc.exe",
@@ -246,14 +370,11 @@ internal class InstallScript
         }
 
         throw new InvalidOperationException(
-            "MSI inputs are missing. Stage a tagged release with DownloadCiArtifacts, " +
-            "IngestMicrosoftPackage, and StageIgfilter before BuildSetup." + Environment.NewLine +
+            "MSI inputs are missing. Build the MSI through the GitHub Actions setup workflow." +
+            Environment.NewLine +
             string.Join(Environment.NewLine, missing.Select(path => "Missing: " + path)));
     }
 
-    /// <summary>
-    ///     Put uninstall logic that doesn't access packaged files in here.
-    /// </summary>
     private static void ProjectOnAfterInstall(SetupEventArgs e)
     {
         if (e.IsUninstalling)
@@ -265,16 +386,11 @@ internal class InstallScript
 
 public static class CustomActions
 {
-    /// <summary>
-    ///     Verifies that the .NET 10 Desktop Runtime (x64) is installed before setup proceeds.
-    ///     Aborts the install with a user-facing message when the runtime is absent.
-    /// </summary>
-    /// <remarks>
-    ///     Detection uses the filesystem rather than the registry: modern .NET installers
-    ///     do not reliably populate HKLM\SOFTWARE\dotnet\Setup\InstalledVersions, but they
-    ///     always create a versioned subdirectory under
-    ///     %ProgramFiles%\dotnet\shared\Microsoft.WindowsDesktop.App.
-    /// </remarks>
+    static CustomActions()
+    {
+        CustomActionAssemblyResolver.Register();
+    }
+
     [CustomAction]
     public static ActionResult CheckDotNetRuntime(Session session)
     {
@@ -292,7 +408,6 @@ public static class CustomActions
                 foreach (string versionDir in Directory.GetDirectories(runtimeDir))
                 {
                     string dirName = Path.GetFileName(versionDir);
-                    // strip pre-release suffix (e.g. "10.0.0-preview.3") before parsing
                     int dashIndex = dirName.IndexOf('-');
                     string numericPart = dashIndex >= 0 ? dirName.Substring(0, dashIndex) : dirName;
                     if (Version.TryParse(numericPart, out Version? installedVersion) &&
@@ -320,13 +435,9 @@ public static class CustomActions
         return ActionResult.Failure;
     }
 
-    /// <summary>
-    ///     Put install logic here.
-    /// </summary>
     [CustomAction]
     public static ActionResult InstallDrivers(Session session)
     {
-        // clean out whatever has been on the machine before
         bool rebootRequired = UninstallDrivers(session);
 
         DirectoryInfo installDir = new(session.Property("INSTALLDIR"));
@@ -405,13 +516,6 @@ public static class CustomActions
         return ActionResult.Success;
     }
 
-    /// <summary>
-    ///     Download and install BthPS3.
-    /// <summary>
-    /// Downloads metadata for the latest BthPS3 update and opens its download URL when the BthPS3 feature is enabled.
-    /// </summary>
-    /// <param name="session">The MSI session used to check whether the BthPS3 feature is enabled and to record logs.</param>
-    /// <returns>`ActionResult.Success` on completion.</returns>
     [CustomAction]
     [SuppressMessage("ReSharper", "InconsistentNaming")]
     public static ActionResult InstallBthPS3(Session session)
@@ -455,36 +559,39 @@ public static class CustomActions
         return ActionResult.Success;
     }
 
-    /// <summary>
-    ///     Open the installation-successful page in the default browser.
-    /// <summary>
-    /// Opens the installation-successful URL in the user's default browser.
-    /// </summary>
-    /// <param name="session">The current MSI session used for logging.</param>
-    /// <returns>`ActionResult.Success` to indicate the custom action completed; if launching the URL fails the exception is logged and the action still returns `ActionResult.Success`.</returns>
     [CustomAction]
-    public static ActionResult OpenInstallationSuccessfulPage(Session session)
+    public static ActionResult OpenArticle(Session session)
     {
+        // MSI UILevel is reported as silent for Embedded/ManagedUI even during a full
+        // wizard run. WIXSHARP_MANAGED_UI_HANDLE is only set when the ManagedUI window
+        // is actually shown; it stays empty for reduced/basic/suppressed execution.
+        string managedUiHandle = session.Property("WIXSHARP_MANAGED_UI_HANDLE");
+        bool articleFeatureEnabled = session.IsFeatureEnabled("PostInstArticle");
+        bool shouldLaunch = OpenArticleDecision.ShouldLaunch(managedUiHandle, articleFeatureEnabled);
+
+        session.Log(
+            $"{nameof(OpenArticle)} - WIXSHARP_MANAGED_UI_HANDLE='{managedUiHandle}', " +
+            $"managedUiDisplayed={!string.IsNullOrWhiteSpace(managedUiHandle)}, PostInstArticle={articleFeatureEnabled}");
+
+        if (!shouldLaunch)
+        {
+            session.Log($"{nameof(OpenArticle)} - skipping launch; feature deselected in full UI");
+            return ActionResult.Success;
+        }
+
         try
         {
+            session.Log($"{nameof(OpenArticle)} - launching post-installation article");
             Process.Start(InstallScript.InstallationSuccessfulUrl.ToString());
         }
         catch (Exception ex)
         {
-            session.Log(
-                $"Installation-successful page launch failed, exception: {ex}");
+            session.Log($"Spawning article process failed with {ex}");
         }
 
         return ActionResult.Success;
     }
 
-    /// <summary>
-    ///     Open donations page in default browser.
-    /// <summary>
-    /// Opens the donation web page in the user's default browser when the DonationFeature is enabled.
-    /// </summary>
-    /// <param name="session">MSI session used to check feature state and to record failures to the installer log.</param>
-    /// <returns><see cref="ActionResult.Success"/> on completion.</returns>
     [CustomAction]
     public static ActionResult OpenDonationPage(Session session)
     {
@@ -506,9 +613,6 @@ public static class CustomActions
         return ActionResult.Success;
     }
 
-    /// <summary>
-    ///     Register the auto-updater.
-    /// </summary>
     [CustomAction]
     public static ActionResult RegisterUpdater(Session session)
     {
@@ -531,9 +635,6 @@ public static class CustomActions
         return ActionResult.Success;
     }
 
-    /// <summary>
-    ///     De-register the auto-updater.
-    /// </summary>
     [CustomAction]
     public static ActionResult DeregisterUpdater(Session session)
     {
@@ -559,23 +660,16 @@ public static class CustomActions
         }
         catch
         {
-            //
-            // Not failing a removal here
-            // 
             return ActionResult.Success;
         }
     }
 
-    /// <summary>
-    ///     Uninstalls and cleans all driver residue.
-    /// </summary>
     public static bool UninstallDrivers(Session session)
     {
         List<string> allDriverPackages = DriverStore.ExistingDrivers.ToList();
 
-        // remove all old copies of DsHidMini
         foreach (string driverPackage in allDriverPackages.Where(p =>
-                     p.Contains("dshidmini.inf", StringComparison.OrdinalIgnoreCase)))
+                     p.IndexOf("dshidmini.inf", StringComparison.OrdinalIgnoreCase) >= 0))
         {
             try
             {
@@ -587,9 +681,8 @@ public static class CustomActions
             }
         }
 
-        // remove all old copies of igfilter
         foreach (string driverPackage in allDriverPackages.Where(p =>
-                     p.Contains("igfilter.inf", StringComparison.OrdinalIgnoreCase)))
+                     p.IndexOf("igfilter.inf", StringComparison.OrdinalIgnoreCase) >= 0))
         {
             try
             {
@@ -601,14 +694,9 @@ public static class CustomActions
             }
         }
 
-        // 
-        // Remove conflicting drivers
-        // 
-
-        // https://docs.nefarius.at/projects/DsHidMini/How-to-Install/#scptoolkit
         foreach (string driverPackage in allDriverPackages.Where(p =>
-                     p.Contains("ds3controller.inf", StringComparison.OrdinalIgnoreCase) ||
-                     p.Contains("ds3controller_", StringComparison.OrdinalIgnoreCase)))
+                     p.IndexOf("ds3controller.inf", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                     p.IndexOf("ds3controller_", StringComparison.OrdinalIgnoreCase) >= 0))
         {
             try
             {
@@ -620,9 +708,8 @@ public static class CustomActions
             }
         }
 
-        // https://docs.nefarius.at/projects/DsHidMini/How-to-Install/#fireshock
         foreach (string driverPackage in allDriverPackages.Where(p =>
-                     p.Contains("fireshock.inf", StringComparison.OrdinalIgnoreCase)))
+                     p.IndexOf("fireshock.inf", StringComparison.OrdinalIgnoreCase) >= 0))
         {
             try
             {
@@ -634,9 +721,8 @@ public static class CustomActions
             }
         }
 
-        // https://docs.nefarius.at/projects/DsHidMini/SIXAXIS.SYS-to-DsHidMini-Guide/
         foreach (string driverPackage in allDriverPackages.Where(p =>
-                     p.Contains("sixaxis.inf", StringComparison.OrdinalIgnoreCase)))
+                     p.IndexOf("sixaxis.inf", StringComparison.OrdinalIgnoreCase) >= 0))
         {
             try
             {
@@ -650,7 +736,6 @@ public static class CustomActions
 
         bool rebootRequired = false;
         int instance = 0;
-        // uninstall live copies of drivers in use by connected or orphaned devices
         while (Devcon.FindByInterfaceGuid(DsHidMiniDriver.DeviceInterfaceGuid, out PnPDevice device, instance++, false))
         {
             try

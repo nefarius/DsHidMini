@@ -6,7 +6,6 @@ using JetBrains.Annotations;
 
 using Nuke.Common;
 using Nuke.Common.IO;
-using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tooling;
 
 using Serilog;
@@ -14,8 +13,6 @@ using Serilog;
 partial class Build
 {
     AbsolutePath ReleaseDownloadDirectory => ResolvedArtifactsPath / "ci";
-
-    SetupInputReport _validatedSetupInputs;
 
     /// <summary>
     /// Downloads the tagged-run artifacts needed to continue a release: signed ControlApp,
@@ -84,7 +81,7 @@ partial class Build
             {
                 Log.Information("Microsoft-attested drivers are in {Drivers}",
                     ReleaseStaging.DriversDirectory(artifactsDir));
-                Log.Information("Next: StageIgfilter, then ValidateSetupInputs / BuildSetup.");
+                Log.Information("Next: dispatch the Build setup workflow for this driver tag.");
             }
             else
             {
@@ -128,91 +125,6 @@ partial class Build
         });
 
     /// <summary>
-    /// Copies maintainer-supplied igfilter packages into artifacts/igfilter.
-    /// </summary>
-    [UsedImplicitly]
-    public Target StageIgfilter => _ => _
-        .Executes(() =>
-        {
-            if (string.IsNullOrWhiteSpace(IgfilterPath))
-            {
-                throw new InvalidOperationException(
-                    "StageIgfilter requires IgfilterPath (directory containing nssmkig_x64 and nssmkig_ARM64).");
-            }
-
-            ReleaseStaging.StageIgfilter(IgfilterPath, ReleaseStaging.IgfilterDirectory(ResolvedArtifactsPath));
-            Log.Information("Staged igfilter packages into {Igfilter}",
-                ReleaseStaging.IgfilterDirectory(ResolvedArtifactsPath));
-        });
-
-    /// <summary>
-    /// Verifies the staged MSI inputs, including publisher-plus-Microsoft driver signatures.
-    /// </summary>
-    [UsedImplicitly]
-    public Target ValidateSetupInputs => _ => _
-        .Executes(() =>
-        {
-            _validatedSetupInputs = ReleaseStaging.ValidateSetupInputs(
-                ResolvedArtifactsPath,
-                SetupVersion,
-                requireSignatures: true,
-                verifyTool: CaptureSignTool);
-
-            Log.Information("Setup inputs are valid for {SetupVersion} (driver {DriverVersion}, tag {Tag}, run {RunId})",
-                _validatedSetupInputs.ResolvedSetupVersion,
-                _validatedSetupInputs.DriverVersion,
-                _validatedSetupInputs.Metadata.Tag,
-                _validatedSetupInputs.Metadata.RunId);
-        });
-
-    /// <summary>
-    /// Builds and EV-signs the MSI after validating staged inputs.
-    /// </summary>
-    [UsedImplicitly]
-    public Target BuildSetup => _ => _
-        .DependsOn(ValidateSetupInputs)
-        .Executes(() =>
-        {
-            SetupInputReport report = _validatedSetupInputs
-                ?? throw new InvalidOperationException("Setup inputs were not validated.");
-
-            string setupVersion = report.ResolvedSetupVersion;
-            AbsolutePath setupProject = RootDirectory / "setup" / "DsHidMini.Installer.csproj";
-            if (!File.Exists(setupProject))
-            {
-                throw new InvalidOperationException($"Setup project not found at {setupProject}");
-            }
-
-            DotNetTasks.DotNetBuild(s => s
-                .SetProjectFile(setupProject)
-                .SetConfiguration(Configuration.Release)
-                .SetProperty("SetupVersion", setupVersion)
-                .SetProperty("GenerateMsi", true));
-
-            string msiName = $"Nefarius_DsHidMini_Drivers_x64_arm64_v{setupVersion}.msi";
-            AbsolutePath msiInSetup = RootDirectory / "setup" / msiName;
-            AbsolutePath msiInBin = RootDirectory / "setup" / "bin" / "Release" / "net48" / msiName;
-            AbsolutePath msiPath = File.Exists(msiInSetup) ? msiInSetup : msiInBin;
-            if (!File.Exists(msiPath))
-            {
-                throw new InvalidOperationException($"MSI not found: {msiInSetup} or {msiInBin}");
-            }
-
-            ReleaseStaging.ValidateGeneratedMsi(msiPath);
-            Log.Information(
-                "Generated MSI includes ControlApp.exe, the Start Menu shortcut, and the .NET 10 Desktop prerequisite");
-
-            InvokeSignTool(
-                $"sign /v /n \"{SignCertName}\" /tr {SignTimestampUrl} /fd sha256 /td sha256 \"{msiPath}\"");
-            ReleaseStaging.RequirePublisherSigner(
-                ReleaseStaging.ParseIssuedTo(CaptureSignTool($"verify /pa /all /v \"{msiPath}\"")),
-                msiPath);
-
-            string hash = ReleaseStaging.Sha256File(msiPath);
-            Log.Information("Signed MSI {Msi} SHA256={Hash}", msiPath, hash);
-        });
-
-    /// <summary>
     /// Runs non-production release-pipeline checks: version parsing, staging fixtures, and the
     /// offline Partner Center signing dry run against a mock sdcm.
     /// </summary>
@@ -227,7 +139,7 @@ partial class Build
             foreach (string testFile in new[]
                      {
                          "ReleaseVersion.Tests.ps1", "PartnerSigning.Tests.ps1",
-                         "PartnerSigning.DryRun.ps1"
+                         "PartnerSigning.DryRun.ps1", "SetupRelease.Tests.ps1"
                      })
             {
                 AbsolutePath tests = RootDirectory / "build" / testFile;
