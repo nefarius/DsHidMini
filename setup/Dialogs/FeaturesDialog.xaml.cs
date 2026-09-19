@@ -68,6 +68,13 @@ namespace Nefarius.DsHidMini.Setup.Dialogs
 
         internal bool ignoreChldrenCheck = false;
 
+        /// <summary>
+        /// Set while the hierarchy is being built. A parent's <see cref="Nodes"/> collection is
+        /// still incomplete at that point, so cascading would recompute its state from a partial
+        /// set of children and clear a feature that is installed by default.
+        /// </summary>
+        internal bool suppressCascade = false;
+
         public bool IsPartialChecked
         {
             get
@@ -89,7 +96,11 @@ namespace Nefarius.DsHidMini.Setup.Dialogs
                 {
                     @checked = value;
 
-                    if (ignoreChldrenCheck)
+                    if (suppressCascade)
+                    {
+                        // the hierarchy is still being assembled; nothing to cascade to yet
+                    }
+                    else if (ignoreChldrenCheck)
                     {
                         ignoreChldrenCheck = false;
                     }
@@ -180,11 +191,13 @@ namespace Nefarius.DsHidMini.Setup.Dialogs
 
             if (userChangedFeatures)
             {
-                string itemsToInstall = features.Where(x => (x.ViewModel as Node).Checked)
+                // A feature marked DisallowAbsent must never be removed; its check box is
+                // disabled in the tree, so the user cannot put it back if it gets cleared.
+                string itemsToInstall = features.Where(x => (x.ViewModel as Node).Checked || x.DisallowAbsent)
                                                 .Select(x => x.Name)
                                                 .JoinBy(",");
 
-                string itemsToRemove = features.Where(x => !(x.ViewModel as Node).Checked)
+                string itemsToRemove = features.Where(x => !(x.ViewModel as Node).Checked && !x.DisallowAbsent)
                                                .Select(x => x.Name)
                                                .JoinBy(",");
 
@@ -232,6 +245,7 @@ namespace Nefarius.DsHidMini.Setup.Dialogs
                 // create the view of the feature
                 var viewModel = new Node
                 {
+                    suppressCascade = true,
                     Name = item.Title,
                     Data = item, // link view to model
                     IsEditable = !item.DisallowAbsent,
@@ -257,6 +271,10 @@ namespace Nefarius.DsHidMini.Setup.Dialogs
                 if (UserSelectedItems != null)
                     viewModel.Checked = UserSelectedItems.Contains((viewModel.Data as FeatureItem).Name);
             }
+
+            features.Select(x => x.ViewModel as Node)
+                    .Where(x => x != null)
+                    .ForEach(x => x.suppressCascade = false);
 
             // add views to the treeView control
             visibleRootItems
