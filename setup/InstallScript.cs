@@ -103,7 +103,9 @@ internal class InstallScript
                 new File(driversFeature, "nefarius_DsHidMini_Updater.exe"),
                 new File(driversFeature, @"..\artifacts\bin\ControlApp.exe")
             ),
-            new Dir(@"%ProgramMenu%\Nefarius Software Solutions\DsHidMini",
+            // Without an explicit feature the shortcut lands in WixSharp's "Complete"
+            // default feature, which shows up as a second root in the feature tree.
+            new Dir(driversFeature, @"%ProgramMenu%\Nefarius Software Solutions\DsHidMini",
                 new ExeFileShortcut("DsHidMini Control App", "[INSTALLDIR]ControlApp.exe", "")),
             new ManagedAction(CustomActions.CheckDotNetRuntime, Return.check,
                 When.Before,
