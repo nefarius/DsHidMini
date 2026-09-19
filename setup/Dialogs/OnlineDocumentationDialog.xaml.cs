@@ -31,6 +31,25 @@ public partial class OnlineDocumentationDialog : WpfDialog, IWpfDialog
     public void Init()
     {
         DataContext = _model = new OnlineDocumentationDialogModel { Host = ManagedFormHost };
+        Loaded += OnLoaded;
+    }
+
+    /// <summary>
+    /// Skips this page when setup did not succeed, so it cannot claim that the
+    /// post-installation article was opened after a failed or cancelled install.
+    /// </summary>
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        Loaded -= OnLoaded;
+
+        if (!_model.SetupFailed)
+        {
+            return;
+        }
+
+        // Navigating while the page is still being loaded would re-enter the shell, so
+        // the jump is queued for the next dispatcher pass.
+        Dispatcher.BeginInvoke(new Action(() => _model.GoNext()));
     }
 
     /// <summary>
@@ -84,6 +103,11 @@ internal class OnlineDocumentationDialogModel : NotifyPropertyChangedBase
                                  Session?.GetResourceBitmap("WixUI_Bmp_Banner").ToImageSource();
 
     public bool CanGoNext => true;
+
+    /// <summary>
+    /// Whether the installation failed or was cancelled by the user.
+    /// </summary>
+    public bool SetupFailed => Shell is not null && (Shell.ErrorDetected || Shell.UserInterrupted);
 
     /// <summary>
     /// Advances the installer to the next step in the dialog sequence.
