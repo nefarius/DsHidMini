@@ -875,9 +875,11 @@ function Get-DsHidMiniMsiTableRows {
 
             try {
                 $fieldCount = [int]$record.FieldCount
-                $values = for ($i = 1; $i -le $fieldCount; $i++) {
-                    [string]$record.StringData($i)
-                }
+                $values = @(
+                    for ($i = 1; $i -le $fieldCount; $i++) {
+                        [string]$record.StringData($i)
+                    }
+                )
                 $rows.Add($values)
             }
             finally {
@@ -1036,6 +1038,56 @@ function Assert-DsHidMiniSetupPayload {
     if ($missing.Count -gt 0) {
         throw "Setup payload is incomplete, missing:`n$($missing -join [Environment]::NewLine)"
     }
+}
+
+function Get-DsHidMiniAllowlistedPublisherIdentities {
+    [pscustomobject]@{
+        Subjects    = @('Nefarius Software Solutions e.U.')
+        Thumbprints = @()
+    }
+}
+
+function Test-DsHidMiniIsAllowlistedPublisher {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        $Certificate
+    )
+
+    $allow = Get-DsHidMiniAllowlistedPublisherIdentities
+    $subject = [string]$Certificate.Subject
+    $thumbprint = [string]$Certificate.Thumbprint
+
+    foreach ($name in @($allow.Subjects)) {
+        if ($subject -and $subject.IndexOf($name, [StringComparison]::OrdinalIgnoreCase) -ge 0) {
+            return $true
+        }
+    }
+
+    foreach ($thumb in @($allow.Thumbprints)) {
+        if ($thumbprint -and $thumbprint.Equals($thumb, [StringComparison]::OrdinalIgnoreCase)) {
+            return $true
+        }
+    }
+
+    return $false
+}
+
+function Assert-DsHidMiniAllowlistedPublisher {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        $Certificate,
+
+        [Parameter(Mandatory)]
+        [string] $Path
+    )
+
+    if (Test-DsHidMiniIsAllowlistedPublisher -Certificate $Certificate) {
+        return
+    }
+
+    throw "Signer on $Path is not the allowlisted publisher: Subject='$($Certificate.Subject)'; Thumbprint='$($Certificate.Thumbprint)'."
 }
 
 function Assert-DsHidMiniAttestedDriverSignatures {
@@ -1329,7 +1381,7 @@ function Resolve-DsHidMiniSetupArtifactRuns {
             $runId = [int64]$run.databaseId
             $names = Get-DsHidMiniGitHubArtifactNames -Repository $Repository -RunId $runId
             if ($names -notcontains 'release-metadata' -or $names -notcontains 'control-app') {
-                Write-Output "Skipping Build run $runId; missing release-metadata or control-app."
+                Write-Host "Skipping Build run $runId; missing release-metadata or control-app."
                 continue
             }
 
@@ -1340,7 +1392,7 @@ function Resolve-DsHidMiniSetupArtifactRuns {
                 Assert-DsHidMiniReleaseMetadataMatchesTag -Metadata $metadata -DriverTag $identity.DriverTag
             }
             catch {
-                Write-Output "Skipping Build run ${runId}: $($_.Exception.Message)"
+                Write-Host "Skipping Build run ${runId}: $($_.Exception.Message)"
                 continue
             }
 

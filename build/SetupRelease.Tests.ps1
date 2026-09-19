@@ -105,6 +105,20 @@ $badCommit = [pscustomobject]@{
 Assert-Throws { Assert-DsHidMiniReleaseMetadataMatchesTag -Metadata $badCommit -DriverTag 'v2.12.0' } 'short commit rejected'
 
 Assert-Equal (Get-DsHidMiniSetupMsiFileName -SetupVersion '2.12.0') 'Nefarius_DsHidMini_Drivers_x64_arm64_v2.12.0.msi' 'msi file name'
+
+Assert-True (Test-DsHidMiniIsAllowlistedPublisher -Certificate ([pscustomobject]@{
+            Subject    = 'CN=Nefarius Software Solutions e.U., O=Nefarius Software Solutions e.U.'
+            Thumbprint = 'DEADBEEF'
+        })) 'allowlists publisher by subject'
+Assert-True (-not (Test-DsHidMiniIsAllowlistedPublisher -Certificate ([pscustomobject]@{
+                Subject    = 'CN=Some Other Signer'
+                Thumbprint = 'DEADBEEF'
+            }))) 'rejects signer that is not allowlisted'
+Assert-Throws {
+    Assert-DsHidMiniAllowlistedPublisher `
+        -Certificate ([pscustomobject]@{ Subject = 'CN=Some Other Signer'; Thumbprint = 'DEADBEEF' }) `
+        -Path 'setup.msi'
+} 'unsigned-identity MSI signer rejected'
 Assert-Equal (ConvertFrom-DsHidMiniMsiName -Value 'CONTRO~1.EXE|ControlApp.exe') 'ControlApp.exe' 'decodes MSI long file name'
 Assert-True (Test-DsHidMiniMsiNamePresent -Values @('CONTRO~1.EXE|ControlApp.exe') -Expected 'ControlApp.exe') 'MSI name present after decode'
 

@@ -247,6 +247,7 @@ jobs:
           if ($sig.Status -ne 'Valid' -or -not $sig.SignerCertificate) {
             throw "MSI is not validly signed: $msi (Status=$($sig.Status))."
           }
+          Assert-DsHidMiniAllowlistedPublisher -Certificate $sig.SignerCertificate -Path $msi
           Write-Output "Signed: $msi (Subject=$($sig.SignerCertificate.Subject))"
 
           $sha = (Get-FileHash -LiteralPath $msi -Algorithm SHA256).Hash.ToLowerInvariant()
