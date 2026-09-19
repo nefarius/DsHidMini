@@ -103,8 +103,6 @@ internal class InstallScript
                 new File(driversFeature, "nefarius_DsHidMini_Updater.exe"),
                 new File(driversFeature, @"..\artifacts\bin\ControlApp.exe")
             ),
-            // Without an explicit feature the shortcut lands in WixSharp's "Complete"
-            // default feature, which shows up as a second root in the feature tree.
             new Dir(driversFeature, @"%ProgramMenu%\Nefarius Software Solutions\DsHidMini",
                 new ExeFileShortcut("DsHidMini Control App", "[INSTALLDIR]ControlApp.exe", "")),
             new ManagedAction(CustomActions.CheckDotNetRuntime, Return.check,
@@ -176,6 +174,10 @@ internal class InstallScript
             OutFileName = $"Nefarius_DsHidMini_Drivers_x64_arm64_v{version}",
             Version = version,
             Platform = Platform.x64,
+            // Entities without an explicit feature would otherwise land in WixSharp's
+            // synthetic "Complete" feature, which appears as a second root in the feature
+            // tree and leaves the mandatory drivers feature deselected.
+            DefaultFeature = driversFeature,
             GUID = new Guid("25784100-B9AA-4205-8D54-CA53717F6AC5"),
             LicenceFile = "EULA.rtf",
             WildCardDedup = Project.UniqueFileNameDedup,
