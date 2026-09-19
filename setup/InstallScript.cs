@@ -101,10 +101,10 @@ internal class InstallScript
                     new Files(driversFeature, @".\igfilter\*.*")
                 ),
                 new File(driversFeature, "nefarius_DsHidMini_Updater.exe"),
-                new File(driversFeature, @"..\artifacts\bin\ControlApp.exe",
-                    new FileShortcut("DsHidMini Control App",
-                        @"%ProgramMenu%\Nefarius Software Solutions\DsHidMini"))
+                new File(driversFeature, @"..\artifacts\bin\ControlApp.exe")
             ),
+            new Dir(@"%ProgramMenu%\Nefarius Software Solutions\DsHidMini",
+                new ExeFileShortcut("DsHidMini Control App", "[INSTALLDIR]ControlApp.exe", "")),
             new ManagedAction(CustomActions.CheckDotNetRuntime, Return.check,
                 When.Before,
                 Step.LaunchConditions,
