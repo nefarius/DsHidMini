@@ -801,13 +801,46 @@ function Assert-DsHidMiniCustomActionPackageFiles {
     }
 }
 
+function Get-DsHidMiniCustomActionBinaryName {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $MsiPath,
+
+        [string] $ActionName = 'InstallDrivers'
+    )
+
+    if ($ActionName -match "[^A-Za-z0-9_.-]") {
+        throw "Custom action name contains unsupported characters: '$ActionName'."
+    }
+
+    $rows = @(Get-DsHidMiniMsiTableRows -MsiPath $MsiPath -Sql "SELECT ``Source`` FROM ``CustomAction`` WHERE ``Action``='$ActionName'")
+    if ($rows.Count -eq 0) {
+        throw "Custom action '$ActionName' was not found in $MsiPath."
+    }
+
+    $first = $rows[0]
+    $source = if ($first -is [System.Array] -and $first.Length -gt 0) {
+        [string]$first[0]
+    }
+    else {
+        [string]$first
+    }
+
+    if ([string]::IsNullOrWhiteSpace($source)) {
+        throw "Custom action '$ActionName' has no Binary source in $MsiPath."
+    }
+
+    return $source
+}
+
 function Assert-DsHidMiniCustomActionPackage {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
         [string] $MsiPath,
 
-        [string] $BinaryName = 'InstallDrivers_File',
+        [string] $BinaryName,
 
         [AllowNull()]
         [string] $ManifestPath
@@ -817,6 +850,11 @@ function Assert-DsHidMiniCustomActionPackage {
     if ($ManifestPath) {
         $expected = Get-DsHidMiniCustomActionManifestAssemblies -ManifestPath $ManifestPath
         Write-Output "Custom-action manifest lists $($expected.Count) support assemblies."
+    }
+
+    if ([string]::IsNullOrWhiteSpace($BinaryName)) {
+        $BinaryName = Get-DsHidMiniCustomActionBinaryName -MsiPath $MsiPath
+        Write-Output "Custom-action binary for InstallDrivers is $BinaryName."
     }
 
     $payload = Get-DsHidMiniMsiBinaryPayload -MsiPath $MsiPath -BinaryName $BinaryName

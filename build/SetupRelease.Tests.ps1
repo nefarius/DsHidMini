@@ -278,6 +278,10 @@ try {
     Assert-True ($manifestNames -contains 'System.Numerics.Vectors.dll') 'manifest entries are trimmed'
 
     Assert-Throws {
+        Get-DsHidMiniCustomActionBinaryName -MsiPath (Join-Path $tempRoot 'absent.msi') -ActionName 'Install Drivers'
+    } 'custom action name with spaces rejected'
+
+    Assert-Throws {
         Get-DsHidMiniCustomActionManifestAssemblies -ManifestPath (Join-Path $tempRoot 'absent-manifest.txt')
     } 'missing custom-action manifest rejected'
 
