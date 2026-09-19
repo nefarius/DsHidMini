@@ -147,17 +147,13 @@ internal class InstallScript
             {
                 RefAssemblies = customActionAssemblies
             },
-            new ManagedAction(CustomActions.OpenDonationPage, Return.check,
-                When.After,
-                Step.InstallFinalize,
-                Condition.NOT_Installed)
-            {
-                RefAssemblies = customActionAssemblies
-            },
+            // Only a full uninstall should unregister the updater. Conditioning this on
+            // Installed would also fire on repair and modify, where RegisterUpdater does not
+            // run, leaving the updater deregistered with nothing putting it back.
             new ManagedAction(CustomActions.DeregisterUpdater, Return.check,
                 When.Before,
                 Step.RemoveFiles,
-                Condition.Installed)
+                new Condition("REMOVE=\"ALL\""))
             {
                 RefAssemblies = customActionAssemblies
             },
@@ -185,6 +181,11 @@ internal class InstallScript
             BackgroundImage = "DsHidMini.dialog_background.bmp",
             CAConfigFile = "CustomActions.config"
         };
+
+        // The 9000 message tells the user to reboot manually, so MSI must never schedule or
+        // prompt for a reboot itself. This applies to the whole session, including the
+        // removal of an older version.
+        project.AddProperty(new Property("REBOOT", "ReallySuppress"));
 
         project.MajorUpgrade = new MajorUpgrade
         {
@@ -591,27 +592,6 @@ public static class CustomActions
         catch (Exception ex)
         {
             session.Log($"Spawning article process failed with {ex}");
-        }
-
-        return ActionResult.Success;
-    }
-
-    [CustomAction]
-    public static ActionResult OpenDonationPage(Session session)
-    {
-        if (!session.IsFeatureEnabled("DonationFeature"))
-        {
-            return ActionResult.Success;
-        }
-
-        try
-        {
-            Process.Start("https://docs.nefarius.at/Donations/");
-        }
-        catch (Exception ex)
-        {
-            session.Log(
-                $"Donation page launch failed, exception: {ex}");
         }
 
         return ActionResult.Success;
