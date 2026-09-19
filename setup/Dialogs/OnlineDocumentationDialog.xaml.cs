@@ -49,7 +49,7 @@ public partial class OnlineDocumentationDialog : WpfDialog, IWpfDialog
 
         // Navigating while the page is still being loaded would re-enter the shell, so
         // the jump is queued for the next dispatcher pass.
-        Dispatcher.BeginInvoke(new Action(() => _model.GoNext()));
+        Dispatcher.BeginInvoke(new System.Action(() => _model.GoNext()));
     }
 
     /// <summary>
