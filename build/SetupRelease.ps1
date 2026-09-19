@@ -1055,11 +1055,19 @@ function Test-DsHidMiniIsAllowlistedPublisher {
     )
 
     $allow = Get-DsHidMiniAllowlistedPublisherIdentities
-    $subject = [string]$Certificate.Subject
     $thumbprint = [string]$Certificate.Thumbprint
+    $simpleName = ''
+    try {
+        $simpleName = [string]$Certificate.GetNameInfo(
+            [System.Security.Cryptography.X509Certificates.X509NameType]::SimpleName,
+            $false)
+    }
+    catch {
+        $simpleName = ''
+    }
 
     foreach ($name in @($allow.Subjects)) {
-        if ($subject -and $subject.IndexOf($name, [StringComparison]::OrdinalIgnoreCase) -ge 0) {
+        if ($simpleName -and $simpleName.Equals($name, [StringComparison]::OrdinalIgnoreCase)) {
             return $true
         }
     }

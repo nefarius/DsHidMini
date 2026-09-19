@@ -35,6 +35,25 @@ function Assert-Throws([scriptblock] $Action, [string] $Name) {
     Write-Output "PASS $Name"
 }
 
+function New-TestPublisherCertificate {
+    param(
+        [string] $SimpleName,
+        [string] $Subject = '',
+        [string] $Thumbprint = 'DEADBEEF'
+    )
+
+    $cert = [pscustomobject]@{
+        Subject          = $Subject
+        Thumbprint       = $Thumbprint
+        SimpleNameValue  = $SimpleName
+    }
+    $cert | Add-Member -MemberType ScriptMethod -Name GetNameInfo -Value {
+        param($nameType, $forIssuer)
+        [string]$this.SimpleNameValue
+    }
+    return $cert
+}
+
 function New-TestDriverPackage {
     param([string] $Root)
 
@@ -106,17 +125,18 @@ Assert-Throws { Assert-DsHidMiniReleaseMetadataMatchesTag -Metadata $badCommit -
 
 Assert-Equal (Get-DsHidMiniSetupMsiFileName -SetupVersion '2.12.0') 'Nefarius_DsHidMini_Drivers_x64_arm64_v2.12.0.msi' 'msi file name'
 
-Assert-True (Test-DsHidMiniIsAllowlistedPublisher -Certificate ([pscustomobject]@{
-            Subject    = 'CN=Nefarius Software Solutions e.U., O=Nefarius Software Solutions e.U.'
-            Thumbprint = 'DEADBEEF'
-        })) 'allowlists publisher by subject'
-Assert-True (-not (Test-DsHidMiniIsAllowlistedPublisher -Certificate ([pscustomobject]@{
-                Subject    = 'CN=Some Other Signer'
-                Thumbprint = 'DEADBEEF'
-            }))) 'rejects signer that is not allowlisted'
+Assert-True (Test-DsHidMiniIsAllowlistedPublisher -Certificate (New-TestPublisherCertificate `
+            -SimpleName 'Nefarius Software Solutions e.U.' `
+            -Subject 'CN=Nefarius Software Solutions e.U., O=Nefarius Software Solutions e.U.')) 'allowlists publisher by simple name'
+Assert-True (-not (Test-DsHidMiniIsAllowlistedPublisher -Certificate (New-TestPublisherCertificate `
+                -SimpleName 'Some Other Signer' `
+                -Subject 'CN=Some Other Signer'))) 'rejects signer that is not allowlisted'
+Assert-True (-not (Test-DsHidMiniIsAllowlistedPublisher -Certificate (New-TestPublisherCertificate `
+                -SimpleName 'Evil Corp' `
+                -Subject 'CN=Evil Corp, OU=Nefarius Software Solutions e.U.'))) 'rejects subject substring that is not the simple name'
 Assert-Throws {
     Assert-DsHidMiniAllowlistedPublisher `
-        -Certificate ([pscustomobject]@{ Subject = 'CN=Some Other Signer'; Thumbprint = 'DEADBEEF' }) `
+        -Certificate (New-TestPublisherCertificate -SimpleName 'Some Other Signer' -Subject 'CN=Some Other Signer') `
         -Path 'setup.msi'
 } 'unsigned-identity MSI signer rejected'
 Assert-Equal (ConvertFrom-DsHidMiniMsiName -Value 'CONTRO~1.EXE|ControlApp.exe') 'ControlApp.exe' 'decodes MSI long file name'
