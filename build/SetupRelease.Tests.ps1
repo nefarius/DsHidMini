@@ -49,6 +49,9 @@ function New-TestPublisherCertificate {
     }
     $cert | Add-Member -MemberType ScriptMethod -Name GetNameInfo -Value {
         param($nameType, $forIssuer)
+        if ($nameType -ne [System.Security.Cryptography.X509Certificates.X509NameType]::SimpleName -or $forIssuer -ne $false) {
+            throw "GetNameInfo expected SimpleName and forIssuer=`$false, got nameType='$nameType' forIssuer='$forIssuer'."
+        }
         [string]$this.SimpleNameValue
     }
     return $cert
