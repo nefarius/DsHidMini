@@ -147,6 +147,7 @@ public sealed partial class InputTesterViewModel : ObservableObject, IDisposable
             IsUnavailable = true;
             StatusSeverity = InfoBarSeverity.Error;
             StatusText = message;
+            State = ControllerInputState.Idle;
         });
     }
 
