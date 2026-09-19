@@ -46,6 +46,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     ];
 
     private readonly DeviceData _deviceUserData;
+    private InputTesterWindow? _inputTester;
     private MotionViewerWindow? _motionViewer;
 
     // ------------------------------------------------------ FIELDS
@@ -624,6 +625,10 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             OnPropertyChanged(nameof(BatteryIcon));
             OnPropertyChanged(nameof(BatteryStatusInText));
             OnPropertyChanged(nameof(BatteryToolTip));
+            OnPropertyChanged(nameof(CanOpenInputTester));
+            OnPropertyChanged(nameof(InputTesterToolTip));
+            OnPropertyChanged(nameof(CanOpenMotionViewer));
+            OnPropertyChanged(nameof(MotionViewerToolTip));
             NotifyIdentificationProperties();
         });
     }
@@ -642,6 +647,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     {
         Interlocked.Increment(ref _xInputSlotRefreshGeneration);
         _batteryQuery.Dispose();
+        CloseInputTester();
         CloseMotionViewer();
         GC.SuppressFinalize(this);
     }
@@ -1061,6 +1067,14 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         return PhysicalAddress.Parse(normalized);
     }
 
+    public bool CanOpenInputTester =>
+        DsHidMiniInterop.IsAvailable && DsHidMiniInterop.TryGetIpcSlotIndex(Device) is not null;
+
+    public string InputTesterToolTip =>
+        CanOpenInputTester
+            ? "Open a live DualShock 3 input diagram. Values come from the raw IPC report and stay the same in every HID mode."
+            : "Input tester needs driver IPC and a published device slot.";
+
     public bool CanOpenMotionViewer =>
         DsHidMiniInterop.IsAvailable && DsHidMiniInterop.TryGetIpcSlotIndex(Device) is not null;
 
@@ -1068,6 +1082,50 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         CanOpenMotionViewer
             ? "Open a live motion readout and diagnostic 3D pose for this controller."
             : "Motion viewer needs driver IPC and a published device slot.";
+
+    [RelayCommand]
+    private void OpenInputTester()
+    {
+        if (_inputTester is { IsVisible: true })
+        {
+            _inputTester.Activate();
+            return;
+        }
+
+        int? slot = DsHidMiniInterop.TryGetIpcSlotIndex(Device);
+        if (slot is not int deviceIndex)
+        {
+            _appSnackbarMessagesService.ShowInputTesterFailedMessage(
+                "The driver did not report an IPC slot for this device.");
+            return;
+        }
+
+        if (!DsHidMiniInterop.IsAvailable)
+        {
+            _appSnackbarMessagesService.ShowInputTesterFailedMessage(
+                "Driver IPC is not available. Confirm the controller is still connected.");
+            return;
+        }
+
+        InputTesterViewModel tester = new(deviceIndex, DeviceAddressFriendly ?? DeviceAddress);
+        _inputTester = new InputTesterWindow(tester)
+        {
+            Owner = Application.Current.MainWindow
+        };
+        _inputTester.Closed += (_, _) => _inputTester = null;
+        _inputTester.Show();
+    }
+
+    private void CloseInputTester()
+    {
+        if (_inputTester is null)
+        {
+            return;
+        }
+
+        _inputTester.Close();
+        _inputTester = null;
+    }
 
     [RelayCommand]
     private void OpenMotionViewer()
