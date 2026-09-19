@@ -814,7 +814,7 @@ function Get-DsHidMiniCustomActionBinaryName {
         throw "Custom action name contains unsupported characters: '$ActionName'."
     }
 
-    $rows = @(Get-DsHidMiniMsiTableRows -MsiPath $MsiPath -Sql "SELECT ``Source`` FROM ``CustomAction`` WHERE ``Action``='$ActionName'")
+    $rows = @(Get-DsHidMiniMsiTableRows -MsiPath $MsiPath -Sql "SELECT ``Source`` FROM ``CustomAction`` WHERE ``Action``='$ActionName'" -ColumnCount 1)
     if ($rows.Count -eq 0) {
         throw "Custom action '$ActionName' was not found in $MsiPath."
     }
@@ -888,7 +888,12 @@ function Get-DsHidMiniMsiTableRows {
         [string] $MsiPath,
 
         [Parameter(Mandatory)]
-        [string] $Sql
+        [string] $Sql,
+
+        # Windows Installer's Record COM object does not expose FieldCount through
+        # PowerShell's COM adapter, so the selected column count has to be passed in.
+        [ValidateRange(1, 16)]
+        [int] $ColumnCount = 1
     )
 
     if (-not (Test-Path -LiteralPath $MsiPath -PathType Leaf)) {
@@ -912,9 +917,8 @@ function Get-DsHidMiniMsiTableRows {
             }
 
             try {
-                $fieldCount = [int]$record.FieldCount
                 $values = @(
-                    for ($i = 1; $i -le $fieldCount; $i++) {
+                    for ($i = 1; $i -le $ColumnCount; $i++) {
                         [string]$record.StringData($i)
                     }
                 )
@@ -966,8 +970,20 @@ function Test-DsHidMiniMsiNamePresent {
         [string] $Expected
     )
 
+    # Windows Installer stores shortcut names with the .lnk extension appended, so both
+    # sides are compared without it.
+    $trimLnk = {
+        param([string] $Name)
+        if ($Name -and $Name.EndsWith('.lnk', [StringComparison]::OrdinalIgnoreCase)) {
+            return $Name.Substring(0, $Name.Length - 4)
+        }
+        return $Name
+    }
+
+    $expected = & $trimLnk $Expected
     foreach ($value in @($Values)) {
-        if ([string]::Equals((ConvertFrom-DsHidMiniMsiName -Value $value), $Expected, [StringComparison]::OrdinalIgnoreCase)) {
+        $actual = & $trimLnk (ConvertFrom-DsHidMiniMsiName -Value $value)
+        if ([string]::Equals($actual, $expected, [StringComparison]::OrdinalIgnoreCase)) {
             return $true
         }
     }
@@ -985,7 +1001,7 @@ function Assert-DsHidMiniMsiContract {
     $errors = [System.Collections.Generic.List[string]]::new()
 
     $fileNames = @(
-        Get-DsHidMiniMsiTableRows -MsiPath $MsiPath -Sql "SELECT ``FileName`` FROM ``File``" |
+        Get-DsHidMiniMsiTableRows -MsiPath $MsiPath -Sql "SELECT ``FileName`` FROM ``File``" -ColumnCount 1 |
             ForEach-Object { $_[0] }
     )
     if (-not (Test-DsHidMiniMsiNamePresent -Values $fileNames -Expected 'ControlApp.exe')) {
@@ -993,7 +1009,7 @@ function Assert-DsHidMiniMsiContract {
     }
 
     $shortcutNames = @(
-        Get-DsHidMiniMsiTableRows -MsiPath $MsiPath -Sql "SELECT ``Name`` FROM ``Shortcut``" |
+        Get-DsHidMiniMsiTableRows -MsiPath $MsiPath -Sql "SELECT ``Name`` FROM ``Shortcut``" -ColumnCount 1 |
             ForEach-Object { $_[0] }
     )
     if (-not (Test-DsHidMiniMsiNamePresent -Values $shortcutNames -Expected 'DsHidMini Control App')) {
@@ -1001,7 +1017,7 @@ function Assert-DsHidMiniMsiContract {
     }
 
     $customActions = @(
-        Get-DsHidMiniMsiTableRows -MsiPath $MsiPath -Sql "SELECT ``Action`` FROM ``CustomAction``" |
+        Get-DsHidMiniMsiTableRows -MsiPath $MsiPath -Sql "SELECT ``Action`` FROM ``CustomAction``" -ColumnCount 1 |
             ForEach-Object { $_[0] }
     )
     if (-not ($customActions | Where-Object { [string]::Equals($_, 'CheckDotNetRuntime', [StringComparison]::OrdinalIgnoreCase) })) {
@@ -1012,7 +1028,7 @@ function Assert-DsHidMiniMsiContract {
     }
 
     $sequence = @(
-        Get-DsHidMiniMsiTableRows -MsiPath $MsiPath -Sql "SELECT ``Action``,``Condition`` FROM ``InstallExecuteSequence``" |
+        Get-DsHidMiniMsiTableRows -MsiPath $MsiPath -Sql "SELECT ``Action``,``Condition`` FROM ``InstallExecuteSequence``" -ColumnCount 2 |
             ForEach-Object {
                 [pscustomobject]@{ Action = $_[0]; Condition = $_[1] }
             }
@@ -1034,7 +1050,7 @@ function Assert-DsHidMiniMsiContract {
     }
 
     $errorRows = @(
-        Get-DsHidMiniMsiTableRows -MsiPath $MsiPath -Sql "SELECT ``Error``,``Message`` FROM ``Error``" |
+        Get-DsHidMiniMsiTableRows -MsiPath $MsiPath -Sql "SELECT ``Error``,``Message`` FROM ``Error``" -ColumnCount 2 |
             ForEach-Object {
                 [pscustomobject]@{ Id = $_[0]; Message = $_[1] }
             }

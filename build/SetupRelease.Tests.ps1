@@ -144,6 +144,16 @@ Assert-Throws {
 } 'unsigned-identity MSI signer rejected'
 Assert-Equal (ConvertFrom-DsHidMiniMsiName -Value 'CONTRO~1.EXE|ControlApp.exe') 'ControlApp.exe' 'decodes MSI long file name'
 Assert-True (Test-DsHidMiniMsiNamePresent -Values @('CONTRO~1.EXE|ControlApp.exe') -Expected 'ControlApp.exe') 'MSI name present after decode'
+# Windows Installer stores shortcuts as "<short>.lnk|<long>.lnk".
+Assert-True (Test-DsHidMiniMsiNamePresent `
+        -Values @('-sd7_iyj.lnk|DsHidMini Control App.lnk') `
+        -Expected 'DsHidMini Control App') 'shortcut matches expectation without .lnk'
+Assert-True (Test-DsHidMiniMsiNamePresent `
+        -Values @('-sd7_iyj.lnk|DsHidMini Control App.lnk') `
+        -Expected 'DsHidMini Control App.lnk') 'shortcut matches expectation with .lnk'
+Assert-True (-not (Test-DsHidMiniMsiNamePresent `
+            -Values @('-sd7_iyj.lnk|Some Other Shortcut.lnk') `
+            -Expected 'DsHidMini Control App')) 'unrelated shortcut is not matched'
 
 Assert-Equal (ConvertTo-DsHidMiniSetupVersionFromTag -Tag 'setup-v2.17.0') ([version]'2.17.0') 'parses plain setup tag'
 Assert-Equal (ConvertTo-DsHidMiniSetupVersionFromTag -Tag 'setup-v2.12.0-r3') ([version]'2.12.0') 'parses re-spin tag, drops -rN'

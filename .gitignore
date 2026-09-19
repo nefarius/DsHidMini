@@ -356,3 +356,6 @@ healthchecksdb
 *.msi
 **/*.g.cs
 setup/*.png
+# MakeCab leftovers from the per-architecture driver CABs
+/setup.inf
+/setup.rpt
