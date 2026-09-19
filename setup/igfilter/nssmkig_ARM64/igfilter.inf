@@ -1,0 +1,78 @@
+; Copyright (c) 2021-2024, Nefarius Software Solutions e.U.
+;  All rights reserved.
+; 
+;  Redistribution and use in bytecode or binary forms, without modification, 
+;  are permitted provided that the following conditions are met:
+; 
+;    * Redistributions in bytecode or binary form must reproduce the above 
+;      copyright notice, this list of conditions and the following disclaimer 
+;      in the documentation and/or other materials provided with the 
+;      distribution.
+; 
+;    * Neither the name of the nssmkig.sys nor the names of its contributors may 
+;      be used to endorse or promote products derived from or distributed 
+;      with this software without specific prior written permission.
+; 
+;    * Decompiling, disassembling, reverse-engineering or otherwise attempting to 
+;      discover the source code or even altering this software in any way, 
+;      without specific prior written permission, is strictly prohibited.
+; 
+;  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+;  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+;  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+;  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
+;  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
+;  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
+;  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+;  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+;  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+;  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+;  POSSIBILITY OF SUCH DAMAGE.
+
+
+[Version]
+Signature = "$WINDOWS NT$"
+Class = HIDClass
+ClassGuid = {745a17a0-74d3-11d0-b6fe-00a0c90f57da}
+Provider = %ManufacturerName%
+CatalogFile = igfilter.cat
+DriverVer = 05/03/2024,1.1.1.0
+PnpLockdown = 1
+ 
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+nssmkig.sys  = 1,,
+
+[DestinationDirs]
+DefaultDestDir = 12
+Nssmkig.DriverFiles = 12
+
+[DefaultInstall.NTARM64]
+OptionDesc = %NssmkigServiceDesc%
+CopyFiles = Nssmkig.DriverFiles
+
+[DefaultUninstall.NTARM64]
+LegacyUninstall = 1
+
+[Nssmkig.DriverFiles]
+nssmkig.sys
+
+[DefaultInstall.NTARM64.Services]
+AddService = %NssmkigServiceName%,,Nssmkig.Service
+
+[Nssmkig.Service]
+DisplayName    = %NssmkigServiceName%
+Description    = %NssmkigServiceDesc%
+ServiceBinary  = %12%\Nssmkig.sys
+ServiceType    = 1 ;    SERVICE_KERNEL_DRIVER
+StartType      = 3 ;    SERVICE_DEMAND_START
+ErrorControl   = 1 ;    SERVICE_ERROR_NORMAL
+ 
+[Strings]
+ManufacturerName = "Nefarius Software Solutions e.U." 
+DiskName = "nssmkig Installation Disk"
+NssmkigServiceDesc = "Nefarius XInput HID Devices filter driver"
+NssmkigServiceName = "nssmkig"

@@ -32,23 +32,14 @@ partial class Build : NukeBuild
     [Parameter("Output path for release staging. Default: ./artifacts")]
     readonly string ArtifactsPath = "./artifacts";
 
-    [Parameter("Three-part setup version for BuildSetup (e.g. 3.6.0). Defaults to release-metadata.json when omitted.")]
-    readonly string SetupVersion = "";
-
     [Parameter("Path to the Microsoft-attested driver package (zip, cab, or extracted directory)")]
     readonly string MicrosoftPackagePath = "";
-
-    [Parameter("Path to the maintainer-supplied igfilter packages (directory containing nssmkig_x64 and nssmkig_ARM64)")]
-    readonly string IgfilterPath = "";
 
     [Parameter("Path to signtool.exe. When not set, Nefarius.Tools.WDKWhere is used to run signtool.")]
     readonly string SignToolPath = "";
 
     [NuGetPackage("Nefarius.Tools.WDKWhere", "wdkwhere.dll", Framework = "net8.0")]
     readonly Tool WdkWhere;
-
-    const string SignTimestampUrl = "http://timestamp.digicert.com";
-    const string SignCertName = "Nefarius Software Solutions e.U.";
 
     AbsolutePath DmfSolution => Solution.Directory / "DMF/Dmf.sln";
 

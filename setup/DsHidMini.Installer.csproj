@@ -19,8 +19,15 @@
     <GenerateMsi Condition="'$(GenerateMsi)' == ''">false</GenerateMsi>
   </PropertyGroup>
 
-  <Target Name="GenerateBuildVariableFile" BeforeTargets="BeforeBuild">
-    <WriteLinesToFile File="GeneratedBuildVariables.g.cs" Lines="namespace Nefarius.DsHidMini.Setup { public static class BuildVariables { public const string SetupVersion = &quot;$(SetupVersion)&quot;%3B } }" Overwrite="true" />
+  <ItemGroup>
+    <Compile Remove="GeneratedBuildVariables.g.cs" />
+  </ItemGroup>
+
+  <Target Name="GenerateBuildVariableFile" BeforeTargets="BeforeCompile;CoreCompile">
+    <WriteLinesToFile File="GeneratedBuildVariables.g.cs" Lines="namespace Nefarius.DsHidMini.Setup { public static class BuildVariables { public const string SetupVersion = &quot;$(SetupVersion)&quot;%3B } }" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <Compile Include="GeneratedBuildVariables.g.cs" />
+    </ItemGroup>
   </Target>
 
   <ItemGroup>
@@ -32,7 +39,6 @@
     <None Remove="*.wixpdb" />
     <None Remove="*.wixobj" />
     <None Remove="Archive\**" />
-    <None Remove="App.config" />
     <None Remove="*.g.cs" />
     <None Include="wix\$(ProjectName).g.wxs" />
   </ItemGroup>
@@ -41,19 +47,15 @@
     <PackageReference Include="CliWrap" Version="3.10.5" />
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.12" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="Nefarius.Utilities.WixSharp" Version="1.2.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
     <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
     <PackageReference Include="Nefarius.Utilities.DeviceManagement" Version="6.1.0" />
+    <PackageReference Include="WixSharp-wix4.WPF" Version="2.14.1" />
   </ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Include="WixSharp-wix4.WPF" Version="2.14.1" />
-    </ItemGroup>
-
   <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(GenerateMsi)' == 'true'">
-    <Error Condition="'$(SetupVersion)' == ''" Text="SetupVersion is required when GenerateMsi=true (use .\build.cmd BuildSetup --setup-version X.Y.Z)." />
+    <Error Condition="'$(SetupVersion)' == ''" Text="SetupVersion is required when GenerateMsi=true. Dispatch the GitHub Actions setup workflow." />
     <Exec Command="cd .\&#xD;&#xA;set ide=true&#xD;&#xA;&quot;$(TargetPath)&quot;" />
   </Target>
 </Project>

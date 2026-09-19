@@ -27,7 +27,6 @@
         "AuditXInputBridge",
         "BenchmarkXInputBridge",
         "BuildDmf",
-        "BuildSetup",
         "Clean",
         "Compile",
         "CompileConfigParserTests",
@@ -37,12 +36,10 @@
         "IngestMicrosoftPackage",
         "PublishControlApp",
         "Restore",
-        "StageIgfilter",
         "TestConfigParser",
         "TestControlApp",
         "TestReleasePipeline",
-        "TestXInputBridge",
-        "ValidateSetupInputs"
+        "TestXInputBridge"
       ]
     },
     "Verbosity": {
@@ -128,10 +125,6 @@
             "Release"
           ]
         },
-        "IgfilterPath": {
-          "type": "string",
-          "description": "Path to the maintainer-supplied igfilter packages (directory containing nssmkig_x64 and nssmkig_ARM64)"
-        },
         "MicrosoftPackagePath": {
           "type": "string",
           "description": "Path to the Microsoft-attested driver package (zip, cab, or extracted directory)"
@@ -139,10 +132,6 @@
         "RunId": {
           "type": "string",
           "description": "GitHub Actions run ID used by DownloadCiArtifacts"
-        },
-        "SetupVersion": {
-          "type": "string",
-          "description": "Three-part setup version for BuildSetup (e.g. 3.6.0). Defaults to release-metadata.json when omitted"
         },
         "SignToolPath": {
           "type": "string",

@@ -1,0 +1,339 @@
+name: 'Build setup'
+
+on:
+  workflow_dispatch:
+    inputs:
+      driver-tag:
+        description: 'Driver release tag whose artifacts to embed (vMAJOR.MINOR.PATCH)'
+        required: true
+        type: string
+
+concurrency:
+  group: setup-${{ inputs.driver-tag }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+  DOTNET_NOLOGO: 'true'
+
+jobs:
+  resolve:
+    name: 'Resolve driver artifacts'
+    runs-on: ubuntu-latest
+    outputs:
+      driver-tag: ${{ steps.resolve.outputs.driver-tag }}
+      setup-version: ${{ steps.resolve.outputs.setup-version }}
+      setup-tag: ${{ steps.resolve.outputs.setup-tag }}
+      driver-version: ${{ steps.resolve.outputs.driver-version }}
+      driver-commit: ${{ steps.resolve.outputs.driver-commit }}
+      setup-commit: ${{ steps.resolve.outputs.setup-commit }}
+      build-run-id: ${{ steps.resolve.outputs.build-run-id }}
+      drivers-run-id: ${{ steps.resolve.outputs.drivers-run-id }}
+      msi-name: ${{ steps.resolve.outputs.msi-name }}
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            build
+
+      - name: 'Resolve source runs and setup tag'
+        id: resolve
+        shell: pwsh
+        env:
+          DRIVER_TAG: ${{ inputs.driver-tag }}
+          SETUP_COMMIT: ${{ github.sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . ./build/SetupRelease.ps1
+
+          $identity = ConvertTo-DsHidMiniSetupReleaseIdentity -DriverTag $env:DRIVER_TAG
+
+          $allSetupTags = Get-DsHidMiniAllSetupReleaseTags -Repository '${{ github.repository }}'
+          $highestPublished = Get-DsHidMiniHighestSetupVersion -Tags $allSetupTags
+          Assert-DsHidMiniSetupVersionNotRegressed -SetupVersion $identity.SetupVersion -HighestPublishedVersion $highestPublished
+
+          $source = Resolve-DsHidMiniSetupArtifactRuns -Repository '${{ github.repository }}' -DriverTag $identity.DriverTag
+          $existing = Get-DsHidMiniExistingSetupReleaseTags -Repository '${{ github.repository }}' -SetupVersion $identity.SetupVersion
+          $setupTag = Get-DsHidMiniNextSetupReleaseTag -SetupVersion $identity.SetupVersion -ExistingTags $existing
+          $msiName = Get-DsHidMiniSetupMsiFileName -SetupVersion $identity.SetupVersion
+
+          Write-DsHidMiniGitHubOutput -GitHubOutput $env:GITHUB_OUTPUT -Values @{
+            'driver-tag'     = $identity.DriverTag
+            'setup-version'  = $identity.SetupVersion
+            'setup-tag'      = $setupTag
+            'driver-version' = $source.DriverVersion
+            'driver-commit'  = $source.DriverCommit
+            'setup-commit'   = $env:SETUP_COMMIT
+            'build-run-id'   = $source.BuildRunId
+            'drivers-run-id' = $source.DriversRunId
+            'msi-name'       = $msiName
+          }
+
+          $summary = @(
+            "Resolved $($identity.DriverTag) for setup tag ``$setupTag``"
+            "- Setup version: ``$($identity.SetupVersion)``"
+            "- Driver version: ``$($source.DriverVersion)``"
+            "- Driver commit: ``$($source.DriverCommit)``"
+            "- Setup commit: ``$($env:SETUP_COMMIT)``"
+            "- Build run: ``$($source.BuildRunId)``"
+            "- Drivers run: ``$($source.DriversRunId)``"
+          ) -join [Environment]::NewLine
+          $summary >> $env:GITHUB_STEP_SUMMARY
+          Write-Output $summary
+
+  build:
+    name: 'Build and sign MSI'
+    needs: resolve
+    runs-on: windows-2022
+    env:
+      DRIVER_TAG: ${{ needs.resolve.outputs.driver-tag }}
+      SETUP_VERSION: ${{ needs.resolve.outputs.setup-version }}
+      SETUP_TAG: ${{ needs.resolve.outputs.setup-tag }}
+      DRIVER_VERSION: ${{ needs.resolve.outputs.driver-version }}
+      DRIVER_COMMIT: ${{ needs.resolve.outputs.driver-commit }}
+      SETUP_COMMIT: ${{ needs.resolve.outputs.setup-commit }}
+      BUILD_RUN_ID: ${{ needs.resolve.outputs.build-run-id }}
+      DRIVERS_RUN_ID: ${{ needs.resolve.outputs.drivers-run-id }}
+      MSI_NAME: ${{ needs.resolve.outputs.msi-name }}
+      SIGN_RELAY_SERVER: ${{ vars.SIGN_RELAY_SERVER }}
+      SIGN_RELAY_CI_TOKEN: ${{ secrets.SIGN_RELAY_CI_TOKEN }}
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          # nefcon, the updater, and igfilter are Git LFS objects. Without this they
+          # check out as 132-byte pointer stubs, which MSI packages as unversioned
+          # files and then refuses to install over an existing versioned copy.
+          lfs: true
+
+      - name: 'Require signing configuration'
+        shell: pwsh
+        run: |
+          if (-not $env:SIGN_RELAY_SERVER) { throw 'Repository variable SIGN_RELAY_SERVER is not set.' }
+          if (-not $env:SIGN_RELAY_CI_TOKEN) { throw 'Repository secret SIGN_RELAY_CI_TOKEN is not set.' }
+
+      - name: 'Download release metadata'
+        uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: release-metadata
+          path: artifacts/ci/metadata
+          run-id: ${{ env.BUILD_RUN_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Download signed ControlApp'
+        uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: control-app
+          path: artifacts/ci/tools
+          run-id: ${{ env.BUILD_RUN_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Download attested drivers'
+        uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: dshidmini-microsoft-drivers
+          path: artifacts/ci/drivers
+          run-id: ${{ env.DRIVERS_RUN_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Stage setup payload'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . ./build/SetupRelease.ps1
+
+          $metadata = Read-DsHidMiniReleaseMetadataFile -Path 'artifacts/ci/metadata'
+          Assert-DsHidMiniReleaseMetadataMatchesTag -Metadata $metadata -DriverTag $env:DRIVER_TAG
+          if ([string]$metadata.driverVersion -ne $env:DRIVER_VERSION) {
+            throw "Downloaded driverVersion '$($metadata.driverVersion)' does not match resolved '$($env:DRIVER_VERSION)'."
+          }
+
+          Copy-DsHidMiniSetupPayload `
+            -DriversSource 'artifacts/ci/drivers' `
+            -ToolsSource 'artifacts/ci/tools' `
+            -ArtifactsRoot (Join-Path $pwd 'artifacts')
+          Assert-DsHidMiniAttestedDriverSignatures -DriversRoot (Join-Path $pwd 'artifacts\drivers')
+          Write-Output 'Do not append another publisher signature after Microsoft attestation.'
+
+      - name: 'Setup .NET'
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: 'Cache NuGet packages'
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-setup-${{ runner.os }}-${{ hashFiles('setup/DsHidMini.Installer.csproj') }}
+          restore-keys: |
+            nuget-setup-${{ runner.os }}-
+
+      - name: 'Install WiX toolset'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # Pinned to the WiX v4 line on purpose: v6+ gates `wix.exe` behind the
+          # Open Source Maintenance Fee EULA (enforced via -acceptEula starting
+          # in v7), which would silently block CI. Bump only after confirming
+          # WixSharp_wix4's compatibility notes and re-testing the EULA gate.
+          dotnet tool install --global wix --version 4.0.6
+          "$env:USERPROFILE\.dotnet\tools" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          & "$env:USERPROFILE\.dotnet\tools\wix.exe" extension add -g WixToolset.UI.wixext/4.0.6
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+      - name: 'Assert LFS payload is materialized'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . ./build/SetupRelease.ps1
+          Assert-DsHidMiniNoGitLfsPointers -RepositoryRoot $pwd
+
+      - name: 'Build MSI'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          dotnet build -c Release -p:SetupVersion=$env:SETUP_VERSION -p:GenerateMsi=true .\setup\DsHidMini.Installer.csproj
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+      - name: 'Assert MSI payload and custom-action package'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . ./build/SetupRelease.ps1
+          $msi = Join-Path $pwd (Join-Path 'setup' $env:MSI_NAME)
+          if (-not (Test-Path -LiteralPath $msi)) { throw "MSI was not produced: $msi" }
+          Assert-DsHidMiniMsiBinariesVersioned -PayloadFiles (Get-DsHidMiniMsiPayloadFiles -MsiPath $msi)
+          $manifest = Join-Path $pwd 'setup\obj\ca-support-assemblies.txt'
+          Assert-DsHidMiniCustomActionPackage -MsiPath $msi -ManifestPath $manifest
+          Assert-DsHidMiniMsiContract -MsiPath $msi
+
+      - name: 'Assert MSI is unsigned'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . ./build/SetupRelease.ps1
+          $msi = Join-Path $pwd (Join-Path 'setup' $env:MSI_NAME)
+          if (-not (Test-Path -LiteralPath $msi)) { throw "MSI was not produced: $msi" }
+          $sig = Get-AuthenticodeSignature -LiteralPath $msi
+          if ($sig.Status -ne 'NotSigned') {
+            throw "Expected unsigned $msi but Get-AuthenticodeSignature returned $($sig.Status)."
+          }
+          Write-Output "Unsigned as required: $msi"
+
+      - name: 'Sign MSI'
+        uses: nefarius/SignRelay@39ccbe0cef16a383237130380a5aef8db040d5d0
+        with:
+          server: ${{ env.SIGN_RELAY_SERVER }}
+          token: ${{ env.SIGN_RELAY_CI_TOKEN }}
+          in-place: true
+          files: setup/${{ needs.resolve.outputs.msi-name }}
+
+      - name: 'Verify signed MSI and write provenance'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . ./build/SetupRelease.ps1
+
+          $msi = Join-Path $pwd (Join-Path 'setup' $env:MSI_NAME)
+          $sig = Get-AuthenticodeSignature -LiteralPath $msi
+          if ($sig.Status -ne 'Valid' -or -not $sig.SignerCertificate) {
+            throw "MSI is not validly signed: $msi (Status=$($sig.Status))."
+          }
+          Write-Output "Signed: $msi (Subject=$($sig.SignerCertificate.Subject))"
+
+          $sha = (Get-FileHash -LiteralPath $msi -Algorithm SHA256).Hash.ToLowerInvariant()
+          $provenance = New-DsHidMiniSetupProvenance `
+            -DriverTag $env:DRIVER_TAG `
+            -SetupVersion $env:SETUP_VERSION `
+            -SetupTag $env:SETUP_TAG `
+            -DriverVersion $env:DRIVER_VERSION `
+            -DriverCommit $env:DRIVER_COMMIT `
+            -SetupCommit $env:SETUP_COMMIT `
+            -BuildRunId ([int64]$env:BUILD_RUN_ID) `
+            -DriversRunId ([int64]$env:DRIVERS_RUN_ID) `
+            -Repository '${{ github.repository }}' `
+            -MsiName $env:MSI_NAME `
+            -MsiSha256 $sha
+
+          $out = Join-Path $pwd 'setup-artifact'
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          Copy-Item -LiteralPath $msi -Destination (Join-Path $out $env:MSI_NAME)
+          Write-DsHidMiniUtf8NoBomJson -Object $provenance -Path (Join-Path $out 'setup-metadata.json')
+          Write-Output ($provenance | ConvertTo-Json -Depth 8)
+
+      - name: 'Upload setup'
+        uses: actions/upload-artifact@v7
+        with:
+          name: dshidmini-setup
+          if-no-files-found: error
+          path: setup-artifact
+
+  tag:
+    name: 'Create setup tag'
+    needs: [resolve, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            build
+
+      - name: 'Create collision-free setup tag'
+        shell: pwsh
+        env:
+          SETUP_VERSION: ${{ needs.resolve.outputs.setup-version }}
+          PROPOSED_SETUP_TAG: ${{ needs.resolve.outputs.setup-tag }}
+          SETUP_COMMIT: ${{ needs.resolve.outputs.setup-commit }}
+          DRIVER_TAG: ${{ needs.resolve.outputs.driver-tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . ./build/SetupRelease.ps1
+
+          $repo = '${{ github.repository }}'
+
+          $allSetupTags = Get-DsHidMiniAllSetupReleaseTags -Repository $repo
+          $highestPublished = Get-DsHidMiniHighestSetupVersion -Tags $allSetupTags
+          Assert-DsHidMiniSetupVersionNotRegressed -SetupVersion $env:SETUP_VERSION -HighestPublishedVersion $highestPublished
+
+          $existing = Get-DsHidMiniExistingSetupReleaseTags -Repository $repo -SetupVersion $env:SETUP_VERSION
+          $tag = Get-DsHidMiniNextSetupReleaseTag -SetupVersion $env:SETUP_VERSION -ExistingTags $existing
+          if ($tag -ne $env:PROPOSED_SETUP_TAG) {
+            throw "Proposed tag $($env:PROPOSED_SETUP_TAG) is no longer free (next would be $tag). Re-dispatch so provenance and the Git tag stay aligned."
+          }
+
+          New-DsHidMiniSetupGitTag -Repository $repo -Tag $tag -Sha $env:SETUP_COMMIT
+
+          $summary = @(
+            "Created ``$tag`` at ``$($env:SETUP_COMMIT)`` for driver ``$($env:DRIVER_TAG)``"
+            "- GitHub Release creation remains manual."
+          ) -join [Environment]::NewLine
+          $summary >> $env:GITHUB_STEP_SUMMARY
+          Write-Output $summary
+
+  mirror:
+    name: 'Mirror setup'
+    needs: tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Mirror setup'
+        # nefarius/AppVeyorArtifactsReceiver@89b6e611c9f1997c3faf8c57401d3c0e557a2dc4 (master as of 2026-09-16, PR #135)
+        uses: nefarius/AppVeyorArtifactsReceiver@89b6e611c9f1997c3faf8c57401d3c0e557a2dc4
+        with:
+          webhook-url: ${{ secrets.WEBHOOK_URL }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          artifact-name: dshidmini-setup
+          skip-latest-symlink: true
+          job-label: setup

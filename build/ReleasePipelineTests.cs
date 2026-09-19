@@ -14,14 +14,8 @@ static class ReleasePipelineTests
         TestStageMicrosoftDrivers();
         TestUniquePackageDetection();
         TestIngestFromDirectoryAndZip();
-        TestIgfilterStaging();
-        TestSetupValidationWithoutSignatures();
         TestSignatureParser();
-        TestSetupMsiContractAcceptsControlAppPayload();
-        TestSetupMsiContractRejectsMissingControlApp();
-        TestSetupMsiContractRejectsMissingShortcut();
-        TestSetupMsiContractRejectsMissingDotNetPrerequisite();
-        TestSetupMsiContractRejectsNearMatchAndUiOnlyRuntimeAction();
+        OpenArticleTests.Run();
         Console.WriteLine("ReleasePipeline fixture tests passed");
     }
 
@@ -127,37 +121,6 @@ static class ReleasePipelineTests
             "incomplete package");
     }
 
-    static void TestIgfilterStaging()
-    {
-        using TempScope scope = new();
-        string source = Path.Combine(scope.Root, "ig-src");
-        WriteIgfilterPackage(Path.Combine(source, "nssmkig_x64"));
-        WriteIgfilterPackage(Path.Combine(source, "nssmkig_arm64"));
-        string dest = Path.Combine(scope.Root, "igfilter");
-        ReleaseStaging.StageIgfilter(source, dest);
-        ReleaseStaging.RequireIgfilterLayout(dest);
-        AssertTrue(Directory.Exists(Path.Combine(dest, "nssmkig_ARM64")), "arm64 normalized");
-
-        AssertThrows(() => ReleaseStaging.StageIgfilter(Path.Combine(scope.Root, "empty"), dest), "missing igfilter");
-    }
-
-    static void TestSetupValidationWithoutSignatures()
-    {
-        using TempScope scope = new();
-        string artifacts = Path.Combine(scope.Root, "artifacts");
-        ReleaseMetadata metadata = SampleMetadata();
-        ReleaseStaging.WriteMetadata(ReleaseStaging.MetadataPath(artifacts), metadata);
-        WriteDriverPackage(ReleaseStaging.DriversDirectory(artifacts), includeBinaries: false);
-        Directory.CreateDirectory(ReleaseStaging.BinDirectory(artifacts));
-        File.WriteAllText(Path.Combine(ReleaseStaging.BinDirectory(artifacts), "ControlApp.exe"), "app");
-        WriteIgfilterPackage(Path.Combine(ReleaseStaging.IgfilterDirectory(artifacts), "nssmkig_x64"));
-        WriteIgfilterPackage(Path.Combine(ReleaseStaging.IgfilterDirectory(artifacts), "nssmkig_ARM64"));
-
-        AssertThrows(
-            () => ReleaseStaging.ValidateSetupInputs(artifacts, "3.6.0", requireSignatures: false),
-            "driver files without versions fail");
-    }
-
     static void TestSignatureParser()
     {
         const string output = """
@@ -185,7 +148,6 @@ static class ReleasePipelineTests
             "Nefarius Software Solutions e.U.|Microsoft Windows Hardware Compatibility Publisher",
             nameof(TestSignatureParser));
         ReleaseStaging.RequireDualDriverSigners(issued, "dshidmini.dll");
-        ReleaseStaging.RequirePublisherSigner(issued, "ControlApp.exe");
 
         AssertThrows(
             () => ReleaseStaging.RequireDualDriverSigners(["Nefarius Software Solutions e.U."], "dshidmini.dll"),
@@ -194,156 +156,6 @@ static class ReleasePipelineTests
             () => ReleaseStaging.RequireDualDriverSigners(["Microsoft Windows Hardware Compatibility Publisher"], "dshidmini.dll"),
             "microsoft-only rejected");
     }
-
-    static void TestSetupMsiContractAcceptsControlAppPayload()
-    {
-        IReadOnlyList<string> errors = SetupMsiContract.Validate(ValidSetupMsiContents());
-        AssertTrue(errors.Count == 0, nameof(TestSetupMsiContractAcceptsControlAppPayload));
-        AssertTrue(
-            SetupMsiContract.ContainsMsiName(["CONTRO~1.EXE|ControlApp.exe"], SetupMsiContract.ControlAppFileName),
-            "decodes MSI long file name");
-        AssertEqual(
-            SetupMsiContract.DecodeMsiName("DSHIDM~1|DsHidMini Control App"),
-            SetupMsiContract.ControlAppShortcutName,
-            "decodes MSI long shortcut name");
-    }
-
-    static void TestSetupMsiContractRejectsMissingControlApp()
-    {
-        SetupMsiContents contents = ValidSetupMsiContents() with { FileNames = ["dshidmini.dll"] };
-        IReadOnlyList<string> errors = SetupMsiContract.Validate(contents);
-        AssertTrue(errors.Any(error => error.Contains(SetupMsiContract.ControlAppFileName, StringComparison.Ordinal)),
-            nameof(TestSetupMsiContractRejectsMissingControlApp));
-    }
-
-    static void TestSetupMsiContractRejectsMissingShortcut()
-    {
-        SetupMsiContents contents = ValidSetupMsiContents() with { ShortcutNames = ["Unrelated"] };
-        IReadOnlyList<string> errors = SetupMsiContract.Validate(contents);
-        AssertTrue(
-            errors.Any(error => error.Contains(SetupMsiContract.ControlAppShortcutName, StringComparison.Ordinal)),
-            nameof(TestSetupMsiContractRejectsMissingShortcut));
-    }
-
-    static void TestSetupMsiContractRejectsMissingDotNetPrerequisite()
-    {
-        SetupMsiContents missingAction = ValidSetupMsiContents() with { CustomActions = [] };
-        AssertTrue(
-            SetupMsiContract.Validate(missingAction)
-                .Any(error => error.Contains(SetupMsiContract.DotNetRuntimeCustomAction, StringComparison.Ordinal)),
-            "missing custom action");
-
-        SetupMsiContents missingCondition = ValidSetupMsiContents() with
-        {
-            SequenceEntries =
-            [
-                new SetupMsiSequenceEntry
-                {
-                    Table = "InstallExecuteSequence",
-                    Action = SetupMsiContract.DotNetRuntimeCustomAction,
-                    Condition = "Installed"
-                }
-            ]
-        };
-        AssertTrue(
-            SetupMsiContract.Validate(missingCondition)
-                .Any(error => error.Contains(SetupMsiContract.NotInstalledCondition, StringComparison.Ordinal)),
-            "missing NOT Installed condition");
-
-        SetupMsiContents staleRuntimeError = ValidSetupMsiContents() with
-        {
-            Errors =
-            [
-                new SetupMsiError
-                {
-                    Id = SetupMsiContract.DotNetRuntimeErrorId,
-                    Message = "The .NET 9 Desktop Runtime (x64) is required by DsHidMini Control App."
-                }
-            ]
-        };
-        AssertTrue(
-            SetupMsiContract.Validate(staleRuntimeError)
-                .Any(error => error.Contains(SetupMsiContract.DotNetRuntimeErrorHint, StringComparison.Ordinal)),
-            "stale .NET 9 error text");
-    }
-
-    static void TestSetupMsiContractRejectsNearMatchAndUiOnlyRuntimeAction()
-    {
-        SetupMsiContents nearMatch = ValidSetupMsiContents() with
-        {
-            CustomActions =
-            [
-                new SetupMsiCustomAction
-                {
-                    Id = "CheckDotNetRuntimeProbe",
-                    Source = "ActionRuntime.dll",
-                    Target = SetupMsiContract.DotNetRuntimeCustomAction
-                }
-            ],
-            SequenceEntries =
-            [
-                new SetupMsiSequenceEntry
-                {
-                    Table = "InstallExecuteSequence",
-                    Action = "CheckDotNetRuntimeProbe",
-                    Condition = SetupMsiContract.NotInstalledCondition
-                }
-            ]
-        };
-        AssertTrue(
-            SetupMsiContract.Validate(nearMatch)
-                .Any(error => error.Contains(SetupMsiContract.DotNetRuntimeCustomAction, StringComparison.Ordinal)),
-            "near-match custom action");
-
-        SetupMsiContents uiOnly = ValidSetupMsiContents() with
-        {
-            SequenceEntries =
-            [
-                new SetupMsiSequenceEntry
-                {
-                    Table = "InstallUISequence",
-                    Action = SetupMsiContract.DotNetRuntimeCustomAction,
-                    Condition = SetupMsiContract.NotInstalledCondition
-                }
-            ]
-        };
-        AssertTrue(
-            SetupMsiContract.Validate(uiOnly)
-                .Any(error => error.Contains("InstallExecuteSequence", StringComparison.Ordinal)),
-            "UI-only sequence");
-    }
-
-    static SetupMsiContents ValidSetupMsiContents() => new()
-    {
-        FileNames = ["CONTRO~1.EXE|ControlApp.exe"],
-        ShortcutNames = ["DSHIDM~1|DsHidMini Control App"],
-        CustomActions =
-        [
-            new SetupMsiCustomAction
-            {
-                Id = SetupMsiContract.DotNetRuntimeCustomAction,
-                Source = "ActionRuntime.dll",
-                Target = SetupMsiContract.DotNetRuntimeCustomAction
-            }
-        ],
-        SequenceEntries =
-        [
-            new SetupMsiSequenceEntry
-            {
-                Table = "InstallExecuteSequence",
-                Action = SetupMsiContract.DotNetRuntimeCustomAction,
-                Condition = SetupMsiContract.NotInstalledCondition
-            }
-        ],
-        Errors =
-        [
-            new SetupMsiError
-            {
-                Id = SetupMsiContract.DotNetRuntimeErrorId,
-                Message = "The .NET 10 Desktop Runtime (x64) is required by DsHidMini Control App."
-            }
-        ]
-    };
 
     static ReleaseMetadata SampleMetadata() => new()
     {
@@ -385,13 +197,6 @@ static class ReleasePipelineTests
         }
 
         return directory;
-    }
-
-    static void WriteIgfilterPackage(string directory)
-    {
-        Directory.CreateDirectory(directory);
-        File.WriteAllText(Path.Combine(directory, "igfilter.inf"), "[Version]");
-        File.WriteAllText(Path.Combine(directory, "nssmkig.sys"), "sys");
     }
 
     static void AssertEqual(string actual, string expected, string name)

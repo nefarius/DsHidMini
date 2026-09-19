@@ -1,15 +1,15 @@
 # DsHidMini tagged driver release
 
-This is the maintainer and agent runbook for producing a production MSI. Tagged CI EV-signs the combined CAB, submits it to Partner Center, waits for attestation, and stages the Microsoft-signed drivers. The remaining local steps are igfilter staging, MSI construction, and the GitHub release. Every local step is a NUKE target invoked with `.\build.cmd` from the repository root.
+This is the maintainer and agent runbook for producing a production MSI. Tagged CI EV-signs the combined CAB, submits it to Partner Center, waits for attestation, and stages the Microsoft-signed drivers. Dispatch **Build setup** to embed those artifacts, sign the MSI, and create the `setup-v*` tag. GitHub Release creation remains manual.
 
-Do not use `nuke ...` directly, do not use Visual Studio to emit the MSI, and do not mix artifacts from different GitHub Actions runs.
+Do not use Visual Studio to emit the MSI, and do not mix artifacts from different GitHub Actions runs.
 
 ## Version invariants
 
 | Item | Rule | Example |
 |------|------|---------|
 | Driver tag | Exactly `vMAJOR.MINOR.PATCH` | `v3.6.0` |
-| Setup tag | `setup-vMAJOR.MINOR.PATCH` after the MSI exists | `setup-v3.6.0` |
+| Setup tag | First MSI is `setup-vMAJOR.MINOR.PATCH`; re-spins use `-r1`, `-r2`, … | `setup-v3.6.0` |
 | Driver file version | `MAJOR.MINOR.PATCH.(2000 + github.run_number)` | `3.6.0.2145` |
 | MSI product version | Same three-part value as the driver tag | `3.6.0` |
 
@@ -21,15 +21,15 @@ Non-tag CI (master / pull request) stamps binaries `0.0.0.(2000 + run_number)` a
 
 ## Prerequisites
 
-Local machine:
+Local machine (optional ingest / verification only):
 
 - Windows, `gh` authenticated (`gh auth login`, `repo` scope)
 - Visual Studio 2026 / MSBuild 18 and Windows SDK/WDK 10.0.28000 (same pair CI installs)
-- EV code-signing certificate whose subject contains `Nefarius Software Solutions e.U.`
 - SignTool on PATH via WDK, or pass `--sign-tool-path`
-- Maintainer-supplied `igfilter` packages (private; not built or downloaded by this repository)
 
-GitHub Actions secrets/variables used by tagged runs:
+`igfilter` / `nssmkig` lives in `setup/igfilter` as Git LFS content. Do not stage it locally.
+
+GitHub Actions secrets/variables used by tagged runs and the setup workflow:
 
 - `SIGN_RELAY_SERVER` (variable)
 - `SIGN_RELAY_CI_TOKEN` (secret)
@@ -63,13 +63,14 @@ version
 | `dshidmini-partner-signed` | release tags only | `Signed_<id>.zip` and `Initial_<id>.cab` from the portal, mirrored to buildbot |
 | `partner-signing-result` | release tags only | Portal URL, IDs, and signed file names |
 | `dshidmini-microsoft-drivers` | release tags only | Validated dual-arch `dshidmini.inf` / `.cat` / `x64` / `ARM64` tree |
+| `dshidmini-setup` | **Build setup** dispatch | Signed MSI plus `setup-metadata.json` |
 
 Per-architecture CABs (`dshidmini_x64.cab` / `dshidmini_ARM64.cab`) are CI archives only. Never submit them to Partner Center.
 
 ## Signing identities
 
-| File | After CI `partner-cab` | After Microsoft returns the package | After `BuildSetup` |
-|------|------------------------|-------------------------------------|--------------------|
+| File | After CI `partner-cab` | After Microsoft returns the package | After **Build setup** |
+|------|------------------------|-------------------------------------|-----------------------|
 | `dshidmini.dll` (x64, ARM64) | publisher EV | publisher EV **plus** Microsoft attestation | unchanged |
 | Partner CAB | publisher EV | n/a (not shipped) | n/a |
 | `ControlApp.exe` | publisher EV | n/a | packaged as signed |
@@ -92,14 +93,9 @@ artifacts/
     dshidmini.cat                 Microsoft-issued catalog
     x64/dshidmini.dll
     ARM64/dshidmini.dll
-  igfilter/
-    nssmkig_x64/igfilter.inf
-    nssmkig_x64/nssmkig.sys
-    nssmkig_ARM64/igfilter.inf
-    nssmkig_ARM64/nssmkig.sys
 ```
 
-The catalog is bound to the dual-arch INF. Do not split the package back into per-architecture INFs.
+The catalog is bound to the dual-arch INF. Do not split the package back into per-architecture INFs. `igfilter` is no longer staged here; the setup workflow packages `setup/igfilter` from the repo.
 
 ## Procedure
 
@@ -147,7 +143,7 @@ Before changing that automation, run `.\build.cmd TestReleasePipeline`. It runs 
 
 This project's verified behavior: Microsoft **adds** its signature to the already EV-signed DLLs and replaces the catalog. If a returned DLL has only a Microsoft signer, stop and investigate; do not continue to MSI.
 
-CI does **not** build or publish the MSI, create a GitHub release, or create a shipping label.
+The Build workflow does **not** build the MSI or create a GitHub Release. Dispatch **Build setup** after Partner Center signing finishes.
 
 ### 4. Ingest the signed package (only if CI did not)
 
@@ -165,48 +161,29 @@ Accepts a `.zip`, `.cab`, or an already extracted directory. It locates the uniq
 
 Restart point: rerun with the same or a corrected package; `artifacts/drivers` is replaced.
 
-### 5. Stage igfilter
+### 5. Build and sign the MSI
 
-`igfilter` / `nssmkig` is a private maintainer payload. Point at a directory that already contains both architecture packages:
+Dispatch **Build setup** (`setup.yml`) with `driver-tag` set to the same `vMAJOR.MINOR.PATCH` used in step 1. The workflow resolves the matching Build and Partner Center runs, stages attested drivers and ControlApp, packages the in-repo LFS payload (`nefcon`, updater, `igfilter`), pins WiX 4.0.6, builds the MSI, SignRelay-signs it, uploads `dshidmini-setup`, creates `setup-vMAJOR.MINOR.PATCH` (or `-rN` on a re-spin), then mirrors the artifact.
 
-```powershell
-.\build.cmd StageIgfilter --igfilter-path "D:\payloads\igfilter"
-```
-
-Required children: `nssmkig_x64\` and `nssmkig_ARM64\` (or `nssmkig_arm64`, which is normalized). Each folder must contain `igfilter.inf` and `nssmkig.sys`. Both `.sys` files must carry the publisher EV signature.
-
-### 6. Validate and build the MSI
-
-```powershell
-.\build.cmd ValidateSetupInputs
-.\build.cmd BuildSetup --setup-version 3.6.0
-```
-
-`BuildSetup` depends on `ValidateSetupInputs`. If `--setup-version` is omitted, the value from `release-metadata.json` is used. If it is supplied, it must match the metadata (and therefore the driver tag).
-
-Output:
-
-```text
-setup\Nefarius_DsHidMini_Drivers_x64_arm64_v3.6.0.msi
-```
-
-`BuildSetup` opens the generated MSI read-only and requires `ControlApp.exe` in the `File` table, the `DsHidMini Control App` Start Menu shortcut, and the `CheckDotNetRuntime` custom action sequenced with `NOT Installed` plus Error `9001` mentioning the .NET 10 Desktop Runtime. The target then EV-signs the MSI, verifies the publisher signature, and logs the SHA-256. Building `setup/DsHidMini.Installer.csproj` without `GenerateMsi=true` only compiles; it does not emit an MSI.
+A dispatch whose three-part version is lower than any already-published `setup-v*` tag fails the regression guard. Windows Installer would otherwise treat the MSI as a downgrade.
 
 Clean-VM smoke checks before publishing:
 
 - Windows x64 (and ARM64 if available) with the .NET 10 Desktop Runtime (x64) already installed: MSI installs the driver, `ControlApp.exe` is under Program Files, the Start Menu shortcut launches ControlApp.
 - The same machine family **without** that runtime: setup aborts with Error 9001 and does not leave a partial driver install.
 
-### 7. Publish
+### 6. Publish
+
+Download the signed MSI from the `dshidmini-setup` Actions artifact (or the buildbot mirror) and create the GitHub Release on the tag the workflow created:
 
 ```powershell
 gh release create setup-v3.6.0 `
   --title "DsHidMini Driver v3.6.0" `
   --notes-file path\to\notes.md `
-  .\setup\Nefarius_DsHidMini_Drivers_x64_arm64_v3.6.0.msi
+  .\Nefarius_DsHidMini_Drivers_x64_arm64_v3.6.0.msi
 ```
 
-`setup-v*` does not trigger the Build workflow. That is intentional.
+`setup-v*` does not trigger the Build workflow. That is intentional. The setup workflow does not create the GitHub Release.
 
 ## Do not
 
@@ -235,21 +212,23 @@ gh release create setup-v3.6.0 `
 | Multiple `dshidmini` packages | Point `MicrosoftPackagePath` at the zip or the single package folder |
 | DLL missing Microsoft signer | Downloaded the submission CAB instead of the dashboard's signed package |
 | DLL missing publisher signer | Microsoft package is not from this pipeline's EV-signed CAB |
-| `StageIgfilter` cannot find `nssmkig_ARM64` | Source tree is incomplete or named differently |
-| MSI build missing files | `ValidateSetupInputs` was skipped or staging was cleaned |
-| `BuildSetup` ControlApp packaging contract failed | Generated MSI omitted `ControlApp.exe`, the Start Menu shortcut, or the .NET 10 Desktop prerequisite |
-| `BuildSetup` SetupVersion mismatch | Typed `3.6.1` against a `v3.6.0` run |
+| Setup workflow: Git LFS pointer stubs | Checkout without `lfs: true`, or `git lfs pull` was skipped |
+| Setup workflow: custom-action package missing assemblies | MakeSfxCA closure missed a dependency; see `setup/obj/ca-support-assemblies.txt` |
+| Setup workflow: version regression | Dispatched a driver tag whose MAJOR.MINOR.PATCH is below the highest published `setup-v*` |
+| Setup workflow ControlApp packaging contract failed | Generated MSI omitted `ControlApp.exe`, the Start Menu shortcut, `CheckDotNetRuntime`, or `OpenArticle` |
 
 ## Related code
 
 | Path | Role |
 |------|------|
 | [`build/ReleaseVersion.ps1`](../build/ReleaseVersion.ps1) | Tag parse and four-part version |
-| [`build/ReleasePipeline.cs`](../build/ReleasePipeline.cs) | Staging, ingest, validation |
+| [`build/ReleasePipeline.cs`](../build/ReleasePipeline.cs) | Staging and Microsoft-package ingest |
 | [`build/ReleaseTargets.cs`](../build/ReleaseTargets.cs) | NUKE entry points |
+| [`build/SetupRelease.ps1`](../build/SetupRelease.ps1) | Setup tags, payload staging, MSI/CA guards, provenance |
 | [`build/PartnerSigning.ps1`](../build/PartnerSigning.ps1) | SDCM payloads, `submission status` wrappers, Signed_/Initial_ pair checks |
 | [`build/PartnerSigning.DryRun.ps1`](../build/PartnerSigning.DryRun.ps1) | Offline dry run of the signing workflow against a mock sdcm |
 | [`.github/workflows/partner-signing.yml`](../.github/workflows/partner-signing.yml) | Retryable Partner Center submit / wait / ingest |
+| [`.github/workflows/setup.yml`](../.github/workflows/setup.yml) | Dispatched signed-MSI build, tag, and mirror |
 | [`build/New-PartnerSubmissionInf.ps1`](../build/New-PartnerSubmissionInf.ps1) | Dual-arch INF for the submission CAB |
 | [`DsHidMini_combined.ddf`](../DsHidMini_combined.ddf) | Partner CAB layout (`dshidmini/` not at CAB root; includes PDBs) |
 | [`setup/InstallScript.cs`](../setup/InstallScript.cs) | WixSharp MSI contents |
