@@ -89,6 +89,31 @@
                                 DockPanel.Dock="Right"
                                 Text="{Binding DeviceTypeDisplay, Mode=OneWay}" />
                         </DockPanel>
+                        <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                            <ui:TextBlock
+                                DockPanel.Dock="Left"
+                                Style="{StaticResource MyKey_InfoDescriptionTextbox}"
+                                Text="Diagnostics:" />
+                            <StackPanel
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                DockPanel.Dock="Right"
+                                Orientation="Horizontal">
+                                <ui:Button
+                                    Margin="0,0,8,0"
+                                    Command="{Binding OpenInputTesterCommand}"
+                                    Content="Input tester"
+                                    IsEnabled="{Binding CanOpenInputTester}"
+                                    ToolTip="{Binding InputTesterToolTip}"
+                                    ToolTipService.InitialShowDelay="200" />
+                                <ui:Button
+                                    Command="{Binding OpenMotionViewerCommand}"
+                                    Content="Motion viewer"
+                                    IsEnabled="{Binding CanOpenMotionViewer}"
+                                    ToolTip="{Binding MotionViewerToolTip}"
+                                    ToolTipService.InitialShowDelay="200" />
+                            </StackPanel>
+                        </DockPanel>
                         <ui:InfoBar
                             Title="Hardware limits"
                             Margin="{StaticResource MyKey_NextLineSpacement}"
@@ -168,15 +193,6 @@
                                     VerticalAlignment="Center"
                                     DockPanel.Dock="Right"
                                     Text="{Binding IdentificationMotionPath}" />
-                            </DockPanel>
-                            <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
-                                <ui:Button
-                                    DockPanel.Dock="Left"
-                                    Command="{Binding OpenMotionViewerCommand}"
-                                    Content="Motion viewer"
-                                    IsEnabled="{Binding CanOpenMotionViewer}"
-                                    ToolTip="{Binding MotionViewerToolTip}"
-                                    ToolTipService.InitialShowDelay="200" />
                             </DockPanel>
                             <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
                                 <ui:TextBlock

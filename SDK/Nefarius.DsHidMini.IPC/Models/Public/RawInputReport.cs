@@ -31,7 +31,7 @@ public unsafe struct DS3_RAW_INPUT_REPORT
         internal fixed byte bButtons[4];
 
         [FieldOffset(0)]
-        internal ushort packedButtons;
+        internal uint packedButtons;
 
         /// <summary>
         ///     Gets or sets the Select button state.
@@ -119,21 +119,22 @@ public unsafe struct DS3_RAW_INPUT_REPORT
         [SuppressMessage("ReSharper", "InconsistentNaming")]
         public bool PS { get => GetBit(packedButtons, 16); set => SetBit(ref packedButtons, 16, value); }
 
-        // Helper methods to manipulate individual bits
-        private static bool GetBit(ushort value, int bitNumber)
+        // Helper methods to manipulate individual bits. packedButtons is 32 bits
+        // so PS (bit 16) is addressable without changing the four-byte wire layout.
+        private static bool GetBit(uint value, int bitNumber)
         {
-            return (value & (1 << bitNumber)) != 0;
+            return (value & (1u << bitNumber)) != 0;
         }
 
-        private static void SetBit(ref ushort value, int bitNumber, bool bitValue)
+        private static void SetBit(ref uint value, int bitNumber, bool bitValue)
         {
             if (bitValue)
             {
-                value |= (ushort)(1 << bitNumber);
+                value |= 1u << bitNumber;
             }
             else
             {
-                value &= (ushort)~(1 << bitNumber);
+                value &= ~(1u << bitNumber);
             }
         }
     }
