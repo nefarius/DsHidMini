@@ -107,7 +107,14 @@ internal class OnlineDocumentationDialogModel : NotifyPropertyChangedBase
     /// <summary>
     /// Whether the installation failed or was cancelled by the user.
     /// </summary>
-    public bool SetupFailed => Shell is not null && (Shell.ErrorDetected || Shell.UserInterrupted);
+    /// <remarks>
+    /// The log is inspected in addition to the shell flags because <c>UserInterrupted</c> can be
+    /// overwritten before this page is reached. WixSharp's own dialogs check the same message.
+    /// </remarks>
+    public bool SetupFailed => Shell is not null &&
+                              (Shell.ErrorDetected ||
+                               Shell.UserInterrupted ||
+                               Shell.Log?.Contains("User canceled installation.") == true);
 
     /// <summary>
     /// Advances the installer to the next step in the dialog sequence.
