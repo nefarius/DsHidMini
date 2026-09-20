@@ -20,7 +20,8 @@ public class HidModeSettingsViewModel : DeviceSettingsViewModel
         SettingsContext.GPJ,
         SettingsContext.SXS,
         SettingsContext.DS4W,
-        SettingsContext.XInput
+        SettingsContext.XInput,
+        SettingsContext.CGP
     };
 
     public List<SettingsContext> HIDDeviceModesList => hidDeviceModesList;

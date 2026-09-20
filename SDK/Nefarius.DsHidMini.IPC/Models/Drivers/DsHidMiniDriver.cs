@@ -343,5 +343,12 @@ public enum DsHidDeviceMode : byte
     ///     Xbox One Controller mode.
     /// </summary>
     [Description("XInput (Xbox One)")]
-    XInput = 0x05
+    XInput = 0x05,
+
+    /// <summary>
+    ///     Common Gamepad: single DirectInput-friendly device without pressure-sensitive
+    ///     button sliders, improving compatibility with older games (see issue #68).
+    /// </summary>
+    [Description("CGP (Common Gamepad)")]
+    CGP = 0x06
 }

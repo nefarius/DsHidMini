@@ -93,6 +93,51 @@ sizeof(G_Ds3HidReportDescriptor_Single_Mode) }  // total length of report descri
 
 #pragma endregion
 
+#pragma region DS3 HID Report Descriptor (Common Gamepad Mode)
+
+//
+// Single DirectInput-friendly gamepad without pressure sliders; see issue #68
+// 
+CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_CGP_Mode[] =
+{
+	/************************************************************************/
+	/* Gamepad definition without pressure axes                             */
+	/************************************************************************/
+#include "HID/06_CGP_Col1_GamePad.h"
+#ifdef DSHM_FEATURE_FFB
+#include "PID/01_PIDStateReport.h"
+#include "PID/02_SetEffectReport.h"
+#include "PID/03_SetEnvelopeReport.h"
+#include "PID/04_SetConditionReport.h"
+#include "PID/05_SetPeriodicReport.h"
+#include "PID/06_SetConstantForceReport.h"
+#include "PID/07_SetRampForceReport.h"
+#include "PID/08_CustomForceDataReport.h"
+#include "PID/09_DownloadForceSample.h"
+#include "PID/10_EffectOperationReport.h"
+#include "PID/11_PIDBlockFreeReport.h"
+#include "PID/12_PIDDeviceControl.h"
+#include "PID/13_DeviceGainReport.h"
+#include "PID/14_SetCustomForceReport.h"
+#include "PID/15_CreateNewEffectReport.h"
+#include "PID/16_PIDBlockLoadReport.h"
+#include "PID/17_PIDPoolReport.h"
+#endif
+	0xC0,              // End Collection
+};
+
+CONST HID_DESCRIPTOR G_Ds3HidDescriptor_CGP_Mode = {
+	0x09,   // length of HID descriptor
+	0x21,   // descriptor type == HID  0x21
+	0x0100, // hid spec release
+	0x00,   // country code == Not Specified
+	0x01,   // number of HID class descriptors
+{ 0x22,   // descriptor type 
+sizeof(G_Ds3HidReportDescriptor_CGP_Mode) }  // total length of report descriptor
+};
+
+#pragma endregion
+
 #pragma region DS3 HID Report Descriptor (SIXAXIS.SYS compatible)
 
 CONST HID_REPORT_DESCRIPTOR G_SixaxisHidReportDescriptor[] =

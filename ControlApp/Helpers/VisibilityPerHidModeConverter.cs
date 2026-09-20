@@ -36,6 +36,9 @@ public class VisibilityPerHidModeConverter : IValueConverter
             case SettingsContext.Global:
                 amountToBitShift = 6;
                 break;
+            case SettingsContext.CGP:
+                amountToBitShift = 7;
+                break;
             default:
                 return false;
         }

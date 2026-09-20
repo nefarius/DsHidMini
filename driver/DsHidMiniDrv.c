@@ -444,6 +444,14 @@ DMF_DsHidMini_Open(
 		pHidCfg->HidReportDescriptorLength = G_Ds3HidDescriptor_Single_Mode.DescriptorList[0].wReportLength;
 
 		break;
+	case DsHidMiniDeviceModeCGP:
+
+		pHidCfg->HidDescriptor = &G_Ds3HidDescriptor_CGP_Mode;
+		pHidCfg->HidDescriptorLength = sizeof(G_Ds3HidDescriptor_CGP_Mode);
+		pHidCfg->HidReportDescriptor = G_Ds3HidReportDescriptor_CGP_Mode;
+		pHidCfg->HidReportDescriptorLength = G_Ds3HidDescriptor_CGP_Mode.DescriptorList[0].wReportLength;
+
+		break;
 	case DsHidMiniDeviceModeGPJ:
 
 		pHidCfg->HidDescriptor = &G_Ds3HidDescriptor_Split_Mode;
@@ -634,6 +642,9 @@ DsHidMini_RetrieveNextInputReport(
 	case DsHidMiniDeviceModeSDF:
 	case DsHidMiniDeviceModeGPJ:
 		*BufferSize = DS3_SDF_GPJ_HID_INPUT_REPORT_SIZE;
+		break;
+	case DsHidMiniDeviceModeCGP:
+		*BufferSize = DS3_CGP_HID_INPUT_REPORT_SIZE;
 		break;
 	case DsHidMiniDeviceModeSixaxisCompatible:
 		*BufferSize = SIXAXIS_HID_INPUT_REPORT_SIZE;

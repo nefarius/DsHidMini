@@ -30,9 +30,12 @@ service is not required.
 
 ## Capabilities
 
-- Five HID modes: single custom gamepad (SDF), split gamepad and joystick
-  (GPJ), Sony SIXAXIS-compatible (SXS), DualShock 4-compatible, and Xbox
-  One/XInput-compatible HID
+- Six HID modes: single custom gamepad (SDF), split gamepad and joystick
+  (GPJ), Sony SIXAXIS-compatible (SXS), DualShock 4-compatible, Xbox
+  One/XInput-compatible HID, and Common Gamepad (CGP) — a single
+  DirectInput-friendly device without pressure-sensitive button sliders for
+  older games with limited axis support (see
+  [issue #68](https://github.com/nefarius/DsHidMini/issues/68))
 - Pressure-sensitive buttons, configurable D-pad exposure, stick dead zones,
   axis inversion, and per-mode settings
 - Force Feedback rumble, runtime rumble control, alternative rumble behavior,
@@ -66,7 +69,7 @@ restart. The driver can perform this automatically when
 | `DsIdentification.c`, `DsMotion.c` | Controller identification, calibration, and motion processing |
 | `DsLed.c`, `OutputReport.c` | LEDs, rumble, and transport-specific output |
 | `Configuration.c`, `Configuration.Json.c` | JSON defaults, validation, overrides, and runtime reload |
-| `HID/` | HID report descriptors (GamePad, Joystick, Sixaxis, DS4, XInput) |
+| `HID/` | HID report descriptors (GamePad, Joystick, Sixaxis, DS4, XInput, CGP) |
 | `HID.Reports.c`, `InputReport.c`, `OutputReport.c` | Report assembly and handling |
 | `HID.FeatureReport.c` | HID feature report handling |
 | `PID/` | Physical Interface Device Force Feedback reports and types |

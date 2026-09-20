@@ -17,7 +17,8 @@ public enum SettingsContext
     DS4W,
     XInput,
     General,
-    Global
+    Global,
+    CGP
 }
 
 [SuppressMessage("ReSharper", "InconsistentNaming")]

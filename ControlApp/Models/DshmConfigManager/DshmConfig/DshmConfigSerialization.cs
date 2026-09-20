@@ -12,7 +12,7 @@ internal static class DshmConfigSerialization
     public const string DriverFolderName = "DsHidMini";
     public const string DriverFileName = "DsHidMini.json";
 
-    private static readonly string[] ModeBlockNames = ["SDF", "GPJ", "SXS", "DS4Windows", "XInput"];
+    private static readonly string[] ModeBlockNames = ["SDF", "GPJ", "SXS", "DS4Windows", "XInput", "CGP"];
 
     private static readonly Dictionary<string, string> CanonicalPropertyNames =
         new(StringComparer.OrdinalIgnoreCase)

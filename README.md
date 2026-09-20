@@ -33,7 +33,7 @@ DsHidMini is a self-contained [user-mode driver](https://learn.microsoft.com/win
 - **Bluetooth** with [BthPS3](https://github.com/nefarius/BthPS3)
   (v2.0.144+); configurable pairing, idle disconnect, and quick-disconnect
   combo (defaults: 5 minutes and **L1 + R1 + PS** held for 1 second)
-- **HID modes:** single Gamepad (including pressure-sensitive buttons), split/multi device, Sony sixaxis emulation, **DualShock 4** (for [DS4Windows](https://github.com/Ryochan7/DS4Windows)), **Xbox / XInput** for modern games
+- **HID modes:** single Gamepad (including pressure-sensitive buttons), split/multi device, Sony sixaxis emulation, **DualShock 4** (for [DS4Windows](https://github.com/Ryochan7/DS4Windows)), **Xbox / XInput** for modern games, and **Common Gamepad (CGP)** — a single DirectInput-friendly device without pressure-sensitive button sliders, for older games with limited axis support (see [issue #68](https://github.com/nefarius/DsHidMini/issues/68))
 - **Rumble** exposed as Force Feedback
 - **LEDs** — player-index and bar-graph battery modes, charging animation,
   custom static/flashing patterns, and application-controlled output
