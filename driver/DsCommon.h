@@ -101,7 +101,12 @@ typedef enum
 	//
 	// Microsoft XINPUTHID.SYS compatible
 	// 
-	DsHidMiniDeviceModeXInputHIDCompatible
+	DsHidMiniDeviceModeXInputHIDCompatible,
+	//
+	// Common Gamepad: single DirectInput-friendly device without pressure
+	// sliders (see issue #68)
+	// 
+	DsHidMiniDeviceModeCGP
 } DS_HID_DEVICE_MODE, * PDS_HID_DEVICE_MODE;
 
 //
@@ -114,7 +119,8 @@ static CONST PSTR G_HID_DEVICE_MODE_NAMES[] =
 	"GPJ",
 	"SXS",
 	"DS4Windows",
-	"XInput"
+	"XInput",
+	"CGP"
 };
 
 //

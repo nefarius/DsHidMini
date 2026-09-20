@@ -22,12 +22,21 @@ extern CONST HID_REPORT_DESCRIPTOR G_XInputHIDCompatible_HidReportDescriptor[];
 
 extern CONST HID_DESCRIPTOR G_XInputHIDCompatible_HidDescriptor;
 
+extern CONST HID_REPORT_DESCRIPTOR G_Ds3HidReportDescriptor_CGP_Mode[];
+
+extern CONST HID_DESCRIPTOR G_Ds3HidDescriptor_CGP_Mode;
+
 #define DS3_COMMON_MAX_HID_INPUT_REPORT_SIZE	0x40
 #define DS3_DS4REV1_USB_HID_INPUT_REPORT_SIZE	DS3_COMMON_MAX_HID_INPUT_REPORT_SIZE
 #define DS3_SDF_GPJ_HID_INPUT_REPORT_SIZE		0x27
 #define SIXAXIS_HID_INPUT_REPORT_SIZE			0x0C
 #define SIXAXIS_HID_GET_FEATURE_REPORT_SIZE		0x31
 #define XINPUTHID_HID_INPUT_REPORT_SIZE			0x11
+//
+// Report ID (1) + 4 axes + hat/buttons (3) + trigger axes (2); no pressure
+// sliders (see issue #68)
+// 
+#define DS3_CGP_HID_INPUT_REPORT_SIZE			0x0A
 
 #define DS3_RAW_SLIDER_IDLE_THRESHOLD			0x7F // 127 ( (256 * 0,5 ) -1 )
 #define DS3_RAW_AXIS_IDLE_THRESHOLD_LOWER		0x3F // 63 ( ( 128 * 0,5 ) - 1 )

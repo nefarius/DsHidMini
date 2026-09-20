@@ -6,6 +6,7 @@ using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
+using Nefarius.DsHidMini.ControlApp.Models.Util;
 
 using Xunit;
 
@@ -15,7 +16,7 @@ namespace Nefarius.DsHidMini.ControlApp.Tests;
 
 public class DriverConfigContractTests
 {
-    private static readonly string[] HidModes = ["SDF", "GPJ", "SXS", "DS4Windows", "XInput"];
+    private static readonly string[] HidModes = ["SDF", "GPJ", "SXS", "DS4Windows", "XInput", "CGP"];
 
     [Fact]
     public void Serialize_UsesNativePropertyNames_AndOmitsUnsupportedKeys()
@@ -42,6 +43,7 @@ public class DriverConfigContractTests
     [InlineData(SettingsContext.SXS, "SXS")]
     [InlineData(SettingsContext.DS4W, "DS4Windows")]
     [InlineData(SettingsContext.XInput, "XInput")]
+    [InlineData(SettingsContext.CGP, "CGP")]
     public void Serialize_EmitsExactlyOneActiveModeBlock(SettingsContext context, string expectedMode)
     {
         JsonNode global = JsonNode.Parse(SerializeDefaultProfile(context))!["Global"]!;
@@ -142,6 +144,36 @@ public class DriverConfigContractTests
         Assert.True(restored.GeneralRumble.AlwaysStartInNormalMode);
         Assert.Equal(90, restored.AltRumbleAdjusts.RightRumbleConversionUpperRange);
         Assert.Equal(BluetoothOutputReportTransport.Control, restored.OutputReport.BluetoothOutputReportTransport);
+    }
+
+    [Fact]
+    public void RoundTrip_CgpMode_PreservesHidModeAndOmitsPressureAndDPadSettings()
+    {
+        DeviceSettings original = new();
+        original.HidMode.SettingsContext = SettingsContext.CGP;
+
+        DshmDeviceSettings driver = new();
+        DshmManagerToDriverConversion.ConvertDeviceSettingsToDriverFormat(original, driver);
+        Assert.Equal(HidDeviceMode.CGP, driver.HidDeviceMode);
+        Assert.Null(driver.ContextSettings.PressureExposureMode);
+        Assert.Null(driver.ContextSettings.DPadExposureMode);
+
+        string json = DshmConfigSerialization.Serialize(new DshmConfiguration { Global = driver });
+        JsonNode global = JsonNode.Parse(json)!["Global"]!;
+        Assert.Equal("CGP", global["HidDeviceMode"]!.GetValue<string>());
+        Assert.Null(global["CGP"]!["PressureExposureMode"]);
+        Assert.Null(global["CGP"]!["DPadExposureMode"]);
+
+        DshmConfiguration parsed = DshmConfigSerialization.Deserialize(json);
+        DeviceSettings restored = new();
+        DshmManagerToDriverConversion.ConvertDriverFormatToDeviceSettings(parsed.Global, restored);
+        Assert.Equal(SettingsContext.CGP, restored.HidMode.SettingsContext);
+    }
+
+    [Fact]
+    public void ToHidDeviceModePropertyValue_Cgp_MapsToByteSix()
+    {
+        Assert.Equal(0x06, DshmDriverTranslationUtils.ToHidDeviceModePropertyValue(SettingsContext.CGP));
     }
 
     [Fact]

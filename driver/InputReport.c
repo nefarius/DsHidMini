@@ -94,6 +94,25 @@ DSHM_ParseInputReport(
 		);
 
 		break;
+	case DsHidMiniDeviceModeCGP:
+
+		//
+		// Reuses the proven SDF button/axis packing, but forced to digital
+		// pressure exposure and HAT D-pad mode: CGP's report descriptor has
+		// no pressure-slider elements to write analogue values into, and a
+		// fixed, minimal layout is what keeps this mode DirectInput-friendly
+		// (see issue #68).
+		// 
+		DS3_RAW_TO_SDF_HID_INPUT_REPORT(
+			Report,
+			ModuleDeviceContext->InputReport,
+			DsPressureExposureModeDigital,
+			DsDPadExposureModeHAT,
+			&DeviceContext->Configuration.ThumbSettings,
+			&DeviceContext->Configuration.FlipAxis
+		);
+
+		break;
 	default:
 		break;
 	}

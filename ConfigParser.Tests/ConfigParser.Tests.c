@@ -414,6 +414,16 @@ TEST(Parse_SdfAndGpjModeSpecificSettings)
     return 0;
 }
 
+TEST(Parse_CgpHidDeviceMode_Recognized)
+{
+    DS_DRIVER_CONFIGURATION parsed;
+    const CHAR* json = "{\"Global\":{\"HidDeviceMode\":\"CGP\"}}";
+
+    EXPECT_STATUS(ParseText(json, FALSE, NULL, NULL, &parsed, NULL), STATUS_SUCCESS);
+    EXPECT(parsed.HidDeviceMode == DsHidMiniDeviceModeCGP);
+    return 0;
+}
+
 TEST(Parse_MalformedJson_Fails)
 {
     DS_DRIVER_CONFIGURATION parsed;
@@ -622,6 +632,7 @@ int main(void)
     RUN(Parse_DuplicateKnownKeys_AreIgnored);
     RUN(Parse_UnknownKeys_AreIgnored);
     RUN(Parse_SdfAndGpjModeSpecificSettings);
+    RUN(Parse_CgpHidDeviceMode_Recognized);
     RUN(Parse_MalformedJson_Fails);
     RUN(Parse_TrailingGarbage_Fails);
     RUN(Parse_RootArray_Fails);
