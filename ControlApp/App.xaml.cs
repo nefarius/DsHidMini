@@ -112,7 +112,8 @@ public partial class App
                 .MinimumLevel.Override("Polly", LogEventLevel.Warning)
                 .WriteTo.File(Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-                    "DsHidMini\\Log\\ControlAppLog.txt"))
+                    "DsHidMini\\Log\\ControlAppLog.txt"),
+                    rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
             services.AddSerilog(Log.Logger);
