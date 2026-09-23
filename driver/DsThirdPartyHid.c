@@ -211,6 +211,168 @@ ThirdPartyHid_BuildOutputReport(
 	Output[4] = 0xFF;
 }
 
+C_ASSERT(
+	sizeof(((PDEVICE_CONTEXT)0)->Connection.Usb.LastAttemptedAdapterReport)
+	== THIRD_PARTY_HID_OUTPUT_REPORT_LENGTH
+);
+
+static VOID
+ThirdPartyHid_PublishOutputReportStatus(
+	_In_ PDEVICE_CONTEXT Context,
+	_In_ NTSTATUS ReportStatus
+)
+{
+	WDF_DEVICE_PROPERTY_DATA propertyData;
+	const WDFDEVICE device = WdfObjectContextGetObject(Context);
+	NTSTATUS status;
+
+	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RO_OutputReportStatus);
+	propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+	propertyData.Lcid = LOCALE_NEUTRAL;
+
+	status = WdfDeviceAssignProperty(
+		device,
+		&propertyData,
+		DEVPROP_TYPE_NTSTATUS,
+		sizeof(NTSTATUS),
+		&ReportStatus
+	);
+
+	if (!NT_SUCCESS(status))
+	{
+		TraceError(
+			TRACE_DSUSB,
+			"Setting DEVPKEY_DsHidMini_RO_OutputReportStatus failed with status %!STATUS!",
+			status
+		);
+	}
+}
+
+VOID
+ThirdPartyHid_ResetOutputStall(
+	_In_ PDEVICE_CONTEXT Context
+)
+{
+	Context->Connection.Usb.OutputStalled = FALSE;
+	Context->Connection.Usb.OutputFetchFailureLogged = FALSE;
+	Context->Connection.Usb.LastOutputAttemptTimestamp.QuadPart = 0;
+	RtlZeroMemory(
+		Context->Connection.Usb.LastAttemptedAdapterReport,
+		sizeof(Context->Connection.Usb.LastAttemptedAdapterReport)
+	);
+
+	ThirdPartyHid_PublishOutputReportStatus(Context, STATUS_SUCCESS);
+}
+
+static BOOLEAN
+ThirdPartyHid_StallProbeDue(
+	_In_ PDEVICE_CONTEXT Context
+)
+{
+	LARGE_INTEGER now;
+	LARGE_INTEGER frequency;
+	LONGLONG elapsedMs;
+
+	if (Context->Connection.Usb.LastOutputAttemptTimestamp.QuadPart == 0)
+	{
+		return TRUE;
+	}
+
+	QueryPerformanceCounter(&now);
+	QueryPerformanceFrequency(&frequency);
+
+	if (frequency.QuadPart == 0)
+	{
+		return TRUE;
+	}
+
+	elapsedMs =
+		((now.QuadPart - Context->Connection.Usb.LastOutputAttemptTimestamp.QuadPart) * 1000)
+		/ frequency.QuadPart;
+
+	return elapsedMs >= THIRD_PARTY_HID_STALL_PROBE_PERIOD_MS;
+}
+
+static BOOLEAN
+ThirdPartyHid_InterruptOutTimedOut(
+	_In_ NTSTATUS Status
+)
+{
+	//
+	// WDF completes a send-option timeout as STATUS_IO_TIMEOUT. STATUS_CANCELLED
+	// is a different completion (power-down or an explicit cancel) and must
+	// not restart the pipe.
+	//
+	return Status == STATUS_IO_TIMEOUT;
+}
+
+//
+// A timed-out write cancels the URB and can leave this pipe's I/O target
+// unable to accept another transfer. Stop, abort, reset, then start is the
+// documented USB pipe recovery order. The interrupt IN reader uses a
+// different pipe and is left running.
+//
+static NTSTATUS
+ThirdPartyHid_RecoverInterruptOutPipe(
+	_In_ WDFUSBPIPE Pipe
+)
+{
+	const WDFIOTARGET ioTarget = WdfUsbTargetPipeGetIoTarget(Pipe);
+	NTSTATUS status = STATUS_SUCCESS;
+	NTSTATUS stepStatus;
+
+	//
+	// UMDF's WdfIoTargetStop returns void. It cancels outstanding I/O
+	// on this pipe only.
+	//
+	WdfIoTargetStop(ioTarget, WdfIoTargetCancelSentIo);
+
+	stepStatus = WdfUsbTargetPipeAbortSynchronously(Pipe, NULL, NULL);
+	if (!NT_SUCCESS(stepStatus))
+	{
+		TraceWarning(
+			TRACE_DSUSB,
+			"WdfUsbTargetPipeAbortSynchronously failed with status %!STATUS!",
+			stepStatus
+		);
+		status = stepStatus;
+	}
+
+	stepStatus = WdfUsbTargetPipeResetSynchronously(Pipe, NULL, NULL);
+	if (!NT_SUCCESS(stepStatus))
+	{
+		TraceWarning(
+			TRACE_DSUSB,
+			"WdfUsbTargetPipeResetSynchronously failed with status %!STATUS!",
+			stepStatus
+		);
+		if (NT_SUCCESS(status))
+		{
+			status = stepStatus;
+		}
+	}
+
+	//
+	// Start even when abort or reset failed. Stop already succeeded, and
+	// leaving the target stopped would fail every later write.
+	//
+	stepStatus = WdfIoTargetStart(ioTarget);
+	if (!NT_SUCCESS(stepStatus))
+	{
+		TraceWarning(
+			TRACE_DSUSB,
+			"WdfIoTargetStart on interrupt OUT failed with status %!STATUS!",
+			stepStatus
+		);
+		if (NT_SUCCESS(status))
+		{
+			status = stepStatus;
+		}
+	}
+
+	return status;
+}
+
 NTSTATUS
 ThirdPartyHid_SendOutputReport(
 	_In_ PDEVICE_CONTEXT Context,
@@ -219,6 +381,22 @@ ThirdPartyHid_SendOutputReport(
 {
 	NTSTATUS status;
 	WDF_MEMORY_DESCRIPTOR memoryDesc;
+
+	//
+	// While the adapter is NAKing, the keep-alive resends the same 8 bytes
+	// every 200 ms. Repeating that on the bus only blocks the worker. One
+	// identical probe per second is enough to notice when a controller links.
+	//
+	if (Context->Connection.Usb.OutputStalled
+		&& RtlEqualMemory(
+			Output,
+			Context->Connection.Usb.LastAttemptedAdapterReport,
+			THIRD_PARTY_HID_OUTPUT_REPORT_LENGTH
+		)
+		&& !ThirdPartyHid_StallProbeDue(Context))
+	{
+		return STATUS_SUCCESS;
+	}
 
 	//
 	// Auto resolves to InterruptOut while the pipe exists. ControlEndpoint
@@ -246,18 +424,71 @@ ThirdPartyHid_SendOutputReport(
 			THIRD_PARTY_HID_OUTPUT_REPORT_LENGTH
 		);
 
-		status = USB_WriteInterruptOutSync(Context, &memoryDesc);
+		status = USB_WriteInterruptOutSync(
+			Context,
+			&memoryDesc,
+			THIRD_PARTY_HID_OUTPUT_TIMEOUT_MS
+		);
+
+		//
+		// Recover the pipe, then send this report once more. A controller
+		// that linked while the first URB was being cancelled can ACK the
+		// retry. A second timeout still takes the stall path below.
+		//
+		if (ThirdPartyHid_InterruptOutTimedOut(status)
+			&& NT_SUCCESS(ThirdPartyHid_RecoverInterruptOutPipe(
+				Context->Connection.Usb.InterruptOutPipe)))
+		{
+			status = USB_WriteInterruptOutSync(
+				Context,
+				&memoryDesc,
+				THIRD_PARTY_HID_OUTPUT_TIMEOUT_MS
+			);
+		}
 	}
+
+	RtlCopyMemory(
+		Context->Connection.Usb.LastAttemptedAdapterReport,
+		Output,
+		THIRD_PARTY_HID_OUTPUT_REPORT_LENGTH
+	);
+	QueryPerformanceCounter(&Context->Connection.Usb.LastOutputAttemptTimestamp);
 
 	if (!NT_SUCCESS(status))
 	{
-		TraceError(
+		if (!Context->Connection.Usb.OutputStalled)
+		{
+			Context->Connection.Usb.OutputStalled = TRUE;
+
+			TraceWarning(
+				TRACE_DSUSB,
+				"ShanWan output stalled with status %!STATUS!",
+				status
+			);
+
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"ShanWan rumble", status);
+			ThirdPartyHid_PublishOutputReportStatus(Context, status);
+		}
+		else
+		{
+			TraceVerbose(
+				TRACE_DSUSB,
+				"ShanWan output still stalled (%!STATUS!)",
+				status
+			);
+		}
+	}
+	else if (Context->Connection.Usb.OutputStalled)
+	{
+		Context->Connection.Usb.OutputStalled = FALSE;
+		Context->Connection.Usb.OutputFetchFailureLogged = FALSE;
+
+		TraceInformation(
 			TRACE_DSUSB,
-			"ShanWan rumble send failed with status %!STATUS!",
-			status
+			"ShanWan output recovered"
 		);
 
-		EventWriteFailedWithNTStatus(__FUNCTION__, L"ShanWan rumble", status);
+		ThirdPartyHid_PublishOutputReportStatus(Context, STATUS_SUCCESS);
 	}
 
 	return status;

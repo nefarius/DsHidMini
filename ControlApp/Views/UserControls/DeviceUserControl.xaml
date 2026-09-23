@@ -122,6 +122,13 @@
                             IsOpen="{Binding HasDeviceCapabilityNote}"
                             Message="{Binding DeviceCapabilityNote}"
                             Severity="Informational" />
+                        <ui:InfoBar
+                            Margin="{StaticResource MyKey_NextLineSpacement}"
+                            DockPanel.Dock="Top"
+                            IsClosable="False"
+                            IsOpen="{Binding IsOutputStalled}"
+                            Message="{Binding OutputStallNote}"
+                            Severity="Warning" />
                         <!--  Device MAC address  -->
                         <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
                             <ui:TextBlock

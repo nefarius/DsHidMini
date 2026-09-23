@@ -238,7 +238,8 @@ USB_WriteInterruptPipeAsync(
 NTSTATUS
 USB_WriteInterruptOutSync(
 	_In_ PDEVICE_CONTEXT Context,
-	_In_ PWDF_MEMORY_DESCRIPTOR Memory
+	_In_ PWDF_MEMORY_DESCRIPTOR Memory,
+	_In_ ULONG TimeoutMs
 )
 {
 	ULONG bytesWritten;
@@ -248,8 +249,9 @@ USB_WriteInterruptOutSync(
 	FuncEntry(TRACE_DSUSB);
 
 	//
-	// Same bound as USB_SendControlRequest. A stalled interrupt OUT would
-	// otherwise hold the output worker until the pipe is cancelled.
+	// A stalled interrupt OUT would otherwise hold the output worker until
+	// the pipe is cancelled. DualShock 3 keeps the 3 second bound shared
+	// with USB_SendControlRequest; third-party HID passes a shorter one.
 	// 
 	WDF_REQUEST_SEND_OPTIONS_INIT(
 		&sendOptions,
@@ -258,7 +260,7 @@ USB_WriteInterruptOutSync(
 
 	WDF_REQUEST_SEND_OPTIONS_SET_TIMEOUT(
 		&sendOptions,
-		WDF_REL_TIMEOUT_IN_SEC(3)
+		WDF_REL_TIMEOUT_IN_MS(TimeoutMs)
 	);
 
 	status = WdfUsbTargetPipeWriteSynchronously(
@@ -476,6 +478,12 @@ NTSTATUS DsUsb_PrepareHardware(WDFDEVICE Device)
 			pDevCtx->Connection.Usb.OutputTransport = DsUsbOutputReportTransportInterruptOut;
 		}
 
+		//
+		// Readers of DEVPKEY_DsHidMini_RO_OutputReportStatus always see a
+		// defined value. Only a third-party HID stall changes it afterwards.
+		//
+		ThirdPartyHid_ResetOutputStall(pDevCtx);
+
 #pragma endregion
 
 		if (!NT_SUCCESS(status = DsUsbConfigContReaderForInterruptEndPoint(Device)))
@@ -676,6 +684,13 @@ NTSTATUS DsUsb_D0Entry(WDFDEVICE Device, WDF_POWER_DEVICE_STATE PreviousState)
 		"PreviousState=%d",
 		PreviousState
 	);
+
+	//
+	// A replug or bus resume starts with a clean output path. A stall that
+	// belonged to the previous power session must not keep dropping reports
+	// or leave the ControlApp warning up.
+	//
+	ThirdPartyHid_ResetOutputStall(pDevCtx);
 
 	do
 	{

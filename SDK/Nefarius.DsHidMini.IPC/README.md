@@ -151,6 +151,7 @@ All device-indexed APIs use a **one-based** device index (see [Device index](#de
 - **Meaning:** The index is the driver’s **IPC slot** (`SlotIndex`): shared HID memory, per-slot wait events (`Global\DsHidMiniHidReportEvent` + index), and IPC `TargetIndex` all use this same one-based value.  
 - **Discovery:** Use **`DsHidMiniInterop.TryGetIpcSlotIndex(PnPDevice)`**, which reads the read-only device property **`DsHidMiniDriver.IpcSlotIndexProperty`** (`DEVPROP_TYPE_UINT32`, same value the driver publishes after claiming a slot). Enumerate DsHidMini device interfaces and query this property per `PnPDevice`—do **not** assume SetupAPI / `CM_Get_Device_Interface_List` ordering matches slot order (e.g. after a middle device disconnects, remaining devices may occupy non-contiguous slots such as `1` and `3`).  
 - **Older drivers:** If the property is absent, fall back to your own mapping; ordering-only heuristics may be wrong when slots are not contiguous.  
+- **Output stall:** `DsHidMiniDriver.OutputReportStatusProperty` (`DEVPROP_TYPE_NTSTATUS`, property id 15) is `0` while a ShanWan PS1/PS2 adapter is acknowledging output reports, and a failing NTSTATUS while no controller is linked to the receiver. Other device types stay at `0`. Absent on drivers older than the build that added it.  
 - **Invalid index:** APIs throw `DsHidMiniInteropInvalidDeviceIndexException` if `deviceIndex` is ≤ 0 or &gt; 255.
 
 ---

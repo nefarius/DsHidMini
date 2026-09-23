@@ -92,13 +92,40 @@ DSHM_SendOutputReportUnlocked(
 			(PVOID*)&sendContext
 		)))
 		{
-			TraceError(
-				TRACE_DSHIDMINIDRV,
-				"DMF_ThreadedBufferQueue_Fetch failed with status %!STATUS!",
-				status
-			);
+			//
+			// While a third-party HID adapter is stalling interrupt OUT, the
+			// keep-alive keeps filling this fixed queue. The fetch failure is
+			// a consequence of that stall, so it is event-logged once per
+			// episode instead of on every attempt.
+			//
+			const BOOLEAN outputStalled =
+				Context->DeviceType == DsDeviceTypeThirdPartyHid
+				&& Context->ConnectionType == DsDeviceConnectionTypeUsb
+				&& Context->Connection.Usb.OutputStalled;
 
-			EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_ThreadedBufferQueue_Fetch", status);
+			if (outputStalled && Context->Connection.Usb.OutputFetchFailureLogged)
+			{
+				TraceVerbose(
+					TRACE_DSHIDMINIDRV,
+					"DMF_ThreadedBufferQueue_Fetch failed while output is stalled (%!STATUS!)",
+					status
+				);
+			}
+			else
+			{
+				TraceError(
+					TRACE_DSHIDMINIDRV,
+					"DMF_ThreadedBufferQueue_Fetch failed with status %!STATUS!",
+					status
+				);
+
+				EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_ThreadedBufferQueue_Fetch", status);
+
+				if (outputStalled)
+				{
+					Context->Connection.Usb.OutputFetchFailureLogged = TRUE;
+				}
+			}
 
 			break;
 		}
@@ -286,7 +313,8 @@ DSHM_EvtExecuteOutputPacketReceived(
 		{
 			status = USB_WriteInterruptOutSync(
 				pDevCtx,
-				&memoryDesc
+				&memoryDesc,
+				USB_INTERRUPT_OUT_TIMEOUT_DEFAULT_MS
 			);
 		}
 

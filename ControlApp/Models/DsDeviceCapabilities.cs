@@ -106,4 +106,12 @@ public static class DsDeviceCapabilities
                 "Buttons, hat, sticks, and pressure axes come from the adapter report. Motion stays neutral. There are no LEDs and no Bluetooth pairing.",
             _ => string.Empty
         };
+
+    public static string OutputStallGuidance(DsDeviceType type) =>
+        type switch
+        {
+            DsDeviceType.ThirdPartyHid =>
+                "The adapter is not accepting output reports, so rumble cannot reach the pad. Make sure a controller is paired to the PS1/PS2 receiver; rumble resumes on its own once it is.",
+            _ => string.Empty
+        };
 }

@@ -16,6 +16,19 @@
 #define THIRD_PARTY_HID_OUTPUT_REPORT_LENGTH    8
 
 //
+// A linked adapter ACKs interrupt OUT in 5-15 ms (10 ms interval). 250 ms
+// is generous. An unlinked adapter never ACKs, so this is also how long the
+// output worker waits before the stall gate takes over.
+//
+#define THIRD_PARTY_HID_OUTPUT_TIMEOUT_MS       250
+
+//
+// While stalled, an unchanged payload is not put on the bus again until this
+// period has elapsed. The probe is what detects that a controller linked.
+//
+#define THIRD_PARTY_HID_STALL_PROBE_PERIOD_MS   1000
+
+//
 // DS3 small-motor writes are on/off. A pass-through report that turns the
 // motor on has no 0-255 magnitude, so the adapter is given full strength.
 // 
@@ -48,4 +61,14 @@ NTSTATUS
 ThirdPartyHid_SendOutputReport(
 	_In_ PDEVICE_CONTEXT Context,
 	_In_reads_(THIRD_PARTY_HID_OUTPUT_REPORT_LENGTH) PUCHAR Output
+);
+
+//
+// Clears the output-stall bookkeeping and publishes STATUS_SUCCESS as
+// DEVPKEY_DsHidMini_RO_OutputReportStatus. Called from PrepareHardware and
+// D0Entry so a replug or resume does not inherit a previous stall.
+//
+VOID
+ThirdPartyHid_ResetOutputStall(
+	_In_ PDEVICE_CONTEXT Context
 );

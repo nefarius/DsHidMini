@@ -253,6 +253,35 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     public bool HasDeviceCapabilityNote => !string.IsNullOrEmpty(DeviceCapabilityNote);
 
     /// <summary>
+    ///     Shown while a ShanWan adapter is not acknowledging output reports.
+    /// </summary>
+    public string OutputStallNote => DsDeviceCapabilities.OutputStallGuidance(DeviceType);
+
+    /// <summary>
+    ///     True when <see cref="DsHidMiniDriver.OutputReportStatusProperty"/> is a
+    ///     failing NTSTATUS and this device type has stall guidance to show.
+    /// </summary>
+    public bool IsOutputStalled
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(OutputStallNote))
+            {
+                return false;
+            }
+
+            try
+            {
+                return Device.GetProperty<int>(DsHidMiniDriver.OutputReportStatusProperty) != 0;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+    }
+
+    /// <summary>
     ///     The friendly (product) name of this device.
     /// </summary>
     public string DisplayName
@@ -630,6 +659,8 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             OnPropertyChanged(nameof(InputTesterToolTip));
             OnPropertyChanged(nameof(CanOpenMotionViewer));
             OnPropertyChanged(nameof(MotionViewerToolTip));
+            OnPropertyChanged(nameof(IsOutputStalled));
+            OnPropertyChanged(nameof(OutputStallNote));
             NotifyIdentificationProperties();
         });
     }

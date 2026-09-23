@@ -23,6 +23,17 @@ Battery is reported as charged. Motion is a fixed DS3 rest sample (accelerometer
 
 Eight bytes, report id 0, written to interrupt OUT endpoint `0x02` by default. That is the path Linux `usbhid` uses for hid-shanwan's output report. Setting `UsbOutputReportTransport` to `ControlEndpoint` sends the same bytes as SET_REPORT Output (`wValue` `0x0200`) instead.
 
+Confirmed on 2026-09-23 with a Retro Fighters Defender (first model) on its PS1/PS2 receiver: `02 08 FF FF FF 00 00 00` on interrupt OUT starts both motors and `02 08 00 00 FF 00 00 00` stops them, both from a raw WinUSB write and from driver 3.12.0 in XInput mode. XInput left (large motor) is byte 3, XInput right (small motor) is byte 2. The interrupt OUT write completes in about 5-15 ms, also while the IN pipe is being read continuously.
+
+While the adapter has no live controller on its PS2 side (the input report sits at `00 E0 0F 7F 7F 7F 7F` with all axes exactly centred), the same 8-byte interrupt OUT is never acknowledged. A capture with driver 3.12.0 showed the URB staying pending until the then-3-second send timeout cancelled it (`USBD_STATUS_CANCELED`, `0xC0010000`), so every queued output report cost 3 seconds on the output worker. That window was the pad paired to its USB dongle instead of the PS1/PS2 receiver. Whether the pad rumbles is decided by the pairing, not by the report layout.
+
+The driver now bounds that case instead of waiting it out:
+
+- Interrupt OUT for this device type times out after 250 ms. DualShock 3 keeps the 3 second bound. A linked adapter still completes in 5-15 ms.
+- Once a send has failed, an identical 8-byte payload is not put on the bus again until one second has passed. That probe is what notices the controller linking again. A payload that changed (a new rumble strength) is sent immediately.
+- The stall and the recovery are each logged once. While the stall lasts, a full output queue is event-logged once per episode rather than on every keep-alive.
+- `DEVPKEY_DsHidMini_RO_OutputReportStatus` (property id 15, `DEVPROP_TYPE_NTSTATUS`) is `STATUS_SUCCESS` while output is being acknowledged and the failing status while it is not. It is initialized for every USB device and only changes for this device type. ControlApp reads it on the same poll as the battery and shows a warning while it is non-zero. A power-up (`D0Entry`) clears the stall.
+
 | Offset | Content |
 | --- | --- |
 | 0 | `0x02` rumble message |
@@ -38,7 +49,7 @@ Eight bytes, report id 0, written to interrupt OUT endpoint `0x02` by default. T
 
 | | |
 | --- | --- |
-| Rumble | Yes |
+| Rumble | Yes, both motors (Retro Fighters Defender on its PS1/PS2 receiver). Interrupt OUT is not acknowledged while no controller is linked; the driver then short-timeouts, stops repeating the same payload, and publishes `DEVPKEY_DsHidMini_RO_OutputReportStatus` |
 | LEDs | No |
 | Motion | Neutral only |
 | Bluetooth / pairing | No. The driver publishes a synthesized device address so per-device configuration still has a stable key |
