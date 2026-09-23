@@ -10,7 +10,7 @@ Confirmed from the HID caps Windows parsed out of the 137-byte report descriptor
 
 | Offset | Content |
 | --- | --- |
-| 0 | Buttons, bit 0 first: Square, Cross, Circle, Triangle, L1, R1, L2, R2 |
+| 0 | Buttons, bit 0 first: Triangle, Circle, Cross, Square, L1, R1, L2, R2 |
 | 1 | Select, Start, L3, R3, PS. Bits 5-7 are constant padding and read as 1 (`0xE0` at rest). Mask with `0x1F` |
 | 2 | Hat in the low nibble. 0 = up, clockwise through 7. `0x0F` = neutral |
 | 3-6 | Left X, left Y, right X, right Y. Rest is `0x7F`. Translated with a +1 bias so DS3 center `0x80` lines up, except `0xFF` which stays `0xFF` |
