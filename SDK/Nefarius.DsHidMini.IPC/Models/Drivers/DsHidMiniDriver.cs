@@ -112,6 +112,17 @@ public static class DsHidMiniDriver
         Guid.Parse("{3FECF510-CC94-4FBE-8839-738201F84D59}"), 14,
         typeof(byte));
 
+    /// <summary>
+    ///     Last output-report result for a ShanWan PS1/PS2 USB adapter
+    ///     (<c>DEVPROP_TYPE_NTSTATUS</c>). <c>0</c> while the adapter is
+    ///     acknowledging rumble reports. A failing NTSTATUS while no controller
+    ///     is linked to the receiver, which is when interrupt OUT is never
+    ///     acknowledged. Other device types stay at <c>0</c>.
+    /// </summary>
+    public static DevicePropertyKey OutputReportStatusProperty => CustomDeviceProperty.CreateCustomDeviceProperty(
+        Guid.Parse("{3FECF510-CC94-4FBE-8839-738201F84D59}"), 15,
+        typeof(int));
+
     #endregion
 
     #region Common device properties

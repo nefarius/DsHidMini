@@ -31,10 +31,18 @@ NTSTATUS USB_WriteInterruptPipeAsync(
     _In_ size_t BufferLength
 );
 
+//
+// Bound used for DualShock 3 interrupt OUT. A third-party HID adapter passes
+// its own, much shorter timeout: an unlinked ShanWan adapter never ACKs, and
+// waiting 3 seconds per report pins the output worker.
+//
+#define USB_INTERRUPT_OUT_TIMEOUT_DEFAULT_MS    3000
+
 NTSTATUS
 USB_WriteInterruptOutSync(
     _In_ PDEVICE_CONTEXT Context,
-    _In_ PWDF_MEMORY_DESCRIPTOR Memory
+    _In_ PWDF_MEMORY_DESCRIPTOR Memory,
+    _In_ ULONG TimeoutMs
 );
 
 EVT_WDF_REQUEST_COMPLETION_ROUTINE EvtUsbRequestCompletionRoutine;

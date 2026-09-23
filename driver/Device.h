@@ -63,6 +63,22 @@ struct USB_DEVICE_CONTEXT
 	DS_USB_OUTPUT_REPORT_TRANSPORT OutputTransport;
 
 	//
+	// Third-party HID interrupt OUT stall. While OutputStalled is set,
+	// ThirdPartyHid_SendOutputReport does not repeat an identical payload
+	// until the probe period elapses, so a NAK cannot pin the output worker.
+	// LastAttemptedAdapterReport is THIRD_PARTY_HID_OUTPUT_REPORT_LENGTH bytes;
+	// that header is not visible here, so the length is asserted at the
+	// call site.
+	//
+	BOOLEAN OutputStalled;
+
+	BOOLEAN OutputFetchFailureLogged;
+
+	UCHAR LastAttemptedAdapterReport[8];
+
+	LARGE_INTEGER LastOutputAttemptTimestamp;
+
+	//
 	// Timestamp to calculate charging cycle state change
 	// 
 	LARGE_INTEGER ChargingCycleTimestamp;

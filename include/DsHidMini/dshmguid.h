@@ -93,3 +93,11 @@ DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RO_MotionCalibrationData,
 // {3FECF510-CC94-4FBE-8839-738201F84D59}
 DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RO_MotionCalibrationSource,
 	0x3fecf510, 0xcc94, 0x4fbe, 0x88, 0x39, 0x73, 0x82, 0x1, 0xf8, 0x4d, 0x59, 14); // DEVPROP_TYPE_BYTE
+
+// Last interrupt-OUT (or control SET_REPORT) result for a third-party HID
+// adapter. STATUS_SUCCESS while the adapter is acknowledging output reports;
+// the failing NTSTATUS while it is not (no controller linked to the PS2
+// receiver). Initialized for every USB device so readers always see a value.
+// {3FECF510-CC94-4FBE-8839-738201F84D59}
+DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RO_OutputReportStatus,
+	0x3fecf510, 0xcc94, 0x4fbe, 0x88, 0x39, 0x73, 0x82, 0x1, 0xf8, 0x4d, 0x59, 15); // DEVPROP_TYPE_NTSTATUS

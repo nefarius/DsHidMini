@@ -211,6 +211,88 @@ ThirdPartyHid_BuildOutputReport(
 	Output[4] = 0xFF;
 }
 
+C_ASSERT(
+	sizeof(((PDEVICE_CONTEXT)0)->Connection.Usb.LastAttemptedAdapterReport)
+	== THIRD_PARTY_HID_OUTPUT_REPORT_LENGTH
+);
+
+static VOID
+ThirdPartyHid_PublishOutputReportStatus(
+	_In_ PDEVICE_CONTEXT Context,
+	_In_ NTSTATUS ReportStatus
+)
+{
+	WDF_DEVICE_PROPERTY_DATA propertyData;
+	const WDFDEVICE device = WdfObjectContextGetObject(Context);
+	NTSTATUS status;
+
+	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RO_OutputReportStatus);
+	propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+	propertyData.Lcid = LOCALE_NEUTRAL;
+
+	status = WdfDeviceAssignProperty(
+		device,
+		&propertyData,
+		DEVPROP_TYPE_NTSTATUS,
+		sizeof(NTSTATUS),
+		&ReportStatus
+	);
+
+	if (!NT_SUCCESS(status))
+	{
+		TraceError(
+			TRACE_DSUSB,
+			"Setting DEVPKEY_DsHidMini_RO_OutputReportStatus failed with status %!STATUS!",
+			status
+		);
+	}
+}
+
+VOID
+ThirdPartyHid_ResetOutputStall(
+	_In_ PDEVICE_CONTEXT Context
+)
+{
+	Context->Connection.Usb.OutputStalled = FALSE;
+	Context->Connection.Usb.OutputFetchFailureLogged = FALSE;
+	Context->Connection.Usb.LastOutputAttemptTimestamp.QuadPart = 0;
+	RtlZeroMemory(
+		Context->Connection.Usb.LastAttemptedAdapterReport,
+		sizeof(Context->Connection.Usb.LastAttemptedAdapterReport)
+	);
+
+	ThirdPartyHid_PublishOutputReportStatus(Context, STATUS_SUCCESS);
+}
+
+static BOOLEAN
+ThirdPartyHid_StallProbeDue(
+	_In_ PDEVICE_CONTEXT Context
+)
+{
+	LARGE_INTEGER now;
+	LARGE_INTEGER frequency;
+	LONGLONG elapsedMs;
+
+	if (Context->Connection.Usb.LastOutputAttemptTimestamp.QuadPart == 0)
+	{
+		return TRUE;
+	}
+
+	QueryPerformanceCounter(&now);
+	QueryPerformanceFrequency(&frequency);
+
+	if (frequency.QuadPart == 0)
+	{
+		return TRUE;
+	}
+
+	elapsedMs =
+		((now.QuadPart - Context->Connection.Usb.LastOutputAttemptTimestamp.QuadPart) * 1000)
+		/ frequency.QuadPart;
+
+	return elapsedMs >= THIRD_PARTY_HID_STALL_PROBE_PERIOD_MS;
+}
+
 NTSTATUS
 ThirdPartyHid_SendOutputReport(
 	_In_ PDEVICE_CONTEXT Context,
@@ -219,6 +301,22 @@ ThirdPartyHid_SendOutputReport(
 {
 	NTSTATUS status;
 	WDF_MEMORY_DESCRIPTOR memoryDesc;
+
+	//
+	// While the adapter is NAKing, the keep-alive resends the same 8 bytes
+	// every 200 ms. Repeating that on the bus only blocks the worker. One
+	// identical probe per second is enough to notice when a controller links.
+	//
+	if (Context->Connection.Usb.OutputStalled
+		&& RtlEqualMemory(
+			Output,
+			Context->Connection.Usb.LastAttemptedAdapterReport,
+			THIRD_PARTY_HID_OUTPUT_REPORT_LENGTH
+		)
+		&& !ThirdPartyHid_StallProbeDue(Context))
+	{
+		return STATUS_SUCCESS;
+	}
 
 	//
 	// Auto resolves to InterruptOut while the pipe exists. ControlEndpoint
@@ -246,18 +344,55 @@ ThirdPartyHid_SendOutputReport(
 			THIRD_PARTY_HID_OUTPUT_REPORT_LENGTH
 		);
 
-		status = USB_WriteInterruptOutSync(Context, &memoryDesc);
+		status = USB_WriteInterruptOutSync(
+			Context,
+			&memoryDesc,
+			THIRD_PARTY_HID_OUTPUT_TIMEOUT_MS
+		);
 	}
+
+	RtlCopyMemory(
+		Context->Connection.Usb.LastAttemptedAdapterReport,
+		Output,
+		THIRD_PARTY_HID_OUTPUT_REPORT_LENGTH
+	);
+	QueryPerformanceCounter(&Context->Connection.Usb.LastOutputAttemptTimestamp);
 
 	if (!NT_SUCCESS(status))
 	{
-		TraceError(
+		if (!Context->Connection.Usb.OutputStalled)
+		{
+			Context->Connection.Usb.OutputStalled = TRUE;
+
+			TraceWarning(
+				TRACE_DSUSB,
+				"ShanWan output stalled with status %!STATUS!",
+				status
+			);
+
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"ShanWan rumble", status);
+			ThirdPartyHid_PublishOutputReportStatus(Context, status);
+		}
+		else
+		{
+			TraceVerbose(
+				TRACE_DSUSB,
+				"ShanWan output still stalled (%!STATUS!)",
+				status
+			);
+		}
+	}
+	else if (Context->Connection.Usb.OutputStalled)
+	{
+		Context->Connection.Usb.OutputStalled = FALSE;
+		Context->Connection.Usb.OutputFetchFailureLogged = FALSE;
+
+		TraceInformation(
 			TRACE_DSUSB,
-			"ShanWan rumble send failed with status %!STATUS!",
-			status
+			"ShanWan output recovered"
 		);
 
-		EventWriteFailedWithNTStatus(__FUNCTION__, L"ShanWan rumble", status);
+		ThirdPartyHid_PublishOutputReportStatus(Context, STATUS_SUCCESS);
 	}
 
 	return status;

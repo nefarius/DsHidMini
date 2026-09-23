@@ -34,6 +34,27 @@ public class ThirdPartyHidCapabilityTests
         Assert.False(DsDeviceCapabilities.SupportsBluetooth(DsDeviceType.ThirdPartyHid));
         Assert.Equal("PS1/PS2 USB Adapter (ShanWan)", DsDeviceCapabilities.DisplayName(DsDeviceType.ThirdPartyHid));
         Assert.Contains("neutral", DsDeviceCapabilities.HidModeGuidance(DsDeviceType.ThirdPartyHid));
+        Assert.Contains("paired", DsDeviceCapabilities.OutputStallGuidance(DsDeviceType.ThirdPartyHid));
+    }
+
+    [Theory]
+    [InlineData(DsDeviceType.Unknown)]
+    [InlineData(DsDeviceType.Sixaxis)]
+    [InlineData(DsDeviceType.Navigation)]
+    [InlineData(DsDeviceType.Motion)]
+    [InlineData(DsDeviceType.Wireless)]
+    public void OutputStallGuidance_IsEmptyExceptThirdPartyHid(DsDeviceType type)
+    {
+        Assert.Equal(string.Empty, DsDeviceCapabilities.OutputStallGuidance(type));
+    }
+
+    [Fact]
+    public void OutputReportStatusProperty_IsDistinctReadOnlyKey()
+    {
+        Assert.NotEqual(DsHidMiniDriver.DeviceTypeProperty, DsHidMiniDriver.OutputReportStatusProperty);
+        Assert.NotEqual(DsHidMiniDriver.LastHostRequestStatusProperty, DsHidMiniDriver.OutputReportStatusProperty);
+        Assert.NotEqual(DsHidMiniDriver.MotionCalibrationSourceProperty, DsHidMiniDriver.OutputReportStatusProperty);
+        Assert.Equal(15u, DsHidMiniDriver.OutputReportStatusProperty.PropertyIdentifier);
     }
 
     [Fact]
