@@ -5,6 +5,8 @@ using System.Text.Json;
 
 using Microsoft.Extensions.Logging;
 
+using Nefarius.DsHidMini.ControlApp.Models;
+
 namespace Nefarius.DsHidMini.ControlApp.Models.Util.Web;
 
 [SuppressMessage("ReSharper", "InconsistentNaming")]
@@ -99,7 +101,8 @@ public sealed class AddressValidator(IHttpClientFactory clientFactory, ILogger<A
 {
     public async Task<bool> IsGenuineAddress(PhysicalAddress address)
     {
-        using HttpClient client = clientFactory.CreateClient("Docs");
+        // global:: avoids the Nefarius.HttpClient namespace introduced by the cache package.
+        using global::System.Net.Http.HttpClient client = clientFactory.CreateClient(DocsHttpClient.Name);
 
         try
         {
