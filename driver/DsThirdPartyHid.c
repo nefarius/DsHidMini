@@ -205,7 +205,10 @@ ThirdPartyHid_BuildOutputReport(
 	Output[1] = 0x08;
 	Output[2] = right;
 	Output[3] = left;
-	Output[4] = (right != 0 || left != 0) ? 0xFF : 0x00;
+	//
+	// hid-shanwan always writes 0xFF here, including the stop report.
+	// 
+	Output[4] = 0xFF;
 }
 
 NTSTATUS
@@ -214,15 +217,48 @@ ThirdPartyHid_SendOutputReport(
 	_In_reads_(THIRD_PARTY_HID_OUTPUT_REPORT_LENGTH) PUCHAR Output
 )
 {
-	return USB_SendControlRequest(
-		Context,
-		BmRequestHostToDevice,
-		BmRequestClass,
-		SetReport,
-		THIRD_PARTY_HID_OUTPUT_REPORT_VALUE,
-		0,
-		Output,
-		THIRD_PARTY_HID_OUTPUT_REPORT_LENGTH,
-		NULL
-	);
+	NTSTATUS status;
+	WDF_MEMORY_DESCRIPTOR memoryDesc;
+
+	//
+	// Auto resolves to InterruptOut while the pipe exists. ControlEndpoint
+	// is the config override used to compare the two transports.
+	// 
+	if (Context->Connection.Usb.OutputTransport == DsUsbOutputReportTransportControlEndpoint)
+	{
+		status = USB_SendControlRequest(
+			Context,
+			BmRequestHostToDevice,
+			BmRequestClass,
+			SetReport,
+			THIRD_PARTY_HID_OUTPUT_REPORT_VALUE,
+			0,
+			Output,
+			THIRD_PARTY_HID_OUTPUT_REPORT_LENGTH,
+			NULL
+		);
+	}
+	else
+	{
+		WDF_MEMORY_DESCRIPTOR_INIT_BUFFER(
+			&memoryDesc,
+			Output,
+			THIRD_PARTY_HID_OUTPUT_REPORT_LENGTH
+		);
+
+		status = USB_WriteInterruptOutSync(Context, &memoryDesc);
+	}
+
+	if (!NT_SUCCESS(status))
+	{
+		TraceError(
+			TRACE_DSUSB,
+			"ShanWan rumble send failed with status %!STATUS!",
+			status
+		);
+
+		EventWriteFailedWithNTStatus(__FUNCTION__, L"ShanWan rumble", status);
+	}
+
+	return status;
 }

@@ -7,8 +7,10 @@
 #define THIRD_PARTY_HID_INPUT_REPORT_MINIMUM    19
 
 //
-// SET_REPORT Output, report id 0. hid-shanwan uses this on the control
-// endpoint; an interrupt OUT write is not the path that firmware accepts.
+// Output report id 0. Default transport is the interrupt OUT pipe, which
+// is where Linux usbhid delivers hid-shanwan's SET_REPORT. The control
+// endpoint (wValue 0x0200) remains available when UsbOutputReportTransport
+// is ControlEndpoint.
 // 
 #define THIRD_PARTY_HID_OUTPUT_REPORT_VALUE     0x0200
 #define THIRD_PARTY_HID_OUTPUT_REPORT_LENGTH    8

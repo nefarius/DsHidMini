@@ -21,7 +21,7 @@ Battery is reported as charged. Motion is a fixed DS3 rest sample (accelerometer
 
 ## Output report
 
-Eight bytes, SET_REPORT Output, report id 0 (`wValue` `0x0200`) on the control endpoint. This is the transfer `HidD_SetOutputReport` accepted on the live adapter without changing VID/PID. The interrupt OUT pipe is not used.
+Eight bytes, report id 0, written to interrupt OUT endpoint `0x02` by default. That is the path Linux `usbhid` uses for hid-shanwan's output report. Setting `UsbOutputReportTransport` to `ControlEndpoint` sends the same bytes as SET_REPORT Output (`wValue` `0x0200`) instead.
 
 | Offset | Content |
 | --- | --- |
@@ -29,10 +29,10 @@ Eight bytes, SET_REPORT Output, report id 0 (`wValue` `0x0200`) on the control e
 | 1 | `0x08` |
 | 2 | Right motor, 0-255. DS3 small-motor magnitude (`LightCache`; the DS3 wire byte is only on/off) |
 | 3 | Left motor, 0-255. DS3 large-motor byte |
-| 4 | `0xFF` while either motor is non-zero, otherwise `0x00` |
+| 4 | `0xFF` duration, including the stop report |
 | 5-7 | `0x00` |
 
-`02 08 FF FF 20 00 00 00` followed by an all-zero stop was accepted by the adapter while `hidusb` was still bound. LEDs are not sent. USB power-off does not send Feature `0xF4` or the 48-byte DS3 output report.
+`02 08 FF FF 20 00 00 00` was accepted as a control SET_REPORT while `hidusb` was still bound. The driver sends that layout on interrupt OUT, with byte 4 always `0xFF`. LEDs are not sent. USB power-off does not send Feature `0xF4` or the 48-byte DS3 output report.
 
 ## Capabilities
 
