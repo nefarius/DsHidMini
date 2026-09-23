@@ -168,6 +168,13 @@ typedef struct _DS_OUTPUT_REPORT_CONTEXT
 	// The initiator of this report
 	// 
 	DS_OUTPUT_REPORT_SOURCE ReportSource;
+
+	//
+	// Right-motor magnitude for a third-party HID adapter. Captured with
+	// this report because the DS3 small-motor wire byte is only on/off and
+	// LightCache can change before the worker runs.
+	// 
+	UCHAR RightMotorStrength;
 	
 } DS_OUTPUT_REPORT_CONTEXT, *PDS_OUTPUT_REPORT_CONTEXT;
 

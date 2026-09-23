@@ -39,6 +39,7 @@
 #include "Power.h"
 #include "DsUsb.h"
 #include "Ds3.h"
+#include "DsThirdPartyHid.h"
 #include "DsLed.h"
 #include "DsBth.h"
 #include "HID.ReportHandlers.h"

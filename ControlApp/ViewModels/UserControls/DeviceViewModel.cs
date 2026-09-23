@@ -310,6 +310,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     ///     wired and reported its own Bluetooth MAC address. Controls whether pairing UI should be enabled.
     /// </summary>
     public bool SupportsBluetoothPairing =>
+        DsDeviceCapabilities.SupportsBluetooth(DeviceType) &&
         !IsWireless && !IsDeviceAddressSynthesized && !string.IsNullOrEmpty(DeviceAddress);
 
     /// <summary>

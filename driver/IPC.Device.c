@@ -126,6 +126,15 @@ DSHM_EvtDispatchDeviceMessage(
 				"USB power-off requested for a non-USB device"
 			);
 		}
+		else if (DeviceContext->DeviceType == DsDeviceTypeThirdPartyHid)
+		{
+			//
+			// No DS3 power-off sequence. Feature 0xF4 and the 48-byte
+			// output report are not this device's protocol.
+			// 
+			indicatorsOffStatus = STATUS_NOT_SUPPORTED;
+			shutdownStatus = STATUS_NOT_SUPPORTED;
+		}
 		else
 		{
 			//

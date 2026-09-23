@@ -480,13 +480,16 @@ NTSTATUS DsUsb_PrepareHardware(WDFDEVICE Device)
 		// See https://github.com/nefarius/DsHidMini/issues/50
 		// Moved ahead of MAC discovery to mirror the order the PS3 itself
 		// queries a freshly plugged-in pad (GET Feature 0x01 before 0xF2).
+		// Third-party HID adapters do not implement this report. Asking
+		// them can drop ShanWan firmware into its fallback identity.
 		// 
 		ULONG identificationLength = 0;
 
 		RtlZeroMemory(identification, sizeof(identification));
 		DsIdentification_Clear(Device);
 
-		if (NT_SUCCESS(USB_SendControlRequest(
+		if (pDevCtx->DeviceType != DsDeviceTypeThirdPartyHid &&
+			NT_SUCCESS(USB_SendControlRequest(
 			pDevCtx,
 			BmRequestDeviceToHost,
 			BmRequestClass,
@@ -577,7 +580,20 @@ NTSTATUS DsUsb_PrepareHardware(WDFDEVICE Device)
 		// abort PrepareHardware; DsMotion keeps the documented nominal
 		// fallback in that case (issue #217).
 		// 
-		DsMotion_TryLoadUsbCalibration(Device);
+		if (pDevCtx->DeviceType == DsDeviceTypeThirdPartyHid)
+		{
+			//
+			// No EEPROM. Keep the nominal rest sample and do not send a
+			// hardware cal byte (that write shares the large-motor slots).
+			// 
+			pDevCtx->Motion.Path = DsIdentificationMotionPathPlainZero;
+			pDevCtx->Motion.Fallback = TRUE;
+			pDevCtx->Motion.SendHardwareCal = FALSE;
+		}
+		else
+		{
+			DsMotion_TryLoadUsbCalibration(Device);
+		}
 
 		//
 		// Send initial output report. The PS3 itself sends an all-zero,
@@ -588,6 +604,7 @@ NTSTATUS DsUsb_PrepareHardware(WDFDEVICE Device)
 		// (see issue #321 and docs/PS3_USB_STARTUP.md). Overlay the Sony
 		// gyro cal byte when this pad's path uses hardware trim.
 		// 
+		if (pDevCtx->DeviceType != DsDeviceTypeThirdPartyHid)
 		{
 			UCHAR zeroOutputReport[48] = { 0 };
 
@@ -658,7 +675,19 @@ NTSTATUS DsUsb_D0Entry(WDFDEVICE Device, WDF_POWER_DEVICE_STATE PreviousState)
 		// transfer failure right after a bus resume is not necessarily
 		// terminal.
 		// 
-		for (attempt = 1; attempt <= DS3_INIT_D0ENTRY_MAX_ATTEMPTS; attempt++)
+		if (pDevCtx->DeviceType == DsDeviceTypeThirdPartyHid)
+		{
+			//
+			// Already streaming. Feature 0xF4 is a DS3 command and can
+			// knock ShanWan firmware into its fallback identity.
+			// 
+			TraceInformation(
+				TRACE_DSUSB,
+				"Skipping DsUsb_Ds3Init for third-party HID (PreviousState=%d)",
+				PreviousState
+			);
+		}
+		else for (attempt = 1; attempt <= DS3_INIT_D0ENTRY_MAX_ATTEMPTS; attempt++)
 		{
 			TraceInformation(
 				TRACE_DSUSB,
@@ -710,6 +739,7 @@ NTSTATUS DsUsb_D0Entry(WDFDEVICE Device, WDF_POWER_DEVICE_STATE PreviousState)
 		// LED state; genuine controllers accept this unconditionally too
 		// (see issue #321 and docs/PS3_USB_STARTUP.md). Soft-fail only.
 		// 
+		if (pDevCtx->DeviceType != DsDeviceTypeThirdPartyHid)
 		{
 			PUCHAR outputReportBuffer = NULL;
 			SIZE_T outputReportBufferLength = 0;

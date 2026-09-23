@@ -327,7 +327,13 @@ DSHM_WriteReport(
 			);
 		}
 
-		(void)DSHM_SendOutputReport(DeviceContext, Ds3OutputReportSourcePassThrough);
+			//
+			// The copied DS3 small-motor byte is on/off. SendOutputReport
+			// stores THIRD_PARTY_HID_SMALL_MOTOR_ON_STRENGTH with this
+			// queued report when that byte is set, because this path does
+			// not write a 0-255 magnitude into LightCache.
+			// 
+			(void)DSHM_SendOutputReport(DeviceContext, Ds3OutputReportSourcePassThrough);
 
 		status = STATUS_SUCCESS;
 	}

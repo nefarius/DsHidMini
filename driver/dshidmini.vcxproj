@@ -31,6 +31,7 @@
     <ClCompile Include="DsIdentification.c" />
     <ClCompile Include="DsLed.c" />
     <ClCompile Include="DsMotion.c" />
+    <ClCompile Include="DsThirdPartyHid.c" />
     <ClCompile Include="DsUsb.c" />
     <ClCompile Include="HID.FeatureReport.c" />
     <ClCompile Include="HID.Reports.c" />
