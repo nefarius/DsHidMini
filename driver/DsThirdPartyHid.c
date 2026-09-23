@@ -256,7 +256,9 @@ ThirdPartyHid_ArmOutputStallProbe(
 {
 	if (Context->RumbleControlState.IsTearingDown
 		|| Context->ConnectionType != DsDeviceConnectionTypeUsb
-		|| Context->Connection.Usb.OutputStallProbeTimer == NULL)
+		|| Context->Connection.Usb.OutputStallProbeTimer == NULL
+		|| (!Context->Connection.Usb.OutputStalled
+			&& !Context->Connection.Usb.InitialOutputProbePending))
 	{
 		return;
 	}
@@ -273,8 +275,14 @@ ThirdPartyHid_StopOutputStallProbe(
 	_In_ BOOLEAN Wait
 )
 {
-	if (Context->ConnectionType != DsDeviceConnectionTypeUsb
-		|| Context->Connection.Usb.OutputStallProbeTimer == NULL)
+	if (Context->ConnectionType != DsDeviceConnectionTypeUsb)
+	{
+		return;
+	}
+
+	Context->Connection.Usb.InitialOutputProbePending = FALSE;
+
+	if (Context->Connection.Usb.OutputStallProbeTimer == NULL)
 	{
 		return;
 	}
@@ -297,7 +305,8 @@ ThirdPartyHid_EvtOutputStallProbeTimerFunc(
 	//
 	if (context->RumbleControlState.IsTearingDown
 		|| context->ConnectionType != DsDeviceConnectionTypeUsb
-		|| !context->Connection.Usb.OutputStalled)
+		|| (!context->Connection.Usb.OutputStalled
+			&& !context->Connection.Usb.InitialOutputProbePending))
 	{
 		return;
 	}
@@ -305,12 +314,18 @@ ThirdPartyHid_EvtOutputStallProbeTimerFunc(
 	//
 	// The worker re-arms this timer when it finishes the send. A full
 	// queue never gets that far, so arm it here or probing stops.
+	// InitialOutputProbePending covers the power-up report, which has
+	// not set OutputStalled yet.
 	//
 	if (!NT_SUCCESS(DSHM_SendOutputReport(
 		context,
 		Ds3OutputReportSourceDriverHighPriority)))
 	{
 		ThirdPartyHid_ArmOutputStallProbe(context);
+	}
+	else
+	{
+		context->Connection.Usb.InitialOutputProbePending = FALSE;
 	}
 }
 
@@ -342,10 +357,22 @@ ThirdPartyHid_ProbeOutputPath(
 	Context->RumbleControlState.LightCache = 0;
 	Context->RumbleControlState.HeavyCache = 0;
 
-	(void)DSHM_SendOutputReportUnlocked(
+	if (NT_SUCCESS(DSHM_SendOutputReportUnlocked(
 		Context,
-		Ds3OutputReportSourceDriverHighPriority
-	);
+		Ds3OutputReportSourceDriverHighPriority)))
+	{
+		Context->Connection.Usb.InitialOutputProbePending = FALSE;
+	}
+	else
+	{
+		//
+		// OutputStalled stays clear until a send actually fails on the
+		// wire. Remember this missed queue so the probe timer retries
+		// it without treating every clear status as a stall.
+		//
+		Context->Connection.Usb.InitialOutputProbePending = TRUE;
+		ThirdPartyHid_ArmOutputStallProbe(Context);
+	}
 
 	WdfWaitLockRelease(Context->OutputReport.Lock);
 }
