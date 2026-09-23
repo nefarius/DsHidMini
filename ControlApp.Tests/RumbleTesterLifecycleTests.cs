@@ -161,11 +161,12 @@ public class RumbleTesterLifecycleTests
         var output = new ScriptedRumbleOutput();
         RumbleTesterViewModel vm = new(1, "test", () => output, TimeSpan.Zero);
 
-        Task first = vm.ShutdownAsync();
-        Task second = vm.ShutdownAsync();
+        Task<RumbleCommandResult> first = vm.ShutdownAsync();
+        Task<RumbleCommandResult> second = vm.ShutdownAsync();
 
         Assert.Same(first, second);
-        await first.WaitAsync(TimeSpan.FromSeconds(2));
+        RumbleCommandResult result = await first.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.True(result.Succeeded);
         Assert.Equal(new[] { ((byte)0, (byte)0) }, output.Calls);
         Assert.Equal(1, output.DisposeCount);
         Assert.True(output.DisposedAfterOff);
@@ -185,8 +186,10 @@ public class RumbleTesterLifecycleTests
         };
         RumbleTesterViewModel vm = new(1, "test", () => output, TimeSpan.Zero);
 
-        await vm.ShutdownAsync().WaitAsync(TimeSpan.FromSeconds(2));
+        RumbleCommandResult result = await vm.ShutdownAsync().WaitAsync(TimeSpan.FromSeconds(2));
 
+        Assert.False(result.Succeeded);
+        Assert.Equal("timed out", result.Error);
         Assert.True(vm.IsShutdown);
         Assert.True(output.IsDisposed);
         Assert.Single(output.Calls);

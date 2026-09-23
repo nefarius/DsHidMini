@@ -118,7 +118,8 @@
                                     Content="Rumble tester"
                                     IsEnabled="{Binding CanOpenRumbleTester}"
                                     ToolTip="{Binding RumbleTesterToolTip}"
-                                    ToolTipService.InitialShowDelay="200" />
+                                    ToolTipService.InitialShowDelay="200"
+                                    ToolTipService.ShowOnDisabled="True" />
                             </StackPanel>
                         </DockPanel>
                         <ui:InfoBar

@@ -100,7 +100,7 @@
             <ui:TextBlock
                 Grid.Row="8"
                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                Text="The selected HID mode does not change this path. Saved rumble settings can still scale, redirect, or mute the motors. Closing this window turns both motors off."
+                Text="The selected HID mode does not change this path. Saved rumble settings can still scale, redirect, or mute the motors. Closing this window attempts to turn both motors off."
                 TextWrapping="Wrap" />
         </Grid>
     </DockPanel>

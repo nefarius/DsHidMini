@@ -222,6 +222,17 @@ public class AppSnackbarMessagesService
         );
     }
 
+    public void ShowRumbleOffFailedMessage(string detail)
+    {
+        _snackbarService.Show(
+            "Rumble may still be on",
+            detail,
+            ControlAppearance.Caution,
+            new SymbolIcon(SymbolRegular.Warning24),
+            TimeSpan.FromSeconds(8)
+        );
+    }
+
     public void ShowUsbPowerOffFailedMessage(string detail)
     {
         _snackbarService.Show(

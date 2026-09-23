@@ -1262,7 +1262,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         }
 
         RumbleTesterViewModel tester = new(deviceIndex, DeviceAddressFriendly ?? DeviceAddress);
-        _rumbleTester = new RumbleTesterWindow(tester)
+        _rumbleTester = new RumbleTesterWindow(tester, _appSnackbarMessagesService.ShowRumbleOffFailedMessage)
         {
             Owner = Application.Current.MainWindow
         };

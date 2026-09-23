@@ -15,7 +15,7 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
     private readonly object _shutdownLock = new();
     private IRumbleOutput? _output;
     private CancellationTokenSource? _pulseCts;
-    private Task? _shutdownTask;
+    private Task<RumbleCommandResult>? _shutdownTask;
     private int _acceptCommands = 1;
     private int _pulseGeneration;
 
@@ -82,7 +82,7 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
         return TurnOffAsync();
     }
 
-    public Task ShutdownAsync()
+    internal Task<RumbleCommandResult> ShutdownAsync()
     {
         lock (_shutdownLock)
         {
@@ -115,11 +115,19 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
         CancellationTokenSource? previous = Interlocked.Exchange(ref _pulseCts, pulse);
         CancelPulse(previous);
         previous?.Dispose();
-        Publish(() => IsPulsing = true);
+        Publish(() =>
+        {
+            if (!IsCurrentPulse(generation))
+            {
+                return;
+            }
+
+            IsPulsing = true;
+        });
 
         try
         {
-            RumbleCommandResult on = await Task.Run(() => Send(large, small)).ConfigureAwait(false);
+            RumbleCommandResult on = await Task.Run(() => Send(large, small, generation)).ConfigureAwait(false);
             if (!on.Sent || generation != Volatile.Read(ref _pulseGeneration))
             {
                 return;
@@ -127,7 +135,7 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
 
             Publish(() =>
             {
-                if (IsShutdown)
+                if (!IsCurrentPulse(generation))
                 {
                     return;
                 }
@@ -154,7 +162,7 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
                 return;
             }
 
-            RumbleCommandResult off = await Task.Run(() => Send(0, 0)).ConfigureAwait(false);
+            RumbleCommandResult off = await Task.Run(() => Send(0, 0, generation)).ConfigureAwait(false);
             if (!off.Sent || generation != Volatile.Read(ref _pulseGeneration))
             {
                 return;
@@ -162,7 +170,7 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
 
             Publish(() =>
             {
-                if (IsShutdown)
+                if (!IsCurrentPulse(generation))
                 {
                     return;
                 }
@@ -186,7 +194,15 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
         {
             if (generation == Volatile.Read(ref _pulseGeneration) && Volatile.Read(ref _acceptCommands) != 0)
             {
-                Publish(() => IsPulsing = false);
+                Publish(() =>
+                {
+                    if (!IsCurrentPulse(generation))
+                    {
+                        return;
+                    }
+
+                    IsPulsing = false;
+                });
             }
         }
     }
@@ -198,12 +214,12 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
             return;
         }
 
-        Interlocked.Increment(ref _pulseGeneration);
+        int generation = Interlocked.Increment(ref _pulseGeneration);
         CancelPulse(_pulseCts);
-        RumbleCommandResult off = await Task.Run(() => Send(0, 0)).ConfigureAwait(false);
+        RumbleCommandResult off = await Task.Run(() => Send(0, 0, generation)).ConfigureAwait(false);
         Publish(() =>
         {
-            if (IsShutdown)
+            if (!IsCurrentPulse(generation))
             {
                 return;
             }
@@ -213,11 +229,11 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
         });
     }
 
-    private RumbleCommandResult Send(byte large, byte small)
+    private RumbleCommandResult Send(byte large, byte small, int generation)
     {
         lock (_gate)
         {
-            if (Volatile.Read(ref _acceptCommands) == 0)
+            if (Volatile.Read(ref _acceptCommands) == 0 || Volatile.Read(ref _pulseGeneration) != generation)
             {
                 return RumbleCommandResult.NotSent;
             }
@@ -235,8 +251,9 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
         }
     }
 
-    private void ShutdownCore()
+    private RumbleCommandResult ShutdownCore()
     {
+        RumbleCommandResult result = RumbleCommandResult.NotSent;
         try
         {
             Interlocked.Exchange(ref _acceptCommands, 0);
@@ -249,12 +266,18 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
                 try
                 {
                     uint status = EnsureOutput().SetRumble(0, 0);
-                    if (!PowerOffUsbResult.IsNtSuccess(status))
+                    result = RumbleCommandResult.FromStatus(status);
+                    if (!result.Succeeded)
                     {
                         Log.Logger.Warning(
                             "Turning rumble off returned NTSTATUS 0x{Status:X8}",
                             status);
                     }
+                }
+                catch (Exception ex)
+                {
+                    Log.Logger.Warning(ex, "Failed to turn rumble off");
+                    result = RumbleCommandResult.FromException(ex);
                 }
                 finally
                 {
@@ -264,11 +287,21 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
             }
 
             pulse?.Dispose();
+            return result.Sent
+                ? result
+                : RumbleCommandResult.FromException(
+                    new InvalidOperationException("The rumble-off request did not reach the driver."));
         }
         catch (Exception ex)
         {
             Log.Logger.Warning(ex, "Rumble tester shutdown failed");
+            return result.Sent ? result : RumbleCommandResult.FromException(ex);
         }
+    }
+
+    private bool IsCurrentPulse(int generation)
+    {
+        return !IsShutdown && generation == Volatile.Read(ref _pulseGeneration);
     }
 
     private IRumbleOutput EnsureOutput()
