@@ -243,13 +243,28 @@ USB_WriteInterruptOutSync(
 {
 	ULONG bytesWritten;
 	NTSTATUS status;
+	WDF_REQUEST_SEND_OPTIONS sendOptions;
 
 	FuncEntry(TRACE_DSUSB);
+
+	//
+	// Same bound as USB_SendControlRequest. A stalled interrupt OUT would
+	// otherwise hold the output worker until the pipe is cancelled.
+	// 
+	WDF_REQUEST_SEND_OPTIONS_INIT(
+		&sendOptions,
+		WDF_REQUEST_SEND_OPTION_TIMEOUT
+	);
+
+	WDF_REQUEST_SEND_OPTIONS_SET_TIMEOUT(
+		&sendOptions,
+		WDF_REL_TIMEOUT_IN_SEC(3)
+	);
 
 	status = WdfUsbTargetPipeWriteSynchronously(
 		Context->Connection.Usb.InterruptOutPipe,
 		NULL,
-		NULL,
+		&sendOptions,
 		Memory,
 		&bytesWritten
 	);
