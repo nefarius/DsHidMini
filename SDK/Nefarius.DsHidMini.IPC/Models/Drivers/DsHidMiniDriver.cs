@@ -303,7 +303,14 @@ public enum DsDeviceType : byte
     ///     Sony DualShock 4. Not supported as a DsHidMini target.
     /// </summary>
     [Description("DualShock 4")]
-    Wireless = 4
+    Wireless = 4,
+
+    /// <summary>
+    ///     Third-party HID gamepad. ShanWan VID 0x2563 / PID 0x0575 (PS1/PS2 USB adapter
+    ///     and other pads that reuse this identity). Rumble, no LEDs, no Bluetooth.
+    /// </summary>
+    [Description("Third-party HID")]
+    ThirdPartyHid = 5
 }
 
 /// <summary>

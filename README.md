@@ -10,7 +10,7 @@
 [![Build status](https://github.com/nefarius/DsHidMini/actions/workflows/build.yml/badge.svg)](https://github.com/nefarius/DsHidMini/actions/workflows/build.yml) [![GitHub All Releases](https://img.shields.io/github/downloads/nefarius/DsHidMini/total)](https://somsubhra.github.io/github-release-stats/?username=nefarius&repository=DsHidMini) ![GitHub issues](https://img.shields.io/github/issues/nefarius/DsHidMini) [![Discord](https://img.shields.io/discord/346756263763378176.svg)](https://discord.nefarius.at/) [![Website](https://img.shields.io/website-up-down-green-red/https/docs.nefarius.at.svg?label=docs.nefarius.at)](https://docs.nefarius.at/)
 
 Virtual HID Mini user-mode driver for Sony DualShock 3/SIXAXIS and Navigation
-controllers on Windows 10/11.
+controllers, plus the ShanWan PS1/PS2 USB adapter, on Windows 10/11.
 
 ## Version 3 (Stable)
 
@@ -26,7 +26,7 @@ Version 3 is the current stable release. Get the latest build from [releases](ht
 
 ## Summary
 
-DsHidMini is a self-contained [user-mode driver](https://learn.microsoft.com/windows-hardware/drivers/wdf/overview-of-the-umdf) for Windows 10/11 that presents Sony DualShock 3/SIXAXIS and Navigation controllers as configurable, standard-compliant HID devices. Games and apps can use [DirectInput](https://learn.microsoft.com/previous-versions/windows/desktop/ee416842(v=vs.85)), [Raw Input](https://learn.microsoft.com/windows/win32/inputdev/raw-input), the [HID API](https://learn.microsoft.com/windows-hardware/drivers/hid/introduction-to-hid-concepts), or XInput (via the optional [XInput Bridge](XInputBridge/README.md)). The driver supports **USB** and **Bluetooth** through [BthPS3](https://github.com/nefarius/BthPS3); the ControlApp configures modes and device behavior. Full documentation: [docs.nefarius.at/projects/DsHidMini](https://docs.nefarius.at/projects/DsHidMini/).
+DsHidMini is a self-contained [user-mode driver](https://learn.microsoft.com/windows-hardware/drivers/wdf/overview-of-the-umdf) for Windows 10/11 that presents Sony DualShock 3/SIXAXIS and Navigation controllers, and the ShanWan PS1/PS2 USB adapter, as configurable, standard-compliant HID devices. Games and apps can use [DirectInput](https://learn.microsoft.com/previous-versions/windows/desktop/ee416842(v=vs.85)), [Raw Input](https://learn.microsoft.com/windows/win32/inputdev/raw-input), the [HID API](https://learn.microsoft.com/windows-hardware/drivers/hid/introduction-to-hid-concepts), or XInput (via the optional [XInput Bridge](XInputBridge/README.md)). The driver supports **USB** and **Bluetooth** through [BthPS3](https://github.com/nefarius/BthPS3); the ControlApp configures modes and device behavior. Full documentation: [docs.nefarius.at/projects/DsHidMini](https://docs.nefarius.at/projects/DsHidMini/).
 
 ## Features
 
@@ -45,6 +45,7 @@ DsHidMini is a self-contained [user-mode driver](https://learn.microsoft.com/win
   controls, and wired USB power-off
 - **Compatibility:** [PCSX2](https://pcsx2.net/), [RPCS3](https://rpcs3.net/), [DS4Windows](https://github.com/Ryochan7/DS4Windows) (v2.2.10+), [RetroArch](https://www.retroarch.com/), [x360ce](https://www.x360ce.com/), [Dolphin](https://dolphin-emu.org/), [DuckStation](https://github.com/stenzek/duckstation); see [issue #40](https://github.com/nefarius/DsHidMini/issues/40) for XInput/DS4 notes
 - **Navigation Controller** — supported ([#48](https://github.com/nefarius/DsHidMini/issues/48)); one LED, no rumble; see [docs/NAVIGATION_CONTROLLER.md](docs/NAVIGATION_CONTROLLER.md)
+- **ShanWan PS1/PS2 USB adapter** (`VID_2563` / `PID_0575`) — buttons, hat, sticks, pressure, and rumble; no LEDs or motion; see [docs/THIRD_PARTY_HID_ADAPTER.md](docs/THIRD_PARTY_HID_ADAPTER.md)
 
 ## Unsupported hardware
 

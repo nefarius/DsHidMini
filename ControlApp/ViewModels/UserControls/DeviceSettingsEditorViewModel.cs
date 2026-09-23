@@ -71,6 +71,8 @@ public partial class SettingsEditorViewModel : ObservableObject
         UpdateLockStateOfGroups();
     }
 
+    private DsDeviceType _deviceType = DsDeviceType.Unknown;
+
     public bool HideRumbleSettings { get; private set; }
 
     public string DeviceCapabilityNote { get; private set; } = string.Empty;
@@ -79,6 +81,7 @@ public partial class SettingsEditorViewModel : ObservableObject
 
     public void ApplyDeviceCapabilities(DsDeviceType deviceType)
     {
+        _deviceType = deviceType;
         HideRumbleSettings = !DsDeviceCapabilities.HasRumble(deviceType);
         LedsSettingsVM.IsSingleLedDevice = DsDeviceCapabilities.HasSingleLed(deviceType);
         if (LedsSettingsVM.IsSingleLedDevice)
@@ -128,6 +131,16 @@ public partial class SettingsEditorViewModel : ObservableObject
             GeneralRumbleSettingsVM.IsGroupVisible = false;
             LeftMotorRescaleSettingsVM.IsGroupVisible = false;
             AltRumbleSettingsVM.IsGroupVisible = false;
+        }
+
+        if (!DsDeviceCapabilities.HasLeds(_deviceType))
+        {
+            LedsSettingsVM.IsGroupVisible = false;
+        }
+
+        if (!DsDeviceCapabilities.SupportsBluetooth(_deviceType))
+        {
+            WirelessSettingsVM.IsGroupVisible = false;
         }
     }
 

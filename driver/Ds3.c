@@ -369,7 +369,16 @@ NTSTATUS DsUsb_Ds3RequestDeviceAddress(WDFDEVICE Device)
 
 	FuncEntry(TRACE_DS3);
 
-	for (ULONG attempt = 1; attempt <= DS3_DEVICE_ADDRESS_MAX_ATTEMPTS; attempt++)
+	//
+	// ShanWan 2563:0575 does not implement Feature 0xF2. A class request it
+	// does not understand can make the firmware re-enumerate as 20BC:0055
+	// ("poor mode") and drop rumble. Synthesize a stable address instead.
+	// 
+	if (pDevCtx->DeviceType == DsDeviceTypeThirdPartyHid)
+	{
+		status = STATUS_NOT_SUPPORTED;
+	}
+	else for (ULONG attempt = 1; attempt <= DS3_DEVICE_ADDRESS_MAX_ATTEMPTS; attempt++)
 	{
 		if (NT_SUCCESS(status = USB_SendControlRequest(
 			pDevCtx,

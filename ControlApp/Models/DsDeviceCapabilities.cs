@@ -13,9 +13,16 @@ public static class DsDeviceCapabilities
     public const ushort SonyVendorId = 0x054C;
     public const ushort SixaxisProductId = 0x0268;
     public const ushort NavigationProductId = 0x042F;
+    public const ushort ShanWanVendorId = 0x2563;
+    public const ushort ShanWanAdapterProductId = 0x0575;
 
     public static DsDeviceType FromHardwareIds(ushort vendorId, ushort productId)
     {
+        if (vendorId == ShanWanVendorId && productId == ShanWanAdapterProductId)
+        {
+            return DsDeviceType.ThirdPartyHid;
+        }
+
         if (vendorId != SonyVendorId)
         {
             return DsDeviceType.Unknown;
@@ -71,7 +78,11 @@ public static class DsDeviceCapabilities
 
     public static bool HasRumble(DsDeviceType type) => type != DsDeviceType.Navigation;
 
+    public static bool HasLeds(DsDeviceType type) => type != DsDeviceType.ThirdPartyHid;
+
     public static bool HasSingleLed(DsDeviceType type) => type == DsDeviceType.Navigation;
+
+    public static bool SupportsBluetooth(DsDeviceType type) => type != DsDeviceType.ThirdPartyHid;
 
     public static bool IsNavigation(DsDeviceType type) => type == DsDeviceType.Navigation;
 
@@ -82,11 +93,17 @@ public static class DsDeviceCapabilities
             DsDeviceType.Sixaxis => "DualShock 3 / SIXAXIS",
             DsDeviceType.Motion => "Motion Controller",
             DsDeviceType.Wireless => "DualShock 4",
+            DsDeviceType.ThirdPartyHid => "PS1/PS2 USB Adapter (ShanWan)",
             _ => "DS3 Compatible HID Device"
         };
 
     public static string HidModeGuidance(DsDeviceType type) =>
-        IsNavigation(type)
-            ? "XInput is recommended. SDF, GPJ, SXS, and DS4Windows stay available for partial-input compatibility, but missing buttons, the right stick, extra pressure axes, rumble, and extra LEDs stay neutral or have no effect."
-            : string.Empty;
+        type switch
+        {
+            DsDeviceType.Navigation =>
+                "XInput is recommended. SDF, GPJ, SXS, and DS4Windows stay available for partial-input compatibility, but missing buttons, the right stick, extra pressure axes, rumble, and extra LEDs stay neutral or have no effect.",
+            DsDeviceType.ThirdPartyHid =>
+                "Buttons, hat, sticks, and pressure axes come from the adapter report. Motion stays neutral. There are no LEDs and no Bluetooth pairing.",
+            _ => string.Empty
+        };
 }

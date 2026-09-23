@@ -465,6 +465,7 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 // Classify the hardware family from VID/PID and publish it as a read-only
 // property so ControlApp does not infer capabilities from display names.
 // Sony Navigation is VID_054C / PID_042F (issue #48).
+// ShanWan PS1/PS2 adapter is VID_2563 / PID_0575.
 // 
 VOID
 DsDevice_AssignDeviceType(
@@ -484,6 +485,11 @@ DsDevice_AssignDeviceType(
 		pDevCtx->ProductId == DS_SONY_PID_SIXAXIS)
 	{
 		pDevCtx->DeviceType = DsDeviceTypeSixaxis;
+	}
+	else if (pDevCtx->VendorId == DS_SHANWAN_VENDOR_ID &&
+		pDevCtx->ProductId == DS_SHANWAN_PID_PS_ADAPTER)
+	{
+		pDevCtx->DeviceType = DsDeviceTypeThirdPartyHid;
 	}
 	else
 	{

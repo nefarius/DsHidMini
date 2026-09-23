@@ -245,13 +245,30 @@ DSHM_EvtExecuteOutputPacketReceived(
 	case DsDeviceConnectionTypeUsb:
 
 		//
+		// ShanWan accepts an 8-byte rumble report via SET_REPORT (output,
+		// id 0). The DS3 buffer stays the source of the motor strengths.
+		// 
+		if (pDevCtx->DeviceType == DsDeviceTypeThirdPartyHid)
+		{
+			UCHAR adapterReport[THIRD_PARTY_HID_OUTPUT_REPORT_LENGTH];
+
+			ThirdPartyHid_BuildOutputReport(
+				pDevCtx,
+				ClientWorkBuffer,
+				bufferSize,
+				adapterReport
+			);
+
+			status = ThirdPartyHid_SendOutputReport(pDevCtx, adapterReport);
+		}
+		//
 		// Devices without a usable interrupt OUT pipe (or explicitly
 		// configured to do so, see UsbOutputReportTransport) get their
 		// output reports over the control endpoint instead - the same
 		// mechanism the PS3 itself falls back to for its very first report
 		// (see issue #321).
 		// 
-		if (pDevCtx->Connection.Usb.OutputTransport == DsUsbOutputReportTransportControlEndpoint)
+		else if (pDevCtx->Connection.Usb.OutputTransport == DsUsbOutputReportTransportControlEndpoint)
 		{
 			status = DsUsb_Ds3SendOutputReportControl(
 				pDevCtx,

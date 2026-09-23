@@ -362,6 +362,16 @@ DsLed_Refresh(
 {
 	FuncEntry(TRACE_LED);
 
+	//
+	// No physical LEDs. Sending the DS3 output report here would also
+	// push a rumble packet the caller did not ask for.
+	// 
+	if (Context->DeviceType == DsDeviceTypeThirdPartyHid)
+	{
+		FuncExit(TRACE_LED, "status=%!STATUS!", STATUS_SUCCESS);
+		return STATUS_SUCCESS;
+	}
+
 	WdfWaitLockAcquire(Context->OutputReport.Lock, NULL);
 
 	DsLed_ApplyLocked(Context);

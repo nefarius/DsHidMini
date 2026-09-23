@@ -22,3 +22,4 @@ Attributes [TypeConverterAttribute](https://learn.microsoft.com/dotnet/api/syste
 | Navigation | 2 | Sony Navigation Controller (CECH-ZCS1, PID 0x042F). One LED, no rumble. |
 | Motion | 3 | Sony PlayStation Move Motion Controller. Not supported. |
 | Wireless | 4 | Sony DualShock 4. Not supported as a DsHidMini target. |
+| ThirdPartyHid | 5 | Third-party HID gamepad. ShanWan VID 0x2563 / PID 0x0575. Rumble, no LEDs, no Bluetooth. |

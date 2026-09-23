@@ -807,33 +807,62 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
-	//
-	// Validate expected packet size
-	// 
-	if (NumBytesTransferred < sizeof(DS3_RAW_INPUT_REPORT))
-	{
-		TraceEvents(
-			TRACE_LEVEL_WARNING,
-			TRACE_DSHIDMINIDRV,
-			"Received %I64d but expected %I64d",
-			NumBytesTransferred,
-			sizeof(DS3_RAW_INPUT_REPORT)
-		);
-
-		FuncExitNoReturn(TRACE_DSHIDMINIDRV);
-		return;
-	}
-
 	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Context);
-	const PDS3_RAW_INPUT_REPORT pInReport = (PDS3_RAW_INPUT_REPORT)WdfMemoryGetBuffer(Buffer, NULL);
+	DS3_RAW_INPUT_REPORT translatedReport;
+	PDS3_RAW_INPUT_REPORT pInReport;
 
-	//
-	// Some controllers occasionally send this broken report, ignore packet
-	// 
-	if (pInReport->Reserved0 == 0xFF)
+	if (pDevCtx->DeviceType == DsDeviceTypeThirdPartyHid)
 	{
-		FuncExitNoReturn(TRACE_DSHIDMINIDRV);
-		return;
+		if (NumBytesTransferred < THIRD_PARTY_HID_INPUT_REPORT_MINIMUM)
+		{
+			TraceEvents(
+				TRACE_LEVEL_WARNING,
+				TRACE_DSHIDMINIDRV,
+				"Received %I64d but expected at least %I64d",
+				NumBytesTransferred,
+				(size_t)THIRD_PARTY_HID_INPUT_REPORT_MINIMUM
+			);
+
+			FuncExitNoReturn(TRACE_DSHIDMINIDRV);
+			return;
+		}
+
+		ThirdPartyHid_TranslateInput(
+			(const UCHAR*)WdfMemoryGetBuffer(Buffer, NULL),
+			NumBytesTransferred,
+			&translatedReport
+		);
+		pInReport = &translatedReport;
+	}
+	else
+	{
+		//
+		// Validate expected packet size
+		// 
+		if (NumBytesTransferred < sizeof(DS3_RAW_INPUT_REPORT))
+		{
+			TraceEvents(
+				TRACE_LEVEL_WARNING,
+				TRACE_DSHIDMINIDRV,
+				"Received %I64d but expected %I64d",
+				NumBytesTransferred,
+				sizeof(DS3_RAW_INPUT_REPORT)
+			);
+
+			FuncExitNoReturn(TRACE_DSHIDMINIDRV);
+			return;
+		}
+
+		pInReport = (PDS3_RAW_INPUT_REPORT)WdfMemoryGetBuffer(Buffer, NULL);
+
+		//
+		// Some controllers occasionally send this broken report, ignore packet
+		// 
+		if (pInReport->Reserved0 == 0xFF)
+		{
+			FuncExitNoReturn(TRACE_DSHIDMINIDRV);
+			return;
+		}
 	}
 
 	QueryPerformanceFrequency(&freq);
@@ -903,7 +932,8 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 	// the on-change refresh instead.
 	// 
 	if (battery == DsBatteryStatusCharging &&
-		pDevCtx->DeviceType != DsDeviceTypeNavigation)
+		pDevCtx->DeviceType != DsDeviceTypeNavigation &&
+		pDevCtx->DeviceType != DsDeviceTypeThirdPartyHid)
 	{
 		if (pDevCtx->Connection.Usb.ChargingCycleTimestamp.QuadPart == 0)
 		{
