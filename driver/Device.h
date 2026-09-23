@@ -72,6 +72,20 @@ struct USB_DEVICE_CONTEXT
 	//
 	BOOLEAN OutputStalled;
 
+	//
+	// The power-up stop report has not been queued yet. The probe timer
+	// may run for this reason while OutputStalled is still clear. Cleared
+	// once that report is queued, and when teardown begins.
+	//
+	BOOLEAN InitialOutputProbePending;
+
+	//
+	// One-shot. Armed while OutputStalled or InitialOutputProbePending is
+	// set, and re-armed when a probe is skipped because it arrived before
+	// the probe period elapsed. NULL until USB device add creates it.
+	//
+	WDFTIMER OutputStallProbeTimer;
+
 	BOOLEAN OutputFetchFailureLogged;
 
 	UCHAR LastAttemptedAdapterReport[8];

@@ -106,6 +106,130 @@ public class RumbleTesterLifecycleTests
         Assert.True(output.DisposedAfterOff);
     }
 
+    [Fact(Timeout = 5000)]
+    public async Task Pulse_ShowsStallThenClearsWhenOutputRecovers()
+    {
+        var stalled = new int[1];
+        var output = new ScriptedRumbleOutput();
+        TaskCompletionSource on = NewSignal();
+        output.Handler = (large, small) =>
+        {
+            if (large != 0 || small != 0)
+            {
+                Interlocked.Exchange(ref stalled[0], 1);
+                on.TrySetResult();
+            }
+
+            return 0;
+        };
+
+        const string note = "Pair a controller to the receiver.";
+        RumbleTesterViewModel vm = new(
+            1,
+            "test",
+            () => output,
+            TimeSpan.FromSeconds(30),
+            () => Volatile.Read(ref stalled[0]) != 0,
+            note,
+            TimeSpan.FromMilliseconds(20))
+        {
+            LargeMotor = 25
+        };
+
+        Task pulse = vm.TestLargeCommand.ExecuteAsync(null);
+        await on.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        await WaitUntil(() =>
+            vm.IsOutputStalled && vm.StatusText == RumbleTesterStatus.Pulsing(25, 0));
+        Assert.Equal(InfoBarSeverity.Informational, vm.StatusSeverity);
+
+        Interlocked.Exchange(ref stalled[0], 0);
+        await WaitUntil(() => !vm.IsOutputStalled);
+
+        await vm.ShutdownAsync().WaitAsync(TimeSpan.FromSeconds(2));
+        await pulse.WaitAsync(TimeSpan.FromSeconds(2));
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task StalePoll_DoesNotClearStallObservedAfterSend()
+    {
+        var releasePoll = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource pollEntered = NewSignal();
+        int reads = 0;
+        var output = new ScriptedRumbleOutput();
+        RumbleTesterViewModel vm = new(
+            1,
+            "test",
+            () => output,
+            TimeSpan.FromSeconds(30),
+            () =>
+            {
+                if (Interlocked.Increment(ref reads) == 1)
+                {
+                    pollEntered.TrySetResult();
+                    return releasePoll.Task.GetAwaiter().GetResult();
+                }
+
+                return true;
+            },
+            "Pair a controller to the receiver.",
+            TimeSpan.FromSeconds(30))
+        {
+            LargeMotor = 25
+        };
+
+        await pollEntered.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        Task pulse = vm.TestLargeCommand.ExecuteAsync(null);
+        await WaitUntil(() =>
+            vm.IsOutputStalled && vm.StatusText == RumbleTesterStatus.Pulsing(25, 0));
+
+        releasePoll.TrySetResult(false);
+        DateTimeOffset deadline = DateTimeOffset.UtcNow + TimeSpan.FromMilliseconds(200);
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            Assert.True(vm.IsOutputStalled);
+            Assert.Equal(RumbleTesterStatus.Pulsing(25, 0), vm.StatusText);
+            await Task.Delay(10);
+        }
+
+        await vm.ShutdownAsync().WaitAsync(TimeSpan.FromSeconds(2));
+        await pulse.WaitAsync(TimeSpan.FromSeconds(2));
+    }
+
+    [Fact]
+    public async Task RejectedPulse_WhileStalled_ShowsStallGuidance()
+    {
+        const uint rejected = 0xC0000001;
+        bool stalled = false;
+        var output = new ScriptedRumbleOutput
+        {
+            Handler = (large, small) =>
+            {
+                if (large == 0 && small == 0)
+                {
+                    return 0;
+                }
+
+                stalled = true;
+                return rejected;
+            }
+        };
+
+        const string note = "Pair a controller to the receiver.";
+        RumbleTesterViewModel vm = new(1, "test", () => output, TimeSpan.Zero, () => stalled, note)
+        {
+            LargeMotor = 40
+        };
+
+        await vm.TestLargeCommand.ExecuteAsync(null);
+
+        Assert.True(vm.IsOutputStalled);
+        Assert.Equal(note, vm.StatusText);
+        Assert.Equal(InfoBarSeverity.Warning, vm.StatusSeverity);
+        Assert.Equal(new[] { ((byte)40, (byte)0), ((byte)0, (byte)0) }, output.Calls);
+
+        vm.Dispose();
+    }
+
     [Fact]
     public async Task RejectedPulse_ReportsNtStatusAndStillTurnsOff()
     {
@@ -263,6 +387,20 @@ public class RumbleTesterLifecycleTests
         await dispose.WaitAsync(TimeSpan.FromSeconds(2));
         Assert.True(output.DisposedAfterOff);
         Assert.Equal(1, output.DisposeCount);
+    }
+
+    private static async Task WaitUntil(Func<bool> condition)
+    {
+        DateTimeOffset deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(2);
+        while (!condition())
+        {
+            if (DateTimeOffset.UtcNow > deadline)
+            {
+                throw new TimeoutException("Condition was not met.");
+            }
+
+            await Task.Delay(10);
+        }
     }
 
     private static TaskCompletionSource NewSignal()

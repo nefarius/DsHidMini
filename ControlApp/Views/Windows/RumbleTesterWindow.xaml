@@ -33,11 +33,19 @@
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <ui:InfoBar
-                IsClosable="False"
-                IsOpen="True"
-                Message="{Binding StatusText}"
-                Severity="{Binding StatusSeverity}" />
+            <StackPanel>
+                <ui:InfoBar
+                    IsClosable="False"
+                    IsOpen="True"
+                    Message="{Binding StatusText}"
+                    Severity="{Binding StatusSeverity}" />
+                <ui:InfoBar
+                    Margin="0,8,0,0"
+                    IsClosable="False"
+                    IsOpen="{Binding IsOutputStalled}"
+                    Message="{Binding OutputStallNote}"
+                    Severity="Warning" />
+            </StackPanel>
             <DockPanel Grid.Row="2" LastChildFill="True">
                 <ui:TextBlock
                     Width="108"

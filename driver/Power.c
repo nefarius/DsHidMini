@@ -134,6 +134,8 @@ DsHidMini_EvtDeviceReleaseHardware(
 		WdfTimerStop(pDevCtx->RumbleControlState.RumbleKeepAliveTimer, TRUE);
 	}
 
+	ThirdPartyHid_StopOutputStallProbe(pDevCtx, TRUE);
+
 	//
 	// Stop delivering input reports before any DMF Module gets a chance to
 	// close. Idempotent: if D0Exit already stopped this target (normal
@@ -275,6 +277,13 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 	if (NT_SUCCESS(status))
 	{
 		DMF_ThreadedBufferQueue_Start(pDevCtx->OutputReport.Worker);
+
+		//
+		// DsUsb_D0Entry returns before this start, so a probe placed there
+		// cannot enqueue. One stop report is enough to publish a stall when
+		// no controller is linked to a ShanWan adapter.
+		//
+		ThirdPartyHid_ProbeOutputPath(pDevCtx);
 	}
 	
 	FuncExit(TRACE_POWER, "status=%!STATUS!", status);
@@ -310,6 +319,8 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 	{
 		WdfTimerStop(pDevCtx->RumbleControlState.RumbleKeepAliveTimer, TRUE);
 	}
+
+	ThirdPartyHid_StopOutputStallProbe(pDevCtx, TRUE);
 
 	//
 	// Stop processing received output report packets

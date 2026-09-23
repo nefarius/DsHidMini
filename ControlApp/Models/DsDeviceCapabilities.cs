@@ -114,4 +114,18 @@ public static class DsDeviceCapabilities
                 "The adapter is not accepting output reports, so rumble cannot reach the pad. Make sure a controller is paired to the PS1/PS2 receiver; rumble resumes on its own once it is.",
             _ => string.Empty
         };
+
+    /// <summary>
+    ///     True when this device type surfaces output-stall guidance and the driver
+    ///     published a failing NTSTATUS. A missing property is not a stall.
+    /// </summary>
+    public static bool IsOutputReportStalled(DsDeviceType type, int? outputReportStatus)
+    {
+        if (string.IsNullOrEmpty(OutputStallGuidance(type)))
+        {
+            return false;
+        }
+
+        return outputReportStatus is int status && status != 0;
+    }
 }

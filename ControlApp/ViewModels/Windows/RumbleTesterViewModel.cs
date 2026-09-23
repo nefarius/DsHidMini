@@ -10,17 +10,24 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
     internal static readonly TimeSpan DefaultPulseDuration = TimeSpan.FromMilliseconds(800);
 
     private readonly Func<IRumbleOutput> _outputFactory;
+    private readonly Func<bool>? _readOutputStalled;
     private readonly TimeSpan _pulseDuration;
     private readonly object _gate = new();
     private readonly object _shutdownLock = new();
     private IRumbleOutput? _output;
+    private System.Threading.Timer? _outputStallPoll;
     private CancellationTokenSource? _pulseCts;
     private Task<RumbleCommandResult>? _shutdownTask;
     private int _acceptCommands = 1;
     private int _pulseGeneration;
+    private int _outputStallEpoch;
 
-    public RumbleTesterViewModel(int deviceIndex, string deviceTitle)
-        : this(deviceIndex, deviceTitle, null, null)
+    public RumbleTesterViewModel(
+        int deviceIndex,
+        string deviceTitle,
+        Func<bool>? readOutputStalled = null,
+        string? outputStallNote = null)
+        : this(deviceIndex, deviceTitle, null, null, readOutputStalled, outputStallNote, null)
     {
     }
 
@@ -28,13 +35,29 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
         int deviceIndex,
         string deviceTitle,
         Func<IRumbleOutput>? outputFactory,
-        TimeSpan? pulseDuration)
+        TimeSpan? pulseDuration,
+        Func<bool>? readOutputStalled = null,
+        string? outputStallNote = null,
+        TimeSpan? outputStallPollInterval = null)
     {
         _outputFactory = outputFactory ?? (() => new IpcRumbleOutput(deviceIndex));
+        _readOutputStalled = readOutputStalled;
         _pulseDuration = pulseDuration ?? DefaultPulseDuration;
+        OutputStallNote = outputStallNote ?? string.Empty;
         Title = $"Rumble tester — {deviceTitle}";
         StatusText = RumbleTesterStatus.Ready;
+        if (readOutputStalled is not null)
+        {
+            TimeSpan interval = outputStallPollInterval ?? TimeSpan.FromMilliseconds(500);
+            _outputStallPoll = new Timer(
+                _ => PublishPolledStall(),
+                null,
+                TimeSpan.Zero,
+                interval);
+        }
     }
+
+    public string OutputStallNote { get; }
 
     public string Title { get; }
 
@@ -52,6 +75,9 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
 
     [ObservableProperty]
     private bool _isPulsing;
+
+    [ObservableProperty]
+    private bool _isOutputStalled;
 
     [ObservableProperty]
     private bool _isShutdown;
@@ -92,6 +118,7 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
             }
 
             IsShutdown = true;
+            StopOutputStallPoll();
             _shutdownTask = Task.Run(ShutdownCore);
             return _shutdownTask;
         }
@@ -133,13 +160,16 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
                 return;
             }
 
+            bool stalled = QueryOutputStalled();
+            int epoch = ObserveOutputStall();
             Publish(() =>
             {
-                if (!IsCurrentPulse(generation))
+                if (!IsCurrentPulse(generation) || !IsCurrentStallObservation(epoch))
                 {
                     return;
                 }
 
+                IsOutputStalled = stalled;
                 IsPulsing = on.Succeeded;
                 ApplyResult(on, RumbleTesterStatus.Pulsing(large, small));
             });
@@ -168,13 +198,16 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
                 return;
             }
 
+            bool stalledAfterOff = QueryOutputStalled();
+            int epochAfterOff = ObserveOutputStall();
             Publish(() =>
             {
-                if (!IsCurrentPulse(generation))
+                if (!IsCurrentPulse(generation) || !IsCurrentStallObservation(epochAfterOff))
                 {
                     return;
                 }
 
+                IsOutputStalled = stalledAfterOff;
                 IsPulsing = false;
                 if (!off.Succeeded)
                 {
@@ -217,13 +250,16 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
         int generation = Interlocked.Increment(ref _pulseGeneration);
         CancelPulse(_pulseCts);
         RumbleCommandResult off = await Task.Run(() => Send(0, 0, generation)).ConfigureAwait(false);
+        bool stalled = QueryOutputStalled();
+        int epoch = ObserveOutputStall();
         Publish(() =>
         {
-            if (!IsCurrentPulse(generation))
+            if (!IsCurrentPulse(generation) || !IsCurrentStallObservation(epoch))
             {
                 return;
             }
 
+            IsOutputStalled = stalled;
             IsPulsing = false;
             ApplyResult(off, RumbleTesterStatus.Off);
         });
@@ -325,6 +361,13 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
 
         if (!PowerOffUsbResult.IsNtSuccess(result.Status))
         {
+            if (IsOutputStalled && !string.IsNullOrEmpty(OutputStallNote))
+            {
+                StatusSeverity = InfoBarSeverity.Warning;
+                StatusText = OutputStallNote;
+                return;
+            }
+
             StatusSeverity = InfoBarSeverity.Error;
             StatusText = RumbleTesterStatus.Rejected(result.Status);
             return;
@@ -332,6 +375,60 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
 
         StatusSeverity = InfoBarSeverity.Informational;
         StatusText = successText;
+    }
+
+    private bool QueryOutputStalled()
+    {
+        if (_readOutputStalled is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            return _readOutputStalled();
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Debug(ex, "Failed to read output stall status");
+            return false;
+        }
+    }
+
+    private int ObserveOutputStall()
+    {
+        return Interlocked.Increment(ref _outputStallEpoch);
+    }
+
+    private bool IsCurrentStallObservation(int epoch)
+    {
+        return Volatile.Read(ref _outputStallEpoch) == epoch;
+    }
+
+    //
+    // The epoch is captured before the read. A rumble command that observes
+    // the stall flag while this read is in flight bumps the epoch, and this
+    // update is dropped so it cannot replace that newer status.
+    //
+    private void PublishPolledStall()
+    {
+        int epoch = Volatile.Read(ref _outputStallEpoch);
+        bool stalled = QueryOutputStalled();
+        Publish(() =>
+        {
+            if (IsShutdown || !IsCurrentStallObservation(epoch))
+            {
+                return;
+            }
+
+            IsOutputStalled = stalled;
+        });
+    }
+
+    private void StopOutputStallPoll()
+    {
+        Timer? poll = Interlocked.Exchange(ref _outputStallPoll, null);
+        poll?.Dispose();
     }
 
     private void Publish(Action apply)

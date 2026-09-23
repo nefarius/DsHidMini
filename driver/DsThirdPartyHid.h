@@ -72,3 +72,25 @@ VOID
 ThirdPartyHid_ResetOutputStall(
 	_In_ PDEVICE_CONTEXT Context
 );
+
+//
+// Cancels OutputStallProbeTimer. Wait is TRUE on power-down, where the
+// callback must finish before the output worker stops.
+//
+VOID
+ThirdPartyHid_StopOutputStallProbe(
+	_In_ PDEVICE_CONTEXT Context,
+	_In_ BOOLEAN Wait
+);
+
+//
+// Sends one stop report so an unlinked adapter publishes a stall without
+// waiting for an application rumble request. Call only after the output
+// worker has been started; DsUsb_D0Entry runs before that.
+//
+VOID
+ThirdPartyHid_ProbeOutputPath(
+	_In_ PDEVICE_CONTEXT Context
+);
+
+EVT_WDF_TIMER ThirdPartyHid_EvtOutputStallProbeTimerFunc;

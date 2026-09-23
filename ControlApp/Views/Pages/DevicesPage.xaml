@@ -113,6 +113,17 @@
 
 
                                         <DockPanel DockPanel.Dock="Right" LastChildFill="False">
+                                            <!--  ShanWan output stall  -->
+                                            <Viewbox
+                                                Margin="0,5,5,0"
+                                                DockPanel.Dock="Left"
+                                                Visibility="{Binding IsOutputStalled, Converter={StaticResource BoolToVis_TV_FC}}">
+                                                <ui:SymbolIcon
+                                                    Foreground="Yellow"
+                                                    Symbol="Warning24"
+                                                    ToolTip="{Binding OutputStallNote}"
+                                                    ToolTipService.InitialShowDelay="200" />
+                                            </Viewbox>
                                             <!--  Mismatched HID status  -->
                                             <Viewbox
                                                 Margin="0,5,5,0"
