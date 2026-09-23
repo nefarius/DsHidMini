@@ -112,6 +112,66 @@ public class DocsHttpCacheTests
         Assert.Equal(OuiDatabasePath, host.Handler.RequestPaths[1]);
     }
 
+    [Theory]
+    [InlineData("not-json")]
+    [InlineData("null")]
+    [InlineData("[\"00112\"]")]
+    [InlineData("[\"00:11:22\",\"00112\"]")]
+    public async Task IsGenuineAddress_DoesNotReuseRejectedDatabase(string rejectedJson)
+    {
+        await using CacheHost host = await CacheHost.StartAsync(TimeSpan.FromHours(1), call =>
+            call == 1 ? Json(rejectedJson) : Json(OuiDatabaseJson));
+
+        Assert.False(await host.Validator.IsGenuineAddress(GenuineAddress));
+        Assert.True(await host.Validator.IsGenuineAddress(GenuineAddress));
+        Assert.Equal(2, host.Handler.Calls);
+    }
+
+    [Theory]
+    [InlineData("not-json")]
+    [InlineData("null")]
+    [InlineData("[\"00112\"]")]
+    [InlineData("[\"00:11:22\",\"00112\"]")]
+    public async Task IsGenuineAddress_KeepsValidSnapshotWhenRefreshIsRejected(string rejectedJson)
+    {
+        await using CacheHost host = await CacheHost.StartAsync(TimeSpan.FromMilliseconds(200), call =>
+            call == 1 ? Json(OuiDatabaseJson) : Json(rejectedJson));
+
+        Assert.True(await host.Validator.IsGenuineAddress(GenuineAddress));
+        await Task.Delay(TimeSpan.FromMilliseconds(500));
+
+        Assert.True(await host.Validator.IsGenuineAddress(GenuineAddress));
+        Assert.Equal(2, host.Handler.Calls);
+    }
+
+    [Fact]
+    public async Task AddDocsHttpClient_SkipsCacheWhenDirectoryCannotBeCreated()
+    {
+        string root = Path.Combine(Path.GetTempPath(), "DsHidMini-docs-cache-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        string blockingFile = Path.Combine(root, "blocked");
+        await File.WriteAllTextAsync(blockingFile, "not a directory");
+        string databasePath = Path.Combine(blockingFile, "docs-http-cache.db");
+
+        await using CacheHost host = await CacheHost.StartAsync(
+            TimeSpan.FromHours(1),
+            call =>
+            {
+                if (call == 1)
+                {
+                    return Json(OuiDatabaseJson);
+                }
+
+                throw new HttpRequestException("offline");
+            },
+            databasePath,
+            root);
+
+        Assert.True(await host.Validator.IsGenuineAddress(GenuineAddress));
+        Assert.False(await host.Validator.IsGenuineAddress(GenuineAddress));
+        Assert.Equal(1 + CacheHost.RetryAttempts, host.Handler.Calls);
+    }
+
     private static HttpResponseMessage Json(string json)
     {
         return new HttpResponseMessage(HttpStatusCode.OK)
@@ -142,17 +202,26 @@ public class DocsHttpCacheTests
 
         public static async Task<CacheHost> StartAsync(
             TimeSpan cacheLifetime,
-            Func<int, HttpResponseMessage> respond)
+            Func<int, HttpResponseMessage> respond,
+            string? databasePath = null,
+            string? cleanupDirectory = null)
         {
-            return await StartAsync(cacheLifetime, (_, call) => respond(call));
+            return await StartAsync(
+                cacheLifetime,
+                (_, call) => respond(call),
+                databasePath,
+                cleanupDirectory);
         }
 
         public static async Task<CacheHost> StartAsync(
             TimeSpan cacheLifetime,
-            Func<HttpRequestMessage, int, HttpResponseMessage> respond)
+            Func<HttpRequestMessage, int, HttpResponseMessage> respond,
+            string? databasePath = null,
+            string? cleanupDirectory = null)
         {
-            string directory = Path.Combine(Path.GetTempPath(), "DsHidMini-docs-cache-" + Guid.NewGuid().ToString("N"));
-            string databasePath = Path.Combine(directory, "docs-http-cache.db");
+            string directory = cleanupDirectory
+                               ?? Path.Combine(Path.GetTempPath(), "DsHidMini-docs-cache-" + Guid.NewGuid().ToString("N"));
+            databasePath ??= Path.Combine(directory, "docs-http-cache.db");
             ScriptedHandler handler = new(respond);
 
             IHost host = Host.CreateDefaultBuilder()

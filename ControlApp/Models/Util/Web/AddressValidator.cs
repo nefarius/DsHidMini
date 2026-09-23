@@ -107,7 +107,7 @@ public sealed class AddressValidator(IHttpClientFactory clientFactory, ILogger<A
         try
         {
             IList<string>? rawOuiList =
-                await client.GetFromJsonAsync<IList<string>>("/projects/DsHidMini/genuine_oui_db.json");
+                await client.GetFromJsonAsync<IList<string>>(DocsHttpClient.OuiDatabasePath);
 
             if (rawOuiList is null)
             {
