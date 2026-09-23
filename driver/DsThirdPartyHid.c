@@ -293,6 +293,85 @@ ThirdPartyHid_StallProbeDue(
 	return elapsedMs >= THIRD_PARTY_HID_STALL_PROBE_PERIOD_MS;
 }
 
+static BOOLEAN
+ThirdPartyHid_InterruptOutTimedOut(
+	_In_ NTSTATUS Status
+)
+{
+	//
+	// WDF completes a send-option timeout as STATUS_IO_TIMEOUT. The
+	// cancelled URB is also reported as STATUS_CANCELLED.
+	//
+	return Status == STATUS_IO_TIMEOUT || Status == STATUS_CANCELLED;
+}
+
+//
+// A timed-out write cancels the URB and can leave this pipe's I/O target
+// unable to accept another transfer. Stop, abort, reset, then start is the
+// documented USB pipe recovery order. The interrupt IN reader uses a
+// different pipe and is left running.
+//
+static NTSTATUS
+ThirdPartyHid_RecoverInterruptOutPipe(
+	_In_ WDFUSBPIPE Pipe
+)
+{
+	const WDFIOTARGET ioTarget = WdfUsbTargetPipeGetIoTarget(Pipe);
+	NTSTATUS status = STATUS_SUCCESS;
+	NTSTATUS stepStatus;
+
+	//
+	// UMDF's WdfIoTargetStop returns void. It cancels outstanding I/O
+	// on this pipe only.
+	//
+	WdfIoTargetStop(ioTarget, WdfIoTargetCancelSentIo);
+
+	stepStatus = WdfUsbTargetPipeAbortSynchronously(Pipe, NULL, NULL);
+	if (!NT_SUCCESS(stepStatus))
+	{
+		TraceWarning(
+			TRACE_DSUSB,
+			"WdfUsbTargetPipeAbortSynchronously failed with status %!STATUS!",
+			stepStatus
+		);
+		status = stepStatus;
+	}
+
+	stepStatus = WdfUsbTargetPipeResetSynchronously(Pipe, NULL, NULL);
+	if (!NT_SUCCESS(stepStatus))
+	{
+		TraceWarning(
+			TRACE_DSUSB,
+			"WdfUsbTargetPipeResetSynchronously failed with status %!STATUS!",
+			stepStatus
+		);
+		if (NT_SUCCESS(status))
+		{
+			status = stepStatus;
+		}
+	}
+
+	//
+	// Start even when abort or reset failed. Stop already succeeded, and
+	// leaving the target stopped would fail every later write.
+	//
+	stepStatus = WdfIoTargetStart(ioTarget);
+	if (!NT_SUCCESS(stepStatus))
+	{
+		TraceWarning(
+			TRACE_DSUSB,
+			"WdfIoTargetStart on interrupt OUT failed with status %!STATUS!",
+			stepStatus
+		);
+		if (NT_SUCCESS(status))
+		{
+			status = stepStatus;
+		}
+	}
+
+	return status;
+}
+
 NTSTATUS
 ThirdPartyHid_SendOutputReport(
 	_In_ PDEVICE_CONTEXT Context,
@@ -349,6 +428,22 @@ ThirdPartyHid_SendOutputReport(
 			&memoryDesc,
 			THIRD_PARTY_HID_OUTPUT_TIMEOUT_MS
 		);
+
+		//
+		// Recover the pipe, then send this report once more. A controller
+		// that linked while the first URB was being cancelled can ACK the
+		// retry. A second timeout still takes the stall path below.
+		//
+		if (ThirdPartyHid_InterruptOutTimedOut(status)
+			&& NT_SUCCESS(ThirdPartyHid_RecoverInterruptOutPipe(
+				Context->Connection.Usb.InterruptOutPipe)))
+		{
+			status = USB_WriteInterruptOutSync(
+				Context,
+				&memoryDesc,
+				THIRD_PARTY_HID_OUTPUT_TIMEOUT_MS
+			);
+		}
 	}
 
 	RtlCopyMemory(
