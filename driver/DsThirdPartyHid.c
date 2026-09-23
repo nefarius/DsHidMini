@@ -299,10 +299,11 @@ ThirdPartyHid_InterruptOutTimedOut(
 )
 {
 	//
-	// WDF completes a send-option timeout as STATUS_IO_TIMEOUT. The
-	// cancelled URB is also reported as STATUS_CANCELLED.
+	// WDF completes a send-option timeout as STATUS_IO_TIMEOUT. STATUS_CANCELLED
+	// is a different completion (power-down or an explicit cancel) and must
+	// not restart the pipe.
 	//
-	return Status == STATUS_IO_TIMEOUT || Status == STATUS_CANCELLED;
+	return Status == STATUS_IO_TIMEOUT;
 }
 
 //
