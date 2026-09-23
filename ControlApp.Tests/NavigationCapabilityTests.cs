@@ -1,4 +1,5 @@
 using Nefarius.DsHidMini.ControlApp.Models;
+using Nefarius.DsHidMini.ControlApp.Models.Rumble;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 using Nefarius.DsHidMini.ControlApp.ViewModels.UserControls;
@@ -92,6 +93,39 @@ public class NavigationCapabilityTests
     {
         Assert.NotEqual(DsHidMiniDriver.DeviceAddressSynthesizedProperty, DsHidMiniDriver.DeviceTypeProperty);
         Assert.NotEqual(DsHidMiniDriver.IdentificationCloneHeuristicProperty, DsHidMiniDriver.DeviceTypeProperty);
+    }
+
+    [Theory]
+    [InlineData(true, true, true, true)]
+    [InlineData(true, true, false, false)]
+    [InlineData(false, true, true, false)]
+    [InlineData(true, false, true, false)]
+    public void RumbleTester_CanOpenRequiresIpcSlotAndRumble(
+        bool ipcAvailable,
+        bool hasSlot,
+        bool hasRumble,
+        bool expected)
+    {
+        Assert.Equal(expected, RumbleTesterAvailability.CanOpen(ipcAvailable, hasSlot, hasRumble));
+    }
+
+    [Fact]
+    public void RumbleTester_NavigationCannotOpenEvenWhenIpcIsReady()
+    {
+        Assert.False(RumbleTesterAvailability.CanOpen(
+            ipcAvailable: true,
+            hasSlot: true,
+            hasRumble: DsDeviceCapabilities.HasRumble(DsDeviceType.Navigation)));
+        Assert.Contains("rumble", RumbleTesterAvailability.ToolTip(false), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void RumbleTester_SixaxisCanOpenWhenIpcIsReady()
+    {
+        Assert.True(RumbleTesterAvailability.CanOpen(
+            ipcAvailable: true,
+            hasSlot: true,
+            hasRumble: DsDeviceCapabilities.HasRumble(DsDeviceType.Sixaxis)));
     }
 
     [Fact]
