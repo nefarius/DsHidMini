@@ -41,6 +41,11 @@ partial class Build : NukeBuild
     [NuGetPackage("Nefarius.Tools.WDKWhere", "wdkwhere.dll", Framework = "net8.0")]
     readonly Tool WdkWhere;
 
+    // Must match the portable SDK/WDK packages restored by the GitHub Actions build.
+    // A global MSBuild property prevents runner image updates from changing
+    // $(LatestTargetPlatformVersion) underneath the portable WDK.
+    const string CiWindowsTargetPlatformVersion = "10.0.28000.0";
+
     AbsolutePath DmfSolution => Solution.Directory / "DMF/Dmf.sln";
 
     AbsolutePath ResolvedArtifactsPath => (AbsolutePath)Path.GetFullPath(Path.Combine(RootDirectory, ArtifactsPath));
@@ -160,19 +165,29 @@ partial class Build : NukeBuild
                 // MSBuild resolves "DmfU" as a solution-level target and pulls in its dependencies
                 // (DmfUFramework, DmfUModules.Library, DmfUModules.Template, DmfUModules.Library.Tests).
                 Log.Information("Building DMF DmfU {Configuration} | {Platform}", config, platform);
-                MSBuildTasks.MSBuild(s => s
-                    .SetProcessToolPath(MSBuildPath)
-                    .SetTargetPath(DmfSolution)
-                    .SetTargets("DmfU")
-                    .SetConfiguration(config)
-                    .SetTargetPlatform(platform)
-                    .SetMaxCpuCount(Environment.ProcessorCount)
-                    .SetNodeReuse(IsLocalBuild)
-                    .SetVerbosity(MSBuildVerbosity.Minimal)
-                    // VS 2026's STL errors on DMF's /await experimental coroutine modules unless silenced.
-                    .SetProperty("ForceImportBeforeCppTargets",
-                        RootDirectory / "build" / "SilenceExperimentalCoroutines.props")
-                );
+                MSBuildTasks.MSBuild(s =>
+                {
+                    MSBuildSettings settings = s
+                        .SetProcessToolPath(MSBuildPath)
+                        .SetTargetPath(DmfSolution)
+                        .SetTargets("DmfU")
+                        .SetConfiguration(config)
+                        .SetTargetPlatform(platform)
+                        .SetMaxCpuCount(Environment.ProcessorCount)
+                        .SetNodeReuse(IsLocalBuild)
+                        .SetVerbosity(MSBuildVerbosity.Minimal)
+                        // VS 2026's STL errors on DMF's /await experimental coroutine modules unless silenced.
+                        .SetProperty("ForceImportBeforeCppTargets",
+                            RootDirectory / "build" / "SilenceExperimentalCoroutines.props");
+
+                    if (!IsLocalBuild)
+                    {
+                        settings = settings.SetProperty(
+                            "WindowsTargetPlatformVersion", CiWindowsTargetPlatformVersion);
+                    }
+
+                    return settings;
+                });
             }
         });
 
@@ -208,6 +223,7 @@ partial class Build : NukeBuild
 
                     settings = settings
                         .SetTargetPlatform((MSBuildTargetPlatform)TargetPlatform)
+                        .SetProperty("WindowsTargetPlatformVersion", CiWindowsTargetPlatformVersion)
                         // Compile produces unsigned driver DLLs. The partner-cab job EV-signs
                         // those binaries immediately before packing the submission CAB.
                         .SetProperty("SignMode", "Off");

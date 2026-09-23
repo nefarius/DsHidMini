@@ -30,6 +30,7 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="Nefarius.HttpClient.LiteDbCache" Version="2.5.0" />
         <PackageReference Include="Nefarius.Utilities.Bluetooth" Version="1.8.2"/>
         <PackageReference Include="Nefarius.Utilities.DeviceManagement" Version="6.1.0"/>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />

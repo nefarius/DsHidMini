@@ -124,11 +124,7 @@ public partial class App
                 client.DefaultRequestHeaders.UserAgent.ParseAdd(context.HostingEnvironment.ApplicationName);
             }).AddCommonRetryPolicy();
 
-            services.AddHttpClient("Docs", client =>
-            {
-                client.BaseAddress = new Uri("https://docs.nefarius.at/");
-                client.DefaultRequestHeaders.UserAgent.ParseAdd(context.HostingEnvironment.ApplicationName);
-            }).AddCommonRetryPolicy();
+            services.AddDocsHttpClient(context.HostingEnvironment.ApplicationName);
         }).Build();
 
     /// <summary>
