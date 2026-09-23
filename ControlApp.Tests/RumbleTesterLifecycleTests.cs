@@ -149,6 +149,52 @@ public class RumbleTesterLifecycleTests
         await pulse.WaitAsync(TimeSpan.FromSeconds(2));
     }
 
+    [Fact(Timeout = 5000)]
+    public async Task StalePoll_DoesNotClearStallObservedAfterSend()
+    {
+        var releasePoll = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource pollEntered = NewSignal();
+        int reads = 0;
+        var output = new ScriptedRumbleOutput();
+        RumbleTesterViewModel vm = new(
+            1,
+            "test",
+            () => output,
+            TimeSpan.FromSeconds(30),
+            () =>
+            {
+                if (Interlocked.Increment(ref reads) == 1)
+                {
+                    pollEntered.TrySetResult();
+                    return releasePoll.Task.GetAwaiter().GetResult();
+                }
+
+                return true;
+            },
+            "Pair a controller to the receiver.",
+            TimeSpan.FromSeconds(30))
+        {
+            LargeMotor = 25
+        };
+
+        await pollEntered.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        Task pulse = vm.TestLargeCommand.ExecuteAsync(null);
+        await WaitUntil(() =>
+            vm.IsOutputStalled && vm.StatusText == RumbleTesterStatus.Pulsing(25, 0));
+
+        releasePoll.TrySetResult(false);
+        DateTimeOffset deadline = DateTimeOffset.UtcNow + TimeSpan.FromMilliseconds(200);
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            Assert.True(vm.IsOutputStalled);
+            Assert.Equal(RumbleTesterStatus.Pulsing(25, 0), vm.StatusText);
+            await Task.Delay(10);
+        }
+
+        await vm.ShutdownAsync().WaitAsync(TimeSpan.FromSeconds(2));
+        await pulse.WaitAsync(TimeSpan.FromSeconds(2));
+    }
+
     [Fact]
     public async Task RejectedPulse_WhileStalled_ShowsStallGuidance()
     {

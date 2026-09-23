@@ -20,6 +20,7 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
     private Task<RumbleCommandResult>? _shutdownTask;
     private int _acceptCommands = 1;
     private int _pulseGeneration;
+    private int _outputStallEpoch;
 
     public RumbleTesterViewModel(
         int deviceIndex,
@@ -49,7 +50,7 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
         {
             TimeSpan interval = outputStallPollInterval ?? TimeSpan.FromMilliseconds(500);
             _outputStallPoll = new Timer(
-                _ => PublishOutputStall(QueryOutputStalled()),
+                _ => PublishPolledStall(),
                 null,
                 TimeSpan.Zero,
                 interval);
@@ -160,9 +161,10 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
             }
 
             bool stalled = QueryOutputStalled();
+            int epoch = ObserveOutputStall();
             Publish(() =>
             {
-                if (!IsCurrentPulse(generation))
+                if (!IsCurrentPulse(generation) || !IsCurrentStallObservation(epoch))
                 {
                     return;
                 }
@@ -197,9 +199,10 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
             }
 
             bool stalledAfterOff = QueryOutputStalled();
+            int epochAfterOff = ObserveOutputStall();
             Publish(() =>
             {
-                if (!IsCurrentPulse(generation))
+                if (!IsCurrentPulse(generation) || !IsCurrentStallObservation(epochAfterOff))
                 {
                     return;
                 }
@@ -248,9 +251,10 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
         CancelPulse(_pulseCts);
         RumbleCommandResult off = await Task.Run(() => Send(0, 0, generation)).ConfigureAwait(false);
         bool stalled = QueryOutputStalled();
+        int epoch = ObserveOutputStall();
         Publish(() =>
         {
-            if (!IsCurrentPulse(generation))
+            if (!IsCurrentPulse(generation) || !IsCurrentStallObservation(epoch))
             {
                 return;
             }
@@ -391,11 +395,28 @@ public sealed partial class RumbleTesterViewModel : ObservableObject, IDisposabl
         }
     }
 
-    private void PublishOutputStall(bool stalled)
+    private int ObserveOutputStall()
     {
+        return Interlocked.Increment(ref _outputStallEpoch);
+    }
+
+    private bool IsCurrentStallObservation(int epoch)
+    {
+        return Volatile.Read(ref _outputStallEpoch) == epoch;
+    }
+
+    //
+    // The epoch is captured before the read. A rumble command that observes
+    // the stall flag while this read is in flight bumps the epoch, and this
+    // update is dropped so it cannot replace that newer status.
+    //
+    private void PublishPolledStall()
+    {
+        int epoch = Volatile.Read(ref _outputStallEpoch);
+        bool stalled = QueryOutputStalled();
         Publish(() =>
         {
-            if (IsShutdown)
+            if (IsShutdown || !IsCurrentStallObservation(epoch))
             {
                 return;
             }
