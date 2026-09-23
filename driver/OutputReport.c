@@ -168,6 +168,12 @@ DSHM_SendOutputReportUnlocked(
 		// Store origin
 		//
 		sendContext->ReportSource = Source;
+		sendContext->RightMotorStrength = ThirdPartyHid_CaptureRightMotorStrength(
+			Source,
+			sourceBuffer,
+			sourceBufferLength,
+			Context->RumbleControlState.LightCache
+		);
 
 		//
 		// Copy current report to buffer
@@ -253,9 +259,9 @@ DSHM_EvtExecuteOutputPacketReceived(
 			UCHAR adapterReport[THIRD_PARTY_HID_OUTPUT_REPORT_LENGTH];
 
 			ThirdPartyHid_BuildOutputReport(
-				pDevCtx,
 				ClientWorkBuffer,
 				bufferSize,
+				pRepCtx->RightMotorStrength,
 				adapterReport
 			);
 

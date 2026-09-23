@@ -147,14 +147,42 @@ ThirdPartyHid_TranslateInput(
 }
 
 //
-// DS3 small-motor wire byte is only 0 or 1. The requested magnitude stays
-// in LightCache. Large-motor byte 5 already holds the rescaled strength.
+// Snapshot the right-motor magnitude for the report about to be queued.
+// Pass-through copies a DS3 report whose small-motor byte is only on/off
+// and does not update LightCache, so an "on" write uses full strength.
+// Every other source already stored its magnitude in LightCache before
+// the send, and that value is what must travel with this queue entry.
+// 
+UCHAR
+ThirdPartyHid_CaptureRightMotorStrength(
+	_In_ DS_OUTPUT_REPORT_SOURCE Source,
+	_In_reads_(Ds3ReportLength) const UCHAR* Ds3Report,
+	_In_ size_t Ds3ReportLength,
+	_In_ UCHAR LightCache
+)
+{
+	if (Ds3Report == NULL || Ds3ReportLength <= 3 || Ds3Report[3] == 0)
+	{
+		return 0;
+	}
+
+	if (Source == Ds3OutputReportSourcePassThrough || LightCache == 0)
+	{
+		return THIRD_PARTY_HID_SMALL_MOTOR_ON_STRENGTH;
+	}
+
+	return LightCache;
+}
+
+//
+// Large-motor byte 5 already holds the rescaled strength. RightMotorStrength
+// is the snapshot taken when this report was queued.
 // 
 VOID
 ThirdPartyHid_BuildOutputReport(
-	_In_ const PDEVICE_CONTEXT Context,
 	_In_reads_(Ds3ReportLength) const UCHAR* Ds3Report,
 	_In_ size_t Ds3ReportLength,
+	_In_ UCHAR RightMotorStrength,
 	_Out_writes_(THIRD_PARTY_HID_OUTPUT_REPORT_LENGTH) PUCHAR Output
 )
 {
@@ -165,7 +193,7 @@ ThirdPartyHid_BuildOutputReport(
 
 	if (Ds3Report != NULL && Ds3ReportLength > 3 && Ds3Report[3] != 0)
 	{
-		right = Context->RumbleControlState.LightCache;
+		right = RightMotorStrength;
 	}
 
 	if (Ds3Report != NULL && Ds3ReportLength > 5)
