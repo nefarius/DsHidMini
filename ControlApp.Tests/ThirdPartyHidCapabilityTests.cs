@@ -48,6 +48,20 @@ public class ThirdPartyHidCapabilityTests
         Assert.Equal(string.Empty, DsDeviceCapabilities.OutputStallGuidance(type));
     }
 
+    [Theory]
+    [InlineData(DsDeviceType.ThirdPartyHid, 0, false)]
+    [InlineData(DsDeviceType.ThirdPartyHid, null, false)]
+    [InlineData(DsDeviceType.ThirdPartyHid, unchecked((int)0xC00000B5), true)]
+    [InlineData(DsDeviceType.Sixaxis, unchecked((int)0xC00000B5), false)]
+    [InlineData(DsDeviceType.Navigation, 1, false)]
+    public void IsOutputReportStalled_RequiresThirdPartyHidAndFailingStatus(
+        DsDeviceType type,
+        int? outputReportStatus,
+        bool expected)
+    {
+        Assert.Equal(expected, DsDeviceCapabilities.IsOutputReportStalled(type, outputReportStatus));
+    }
+
     [Fact]
     public void OutputReportStatusProperty_IsDistinctReadOnlyKey()
     {

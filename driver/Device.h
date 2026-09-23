@@ -72,6 +72,14 @@ struct USB_DEVICE_CONTEXT
 	//
 	BOOLEAN OutputStalled;
 
+	//
+	// One-shot. Armed while OutputStalled is set so an unlinked adapter is
+	// probed again even when nothing else is sending, and re-armed when a
+	// probe is skipped because it arrived before the probe period elapsed.
+	// NULL until USB device add creates it.
+	//
+	WDFTIMER OutputStallProbeTimer;
+
 	BOOLEAN OutputFetchFailureLogged;
 
 	UCHAR LastAttemptedAdapterReport[8];

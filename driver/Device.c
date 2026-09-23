@@ -966,6 +966,37 @@ DsDevice_InitContext(
 			break;
 		}
 
+		//
+		// One-shot probe used only while a third-party HID adapter is not
+		// acknowledging output. Created for every USB device; Bluetooth has
+		// no interrupt OUT stall of this kind.
+		//
+		if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
+		{
+			WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
+			attributes.ParentObject = Device;
+
+			WDF_TIMER_CONFIG_INIT(
+				&timerCfg,
+				ThirdPartyHid_EvtOutputStallProbeTimerFunc
+			);
+
+			if (!NT_SUCCESS(status = WdfTimerCreate(
+				&timerCfg,
+				&attributes,
+				&pDevCtx->Connection.Usb.OutputStallProbeTimer
+			)))
+			{
+				TraceError(
+					TRACE_DEVICE,
+					"WdfTimerCreate (OutputStallProbeTimer) failed with status %!STATUS!",
+					status
+				);
+				EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfTimerCreate (OutputStallProbeTimer)", status);
+				break;
+			}
+		}
+
 #pragma region IPC
 
 		SECURITY_DESCRIPTOR sd = { 0 };

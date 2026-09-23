@@ -248,11 +248,105 @@ ThirdPartyHid_PublishOutputReportStatus(
 	}
 }
 
+static
+VOID
+ThirdPartyHid_ArmOutputStallProbe(
+	_In_ PDEVICE_CONTEXT Context
+)
+{
+	if (Context->RumbleControlState.IsTearingDown
+		|| Context->ConnectionType != DsDeviceConnectionTypeUsb
+		|| Context->Connection.Usb.OutputStallProbeTimer == NULL)
+	{
+		return;
+	}
+
+	WdfTimerStart(
+		Context->Connection.Usb.OutputStallProbeTimer,
+		WDF_REL_TIMEOUT_IN_MS(THIRD_PARTY_HID_STALL_PROBE_PERIOD_MS)
+	);
+}
+
+VOID
+ThirdPartyHid_StopOutputStallProbe(
+	_In_ PDEVICE_CONTEXT Context,
+	_In_ BOOLEAN Wait
+)
+{
+	if (Context->ConnectionType != DsDeviceConnectionTypeUsb
+		|| Context->Connection.Usb.OutputStallProbeTimer == NULL)
+	{
+		return;
+	}
+
+	WdfTimerStop(Context->Connection.Usb.OutputStallProbeTimer, Wait);
+}
+
+_Use_decl_annotations_
+VOID
+ThirdPartyHid_EvtOutputStallProbeTimerFunc(
+	WDFTIMER Timer
+)
+{
+	const PDEVICE_CONTEXT context = DeviceGetContext(WdfTimerGetParentObject(Timer));
+
+	//
+	// IsTearingDown is set before the timer is stopped on power-down, so a
+	// callback that already passed this check cannot re-arm afterwards.
+	//
+	if (context->RumbleControlState.IsTearingDown
+		|| context->ConnectionType != DsDeviceConnectionTypeUsb
+		|| !context->Connection.Usb.OutputStalled)
+	{
+		return;
+	}
+
+	(void)DSHM_SendOutputReport(context, Ds3OutputReportSourceDriverHighPriority);
+}
+
+VOID
+ThirdPartyHid_ProbeOutputPath(
+	_In_ PDEVICE_CONTEXT Context
+)
+{
+	PUCHAR buffer;
+
+	if (Context->DeviceType != DsDeviceTypeThirdPartyHid
+		|| Context->ConnectionType != DsDeviceConnectionTypeUsb
+		|| Context->RumbleControlState.IsTearingDown)
+	{
+		return;
+	}
+
+	//
+	// The default USB template is already a stop report. Zero the motor
+	// bytes anyway so a resume cannot replay rumble left over from the
+	// previous power session. The adapter report is then
+	// 02 08 00 00 FF 00 00 00.
+	//
+	WdfWaitLockAcquire(Context->OutputReport.Lock, NULL);
+
+	buffer = (PUCHAR)WdfMemoryGetBuffer(Context->OutputReportMemory, NULL);
+	DS3_USB_SET_SMALL_RUMBLE_STRENGTH(buffer, 0);
+	DS3_USB_SET_LARGE_RUMBLE_STRENGTH(buffer, 0);
+	Context->RumbleControlState.LightCache = 0;
+	Context->RumbleControlState.HeavyCache = 0;
+
+	(void)DSHM_SendOutputReportUnlocked(
+		Context,
+		Ds3OutputReportSourceDriverHighPriority
+	);
+
+	WdfWaitLockRelease(Context->OutputReport.Lock);
+}
+
 VOID
 ThirdPartyHid_ResetOutputStall(
 	_In_ PDEVICE_CONTEXT Context
 )
 {
+	ThirdPartyHid_StopOutputStallProbe(Context, FALSE);
+
 	Context->Connection.Usb.OutputStalled = FALSE;
 	Context->Connection.Usb.OutputFetchFailureLogged = FALSE;
 	Context->Connection.Usb.LastOutputAttemptTimestamp.QuadPart = 0;
@@ -395,6 +489,11 @@ ThirdPartyHid_SendOutputReport(
 		)
 		&& !ThirdPartyHid_StallProbeDue(Context))
 	{
+		//
+		// A probe that arrives a few milliseconds early must not be the
+		// last one. Re-arm so the next attempt still happens.
+		//
+		ThirdPartyHid_ArmOutputStallProbe(Context);
 		return STATUS_SUCCESS;
 	}
 
@@ -477,11 +576,19 @@ ThirdPartyHid_SendOutputReport(
 				status
 			);
 		}
+
+		//
+		// Both the first failure and every later one. The keep-alive stops
+		// once the motors are quiet, so this timer is what notices a
+		// controller linking afterwards.
+		//
+		ThirdPartyHid_ArmOutputStallProbe(Context);
 	}
 	else if (Context->Connection.Usb.OutputStalled)
 	{
 		Context->Connection.Usb.OutputStalled = FALSE;
 		Context->Connection.Usb.OutputFetchFailureLogged = FALSE;
+		ThirdPartyHid_StopOutputStallProbe(Context, FALSE);
 
 		TraceInformation(
 			TRACE_DSUSB,

@@ -73,7 +73,7 @@ internal static class RumbleTesterStatus
 
     public static string Pulsing(byte large, byte small)
     {
-        return $"Rumble on: large {large}, small {small}.";
+        return $"Rumble request sent: large {large}, small {small}.";
     }
 
     public static string Rejected(uint status)

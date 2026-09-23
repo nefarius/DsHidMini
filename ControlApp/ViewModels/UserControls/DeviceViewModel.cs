@@ -29,6 +29,10 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     private readonly AddressValidator _addressValidator;
     private readonly AppSnackbarMessagesService _appSnackbarMessagesService;
     private readonly Timer _batteryQuery;
+    private readonly Timer? _outputStatusQuery;
+    private readonly object _outputStallLock = new();
+    private bool? _lastNotifiedOutputStalled;
+    private int _outputStallDisposed;
     private readonly IContentDialogService _contentDialogService;
 
     private int _xInputSlotRefreshGeneration;
@@ -138,6 +142,11 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         _contentDialogService = contentDialogService;
         _addressValidator = addressValidator;
         _batteryQuery = new Timer(UpdateBatteryStatus, null, 1500, 10000);
+        _outputStatusQuery = null;
+        if (!string.IsNullOrEmpty(DsDeviceCapabilities.OutputStallGuidance(DeviceType)))
+        {
+            _outputStatusQuery = new Timer(UpdateOutputStallStatus, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+        }
         _deviceUserData = _dshmConfigManager.GetDeviceData(DeviceAddress);
         _pairingMode = _deviceUserData.BluetoothPairingMode;
         DeviceCustomsVM.ApplyDeviceCapabilities(DeviceType);
@@ -272,14 +281,19 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
                 return false;
             }
 
-            try
-            {
-                return Device.GetProperty<int>(DsHidMiniDriver.OutputReportStatusProperty) != 0;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
+            return DsDeviceCapabilities.IsOutputReportStalled(DeviceType, TryReadOutputReportStatus());
+        }
+    }
+
+    private int? TryReadOutputReportStatus()
+    {
+        try
+        {
+            return Device.GetProperty<int>(DsHidMiniDriver.OutputReportStatusProperty);
+        }
+        catch (Exception)
+        {
+            return null;
         }
     }
 
@@ -663,8 +677,6 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             OnPropertyChanged(nameof(MotionViewerToolTip));
             OnPropertyChanged(nameof(CanOpenRumbleTester));
             OnPropertyChanged(nameof(RumbleTesterToolTip));
-            OnPropertyChanged(nameof(IsOutputStalled));
-            OnPropertyChanged(nameof(OutputStallNote));
             NotifyIdentificationProperties();
         });
     }
@@ -679,9 +691,40 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(IdentificationCloneHeuristicText));
     }
 
+    private void UpdateOutputStallStatus(object? state)
+    {
+        if (Volatile.Read(ref _outputStallDisposed) != 0)
+        {
+            return;
+        }
+
+        bool stalled = IsOutputStalled;
+        lock (_outputStallLock)
+        {
+            if (_lastNotifiedOutputStalled == stalled)
+            {
+                return;
+            }
+
+            _lastNotifiedOutputStalled = stalled;
+        }
+
+        Application.Current?.Dispatcher.BeginInvoke(() =>
+        {
+            if (Volatile.Read(ref _outputStallDisposed) != 0)
+            {
+                return;
+            }
+
+            OnPropertyChanged(nameof(IsOutputStalled));
+        });
+    }
+
     public void Dispose()
     {
+        Interlocked.Exchange(ref _outputStallDisposed, 1);
         Interlocked.Increment(ref _xInputSlotRefreshGeneration);
+        _outputStatusQuery?.Dispose();
         _batteryQuery.Dispose();
         CloseInputTester();
         CloseMotionViewer();
@@ -1261,7 +1304,11 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             return;
         }
 
-        RumbleTesterViewModel tester = new(deviceIndex, DeviceAddressFriendly ?? DeviceAddress);
+        RumbleTesterViewModel tester = new(
+            deviceIndex,
+            DeviceAddressFriendly ?? DeviceAddress,
+            () => IsOutputStalled,
+            OutputStallNote);
         _rumbleTester = new RumbleTesterWindow(tester, _appSnackbarMessagesService.ShowRumbleOffFailedMessage)
         {
             Owner = Application.Current.MainWindow

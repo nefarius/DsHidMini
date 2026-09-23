@@ -30,9 +30,11 @@ While the adapter has no live controller on its PS2 side (the input report sits 
 The driver now bounds that case instead of waiting it out:
 
 - Interrupt OUT for this device type times out after 250 ms. DualShock 3 keeps the 3 second bound. A linked adapter still completes in 5-15 ms.
-- Once a send has failed, an identical 8-byte payload is not put on the bus again until one second has passed. That probe is what notices the controller linking again. A payload that changed (a new rumble strength) is sent immediately.
+- Once a send has failed, an identical 8-byte payload is not put on the bus again until one second has passed. A payload that changed (a new rumble strength) is sent immediately.
+- Power-up sends one stop report (`02 08 00 00 FF 00 00 00`) after the output worker starts, so the stall is known without an application rumble request. An unlinked adapter fails that write in about 0.5 s (250 ms timeout, then one retry).
+- While the stall lasts, a one-shot timer resends the current report once per second until it is acknowledged, including when an identical probe arrives before that second is up. The status returns to `STATUS_SUCCESS` on its own once a controller links. The timer is stopped on recovery and on power-down.
 - The stall and the recovery are each logged once. While the stall lasts, a full output queue is event-logged once per episode rather than on every keep-alive.
-- `DEVPKEY_DsHidMini_RO_OutputReportStatus` (property id 15, `DEVPROP_TYPE_NTSTATUS`) is `STATUS_SUCCESS` while output is being acknowledged and the failing status while it is not. It is initialized for every USB device and only changes for this device type. ControlApp reads it on the same poll as the battery and shows a warning while it is non-zero. A power-up (`D0Entry`) clears the stall.
+- `DEVPKEY_DsHidMini_RO_OutputReportStatus` (property id 15, `DEVPROP_TYPE_NTSTATUS`) is `STATUS_SUCCESS` while output is being acknowledged and the failing status while it is not. It is initialized for every USB device and only changes for this device type. ControlApp polls it about once a second for this device type and shows a warning on the device list and the detail pane while it is non-zero. A power-up (`D0Entry`) clears the stall before the probe runs.
 
 | Offset | Content |
 | --- | --- |
