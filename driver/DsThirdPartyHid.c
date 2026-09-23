@@ -291,8 +291,9 @@ ThirdPartyHid_EvtOutputStallProbeTimerFunc(
 	const PDEVICE_CONTEXT context = DeviceGetContext(WdfTimerGetParentObject(Timer));
 
 	//
-	// IsTearingDown is set before the timer is stopped on power-down, so a
-	// callback that already passed this check cannot re-arm afterwards.
+	// IsTearingDown is set before the timer is stopped on power-down.
+	// ThirdPartyHid_ArmOutputStallProbe checks it again, so a failed
+	// enqueue below cannot restart the timer after teardown.
 	//
 	if (context->RumbleControlState.IsTearingDown
 		|| context->ConnectionType != DsDeviceConnectionTypeUsb
@@ -301,7 +302,16 @@ ThirdPartyHid_EvtOutputStallProbeTimerFunc(
 		return;
 	}
 
-	(void)DSHM_SendOutputReport(context, Ds3OutputReportSourceDriverHighPriority);
+	//
+	// The worker re-arms this timer when it finishes the send. A full
+	// queue never gets that far, so arm it here or probing stops.
+	//
+	if (!NT_SUCCESS(DSHM_SendOutputReport(
+		context,
+		Ds3OutputReportSourceDriverHighPriority)))
+	{
+		ThirdPartyHid_ArmOutputStallProbe(context);
+	}
 }
 
 VOID
