@@ -211,6 +211,28 @@ public class AppSnackbarMessagesService
         );
     }
 
+    public void ShowRumbleTesterFailedMessage(string detail)
+    {
+        _snackbarService.Show(
+            "Rumble tester unavailable",
+            detail,
+            ControlAppearance.Danger,
+            new SymbolIcon(SymbolRegular.DismissCircle24),
+            TimeSpan.FromSeconds(8)
+        );
+    }
+
+    public void ShowRumbleOffFailedMessage(string detail)
+    {
+        _snackbarService.Show(
+            "Rumble may still be on",
+            detail,
+            ControlAppearance.Caution,
+            new SymbolIcon(SymbolRegular.Warning24),
+            TimeSpan.FromSeconds(8)
+        );
+    }
+
     public void ShowUsbPowerOffFailedMessage(string detail)
     {
         _snackbarService.Show(

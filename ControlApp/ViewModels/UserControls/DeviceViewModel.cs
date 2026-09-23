@@ -7,6 +7,7 @@ using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.Enums;
+using Nefarius.DsHidMini.ControlApp.Models.Rumble;
 using Nefarius.DsHidMini.ControlApp.Models.Util;
 using Nefarius.DsHidMini.ControlApp.Models.Util.Web;
 using Nefarius.DsHidMini.ControlApp.Services;
@@ -48,6 +49,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     private readonly DeviceData _deviceUserData;
     private InputTesterWindow? _inputTester;
     private MotionViewerWindow? _motionViewer;
+    private RumbleTesterWindow? _rumbleTester;
 
     // ------------------------------------------------------ FIELDS
 
@@ -659,6 +661,8 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             OnPropertyChanged(nameof(InputTesterToolTip));
             OnPropertyChanged(nameof(CanOpenMotionViewer));
             OnPropertyChanged(nameof(MotionViewerToolTip));
+            OnPropertyChanged(nameof(CanOpenRumbleTester));
+            OnPropertyChanged(nameof(RumbleTesterToolTip));
             OnPropertyChanged(nameof(IsOutputStalled));
             OnPropertyChanged(nameof(OutputStallNote));
             NotifyIdentificationProperties();
@@ -681,6 +685,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         _batteryQuery.Dispose();
         CloseInputTester();
         CloseMotionViewer();
+        CloseRumbleTester();
         GC.SuppressFinalize(this);
     }
 
@@ -1115,6 +1120,14 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             ? "Open a live motion readout and diagnostic 3D pose for this controller."
             : "Motion viewer needs driver IPC and a published device slot.";
 
+    public bool CanOpenRumbleTester =>
+        RumbleTesterAvailability.CanOpen(
+            DsHidMiniInterop.IsAvailable,
+            DsHidMiniInterop.TryGetIpcSlotIndex(Device) is not null,
+            HasRumble);
+
+    public string RumbleTesterToolTip => RumbleTesterAvailability.ToolTip(CanOpenRumbleTester);
+
     [RelayCommand]
     private void OpenInputTester()
     {
@@ -1215,6 +1228,57 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
 
         _motionViewer.Close();
         _motionViewer = null;
+    }
+
+    [RelayCommand]
+    private void OpenRumbleTester()
+    {
+        if (_rumbleTester is { IsVisible: true })
+        {
+            _rumbleTester.Activate();
+            return;
+        }
+
+        if (!HasRumble)
+        {
+            _appSnackbarMessagesService.ShowRumbleTesterFailedMessage(
+                "This controller has no rumble motors.");
+            return;
+        }
+
+        int? slot = DsHidMiniInterop.TryGetIpcSlotIndex(Device);
+        if (slot is not int deviceIndex)
+        {
+            _appSnackbarMessagesService.ShowRumbleTesterFailedMessage(
+                "The driver did not report an IPC slot for this device.");
+            return;
+        }
+
+        if (!DsHidMiniInterop.IsAvailable)
+        {
+            _appSnackbarMessagesService.ShowRumbleTesterFailedMessage(
+                "Driver IPC is not available. Confirm the controller is still connected.");
+            return;
+        }
+
+        RumbleTesterViewModel tester = new(deviceIndex, DeviceAddressFriendly ?? DeviceAddress);
+        _rumbleTester = new RumbleTesterWindow(tester, _appSnackbarMessagesService.ShowRumbleOffFailedMessage)
+        {
+            Owner = Application.Current.MainWindow
+        };
+        _rumbleTester.Closed += (_, _) => _rumbleTester = null;
+        _rumbleTester.Show();
+    }
+
+    private void CloseRumbleTester()
+    {
+        if (_rumbleTester is null)
+        {
+            return;
+        }
+
+        _rumbleTester.Close();
+        _rumbleTester = null;
     }
 
     [RelayCommand]
