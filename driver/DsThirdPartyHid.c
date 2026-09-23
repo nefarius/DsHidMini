@@ -60,8 +60,8 @@ ThirdPartyHid_ApplyHat(
 
 //
 // 27-byte ShanWan HID input (no report id on the wire) into the DS3 report
-// every HID mode already consumes. Face-button order is the conventional
-// map for this 137-byte descriptor: bit 0 is Square, not Cross.
+// every HID mode already consumes. Face-button order on this adapter is
+// Triangle, Circle, Cross, Square: bit 0 is Triangle, not Square.
 // 
 VOID
 ThirdPartyHid_TranslateInput(
@@ -82,10 +82,10 @@ ThirdPartyHid_TranslateInput(
 	}
 
 	face = Raw[0];
-	Report->Buttons.Individual.Square = (face >> 0) & 0x01;
-	Report->Buttons.Individual.Cross = (face >> 1) & 0x01;
-	Report->Buttons.Individual.Circle = (face >> 2) & 0x01;
-	Report->Buttons.Individual.Triangle = (face >> 3) & 0x01;
+	Report->Buttons.Individual.Triangle = (face >> 0) & 0x01;
+	Report->Buttons.Individual.Circle = (face >> 1) & 0x01;
+	Report->Buttons.Individual.Cross = (face >> 2) & 0x01;
+	Report->Buttons.Individual.Square = (face >> 3) & 0x01;
 	Report->Buttons.Individual.L1 = (face >> 4) & 0x01;
 	Report->Buttons.Individual.R1 = (face >> 5) & 0x01;
 	Report->Buttons.Individual.L2 = (face >> 6) & 0x01;
