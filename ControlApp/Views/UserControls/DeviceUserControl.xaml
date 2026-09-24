@@ -105,14 +105,16 @@
                                     Content="Input tester"
                                     IsEnabled="{Binding CanOpenInputTester}"
                                     ToolTip="{Binding InputTesterToolTip}"
-                                    ToolTipService.InitialShowDelay="200" />
+                                    ToolTipService.InitialShowDelay="200"
+                                    ToolTipService.ShowOnDisabled="True" />
                                 <ui:Button
                                     Margin="0,0,8,0"
                                     Command="{Binding OpenMotionViewerCommand}"
                                     Content="Motion viewer"
                                     IsEnabled="{Binding CanOpenMotionViewer}"
                                     ToolTip="{Binding MotionViewerToolTip}"
-                                    ToolTipService.InitialShowDelay="200" />
+                                    ToolTipService.InitialShowDelay="200"
+                                    ToolTipService.ShowOnDisabled="True" />
                                 <ui:Button
                                     Command="{Binding OpenRumbleTesterCommand}"
                                     Content="Rumble tester"
@@ -136,6 +138,14 @@
                             IsClosable="False"
                             IsOpen="{Binding IsOutputStalled}"
                             Message="{Binding OutputStallNote}"
+                            Severity="Warning" />
+                        <ui:InfoBar
+                            Title="Outdated driver"
+                            Margin="{StaticResource MyKey_NextLineSpacement}"
+                            DockPanel.Dock="Top"
+                            IsClosable="False"
+                            IsOpen="{Binding IsDriverOutdated}"
+                            Message="{Binding DriverOutdatedNote}"
                             Severity="Warning" />
                         <!--  Device MAC address  -->
                         <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
