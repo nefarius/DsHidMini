@@ -3,6 +3,7 @@ using System.Threading;
 using System.Windows;
 
 using Nefarius.DsHidMini.ControlApp.Models;
+using Nefarius.DsHidMini.ControlApp.Models.Drivers;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
@@ -559,6 +560,33 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         Device.GetProperty<string>(DevicePropertyKey.Device_DriverVersion)!.ToUpperInvariant();
 
     /// <summary>
+    ///     True when the bound driver predates the IPC slot property, so pairing and diagnostics cannot run.
+    /// </summary>
+    public bool IsDriverOutdated =>
+        DsHidMiniDriverCompatibility.IsOlderThanIpcMinimum(
+            DsHidMiniDriverCompatibility.TryGetInstalledVersion(Device));
+
+    /// <summary>
+    ///     Shown on the Info tab while <see cref="IsDriverOutdated" /> is true.
+    /// </summary>
+    public string DriverOutdatedNote =>
+        IsDriverOutdated ? DsHidMiniDriverCompatibility.DescribeMissingIpcSlot(Device) : string.Empty;
+
+    private string MissingIpcSlotDetail => DsHidMiniDriverCompatibility.DescribeMissingIpcSlot(Device);
+
+    private string DisabledDiagnosticsToolTip(string fallback) =>
+        IsDriverOutdated ? DriverOutdatedNote : fallback;
+
+    private void LogMissingIpcSlot(string action)
+    {
+        Log.Logger.Warning(
+            "{Action} skipped for '{DeviceAddress}': no readable IPC slot (driver {DriverVersion}).",
+            action,
+            DeviceAddress,
+            DsHidMiniDriverCompatibility.FormatInstalledVersion(Device));
+    }
+
+    /// <summary>
     ///     <see langword="true"/> if Feature 0x01 identification was published
     ///     (USB or Bluetooth pads that answered GET).
     /// </summary>
@@ -999,11 +1027,8 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         int? slot = DsHidMiniInterop.TryGetIpcSlotIndex(Device);
         if (slot is not int deviceIndex)
         {
-            Log.Logger.Warning(
-                "USB power-off skipped for '{DeviceAddress}': no readable IPC slot.",
-                DeviceAddress);
-            _appSnackbarMessagesService.ShowUsbPowerOffFailedMessage(
-                "The driver did not report an IPC slot for this device.");
+            LogMissingIpcSlot("USB power-off");
+            _appSnackbarMessagesService.ShowUsbPowerOffFailedMessage(MissingIpcSlotDetail);
             return;
         }
 
@@ -1061,11 +1086,8 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         int? slot = DsHidMiniInterop.TryGetIpcSlotIndex(Device);
         if (slot is not int deviceIndex)
         {
-            Log.Logger.Warning(
-                "Pairing skipped for '{DeviceAddress}': no readable IPC slot.",
-                DeviceAddress);
-            _appSnackbarMessagesService.ShowPairingFailedMessage(
-                "The driver did not report an IPC slot for this device.");
+            LogMissingIpcSlot("Pairing");
+            _appSnackbarMessagesService.ShowPairingFailedMessage(MissingIpcSlotDetail);
             return;
         }
 
@@ -1153,7 +1175,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     public string InputTesterToolTip =>
         CanOpenInputTester
             ? "Open a live DualShock 3 input diagram. Values come from the raw IPC report and stay the same in every HID mode."
-            : "Input tester needs driver IPC and a published device slot.";
+            : DisabledDiagnosticsToolTip("Input tester needs driver IPC and a published device slot.");
 
     public bool CanOpenMotionViewer =>
         DsHidMiniInterop.IsAvailable && DsHidMiniInterop.TryGetIpcSlotIndex(Device) is not null;
@@ -1161,7 +1183,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     public string MotionViewerToolTip =>
         CanOpenMotionViewer
             ? "Open a live motion readout and diagnostic 3D pose for this controller."
-            : "Motion viewer needs driver IPC and a published device slot.";
+            : DisabledDiagnosticsToolTip("Motion viewer needs driver IPC and a published device slot.");
 
     public bool CanOpenRumbleTester =>
         RumbleTesterAvailability.CanOpen(
@@ -1169,7 +1191,10 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             DsHidMiniInterop.TryGetIpcSlotIndex(Device) is not null,
             HasRumble);
 
-    public string RumbleTesterToolTip => RumbleTesterAvailability.ToolTip(CanOpenRumbleTester);
+    public string RumbleTesterToolTip =>
+        IsDriverOutdated
+            ? DriverOutdatedNote
+            : RumbleTesterAvailability.ToolTip(CanOpenRumbleTester);
 
     [RelayCommand]
     private void OpenInputTester()
@@ -1183,8 +1208,8 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         int? slot = DsHidMiniInterop.TryGetIpcSlotIndex(Device);
         if (slot is not int deviceIndex)
         {
-            _appSnackbarMessagesService.ShowInputTesterFailedMessage(
-                "The driver did not report an IPC slot for this device.");
+            LogMissingIpcSlot("Input tester");
+            _appSnackbarMessagesService.ShowInputTesterFailedMessage(MissingIpcSlotDetail);
             return;
         }
 
@@ -1227,8 +1252,8 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         int? slot = DsHidMiniInterop.TryGetIpcSlotIndex(Device);
         if (slot is not int deviceIndex)
         {
-            _appSnackbarMessagesService.ShowMotionViewerFailedMessage(
-                "The driver did not report an IPC slot for this device.");
+            LogMissingIpcSlot("Motion viewer");
+            _appSnackbarMessagesService.ShowMotionViewerFailedMessage(MissingIpcSlotDetail);
             return;
         }
 
@@ -1292,8 +1317,8 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         int? slot = DsHidMiniInterop.TryGetIpcSlotIndex(Device);
         if (slot is not int deviceIndex)
         {
-            _appSnackbarMessagesService.ShowRumbleTesterFailedMessage(
-                "The driver did not report an IPC slot for this device.");
+            LogMissingIpcSlot("Rumble tester");
+            _appSnackbarMessagesService.ShowRumbleTesterFailedMessage(MissingIpcSlotDetail);
             return;
         }
 

@@ -1,5 +1,6 @@
 using System.Threading;
 
+using Nefarius.DsHidMini.ControlApp.Models.Drivers;
 using Nefarius.DsHidMini.ControlApp.Models.Util;
 using Nefarius.DsHidMini.IPC;
 using Nefarius.DsHidMini.IPC.Models.Drivers;
@@ -134,8 +135,10 @@ public class DshmDevMan
                 if (slot is not int deviceIndex)
                 {
                     Log.Logger.Warning(
-                        "Wireless disconnect skipped for '{InstanceId}': no readable IPC slot.",
-                        device.InstanceId);
+                        "Wireless disconnect skipped for '{InstanceId}': no readable IPC slot (driver {DriverVersion}). {Detail}",
+                        device.InstanceId,
+                        DsHidMiniDriverCompatibility.FormatInstalledVersion(device),
+                        DsHidMiniDriverCompatibility.DescribeMissingIpcSlot(device));
                     return false;
                 }
 
