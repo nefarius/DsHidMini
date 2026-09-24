@@ -1,5 +1,3 @@
-using System.Reflection;
-
 using Nefarius.Utilities.DeviceManagement.PnP;
 
 namespace Nefarius.DsHidMini.ControlApp.Models.Drivers;
@@ -63,13 +61,8 @@ internal static class DsHidMiniDriverCompatibility
             return MissingIpcSlotMessage;
         }
 
-        string appVersion = ControlAppVersion;
-        string appLabel = string.IsNullOrWhiteSpace(appVersion)
-            ? "this ControlApp"
-            : $"this ControlApp ({appVersion})";
-
         return
-            $"Driver {installedDriverVersion} is older than {appLabel}. " +
+            $"Driver {installedDriverVersion} predates IPC-slot support. " +
             $"Pairing and diagnostics need DsHidMini driver {MinimumIpcDriverVersion} or newer; " +
             "install the matching driver package and reconnect the controller.";
     }
@@ -82,24 +75,6 @@ internal static class DsHidMiniDriverCompatibility
     public static string FormatInstalledVersion(PnPDevice device)
     {
         return TryGetInstalledVersion(device)?.ToString() ?? "unknown";
-    }
-
-    private static string ControlAppVersion
-    {
-        get
-        {
-            string? informational = Assembly.GetExecutingAssembly()
-                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-                ?.InformationalVersion;
-
-            if (!string.IsNullOrWhiteSpace(informational))
-            {
-                int metadataSeparator = informational.IndexOf('+');
-                return metadataSeparator >= 0 ? informational[..metadataSeparator] : informational;
-            }
-
-            return Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? string.Empty;
-        }
     }
 
     /// <summary>

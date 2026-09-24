@@ -19,7 +19,8 @@ public class DriverCompatibilityTests
 
         string message = DsHidMiniDriverCompatibility.DescribeMissingIpcSlot(parsed);
         Assert.Contains(parsed.ToString(), message);
-        Assert.Contains("older", message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("predates IPC-slot support", message);
+        Assert.DoesNotContain("ControlApp", message);
         Assert.Contains(DsHidMiniDriverCompatibility.MinimumIpcDriverVersion.ToString(), message);
         Assert.DoesNotContain("did not report an IPC slot", message);
     }
