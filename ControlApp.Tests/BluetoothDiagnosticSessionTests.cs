@@ -407,6 +407,33 @@ public class BluetoothDiagnosticSessionTests
     }
 
     [Fact]
+    public async Task RunAsync_WirelessAlreadyPresentAtStart_DoesNotCountAsReconnect()
+    {
+        (BluetoothDiagnosticSession session, FakePreflightProbe probe, _, _, _, _) = CreateSession();
+
+        probe.Results =
+        [
+            new PreflightCheckResult(PreflightCheckId.BluetoothRadioOperable, true, "Bluetooth is on", "ok")
+        ];
+        probe.Candidate = null;
+        session.TryPairOverride = _ => Task.FromResult(true);
+        session.WirelessAttemptWait = TimeSpan.FromSeconds(30);
+        session.WirelessReconnectObservedOverride = () => true;
+
+        Task run = session.RunAsync();
+        await WaitUntil(() => session.Stage == BluetoothDiagnosticStage.WaitingForWirelessAttempt);
+        await Task.Delay(50);
+
+        Assert.Equal(BluetoothDiagnosticStage.WaitingForWirelessAttempt, session.Stage);
+
+        session.Cancel();
+        await run.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(BluetoothDiagnosticStage.Cancelled, session.Stage);
+        Assert.Null(session.Verdict);
+    }
+
+    [Fact]
     public async Task RunAsync_LegacyBthPs3SuccessEvents_CompletesBeforeTimeout()
     {
         // Older BthPS3 never emits RemoteConnectReceived (event 27). Classic 1-26 events plus

@@ -63,6 +63,7 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
     private DateTimeOffset _lastRunFinishedAt;
     private DateTimeOffset _lastRunStartedAt;
     private volatile bool _observedWirelessReconnect;
+    private volatile bool _wirelessCandidateWasAbsent;
     private volatile int _wirelessAttemptTimelineStart;
     private CancellationTokenSource? _runCts;
 
@@ -151,6 +152,7 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
         _unplugSignal = null;
         _wirelessAttemptCompleteSignal = null;
         _observedWirelessReconnect = false;
+        _wirelessCandidateWasAbsent = false;
         _wirelessAttemptTimelineStart = 0;
         _lastRunStartedAt = DateTimeOffset.UtcNow;
         _devMan.RefreshConnectedDevices();
@@ -339,6 +341,11 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
                 return outcome;
             }
 
+            if (token.IsCancellationRequested)
+            {
+                return WaitOutcome.Cancelled;
+            }
+
             _devMan.RefreshConnectedDevices();
             PreflightResults = _preflightProbe.Run();
         }
@@ -365,6 +372,7 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
             _wirelessAttemptTimelineStart = _timeline.Count;
         }
 
+        _wirelessCandidateWasAbsent = !IsCandidateWirelessPresent();
         _wirelessAttemptCompleteSignal =
             new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         TryCompleteWirelessAttempt();
@@ -383,7 +391,7 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
         return outcome;
     }
 
-    private void TryCompleteWirelessAttempt()
+    private void TryCompleteWirelessAttempt(bool fromDeviceListUpdate = false)
     {
         TaskCompletionSource<bool>? signal = _wirelessAttemptCompleteSignal;
         if (signal is null)
@@ -391,7 +399,7 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
             return;
         }
 
-        if (IsCandidateWirelessReconnectObserved())
+        if (fromDeviceListUpdate && IsCandidateWirelessReconnectObserved())
         {
             _observedWirelessReconnect = true;
             signal.TrySetResult(true);
@@ -428,7 +436,10 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
         return verdict.Code == DiagnosticVerdictCode.Success;
     }
 
-    private bool IsCandidateWirelessReconnectObserved()
+    private bool IsCandidateWirelessReconnectObserved() =>
+        _wirelessCandidateWasAbsent && IsCandidateWirelessPresent();
+
+    private bool IsCandidateWirelessPresent()
     {
         if (WirelessReconnectObservedOverride is { } observedOverride)
         {
@@ -635,7 +646,7 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
         // fresh run, so re-reading the fields between the null-checks and the TrySetResult call
         // below could otherwise observe a signal from a different run than the one just checked.
         _usbArrivalSignal?.TrySetResult(true);
-        TryCompleteWirelessAttempt();
+        TryCompleteWirelessAttempt(fromDeviceListUpdate: true);
 
         string? candidateInstanceId = _candidateInstanceId;
         TaskCompletionSource<bool>? unplugSignal = _unplugSignal;
