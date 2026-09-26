@@ -1035,11 +1035,19 @@ function Assert-DsHidMiniMsiContract {
     if (-not ($customActions | Where-Object { [string]::Equals($_, 'UninstallManifest', [StringComparison]::OrdinalIgnoreCase) })) {
         $errors.Add('CustomAction table is missing UninstallManifest.')
     }
+    if (-not ($customActions | Where-Object { [string]::Equals($_, 'RollbackInstallManifest', [StringComparison]::OrdinalIgnoreCase) })) {
+        $errors.Add('CustomAction table is missing RollbackInstallManifest.')
+    }
+    if (-not ($customActions | Where-Object { [string]::Equals($_, 'RollbackUninstallManifest', [StringComparison]::OrdinalIgnoreCase) })) {
+        $errors.Add('CustomAction table is missing RollbackUninstallManifest.')
+    }
 
     $sequence = @(
-        Get-DsHidMiniMsiTableRows -MsiPath $MsiPath -Sql "SELECT ``Action``,``Condition`` FROM ``InstallExecuteSequence``" -ColumnCount 2 |
+        Get-DsHidMiniMsiTableRows -MsiPath $MsiPath -Sql "SELECT ``Action``,``Condition``,``Sequence`` FROM ``InstallExecuteSequence``" -ColumnCount 3 |
             ForEach-Object {
-                [pscustomobject]@{ Action = $_[0]; Condition = $_[1] }
+                $sequenceNumber = 0
+                [void][int]::TryParse($_[2], [ref]$sequenceNumber)
+                [pscustomobject]@{ Action = $_[0]; Condition = $_[1]; Sequence = $sequenceNumber }
             }
     )
     $runtimeSequenced = $sequence | Where-Object {
@@ -1066,12 +1074,34 @@ function Assert-DsHidMiniMsiContract {
         $errors.Add("InstallManifest is missing from InstallExecuteSequence with condition 'NOT Installed'.")
     }
 
+    $rollbackInstallManifestSequenced = $sequence | Where-Object {
+        [string]::Equals($_.Action, 'RollbackInstallManifest', [StringComparison]::OrdinalIgnoreCase) -and
+        $_.Condition -and $_.Condition.IndexOf('NOT Installed', [StringComparison]::OrdinalIgnoreCase) -ge 0
+    }
+    if (-not $rollbackInstallManifestSequenced) {
+        $errors.Add("RollbackInstallManifest is missing from InstallExecuteSequence with condition 'NOT Installed'.")
+    }
+    elseif ($installManifestSequenced -and $rollbackInstallManifestSequenced.Sequence -ge $installManifestSequenced.Sequence) {
+        $errors.Add('RollbackInstallManifest must be sequenced before InstallManifest.')
+    }
+
     $uninstallManifestSequenced = $sequence | Where-Object {
         [string]::Equals($_.Action, 'UninstallManifest', [StringComparison]::OrdinalIgnoreCase) -and
         $_.Condition -and $_.Condition.IndexOf('REMOVE="ALL"', [StringComparison]::OrdinalIgnoreCase) -ge 0
     }
     if (-not $uninstallManifestSequenced) {
         $errors.Add('UninstallManifest is missing from InstallExecuteSequence with condition REMOVE="ALL".')
+    }
+
+    $rollbackUninstallManifestSequenced = $sequence | Where-Object {
+        [string]::Equals($_.Action, 'RollbackUninstallManifest', [StringComparison]::OrdinalIgnoreCase) -and
+        $_.Condition -and $_.Condition.IndexOf('REMOVE="ALL"', [StringComparison]::OrdinalIgnoreCase) -ge 0
+    }
+    if (-not $rollbackUninstallManifestSequenced) {
+        $errors.Add('RollbackUninstallManifest is missing from InstallExecuteSequence with condition REMOVE="ALL".')
+    }
+    elseif ($uninstallManifestSequenced -and $rollbackUninstallManifestSequenced.Sequence -ge $uninstallManifestSequenced.Sequence) {
+        $errors.Add('RollbackUninstallManifest must be sequenced before UninstallManifest.')
     }
 
     $errorRows = @(

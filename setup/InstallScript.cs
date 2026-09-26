@@ -124,11 +124,30 @@ internal class InstallScript
             {
                 RefAssemblies = customActionAssemblies
             },
+            // Rollback CAs must appear immediately before the deferred action they undo so
+            // MSI records them on the rollback script first. See Windows Installer
+            // "Installation Phases and In-Script Execution Options".
+            new ElevatedManagedAction(CustomActions.RollbackInstallManifest, Return.check,
+                When.After,
+                Step.InstallFiles,
+                Condition.NOT_Installed)
+            {
+                Execute = Execute.rollback,
+                RefAssemblies = customActionAssemblies
+            },
             new ElevatedManagedAction(CustomActions.InstallManifest, Return.check,
                 When.After,
                 Step.InstallFiles,
                 Condition.NOT_Installed)
             {
+                RefAssemblies = customActionAssemblies
+            },
+            new ElevatedManagedAction(CustomActions.RollbackUninstallManifest, Return.check,
+                When.Before,
+                Step.RemoveFiles,
+                new Condition("REMOVE=\"ALL\""))
+            {
+                Execute = Execute.rollback,
                 RefAssemblies = customActionAssemblies
             },
             new ElevatedManagedAction(CustomActions.UninstallManifest, Return.check,
@@ -696,6 +715,15 @@ public static class CustomActions
     }
 
     /// <summary>
+    ///     Rolls back <see cref="InstallManifest" /> by unregistering the ETW publisher.
+    /// </summary>
+    [CustomAction]
+    public static ActionResult RollbackInstallManifest(Session session)
+    {
+        return UninstallManifest(session);
+    }
+
+    /// <summary>
     ///     Unregisters the DsHidMini ETW instrumentation manifest.
     /// </summary>
     /// <remarks>Requires elevated permissions.</remarks>
@@ -720,6 +748,15 @@ public static class CustomActions
             $"exit code: {result.ExitCode}");
 
         return ActionResult.Success;
+    }
+
+    /// <summary>
+    ///     Rolls back <see cref="UninstallManifest" /> by re-registering the ETW publisher.
+    /// </summary>
+    [CustomAction]
+    public static ActionResult RollbackUninstallManifest(Session session)
+    {
+        return InstallManifest(session);
     }
 
     public static bool UninstallDrivers(Session session)
