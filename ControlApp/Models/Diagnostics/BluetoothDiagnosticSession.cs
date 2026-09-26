@@ -343,6 +343,12 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
             PreflightResults = _preflightProbe.Run();
         }
 
+        if (PreflightResults.Any(result => !result.Passed && result.Id == PreflightCheckId.UsbControllerPresent))
+        {
+            _devMan.RefreshConnectedDevices();
+            PreflightResults = _preflightProbe.Run();
+        }
+
         return WaitOutcome.Completed;
     }
 

@@ -699,11 +699,39 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     {
         get
         {
-            DsIdentificationInfo? info = IdentificationInfo;
-            return DeviceAuthenticityPresentation.ForIdentification(
-                HasIdentification,
-                info is not null,
-                info?.CloneHeuristic ?? false);
+            TryReadIdentificationSnapshot(out bool hasRawReport, out bool parsed, out bool cloneHeuristic);
+            return DeviceAuthenticityPresentation.ForIdentification(hasRawReport, parsed, cloneHeuristic);
+        }
+    }
+
+    /// <summary>
+    ///     One Feature 0x01 property read. Absent or failed reads stay Unavailable; a present
+    ///     report that does not parse is Unreadable.
+    /// </summary>
+    private void TryReadIdentificationSnapshot(out bool hasRawReport, out bool parsed, out bool cloneHeuristic)
+    {
+        hasRawReport = false;
+        parsed = false;
+        cloneHeuristic = false;
+
+        try
+        {
+            byte[]? raw = Device.GetProperty<byte[]>(DsHidMiniDriver.IdentificationDataProperty);
+            if (raw is not { Length: > 0 })
+            {
+                return;
+            }
+
+            hasRawReport = true;
+            if (DsIdentification.TryParse(raw, out DsIdentificationInfo? info) && info is not null)
+            {
+                parsed = true;
+                cloneHeuristic = info.CloneHeuristic;
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Warning(ex, "Failed to read identification data of device '{Address}'", DeviceAddress);
         }
     }
 
