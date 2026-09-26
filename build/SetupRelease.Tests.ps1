@@ -369,6 +369,7 @@ try {
         [pscustomobject]@{ FileName = 'dshidmini.dll'; FileSize = 67712; Version = '3.6.0.2145' }
         [pscustomobject]@{ FileName = 'LICENSE'; FileSize = 1574; Version = '' }
         [pscustomobject]@{ FileName = 'igfilter.inf'; FileSize = 2908; Version = '' }
+        [pscustomobject]@{ FileName = 'DsHidMini.man'; FileSize = 12453; Version = '' }
     )
     Write-Output 'PASS versioned MSI binaries accepted, unversioned data files ignored'
 
