@@ -63,6 +63,7 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
     private DateTimeOffset _lastRunFinishedAt;
     private DateTimeOffset _lastRunStartedAt;
     private volatile bool _observedWirelessReconnect;
+    private volatile int _wirelessAttemptTimelineStart;
     private CancellationTokenSource? _runCts;
 
     // Volatile: read from the PnP notification callback thread in OnDeviceListUpdated, written
@@ -150,6 +151,7 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
         _unplugSignal = null;
         _wirelessAttemptCompleteSignal = null;
         _observedWirelessReconnect = false;
+        _wirelessAttemptTimelineStart = 0;
         _lastRunStartedAt = DateTimeOffset.UtcNow;
         _devMan.RefreshConnectedDevices();
 
@@ -352,6 +354,11 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
     /// </summary>
     private async Task<WaitOutcome> WaitForWirelessAttemptAsync(CancellationToken token)
     {
+        lock (_timelineLock)
+        {
+            _wirelessAttemptTimelineStart = _timeline.Count;
+        }
+
         _wirelessAttemptCompleteSignal =
             new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         TryCompleteWirelessAttempt();
@@ -393,7 +400,25 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
 
     private bool TimelineShowsConclusiveSuccess()
     {
-        DiagnosticVerdict verdict = _successProbe.Classify(PreflightResults, Timeline, _candidateAddress);
+        DiagnosticEventRecord[] wirelessTimeline;
+        lock (_timelineLock)
+        {
+            int start = _wirelessAttemptTimelineStart;
+            if (start < 0)
+            {
+                start = 0;
+            }
+
+            if (start >= _timeline.Count)
+            {
+                return false;
+            }
+
+            wirelessTimeline = new DiagnosticEventRecord[_timeline.Count - start];
+            _timeline.CopyTo(start, wirelessTimeline, 0, wirelessTimeline.Length);
+        }
+
+        DiagnosticVerdict verdict = _successProbe.Classify(PreflightResults, wirelessTimeline, _candidateAddress);
         return verdict.Code == DiagnosticVerdictCode.Success;
     }
 

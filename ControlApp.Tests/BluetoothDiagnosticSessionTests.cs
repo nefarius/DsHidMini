@@ -49,6 +49,7 @@ public class BluetoothDiagnosticSessionTests
         public int StartCount { get; private set; }
         public int StopCount { get; private set; }
         public DiagnosticEventRecord? EventOnStart { get; set; }
+        public IReadOnlyList<DiagnosticEventRecord> EventsOnStart { get; set; } = [];
         public Exception? FaultAfterStop { get; set; }
 
         public event Action<DiagnosticEventRecord>? EventCaptured;
@@ -61,6 +62,11 @@ public class BluetoothDiagnosticSessionTests
             if (EventOnStart is { } record)
             {
                 EventCaptured?.Invoke(record);
+            }
+
+            foreach (DiagnosticEventRecord started in EventsOnStart)
+            {
+                EventCaptured?.Invoke(started);
             }
 
             return Task.CompletedTask;
@@ -303,6 +309,45 @@ public class BluetoothDiagnosticSessionTests
 
         Assert.Equal(BluetoothDiagnosticStage.Cancelled, session.Stage);
         Assert.Equal(0, capture.StartCount);
+    }
+
+    [Fact]
+    public async Task RunAsync_SuccessEventsBeforeWirelessWait_DoNotCompleteTheAttempt()
+    {
+        (BluetoothDiagnosticSession session, FakePreflightProbe probe, FakeTraceCapture capture, _, _, _) =
+            CreateSession();
+
+        probe.Results =
+        [
+            new PreflightCheckResult(PreflightCheckId.BluetoothRadioOperable, true, "Bluetooth is on", "ok")
+        ];
+        probe.Candidate = null;
+        session.TryPairOverride = _ => Task.FromResult(true);
+        session.WirelessAttemptWait = TimeSpan.FromSeconds(30);
+
+        DateTimeOffset t = DateTimeOffset.UtcNow;
+        capture.EventsOnStart =
+        [
+            Bth(BthPS3Events.RemoteDeviceName, t),
+            Bth(BthPS3Events.RemoteDeviceIdentified, t.AddMilliseconds(1)),
+            Bth(BthPS3Events.ChildDeviceCreationSuccessful, t.AddMilliseconds(2)),
+            Bth(BthPS3Events.HidControlChannelConnected, t.AddMilliseconds(3)),
+            Bth(BthPS3Events.HidInterruptChannelConnected, t.AddMilliseconds(4)),
+            Bth(BthPS3Events.RemoteDeviceOnline, t.AddMilliseconds(5)),
+            DsHid("SomeDsHidMiniEvent", t.AddMilliseconds(6))
+        ];
+
+        Task run = session.RunAsync();
+        await WaitUntil(() => session.Stage == BluetoothDiagnosticStage.WaitingForWirelessAttempt);
+        await Task.Delay(50);
+
+        Assert.Equal(BluetoothDiagnosticStage.WaitingForWirelessAttempt, session.Stage);
+
+        session.Cancel();
+        await run.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(BluetoothDiagnosticStage.Cancelled, session.Stage);
+        Assert.Null(session.Verdict);
     }
 
     [Fact]
