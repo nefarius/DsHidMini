@@ -786,6 +786,7 @@ DsUsb_Ds3PairToSpecifiedHost(
 			break;
 		}
 
+		EventWritePairedSuccessfully(pDevCtx->DeviceAddressString);
 		status = STATUS_SUCCESS;
 
 	} while (FALSE);
@@ -895,6 +896,10 @@ NTSTATUS DsUsb_Ds3PairToNewHost(WDFDEVICE Device)
 					TRACE_DS3,
 					"Failed to get active radio host address"
 				);
+				if (status == STATUS_NO_MORE_ENTRIES)
+				{
+					EventWritePairingNoRadioFound(pDevCtx->DeviceAddressString);
+				}
 				break;
 			}
 		}
@@ -976,10 +981,17 @@ DsUsb_Ds3PairToActiveRadioAndVerify(
 	const NTSTATUS radioStatus = DS3_GetActiveRadioAddress(&newHostAddress);
 	if (!NT_SUCCESS(radioStatus))
 	{
+		const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
+
 		TraceError(
 			TRACE_DS3,
 			"Failed to get active radio host address"
 		);
+
+		if (radioStatus == STATUS_NO_MORE_ENTRIES)
+		{
+			EventWritePairingNoRadioFound(pDevCtx->DeviceAddressString);
+		}
 
 		if (ReadStatus)
 		{

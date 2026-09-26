@@ -182,6 +182,48 @@ public class BluetoothConnectionClassifierTests
     }
 
     [Fact]
+    public void OnlineWithOnlyWirelessDisconnectRequested_DoesNotCountAsLegacyActivity()
+    {
+        DateTimeOffset baseTime = DateTimeOffset.UtcNow;
+        List<DiagnosticEventRecord> timeline =
+        [
+            Bth(BthPS3Events.RemoteConnectReceived, at: baseTime),
+            Bth(BthPS3Events.RemoteDeviceIdentified, at: baseTime.AddMilliseconds(1)),
+            Bth(BthPS3Events.ChildDeviceCreationSuccessful, at: baseTime.AddMilliseconds(2)),
+            Bth(BthPS3Events.HidControlChannelConnected, at: baseTime.AddMilliseconds(3)),
+            Bth(BthPS3Events.HidInterruptChannelConnected, at: baseTime.AddMilliseconds(4)),
+            Bth(BthPS3Events.RemoteDeviceOnline, at: baseTime.AddMilliseconds(5)),
+            DsHid(DsHidMiniEvents.WirelessDisconnectRequested, baseTime.AddMilliseconds(6))
+        ];
+
+        DiagnosticVerdict verdict = _classifier.Classify(AllPassed, timeline);
+
+        Assert.Equal(DiagnosticVerdictCode.BthPs3OnlineDsHidMiniMissing, verdict.Code);
+        Assert.Equal(DiagnosticConfidence.Medium, verdict.Confidence);
+    }
+
+    [Fact]
+    public void OnlineWithOnlyFailedWithNTStatus_DoesNotCountAsLegacyActivity()
+    {
+        DateTimeOffset baseTime = DateTimeOffset.UtcNow;
+        List<DiagnosticEventRecord> timeline =
+        [
+            Bth(BthPS3Events.RemoteConnectReceived, at: baseTime),
+            Bth(BthPS3Events.RemoteDeviceIdentified, at: baseTime.AddMilliseconds(1)),
+            Bth(BthPS3Events.ChildDeviceCreationSuccessful, at: baseTime.AddMilliseconds(2)),
+            Bth(BthPS3Events.HidControlChannelConnected, at: baseTime.AddMilliseconds(3)),
+            Bth(BthPS3Events.HidInterruptChannelConnected, at: baseTime.AddMilliseconds(4)),
+            Bth(BthPS3Events.RemoteDeviceOnline, at: baseTime.AddMilliseconds(5)),
+            DsHid(DsHidMiniEvents.FailedWithNTStatus, baseTime.AddMilliseconds(6))
+        ];
+
+        DiagnosticVerdict verdict = _classifier.Classify(AllPassed, timeline);
+
+        Assert.Equal(DiagnosticVerdictCode.BthPs3OnlineDsHidMiniMissing, verdict.Code);
+        Assert.Equal(DiagnosticConfidence.Medium, verdict.Confidence);
+    }
+
+    [Fact]
     public void OnlineWithDsHidMiniActivityAfterward_ProducesSuccess()
     {
         DateTimeOffset baseTime = DateTimeOffset.UtcNow;
@@ -396,6 +438,101 @@ public class BluetoothConnectionClassifierTests
         DiagnosticVerdict verdict = _classifier.Classify(AllPassed, timeline, candidateAddress);
 
         Assert.Equal(DiagnosticVerdictCode.Success, verdict.Code);
+    }
+
+    [Fact]
+    public void OnlineWithBluetoothInputStreamStarted_ProducesSuccess()
+    {
+        DateTimeOffset baseTime = DateTimeOffset.UtcNow;
+        List<DiagnosticEventRecord> timeline =
+        [
+            Bth(BthPS3Events.RemoteConnectReceived, at: baseTime),
+            Bth(BthPS3Events.RemoteDeviceIdentified, at: baseTime.AddMilliseconds(1)),
+            Bth(BthPS3Events.ChildDeviceCreationSuccessful, at: baseTime.AddMilliseconds(2)),
+            Bth(BthPS3Events.HidControlChannelConnected, at: baseTime.AddMilliseconds(3)),
+            Bth(BthPS3Events.HidInterruptChannelConnected, at: baseTime.AddMilliseconds(4)),
+            Bth(BthPS3Events.RemoteDeviceOnline, at: baseTime.AddMilliseconds(5)),
+            DsHid(DsHidMiniEvents.BluetoothInputStreamStarted, baseTime.AddMilliseconds(6))
+        ];
+
+        DiagnosticVerdict verdict = _classifier.Classify(AllPassed, timeline);
+
+        Assert.Equal(DiagnosticVerdictCode.Success, verdict.Code);
+        Assert.Equal(DiagnosticConfidence.High, verdict.Confidence);
+        Assert.Contains(verdict.Evidence, e => e.EventName == DsHidMiniEvents.BluetoothInputStreamStarted);
+        Assert.Contains("started its Bluetooth input stream", verdict.Explanation);
+    }
+
+    [Fact]
+    public void BluetoothInputStreamStartedBeforeOnline_DoesNotCountTowardSuccess()
+    {
+        DateTimeOffset baseTime = DateTimeOffset.UtcNow;
+        List<DiagnosticEventRecord> timeline =
+        [
+            DsHid(DsHidMiniEvents.BluetoothInputStreamStarted, baseTime.AddSeconds(-10)),
+            Bth(BthPS3Events.RemoteConnectReceived, at: baseTime),
+            Bth(BthPS3Events.RemoteDeviceIdentified, at: baseTime.AddMilliseconds(1)),
+            Bth(BthPS3Events.ChildDeviceCreationSuccessful, at: baseTime.AddMilliseconds(2)),
+            Bth(BthPS3Events.HidControlChannelConnected, at: baseTime.AddMilliseconds(3)),
+            Bth(BthPS3Events.HidInterruptChannelConnected, at: baseTime.AddMilliseconds(4)),
+            Bth(BthPS3Events.RemoteDeviceOnline, at: baseTime.AddMilliseconds(5))
+        ];
+
+        DiagnosticVerdict verdict = _classifier.Classify(AllPassed, timeline);
+
+        Assert.Equal(DiagnosticVerdictCode.BthPs3OnlineDsHidMiniMissing, verdict.Code);
+        Assert.Equal(DiagnosticConfidence.Medium, verdict.Confidence);
+    }
+
+    [Fact]
+    public void AddressCorrelation_MatchingBluetoothInputStreamStarted_ProducesSuccess()
+    {
+        const ulong candidateAddress = 0xAABBCCDDEEFFUL;
+        DateTimeOffset baseTime = DateTimeOffset.UtcNow;
+
+        List<DiagnosticEventRecord> timeline =
+        [
+            Bth(BthPS3Events.RemoteConnectReceived, new Dictionary<string, object?> { ["Address"] = candidateAddress }, baseTime),
+            Bth(BthPS3Events.RemoteDeviceIdentified, new Dictionary<string, object?> { ["Address"] = candidateAddress }, baseTime.AddMilliseconds(1)),
+            Bth(BthPS3Events.ChildDeviceCreationSuccessful, new Dictionary<string, object?> { ["Address"] = candidateAddress }, baseTime.AddMilliseconds(2)),
+            Bth(BthPS3Events.HidControlChannelConnected, at: baseTime.AddMilliseconds(3)),
+            Bth(BthPS3Events.HidInterruptChannelConnected, at: baseTime.AddMilliseconds(4)),
+            Bth(BthPS3Events.RemoteDeviceOnline, new Dictionary<string, object?> { ["Address"] = candidateAddress }, baseTime.AddMilliseconds(5)),
+            DsHid(DsHidMiniEvents.BluetoothInputStreamStarted, baseTime.AddMilliseconds(6),
+                new Dictionary<string, object?> { ["Address"] = "001122334455" }),
+            DsHid(DsHidMiniEvents.BluetoothInputStreamStarted, baseTime.AddMilliseconds(7),
+                new Dictionary<string, object?> { ["Address"] = "AABBCCDDEEFF" })
+        ];
+
+        DiagnosticVerdict verdict = _classifier.Classify(AllPassed, timeline, candidateAddress);
+
+        Assert.Equal(DiagnosticVerdictCode.Success, verdict.Code);
+        Assert.Contains(verdict.Evidence, e =>
+            e.EventName == DsHidMiniEvents.BluetoothInputStreamStarted &&
+            e.GetString("Address") == "AABBCCDDEEFF");
+    }
+
+    [Fact]
+    public void AddressCorrelation_BluetoothInputStreamStartedForUnrelatedDevice_DoesNotCountTowardSuccess()
+    {
+        const ulong candidateAddress = 0xAABBCCDDEEFFUL;
+        DateTimeOffset baseTime = DateTimeOffset.UtcNow;
+
+        List<DiagnosticEventRecord> timeline =
+        [
+            Bth(BthPS3Events.RemoteConnectReceived, new Dictionary<string, object?> { ["Address"] = candidateAddress }, baseTime),
+            Bth(BthPS3Events.RemoteDeviceIdentified, new Dictionary<string, object?> { ["Address"] = candidateAddress }, baseTime.AddMilliseconds(1)),
+            Bth(BthPS3Events.ChildDeviceCreationSuccessful, new Dictionary<string, object?> { ["Address"] = candidateAddress }, baseTime.AddMilliseconds(2)),
+            Bth(BthPS3Events.HidControlChannelConnected, at: baseTime.AddMilliseconds(3)),
+            Bth(BthPS3Events.HidInterruptChannelConnected, at: baseTime.AddMilliseconds(4)),
+            Bth(BthPS3Events.RemoteDeviceOnline, new Dictionary<string, object?> { ["Address"] = candidateAddress }, baseTime.AddMilliseconds(5)),
+            DsHid(DsHidMiniEvents.BluetoothInputStreamStarted, baseTime.AddMilliseconds(6),
+                new Dictionary<string, object?> { ["Address"] = "001122334455" })
+        ];
+
+        DiagnosticVerdict verdict = _classifier.Classify(AllPassed, timeline, candidateAddress);
+
+        Assert.Equal(DiagnosticVerdictCode.BthPs3OnlineDsHidMiniMissing, verdict.Code);
     }
 
     [Fact]

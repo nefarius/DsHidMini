@@ -1175,7 +1175,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 				//
 				// Send disconnect request
 				// 
-				status = DsBth_SendDisconnectRequest(pDevCtx);
+				status = DsBth_SendDisconnectRequest(pDevCtx, DsBthDisconnectReasonButtonCombo);
 
 				if (!NT_SUCCESS(status))
 				{
@@ -1338,7 +1338,7 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 			//
 			// Send disconnect request
 			// 
-			status = DsBth_SendDisconnectRequest(pDevCtx);
+			status = DsBth_SendDisconnectRequest(pDevCtx, DsBthDisconnectReasonIdleTimeout);
 
 			if (!NT_SUCCESS(status))
 			{

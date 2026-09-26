@@ -83,6 +83,8 @@
 					<event value="21" channel="SYSTEM" level="win:Informational" message="$(string.YieldingToWiredInstance.EventMessage)" opcode="win:Info" symbol="YieldingToWiredInstance" template="tid_device_address"/>
 					<event value="22" channel="SYSTEM" level="win:Warning" message="$(string.DeviceAddressUnavailableUsingFallback.EventMessage)" opcode="win:Info" symbol="DeviceAddressUnavailableUsingFallback" template="tid_device_address_status"/>
 					<event value="23" channel="SYSTEM" level="win:Informational" message="$(string.UsbOutputTransportSelected.EventMessage)" opcode="win:Info" symbol="UsbOutputTransportSelected" template="tid_device_address_uint"/>
+					<event value="24" channel="SYSTEM" level="win:Informational" message="$(string.BluetoothInputStreamStarted.EventMessage)" opcode="win:Info" symbol="BluetoothInputStreamStarted" template="tid_device_address"/>
+					<event value="25" channel="SYSTEM" level="win:Informational" message="$(string.WirelessDisconnectRequested.EventMessage)" opcode="win:Info" symbol="WirelessDisconnectRequested" template="tid_device_address_uint"/>
 				</events>
 			</provider>
 		</events>
@@ -95,13 +97,13 @@
 				<string id="FailedWithHResult.EventMessage" value="[%1] %2 failed with HRESULT %3"/>
 				<string id="FailedWithNTStatus.EventMessage" value="[%1] %2 failed with NTSTATUS %3"/>
 				<string id="FailedWithWin32Error.EventMessage" value="[%1] %2 failed with Win32 Error %3"/>
-				<string id="OverrideSettingUInt.EventMessage" value="Setting %1 changed to %2"/>
-				<string id="OverrideSettingString.EventMessage" value="Setting %1 changed to %2"/>
-				<string id="OverrideSettingDouble.EventMessage" value="Setting %1 changed to %2"/>
+				<string id="OverrideSettingUInt.EventMessage" value="Setting %2 in node %1 changed to %3"/>
+				<string id="OverrideSettingString.EventMessage" value="Setting %2 in node %1 changed to %3"/>
+				<string id="OverrideSettingDouble.EventMessage" value="Setting %2 in node %1 changed to %3"/>
 				<string id="JSONParseError.EventMessage" value="Failed to read configuration file, JSON parsing error: %1"/>
 				<string id="LoadingDeviceSpecificConfig.EventMessage" value="Loading custom configuration overrides for device %1"/>
 				<string id="PairingNoRadioFound.EventMessage" value="Couldn't pair device %1 to this machine: no host radio found. Make sure you have a working turned-on Bluetooth Radio with stock drivers."/>
-				<string id="AlreadyPaired.EventMessage" value="Device %1 already paired to this machine's host radio, skipping"/>
+				<string id="AlreadyPaired.EventMessage" value="Device %1 host address already matches the configured target, skipping"/>
 				<string id="PairedSuccessfully.EventMessage" value="Device %1 paired successfully"/>
 				<string id="FFBNoFreeEffectBlockIndex.EventMessage" value="No free effect block index, can't create Force-Feedback Effect"/>
 				<string id="ApplyingWirelessWorkarounds.EventMessage" value="Battery status still unknown, applying workarounds"/>
@@ -113,6 +115,8 @@
 				<string id="YieldingToWiredInstance.EventMessage" value="Wireless instance yielding to existing wired connection for device %1"/>
 				<string id="DeviceAddressUnavailableUsingFallback.EventMessage" value="Device %1 did not report its own Bluetooth address (status %2); using a synthesized fallback address instead. Bluetooth pairing is unavailable for this device."/>
 				<string id="UsbOutputTransportSelected.EventMessage" value="Device %1 will use output report transport %2 (0 = Auto, 1 = InterruptOut, 2 = ControlEndpoint)"/>
+				<string id="BluetoothInputStreamStarted.EventMessage" value="Device %1 started consuming Bluetooth HID interrupt input reports"/>
+				<string id="WirelessDisconnectRequested.EventMessage" value="Wireless disconnect requested for device %1 (reason %2: 0 = Unknown, 1 = ButtonCombo, 2 = IdleTimeout, 3 = YieldWired, 4 = SelfManagedIoSuspend, 5 = IpcRequest, 6 = UsbSignal)"/>
 			</stringTable>
 		</resources>
 	</localization>

@@ -239,8 +239,16 @@ public sealed class BluetoothConnectionClassifier : IDiagnosticClassifier
         // Correlate the handoff too: DsHidMini's own 'Address' property is the same 12-hex-digit
         // string (see driver/Ds3.c, driver/Device.c: "%02X%02X%02X%02X%02X%02X") as BthPS3's
         // numeric one, just formatted differently -- MatchesCandidateAddress() normalizes both.
-        bool hasDsHidMiniActivity = dsHidMini.Any(e =>
-            e.Timestamp >= online.Timestamp && MatchesCandidateAddress(e, candidateAddress));
+        // Prefer the explicit wireless-ready milestone when the installed driver emits it;
+        // older builds only produce generic DsHidMini activity after BthPS3 goes online.
+        DiagnosticEventRecord? inputStreamStarted = dsHidMini.LastOrDefault(e =>
+            e.EventName == DsHidMiniEvents.BluetoothInputStreamStarted &&
+            e.Timestamp >= online.Timestamp &&
+            MatchesCandidateAddress(e, candidateAddress));
+        bool hasDsHidMiniActivity = inputStreamStarted is not null || dsHidMini.Any(e =>
+            e.Timestamp >= online.Timestamp &&
+            MatchesCandidateAddress(e, candidateAddress) &&
+            !DsHidMiniEvents.IsFailureOrDisconnect(e.EventName));
         if (!hasDsHidMiniActivity)
         {
             // Zero DsHidMini events in the *entire* session (not just after BthPS3 went online) means
@@ -262,11 +270,18 @@ public sealed class BluetoothConnectionClassifier : IDiagnosticClassifier
                 evidence);
         }
 
+        if (inputStreamStarted is not null)
+        {
+            evidence.Add(inputStreamStarted);
+        }
+
         return new DiagnosticVerdict(
             DiagnosticVerdictCode.Success,
             DiagnosticConfidence.High,
             "The controller connected over Bluetooth",
-            "BthPS3 reports the controller fully online, and DsHidMini driver activity followed.",
+            inputStreamStarted is not null
+                ? "BthPS3 reports the controller fully online, and DsHidMini started its Bluetooth input stream."
+                : "BthPS3 reports the controller fully online, and DsHidMini driver activity followed.",
             "No action needed. The controller should now behave normally over Bluetooth.",
             evidence);
     }

@@ -221,6 +221,22 @@ static CONST PSTR G_BLUETOOTH_OUTPUT_REPORT_TRANSPORT_NAMES[] =
 };
 
 //
+// Why a wireless instance asked the host radio to drop the link. Numeric
+// values are part of the ETW WirelessDisconnectRequested payload and must
+// stay stable.
+//
+typedef enum
+{
+	DsBthDisconnectReasonUnknown = 0,
+	DsBthDisconnectReasonButtonCombo,
+	DsBthDisconnectReasonIdleTimeout,
+	DsBthDisconnectReasonYieldWired,
+	DsBthDisconnectReasonSelfManagedIoSuspend,
+	DsBthDisconnectReasonIpcRequest,
+	DsBthDisconnectReasonUsbSignal
+} DS_BTH_DISCONNECT_REASON, * PDS_BTH_DISCONNECT_REASON;
+
+//
 // Output report processing mode
 // 
 typedef enum
