@@ -26,7 +26,7 @@ public class DocsHttpCacheTests
     private static readonly PhysicalAddress UnknownAddress = PhysicalAddress.Parse("AA-BB-CC-DD-EE-FF");
 
     [Fact]
-    public async Task IsGenuineAddress_UsesCachedDatabaseWhileOffline()
+    public async Task CheckAddress_UsesCachedDatabaseWhileOffline()
     {
         await using CacheHost host = await CacheHost.StartAsync(TimeSpan.FromHours(1), call =>
         {
@@ -38,13 +38,13 @@ public class DocsHttpCacheTests
             throw new HttpRequestException("offline");
         });
 
-        Assert.True(await host.Validator.IsGenuineAddress(GenuineAddress));
-        Assert.False(await host.Validator.IsGenuineAddress(UnknownAddress));
+        Assert.Equal(AddressAuthenticityStatus.SonyPrefixRecognized, await host.Validator.CheckAddress(GenuineAddress));
+        Assert.Equal(AddressAuthenticityStatus.PrefixNotRecognized, await host.Validator.CheckAddress(UnknownAddress));
         Assert.Equal(1, host.Handler.Calls);
     }
 
     [Fact]
-    public async Task IsGenuineAddress_ServesExpiredDatabaseWhenRefreshFails()
+    public async Task CheckAddress_ServesExpiredDatabaseWhenRefreshFails()
     {
         await using CacheHost host = await CacheHost.StartAsync(TimeSpan.FromMilliseconds(200), call =>
         {
@@ -56,15 +56,15 @@ public class DocsHttpCacheTests
             throw new HttpRequestException("offline");
         });
 
-        Assert.True(await host.Validator.IsGenuineAddress(GenuineAddress));
+        Assert.Equal(AddressAuthenticityStatus.SonyPrefixRecognized, await host.Validator.CheckAddress(GenuineAddress));
         await Task.Delay(TimeSpan.FromMilliseconds(500));
 
-        Assert.True(await host.Validator.IsGenuineAddress(GenuineAddress));
+        Assert.Equal(AddressAuthenticityStatus.SonyPrefixRecognized, await host.Validator.CheckAddress(GenuineAddress));
         Assert.Equal(1 + CacheHost.RetryAttempts, host.Handler.Calls);
     }
 
     [Fact]
-    public async Task IsGenuineAddress_DoesNotCacheFailedDatabaseDownload()
+    public async Task CheckAddress_DoesNotCacheFailedDatabaseDownload()
     {
         await using CacheHost host = await CacheHost.StartAsync(TimeSpan.FromHours(1), call =>
         {
@@ -76,13 +76,13 @@ public class DocsHttpCacheTests
             return Json(OuiDatabaseJson);
         });
 
-        Assert.False(await host.Validator.IsGenuineAddress(GenuineAddress));
-        Assert.True(await host.Validator.IsGenuineAddress(GenuineAddress));
+        Assert.Equal(AddressAuthenticityStatus.CheckUnavailable, await host.Validator.CheckAddress(GenuineAddress));
+        Assert.Equal(AddressAuthenticityStatus.SonyPrefixRecognized, await host.Validator.CheckAddress(GenuineAddress));
         Assert.Equal(CacheHost.RetryAttempts + 1, host.Handler.Calls);
     }
 
     [Fact]
-    public async Task IsGenuineAddress_DoesNotReuseUnrelatedCachedResponse()
+    public async Task CheckAddress_DoesNotReuseUnrelatedCachedResponse()
     {
         await using CacheHost host = await CacheHost.StartAsync(TimeSpan.FromHours(1), (request, call) =>
         {
@@ -107,7 +107,7 @@ public class DocsHttpCacheTests
         using HttpResponseMessage unrelated = await client.GetAsync("/unrelated");
         Assert.True(unrelated.IsSuccessStatusCode);
 
-        Assert.True(await host.Validator.IsGenuineAddress(GenuineAddress));
+        Assert.Equal(AddressAuthenticityStatus.SonyPrefixRecognized, await host.Validator.CheckAddress(GenuineAddress));
         Assert.Equal(2, host.Handler.Calls);
         Assert.Equal(OuiDatabasePath, host.Handler.RequestPaths[1]);
     }
@@ -117,13 +117,13 @@ public class DocsHttpCacheTests
     [InlineData("null")]
     [InlineData("[\"00112\"]")]
     [InlineData("[\"00:11:22\",\"00112\"]")]
-    public async Task IsGenuineAddress_DoesNotReuseRejectedDatabase(string rejectedJson)
+    public async Task CheckAddress_DoesNotReuseRejectedDatabase(string rejectedJson)
     {
         await using CacheHost host = await CacheHost.StartAsync(TimeSpan.FromHours(1), call =>
             call == 1 ? Json(rejectedJson) : Json(OuiDatabaseJson));
 
-        Assert.False(await host.Validator.IsGenuineAddress(GenuineAddress));
-        Assert.True(await host.Validator.IsGenuineAddress(GenuineAddress));
+        Assert.Equal(AddressAuthenticityStatus.CheckUnavailable, await host.Validator.CheckAddress(GenuineAddress));
+        Assert.Equal(AddressAuthenticityStatus.SonyPrefixRecognized, await host.Validator.CheckAddress(GenuineAddress));
         Assert.Equal(2, host.Handler.Calls);
     }
 
@@ -132,15 +132,15 @@ public class DocsHttpCacheTests
     [InlineData("null")]
     [InlineData("[\"00112\"]")]
     [InlineData("[\"00:11:22\",\"00112\"]")]
-    public async Task IsGenuineAddress_KeepsValidSnapshotWhenRefreshIsRejected(string rejectedJson)
+    public async Task CheckAddress_KeepsValidSnapshotWhenRefreshIsRejected(string rejectedJson)
     {
         await using CacheHost host = await CacheHost.StartAsync(TimeSpan.FromMilliseconds(200), call =>
             call == 1 ? Json(OuiDatabaseJson) : Json(rejectedJson));
 
-        Assert.True(await host.Validator.IsGenuineAddress(GenuineAddress));
+        Assert.Equal(AddressAuthenticityStatus.SonyPrefixRecognized, await host.Validator.CheckAddress(GenuineAddress));
         await Task.Delay(TimeSpan.FromMilliseconds(500));
 
-        Assert.True(await host.Validator.IsGenuineAddress(GenuineAddress));
+        Assert.Equal(AddressAuthenticityStatus.SonyPrefixRecognized, await host.Validator.CheckAddress(GenuineAddress));
         Assert.Equal(2, host.Handler.Calls);
     }
 
@@ -167,8 +167,8 @@ public class DocsHttpCacheTests
             databasePath,
             root);
 
-        Assert.True(await host.Validator.IsGenuineAddress(GenuineAddress));
-        Assert.False(await host.Validator.IsGenuineAddress(GenuineAddress));
+        Assert.Equal(AddressAuthenticityStatus.SonyPrefixRecognized, await host.Validator.CheckAddress(GenuineAddress));
+        Assert.Equal(AddressAuthenticityStatus.CheckUnavailable, await host.Validator.CheckAddress(GenuineAddress));
         Assert.Equal(1 + CacheHost.RetryAttempts, host.Handler.Calls);
     }
 

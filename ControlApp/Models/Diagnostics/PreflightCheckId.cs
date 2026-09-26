@@ -6,6 +6,7 @@ namespace Nefarius.DsHidMini.ControlApp.Models.Diagnostics;
 /// </summary>
 public enum PreflightCheckId
 {
+    RunningAsAdministrator,
     BluetoothRadioOperable,
     BthPS3Installed,
     BthPS3VersionSupported,

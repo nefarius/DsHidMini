@@ -66,8 +66,31 @@ public class ApplicationHostService : IHostedService
 
         if (!Application.Current.Windows.OfType<MainWindow>().Any())
         {
-            if (!_onboardingCoordinator.IsCompleted)
+            if (_onboardingCoordinator.ShouldShowFirstRunWizard)
             {
+                if (OnboardingCoordinator.RequiresElevationToStart(
+                        _onboardingCoordinator.ShouldShowFirstRunWizard, SecurityUtil.IsElevated))
+                {
+                    Log.Logger.Information(
+                        "First-run setup requires Administrator; requesting elevation.");
+                    if (!Main.RestartAsAdmin())
+                    {
+                        Log.Logger.Warning(
+                            "Elevation for first-run setup was declined or failed; exiting.");
+                        App.RequestExit();
+                    }
+
+                    return;
+                }
+
+                // Onboarding is shown before MainWindow, which is otherwise the only place that
+                // starts PnP listening. Without this, setup never sees a controller being plugged in.
+                _dshmDevMan.StartListeningForDshmDevices();
+
+                // The wizard is the only window. Default OnLastWindowClose would shut the process
+                // down the moment Finish closes it, before MainWindow can be shown.
+                Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
                 OnboardingWindow onboardingWindow = (OnboardingWindow)_serviceProvider.GetService(typeof(OnboardingWindow))!;
                 onboardingWindow.ShowDialog();
 
@@ -79,6 +102,16 @@ public class ApplicationHostService : IHostedService
                     return;
                 }
             }
+            else
+            {
+                if (_onboardingCoordinator.IsDeveloperMode && !_onboardingCoordinator.IsCompleted)
+                {
+                    Log.Logger.Information(
+                        "Skipping first-run setup because ControlApp is running in developer mode.");
+                }
+
+                _dshmDevMan.StartListeningForDshmDevices();
+            }
 
             _navigationWindow = (
                 _serviceProvider.GetService(typeof(MainWindow)) as INavigationWindow
@@ -86,6 +119,9 @@ public class ApplicationHostService : IHostedService
             _navigationWindow!.ShowWindow();
 
             _navigationWindow.Navigate(typeof(DevicesPage));
+
+            // Closing the main window (when not hidden to the tray) should exit again.
+            Application.Current.ShutdownMode = ShutdownMode.OnLastWindowClose;
         }
 
         await Task.CompletedTask;

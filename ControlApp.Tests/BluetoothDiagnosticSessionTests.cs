@@ -12,7 +12,9 @@ namespace Nefarius.DsHidMini.ControlApp.Tests;
 ///     need no extra seams. Capture and classification are reached via
 ///     <see cref="BluetoothDiagnosticSession.TryPairOverride" /> (skip live IPC) and a shortened
 ///     <see cref="BluetoothDiagnosticSession.WirelessAttemptWait" />; an empty
-///     <see cref="DshmDevMan.Devices" /> list completes the unplug wait immediately.
+///     <see cref="DshmDevMan.Devices" /> list completes the unplug wait immediately. A wireless
+///     reconnect (or a conclusive ETW success, including older BthPS3 event sets) ends the
+///     observation window before that timeout.
 /// </summary>
 public class BluetoothDiagnosticSessionTests
 {
@@ -24,7 +26,13 @@ public class BluetoothDiagnosticSessionTests
         public PreflightCheckId? LastAutoRepairedId { get; private set; }
         public string BthPS3VersionDisplay { get; set; } = "Unknown";
 
-        public IReadOnlyList<PreflightCheckResult> Run(PnPDevice? candidateDevice = null) => Results;
+        public int RunCount { get; private set; }
+
+        public IReadOnlyList<PreflightCheckResult> Run(PnPDevice? candidateDevice = null)
+        {
+            RunCount++;
+            return Results;
+        }
 
         public PnPDevice? FindEligibleUsbController() => Candidate;
 
@@ -41,6 +49,7 @@ public class BluetoothDiagnosticSessionTests
         public int StartCount { get; private set; }
         public int StopCount { get; private set; }
         public DiagnosticEventRecord? EventOnStart { get; set; }
+        public IReadOnlyList<DiagnosticEventRecord> EventsOnStart { get; set; } = [];
         public Exception? FaultAfterStop { get; set; }
 
         public event Action<DiagnosticEventRecord>? EventCaptured;
@@ -53,6 +62,11 @@ public class BluetoothDiagnosticSessionTests
             if (EventOnStart is { } record)
             {
                 EventCaptured?.Invoke(record);
+            }
+
+            foreach (DiagnosticEventRecord started in EventsOnStart)
+            {
+                EventCaptured?.Invoke(started);
             }
 
             return Task.CompletedTask;
@@ -127,7 +141,11 @@ public class BluetoothDiagnosticSessionTests
         FakeBundleWriter bundle = new();
         DshmDevMan devMan = new();
 
-        BluetoothDiagnosticSession session = new(probe, capture, classifier, bundle, devMan);
+        BluetoothDiagnosticSession session = new(probe, capture, classifier, bundle, devMan)
+        {
+            // Snapshot preflight unless a test is exercising the USB-arrival wait.
+            WaitForUsbWhenMissing = false
+        };
         return (session, probe, capture, classifier, bundle, devMan);
     }
 
@@ -154,6 +172,7 @@ public class BluetoothDiagnosticSessionTests
         await session.RunAsync();
 
         Assert.Equal(BluetoothDiagnosticStage.PreflightBlocked, session.Stage);
+        Assert.Equal("Turn it on", session.StatusMessage);
         Assert.NotNull(session.Verdict);
         Assert.Equal(DiagnosticVerdictCode.PreflightBlocked, session.Verdict!.Code);
         Assert.Equal(0, capture.StartCount);
@@ -215,6 +234,43 @@ public class BluetoothDiagnosticSessionTests
     }
 
     [Fact]
+    public async Task RunAsync_RetryAfterCaptureFault_DoesNotInheritPreviousFaultSignal()
+    {
+        (BluetoothDiagnosticSession session, FakePreflightProbe probe, FakeTraceCapture capture, _, _, _) =
+            CreateSession();
+
+        probe.Results =
+        [
+            new PreflightCheckResult(PreflightCheckId.BluetoothRadioOperable, true, "Bluetooth is on", "ok")
+        ];
+        probe.Candidate = null;
+        session.TryPairOverride = _ => Task.FromResult(true);
+        session.WirelessAttemptWait = TimeSpan.Zero;
+        capture.FaultAfterStop = new InvalidOperationException("pump died after stop");
+
+        await session.RunAsync();
+        Assert.Equal(BluetoothDiagnosticStage.Faulted, session.Stage);
+
+        capture.FaultAfterStop = null;
+        session.TryPairOverride = null;
+        session.WaitForUsbWhenMissing = true;
+        probe.Results =
+        [
+            new PreflightCheckResult(PreflightCheckId.UsbControllerPresent, false, "Controller is connected with USB",
+                "Connect the controller to this PC with a USB cable.")
+        ];
+
+        Task retry = session.RunAsync();
+        await WaitUntil(() => session.Stage == BluetoothDiagnosticStage.WaitingForUsb);
+
+        session.Cancel();
+        await retry.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(BluetoothDiagnosticStage.Cancelled, session.Stage);
+        Assert.Equal(1, capture.StartCount);
+    }
+
+    [Fact]
     public void Cancel_BeforeAnyRun_DoesNotThrow()
     {
         (BluetoothDiagnosticSession session, _, _, _, _, _) = CreateSession();
@@ -262,5 +318,287 @@ public class BluetoothDiagnosticSessionTests
         Assert.NotNull(bundle.LastContent);
         Assert.Equal(DiagnosticVerdictCode.PreflightBlocked, bundle.LastContent!.Verdict!.Code);
         Assert.Same(probe.Results, bundle.LastContent.PreflightResults);
+    }
+
+    [Fact]
+    public async Task RunAsync_MissingUsbOnly_WaitsUntilCancelled()
+    {
+        (BluetoothDiagnosticSession session, FakePreflightProbe probe, FakeTraceCapture capture, _, _, _) =
+            CreateSession();
+
+        session.WaitForUsbWhenMissing = true;
+        probe.Results =
+        [
+            new PreflightCheckResult(PreflightCheckId.UsbControllerPresent, false, "Controller is connected with USB",
+                "Connect the controller to this PC with a USB cable.")
+        ];
+        probe.Candidate = null;
+
+        Task run = session.RunAsync();
+        await WaitUntil(() => session.Stage == BluetoothDiagnosticStage.WaitingForUsb);
+
+        Assert.Equal("Connect the controller to this PC with a USB cable.", session.StatusMessage);
+        Assert.Null(session.Verdict);
+        Assert.Equal(0, capture.StartCount);
+
+        session.Cancel();
+        await run;
+
+        Assert.Equal(BluetoothDiagnosticStage.Cancelled, session.Stage);
+        Assert.Equal(0, capture.StartCount);
+    }
+
+    [Fact]
+    public async Task RunAsync_SuccessEventsBeforeWirelessWait_DoNotCompleteTheAttempt()
+    {
+        (BluetoothDiagnosticSession session, FakePreflightProbe probe, FakeTraceCapture capture, _, _, _) =
+            CreateSession();
+
+        probe.Results =
+        [
+            new PreflightCheckResult(PreflightCheckId.BluetoothRadioOperable, true, "Bluetooth is on", "ok")
+        ];
+        probe.Candidate = null;
+        session.TryPairOverride = _ => Task.FromResult(true);
+        session.WirelessAttemptWait = TimeSpan.FromSeconds(30);
+
+        DateTimeOffset t = DateTimeOffset.UtcNow;
+        capture.EventsOnStart =
+        [
+            Bth(BthPS3Events.RemoteDeviceName, t),
+            Bth(BthPS3Events.RemoteDeviceIdentified, t.AddMilliseconds(1)),
+            Bth(BthPS3Events.ChildDeviceCreationSuccessful, t.AddMilliseconds(2)),
+            Bth(BthPS3Events.HidControlChannelConnected, t.AddMilliseconds(3)),
+            Bth(BthPS3Events.HidInterruptChannelConnected, t.AddMilliseconds(4)),
+            Bth(BthPS3Events.RemoteDeviceOnline, t.AddMilliseconds(5)),
+            DsHid("SomeDsHidMiniEvent", t.AddMilliseconds(6))
+        ];
+
+        Task run = session.RunAsync();
+        await WaitUntil(() => session.Stage == BluetoothDiagnosticStage.WaitingForWirelessAttempt);
+        await Task.Delay(50);
+
+        Assert.Equal(BluetoothDiagnosticStage.WaitingForWirelessAttempt, session.Stage);
+
+        session.Cancel();
+        await run.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(BluetoothDiagnosticStage.Cancelled, session.Stage);
+        Assert.Null(session.Verdict);
+    }
+
+    [Fact]
+    public async Task RunAsync_CancelDuringWirelessWait_StaysCancelled()
+    {
+        (BluetoothDiagnosticSession session, FakePreflightProbe probe, FakeTraceCapture capture, _, _, _) =
+            CreateSession();
+
+        probe.Results =
+        [
+            new PreflightCheckResult(PreflightCheckId.BluetoothRadioOperable, true, "Bluetooth is on", "ok")
+        ];
+        probe.Candidate = null;
+        session.TryPairOverride = _ => Task.FromResult(true);
+        session.WirelessAttemptWait = TimeSpan.FromSeconds(30);
+
+        Task run = session.RunAsync();
+        await WaitUntil(() => session.Stage == BluetoothDiagnosticStage.WaitingForWirelessAttempt);
+
+        session.Cancel();
+        await run.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(BluetoothDiagnosticStage.Cancelled, session.Stage);
+        Assert.Null(session.Verdict);
+        Assert.Equal(1, capture.StopCount);
+    }
+
+    [Fact]
+    public async Task RunAsync_WirelessReconnectObserved_CompletesBeforeTimeoutAndTreatsAsSuccess()
+    {
+        (BluetoothDiagnosticSession session, FakePreflightProbe probe, _, FakeClassifier classifier, _,
+                DshmDevMan devMan) = CreateSession();
+
+        probe.Results =
+        [
+            new PreflightCheckResult(PreflightCheckId.BluetoothRadioOperable, true, "Bluetooth is on", "ok")
+        ];
+        probe.Candidate = null;
+        session.TryPairOverride = _ => Task.FromResult(true);
+        session.WirelessAttemptWait = TimeSpan.FromSeconds(30);
+        session.WirelessReconnectObservedOverride = () => false;
+        classifier.NextResult = new DiagnosticVerdict(
+            DiagnosticVerdictCode.Inconclusive, DiagnosticConfidence.Low, "n/a", "n/a", "n/a", []);
+
+        Task run = session.RunAsync();
+        await WaitUntil(() => session.Stage == BluetoothDiagnosticStage.WaitingForWirelessAttempt);
+
+        session.WirelessReconnectObservedOverride = () => true;
+        devMan.RefreshConnectedDevices();
+        await run.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(BluetoothDiagnosticStage.Completed, session.Stage);
+        Assert.Equal("Done.", session.StatusMessage);
+        Assert.NotNull(session.Verdict);
+        Assert.Equal(DiagnosticVerdictCode.Success, session.Verdict!.Code);
+        Assert.Contains("reappeared over Bluetooth", session.Verdict.Explanation);
+    }
+
+    [Fact]
+    public async Task RunAsync_WirelessAlreadyPresentAtStart_DoesNotCountAsReconnect()
+    {
+        (BluetoothDiagnosticSession session, FakePreflightProbe probe, _, _, _, _) = CreateSession();
+
+        probe.Results =
+        [
+            new PreflightCheckResult(PreflightCheckId.BluetoothRadioOperable, true, "Bluetooth is on", "ok")
+        ];
+        probe.Candidate = null;
+        session.TryPairOverride = _ => Task.FromResult(true);
+        session.WirelessAttemptWait = TimeSpan.FromSeconds(30);
+        session.WirelessReconnectObservedOverride = () => true;
+
+        Task run = session.RunAsync();
+        await WaitUntil(() => session.Stage == BluetoothDiagnosticStage.WaitingForWirelessAttempt);
+        await Task.Delay(50);
+
+        Assert.Equal(BluetoothDiagnosticStage.WaitingForWirelessAttempt, session.Stage);
+
+        session.Cancel();
+        await run.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(BluetoothDiagnosticStage.Cancelled, session.Stage);
+        Assert.Null(session.Verdict);
+    }
+
+    [Fact]
+    public async Task RunAsync_WirelessDropsThenReturns_CountsAsReconnect()
+    {
+        (BluetoothDiagnosticSession session, FakePreflightProbe probe, _, FakeClassifier classifier, _,
+                DshmDevMan devMan) = CreateSession();
+
+        probe.Results =
+        [
+            new PreflightCheckResult(PreflightCheckId.BluetoothRadioOperable, true, "Bluetooth is on", "ok")
+        ];
+        probe.Candidate = null;
+        session.TryPairOverride = _ => Task.FromResult(true);
+        session.WirelessAttemptWait = TimeSpan.FromSeconds(30);
+        bool present = true;
+        session.WirelessReconnectObservedOverride = () => present;
+        classifier.NextResult = new DiagnosticVerdict(
+            DiagnosticVerdictCode.Inconclusive, DiagnosticConfidence.Low, "n/a", "n/a", "n/a", []);
+
+        Task run = session.RunAsync();
+        await WaitUntil(() => session.Stage == BluetoothDiagnosticStage.WaitingForWirelessAttempt);
+
+        present = false;
+        devMan.RefreshConnectedDevices();
+        present = true;
+        devMan.RefreshConnectedDevices();
+        await run.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(BluetoothDiagnosticStage.Completed, session.Stage);
+        Assert.Equal(DiagnosticVerdictCode.Success, session.Verdict!.Code);
+        Assert.Contains("reappeared over Bluetooth", session.Verdict.Explanation);
+    }
+
+    [Fact]
+    public async Task RunAsync_LegacyBthPs3SuccessEvents_CompletesBeforeTimeout()
+    {
+        // Older BthPS3 never emits RemoteConnectReceived (event 27). Classic 1-26 events plus
+        // DsHidMini activity must still end the wait immediately instead of sitting on the
+        // full observation window.
+        (BluetoothDiagnosticSession session, FakePreflightProbe probe, FakeTraceCapture capture,
+                FakeClassifier classifier, _, _) = CreateSession();
+
+        probe.Results =
+        [
+            new PreflightCheckResult(PreflightCheckId.BluetoothRadioOperable, true, "Bluetooth is on", "ok")
+        ];
+        probe.Candidate = null;
+        session.TryPairOverride = _ => Task.FromResult(true);
+        session.WirelessAttemptWait = TimeSpan.FromSeconds(30);
+        classifier.NextResult = new DiagnosticVerdict(
+            DiagnosticVerdictCode.Success, DiagnosticConfidence.High,
+            "The controller connected over Bluetooth", "ok", "none", []);
+
+        Task run = session.RunAsync();
+        await WaitUntil(() => session.Stage == BluetoothDiagnosticStage.WaitingForWirelessAttempt);
+
+        DateTimeOffset t = DateTimeOffset.UtcNow;
+        capture.Raise(Bth(BthPS3Events.RemoteDeviceName, t));
+        capture.Raise(Bth(BthPS3Events.RemoteDeviceIdentified, t.AddMilliseconds(1)));
+        capture.Raise(Bth(BthPS3Events.ChildDeviceCreationSuccessful, t.AddMilliseconds(2)));
+        capture.Raise(Bth(BthPS3Events.HidControlChannelConnected, t.AddMilliseconds(3)));
+        capture.Raise(Bth(BthPS3Events.HidInterruptChannelConnected, t.AddMilliseconds(4)));
+        capture.Raise(Bth(BthPS3Events.RemoteDeviceOnline, t.AddMilliseconds(5)));
+        capture.Raise(DsHid("SomeDsHidMiniEvent", t.AddMilliseconds(6)));
+
+        await run.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(BluetoothDiagnosticStage.Completed, session.Stage);
+        Assert.Equal("Done.", session.StatusMessage);
+        Assert.Equal(DiagnosticVerdictCode.Success, session.Verdict!.Code);
+        Assert.DoesNotContain(session.Timeline, e => e.EventName == BthPS3Events.RemoteConnectReceived);
+    }
+
+    [Fact]
+    public async Task RunAsync_MissingUsbOnly_ReprobesWhenDeviceListUpdates()
+    {
+        (BluetoothDiagnosticSession session, FakePreflightProbe probe, _, _, _, DshmDevMan devMan) = CreateSession();
+
+        session.WaitForUsbWhenMissing = true;
+        probe.Results =
+        [
+            new PreflightCheckResult(PreflightCheckId.UsbControllerPresent, false, "Controller is connected with USB",
+                "Connect the controller to this PC with a USB cable.")
+        ];
+        probe.Candidate = null;
+
+        Task run = session.RunAsync();
+        await WaitUntil(() => session.Stage == BluetoothDiagnosticStage.WaitingForUsb);
+        int runsAfterWait = probe.RunCount;
+
+        devMan.RefreshConnectedDevices();
+        await WaitUntil(() => probe.RunCount > runsAfterWait);
+
+        session.Cancel();
+        await run;
+
+        Assert.True(probe.RunCount > runsAfterWait);
+        Assert.Equal(BluetoothDiagnosticStage.Cancelled, session.Stage);
+    }
+
+    private static DiagnosticEventRecord Bth(string eventName, DateTimeOffset at) =>
+        new(
+            at,
+            KnownDiagnosticProviders.BthPS3,
+            "BthPS3",
+            0,
+            eventName,
+            new Dictionary<string, object?>());
+
+    private static DiagnosticEventRecord DsHid(string eventName, DateTimeOffset at) =>
+        new(
+            at,
+            KnownDiagnosticProviders.DsHidMini,
+            "DsHidMini",
+            0,
+            eventName,
+            new Dictionary<string, object?>());
+
+    private static async Task WaitUntil(Func<bool> condition)
+    {
+        for (int attempt = 0; attempt < 50; attempt++)
+        {
+            if (condition())
+            {
+                return;
+            }
+
+            await Task.Delay(20);
+        }
+
+        Assert.Fail("Timed out waiting for diagnostic session state.");
     }
 }

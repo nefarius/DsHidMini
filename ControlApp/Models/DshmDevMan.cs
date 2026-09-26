@@ -42,6 +42,15 @@ public class DshmDevMan
         UpdateConnectedDshmDevicesList();
     }
 
+    /// <summary>
+    ///     Re-enumerates connected DsHidMini devices. Safe to call before
+    ///     <see cref="StartListeningForDshmDevices" />; a live listener is not required.
+    /// </summary>
+    public void RefreshConnectedDevices()
+    {
+        UpdateConnectedDshmDevicesList();
+    }
+
     public void StopListeningForDshmDevices()
     {
         Log.Logger.Information("Stopping detection of DsHidMini devices");

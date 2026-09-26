@@ -53,4 +53,34 @@ public class OnboardingCoordinatorTests
         Assert.Null(config.CompletedOnboardingVersion);
         Assert.False(OnboardingCoordinator.IsVersionCompleted(config.CompletedOnboardingVersion));
     }
+
+    [Fact]
+    public void IsFirstRunWizardRequired_DeveloperMode_SkipsEvenWhenIncomplete()
+    {
+        Assert.False(OnboardingCoordinator.IsFirstRunWizardRequired(null, isDeveloperMode: true));
+        Assert.False(OnboardingCoordinator.IsFirstRunWizardRequired(0, isDeveloperMode: true));
+    }
+
+    [Fact]
+    public void IsFirstRunWizardRequired_ReleaseIncomplete_ShowsWizard()
+    {
+        Assert.True(OnboardingCoordinator.IsFirstRunWizardRequired(null, isDeveloperMode: false));
+        Assert.True(OnboardingCoordinator.IsFirstRunWizardRequired(0, isDeveloperMode: false));
+    }
+
+    [Fact]
+    public void IsFirstRunWizardRequired_ReleaseCompleted_DoesNotShowWizard()
+    {
+        Assert.False(OnboardingCoordinator.IsFirstRunWizardRequired(
+            OnboardingCoordinator.CurrentOnboardingVersion,
+            isDeveloperMode: false));
+    }
+
+    [Fact]
+    public void RequiresElevationToStart_OnlyWhenWizardWillShowAndProcessIsUnelevated()
+    {
+        Assert.True(OnboardingCoordinator.RequiresElevationToStart(shouldShowWizard: true, isElevated: false));
+        Assert.False(OnboardingCoordinator.RequiresElevationToStart(shouldShowWizard: true, isElevated: true));
+        Assert.False(OnboardingCoordinator.RequiresElevationToStart(shouldShowWizard: false, isElevated: false));
+    }
 }

@@ -94,12 +94,22 @@ public class OUIEntry : IEquatable<OUIEntry>
 }
 
 /// <summary>
-///     Genuine controller MAC address validator.
+///     Outcome of comparing a controller Bluetooth address against chip vendors Sony typically sourced.
+/// </summary>
+public enum AddressAuthenticityStatus
+{
+    SonyPrefixRecognized,
+    PrefixNotRecognized,
+    CheckUnavailable
+}
+
+/// <summary>
+///     Best-effort controller MAC vendor-prefix lookup.
 /// </summary>
 /// <remarks>https://github.com/nefarius/DsHidMini/discussions/166</remarks>
 public sealed class AddressValidator(IHttpClientFactory clientFactory, ILogger<AddressValidator>? logger = null)
 {
-    public async Task<bool> IsGenuineAddress(PhysicalAddress address)
+    public async Task<AddressAuthenticityStatus> CheckAddress(PhysicalAddress address)
     {
         // global:: avoids the Nefarius.HttpClient namespace introduced by the cache package.
         using global::System.Net.Http.HttpClient client = clientFactory.CreateClient(DocsHttpClient.Name);
@@ -111,7 +121,7 @@ public sealed class AddressValidator(IHttpClientFactory clientFactory, ILogger<A
 
             if (rawOuiList is null)
             {
-                return false;
+                return AddressAuthenticityStatus.CheckUnavailable;
             }
 
             // Protect Select + OUIEntry construction too (constructor can throw on malformed strings)
@@ -119,29 +129,32 @@ public sealed class AddressValidator(IHttpClientFactory clientFactory, ILogger<A
 
             OUIEntry device = new(address);
 
-            return ouiList.Contains(device);
+            return ouiList.Contains(device)
+                ? AddressAuthenticityStatus.SonyPrefixRecognized
+                : AddressAuthenticityStatus.PrefixNotRecognized;
         }
         catch (HttpRequestException ex)
         {
-            logger?.LogWarning(ex, "Failed to download genuine OUI database; treating address as not genuine.");
-            return false;
+            logger?.LogWarning(ex, "Failed to download genuine OUI database; treating the check as unavailable.");
+            return AddressAuthenticityStatus.CheckUnavailable;
         }
         catch (TaskCanceledException ex)
         {
             logger?.LogWarning(ex,
-                "Downloading genuine OUI database timed out/canceled; treating address as not genuine.");
-            return false;
+                "Downloading genuine OUI database timed out/canceled; treating the check as unavailable.");
+            return AddressAuthenticityStatus.CheckUnavailable;
         }
         catch (JsonException ex)
         {
-            logger?.LogWarning(ex, "Failed to deserialize genuine OUI database JSON; treating address as not genuine.");
-            return false;
+            logger?.LogWarning(ex,
+                "Failed to deserialize genuine OUI database JSON; treating the check as unavailable.");
+            return AddressAuthenticityStatus.CheckUnavailable;
         }
         catch (Exception ex)
         {
             // Covers LINQ Select enumeration issues + OUIEntry ctor failures + any unexpected runtime errors.
-            logger?.LogWarning(ex, "Error while evaluating genuine OUI database; treating address as not genuine.");
-            return false;
+            logger?.LogWarning(ex, "Error while evaluating genuine OUI database; treating the check as unavailable.");
+            return AddressAuthenticityStatus.CheckUnavailable;
         }
     }
 }

@@ -93,10 +93,10 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     private bool _isEditorVisible;
 
     /// <summary>
-    ///     Whether the controller is deemed official Sony genuine by using the online address database.
+    ///     Result of the best-effort Sony-sourced chip-vendor lookup. Failures stay <see cref="AddressAuthenticityStatus.CheckUnavailable" />.
     /// </summary>
     [ObservableProperty]
-    private bool _isGenuine;
+    private AddressAuthenticityStatus _addressAuthenticityStatus = AddressAuthenticityStatus.CheckUnavailable;
 
     /// <summary>
     ///     Determines if the profile selector is enabled.
@@ -466,17 +466,6 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     public bool WasLastHostRequestSuccessful =>
         Device.GetProperty<int>(DsHidMiniDriver.LastHostRequestStatusProperty) == 0;
 
-    //public SymbolRegular GenuineIcon
-    //{
-    //    get
-    //    {
-    //        // if (Validator.IsGenuineAddress(PhysicalAddress.Parse(DeviceAddress)))
-    //        //return SymbolRegular.CheckmarkCircle24;
-    //        //return SymbolRegular.ErrorCircle24;
-    //    }
-    //}
-
-
     /// <summary>
     ///     The wireless state of the device
     /// </summary>
@@ -680,16 +669,71 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
 
     /// <summary>
     ///     Feature 0x01 clone heuristic (field list <c>01 02</c> and byte <c>0x29 == 0x64</c>).
-    ///     Not the OUI genuine check.
+    ///     Independent of the Bluetooth chip-vendor lookup.
     /// </summary>
     public bool IdentificationCloneHeuristic => IdentificationInfo?.CloneHeuristic ?? false;
 
-    public string IdentificationCloneHeuristicText =>
-        IdentificationInfo is null
-            ? "Unknown"
-            : IdentificationCloneHeuristic
-                ? "Likely counterfeit"
-                : "No match";
+    /// <summary>
+    ///     Shared disclaimer for the two independent authenticity approximations.
+    /// </summary>
+    public string AuthenticityDisclaimer => DeviceAuthenticityPresentation.Disclaimer;
+
+    public string AddressVendorSummary => AddressVendorDisplay.Summary;
+
+    public string AddressVendorDetail => AddressVendorDisplay.Detail;
+
+    public bool ShowAddressVendorWarning => AddressVendorDisplay.ShowWarning;
+
+    public string IdentificationCheckSummary => IdentificationCheckDisplay.Summary;
+
+    public string IdentificationCheckDetail => IdentificationCheckDisplay.Detail;
+
+    public bool ShowIdentificationCheckWarning => IdentificationCheckDisplay.ShowWarning;
+
+    private AuthenticityCheckDisplay AddressVendorDisplay =>
+        DeviceAuthenticityPresentation.ForBluetoothAddress(
+            AddressAuthenticityStatus,
+            string.IsNullOrWhiteSpace(DeviceAddress) || IsDeviceAddressSynthesized);
+
+    private AuthenticityCheckDisplay IdentificationCheckDisplay
+    {
+        get
+        {
+            TryReadIdentificationSnapshot(out bool hasRawReport, out bool parsed, out bool cloneHeuristic);
+            return DeviceAuthenticityPresentation.ForIdentification(hasRawReport, parsed, cloneHeuristic);
+        }
+    }
+
+    /// <summary>
+    ///     One Feature 0x01 property read. Absent or failed reads stay Unavailable; a present
+    ///     report that does not parse is Unreadable.
+    /// </summary>
+    private void TryReadIdentificationSnapshot(out bool hasRawReport, out bool parsed, out bool cloneHeuristic)
+    {
+        hasRawReport = false;
+        parsed = false;
+        cloneHeuristic = false;
+
+        try
+        {
+            byte[]? raw = Device.GetProperty<byte[]>(DsHidMiniDriver.IdentificationDataProperty);
+            if (raw is not { Length: > 0 })
+            {
+                return;
+            }
+
+            hasRawReport = true;
+            if (DsIdentification.TryParse(raw, out DsIdentificationInfo? info) && info is not null)
+            {
+                parsed = true;
+                cloneHeuristic = info.CloneHeuristic;
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Warning(ex, "Failed to read identification data of device '{Address}'", DeviceAddress);
+        }
+    }
 
     /// <summary>
     ///     The device Instance ID.
@@ -721,7 +765,17 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(IdentificationPadType));
         OnPropertyChanged(nameof(IdentificationMotionPath));
         OnPropertyChanged(nameof(IdentificationCloneHeuristic));
-        OnPropertyChanged(nameof(IdentificationCloneHeuristicText));
+        OnPropertyChanged(nameof(IdentificationCheckSummary));
+        OnPropertyChanged(nameof(IdentificationCheckDetail));
+        OnPropertyChanged(nameof(ShowIdentificationCheckWarning));
+    }
+
+    private void NotifyAddressAuthenticityProperties()
+    {
+        OnPropertyChanged(nameof(AddressAuthenticityStatus));
+        OnPropertyChanged(nameof(AddressVendorSummary));
+        OnPropertyChanged(nameof(AddressVendorDetail));
+        OnPropertyChanged(nameof(ShowAddressVendorWarning));
     }
 
     private void UpdateOutputStallStatus(object? state)
@@ -804,21 +858,22 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             Log.Logger.Information("Custom pairing address: {CustomPairingAddress}.", CustomPairingAddress);
         }
 
-        if (string.IsNullOrWhiteSpace(DeviceAddress))
+        if (string.IsNullOrWhiteSpace(DeviceAddress) || IsDeviceAddressSynthesized)
         {
-            IsGenuine = false;
+            AddressAuthenticityStatus = AddressAuthenticityStatus.CheckUnavailable;
         }
         else
         {
             try
             {
-                IsGenuine = await _addressValidator.IsGenuineAddress(PhysicalAddress.Parse(DeviceAddress));
+                AddressAuthenticityStatus =
+                    await _addressValidator.CheckAddress(PhysicalAddress.Parse(DeviceAddress));
             }
             catch (FormatException ex)
             {
                 Log.Logger.Warning(ex, "Failed to parse device address '{DeviceAddress}' as PhysicalAddress.",
                     DeviceAddress);
-                IsGenuine = false;
+                AddressAuthenticityStatus = AddressAuthenticityStatus.CheckUnavailable;
             }
         }
 
@@ -826,6 +881,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(DeviceSettingsStatus));
         OnPropertyChanged(nameof(IsHidModeMismatched));
         OnPropertyChanged(nameof(BluetoothOutputReportTransport));
+        NotifyAddressAuthenticityProperties();
         NotifyIdentificationProperties();
         await RefreshXInputSlotLabelAsync();
     }
