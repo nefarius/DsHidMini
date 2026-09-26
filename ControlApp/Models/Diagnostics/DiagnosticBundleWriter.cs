@@ -34,7 +34,9 @@ public sealed class DiagnosticBundleWriter : IDiagnosticBundleWriter
             RedactionNote = redact
                 ? "Bluetooth addresses and instance IDs are hashed per export. The same device always " +
                   "hashes to the same token within this file, but the token cannot be reversed to the " +
-                  "original value."
+                  "original value. The ControlApp log excerpt is omitted from redacted exports because " +
+                  "its free-text lines may contain addresses or instance IDs that cannot be reliably " +
+                  "redacted the same way; export without redaction if you need it."
                 : null,
             Verdict = content.Verdict is { } verdict
                 ? new
@@ -72,7 +74,10 @@ public sealed class DiagnosticBundleWriter : IDiagnosticBundleWriter
         await WriteJsonEntryAsync(archive, "summary.json", summary, cancellationToken).ConfigureAwait(false);
         await WriteJsonEntryAsync(archive, "timeline.json", timelineEntries, cancellationToken).ConfigureAwait(false);
 
-        string logExcerpt = TryReadRecentLogLines();
+        // Free-text log lines can contain Bluetooth addresses or instance IDs that the structured
+        // per-property redaction above cannot reach; omit the excerpt entirely for redacted exports
+        // rather than risk leaking one through unredacted log text (see RedactionNote above).
+        string logExcerpt = redact ? string.Empty : TryReadRecentLogLines();
         if (!string.IsNullOrEmpty(logExcerpt))
         {
             ZipArchiveEntry logEntry = archive.CreateEntry("controlapp-log-excerpt.txt", CompressionLevel.Optimal);
@@ -143,14 +148,43 @@ public sealed class DiagnosticBundleWriter : IDiagnosticBundleWriter
                 return string.Empty;
             }
 
-            string[] lines = File.ReadAllLines(latest);
-            return string.Join(Environment.NewLine, lines.TakeLast(500));
+            return string.Join(Environment.NewLine, ReadLastLines(latest, 500));
         }
         catch (Exception ex)
         {
             Log.Logger.Debug(ex, "Failed to read recent ControlApp log lines for diagnostic bundle.");
             return string.Empty;
         }
+    }
+
+    /// <summary>
+    ///     Reads only the last <paramref name="maxLines" /> lines of <paramref name="path" /> using a
+    ///     small ring buffer, instead of loading the whole (potentially large, actively-growing) log
+    ///     file into memory. Opens with <see cref="FileShare.ReadWrite" /> and
+    ///     <see cref="FileShare.Delete" /> so reading the currently-active Serilog file (which the
+    ///     logging pipeline keeps open for writing, and which a rolling/retention policy may delete)
+    ///     does not throw a sharing violation.
+    /// </summary>
+    private static Queue<string> ReadLastLines(string path, int maxLines)
+    {
+        Queue<string> ring = new(maxLines);
+
+        using FileStream stream = new(
+            path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        using StreamReader reader = new(stream);
+
+        string? line;
+        while ((line = reader.ReadLine()) is not null)
+        {
+            if (ring.Count == maxLines)
+            {
+                ring.Dequeue();
+            }
+
+            ring.Enqueue(line);
+        }
+
+        return ring;
     }
 
     private static async Task WriteJsonEntryAsync(

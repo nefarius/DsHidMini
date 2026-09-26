@@ -129,13 +129,27 @@ public sealed class BluetoothConnectionClassifier : IDiagnosticClassifier
         DiagnosticEventRecord? childCreated = FindLast(bthPs3, BthPS3Events.ChildDeviceCreationSuccessful);
         DiagnosticEventRecord? childFailed = FindLast(bthPs3, BthPS3Events.ChildDeviceCreationFailed);
 
-        if (identified is not null)
-        {
-            evidence.Add(identified);
-        }
-
         if (childCreated is null)
         {
+            // BthPS3 skips identification and PDO creation entirely when it finds an existing PDO
+            // for this address (e.g. a connection reused from an earlier, not-yet-torn-down
+            // session) -- that path is not a failure. Only call it ChildCreationFailed when BthPS3
+            // *did* identify the controller in this run but then failed to create its device.
+            if (identified is null)
+            {
+                return new DiagnosticVerdict(
+                    DiagnosticVerdictCode.Inconclusive,
+                    DiagnosticConfidence.Low,
+                    "The controller's connection attempt reached BthPS3",
+                    "BthPS3 did not report identifying the controller or creating its internal device, but " +
+                    "also did not report a name-lookup or rejection failure. This can happen when a " +
+                    "connection reuses an existing driver-side session instead of starting a new one.",
+                    "Try again; if it keeps failing, export a diagnostic package.",
+                    evidence);
+            }
+
+            evidence.Add(identified);
+
             if (childFailed is not null)
             {
                 evidence.Add(childFailed);
@@ -148,6 +162,11 @@ public sealed class BluetoothConnectionClassifier : IDiagnosticClassifier
                 "BthPS3 recognized the controller but failed to create its internal device for it.",
                 "Restart Bluetooth (turn it off and on) and try again; if it keeps failing, export a diagnostic package.",
                 evidence);
+        }
+
+        if (identified is not null)
+        {
+            evidence.Add(identified);
         }
 
         evidence.Add(childCreated);

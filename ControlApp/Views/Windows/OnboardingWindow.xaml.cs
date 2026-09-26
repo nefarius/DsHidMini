@@ -50,15 +50,17 @@ public partial class OnboardingWindow
             return;
         }
 
+        if (!ConfirmExitWithoutFinishing())
+        {
+            // User chose not to exit: leave the running setup untouched rather than having already
+            // cancelled it before asking.
+            e.Cancel = true;
+            return;
+        }
+
         if (_viewModel.IsBusy)
         {
             _viewModel.CancelCommand.Execute(null);
-        }
-
-        if (!ConfirmExitWithoutFinishing())
-        {
-            e.Cancel = true;
-            return;
         }
 
         base.OnClosing(e);

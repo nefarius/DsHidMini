@@ -45,7 +45,11 @@ public sealed class EtwDiagnosticTraceCapture : ITraceCapture
                 SessionName);
         }
 
-        _session = EtwRealtimeSession.Create(SessionName, options =>
+        // Keep the new session local until every provider is enabled. If any EnableProvider call
+        // throws, '_session' must stay null (not a half-configured session) so IsRunning correctly
+        // reports 'not running' and a subsequent StartAsync retry actually creates a fresh session
+        // instead of short-circuiting on a broken one that was never disposed.
+        EtwRealtimeSession session = EtwRealtimeSession.Create(SessionName, options =>
         {
             // System time (FILETIME) instead of the QPC default so captured timestamps are
             // directly usable in the human-facing timeline and support bundle.
@@ -54,9 +58,19 @@ public sealed class EtwDiagnosticTraceCapture : ITraceCapture
                 SessionName, message);
         });
 
-        _session.EnableProvider(KnownDiagnosticProviders.BthPS3, TraceEventLevel.Verbose);
-        _session.EnableProvider(KnownDiagnosticProviders.BthPS3Psm, TraceEventLevel.Verbose);
-        _session.EnableProvider(KnownDiagnosticProviders.DsHidMini, TraceEventLevel.Verbose);
+        try
+        {
+            session.EnableProvider(KnownDiagnosticProviders.BthPS3, TraceEventLevel.Verbose);
+            session.EnableProvider(KnownDiagnosticProviders.BthPS3Psm, TraceEventLevel.Verbose);
+            session.EnableProvider(KnownDiagnosticProviders.DsHidMini, TraceEventLevel.Verbose);
+        }
+        catch
+        {
+            session.Dispose();
+            throw;
+        }
+
+        _session = session;
 
         _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _pumpTask = Task.Run(() => PumpAsync(_cts.Token));

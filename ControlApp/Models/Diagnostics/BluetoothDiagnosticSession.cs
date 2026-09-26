@@ -29,10 +29,15 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
 
     private PnPDevice? _candidateDevice;
     private string? _candidateInstanceId;
+    private TaskCompletionSource<Exception>? _captureFaultSignal;
     private DateTimeOffset _lastRunFinishedAt;
     private DateTimeOffset _lastRunStartedAt;
     private CancellationTokenSource? _runCts;
-    private TaskCompletionSource<bool>? _unplugSignal;
+
+    // Volatile: read from the PnP notification callback thread in OnDeviceListUpdated, written
+    // from RunAsync. Guarantees that thread observes a fresh (non-cached) reference rather than
+    // a value reordered/cached before RunAsync's assignment becomes visible.
+    private volatile TaskCompletionSource<bool>? _unplugSignal;
 
     [ObservableProperty]
     private BluetoothDiagnosticStage _stage = BluetoothDiagnosticStage.Idle;
@@ -57,6 +62,7 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
         _devMan = devMan;
 
         _traceCapture.EventCaptured += OnEventCaptured;
+        _traceCapture.CaptureFaulted += OnCaptureFaulted;
         _devMan.ConnectedDeviceListUpdated += OnDeviceListUpdated;
     }
 
@@ -83,6 +89,7 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
     {
         _devMan.ConnectedDeviceListUpdated -= OnDeviceListUpdated;
         _traceCapture.EventCaptured -= OnEventCaptured;
+        _traceCapture.CaptureFaulted -= OnCaptureFaulted;
         await _traceCapture.DisposeAsync().ConfigureAwait(false);
     }
 
@@ -127,6 +134,8 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
             return;
         }
 
+        _captureFaultSignal = new TaskCompletionSource<Exception>(TaskCreationOptions.RunContinuationsAsynchronously);
+
         try
         {
             await _traceCapture.StartAsync(token).ConfigureAwait(false);
@@ -145,23 +154,32 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
         Stage = BluetoothDiagnosticStage.WaitingForUnplug;
         StatusMessage = "Unplug the USB cable now.";
 
-        if (!await WaitOrCancelAsync(_unplugSignal.Task, token).ConfigureAwait(false))
+        // The device may already have been removed while pairing/trace-start was in progress: that
+        // removal notification would have arrived while '_unplugSignal' was still null and been
+        // dropped by 'OnDeviceListUpdated'. Check the current device list now so an already-missed
+        // removal is not waited on forever.
+        if (!_devMan.Devices.Any(d => d.InstanceId == _candidateInstanceId))
+        {
+            _unplugSignal.TrySetResult(true);
+        }
+
+        WaitOutcome unplugOutcome = await WaitForStepAsync(_unplugSignal.Task, token).ConfigureAwait(false);
+        if (unplugOutcome != WaitOutcome.Completed)
         {
             await _traceCapture.StopAsync().ConfigureAwait(false);
-            Stage = BluetoothDiagnosticStage.Cancelled;
-            _lastRunFinishedAt = DateTimeOffset.UtcNow;
+            ApplyIncompleteOutcome(unplugOutcome);
             return;
         }
 
         Stage = BluetoothDiagnosticStage.WaitingForWirelessAttempt;
         StatusMessage = "Press the PS button on the controller once.";
 
-        if (!await WaitOrCancelAsync(Task.Delay(WirelessAttemptTimeout, CancellationToken.None), token)
-                .ConfigureAwait(false))
+        WaitOutcome wirelessOutcome = await WaitForStepAsync(
+            Task.Delay(WirelessAttemptTimeout, CancellationToken.None), token).ConfigureAwait(false);
+        if (wirelessOutcome != WaitOutcome.Completed)
         {
             await _traceCapture.StopAsync().ConfigureAwait(false);
-            Stage = BluetoothDiagnosticStage.Cancelled;
-            _lastRunFinishedAt = DateTimeOffset.UtcNow;
+            ApplyIncompleteOutcome(wirelessOutcome);
             return;
         }
 
@@ -172,6 +190,21 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
         Verdict = _classifier.Classify(PreflightResults, Timeline);
         Stage = BluetoothDiagnosticStage.Completed;
         StatusMessage = "Done.";
+        _lastRunFinishedAt = DateTimeOffset.UtcNow;
+    }
+
+    private void ApplyIncompleteOutcome(WaitOutcome outcome)
+    {
+        if (outcome == WaitOutcome.CaptureFaulted)
+        {
+            Stage = BluetoothDiagnosticStage.Faulted;
+            StatusMessage = "The driver trace stopped unexpectedly. Try again.";
+        }
+        else
+        {
+            Stage = BluetoothDiagnosticStage.Cancelled;
+        }
+
         _lastRunFinishedAt = DateTimeOffset.UtcNow;
     }
 
@@ -258,22 +291,37 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
         }
     }
 
+    private enum WaitOutcome
+    {
+        Completed,
+        Cancelled,
+        CaptureFaulted
+    }
+
     /// <summary>
-    ///     Awaits <paramref name="work" />, returning <see langword="false" /> (instead of throwing)
-    ///     when <paramref name="token" /> is cancelled first.
+    ///     Awaits <paramref name="work" />, racing it against cooperative cancellation and an
+    ///     unexpected trace-capture fault so a dead ETW pump never leaves the wizard stuck waiting
+    ///     for a signal that will never arrive.
     /// </summary>
-    private static async Task<bool> WaitOrCancelAsync(Task work, CancellationToken token)
+    private async Task<WaitOutcome> WaitForStepAsync(Task work, CancellationToken token)
     {
         Task cancelTask = Task.Delay(Timeout.InfiniteTimeSpan, token);
-        Task completed = await Task.WhenAny(work, cancelTask).ConfigureAwait(false);
-        if (completed == cancelTask)
+        Task faultTask = _captureFaultSignal?.Task ?? Task.Delay(Timeout.InfiniteTimeSpan, CancellationToken.None);
+
+        Task completed = await Task.WhenAny(work, cancelTask, faultTask).ConfigureAwait(false);
+        if (completed == faultTask)
         {
-            return false;
+            return WaitOutcome.CaptureFaulted;
         }
 
-        // Propagate a real failure from 'work' itself (not cancellation).
+        if (completed == cancelTask)
+        {
+            return WaitOutcome.Cancelled;
+        }
+
+        // Propagate a real failure from 'work' itself (not cancellation/fault).
         await work.ConfigureAwait(false);
-        return true;
+        return WaitOutcome.Completed;
     }
 
     private static DiagnosticVerdict BuildPairingFailureVerdict(string detail)
@@ -289,16 +337,28 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
 
     private void OnDeviceListUpdated(object? sender, EventArgs e)
     {
-        if (_candidateInstanceId is null || _unplugSignal is null)
+        // Snapshot both into locals: this runs on the PnP notification thread while RunAsync (on a
+        // different thread) may concurrently reassign '_candidateInstanceId'/'_unplugSignal' for a
+        // fresh run, so re-reading the fields between the null-checks and the TrySetResult call
+        // below could otherwise observe a signal from a different run than the one just checked.
+        string? candidateInstanceId = _candidateInstanceId;
+        TaskCompletionSource<bool>? unplugSignal = _unplugSignal;
+        if (candidateInstanceId is null || unplugSignal is null)
         {
             return;
         }
 
-        bool stillPresent = _devMan.Devices.Any(d => d.InstanceId == _candidateInstanceId);
+        bool stillPresent = _devMan.Devices.Any(d => d.InstanceId == candidateInstanceId);
         if (!stillPresent)
         {
-            _unplugSignal.TrySetResult(true);
+            unplugSignal.TrySetResult(true);
         }
+    }
+
+    private void OnCaptureFaulted(Exception ex)
+    {
+        Log.Logger.Warning(ex, "Diagnostic ETW capture faulted during an active run.");
+        _captureFaultSignal?.TrySetResult(ex);
     }
 
     private void OnEventCaptured(DiagnosticEventRecord record)
