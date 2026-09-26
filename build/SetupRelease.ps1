@@ -1007,6 +1007,9 @@ function Assert-DsHidMiniMsiContract {
     if (-not (Test-DsHidMiniMsiNamePresent -Values $fileNames -Expected 'ControlApp.exe')) {
         $errors.Add('File table is missing ControlApp.exe.')
     }
+    if (-not (Test-DsHidMiniMsiNamePresent -Values $fileNames -Expected 'DsHidMini.man')) {
+        $errors.Add('File table is missing DsHidMini.man.')
+    }
 
     $shortcutNames = @(
         Get-DsHidMiniMsiTableRows -MsiPath $MsiPath -Sql "SELECT ``Name`` FROM ``Shortcut``" -ColumnCount 1 |
@@ -1026,11 +1029,25 @@ function Assert-DsHidMiniMsiContract {
     if (-not ($customActions | Where-Object { [string]::Equals($_, 'OpenArticle', [StringComparison]::OrdinalIgnoreCase) })) {
         $errors.Add('CustomAction table is missing OpenArticle.')
     }
+    if (-not ($customActions | Where-Object { [string]::Equals($_, 'InstallManifest', [StringComparison]::OrdinalIgnoreCase) })) {
+        $errors.Add('CustomAction table is missing InstallManifest.')
+    }
+    if (-not ($customActions | Where-Object { [string]::Equals($_, 'UninstallManifest', [StringComparison]::OrdinalIgnoreCase) })) {
+        $errors.Add('CustomAction table is missing UninstallManifest.')
+    }
+    if (-not ($customActions | Where-Object { [string]::Equals($_, 'RollbackInstallManifest', [StringComparison]::OrdinalIgnoreCase) })) {
+        $errors.Add('CustomAction table is missing RollbackInstallManifest.')
+    }
+    if (-not ($customActions | Where-Object { [string]::Equals($_, 'RollbackUninstallManifest', [StringComparison]::OrdinalIgnoreCase) })) {
+        $errors.Add('CustomAction table is missing RollbackUninstallManifest.')
+    }
 
     $sequence = @(
-        Get-DsHidMiniMsiTableRows -MsiPath $MsiPath -Sql "SELECT ``Action``,``Condition`` FROM ``InstallExecuteSequence``" -ColumnCount 2 |
+        Get-DsHidMiniMsiTableRows -MsiPath $MsiPath -Sql "SELECT ``Action``,``Condition``,``Sequence`` FROM ``InstallExecuteSequence``" -ColumnCount 3 |
             ForEach-Object {
-                [pscustomobject]@{ Action = $_[0]; Condition = $_[1] }
+                $sequenceNumber = 0
+                [void][int]::TryParse($_[2], [ref]$sequenceNumber)
+                [pscustomobject]@{ Action = $_[0]; Condition = $_[1]; Sequence = $sequenceNumber }
             }
     )
     $runtimeSequenced = $sequence | Where-Object {
@@ -1047,6 +1064,44 @@ function Assert-DsHidMiniMsiContract {
     }
     if (-not $articleSequenced) {
         $errors.Add("OpenArticle is missing from InstallExecuteSequence with condition 'NOT Installed'.")
+    }
+
+    $installManifestSequenced = $sequence | Where-Object {
+        [string]::Equals($_.Action, 'InstallManifest', [StringComparison]::OrdinalIgnoreCase) -and
+        $_.Condition -and $_.Condition.IndexOf('NOT Installed', [StringComparison]::OrdinalIgnoreCase) -ge 0
+    }
+    if (-not $installManifestSequenced) {
+        $errors.Add("InstallManifest is missing from InstallExecuteSequence with condition 'NOT Installed'.")
+    }
+
+    $rollbackInstallManifestSequenced = $sequence | Where-Object {
+        [string]::Equals($_.Action, 'RollbackInstallManifest', [StringComparison]::OrdinalIgnoreCase) -and
+        $_.Condition -and $_.Condition.IndexOf('NOT Installed', [StringComparison]::OrdinalIgnoreCase) -ge 0
+    }
+    if (-not $rollbackInstallManifestSequenced) {
+        $errors.Add("RollbackInstallManifest is missing from InstallExecuteSequence with condition 'NOT Installed'.")
+    }
+    elseif ($installManifestSequenced -and $rollbackInstallManifestSequenced.Sequence -ge $installManifestSequenced.Sequence) {
+        $errors.Add('RollbackInstallManifest must be sequenced before InstallManifest.')
+    }
+
+    $uninstallManifestSequenced = $sequence | Where-Object {
+        [string]::Equals($_.Action, 'UninstallManifest', [StringComparison]::OrdinalIgnoreCase) -and
+        $_.Condition -and $_.Condition.IndexOf('REMOVE="ALL"', [StringComparison]::OrdinalIgnoreCase) -ge 0
+    }
+    if (-not $uninstallManifestSequenced) {
+        $errors.Add('UninstallManifest is missing from InstallExecuteSequence with condition REMOVE="ALL".')
+    }
+
+    $rollbackUninstallManifestSequenced = $sequence | Where-Object {
+        [string]::Equals($_.Action, 'RollbackUninstallManifest', [StringComparison]::OrdinalIgnoreCase) -and
+        $_.Condition -and $_.Condition.IndexOf('REMOVE="ALL"', [StringComparison]::OrdinalIgnoreCase) -ge 0
+    }
+    if (-not $rollbackUninstallManifestSequenced) {
+        $errors.Add('RollbackUninstallManifest is missing from InstallExecuteSequence with condition REMOVE="ALL".')
+    }
+    elseif ($uninstallManifestSequenced -and $rollbackUninstallManifestSequenced.Sequence -ge $uninstallManifestSequenced.Sequence) {
+        $errors.Add('RollbackUninstallManifest must be sequenced before UninstallManifest.')
     }
 
     $errorRows = @(
@@ -1067,7 +1122,7 @@ function Assert-DsHidMiniMsiContract {
         throw "Generated MSI is missing the ControlApp packaging contract:`n$($errors -join [Environment]::NewLine)"
     }
 
-    Write-Output 'MSI contract includes ControlApp.exe, the Start Menu shortcut, CheckDotNetRuntime, and OpenArticle.'
+    Write-Output 'MSI contract includes ControlApp.exe, DsHidMini.man, the Start Menu shortcut, CheckDotNetRuntime, OpenArticle, and ETW manifest custom actions.'
 }
 
 function Assert-DsHidMiniSetupPayload {
