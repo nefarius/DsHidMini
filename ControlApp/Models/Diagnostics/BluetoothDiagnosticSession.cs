@@ -210,7 +210,7 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
             Timeline,
             typeof(BluetoothDiagnosticSession).Assembly.GetName().Version?.ToString() ?? "unknown",
             _candidateDevice is not null ? DsHidMiniDriverCompatibility.FormatInstalledVersion(_candidateDevice) : null,
-            BthPS3Version: null,
+            _preflightProbe.BthPS3VersionDisplay,
             _lastRunStartedAt,
             _lastRunFinishedAt);
 

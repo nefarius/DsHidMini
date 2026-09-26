@@ -26,11 +26,14 @@ public sealed class BluetoothPreflightProbe : IPreflightProbe
         _configManager = configManager;
     }
 
+    public string BthPS3VersionDisplay { get; private set; } = "Unknown";
+
     public IReadOnlyList<PreflightCheckResult> Run(PnPDevice? candidateDevice = null)
     {
         List<PreflightCheckResult> results = new();
 
         _bthPs3Status.Refresh();
+        BthPS3VersionDisplay = _bthPs3Status.InstalledVersionDisplay;
 
         results.Add(new PreflightCheckResult(
             PreflightCheckId.BluetoothRadioOperable,

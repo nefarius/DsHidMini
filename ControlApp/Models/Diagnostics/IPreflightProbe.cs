@@ -28,4 +28,11 @@ public interface IPreflightProbe
     ///     automatic repair or the repair failed.
     /// </summary>
     bool TryAutoRepair(PreflightCheckId id);
+
+    /// <summary>
+    ///     Human-readable installed BthPS3 version (or "Not installed"/"Unknown"), as of the most
+    ///     recent <see cref="Run" /> call. Used to label support bundles so an old-driver install can
+    ///     be told apart from a genuinely missing signal.
+    /// </summary>
+    string BthPS3VersionDisplay { get; }
 }

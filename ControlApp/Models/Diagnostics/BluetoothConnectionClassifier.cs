@@ -34,9 +34,26 @@ public sealed class BluetoothConnectionClassifier : IDiagnosticClassifier
         List<DiagnosticEventRecord> bthPs3 = Filter(timeline, KnownDiagnosticProviders.BthPS3);
         List<DiagnosticEventRecord> dsHidMini = Filter(timeline, KnownDiagnosticProviders.DsHidMini);
 
+        // 'RemoteConnectReceived' is a newer, explicit "we got something" signal that may not exist
+        // on an older BthPS3 install (older drivers never emit event 27 at all). Never require it:
+        // fall back to whichever per-connection event from the classic 1-26 range shows up first,
+        // so an older, fully-working driver is never misclassified as "nothing happened".
         DiagnosticEventRecord? remoteConnectReceived = FindLast(bthPs3, BthPS3Events.RemoteConnectReceived);
+        DiagnosticEventRecord? reachedBthPs3 = remoteConnectReceived
+                                                ?? FindLast(bthPs3, BthPS3Events.RemoteDeviceName)
+                                                ?? FindLast(bthPs3, BthPS3Events.RemoteDeviceIdentified)
+                                                ?? FindLast(bthPs3, BthPS3Events.RemoteDeviceNotIdentified)
+                                                ?? FindLast(bthPs3, BthPS3Events.ChildDeviceCreationSuccessful)
+                                                ?? FindLast(bthPs3, BthPS3Events.ChildDeviceCreationFailed)
+                                                ?? FindLast(bthPs3, BthPS3Events.L2CAPRemoteConnectFailed)
+                                                ?? FindLast(bthPs3, BthPS3Events.HidControlChannelConnected)
+                                                ?? FindLast(bthPs3, BthPS3Events.HidInterruptChannelConnected)
+                                                ?? FindLast(bthPs3, BthPS3Events.RemoteDeviceOnline);
 
-        if (remoteConnectReceived is null)
+        bool sawNewConnectSignal = remoteConnectReceived is not null;
+        bool sawAnyPsmPatchActivity = bthPs3Psm.Any(e => e.EventName == BthPS3PsmEvents.PsmPatchActivity);
+
+        if (reachedBthPs3 is null)
         {
             List<DiagnosticEventRecord> unpatchedAttempts = bthPs3Psm
                 .Where(e => e.EventName == BthPS3PsmEvents.PsmPatchActivity && e.GetBool("Patched") == false)
@@ -54,16 +71,29 @@ public sealed class BluetoothConnectionClassifier : IDiagnosticClassifier
                     unpatchedAttempts);
             }
 
+            // Older BthPS3PSM builds never emit PsmPatchActivity, so a missing-patch condition
+            // there is silent instead of diagnosable. Say so plainly rather than implying the
+            // filter driver was ruled out.
+            string filterVisibilityNote = sawAnyPsmPatchActivity
+                ? string.Empty
+                : " (This BthPS3 version does not report Bluetooth filter activity in detail, so a " +
+                  "silently-disabled filter cannot be ruled out here.)";
+
             return new DiagnosticVerdict(
                 DiagnosticVerdictCode.NoWirelessAttemptObserved,
-                DiagnosticConfidence.Medium,
+                sawAnyPsmPatchActivity ? DiagnosticConfidence.Medium : DiagnosticConfidence.Low,
                 "Pairing information was written to the controller",
-                "No connection attempt from the controller was observed at all during this run.",
+                "No connection attempt from the controller was observed at all during this run." +
+                filterVisibilityNote,
                 "Make sure the controller is charged, then press the PS button once while it is unplugged.",
                 Array.Empty<DiagnosticEventRecord>());
         }
 
-        List<DiagnosticEventRecord> evidence = new() { remoteConnectReceived };
+        List<DiagnosticEventRecord> evidence = new() { reachedBthPs3 };
+        if (sawNewConnectSignal && !ReferenceEquals(reachedBthPs3, remoteConnectReceived))
+        {
+            evidence.Add(remoteConnectReceived!);
+        }
 
         DiagnosticEventRecord? notIdentified = FindLast(bthPs3, BthPS3Events.RemoteDeviceNotIdentified);
         DiagnosticEventRecord? nameLookupFailed = FindLast(bthPs3,
@@ -167,12 +197,21 @@ public sealed class BluetoothConnectionClassifier : IDiagnosticClassifier
         bool hasDsHidMiniActivity = dsHidMini.Any(e => e.Timestamp >= online.Timestamp);
         if (!hasDsHidMiniActivity)
         {
+            // Zero DsHidMini events in the *entire* session (not just after BthPS3 went online) means
+            // this could be a very old driver build whose ETW instrumentation itself is limited,
+            // rather than proof that the handoff actually failed. Hedge accordingly instead of
+            // pointing a finger with full confidence.
+            bool everSawDsHidMiniActivity = dsHidMini.Count > 0;
             return new DiagnosticVerdict(
                 DiagnosticVerdictCode.BthPs3OnlineDsHidMiniMissing,
-                DiagnosticConfidence.Medium,
+                everSawDsHidMiniActivity ? DiagnosticConfidence.Medium : DiagnosticConfidence.Low,
                 "BthPS3 reports the controller fully online",
-                "BthPS3 finished its part of the connection successfully, but no DsHidMini driver " +
-                "activity was observed afterward. This points at the DsHidMini driver or HID stack, not BthPS3.",
+                everSawDsHidMiniActivity
+                    ? "BthPS3 finished its part of the connection successfully, but no DsHidMini driver " +
+                      "activity was observed afterward. This points at the DsHidMini driver or HID stack, not BthPS3."
+                    : "BthPS3 finished its part of the connection successfully, but no DsHidMini driver " +
+                      "activity was observed at any point during this run. This may point at the DsHidMini " +
+                      "driver or HID stack, or this DsHidMini version may not report detailed activity.",
                 "Update or reinstall the DsHidMini driver, then try again.",
                 evidence);
         }

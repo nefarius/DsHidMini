@@ -21,6 +21,7 @@ public class BluetoothDiagnosticSessionTests
         public PnPDevice? Candidate { get; set; }
         public bool AutoRepairResult { get; set; }
         public PreflightCheckId? LastAutoRepairedId { get; private set; }
+        public string BthPS3VersionDisplay { get; set; } = "Unknown";
 
         public IReadOnlyList<PreflightCheckResult> Run(PnPDevice? candidateDevice = null) => Results;
 
