@@ -15,15 +15,18 @@ public sealed class BluetoothPreflightProbe : IPreflightProbe
     private readonly BthPS3StatusService _bthPs3Status;
     private readonly DshmConfigManagerType _configManager;
     private readonly DshmDevMan _devMan;
+    private readonly Func<bool> _isElevated;
 
     public BluetoothPreflightProbe(
         BthPS3StatusService bthPs3Status,
         DshmDevMan devMan,
-        DshmConfigManagerType configManager)
+        DshmConfigManagerType configManager,
+        Func<bool>? isElevated = null)
     {
         _bthPs3Status = bthPs3Status;
         _devMan = devMan;
         _configManager = configManager;
+        _isElevated = isElevated ?? (() => SecurityUtil.IsElevated);
     }
 
     public string BthPS3VersionDisplay { get; private set; } = "Unknown";
@@ -34,6 +37,8 @@ public sealed class BluetoothPreflightProbe : IPreflightProbe
 
         _bthPs3Status.Refresh();
         BthPS3VersionDisplay = _bthPs3Status.InstalledVersionDisplay;
+
+        results.Add(CreateElevationCheck(_isElevated()));
 
         results.Add(new PreflightCheckResult(
             PreflightCheckId.BluetoothRadioOperable,
@@ -133,6 +138,15 @@ public sealed class BluetoothPreflightProbe : IPreflightProbe
 
         return results;
     }
+
+    internal static PreflightCheckResult CreateElevationCheck(bool isElevated) =>
+        new(
+            PreflightCheckId.RunningAsAdministrator,
+            isElevated,
+            "ControlApp is running as Administrator",
+            isElevated
+                ? "Administrator privileges are available for the driver trace."
+                : "Restart ControlApp as Administrator. The Bluetooth connection check needs those privileges.");
 
     public PnPDevice? FindEligibleUsbController()
     {

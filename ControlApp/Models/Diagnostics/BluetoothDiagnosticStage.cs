@@ -9,6 +9,7 @@ public enum BluetoothDiagnosticStage
 {
     Idle,
     RunningPreflight,
+    WaitingForUsb,
     PreflightBlocked,
     Pairing,
     PairingFailed,

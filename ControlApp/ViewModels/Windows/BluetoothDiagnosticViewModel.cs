@@ -4,6 +4,7 @@ using System.Windows.Threading;
 
 using Microsoft.Win32;
 
+using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.Diagnostics;
 
 namespace Nefarius.DsHidMini.ControlApp.ViewModels.Windows;
@@ -45,6 +46,8 @@ public sealed partial class BluetoothDiagnosticViewModel : ObservableObject, IDi
 
     public bool HasVerdict => Verdict is not null;
 
+    public bool NeedsElevation => !SecurityUtil.IsElevated;
+
     public void Dispose()
     {
         _session.PropertyChanged -= OnSessionPropertyChanged;
@@ -67,6 +70,12 @@ public sealed partial class BluetoothDiagnosticViewModel : ObservableObject, IDi
         {
             IsBusy = false;
         }
+    }
+
+    [RelayCommand]
+    private void RestartAsAdmin()
+    {
+        Main.RestartAsAdmin();
     }
 
     [RelayCommand]

@@ -17,8 +17,8 @@ namespace Nefarius.DsHidMini.ControlApp.Models.Diagnostics;
 public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyncDisposable
 {
     /// <summary>
-    ///     How long to keep capturing after the USB cable is unplugged before giving up and
-    ///     classifying with whatever evidence was observed.
+    ///     How long to keep capturing after the USB cable is unplugged when neither a wireless
+    ///     reconnect nor a conclusive ETW success has been observed yet.
     /// </summary>
     public static readonly TimeSpan WirelessAttemptTimeout = TimeSpan.FromSeconds(25);
 
@@ -34,10 +34,24 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
     /// </summary>
     internal Func<CancellationToken, Task<bool>>? TryPairOverride { get; set; }
 
+    /// <summary>
+    ///     When <see langword="true" /> (production default), a run that is blocked only by a
+    ///     missing USB controller waits for a device-list change instead of finishing immediately.
+    ///     Tests that expect a snapshot preflight set this to <see langword="false" />.
+    /// </summary>
+    internal bool WaitForUsbWhenMissing { get; set; } = true;
+
+    /// <summary>
+    ///     Test seam for a wireless reconnect of the candidate controller. Production uses the live
+    ///     DsHidMini device list (Bluetooth enumerator + matching address).
+    /// </summary>
+    internal Func<bool>? WirelessReconnectObservedOverride { get; set; }
+
     private readonly IDiagnosticBundleWriter _bundleWriter;
     private readonly IDiagnosticClassifier _classifier;
     private readonly DshmDevMan _devMan;
     private readonly IPreflightProbe _preflightProbe;
+    private readonly BluetoothConnectionClassifier _successProbe = new();
     private readonly List<DiagnosticEventRecord> _timeline = new();
     private readonly object _timelineLock = new();
     private readonly ITraceCapture _traceCapture;
@@ -48,12 +62,15 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
     private TaskCompletionSource<Exception>? _captureFaultSignal;
     private DateTimeOffset _lastRunFinishedAt;
     private DateTimeOffset _lastRunStartedAt;
+    private volatile bool _observedWirelessReconnect;
     private CancellationTokenSource? _runCts;
 
     // Volatile: read from the PnP notification callback thread in OnDeviceListUpdated, written
     // from RunAsync. Guarantees that thread observes a fresh (non-cached) reference rather than
     // a value reordered/cached before RunAsync's assignment becomes visible.
     private volatile TaskCompletionSource<bool>? _unplugSignal;
+    private volatile TaskCompletionSource<bool>? _usbArrivalSignal;
+    private volatile TaskCompletionSource<bool>? _wirelessAttemptCompleteSignal;
 
     [ObservableProperty]
     private BluetoothDiagnosticStage _stage = BluetoothDiagnosticStage.Idle;
@@ -82,8 +99,13 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
         _devMan.ConnectedDeviceListUpdated += OnDeviceListUpdated;
     }
 
-    public IReadOnlyList<PreflightCheckResult> PreflightResults { get; private set; } =
-        Array.Empty<PreflightCheckResult>();
+    private IReadOnlyList<PreflightCheckResult> _preflightResults = Array.Empty<PreflightCheckResult>();
+
+    public IReadOnlyList<PreflightCheckResult> PreflightResults
+    {
+        get => _preflightResults;
+        private set => SetProperty(ref _preflightResults, value);
+    }
 
     public IReadOnlyList<DiagnosticEventRecord> Timeline
     {
@@ -124,19 +146,40 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
         }
 
         Verdict = null;
+        _usbArrivalSignal = null;
+        _unplugSignal = null;
+        _wirelessAttemptCompleteSignal = null;
+        _observedWirelessReconnect = false;
         _lastRunStartedAt = DateTimeOffset.UtcNow;
+        _devMan.RefreshConnectedDevices();
 
         Stage = BluetoothDiagnosticStage.RunningPreflight;
         StatusMessage = "Checking your Bluetooth setup...";
         PreflightResults = _preflightProbe.Run();
 
         PnPDevice? device = _preflightProbe.FindEligibleUsbController();
-        if (PreflightResults.Any(r => !r.Passed) || (device is null && TryPairOverride is null))
+        if (HasNonUsbPreflightFailure(PreflightResults) ||
+            (device is null && TryPairOverride is null && !WaitForUsbWhenMissing))
         {
-            Stage = BluetoothDiagnosticStage.PreflightBlocked;
-            Verdict = _classifier.Classify(PreflightResults, Array.Empty<DiagnosticEventRecord>(), _candidateAddress);
-            _lastRunFinishedAt = DateTimeOffset.UtcNow;
+            CompleteAsPreflightBlocked();
             return;
+        }
+
+        if (device is null && TryPairOverride is null)
+        {
+            WaitOutcome usbOutcome = await WaitForUsbControllerAsync(token).ConfigureAwait(false);
+            if (usbOutcome != WaitOutcome.Completed)
+            {
+                ApplyIncompleteOutcome(usbOutcome);
+                return;
+            }
+
+            device = _preflightProbe.FindEligibleUsbController();
+            if (HasNonUsbPreflightFailure(PreflightResults) || device is null)
+            {
+                CompleteAsPreflightBlocked();
+                return;
+            }
         }
 
         _candidateDevice = device;
@@ -165,8 +208,9 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
         {
             Log.Logger.Error(ex, "Failed to start diagnostic ETW capture.");
             Stage = BluetoothDiagnosticStage.Faulted;
-            StatusMessage =
-                "Could not start the driver trace. Make sure ControlApp is running as Administrator, then try again.";
+            StatusMessage = SecurityUtil.IsElevated
+                ? $"Could not start the driver trace: {ex.Message}"
+                : "Could not start the driver trace. Restart ControlApp as Administrator, then try again.";
             _lastRunFinishedAt = DateTimeOffset.UtcNow;
             return;
         }
@@ -195,8 +239,7 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
         Stage = BluetoothDiagnosticStage.WaitingForWirelessAttempt;
         StatusMessage = "Press the PS button on the controller once.";
 
-        WaitOutcome wirelessOutcome = await WaitForStepAsync(
-            Task.Delay(WirelessAttemptWait, CancellationToken.None), token).ConfigureAwait(false);
+        WaitOutcome wirelessOutcome = await WaitForWirelessAttemptAsync(token).ConfigureAwait(false);
         if (wirelessOutcome != WaitOutcome.Completed)
         {
             await _traceCapture.StopAsync().ConfigureAwait(false);
@@ -220,6 +263,22 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
         }
 
         Verdict = _classifier.Classify(PreflightResults, Timeline, _candidateAddress);
+        if (Verdict.Code != DiagnosticVerdictCode.Success &&
+            (_observedWirelessReconnect || IsCandidateWirelessReconnectObserved()))
+        {
+            // Older BthPS3 builds may never emit RemoteConnectReceived or even RemoteDeviceOnline,
+            // so the ETW-only classifier stays inconclusive even though the same controller is
+            // already back over Bluetooth. The live device list is enough to finish first-run.
+            Verdict = new DiagnosticVerdict(
+                DiagnosticVerdictCode.Success,
+                DiagnosticConfidence.High,
+                "The controller connected over Bluetooth",
+                "The controller reappeared over Bluetooth after pairing. This BthPS3 version did not " +
+                "report a full driver-trace sequence, but the device is connected.",
+                "No action needed. The controller should now behave normally over Bluetooth.",
+                Timeline);
+        }
+
         Stage = BluetoothDiagnosticStage.Completed;
         StatusMessage = "Done.";
         _lastRunFinishedAt = DateTimeOffset.UtcNow;
@@ -250,6 +309,140 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
             return null;
         }
     }
+
+    private async Task<WaitOutcome> WaitForUsbControllerAsync(CancellationToken token)
+    {
+        Stage = BluetoothDiagnosticStage.WaitingForUsb;
+        StatusMessage = "Connect the controller to this PC with a USB cable.";
+
+        while (_preflightProbe.FindEligibleUsbController() is null && TryPairOverride is null)
+        {
+            if (HasNonUsbPreflightFailure(PreflightResults))
+            {
+                return WaitOutcome.Completed;
+            }
+
+            _usbArrivalSignal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            WaitOutcome outcome = await WaitForStepAsync(_usbArrivalSignal.Task, token).ConfigureAwait(false);
+            if (outcome != WaitOutcome.Completed)
+            {
+                return outcome;
+            }
+
+            _devMan.RefreshConnectedDevices();
+            PreflightResults = _preflightProbe.Run();
+        }
+
+        return WaitOutcome.Completed;
+    }
+
+    /// <summary>
+    ///     Ends the wireless observation window as soon as the candidate is back over Bluetooth or
+    ///     the ETW timeline already classifies as success. Does not require newer BthPS3 events
+    ///     such as <c>RemoteConnectReceived</c>. Falls back to <see cref="WirelessAttemptWait" />
+    ///     only when neither signal appears.
+    /// </summary>
+    private async Task<WaitOutcome> WaitForWirelessAttemptAsync(CancellationToken token)
+    {
+        _wirelessAttemptCompleteSignal =
+            new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        TryCompleteWirelessAttempt();
+
+        using CancellationTokenSource windowCts = CancellationTokenSource.CreateLinkedTokenSource(token);
+        windowCts.CancelAfter(WirelessAttemptWait);
+
+        Task windowTask = Task.Delay(Timeout.InfiniteTimeSpan, windowCts.Token);
+        WaitOutcome outcome = await WaitForStepAsync(
+            Task.WhenAny(_wirelessAttemptCompleteSignal.Task, windowTask), token).ConfigureAwait(false);
+
+        _wirelessAttemptCompleteSignal = null;
+        return outcome;
+    }
+
+    private void TryCompleteWirelessAttempt()
+    {
+        TaskCompletionSource<bool>? signal = _wirelessAttemptCompleteSignal;
+        if (signal is null)
+        {
+            return;
+        }
+
+        if (IsCandidateWirelessReconnectObserved())
+        {
+            _observedWirelessReconnect = true;
+            signal.TrySetResult(true);
+            return;
+        }
+
+        if (TimelineShowsConclusiveSuccess())
+        {
+            signal.TrySetResult(true);
+        }
+    }
+
+    private bool TimelineShowsConclusiveSuccess()
+    {
+        DiagnosticVerdict verdict = _successProbe.Classify(PreflightResults, Timeline, _candidateAddress);
+        return verdict.Code == DiagnosticVerdictCode.Success;
+    }
+
+    private bool IsCandidateWirelessReconnectObserved()
+    {
+        if (WirelessReconnectObservedOverride is { } observedOverride)
+        {
+            return observedOverride();
+        }
+
+        if (_candidateAddress is null)
+        {
+            return false;
+        }
+
+        foreach (PnPDevice device in _devMan.Devices)
+        {
+            if (string.Equals(device.InstanceId, _candidateInstanceId, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (!IsWirelessDevice(device))
+            {
+                continue;
+            }
+
+            if (TryGetDeviceAddress(device) == _candidateAddress)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsWirelessDevice(PnPDevice device)
+    {
+        try
+        {
+            string enumerator = device.GetProperty<string>(DevicePropertyKey.Device_EnumeratorName) ?? "USB";
+            return !enumerator.Equals("USB", StringComparison.InvariantCultureIgnoreCase);
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    private void CompleteAsPreflightBlocked()
+    {
+        Stage = BluetoothDiagnosticStage.PreflightBlocked;
+        Verdict = _classifier.Classify(PreflightResults, Array.Empty<DiagnosticEventRecord>(), _candidateAddress);
+        StatusMessage = PreflightResults.FirstOrDefault(result => !result.Passed)?.Detail
+                        ?? "Fix the items below, then click Start again.";
+        _lastRunFinishedAt = DateTimeOffset.UtcNow;
+    }
+
+    private static bool HasNonUsbPreflightFailure(IReadOnlyList<PreflightCheckResult> results) =>
+        results.Any(result => !result.Passed && result.Id != PreflightCheckId.UsbControllerPresent);
 
     private void ApplyIncompleteOutcome(WaitOutcome outcome)
     {
@@ -399,6 +592,9 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
         // different thread) may concurrently reassign '_candidateInstanceId'/'_unplugSignal' for a
         // fresh run, so re-reading the fields between the null-checks and the TrySetResult call
         // below could otherwise observe a signal from a different run than the one just checked.
+        _usbArrivalSignal?.TrySetResult(true);
+        TryCompleteWirelessAttempt();
+
         string? candidateInstanceId = _candidateInstanceId;
         TaskCompletionSource<bool>? unplugSignal = _unplugSignal;
         if (candidateInstanceId is null || unplugSignal is null)
@@ -427,5 +623,6 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
         }
 
         TimelineUpdated?.Invoke(this, EventArgs.Empty);
+        TryCompleteWirelessAttempt();
     }
 }

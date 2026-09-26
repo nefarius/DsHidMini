@@ -63,6 +63,13 @@ public sealed class OnboardingCoordinator
         !isDeveloperMode && !IsVersionCompleted(completedVersion);
 
     /// <summary>
+    ///     First-run setup always starts an ETW session, so an unelevated process must
+    ///     self-elevate before the wizard is shown.
+    /// </summary>
+    public static bool RequiresElevationToStart(bool shouldShowWizard, bool isElevated) =>
+        shouldShowWizard && !isElevated;
+
+    /// <summary>
     ///     Records that setup finished successfully. Only call this after the wireless connection
     ///     was actually verified (or the user explicitly accepted a diagnosed blocker), never on a
     ///     bare window close.

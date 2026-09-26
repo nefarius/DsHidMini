@@ -20,17 +20,25 @@ public class Main
         proc.Start();
     }
 
-    public static void RestartAsAdmin()
+    /// <summary>
+    ///     Starts an elevated successor and exits this process.
+    /// </summary>
+    /// <returns>
+    ///     <see langword="true" /> if this process is already elevated, or the elevated
+    ///     successor was launched and this process is shutting down.
+    ///     <see langword="false" /> if the user declined UAC or the handoff failed.
+    /// </returns>
+    public static bool RestartAsAdmin()
     {
         if (SecurityUtil.IsElevated)
         {
-            return;
+            return true;
         }
 
         Debug.WriteLine("restarting as admin");
         string token = Guid.NewGuid().ToString("N");
         using EventWaitHandle ready = SingleInstanceLifetime.CreateHandoffReadyEvent(token);
-        RestartAsAdminFlow.Run(
+        return RestartAsAdminFlow.Run(
             () => StartAsAdmin(
                 Environment.ProcessPath!,
                 SingleInstanceLifetime.HandoffArgumentPrefix + token),

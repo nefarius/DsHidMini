@@ -138,6 +138,12 @@
                         Orientation="Horizontal">
                         <ui:Button
                             Margin="0,0,8,0"
+                            Appearance="Primary"
+                            Command="{Binding RestartAsAdminCommand}"
+                            Content="Restart as Administrator"
+                            Visibility="{Binding NeedsElevation, Converter={StaticResource BoolToVis}}" />
+                        <ui:Button
+                            Margin="0,0,8,0"
                             Appearance="Success"
                             Command="{Binding FinishCommand}"
                             Content="Finish setup"

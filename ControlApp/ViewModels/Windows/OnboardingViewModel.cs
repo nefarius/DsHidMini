@@ -4,6 +4,7 @@ using System.Windows.Threading;
 
 using Microsoft.Win32;
 
+using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.Diagnostics;
 using Nefarius.DsHidMini.ControlApp.Models.Onboarding;
 
@@ -51,6 +52,8 @@ public sealed partial class OnboardingViewModel : ObservableObject, IDisposable
     public bool IsSuccessful => Verdict?.Code == DiagnosticVerdictCode.Success;
 
     public bool CanApplyFix => PreflightItems.Any(i => !i.Passed && i.CanAutoRepair);
+
+    public bool NeedsElevation => !SecurityUtil.IsElevated;
 
     /// <summary>
     ///     Raised once <see cref="FinishCommand" /> has recorded completion. The window should close
@@ -117,6 +120,12 @@ public sealed partial class OnboardingViewModel : ObservableObject, IDisposable
         {
             Log.Logger.Error(ex, "Failed to export first-run setup diagnostic bundle to '{Path}'.", dialog.FileName);
         }
+    }
+
+    [RelayCommand]
+    private void RestartAsAdmin()
+    {
+        Main.RestartAsAdmin();
     }
 
     [RelayCommand]

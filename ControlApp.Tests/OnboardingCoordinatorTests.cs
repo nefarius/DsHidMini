@@ -75,4 +75,12 @@ public class OnboardingCoordinatorTests
             OnboardingCoordinator.CurrentOnboardingVersion,
             isDeveloperMode: false));
     }
+
+    [Fact]
+    public void RequiresElevationToStart_OnlyWhenWizardWillShowAndProcessIsUnelevated()
+    {
+        Assert.True(OnboardingCoordinator.RequiresElevationToStart(shouldShowWizard: true, isElevated: false));
+        Assert.False(OnboardingCoordinator.RequiresElevationToStart(shouldShowWizard: true, isElevated: true));
+        Assert.False(OnboardingCoordinator.RequiresElevationToStart(shouldShowWizard: false, isElevated: false));
+    }
 }

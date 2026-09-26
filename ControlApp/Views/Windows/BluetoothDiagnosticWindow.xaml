@@ -120,6 +120,10 @@
                         Command="{Binding ExportBundleCommand}"
                         Content="Create diagnostic package"
                         IsEnabled="{Binding HasVerdict}" />
+                    <ui:Button
+                        Command="{Binding RestartAsAdminCommand}"
+                        Content="Restart as Administrator"
+                        Visibility="{Binding NeedsElevation, Converter={StaticResource BoolToVis}}" />
                 </StackPanel>
             </Grid>
         </ScrollViewer>

@@ -695,11 +695,17 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             AddressAuthenticityStatus,
             string.IsNullOrWhiteSpace(DeviceAddress) || IsDeviceAddressSynthesized);
 
-    private AuthenticityCheckDisplay IdentificationCheckDisplay =>
-        DeviceAuthenticityPresentation.ForIdentification(
-            HasIdentification,
-            IdentificationInfo is not null,
-            IdentificationCloneHeuristic);
+    private AuthenticityCheckDisplay IdentificationCheckDisplay
+    {
+        get
+        {
+            DsIdentificationInfo? info = IdentificationInfo;
+            return DeviceAuthenticityPresentation.ForIdentification(
+                HasIdentification,
+                info is not null,
+                info?.CloneHeuristic ?? false);
+        }
+    }
 
     /// <summary>
     ///     The device Instance ID.
