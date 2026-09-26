@@ -1,5 +1,8 @@
+using System.Globalization;
+
 using Nefarius.DsHidMini.ControlApp.Models.Drivers;
 using Nefarius.DsHidMini.IPC;
+using Nefarius.DsHidMini.IPC.Models.Drivers;
 using Nefarius.DsHidMini.IPC.Models.Public;
 using Nefarius.Utilities.DeviceManagement.PnP;
 
@@ -27,6 +30,7 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
     private readonly object _timelineLock = new();
     private readonly ITraceCapture _traceCapture;
 
+    private ulong? _candidateAddress;
     private PnPDevice? _candidateDevice;
     private string? _candidateInstanceId;
     private TaskCompletionSource<Exception>? _captureFaultSignal;
@@ -117,13 +121,14 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
         if (PreflightResults.Any(r => !r.Passed) || _preflightProbe.FindEligibleUsbController() is not { } device)
         {
             Stage = BluetoothDiagnosticStage.PreflightBlocked;
-            Verdict = _classifier.Classify(PreflightResults, Array.Empty<DiagnosticEventRecord>());
+            Verdict = _classifier.Classify(PreflightResults, Array.Empty<DiagnosticEventRecord>(), _candidateAddress);
             _lastRunFinishedAt = DateTimeOffset.UtcNow;
             return;
         }
 
         _candidateDevice = device;
         _candidateInstanceId = device.InstanceId;
+        _candidateAddress = TryGetDeviceAddress(device);
 
         Stage = BluetoothDiagnosticStage.Pairing;
         StatusMessage = "Pairing the controller to this PC...";
@@ -187,10 +192,47 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
         StatusMessage = "Analyzing what happened...";
         await _traceCapture.StopAsync().ConfigureAwait(false);
 
-        Verdict = _classifier.Classify(PreflightResults, Timeline);
+        // A fault can land in the narrow window between the wireless-attempt wait naturally
+        // completing and this point (e.g. the pump fails right as the timer elapses, and
+        // Task.WhenAny happened to pick the timer). Stopping the capture never sets this signal on
+        // its own (StopAsync's cancellation is caught as expected inside the pump), so if it is set
+        // here the timeline genuinely may be truncated -- report that instead of a clean Completed.
+        if (_captureFaultSignal?.Task.IsCompleted == true)
+        {
+            ApplyIncompleteOutcome(WaitOutcome.CaptureFaulted);
+            return;
+        }
+
+        Verdict = _classifier.Classify(PreflightResults, Timeline, _candidateAddress);
         Stage = BluetoothDiagnosticStage.Completed;
         StatusMessage = "Done.";
         _lastRunFinishedAt = DateTimeOffset.UtcNow;
+    }
+
+    /// <summary>
+    ///     Reads the candidate device's Bluetooth address for evidence correlation. Returns
+    ///     <see langword="null" /> on any failure (missing property, synthesized/unreadable
+    ///     address) so classification simply falls back to its unfiltered behavior.
+    /// </summary>
+    private static ulong? TryGetDeviceAddress(PnPDevice device)
+    {
+        try
+        {
+            string? address = device.GetProperty<string>(DsHidMiniDriver.DeviceAddressProperty);
+            if (string.IsNullOrEmpty(address))
+            {
+                return null;
+            }
+
+            return ulong.TryParse(address, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out ulong parsed)
+                ? parsed
+                : null;
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Debug(ex, "Failed to read candidate device Bluetooth address for diagnostic correlation.");
+            return null;
+        }
     }
 
     private void ApplyIncompleteOutcome(WaitOutcome outcome)

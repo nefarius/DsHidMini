@@ -68,13 +68,16 @@ public class BluetoothDiagnosticSessionTests
         public DiagnosticVerdict? NextResult { get; set; }
         public IReadOnlyList<PreflightCheckResult>? LastPreflight { get; private set; }
         public IReadOnlyList<DiagnosticEventRecord>? LastTimeline { get; private set; }
+        public ulong? LastCandidateAddress { get; private set; }
 
         public DiagnosticVerdict Classify(
             IReadOnlyList<PreflightCheckResult> preflightResults,
-            IReadOnlyList<DiagnosticEventRecord> timeline)
+            IReadOnlyList<DiagnosticEventRecord> timeline,
+            ulong? candidateAddress = null)
         {
             LastPreflight = preflightResults;
             LastTimeline = timeline;
+            LastCandidateAddress = candidateAddress;
             return NextResult ?? new DiagnosticVerdict(
                 DiagnosticVerdictCode.Inconclusive,
                 DiagnosticConfidence.Low,

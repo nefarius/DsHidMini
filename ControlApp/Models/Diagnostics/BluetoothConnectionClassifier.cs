@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Nefarius.DsHidMini.ControlApp.Models.Diagnostics;
 
 /// <inheritdoc cref="IDiagnosticClassifier" />
@@ -11,7 +13,8 @@ public sealed class BluetoothConnectionClassifier : IDiagnosticClassifier
 {
     public DiagnosticVerdict Classify(
         IReadOnlyList<PreflightCheckResult> preflightResults,
-        IReadOnlyList<DiagnosticEventRecord> timeline)
+        IReadOnlyList<DiagnosticEventRecord> timeline,
+        ulong? candidateAddress = null)
     {
         ArgumentNullException.ThrowIfNull(preflightResults);
         ArgumentNullException.ThrowIfNull(timeline);
@@ -34,21 +37,38 @@ public sealed class BluetoothConnectionClassifier : IDiagnosticClassifier
         List<DiagnosticEventRecord> bthPs3 = Filter(timeline, KnownDiagnosticProviders.BthPS3);
         List<DiagnosticEventRecord> dsHidMini = Filter(timeline, KnownDiagnosticProviders.DsHidMini);
 
+        // Correlate on the specific controller's address wherever the event template carries one,
+        // so an unrelated device's activity during the same observation window (a second paired
+        // controller, or a stale reconnect) is never mistaken for this run's outcome. Events with
+        // no address field at all (HID channel connects carry no payload; BthPS3PSM never learns
+        // the remote address before identification) are never excluded just for lacking it -- that
+        // is an inherent driver-instrumentation gap, not a reason to discard the evidence.
+        DiagnosticEventRecord? FindLastForCandidate(string eventName) =>
+            FindLast(bthPs3, e => e.EventName == eventName && MatchesCandidateAddress(e, candidateAddress));
+
+        DiagnosticEventRecord? nameLookupFailed = FindLast(bthPs3,
+            e => e.EventName == BthPS3Events.FailedWithNTStatus &&
+                 (e.GetString("FunctionName")?.Contains("GetDeviceName", StringComparison.OrdinalIgnoreCase) ?? false));
+
         // 'RemoteConnectReceived' is a newer, explicit "we got something" signal that may not exist
         // on an older BthPS3 install (older drivers never emit event 27 at all). Never require it:
         // fall back to whichever per-connection event from the classic 1-26 range shows up first,
-        // so an older, fully-working driver is never misclassified as "nothing happened".
-        DiagnosticEventRecord? remoteConnectReceived = FindLast(bthPs3, BthPS3Events.RemoteConnectReceived);
+        // so an older, fully-working driver is never misclassified as "nothing happened". The
+        // name-lookup failure is included here too: on an old driver it is otherwise the *only*
+        // event a failed lookup ever produces (BthPS3_GetDeviceName failing skips RemoteDeviceName
+        // entirely), so omitting it would misclassify that failure as "no attempt observed".
+        DiagnosticEventRecord? remoteConnectReceived = FindLastForCandidate(BthPS3Events.RemoteConnectReceived);
         DiagnosticEventRecord? reachedBthPs3 = remoteConnectReceived
-                                                ?? FindLast(bthPs3, BthPS3Events.RemoteDeviceName)
-                                                ?? FindLast(bthPs3, BthPS3Events.RemoteDeviceIdentified)
-                                                ?? FindLast(bthPs3, BthPS3Events.RemoteDeviceNotIdentified)
-                                                ?? FindLast(bthPs3, BthPS3Events.ChildDeviceCreationSuccessful)
-                                                ?? FindLast(bthPs3, BthPS3Events.ChildDeviceCreationFailed)
-                                                ?? FindLast(bthPs3, BthPS3Events.L2CAPRemoteConnectFailed)
-                                                ?? FindLast(bthPs3, BthPS3Events.HidControlChannelConnected)
-                                                ?? FindLast(bthPs3, BthPS3Events.HidInterruptChannelConnected)
-                                                ?? FindLast(bthPs3, BthPS3Events.RemoteDeviceOnline);
+                                                ?? nameLookupFailed
+                                                ?? FindLastForCandidate(BthPS3Events.RemoteDeviceName)
+                                                ?? FindLastForCandidate(BthPS3Events.RemoteDeviceIdentified)
+                                                ?? FindLastForCandidate(BthPS3Events.RemoteDeviceNotIdentified)
+                                                ?? FindLastForCandidate(BthPS3Events.ChildDeviceCreationSuccessful)
+                                                ?? FindLastForCandidate(BthPS3Events.ChildDeviceCreationFailed)
+                                                ?? FindLastForCandidate(BthPS3Events.L2CAPRemoteConnectFailed)
+                                                ?? FindLastForCandidate(BthPS3Events.HidControlChannelConnected)
+                                                ?? FindLastForCandidate(BthPS3Events.HidInterruptChannelConnected)
+                                                ?? FindLastForCandidate(BthPS3Events.RemoteDeviceOnline);
 
         bool sawNewConnectSignal = remoteConnectReceived is not null;
         bool sawAnyPsmPatchActivity = bthPs3Psm.Any(e => e.EventName == BthPS3PsmEvents.PsmPatchActivity);
@@ -95,14 +115,17 @@ public sealed class BluetoothConnectionClassifier : IDiagnosticClassifier
             evidence.Add(remoteConnectReceived!);
         }
 
-        DiagnosticEventRecord? notIdentified = FindLast(bthPs3, BthPS3Events.RemoteDeviceNotIdentified);
-        DiagnosticEventRecord? nameLookupFailed = FindLast(bthPs3,
-            e => e.EventName == BthPS3Events.FailedWithNTStatus &&
-                 (e.GetString("FunctionName")?.Contains("GetDeviceName", StringComparison.OrdinalIgnoreCase) ?? false));
+        DiagnosticEventRecord? notIdentified = FindLastForCandidate(BthPS3Events.RemoteDeviceNotIdentified);
 
-        if (nameLookupFailed is not null && FindLast(bthPs3, BthPS3Events.RemoteDeviceIdentified) is null)
+        if (nameLookupFailed is not null && FindLastForCandidate(BthPS3Events.RemoteDeviceIdentified) is null)
         {
-            evidence.Add(nameLookupFailed);
+            // 'nameLookupFailed' may already be 'reachedBthPs3' itself (added to 'evidence' above)
+            // when this is the only BthPS3 event in the whole run; avoid listing it twice.
+            if (!ReferenceEquals(reachedBthPs3, nameLookupFailed))
+            {
+                evidence.Add(nameLookupFailed);
+            }
+
             return new DiagnosticVerdict(
                 DiagnosticVerdictCode.RemoteDeviceUnknown,
                 DiagnosticConfidence.High,
@@ -113,7 +136,7 @@ public sealed class BluetoothConnectionClassifier : IDiagnosticClassifier
                 evidence);
         }
 
-        if (notIdentified is not null && FindLast(bthPs3, BthPS3Events.RemoteDeviceIdentified) is null)
+        if (notIdentified is not null && FindLastForCandidate(BthPS3Events.RemoteDeviceIdentified) is null)
         {
             evidence.Add(notIdentified);
             return new DiagnosticVerdict(
@@ -125,9 +148,9 @@ public sealed class BluetoothConnectionClassifier : IDiagnosticClassifier
                 evidence);
         }
 
-        DiagnosticEventRecord? identified = FindLast(bthPs3, BthPS3Events.RemoteDeviceIdentified);
-        DiagnosticEventRecord? childCreated = FindLast(bthPs3, BthPS3Events.ChildDeviceCreationSuccessful);
-        DiagnosticEventRecord? childFailed = FindLast(bthPs3, BthPS3Events.ChildDeviceCreationFailed);
+        DiagnosticEventRecord? identified = FindLastForCandidate(BthPS3Events.RemoteDeviceIdentified);
+        DiagnosticEventRecord? childCreated = FindLastForCandidate(BthPS3Events.ChildDeviceCreationSuccessful);
+        DiagnosticEventRecord? childFailed = FindLastForCandidate(BthPS3Events.ChildDeviceCreationFailed);
 
         if (childCreated is null)
         {
@@ -171,9 +194,9 @@ public sealed class BluetoothConnectionClassifier : IDiagnosticClassifier
 
         evidence.Add(childCreated);
 
-        DiagnosticEventRecord? controlConnected = FindLast(bthPs3, BthPS3Events.HidControlChannelConnected);
-        DiagnosticEventRecord? interruptConnected = FindLast(bthPs3, BthPS3Events.HidInterruptChannelConnected);
-        DiagnosticEventRecord? online = FindLast(bthPs3, BthPS3Events.RemoteDeviceOnline);
+        DiagnosticEventRecord? controlConnected = FindLastForCandidate(BthPS3Events.HidControlChannelConnected);
+        DiagnosticEventRecord? interruptConnected = FindLastForCandidate(BthPS3Events.HidInterruptChannelConnected);
+        DiagnosticEventRecord? online = FindLastForCandidate(BthPS3Events.RemoteDeviceOnline);
 
         if (online is null)
         {
@@ -213,7 +236,11 @@ public sealed class BluetoothConnectionClassifier : IDiagnosticClassifier
 
         evidence.Add(online);
 
-        bool hasDsHidMiniActivity = dsHidMini.Any(e => e.Timestamp >= online.Timestamp);
+        // Correlate the handoff too: DsHidMini's own 'Address' property is the same 12-hex-digit
+        // string (see driver/Ds3.c, driver/Device.c: "%02X%02X%02X%02X%02X%02X") as BthPS3's
+        // numeric one, just formatted differently -- MatchesCandidateAddress() normalizes both.
+        bool hasDsHidMiniActivity = dsHidMini.Any(e =>
+            e.Timestamp >= online.Timestamp && MatchesCandidateAddress(e, candidateAddress));
         if (!hasDsHidMiniActivity)
         {
             // Zero DsHidMini events in the *entire* session (not just after BthPS3 went online) means
@@ -247,6 +274,39 @@ public sealed class BluetoothConnectionClassifier : IDiagnosticClassifier
     private static List<DiagnosticEventRecord> Filter(IReadOnlyList<DiagnosticEventRecord> timeline, Guid providerGuid)
     {
         return timeline.Where(e => e.ProviderGuid == providerGuid).ToList();
+    }
+
+    /// <summary>
+    ///     True when <paramref name="candidateAddress" /> is <see langword="null" /> (no address to
+    ///     correlate against), when <paramref name="record" />'s template has no "Address" property
+    ///     at all (cannot correlate), or when the two addresses match. BthPS3 reports "Address" as a
+    ///     raw <c>UInt64</c>; DsHidMini reports it as a 12-hex-digit <c>AnsiString</c> in the same
+    ///     byte order (see driver/Ds3.c, driver/Device.c) -- both are normalized to <c>ulong</c> here.
+    /// </summary>
+    private static bool MatchesCandidateAddress(DiagnosticEventRecord record, ulong? candidateAddress)
+    {
+        if (candidateAddress is null)
+        {
+            return true;
+        }
+
+        if (!record.Properties.TryGetValue("Address", out object? raw) || raw is null)
+        {
+            return true;
+        }
+
+        if (raw is string hex)
+        {
+            if (!ulong.TryParse(hex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out ulong parsed))
+            {
+                return true; // Unparsable string: cannot correlate, don't exclude on that basis.
+            }
+
+            return parsed == candidateAddress.Value;
+        }
+
+        ulong? numeric = record.GetUInt64("Address");
+        return numeric is null || numeric.Value == candidateAddress.Value;
     }
 
     private static DiagnosticEventRecord? FindLast(IReadOnlyList<DiagnosticEventRecord> events, string eventName)
