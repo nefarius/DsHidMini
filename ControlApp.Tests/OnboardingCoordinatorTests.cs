@@ -1,0 +1,56 @@
+using Nefarius.DsHidMini.ControlApp.Models;
+using Nefarius.DsHidMini.ControlApp.Models.Onboarding;
+
+using Newtonsoft.Json;
+
+using Xunit;
+
+namespace Nefarius.DsHidMini.ControlApp.Tests;
+
+public class OnboardingCoordinatorTests
+{
+    [Fact]
+    public void IsVersionCompleted_NullValue_IsIncomplete()
+    {
+        Assert.False(OnboardingCoordinator.IsVersionCompleted(null));
+    }
+
+    [Fact]
+    public void IsVersionCompleted_OlderVersion_IsIncomplete()
+    {
+        Assert.False(OnboardingCoordinator.IsVersionCompleted(OnboardingCoordinator.CurrentOnboardingVersion - 1));
+    }
+
+    [Fact]
+    public void IsVersionCompleted_CurrentVersion_IsComplete()
+    {
+        Assert.True(OnboardingCoordinator.IsVersionCompleted(OnboardingCoordinator.CurrentOnboardingVersion));
+    }
+
+    [Fact]
+    public void IsVersionCompleted_NewerVersion_IsComplete()
+    {
+        Assert.True(OnboardingCoordinator.IsVersionCompleted(OnboardingCoordinator.CurrentOnboardingVersion + 1));
+    }
+
+    [Fact]
+    public void ApplicationConfiguration_JsonRoundTrip_PreservesCompletedOnboardingVersion()
+    {
+        ApplicationConfiguration original = new() { CompletedOnboardingVersion = 3 };
+
+        string json = JsonConvert.SerializeObject(original);
+        ApplicationConfiguration? loaded = JsonConvert.DeserializeObject<ApplicationConfiguration>(json);
+
+        Assert.NotNull(loaded);
+        Assert.Equal(3, loaded.CompletedOnboardingVersion);
+    }
+
+    [Fact]
+    public void ApplicationConfiguration_Default_HasNoCompletedOnboardingVersion()
+    {
+        ApplicationConfiguration config = new();
+
+        Assert.Null(config.CompletedOnboardingVersion);
+        Assert.False(OnboardingCoordinator.IsVersionCompleted(config.CompletedOnboardingVersion));
+    }
+}

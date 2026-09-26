@@ -6,6 +6,7 @@
 using Microsoft.Extensions.Hosting;
 
 using Nefarius.DsHidMini.ControlApp.Models;
+using Nefarius.DsHidMini.ControlApp.Models.Onboarding;
 using Nefarius.DsHidMini.ControlApp.Views.Pages;
 using Nefarius.DsHidMini.ControlApp.Views.Windows;
 
@@ -20,17 +21,20 @@ public class ApplicationHostService : IHostedService
 {
     private readonly DefenderBtStatusService _defenderBtStatusService;
     private readonly DshmDevMan _dshmDevMan;
+    private readonly OnboardingCoordinator _onboardingCoordinator;
     private readonly IServiceProvider _serviceProvider;
     private INavigationWindow _navigationWindow;
 
     public ApplicationHostService(
         IServiceProvider serviceProvider,
         DshmDevMan dshmDevMan,
-        DefenderBtStatusService defenderBtStatusService)
+        DefenderBtStatusService defenderBtStatusService,
+        OnboardingCoordinator onboardingCoordinator)
     {
         _serviceProvider = serviceProvider;
         _dshmDevMan = dshmDevMan;
         _defenderBtStatusService = defenderBtStatusService;
+        _onboardingCoordinator = onboardingCoordinator;
     }
 
     /// <summary>
@@ -62,6 +66,20 @@ public class ApplicationHostService : IHostedService
 
         if (!Application.Current.Windows.OfType<MainWindow>().Any())
         {
+            if (!_onboardingCoordinator.IsCompleted)
+            {
+                OnboardingWindow onboardingWindow = (OnboardingWindow)_serviceProvider.GetService(typeof(OnboardingWindow))!;
+                onboardingWindow.ShowDialog();
+
+                if (!_onboardingCoordinator.IsCompleted)
+                {
+                    // The onboarding window gates the entire startup; declining it (by any means)
+                    // means the app should not proceed to the main window this launch.
+                    App.RequestExit();
+                    return;
+                }
+            }
+
             _navigationWindow = (
                 _serviceProvider.GetService(typeof(MainWindow)) as INavigationWindow
             )!;

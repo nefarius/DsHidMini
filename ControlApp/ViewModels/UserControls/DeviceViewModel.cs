@@ -3,6 +3,7 @@ using System.Threading;
 using System.Windows;
 
 using Nefarius.DsHidMini.ControlApp.Models;
+using Nefarius.DsHidMini.ControlApp.Models.Diagnostics;
 using Nefarius.DsHidMini.ControlApp.Models.Drivers;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.Enums;
@@ -52,9 +53,11 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     ];
 
     private readonly DeviceData _deviceUserData;
+    private readonly BluetoothDiagnosticSession _bluetoothDiagnosticSession;
     private InputTesterWindow? _inputTester;
     private MotionViewerWindow? _motionViewer;
     private RumbleTesterWindow? _rumbleTester;
+    private BluetoothDiagnosticWindow? _bluetoothDiagnosticWindow;
 
     // ------------------------------------------------------ FIELDS
 
@@ -132,7 +135,8 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         DshmConfigManager dshmConfigManager,
         AppSnackbarMessagesService appSnackbarMessagesService,
         IContentDialogService contentDialogService,
-        AddressValidator addressValidator
+        AddressValidator addressValidator,
+        BluetoothDiagnosticSession bluetoothDiagnosticSession
     )
     {
         Device = device;
@@ -142,6 +146,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         _appSnackbarMessagesService = appSnackbarMessagesService;
         _contentDialogService = contentDialogService;
         _addressValidator = addressValidator;
+        _bluetoothDiagnosticSession = bluetoothDiagnosticSession;
         _batteryQuery = new Timer(UpdateBatteryStatus, null, 1500, 10000);
         _outputStatusQuery = null;
         if (!string.IsNullOrEmpty(DsDeviceCapabilities.OutputStallGuidance(DeviceType)))
@@ -1357,10 +1362,27 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     private async Task PairingHelpButtonPressed()
     {
         ContentDialogResult result = await ShowPairingHelpInfoDialog();
-        //if(result == ContentDialogResult.Primary)
-        //{
-        //    // to-do: open bluetooth pairing troubleshooting page
-        //}
+        if (result == ContentDialogResult.Primary)
+        {
+            OpenBluetoothDiagnosticWindow();
+        }
+    }
+
+    private void OpenBluetoothDiagnosticWindow()
+    {
+        if (_bluetoothDiagnosticWindow is { IsVisible: true })
+        {
+            _bluetoothDiagnosticWindow.Activate();
+            return;
+        }
+
+        BluetoothDiagnosticViewModel diagnosticViewModel = new(_bluetoothDiagnosticSession);
+        _bluetoothDiagnosticWindow = new BluetoothDiagnosticWindow(diagnosticViewModel)
+        {
+            Owner = Application.Current.MainWindow
+        };
+        _bluetoothDiagnosticWindow.Closed += (_, _) => _bluetoothDiagnosticWindow = null;
+        _bluetoothDiagnosticWindow.Show();
     }
 
     private async Task<ContentDialogResult> ShowPairingHelpInfoDialog()
@@ -1382,7 +1404,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
 
                           ➤ Retro Fighters Defender Bluetooth Edition owners: plug the controller in via USB. Prefer enabling "Automatically switch Retro Fighters Defender BT to PS3 mode" in Settings, then replug, so the probe is sent immediately after enumeration. The Devices page button can also reset the USB port and retry. The controller must reappear as a DualShock 3 before pairing.
                           """,
-                PrimaryButtonText = "I need more help!",
+                PrimaryButtonText = "Run Bluetooth connection diagnostic",
                 CloseButtonText = "Close"
             }
         );
