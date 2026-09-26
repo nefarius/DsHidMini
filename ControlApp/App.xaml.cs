@@ -112,6 +112,7 @@ public partial class App
 
             services.AddSingleton<AddressValidator>();
             services.AddSingleton<ControlAppUpdateService>();
+            services.AddSingleton<DonationPromptService>();
 
             Log.Logger = new LoggerConfiguration()
 #if DEBUG

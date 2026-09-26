@@ -16,8 +16,9 @@ public partial class MainWindow : INavigationWindow
 {
     private readonly DshmDevMan _dshmDevMan;
     private readonly DefenderBtStatusService _defenderBtStatusService;
+    private readonly DonationPromptService _donationPromptService;
     private readonly ControlAppUpdateService _updateService;
-    private bool _updateCheckStarted;
+    private bool _startupPromptsStarted;
 
     public MainWindow(
         MainWindowViewModel viewModel,
@@ -27,7 +28,8 @@ public partial class MainWindow : INavigationWindow
         IServiceProvider serviceProvider,
         ISnackbarService snackbarService,
         IContentDialogService contentDialogService,
-        ControlAppUpdateService updateService
+        ControlAppUpdateService updateService,
+        DonationPromptService donationPromptService
     )
     {
         ViewModel = viewModel;
@@ -36,6 +38,7 @@ public partial class MainWindow : INavigationWindow
         _dshmDevMan = dshmDevMan;
         _defenderBtStatusService = defenderBtStatusService;
         _updateService = updateService;
+        _donationPromptService = donationPromptService;
 
         SystemThemeWatcher.Watch(this);
 
@@ -84,17 +87,26 @@ public partial class MainWindow : INavigationWindow
     {
         base.OnContentRendered(e);
 
-        if (_updateCheckStarted)
+        if (_startupPromptsStarted)
         {
             return;
         }
 
-        _updateCheckStarted = true;
-        _ = CheckForUpdatesAsync();
+        _startupPromptsStarted = true;
+        _ = RunStartupPromptsAsync();
     }
 
-    private async Task CheckForUpdatesAsync()
+    private async Task RunStartupPromptsAsync()
     {
+        try
+        {
+            await _donationPromptService.ShowIfNeededAsync();
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Warning(ex, "Startup donation prompt failed.");
+        }
+
         try
         {
             await _updateService.CheckOnStartupAsync();
