@@ -66,7 +66,7 @@ public class ApplicationHostService : IHostedService
 
         if (!Application.Current.Windows.OfType<MainWindow>().Any())
         {
-            if (!_onboardingCoordinator.IsCompleted)
+            if (_onboardingCoordinator.ShouldShowFirstRunWizard)
             {
                 OnboardingWindow onboardingWindow = (OnboardingWindow)_serviceProvider.GetService(typeof(OnboardingWindow))!;
                 onboardingWindow.ShowDialog();
@@ -78,6 +78,11 @@ public class ApplicationHostService : IHostedService
                     App.RequestExit();
                     return;
                 }
+            }
+            else if (_onboardingCoordinator.IsDeveloperMode && !_onboardingCoordinator.IsCompleted)
+            {
+                Log.Logger.Information(
+                    "Skipping first-run setup because ControlApp is running in developer mode.");
             }
 
             _navigationWindow = (

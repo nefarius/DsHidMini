@@ -181,7 +181,60 @@
                                 DockPanel.Dock="Right"
                                 Text="{Binding BatteryStatusInText}" />
                         </DockPanel>
-                        <!--  Feature 0x01 identification (USB and Bluetooth)  -->
+                        <!--  Authenticity approximations: sourced-chip OUI and Feature 0x01, shown independently  -->
+                        <ui:InfoBar
+                            Title="Authenticity checks (best effort)"
+                            Margin="{StaticResource MyKey_NextLineSpacement}"
+                            DockPanel.Dock="Top"
+                            IsClosable="False"
+                            IsOpen="True"
+                            Message="{Binding AuthenticityDisclaimer}"
+                            Severity="Informational" />
+                        <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                            <ui:TextBlock
+                                DockPanel.Dock="Left"
+                                Style="{StaticResource MyKey_InfoDescriptionTextbox}"
+                                Text="Bluetooth chip vendor:" />
+                            <ui:SymbolIcon
+                                DockPanel.Dock="Right"
+                                FontSize="{StaticResource MyKey_SymbolFontSize}"
+                                Foreground="Yellow"
+                                Style="{StaticResource MyKey_StatusSymbol}"
+                                Symbol="Warning24"
+                                ToolTip="{Binding AddressVendorDetail}"
+                                ToolTipService.InitialShowDelay="200"
+                                Visibility="{Binding ShowAddressVendorWarning, Converter={StaticResource BoolToVis_TV_FH}}" />
+                            <ui:TextBlock
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                DockPanel.Dock="Right"
+                                Text="{Binding AddressVendorSummary}"
+                                ToolTip="{Binding AddressVendorDetail}"
+                                ToolTipService.InitialShowDelay="200" />
+                        </DockPanel>
+                        <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                            <ui:TextBlock
+                                DockPanel.Dock="Left"
+                                Style="{StaticResource MyKey_InfoDescriptionTextbox}"
+                                Text="Identification data:" />
+                            <ui:SymbolIcon
+                                DockPanel.Dock="Right"
+                                FontSize="{StaticResource MyKey_SymbolFontSize}"
+                                Foreground="Yellow"
+                                Style="{StaticResource MyKey_StatusSymbol}"
+                                Symbol="Warning24"
+                                ToolTip="{Binding IdentificationCheckDetail}"
+                                ToolTipService.InitialShowDelay="200"
+                                Visibility="{Binding ShowIdentificationCheckWarning, Converter={StaticResource BoolToVis_TV_FH}}" />
+                            <ui:TextBlock
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                DockPanel.Dock="Right"
+                                Text="{Binding IdentificationCheckSummary}"
+                                ToolTip="{Binding IdentificationCheckDetail}"
+                                ToolTipService.InitialShowDelay="200" />
+                        </DockPanel>
+                        <!--  Feature 0x01 identification details (USB and Bluetooth)  -->
                         <DockPanel
                             DockPanel.Dock="Top"
                             LastChildFill="False"
@@ -218,26 +271,6 @@
                                     VerticalAlignment="Center"
                                     DockPanel.Dock="Right"
                                     Text="{Binding IdentificationMotionPath}" />
-                            </DockPanel>
-                            <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
-                                <ui:TextBlock
-                                    DockPanel.Dock="Left"
-                                    Style="{StaticResource MyKey_InfoDescriptionTextbox}"
-                                    Text="Clone heuristic:" />
-                                <ui:SymbolIcon
-                                    DockPanel.Dock="Right"
-                                    FontSize="{StaticResource MyKey_SymbolFontSize}"
-                                    Foreground="Yellow"
-                                    Style="{StaticResource MyKey_StatusSymbol}"
-                                    Symbol="Warning24"
-                                    ToolTip="Feature 0x01 matches a known counterfeit signature (field list 01 02 and byte 0x29 = 0x64). This is a heuristic, not a verdict. The OUI/MAC genuine check is separate."
-                                    ToolTipService.InitialShowDelay="200"
-                                    Visibility="{Binding IdentificationCloneHeuristic, Converter={StaticResource BoolToVis_TV_FH}}" />
-                                <ui:TextBlock
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Center"
-                                    DockPanel.Dock="Right"
-                                    Text="{Binding IdentificationCloneHeuristicText}" />
                             </DockPanel>
                         </DockPanel>
                         <!--  Current HID mode  -->

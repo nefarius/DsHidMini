@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Hosting;
+
 namespace Nefarius.DsHidMini.ControlApp.Models.Onboarding;
 
 /// <summary>
@@ -12,6 +14,17 @@ public sealed class OnboardingCoordinator
     /// </summary>
     public const int CurrentOnboardingVersion = 1;
 
+    public OnboardingCoordinator(IHostEnvironment? hostEnvironment = null)
+    {
+        IsDeveloperMode = DetectDeveloperMode(hostEnvironment);
+    }
+
+    /// <summary>
+    ///     Debug builds, or a host environment named Development, skip the mandatory first-run wizard
+    ///     so local work is not gated by Bluetooth setup.
+    /// </summary>
+    public bool IsDeveloperMode { get; }
+
     /// <summary>
     ///     <see langword="true" /> once this installation has completed setup at
     ///     <see cref="CurrentOnboardingVersion" /> or later. A missing, corrupt, or older stored
@@ -20,11 +33,34 @@ public sealed class OnboardingCoordinator
     public bool IsCompleted => IsVersionCompleted(ApplicationConfiguration.Instance.CompletedOnboardingVersion);
 
     /// <summary>
+    ///     Whether startup should show the first-run wizard. Developer mode never gates launch
+    ///     and does not persist completion.
+    /// </summary>
+    public bool ShouldShowFirstRunWizard =>
+        IsFirstRunWizardRequired(ApplicationConfiguration.Instance.CompletedOnboardingVersion, IsDeveloperMode);
+
+    /// <summary>
     ///     Pure comparison extracted for testability: missing, corrupt (negative), or older values
     ///     are always treated as incomplete.
     /// </summary>
     public static bool IsVersionCompleted(int? completedVersion) =>
         completedVersion is { } completed && completed >= CurrentOnboardingVersion;
+
+    /// <summary>
+    ///     Debug compilation is always developer mode. Release builds honor a host
+    ///     environment named Development only.
+    /// </summary>
+    public static bool DetectDeveloperMode(IHostEnvironment? hostEnvironment)
+    {
+#if DEBUG
+        return true;
+#else
+        return hostEnvironment?.IsDevelopment() == true;
+#endif
+    }
+
+    public static bool IsFirstRunWizardRequired(int? completedVersion, bool isDeveloperMode) =>
+        !isDeveloperMode && !IsVersionCompleted(completedVersion);
 
     /// <summary>
     ///     Records that setup finished successfully. Only call this after the wireless connection
