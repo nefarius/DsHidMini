@@ -41,9 +41,14 @@
                     Icon="{ui:SymbolIcon Open24}"
                     NavigateUri="https://github.com/nefarius/DsHidMini" />
                 <ui:HyperlinkButton
+                    Margin="0,0,8,0"
                     Content="View license"
                     Icon="{ui:SymbolIcon DocumentText24}"
                     NavigateUri="https://github.com/nefarius/DsHidMini/blob/master/LICENSE" />
+                <ui:HyperlinkButton
+                    Content="Donate"
+                    Icon="{ui:SymbolIcon Heart24}"
+                    NavigateUri="https://docs.nefarius.at/Donations/" />
             </StackPanel>
 
             <ui:Button
