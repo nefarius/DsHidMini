@@ -7,7 +7,10 @@
 //
 // Request device disconnect from host radio
 // 
-NTSTATUS DsBth_SendDisconnectRequest(PDEVICE_CONTEXT Context)
+NTSTATUS DsBth_SendDisconnectRequest(
+	_In_ PDEVICE_CONTEXT Context,
+	_In_ DS_BTH_DISCONNECT_REASON Reason
+)
 {
 	NTSTATUS status;
 	BLUETOOTH_ADDRESS address;
@@ -15,6 +18,8 @@ NTSTATUS DsBth_SendDisconnectRequest(PDEVICE_CONTEXT Context)
 	UCHAR buffer[sizeof(BLUETOOTH_ADDRESS)];
 
 	FuncEntry(TRACE_DSBTH);
+
+	EventWriteWirelessDisconnectRequested(Context->DeviceAddressString, Reason);
 
 	RtlZeroMemory(buffer, sizeof(BLUETOOTH_ADDRESS));
 	RtlCopyMemory(buffer, &Context->DeviceAddress, sizeof(Context->DeviceAddress));
@@ -62,7 +67,7 @@ DsBth_DisconnectEventCallback(
 
 	FuncEntry(TRACE_DSBTH);
 
-	if (!NT_SUCCESS(status = DsBth_SendDisconnectRequest(pDevCtx)))
+	if (!NT_SUCCESS(status = DsBth_SendDisconnectRequest(pDevCtx, DsBthDisconnectReasonUsbSignal)))
 	{
 		TraceError(
 			TRACE_DSBTH,
@@ -149,7 +154,7 @@ NTSTATUS DsBth_SelfManagedIoSuspend(WDFDEVICE Device)
 	//
 	// Instruct disconnect to start PDO removal procedure
 	// 
-	if (!NT_SUCCESS(status = DsBth_SendDisconnectRequest(pDevCtx)))
+	if (!NT_SUCCESS(status = DsBth_SendDisconnectRequest(pDevCtx, DsBthDisconnectReasonSelfManagedIoSuspend)))
 	{
 		TraceVerbose(
 			TRACE_DSBTH,

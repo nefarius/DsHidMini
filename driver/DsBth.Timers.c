@@ -1,4 +1,4 @@
-﻿#include "Driver.h"
+#include "Driver.h"
 #include "DsBth.Timers.tmh"
 
 //
@@ -30,7 +30,7 @@ DsBth_EvtStartupDelayTimerFunc(
 		);
 		EventWriteYieldingToWiredInstance(pDevCtx->DeviceAddressString);
 
-		if (!NT_SUCCESS(status = DsBth_SendDisconnectRequest(pDevCtx)))
+		if (!NT_SUCCESS(status = DsBth_SendDisconnectRequest(pDevCtx, DsBthDisconnectReasonYieldWired)))
 		{
 			TraceError(
 				TRACE_DSBTH,
@@ -182,6 +182,10 @@ DsBth_EvtStartupDelayTimerFunc(
 		);
 		EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_DefaultTarget_StreamStart", status);
 	}
+	else
+	{
+		EventWriteBluetoothInputStreamStarted(pDevCtx->DeviceAddressString);
+	}
 
 	//
 	// Send delayed initialization packets
@@ -233,7 +237,7 @@ DsBth_EvtPostStartupTimerFunc(
 				"DsBth_Ds3Init failed with status %!STATUS!",
 				status
 			);
-			EventWriteFailedWithNTStatus(__FUNCTION__, L"DsBth_Ds3Init", status);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"DsBth_Ds3SixaxisInit", status);
 		} 
 	}
 

@@ -305,7 +305,10 @@ DSHM_EvtDispatchDeviceMessage(
 			}
 			else
 			{
-				applyStatus = DsBth_SendDisconnectRequest(DeviceContext);
+				applyStatus = DsBth_SendDisconnectRequest(
+					DeviceContext,
+					DsBthDisconnectReasonIpcRequest
+				);
 			}
 		}
 

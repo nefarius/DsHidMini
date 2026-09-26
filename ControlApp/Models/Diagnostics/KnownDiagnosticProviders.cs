@@ -43,3 +43,11 @@ public static class BthPS3PsmEvents
     public const string TransportTypeDetected = "TransportTypeDetected";
     public const string PsmPatchActivity = "PsmPatchActivity";
 }
+
+/// <summary>
+///     Event symbols from <c>driver/DsHidMini.man</c>.
+/// </summary>
+public static class DsHidMiniEvents
+{
+    public const string BluetoothInputStreamStarted = "BluetoothInputStreamStarted";
+}

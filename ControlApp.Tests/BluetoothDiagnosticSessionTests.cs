@@ -503,6 +503,42 @@ public class BluetoothDiagnosticSessionTests
     }
 
     [Fact]
+    public async Task RunAsync_BluetoothInputStreamStarted_CompletesBeforeTimeout()
+    {
+        (BluetoothDiagnosticSession session, FakePreflightProbe probe, FakeTraceCapture capture,
+                FakeClassifier classifier, _, _) = CreateSession();
+
+        probe.Results =
+        [
+            new PreflightCheckResult(PreflightCheckId.BluetoothRadioOperable, true, "Bluetooth is on", "ok")
+        ];
+        probe.Candidate = null;
+        session.TryPairOverride = _ => Task.FromResult(true);
+        session.WirelessAttemptWait = TimeSpan.FromSeconds(30);
+        classifier.NextResult = new DiagnosticVerdict(
+            DiagnosticVerdictCode.Success, DiagnosticConfidence.High,
+            "The controller connected over Bluetooth", "ok", "none", []);
+
+        Task run = session.RunAsync();
+        await WaitUntil(() => session.Stage == BluetoothDiagnosticStage.WaitingForWirelessAttempt);
+
+        DateTimeOffset t = DateTimeOffset.UtcNow;
+        capture.Raise(Bth(BthPS3Events.RemoteDeviceName, t));
+        capture.Raise(Bth(BthPS3Events.RemoteDeviceIdentified, t.AddMilliseconds(1)));
+        capture.Raise(Bth(BthPS3Events.ChildDeviceCreationSuccessful, t.AddMilliseconds(2)));
+        capture.Raise(Bth(BthPS3Events.HidControlChannelConnected, t.AddMilliseconds(3)));
+        capture.Raise(Bth(BthPS3Events.HidInterruptChannelConnected, t.AddMilliseconds(4)));
+        capture.Raise(Bth(BthPS3Events.RemoteDeviceOnline, t.AddMilliseconds(5)));
+        capture.Raise(DsHid(DsHidMiniEvents.BluetoothInputStreamStarted, t.AddMilliseconds(6)));
+
+        await run.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(BluetoothDiagnosticStage.Completed, session.Stage);
+        Assert.Equal(DiagnosticVerdictCode.Success, session.Verdict!.Code);
+        Assert.Contains(session.Timeline, e => e.EventName == DsHidMiniEvents.BluetoothInputStreamStarted);
+    }
+
+    [Fact]
     public async Task RunAsync_LegacyBthPs3SuccessEvents_CompletesBeforeTimeout()
     {
         // Older BthPS3 never emits RemoteConnectReceived (event 27). Classic 1-26 events plus
