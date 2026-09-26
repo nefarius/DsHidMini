@@ -246,7 +246,9 @@ public sealed class BluetoothConnectionClassifier : IDiagnosticClassifier
             e.Timestamp >= online.Timestamp &&
             MatchesCandidateAddress(e, candidateAddress));
         bool hasDsHidMiniActivity = inputStreamStarted is not null || dsHidMini.Any(e =>
-            e.Timestamp >= online.Timestamp && MatchesCandidateAddress(e, candidateAddress));
+            e.Timestamp >= online.Timestamp &&
+            MatchesCandidateAddress(e, candidateAddress) &&
+            !DsHidMiniEvents.IsFailureOrDisconnect(e.EventName));
         if (!hasDsHidMiniActivity)
         {
             // Zero DsHidMini events in the *entire* session (not just after BthPS3 went online) means

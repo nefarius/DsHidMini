@@ -50,4 +50,34 @@ public static class BthPS3PsmEvents
 public static class DsHidMiniEvents
 {
     public const string BluetoothInputStreamStarted = "BluetoothInputStreamStarted";
+    public const string FailedWithHResult = "FailedWithHResult";
+    public const string FailedWithNTStatus = "FailedWithNTStatus";
+    public const string FailedWithWin32Error = "FailedWithWin32Error";
+    public const string JSONParseError = "JSONParseError";
+    public const string PairingNoRadioFound = "PairingNoRadioFound";
+    public const string WirelessDisconnectRequested = "WirelessDisconnectRequested";
+    public const string WirelessDisconnectSignaled = "WirelessDisconnectSignaled";
+    public const string WirelessDisconnectEventNotFound = "WirelessDisconnectEventNotFound";
+    public const string WirelessDisconnectIoctlCompleted = "WirelessDisconnectIoctlCompleted";
+    public const string YieldingToWiredInstance = "YieldingToWiredInstance";
+
+    /// <summary>
+    ///     Known DsHidMini failure or disconnect events. These must not count as
+    ///     legacy handoff activity when <see cref="BluetoothInputStreamStarted" /> is absent.
+    ///     Unknown event names are treated as activity.
+    /// </summary>
+    public static bool IsFailureOrDisconnect(string eventName) => eventName switch
+    {
+        FailedWithHResult or
+        FailedWithNTStatus or
+        FailedWithWin32Error or
+        JSONParseError or
+        PairingNoRadioFound or
+        WirelessDisconnectRequested or
+        WirelessDisconnectSignaled or
+        WirelessDisconnectEventNotFound or
+        WirelessDisconnectIoctlCompleted or
+        YieldingToWiredInstance => true,
+        _ => false
+    };
 }
