@@ -143,7 +143,7 @@ Application-level options are stored in `%AppData%\ControlApp.json` (see
 |----------|-------------|---------|
 | **IsUpdateCheckEnabled** | Check for updates on startup | `true` |
 | **AutoSwitchDefenderBtToPs3Mode** | Switch a detected Retro Fighters Defender Bluetooth Edition from DS4 to PS3 mode | `false` |
-| **HasAcknowledgedDonationDialog** | User has dismissed the donation prompt | `false` |
+| **HasAcknowledgedDonationDialog** | User ticked that they already donated or will consider it, hiding the startup donation prompt | `false` |
 | **MinimizeToTray** | Hide to the notification area on Minimize or Close | `false` |
 
 The files managed by the app are:
