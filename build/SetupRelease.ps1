@@ -991,6 +991,24 @@ function Test-DsHidMiniMsiNamePresent {
     return $false
 }
 
+function Test-DsHidMiniCustomActionTypeHasFlag {
+    [CmdletBinding()]
+    param(
+        [AllowNull()]
+        [string] $Type,
+
+        [Parameter(Mandatory)]
+        [int] $Flag
+    )
+
+    $value = 0
+    if (-not [int]::TryParse($Type, [ref]$value)) {
+        return $false
+    }
+
+    return ($value -band $Flag) -eq $Flag
+}
+
 function Assert-DsHidMiniMsiContract {
     [CmdletBinding()]
     param(
@@ -1019,10 +1037,13 @@ function Assert-DsHidMiniMsiContract {
         $errors.Add("Shortcut table is missing 'DsHidMini Control App'.")
     }
 
-    $customActions = @(
-        Get-DsHidMiniMsiTableRows -MsiPath $MsiPath -Sql "SELECT ``Action`` FROM ``CustomAction``" -ColumnCount 1 |
-            ForEach-Object { $_[0] }
+    $customActionRows = @(
+        Get-DsHidMiniMsiTableRows -MsiPath $MsiPath -Sql "SELECT ``Action``,``Type`` FROM ``CustomAction``" -ColumnCount 2 |
+            ForEach-Object {
+                [pscustomobject]@{ Action = $_[0]; Type = $_[1] }
+            }
     )
+    $customActions = @($customActionRows | ForEach-Object { $_.Action })
     if (-not ($customActions | Where-Object { [string]::Equals($_, 'CheckDotNetRuntime', [StringComparison]::OrdinalIgnoreCase) })) {
         $errors.Add('CustomAction table is missing CheckDotNetRuntime.')
     }
@@ -1040,6 +1061,18 @@ function Assert-DsHidMiniMsiContract {
     }
     if (-not ($customActions | Where-Object { [string]::Equals($_, 'RollbackUninstallManifest', [StringComparison]::OrdinalIgnoreCase) })) {
         $errors.Add('CustomAction table is missing RollbackUninstallManifest.')
+    }
+
+    # msidbCustomActionTypeRollback (0x100), used with InScript (0x400).
+    $rollbackExecutionFlag = 0x100
+    foreach ($rollbackAction in @('RollbackInstallManifest', 'RollbackUninstallManifest')) {
+        $row = @(
+            $customActionRows |
+                Where-Object { [string]::Equals($_.Action, $rollbackAction, [StringComparison]::OrdinalIgnoreCase) }
+        )[0]
+        if ($row -and -not (Test-DsHidMiniCustomActionTypeHasFlag -Type $row.Type -Flag $rollbackExecutionFlag)) {
+            $errors.Add("CustomAction $rollbackAction must have the rollback execution flag set.")
+        }
     }
 
     $sequence = @(

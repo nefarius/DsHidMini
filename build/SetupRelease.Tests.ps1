@@ -155,6 +155,10 @@ Assert-True (-not (Test-DsHidMiniMsiNamePresent `
             -Values @('-sd7_iyj.lnk|Some Other Shortcut.lnk') `
             -Expected 'DsHidMini Control App')) 'unrelated shortcut is not matched'
 
+Assert-True (Test-DsHidMiniCustomActionTypeHasFlag -Type '3329' -Flag 0x100) 'rollback Type 3329 has rollback flag'
+Assert-True (-not (Test-DsHidMiniCustomActionTypeHasFlag -Type '3073' -Flag 0x100)) 'deferred Type 3073 lacks rollback flag'
+Assert-True (-not (Test-DsHidMiniCustomActionTypeHasFlag -Type 'not-a-type' -Flag 0x100)) 'non-numeric Type lacks rollback flag'
+
 Assert-Equal (ConvertTo-DsHidMiniSetupVersionFromTag -Tag 'setup-v2.17.0') ([version]'2.17.0') 'parses plain setup tag'
 Assert-Equal (ConvertTo-DsHidMiniSetupVersionFromTag -Tag 'setup-v2.12.0-r3') ([version]'2.12.0') 'parses re-spin tag, drops -rN'
 Assert-Equal (ConvertTo-DsHidMiniSetupVersionFromTag -Tag 'setup-v2.10.371.0') ([version]'2.10.371') 'parses legacy 4-component tag as ProductVersion'
