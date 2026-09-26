@@ -306,6 +306,31 @@ public class BluetoothDiagnosticSessionTests
     }
 
     [Fact]
+    public async Task RunAsync_CancelDuringWirelessWait_StaysCancelled()
+    {
+        (BluetoothDiagnosticSession session, FakePreflightProbe probe, FakeTraceCapture capture, _, _, _) =
+            CreateSession();
+
+        probe.Results =
+        [
+            new PreflightCheckResult(PreflightCheckId.BluetoothRadioOperable, true, "Bluetooth is on", "ok")
+        ];
+        probe.Candidate = null;
+        session.TryPairOverride = _ => Task.FromResult(true);
+        session.WirelessAttemptWait = TimeSpan.FromSeconds(30);
+
+        Task run = session.RunAsync();
+        await WaitUntil(() => session.Stage == BluetoothDiagnosticStage.WaitingForWirelessAttempt);
+
+        session.Cancel();
+        await run.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(BluetoothDiagnosticStage.Cancelled, session.Stage);
+        Assert.Null(session.Verdict);
+        Assert.Equal(1, capture.StopCount);
+    }
+
+    [Fact]
     public async Task RunAsync_WirelessReconnectObserved_CompletesBeforeTimeoutAndTreatsAsSuccess()
     {
         (BluetoothDiagnosticSession session, FakePreflightProbe probe, _, FakeClassifier classifier, _,

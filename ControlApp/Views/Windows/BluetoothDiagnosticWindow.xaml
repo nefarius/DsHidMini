@@ -38,6 +38,8 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="16" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="16" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <ui:TextBlock
@@ -120,6 +122,11 @@
                         Command="{Binding ExportBundleCommand}"
                         Content="Create diagnostic package"
                         IsEnabled="{Binding HasVerdict}" />
+                </StackPanel>
+                <StackPanel
+                    Grid.Row="10"
+                    HorizontalAlignment="Left"
+                    Orientation="Horizontal">
                     <ui:Button
                         Command="{Binding RestartAsAdminCommand}"
                         Content="Restart as Administrator"

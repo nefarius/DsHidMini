@@ -322,7 +322,15 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
                 return WaitOutcome.Completed;
             }
 
+            // Assign the signal before the last eligibility check so an arrival in the gap
+            // between the while-condition and the wait is either observed here or completes
+            // the signal via OnDeviceListUpdated.
             _usbArrivalSignal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            if (_preflightProbe.FindEligibleUsbController() is not null)
+            {
+                continue;
+            }
+
             WaitOutcome outcome = await WaitForStepAsync(_usbArrivalSignal.Task, token).ConfigureAwait(false);
             if (outcome != WaitOutcome.Completed)
             {
@@ -348,7 +356,10 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
             new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         TryCompleteWirelessAttempt();
 
-        using CancellationTokenSource windowCts = CancellationTokenSource.CreateLinkedTokenSource(token);
+        // Do not link this CTS to the run token: if the window task shares cancellation,
+        // WaitForStepAsync can observe WhenAny completing and treat a cancelled run as
+        // a finished observation window. Run cancellation stays on WaitForStepAsync.
+        using CancellationTokenSource windowCts = new();
         windowCts.CancelAfter(WirelessAttemptWait);
 
         Task windowTask = Task.Delay(Timeout.InfiniteTimeSpan, windowCts.Token);
