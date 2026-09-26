@@ -8,10 +8,11 @@ namespace Nefarius.DsHidMini.ControlApp.Tests;
 
 /// <summary>
 ///     Exercises the <see cref="BluetoothDiagnosticSession" /> state machine using hand-written
-///     fakes so no ETW session, driver IPC, or real hardware is required. Only the branches that do
-///     not need a live <see cref="PnPDevice" /> are covered here (preflight-blocked paths); the
-///     pair/unplug/connect branches require real hardware and are covered by the manual hardware
-///     matrix described in the Bluetooth Diagnostic Assistant plan.
+///     fakes so no ETW session, driver IPC, or real hardware is required. Preflight-blocked paths
+///     need no extra seams. Capture and classification are reached via
+///     <see cref="BluetoothDiagnosticSession.TryPairOverride" /> (skip live IPC) and a shortened
+///     <see cref="BluetoothDiagnosticSession.WirelessAttemptWait" />; an empty
+///     <see cref="DshmDevMan.Devices" /> list completes the unplug wait immediately.
 /// </summary>
 public class BluetoothDiagnosticSessionTests
 {
@@ -39,6 +40,8 @@ public class BluetoothDiagnosticSessionTests
         public bool IsRunning { get; private set; }
         public int StartCount { get; private set; }
         public int StopCount { get; private set; }
+        public DiagnosticEventRecord? EventOnStart { get; set; }
+        public Exception? FaultAfterStop { get; set; }
 
         public event Action<DiagnosticEventRecord>? EventCaptured;
         public event Action<Exception>? CaptureFaulted;
@@ -47,6 +50,11 @@ public class BluetoothDiagnosticSessionTests
         {
             StartCount++;
             IsRunning = true;
+            if (EventOnStart is { } record)
+            {
+                EventCaptured?.Invoke(record);
+            }
+
             return Task.CompletedTask;
         }
 
@@ -54,6 +62,11 @@ public class BluetoothDiagnosticSessionTests
         {
             StopCount++;
             IsRunning = false;
+            if (FaultAfterStop is { } ex)
+            {
+                RaiseFault(ex);
+            }
+
             return Task.CompletedTask;
         }
 
@@ -66,6 +79,7 @@ public class BluetoothDiagnosticSessionTests
     private sealed class FakeClassifier : IDiagnosticClassifier
     {
         public DiagnosticVerdict? NextResult { get; set; }
+        public int ClassifyCount { get; private set; }
         public IReadOnlyList<PreflightCheckResult>? LastPreflight { get; private set; }
         public IReadOnlyList<DiagnosticEventRecord>? LastTimeline { get; private set; }
         public ulong? LastCandidateAddress { get; private set; }
@@ -75,6 +89,7 @@ public class BluetoothDiagnosticSessionTests
             IReadOnlyList<DiagnosticEventRecord> timeline,
             ulong? candidateAddress = null)
         {
+            ClassifyCount++;
             LastPreflight = preflightResults;
             LastTimeline = timeline;
             LastCandidateAddress = candidateAddress;
@@ -161,6 +176,42 @@ public class BluetoothDiagnosticSessionTests
 
         Assert.Equal(BluetoothDiagnosticStage.PreflightBlocked, session.Stage);
         Assert.Equal(0, capture.StartCount);
+    }
+
+    [Fact]
+    public async Task RunAsync_FaultRaisedAfterCaptureStop_StaysFaultedWithoutClassifying()
+    {
+        (BluetoothDiagnosticSession session, FakePreflightProbe probe, FakeTraceCapture capture,
+                FakeClassifier classifier, _, _) = CreateSession();
+
+        probe.Results =
+        [
+            new PreflightCheckResult(PreflightCheckId.BluetoothRadioOperable, true, "Bluetooth is on", "ok")
+        ];
+        probe.Candidate = null;
+
+        // Reach capture/classify without a live PnPDevice or 25s wireless wait.
+        session.TryPairOverride = _ => Task.FromResult(true);
+        session.WirelessAttemptWait = TimeSpan.Zero;
+
+        capture.EventOnStart = new DiagnosticEventRecord(
+            DateTimeOffset.UtcNow,
+            Guid.Parse("00000000-0000-0000-0000-000000000001"),
+            "BthPS3",
+            1,
+            "RemoteConnectReceived",
+            new Dictionary<string, object?>());
+        capture.FaultAfterStop = new InvalidOperationException("pump died after stop");
+
+        await session.RunAsync();
+
+        Assert.Equal(BluetoothDiagnosticStage.Faulted, session.Stage);
+        Assert.Null(session.Verdict);
+        Assert.Equal(1, capture.StartCount);
+        Assert.Equal(1, capture.StopCount);
+        Assert.Single(session.Timeline);
+        Assert.Equal(0, classifier.ClassifyCount);
+        Assert.Null(classifier.LastPreflight);
     }
 
     [Fact]

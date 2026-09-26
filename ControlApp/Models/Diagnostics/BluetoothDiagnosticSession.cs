@@ -22,6 +22,18 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
     /// </summary>
     public static readonly TimeSpan WirelessAttemptTimeout = TimeSpan.FromSeconds(25);
 
+    /// <summary>
+    ///     Observation window used by <see cref="RunAsync" />. Tests shorten this so the
+    ///     capture/classify path can be exercised without waiting the full production timeout.
+    /// </summary>
+    internal TimeSpan WirelessAttemptWait { get; set; } = WirelessAttemptTimeout;
+
+    /// <summary>
+    ///     Test seam that replaces live IPC pairing. When set, a null USB candidate is also allowed
+    ///     so the capture/classify path can run without hardware.
+    /// </summary>
+    internal Func<CancellationToken, Task<bool>>? TryPairOverride { get; set; }
+
     private readonly IDiagnosticBundleWriter _bundleWriter;
     private readonly IDiagnosticClassifier _classifier;
     private readonly DshmDevMan _devMan;
@@ -118,7 +130,8 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
         StatusMessage = "Checking your Bluetooth setup...";
         PreflightResults = _preflightProbe.Run();
 
-        if (PreflightResults.Any(r => !r.Passed) || _preflightProbe.FindEligibleUsbController() is not { } device)
+        PnPDevice? device = _preflightProbe.FindEligibleUsbController();
+        if (PreflightResults.Any(r => !r.Passed) || (device is null && TryPairOverride is null))
         {
             Stage = BluetoothDiagnosticStage.PreflightBlocked;
             Verdict = _classifier.Classify(PreflightResults, Array.Empty<DiagnosticEventRecord>(), _candidateAddress);
@@ -127,13 +140,16 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
         }
 
         _candidateDevice = device;
-        _candidateInstanceId = device.InstanceId;
-        _candidateAddress = TryGetDeviceAddress(device);
+        _candidateInstanceId = device?.InstanceId;
+        _candidateAddress = device is not null ? TryGetDeviceAddress(device) : null;
 
         Stage = BluetoothDiagnosticStage.Pairing;
         StatusMessage = "Pairing the controller to this PC...";
 
-        if (!await TryPairAsync(device, token).ConfigureAwait(false))
+        bool paired = TryPairOverride is { } pairingOverride
+            ? await pairingOverride(token).ConfigureAwait(false)
+            : await TryPairAsync(device!, token).ConfigureAwait(false);
+        if (!paired)
         {
             _lastRunFinishedAt = DateTimeOffset.UtcNow;
             return;
@@ -180,7 +196,7 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
         StatusMessage = "Press the PS button on the controller once.";
 
         WaitOutcome wirelessOutcome = await WaitForStepAsync(
-            Task.Delay(WirelessAttemptTimeout, CancellationToken.None), token).ConfigureAwait(false);
+            Task.Delay(WirelessAttemptWait, CancellationToken.None), token).ConfigureAwait(false);
         if (wirelessOutcome != WaitOutcome.Completed)
         {
             await _traceCapture.StopAsync().ConfigureAwait(false);
