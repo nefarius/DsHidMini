@@ -6,7 +6,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using Nefarius.DsHidMini.ControlApp.Models;
+using Nefarius.DsHidMini.ControlApp.Models.Diagnostics;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
+using Nefarius.DsHidMini.ControlApp.Models.Onboarding;
 using Nefarius.DsHidMini.ControlApp.Models.Util.Web;
 using Nefarius.DsHidMini.ControlApp.Services;
 using Nefarius.DsHidMini.ControlApp.ViewModels.Pages;
@@ -88,6 +90,15 @@ public partial class App
             services.AddSingleton<DshmConfigManager>();
             services.AddSingleton<BthPS3StatusService>();
             services.AddSingleton<DefenderBtStatusService>();
+
+            services.AddSingleton<IPreflightProbe, BluetoothPreflightProbe>();
+            services.AddSingleton<ITraceCapture, EtwDiagnosticTraceCapture>();
+            services.AddSingleton<IDiagnosticClassifier, BluetoothConnectionClassifier>();
+            services.AddSingleton<IDiagnosticBundleWriter, DiagnosticBundleWriter>();
+            services.AddSingleton<BluetoothDiagnosticSession>();
+            services.AddSingleton<OnboardingCoordinator>();
+            services.AddTransient<OnboardingViewModel>();
+            services.AddTransient<OnboardingWindow>();
 
             services.AddSingleton<DevicesPage>();
             services.AddSingleton<DevicesViewModel>();

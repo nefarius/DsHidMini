@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Threading;
 
 using Nefarius.DsHidMini.ControlApp.Models;
+using Nefarius.DsHidMini.ControlApp.Models.Diagnostics;
 using Nefarius.DsHidMini.ControlApp.Models.Util;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.Util.Web;
@@ -48,6 +49,8 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
     [ObservableProperty]
     private DeviceViewModel? _selectedDevice;
 
+    private readonly BluetoothDiagnosticSession _bluetoothDiagnosticSession;
+
     public DevicesViewModel(
         DshmDevMan dshmDevMan,
         DshmConfigManager dshmConfigManager,
@@ -56,12 +59,14 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
         AddressValidator addressValidator,
         BthPS3StatusService bthPs3,
         DefenderBtStatusService defenderBt,
-        INavigationService navigationService
+        INavigationService navigationService,
+        BluetoothDiagnosticSession bluetoothDiagnosticSession
     )
     {
         _dshmDevMan = dshmDevMan;
         _dshmConfigManager = dshmConfigManager;
         _appSnackbarMessagesService = appSnackbarMessagesService;
+        _bluetoothDiagnosticSession = bluetoothDiagnosticSession;
         _dshmDevMan.ConnectedDeviceListUpdated += OnConnectedDevicesListUpdated;
         _dshmDevMan.XInputInterfacesUpdated += OnXInputInterfacesUpdated;
         _dshmConfigManager.DshmConfigurationUpdated += OnDshmConfigUpdated;
@@ -276,7 +281,8 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
                              _dshmConfigManager,
                              _appSnackbarMessagesService,
                              _contentDialogService,
-                             _addressValidator
+                             _addressValidator,
+                             _bluetoothDiagnosticSession
                          )))
                 {
                     if (generation != _refreshGeneration)
