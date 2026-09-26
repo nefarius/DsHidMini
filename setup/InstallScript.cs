@@ -34,6 +34,8 @@ internal class InstallScript
 {
     public const string ProductName = "Nefarius DsHidMini Driver";
     public const string CustomActionManifestName = "ca-support-assemblies.txt";
+    public const string ManifestsDir = "manifests";
+    public const string EtwManifestName = "DsHidMini.man";
 
     public static Uri InstallationSuccessfulUrl = new("https://docs.nefarius.at/projects/DsHidMini/v3/Welcome/Installation-Successful/");
 
@@ -100,6 +102,9 @@ internal class InstallScript
                     new Files(driversFeature, @"..\artifacts\drivers\*.*"),
                     new Files(driversFeature, @".\igfilter\*.*")
                 ),
+                new Dir(driversFeature, ManifestsDir,
+                    new File(driversFeature, $@"..\driver\{EtwManifestName}")
+                ),
                 new File(driversFeature, "nefarius_DsHidMini_Updater.exe"),
                 new File(driversFeature, @"..\artifacts\bin\ControlApp.exe")
             ),
@@ -116,6 +121,39 @@ internal class InstallScript
                 When.After,
                 Step.InstallFiles,
                 Condition.NOT_Installed)
+            {
+                RefAssemblies = customActionAssemblies
+            },
+            // Rollback CAs must appear immediately before the deferred action they undo so
+            // MSI records them on the rollback script first. See Windows Installer
+            // "Installation Phases and In-Script Execution Options".
+            new ElevatedManagedAction(CustomActions.RollbackInstallManifest, Return.check,
+                When.After,
+                Step.InstallFiles,
+                Condition.NOT_Installed)
+            {
+                Execute = Execute.rollback,
+                RefAssemblies = customActionAssemblies
+            },
+            new ElevatedManagedAction(CustomActions.InstallManifest, Return.check,
+                When.After,
+                Step.InstallFiles,
+                Condition.NOT_Installed)
+            {
+                RefAssemblies = customActionAssemblies
+            },
+            new ElevatedManagedAction(CustomActions.RollbackUninstallManifest, Return.check,
+                When.Before,
+                Step.RemoveFiles,
+                new Condition("REMOVE=\"ALL\""))
+            {
+                Execute = Execute.rollback,
+                RefAssemblies = customActionAssemblies
+            },
+            new ElevatedManagedAction(CustomActions.UninstallManifest, Return.check,
+                When.Before,
+                Step.RemoveFiles,
+                new Condition("REMOVE=\"ALL\""))
             {
                 RefAssemblies = customActionAssemblies
             },
@@ -365,7 +403,8 @@ internal class InstallScript
             @"..\artifacts\bin\ControlApp.exe",
             @"nefcon\x64\nefconc.exe",
             @"nefcon\ARM64\nefconc.exe",
-            @"nefarius_DsHidMini_Updater.exe"
+            @"nefarius_DsHidMini_Updater.exe",
+            $@"..\driver\{EtwManifestName}"
         ];
 
         string[] missing = required.Where(path => !System.IO.File.Exists(path)).ToArray();
@@ -646,6 +685,78 @@ public static class CustomActions
         {
             return ActionResult.Success;
         }
+    }
+
+    /// <summary>
+    ///     Registers the DsHidMini ETW instrumentation manifest.
+    /// </summary>
+    /// <remarks>Requires elevated permissions.</remarks>
+    [CustomAction]
+    public static ActionResult InstallManifest(Session session)
+    {
+        DirectoryInfo installDir = new(session.Property("INSTALLDIR"));
+        string manifest = Path.Combine(installDir.FullName, InstallScript.ManifestsDir, InstallScript.EtwManifestName);
+
+        CommandResult? result = Cli.Wrap("wevtutil")
+            .WithArguments(builder => builder
+                .Add("im")
+                .Add(manifest)
+            )
+            .WithValidation(CommandResultValidation.None)
+            .ExecuteAsync()
+            .GetAwaiter()
+            .GetResult();
+
+        session.Log(
+            $"DsHidMini manifest import {(result.IsSuccess ? "succeeded" : "failed")}, " +
+            $"exit code: {result.ExitCode}");
+
+        return ActionResult.Success;
+    }
+
+    /// <summary>
+    ///     Rolls back <see cref="InstallManifest" /> by unregistering the ETW publisher.
+    /// </summary>
+    [CustomAction]
+    public static ActionResult RollbackInstallManifest(Session session)
+    {
+        return UninstallManifest(session);
+    }
+
+    /// <summary>
+    ///     Unregisters the DsHidMini ETW instrumentation manifest.
+    /// </summary>
+    /// <remarks>Requires elevated permissions.</remarks>
+    [CustomAction]
+    public static ActionResult UninstallManifest(Session session)
+    {
+        DirectoryInfo installDir = new(session.Property("INSTALLDIR"));
+        string manifest = Path.Combine(installDir.FullName, InstallScript.ManifestsDir, InstallScript.EtwManifestName);
+
+        CommandResult? result = Cli.Wrap("wevtutil")
+            .WithArguments(builder => builder
+                .Add("um")
+                .Add(manifest)
+            )
+            .WithValidation(CommandResultValidation.None)
+            .ExecuteAsync()
+            .GetAwaiter()
+            .GetResult();
+
+        session.Log(
+            $"DsHidMini manifest removal {(result.IsSuccess ? "succeeded" : "failed")}, " +
+            $"exit code: {result.ExitCode}");
+
+        return ActionResult.Success;
+    }
+
+    /// <summary>
+    ///     Rolls back <see cref="UninstallManifest" /> by re-registering the ETW publisher.
+    /// </summary>
+    [CustomAction]
+    public static ActionResult RollbackUninstallManifest(Session session)
+    {
+        return InstallManifest(session);
     }
 
     public static bool UninstallDrivers(Session session)
