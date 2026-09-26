@@ -234,6 +234,43 @@ public class BluetoothDiagnosticSessionTests
     }
 
     [Fact]
+    public async Task RunAsync_RetryAfterCaptureFault_DoesNotInheritPreviousFaultSignal()
+    {
+        (BluetoothDiagnosticSession session, FakePreflightProbe probe, FakeTraceCapture capture, _, _, _) =
+            CreateSession();
+
+        probe.Results =
+        [
+            new PreflightCheckResult(PreflightCheckId.BluetoothRadioOperable, true, "Bluetooth is on", "ok")
+        ];
+        probe.Candidate = null;
+        session.TryPairOverride = _ => Task.FromResult(true);
+        session.WirelessAttemptWait = TimeSpan.Zero;
+        capture.FaultAfterStop = new InvalidOperationException("pump died after stop");
+
+        await session.RunAsync();
+        Assert.Equal(BluetoothDiagnosticStage.Faulted, session.Stage);
+
+        capture.FaultAfterStop = null;
+        session.TryPairOverride = null;
+        session.WaitForUsbWhenMissing = true;
+        probe.Results =
+        [
+            new PreflightCheckResult(PreflightCheckId.UsbControllerPresent, false, "Controller is connected with USB",
+                "Connect the controller to this PC with a USB cable.")
+        ];
+
+        Task retry = session.RunAsync();
+        await WaitUntil(() => session.Stage == BluetoothDiagnosticStage.WaitingForUsb);
+
+        session.Cancel();
+        await retry.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(BluetoothDiagnosticStage.Cancelled, session.Stage);
+        Assert.Equal(1, capture.StartCount);
+    }
+
+    [Fact]
     public void Cancel_BeforeAnyRun_DoesNotThrow()
     {
         (BluetoothDiagnosticSession session, _, _, _, _, _) = CreateSession();
@@ -431,6 +468,38 @@ public class BluetoothDiagnosticSessionTests
 
         Assert.Equal(BluetoothDiagnosticStage.Cancelled, session.Stage);
         Assert.Null(session.Verdict);
+    }
+
+    [Fact]
+    public async Task RunAsync_WirelessDropsThenReturns_CountsAsReconnect()
+    {
+        (BluetoothDiagnosticSession session, FakePreflightProbe probe, _, FakeClassifier classifier, _,
+                DshmDevMan devMan) = CreateSession();
+
+        probe.Results =
+        [
+            new PreflightCheckResult(PreflightCheckId.BluetoothRadioOperable, true, "Bluetooth is on", "ok")
+        ];
+        probe.Candidate = null;
+        session.TryPairOverride = _ => Task.FromResult(true);
+        session.WirelessAttemptWait = TimeSpan.FromSeconds(30);
+        bool present = true;
+        session.WirelessReconnectObservedOverride = () => present;
+        classifier.NextResult = new DiagnosticVerdict(
+            DiagnosticVerdictCode.Inconclusive, DiagnosticConfidence.Low, "n/a", "n/a", "n/a", []);
+
+        Task run = session.RunAsync();
+        await WaitUntil(() => session.Stage == BluetoothDiagnosticStage.WaitingForWirelessAttempt);
+
+        present = false;
+        devMan.RefreshConnectedDevices();
+        present = true;
+        devMan.RefreshConnectedDevices();
+        await run.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(BluetoothDiagnosticStage.Completed, session.Stage);
+        Assert.Equal(DiagnosticVerdictCode.Success, session.Verdict!.Code);
+        Assert.Contains("reappeared over Bluetooth", session.Verdict.Explanation);
     }
 
     [Fact]

@@ -151,6 +151,7 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
         _usbArrivalSignal = null;
         _unplugSignal = null;
         _wirelessAttemptCompleteSignal = null;
+        _captureFaultSignal = null;
         _observedWirelessReconnect = false;
         _wirelessCandidateWasAbsent = false;
         _wirelessAttemptTimelineStart = 0;
@@ -323,7 +324,7 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
         {
             if (HasNonUsbPreflightFailure(PreflightResults))
             {
-                return WaitOutcome.Completed;
+                return CompletedUnlessCancelled(token);
             }
 
             // Assign the signal before the last eligibility check so an arrival in the gap
@@ -350,13 +351,18 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
             PreflightResults = _preflightProbe.Run();
         }
 
+        if (token.IsCancellationRequested)
+        {
+            return WaitOutcome.Cancelled;
+        }
+
         if (PreflightResults.Any(result => !result.Passed && result.Id == PreflightCheckId.UsbControllerPresent))
         {
             _devMan.RefreshConnectedDevices();
             PreflightResults = _preflightProbe.Run();
         }
 
-        return WaitOutcome.Completed;
+        return CompletedUnlessCancelled(token);
     }
 
     /// <summary>
@@ -399,11 +405,18 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
             return;
         }
 
-        if (fromDeviceListUpdate && IsCandidateWirelessReconnectObserved())
+        if (fromDeviceListUpdate)
         {
-            _observedWirelessReconnect = true;
-            signal.TrySetResult(true);
-            return;
+            if (!IsCandidateWirelessPresent())
+            {
+                _wirelessCandidateWasAbsent = true;
+            }
+            else if (IsCandidateWirelessReconnectObserved())
+            {
+                _observedWirelessReconnect = true;
+                signal.TrySetResult(true);
+                return;
+            }
         }
 
         if (TimelineShowsConclusiveSuccess())
@@ -496,6 +509,9 @@ public sealed partial class BluetoothDiagnosticSession : ObservableObject, IAsyn
 
     private static bool HasNonUsbPreflightFailure(IReadOnlyList<PreflightCheckResult> results) =>
         results.Any(result => !result.Passed && result.Id != PreflightCheckId.UsbControllerPresent);
+
+    private static WaitOutcome CompletedUnlessCancelled(CancellationToken token) =>
+        token.IsCancellationRequested ? WaitOutcome.Cancelled : WaitOutcome.Completed;
 
     private void ApplyIncompleteOutcome(WaitOutcome outcome)
     {
