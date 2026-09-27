@@ -45,10 +45,13 @@ public sealed partial class DsHidMiniInterop : IDisposable
     private MEMORY_MAPPED_VIEW_ADDRESS? _hidView;
     private MEMORY_MAPPED_VIEW_ADDRESS? _motionView;
     private readonly ReaderWriterLockSlim _motionViewLock = new();
+    private MEMORY_MAPPED_VIEW_ADDRESS? _metricsView;
+    private readonly ReaderWriterLockSlim _metricsViewLock = new();
 
     private readonly ConcurrentDictionary<int, EventWaitHandle> _inputReportWaitEvents = new();
     private readonly ConcurrentDictionary<int, int> _lastSeenSequences = new();
     private readonly ConcurrentDictionary<int, int> _lastSeenMotionSequences = new();
+    private readonly ConcurrentDictionary<int, int> _lastSeenMetricsSequences = new();
 
     private EventWaitHandle? _readEvent;
     private EventWaitHandle? _writeEvent;
@@ -122,6 +125,20 @@ public sealed partial class DsHidMiniInterop : IDisposable
         finally
         {
             _motionViewLock.ExitWriteLock();
+        }
+
+        _metricsViewLock.EnterWriteLock();
+        try
+        {
+            if (_metricsView.HasValue)
+            {
+                PInvoke.UnmapViewOfFile(_metricsView.Value);
+                _metricsView = null;
+            }
+        }
+        finally
+        {
+            _metricsViewLock.ExitWriteLock();
         }
 
         _fileMapping?.Dispose();
@@ -222,6 +239,29 @@ public sealed partial class DsHidMiniInterop : IDisposable
             finally
             {
                 _motionViewLock.ExitWriteLock();
+            }
+
+            //
+            // Optional fourth region at 3 * allocation granularity. Older
+            // drivers only expose three regions; MapViewOfFile then fails
+            // and GetInputReportMetrics returns false.
+            //
+            _metricsViewLock.EnterWriteLock();
+            try
+            {
+                MEMORY_MAPPED_VIEW_ADDRESS metricsView = PInvoke.MapViewOfFile(
+                    _fileMapping,
+                    FILE_MAP.FILE_MAP_READ,
+                    0,
+                    systemInfo.dwAllocationGranularity * 3,
+                    systemInfo.dwAllocationGranularity
+                );
+
+                _metricsView = IsNullMappedView(metricsView) ? null : metricsView;
+            }
+            finally
+            {
+                _metricsViewLock.ExitWriteLock();
             }
         }
         catch (FileNotFoundException)
@@ -366,6 +406,7 @@ public sealed partial class DsHidMiniInterop : IDisposable
         DisposeInputReportWaitHandles();
         _lastSeenSequences.Clear();
         _lastSeenMotionSequences.Clear();
+        _lastSeenMetricsSequences.Clear();
     }
 
     /// <summary>
@@ -384,6 +425,26 @@ public sealed partial class DsHidMiniInterop : IDisposable
             finally
             {
                 _motionViewLock.ExitReadLock();
+            }
+        }
+    }
+
+    /// <summary>
+    ///     <see langword="true" /> when this client mapped the driver's input
+    ///     report metrics region. Older drivers leave this <see langword="false" />.
+    /// </summary>
+    public bool HasInputReportMetrics
+    {
+        get
+        {
+            _metricsViewLock.EnterReadLock();
+            try
+            {
+                return _metricsView is { } view && !IsNullMappedView(view);
+            }
+            finally
+            {
+                _metricsViewLock.ExitReadLock();
             }
         }
     }

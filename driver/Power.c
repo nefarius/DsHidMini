@@ -134,6 +134,8 @@ DsHidMini_EvtDeviceReleaseHardware(
 		WdfTimerStop(pDevCtx->RumbleControlState.RumbleKeepAliveTimer, TRUE);
 	}
 
+	DsInputReportMetrics_Stop(pDevCtx, TRUE);
+
 	ThirdPartyHid_StopOutputStallProbe(pDevCtx, TRUE);
 
 	//
@@ -233,6 +235,8 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 	// 
 	pDevCtx->InputReportDropLogged = FALSE;
 
+	DsInputReportMetrics_D0Entry(pDevCtx);
+
 	//
 	// Re-arm the HID mode mismatch restart latch for this power cycle (see
 	// DMF_DsHidMini_Open, issue #374).
@@ -319,6 +323,8 @@ NTSTATUS DsHidMini_EvtDeviceD0Exit(
 	{
 		WdfTimerStop(pDevCtx->RumbleControlState.RumbleKeepAliveTimer, TRUE);
 	}
+
+	DsInputReportMetrics_Stop(pDevCtx, TRUE);
 
 	ThirdPartyHid_StopOutputStallProbe(pDevCtx, TRUE);
 

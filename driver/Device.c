@@ -252,6 +252,7 @@ void DsHidMini_DeviceCleanup(
 			}
 
 			DsMotion_PublishOrClearIpcSnapshot(deviceContext, TRUE);
+			DsInputReportMetrics_PublishOrClearIpcSnapshot(deviceContext, TRUE);
 		}
 		WdfWaitLockRelease(driverContext->IpcLock);
 
@@ -995,6 +996,11 @@ DsDevice_InitContext(
 				EventWriteFailedWithNTStatus(__FUNCTION__, L"WdfTimerCreate (OutputStallProbeTimer)", status);
 				break;
 			}
+		}
+
+		if (!NT_SUCCESS(status = DsInputReportMetrics_Create(Device)))
+		{
+			break;
 		}
 
 #pragma region IPC

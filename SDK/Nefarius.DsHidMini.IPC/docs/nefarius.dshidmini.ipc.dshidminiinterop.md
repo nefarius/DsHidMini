@@ -14,6 +14,19 @@ Attributes [NullableContextAttribute](https://learn.microsoft.com/dotnet/api/sys
 
 ## Properties
 
+### <a id="properties-hasinputreportmetrics"/>**HasInputReportMetrics**
+
+`true` when this client mapped the driver's input
+ report metrics region. Older drivers leave this `false`.
+
+```csharp
+public bool HasInputReportMetrics { get; }
+```
+
+#### Property Value
+
+[Boolean](https://learn.microsoft.com/dotnet/api/system.boolean)<br>
+
 ### <a id="properties-hasmotiontelemetry"/>**HasMotionTelemetry**
 
 `true` when this client mapped the driver's motion
@@ -97,6 +110,37 @@ The driver returned unexpected or malformed data.
 ```csharp
 public void Dispose()
 ```
+
+### <a id="methods-getinputreportmetrics"/>**GetInputReportMetrics(Int32, DsInputReportMetrics, Nullable&lt;TimeSpan&gt;)**
+
+Attempts to read the current [DsInputReportMetrics](./nefarius.dshidmini.ipc.models.public.dsinputreportmetrics.md) for a device slot.
+
+```csharp
+public bool GetInputReportMetrics(int deviceIndex, out DsInputReportMetrics metrics, Nullable<TimeSpan> timeout)
+```
+
+#### Parameters
+
+`deviceIndex` [Int32](https://learn.microsoft.com/dotnet/api/system.int32)<br>
+The one-based device index.
+
+`metrics` [DsInputReportMetrics](./nefarius.dshidmini.ipc.models.public.dsinputreportmetrics.md)<br>
+Receives a stable seqlock copy when the method returns true.
+
+`timeout` [Nullable](https://learn.microsoft.com/dotnet/api/system.nullable-1)<[TimeSpan](https://learn.microsoft.com/dotnet/api/system.timespan)><br>
+Optional timeout to wait for a snapshot update. Default invocation returns immediately.
+
+#### Returns
+
+TRUE if `metrics` was filled, FALSE if input-report
+ metrics are unavailable, the slot is empty, or a timeout expired.
+
+**Remarks:**
+
+When the connected driver has no metrics region (older builds), this
+ returns `false`. Check [DsHidMiniInterop.HasInputReportMetrics](./nefarius.dshidmini.ipc.dshidminiinterop.md#hasinputreportmetrics).
+ The snapshot is published about once a second; an immediate read
+ returns the last completed window.
 
 ### <a id="methods-getmotionsnapshot"/>**GetMotionSnapshot(Int32, ref DsMotionSnapshot, Nullable&lt;TimeSpan&gt;)**
 

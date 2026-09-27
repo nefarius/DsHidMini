@@ -101,3 +101,10 @@ DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RO_MotionCalibrationSource,
 // {3FECF510-CC94-4FBE-8839-738201F84D59}
 DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RO_OutputReportStatus,
 	0x3fecf510, 0xcc94, 0x4fbe, 0x88, 0x39, 0x73, 0x82, 0x1, 0xf8, 0x4d, 0x59, 15); // DEVPROP_TYPE_NTSTATUS
+
+// IPC input-report metrics ABI version (DS_INPUT_REPORT_METRICS_VERSION).
+// Advertises that a live 1 Hz snapshot is published in the fourth shared-
+// memory region. The rate and interval themselves are not written here.
+// {3FECF510-CC94-4FBE-8839-738201F84D59}
+DEFINE_DEVPROPKEY(DEVPKEY_DsHidMini_RO_InputReportMetricsVersion,
+	0x3fecf510, 0xcc94, 0x4fbe, 0x88, 0x39, 0x73, 0x82, 0x1, 0xf8, 0x4d, 0x59, 16); // DEVPROP_TYPE_UINT32

@@ -184,6 +184,7 @@ raw 64-byte blob plus the decoded fields as read-only device properties on
 | 11 | `DEVPKEY_DsHidMini_RO_IdentificationCloneHeuristic` | BOOLEAN |
 | 13 | `DEVPKEY_DsHidMini_RO_MotionCalibrationData` | BINARY 64 (Feature `0xEF` page `0xA0` reply) |
 | 14 | `DEVPKEY_DsHidMini_RO_MotionCalibrationSource` | BYTE (`None` / `LiveUsb` / `CachedFromUsb`) |
+| 16 | `DEVPKEY_DsHidMini_RO_InputReportMetricsVersion` | UINT32 capability (`1`); live Hz / interval live in IPC |
 
 Bluetooth is never queried for Feature `0x01` or `0xEF` - no known Bluetooth
 host does this (see [`PS3_USB_STARTUP.md`](PS3_USB_STARTUP.md#bluetooth-has-no-equivalent-read)).
@@ -412,7 +413,13 @@ What this set actually settles:
   orientation. A `zero == oneG` fallback therefore protects nobody here - the
   check that actually catches these pads is that the sensors never change.
 - **Report rate is a clone tell.** The genuine pads deliver ~101 reports/s; the
-  Fake DS3 delivers ~920/s (1846 reports in a 2 s window).
+  Fake DS3 delivers ~920/s (1846 reports in a 2 s window). The driver now
+  publishes this as a 1 Hz IPC snapshot (`DsInputReportMetrics`): reports per
+  second plus the average completion-to-completion interval. That interval is
+  host-side arrival spacing of USB interrupt completions or Bluetooth interrupt
+  packets, useful for transport cadence and jitter diagnosis. It is **not**
+  one-way packet latency; the controller does not stamp transmit time. The
+  matching device property is only the ABI version (PID 16), not the live Hz.
 
 ## Accelerometer calibration
 

@@ -18,6 +18,26 @@ public class MotionIpcLayoutTests
     }
 
     [Fact]
+    public void InputReportMetrics_IsTwentyEightBytes_VersionOne()
+    {
+        Assert.Equal(DsInputReportMetrics.Size, Marshal.SizeOf<DsInputReportMetrics>());
+        Assert.Equal(28, Marshal.SizeOf<DsInputReportMetrics>());
+        Assert.Equal((ushort)1, DsInputReportMetrics.CurrentVersion);
+        Assert.Equal(4, (int)Marshal.OffsetOf<DsInputReportMetrics>(nameof(DsInputReportMetrics.SequenceNumber)));
+        Assert.Equal(0, Marshal.SizeOf<DsInputReportMetrics>() % sizeof(int));
+    }
+
+    [Fact]
+    public void InputReportMetrics_FieldOffsets_MatchDriverPack1()
+    {
+        Assert.Equal(0, (int)Marshal.OffsetOf<DsInputReportMetrics>(nameof(DsInputReportMetrics.SlotIndex)));
+        Assert.Equal(8, (int)Marshal.OffsetOf<DsInputReportMetrics>(nameof(DsInputReportMetrics.Version)));
+        Assert.Equal(12, (int)Marshal.OffsetOf<DsInputReportMetrics>(nameof(DsInputReportMetrics.ReportRateHz)));
+        Assert.Equal(16, (int)Marshal.OffsetOf<DsInputReportMetrics>(nameof(DsInputReportMetrics.AverageIntervalUs)));
+        Assert.Equal(20, (int)Marshal.OffsetOf<DsInputReportMetrics>(nameof(DsInputReportMetrics.TimestampQpc)));
+    }
+
+    [Fact]
     public void MotionSnapshot_IsEightyBytes_VersionOne()
     {
         Assert.Equal(DsMotionSnapshot.Size, Marshal.SizeOf<DsMotionSnapshot>());

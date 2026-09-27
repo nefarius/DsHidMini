@@ -44,6 +44,8 @@
 
 - [Ds3PlayerLeds](./nefarius.dshidmini.ipc.models.public.ds3playerleds.md)
 
+- [DsInputReportMetrics](./nefarius.dshidmini.ipc.models.public.dsinputreportmetrics.md)
+
 - [DsMotionSnapshot](./nefarius.dshidmini.ipc.models.public.dsmotionsnapshot.md)
 
 - [DsMotionSnapshotFlags](./nefarius.dshidmini.ipc.models.public.dsmotionsnapshotflags.md)

@@ -57,6 +57,9 @@
     <ClInclude Include="DsIdentification.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DsInputReportMetrics.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="DsMotion.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -204,6 +207,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DsIdentification.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DsInputReportMetrics.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DsLed.c">
