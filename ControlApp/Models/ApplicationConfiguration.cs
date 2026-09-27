@@ -54,11 +54,20 @@ public class ApplicationConfiguration
     /// <summary>
     ///     Highest mandatory first-run setup version this installation has completed. <see langword="null" />
     ///     or a value below <see cref="Models.Onboarding.OnboardingCoordinator.CurrentOnboardingVersion" /> means
-    ///     the mandatory setup wizard must run again before the main window is shown. Never reset except by the
-    ///     user explicitly re-running setup, so it survives ControlApp updates that do not change the safety-
-    ///     critical setup steps.
+    ///     the first-run wizard must run again unless the user also skipped that version. Never reset except
+    ///     by the user explicitly re-running setup, so it survives ControlApp updates that do not change the
+    ///     safety-critical setup steps.
     /// </summary>
     public int? CompletedOnboardingVersion { get; set; }
+
+    /// <summary>
+    ///     Highest first-run setup version this installation skipped after accepting the
+    ///     unsupported-configuration warning. Distinct from <see cref="CompletedOnboardingVersion" />
+    ///     so skipped and verified installations can be told apart. A value at or above
+    ///     <see cref="Models.Onboarding.OnboardingCoordinator.CurrentOnboardingVersion" />
+    ///     also suppresses the wizard until setup is reset or the required version is bumped.
+    /// </summary>
+    public int? SkippedOnboardingVersion { get; set; }
 
     private bool _minimizeToTray;
 

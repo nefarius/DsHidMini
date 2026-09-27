@@ -94,7 +94,7 @@ public class ApplicationHostService : IHostedService
                 OnboardingWindow onboardingWindow = (OnboardingWindow)_serviceProvider.GetService(typeof(OnboardingWindow))!;
                 onboardingWindow.ShowDialog();
 
-                if (!_onboardingCoordinator.IsCompleted)
+                if (!_onboardingCoordinator.IsSatisfied)
                 {
                     // The onboarding window gates the entire startup; declining it (by any means)
                     // means the app should not proceed to the main window this launch.
