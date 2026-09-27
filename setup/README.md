@@ -19,8 +19,9 @@ framework-dependent win-x64 app and requires the **.NET 10 Desktop Runtime
 - The MSI product version stays `MAJOR.MINOR.PATCH` across re-spins.
 - The workflow creates the Git tag on the **setup source** commit (the branch
   or SHA you dispatched from). That can differ from the driver build commit.
-- GitHub Releases are **not** created automatically. Attach the signed MSI
-  when you publish the release by hand.
+- After the setup tag exists, CI opens a **draft** GitHub Release on that tag,
+  attaches the signed MSI, and fills in the notes. Review the draft, smoke-test
+  the MSI, then publish it. CI never alters an already-published release.
 
 ## How to run
 
@@ -32,15 +33,24 @@ framework-dependent win-x64 app and requires the **.NET 10 Desktop Runtime
    in-repo LFS payload (`nefcon`, updater, `igfilter`), then builds the
    setup from the dispatched ref.
 4. On success it uploads artifact `dshidmini-setup`, creates the reserved
-   `setup-v*` tag, then mirrors the artifact. A tag collision fails the run
-   without mirroring.
-5. Create the GitHub Release on that tag and attach the signed MSI.
+   `setup-v*` tag, opens a draft GitHub Release with the signed MSI, then
+   mirrors the artifact. A tag collision fails the run without mirroring.
+5. Review the draft notes, smoke-test the MSI, then publish the GitHub Release.
+   If the draft job failed, create the release by hand from the artifact:
+
+   ```powershell
+   gh release create setup-v3.6.0 `
+     --title "DsHidMini Driver v3.6.0" `
+     --notes-file path\to\notes.md `
+     .\Nefarius_DsHidMini_Drivers_x64_arm64_v3.6.0.msi
+   ```
 
 ## Outputs
 
 - Actions artifact `dshidmini-setup` (signed MSI plus `setup-metadata.json`)
 - Build-mirror copy of the same artifact
 - Git tag `setup-vMAJOR.MINOR.PATCH` or `setup-vMAJOR.MINOR.PATCH-rN`
+- Draft GitHub Release on that tag (signed MSI plus generated notes)
 
 `setup-metadata.json` records the driver tag, setup tag, driver and setup
 commits, source run IDs, and the MSI SHA-256.
@@ -56,8 +66,17 @@ Tagged driver builds and setup signing need:
 - `SDCM_PROFILES__DEFAULT__CLIENTID` (secret; Partner Center)
 - `SDCM_PROFILES__DEFAULT__KEY` (secret; Partner Center)
 
-The setup workflow grants `contents: write` only to the tag job. It never
-creates or updates a GitHub Release.
+Draft release notes also require GitHub Copilot CLI billed to the organization
+so the setup workflow can use `GITHUB_TOKEN` with `copilot-requests: write`.
+
+The setup workflow grants `contents: write` to the tag job and the draft-release
+job. The draft-release job also needs `copilot-requests: write` so Highlights
+can be generated with the GitHub Copilot CLI (`GITHUB_TOKEN`). The organization
+must allow Copilot CLI billed to the organization; otherwise that job fails and
+the MSI/tag still remain for a manual release.
+
+Rerunning the draft-release job updates an existing draft and replaces its MSI.
+It refuses to change a release that has already been published.
 
 Do not re-sign Microsoft-attested driver binaries. Attestation adds the
 Microsoft signature; appending another publisher signature is incorrect.

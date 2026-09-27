@@ -1,6 +1,6 @@
 # DsHidMini tagged driver release
 
-This is the maintainer and agent runbook for producing a production MSI. Tagged CI EV-signs the combined CAB, submits it to Partner Center, waits for attestation, and stages the Microsoft-signed drivers. Dispatch **Build setup** to embed those artifacts, sign the MSI, and create the `setup-v*` tag. GitHub Release creation remains manual.
+This is the maintainer and agent runbook for producing a production MSI. Tagged CI EV-signs the combined CAB, submits it to Partner Center, waits for attestation, and stages the Microsoft-signed drivers. Dispatch **Build setup** to embed those artifacts, sign the MSI, create the `setup-v*` tag, and open a draft GitHub Release for review.
 
 Do not use Visual Studio to emit the MSI, and do not mix artifacts from different GitHub Actions runs.
 
@@ -37,6 +37,9 @@ GitHub Actions secrets/variables used by tagged runs and the setup workflow:
 - `SDCM_PROFILES__DEFAULT__TENANTID` (secret; Partner Center Entra tenant)
 - `SDCM_PROFILES__DEFAULT__CLIENTID` (secret; Partner Center app)
 - `SDCM_PROFILES__DEFAULT__KEY` (secret; Partner Center API key)
+
+Draft release notes use the GitHub Copilot CLI with `GITHUB_TOKEN`. The
+organization must allow Copilot CLI billed to the organization.
 
 ## CI jobs and artifacts
 
@@ -163,7 +166,7 @@ Restart point: rerun with the same or a corrected package; `artifacts/drivers` i
 
 ### 5. Build and sign the MSI
 
-Dispatch **Build setup** (`setup.yml`) with `driver-tag` set to the same `vMAJOR.MINOR.PATCH` used in step 1. The workflow resolves the matching Build and Partner Center runs, stages attested drivers and ControlApp, packages the in-repo LFS payload (`nefcon`, updater, `igfilter`), pins WiX 4.0.6, builds the MSI, SignRelay-signs it, uploads `dshidmini-setup`, creates `setup-vMAJOR.MINOR.PATCH` (or `-rN` on a re-spin), then mirrors the artifact.
+Dispatch **Build setup** (`setup.yml`) with `driver-tag` set to the same `vMAJOR.MINOR.PATCH` used in step 1. The workflow resolves the matching Build and Partner Center runs, stages attested drivers and ControlApp, packages the in-repo LFS payload (`nefcon`, updater, `igfilter`), pins WiX 4.0.6, builds the MSI, SignRelay-signs it, uploads `dshidmini-setup`, creates `setup-vMAJOR.MINOR.PATCH` (or `-rN` on a re-spin), opens a draft GitHub Release, then mirrors the artifact.
 
 A dispatch whose three-part version is lower than any already-published `setup-v*` tag fails the regression guard. Windows Installer would otherwise treat the MSI as a downgrade.
 
@@ -174,7 +177,11 @@ Clean-VM smoke checks before publishing:
 
 ### 6. Publish
 
-Download the signed MSI from the `dshidmini-setup` Actions artifact (or the buildbot mirror) and create the GitHub Release on the tag the workflow created:
+The setup workflow opens a **draft** GitHub Release on the `setup-v*` tag it created, attaches the signed MSI, and fills in the notes (fixed product text, Copilot Highlights, and GitHub's What's Changed list). Review the draft, run the clean-VM smoke checks above, then publish the release in the GitHub UI.
+
+Rerunning the draft-release job updates that draft and replaces its MSI. It refuses to change a release that has already been published.
+
+The draft job needs organization Copilot CLI billed to the organization plus `copilot-requests: write`. If Copilot is unavailable, the tag and `dshidmini-setup` artifact still exist; create the release by hand:
 
 ```powershell
 gh release create setup-v3.6.0 `
@@ -183,7 +190,7 @@ gh release create setup-v3.6.0 `
   .\Nefarius_DsHidMini_Drivers_x64_arm64_v3.6.0.msi
 ```
 
-`setup-v*` does not trigger the Build workflow. That is intentional. The setup workflow does not create the GitHub Release.
+`setup-v*` does not trigger the Build workflow. That is intentional.
 
 ## Do not
 
