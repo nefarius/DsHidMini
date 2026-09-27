@@ -319,7 +319,77 @@ jobs:
 
           $summary = @(
             "Created ``$tag`` at ``$($env:SETUP_COMMIT)`` for driver ``$($env:DRIVER_TAG)``"
-            "- GitHub Release creation remains manual."
+            "- Draft GitHub Release is created by the next job."
+          ) -join [Environment]::NewLine
+          $summary >> $env:GITHUB_STEP_SUMMARY
+          Write-Output $summary
+
+  draft-release:
+    name: 'Create draft release'
+    needs: [resolve, build, tag]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+      copilot-requests: write
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            build
+            .github
+
+      - name: 'Download setup artifact'
+        uses: actions/download-artifact@v7
+        with:
+          name: dshidmini-setup
+          path: setup-artifact
+
+      - name: 'Install Copilot CLI'
+        run: npm install -g @github/copilot@1.0.88
+
+      - name: 'Generate notes and open draft release'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . ./build/SetupRelease.ps1
+          . ./build/ReleaseNotes.ps1
+
+          $repo = '${{ github.repository }}'
+          $artifact = Assert-DsHidMiniSetupReleaseArtifact `
+            -Metadata (Read-DsHidMiniSetupMetadataFile -Path 'setup-artifact') `
+            -ArtifactDirectory (Join-Path $pwd 'setup-artifact')
+
+          if ($artifact.SetupTag -ne '${{ needs.resolve.outputs.setup-tag }}') {
+            throw "setup-metadata.json tag '$($artifact.SetupTag)' does not match reserved tag '${{ needs.resolve.outputs.setup-tag }}'."
+          }
+
+          $notes = New-DsHidMiniReleaseNotes `
+            -SetupVersion $artifact.SetupVersion `
+            -SetupTag $artifact.SetupTag `
+            -Repository $repo `
+            -TemplatePath (Join-Path $pwd '.github/release-notes.md')
+          $notesPath = Join-Path $pwd 'release-notes.md'
+          Export-DsHidMiniReleaseNotes -Path $notesPath -Body $notes.Body
+
+          $action = Publish-DsHidMiniDraftRelease `
+            -Repository $repo `
+            -Tag $artifact.SetupTag `
+            -Title $notes.Title `
+            -NotesPath $notesPath `
+            -MsiPath $artifact.MsiPath
+
+          $summary = @(
+            "Draft release ``$($artifact.SetupTag)`` ($action)"
+            "- Title: $($notes.Title)"
+            "- Previous setup tag: $(if ($notes.PreviousSetupTag) { $notes.PreviousSetupTag } else { '(none)' })"
+            "- MSI: ``$($artifact.MsiName)``"
+            "- Review the draft, smoke-test the MSI, then publish the GitHub Release."
           ) -join [Environment]::NewLine
           $summary >> $env:GITHUB_STEP_SUMMARY
           Write-Output $summary

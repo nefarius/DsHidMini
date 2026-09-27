@@ -125,8 +125,8 @@ partial class Build
         });
 
     /// <summary>
-    /// Runs non-production release-pipeline checks: version parsing, staging fixtures, and the
-    /// offline Partner Center signing dry run against a mock sdcm.
+    /// Runs non-production release-pipeline checks: version parsing, staging fixtures,
+    /// release-notes generation, and the offline Partner Center signing dry run against a mock sdcm.
     /// </summary>
     [UsedImplicitly]
     public Target TestReleasePipeline => _ => _
@@ -139,7 +139,8 @@ partial class Build
             foreach (string testFile in new[]
                      {
                          "ReleaseVersion.Tests.ps1", "PartnerSigning.Tests.ps1",
-                         "PartnerSigning.DryRun.ps1", "SetupRelease.Tests.ps1"
+                         "PartnerSigning.DryRun.ps1", "SetupRelease.Tests.ps1",
+                         "ReleaseNotes.Tests.ps1"
                      })
             {
                 AbsolutePath tests = RootDirectory / "build" / testFile;
