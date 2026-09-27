@@ -110,6 +110,15 @@ Assert-Throws { Assert-DsHidMiniHighlightsMarkdown -Highlights "- Fine`n`n## Ext
 Assert-Throws { Assert-DsHidMiniHighlightsMarkdown -Highlights '- {{HIGHLIGHTS}}' } 'placeholder injection rejected'
 Assert-Throws { Assert-DsHidMiniHighlightsMarkdown -Highlights '- <script>alert(1)</script>' } 'html injection rejected'
 
+$draftView = ConvertFrom-DsHidMiniGitHubReleaseView -ExitCode 0 -Stdout '{"isDraft":true,"tagName":"setup-v3.2.0","name":"DsHidMini Driver v3.2.0"}' -Stderr ''
+Assert-True ([bool]$draftView.isDraft) 'release view JSON exposes isDraft'
+Assert-Equal $draftView.tagName 'setup-v3.2.0' 'release view JSON exposes tagName'
+Assert-Equal (ConvertFrom-DsHidMiniGitHubReleaseView -ExitCode 1 -Stdout '' -Stderr 'release not found') $null 'missing release is null'
+Assert-Equal (ConvertFrom-DsHidMiniGitHubReleaseView -ExitCode 1 -Stdout '' -Stderr 'HTTP 404: Not Found') $null 'HTTP 404 is treated as missing'
+Assert-Throws { ConvertFrom-DsHidMiniGitHubReleaseView -ExitCode 1 -Stdout '' -Stderr 'HTTP 401: Bad credentials' } 'auth failure is not treated as missing'
+Assert-Throws { ConvertFrom-DsHidMiniGitHubReleaseView -ExitCode 1 -Stdout '' -Stderr 'dial tcp: lookup api.github.com' } 'network failure is not treated as missing'
+Assert-Throws { ConvertFrom-DsHidMiniGitHubReleaseView -ExitCode 0 -Stdout '' -Stderr '' } 'empty successful view is rejected'
+
 Assert-Equal (Resolve-DsHidMiniDraftReleaseAction -ExistingRelease $null) 'create' 'missing release creates draft'
 Assert-Equal (Resolve-DsHidMiniDraftReleaseAction -ExistingRelease ([pscustomobject]@{ draft = $true; tag_name = 'setup-v3.2.0' })) 'update' 'draft is updated'
 Assert-Equal (Resolve-DsHidMiniDraftReleaseAction -ExistingRelease ([pscustomobject]@{ isDraft = $true })) 'update' 'isDraft alias is accepted'

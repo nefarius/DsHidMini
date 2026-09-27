@@ -339,7 +339,7 @@ jobs:
           persist-credentials: false
           sparse-checkout: |
             build
-            .github/release-notes.md
+            .github
 
       - name: 'Download setup artifact'
         uses: actions/download-artifact@v7

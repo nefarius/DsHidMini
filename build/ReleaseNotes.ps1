@@ -299,15 +299,21 @@ function Invoke-DsHidMiniCopilotHighlights {
             '--deny-tool=github'
         )
 
-        $output = & $CopilotCommand @args 2>&1
+        $stderrPath = Join-Path $tempRoot 'copilot.err'
+        $stdout = & $CopilotCommand @args 2>$stderrPath
         $exitCode = $LASTEXITCODE
-        $text = ($output | ForEach-Object { "$_" }) -join "`n"
+        $text = if ($null -eq $stdout) { '' } else { (@($stdout) | ForEach-Object { "$_" }) -join "`n" }
         [IO.File]::WriteAllText($outputPath, $text, [Text.UTF8Encoding]::new($false))
         if ($exitCode) {
+            $stderr = ''
+            if (Test-Path -LiteralPath $stderrPath) {
+                $stderr = [IO.File]::ReadAllText($stderrPath).Trim()
+            }
+
             throw @(
                 "Copilot CLI failed with exit code $exitCode."
                 'Enable GitHub Copilot CLI billed to the organization and grant this job copilot-requests: write.'
-                $text
+                $stderr
             ) -join ' '
         }
 
@@ -425,6 +431,35 @@ function Resolve-DsHidMiniDraftReleaseAction {
     return 'update'
 }
 
+function ConvertFrom-DsHidMiniGitHubReleaseView {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [int] $ExitCode,
+
+        [AllowEmptyString()]
+        [string] $Stdout,
+
+        [AllowEmptyString()]
+        [string] $Stderr
+    )
+
+    if ($ExitCode -eq 0) {
+        if ([string]::IsNullOrWhiteSpace($Stdout)) {
+            throw 'GitHub Release view succeeded but returned no JSON.'
+        }
+
+        return $Stdout | ConvertFrom-Json
+    }
+
+    if ($Stderr -match '(?i)release not found|HTTP\s+404\b') {
+        return $null
+    }
+
+    $detail = if ([string]::IsNullOrWhiteSpace($Stderr)) { "exit code $ExitCode" } else { $Stderr.Trim() }
+    throw "Failed to look up GitHub Release: $detail"
+}
+
 function Get-DsHidMiniExistingGitHubRelease {
     [CmdletBinding()]
     param(
@@ -438,12 +473,20 @@ function Get-DsHidMiniExistingGitHubRelease {
     $previous = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
     try {
-        $response = gh api "repos/$Repository/releases/tags/$Tag" 2>$null
-        if ($LASTEXITCODE) {
-            return $null
-        }
+        $stderrPath = Join-Path ([IO.Path]::GetTempPath()) ("dshidmini-release-view-" + [guid]::NewGuid().ToString('N') + '.txt')
+        try {
+            $stdout = & gh release view $Tag --repo $Repository --json isDraft,tagName,name 2>$stderrPath
+            $exitCode = $LASTEXITCODE
+            $stderr = ''
+            if (Test-Path -LiteralPath $stderrPath) {
+                $stderr = [IO.File]::ReadAllText($stderrPath)
+            }
 
-        return $response | ConvertFrom-Json
+            return ConvertFrom-DsHidMiniGitHubReleaseView -ExitCode $exitCode -Stdout "$stdout" -Stderr $stderr
+        }
+        finally {
+            Remove-Item -LiteralPath $stderrPath -Force -ErrorAction SilentlyContinue
+        }
     }
     finally {
         $ErrorActionPreference = $previous
