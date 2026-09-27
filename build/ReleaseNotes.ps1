@@ -300,8 +300,16 @@ function Invoke-DsHidMiniCopilotHighlights {
         )
 
         $stderrPath = Join-Path $tempRoot 'copilot.err'
-        $stdout = & $CopilotCommand @args 2>$stderrPath
-        $exitCode = $LASTEXITCODE
+        $previous = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        try {
+            $stdout = & $CopilotCommand @args 2>$stderrPath
+            $exitCode = $LASTEXITCODE
+        }
+        finally {
+            $ErrorActionPreference = $previous
+        }
+
         $text = if ($null -eq $stdout) { '' } else { (@($stdout) | ForEach-Object { "$_" }) -join "`n" }
         [IO.File]::WriteAllText($outputPath, $text, [Text.UTF8Encoding]::new($false))
         if ($exitCode) {
