@@ -11,10 +11,11 @@ using Nefarius.DsHidMini.ControlApp.Models.Onboarding;
 namespace Nefarius.DsHidMini.ControlApp.ViewModels.Windows;
 
 /// <summary>
-///     Drives the mandatory first-run setup window. Reuses the same
+///     Drives the first-run setup window. Reuses the same
 ///     <see cref="BluetoothDiagnosticSession" /> pair/unplug/connect sequence as the guided
-///     diagnostic, framed as a one-time setup instead of troubleshooting, with no way to skip
-///     ahead: the only exits are finishing successfully or closing the application.
+///     diagnostic, framed as a one-time setup instead of troubleshooting. The user may
+///     finish successfully, skip after accepting the unsupported-configuration warning,
+///     or close the application.
 /// </summary>
 public sealed partial class OnboardingViewModel : ObservableObject, IDisposable
 {
@@ -23,6 +24,8 @@ public sealed partial class OnboardingViewModel : ObservableObject, IDisposable
     private readonly BluetoothDiagnosticSession _session;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanSkip))]
+    [NotifyCanExecuteChangedFor(nameof(SkipCommand))]
     private bool _isBusy;
 
     [ObservableProperty]
@@ -55,8 +58,10 @@ public sealed partial class OnboardingViewModel : ObservableObject, IDisposable
 
     public bool NeedsElevation => !SecurityUtil.IsElevated;
 
+    public bool CanSkip => !IsBusy;
+
     /// <summary>
-    ///     Raised once <see cref="FinishCommand" /> has recorded completion. The window should close
+    ///     Raised once setup has been recorded as completed or skipped. The window should close
     ///     itself and let normal startup continue.
     /// </summary>
     public event EventHandler? SetupCompleted;
@@ -137,6 +142,13 @@ public sealed partial class OnboardingViewModel : ObservableObject, IDisposable
         }
 
         _coordinator.MarkCompleted();
+        SetupCompleted?.Invoke(this, EventArgs.Empty);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanSkip))]
+    private void Skip()
+    {
+        _coordinator.MarkSkipped();
         SetupCompleted?.Invoke(this, EventArgs.Empty);
     }
 

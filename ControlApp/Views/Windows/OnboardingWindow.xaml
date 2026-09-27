@@ -24,11 +24,12 @@
         <helpers:BooleanToGlyphConverter x:Key="BooleanToGlyphConverter" />
         <helpers:DiagnosticStageToSeverityConverter x:Key="DiagnosticStageToSeverityConverter" />
     </ui:FluentWindow.Resources>
-    <DockPanel>
-        <ui:TitleBar
-            Title="{Binding Title}"
-            DockPanel.Dock="Top" />
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <Grid>
+        <DockPanel>
+            <ui:TitleBar
+                Title="{Binding Title}"
+                DockPanel.Dock="Top" />
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
             <Grid Margin="20">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -149,11 +150,18 @@
                             Content="Finish setup"
                             IsEnabled="{Binding IsSuccessful}" />
                         <ui:Button
+                            Margin="0,0,8,0"
+                            Click="SkipSetup_OnClick"
+                            Content="Skip setup"
+                            IsEnabled="{Binding CanSkip}" />
+                        <ui:Button
                             Click="ExitApplication_OnClick"
                             Content="Exit DsHidMini ControlApp" />
                     </StackPanel>
                 </StackPanel>
             </Grid>
-        </ScrollViewer>
-    </DockPanel>
+            </ScrollViewer>
+        </DockPanel>
+        <ui:ContentDialogHost x:Name="RootContentDialog" />
+    </Grid>
 </ui:FluentWindow>
