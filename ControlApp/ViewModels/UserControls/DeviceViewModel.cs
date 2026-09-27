@@ -908,6 +908,11 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     {
         lock (_inputReportMetricsLock)
         {
+            if (Volatile.Read(ref _inputReportMetricsDisposed) != 0)
+            {
+                throw new ObjectDisposedException(nameof(DeviceViewModel));
+            }
+
             return _inputReportMetricsInterop ??= new DsHidMiniInterop();
         }
     }
