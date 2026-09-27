@@ -174,6 +174,21 @@ public static DevicePropertyKey IdentificationPadTypeProperty { get; }
 
 DevicePropertyKey<br>
 
+### <a id="properties-inputreportmetricsversionproperty"/>**InputReportMetricsVersionProperty**
+
+IPC input-report metrics ABI version (`DS_INPUT_REPORT_METRICS_VERSION`,
+ currently `1`). Advertises that a live 1 Hz snapshot is published
+ in the fourth shared-memory region. The rate and interval themselves
+ are not written to this property. Absent on older drivers.
+
+```csharp
+public static DevicePropertyKey InputReportMetricsVersionProperty { get; }
+```
+
+#### Property Value
+
+DevicePropertyKey<br>
+
 ### <a id="properties-ipcslotindexproperty"/>**IpcSlotIndexProperty**
 
 One-based driver IPC slot index (`deviceIndex` for shared memory, per-slot events, and IPC `TargetIndex`).

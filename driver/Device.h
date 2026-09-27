@@ -2,6 +2,7 @@
 #include <DmfModule.h>
 #include "DsIdentification.h"
 #include "DsMotion.h"
+#include "DsInputReportMetrics.h"
 
 
 EXTERN_C_START
@@ -368,6 +369,13 @@ typedef struct _DEVICE_CONTEXT
 	// may replace them from EEPROM page 0xA0. See docs/MOTION.md and issue #217.
 	// 
 	DS_MOTION_STATE Motion;
+
+	//
+	// 1 Hz input-report arrival metrics (USB interrupt URB / BT interrupt
+	// packet completions). Live values are published via IPC, not as a
+	// changing device property.
+	//
+	DS_INPUT_REPORT_METRICS_STATE InputReportMetrics;
 
 	//
 	// Current reported battery status

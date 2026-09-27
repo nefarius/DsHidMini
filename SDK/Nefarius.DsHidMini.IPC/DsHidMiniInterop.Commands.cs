@@ -249,6 +249,148 @@ public partial class DsHidMiniInterop
     }
 
     /// <summary>
+    ///     Attempts to read the current <see cref="DsInputReportMetrics" /> for a device slot.
+    /// </summary>
+    /// <remarks>
+    ///     When the connected driver has no metrics region (older builds), this
+    ///     returns <see langword="false" />. Check <see cref="HasInputReportMetrics" />.
+    ///     The snapshot is published about once a second; an immediate read
+    ///     returns the last completed window.
+    /// </remarks>
+    /// <param name="deviceIndex">The one-based device index.</param>
+    /// <param name="metrics">Receives a stable seqlock copy when the method returns true.</param>
+    /// <param name="timeout">Optional timeout to wait for a snapshot update. Default invocation returns immediately.</param>
+    /// <returns>
+    ///     TRUE if <paramref name="metrics" /> was filled, FALSE if input-report
+    ///     metrics are unavailable, the slot is empty, or a timeout expired.
+    /// </returns>
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
+    public unsafe bool GetInputReportMetrics(int deviceIndex, out DsInputReportMetrics metrics, TimeSpan? timeout = null)
+    {
+        metrics = default;
+        _metricsViewLock.EnterReadLock();
+        try
+        {
+            if (_metricsView is null || IsNullMappedView(_metricsView))
+            {
+                return false;
+            }
+
+            ValidateDeviceIndex(deviceIndex);
+
+            nuint byteOffset = (nuint)((deviceIndex - 1) * Marshal.SizeOf<DsInputReportMetrics>());
+            void* pMessage = (byte*)_metricsView.Value + byteOffset;
+            ref DsInputReportMetrics message = ref Unsafe.AsRef<DsInputReportMetrics>(pMessage);
+
+            if (timeout.HasValue)
+            {
+                EventWaitHandle waitEvent;
+                try
+                {
+                    waitEvent = GetOrOpenHidReportWaitEvent(deviceIndex);
+                }
+                catch (WaitHandleCannotBeOpenedException)
+                {
+                    return false;
+                }
+
+                Stopwatch waitClock = Stopwatch.StartNew();
+                TimeSpan waitBudget = timeout.Value < TimeSpan.Zero ? TimeSpan.Zero : timeout.Value;
+                while (true)
+                {
+                    int sequence = Volatile.Read(ref message.SequenceNumber);
+                    if ((sequence & 1) == 0
+                        && sequence != 0
+                        && (!_lastSeenMetricsSequences.TryGetValue(deviceIndex, out int lastSeen) || sequence != lastSeen))
+                    {
+                        return TryCopyInputReportMetrics(deviceIndex, ref message, waitBudget - waitClock.Elapsed, out metrics);
+                    }
+
+                    if (message.SlotIndex == 0)
+                    {
+                        return false;
+                    }
+
+                    TimeSpan waitRemaining = waitBudget - waitClock.Elapsed;
+                    if (waitRemaining <= TimeSpan.Zero)
+                    {
+                        return false;
+                    }
+
+                    if ((sequence & 1) == 0
+                        && _lastSeenMetricsSequences.TryGetValue(deviceIndex, out lastSeen)
+                        && sequence == lastSeen)
+                    {
+                        Thread.Sleep((int)Math.Min(waitRemaining.TotalMilliseconds, 1));
+                    }
+                    else
+                    {
+                        waitEvent.WaitOne(waitRemaining);
+                    }
+                }
+            }
+
+            return TryCopyInputReportMetrics(deviceIndex, ref message, timeout: null, out metrics);
+        }
+        finally
+        {
+            _metricsViewLock.ExitReadLock();
+        }
+    }
+
+    private bool TryCopyInputReportMetrics(
+        int deviceIndex,
+        ref DsInputReportMetrics message,
+        TimeSpan? timeout,
+        out DsInputReportMetrics metrics
+    )
+    {
+        Stopwatch? copyClock = timeout.HasValue ? Stopwatch.StartNew() : null;
+        TimeSpan copyBudget = timeout.GetValueOrDefault();
+        bool allowOneAttempt = timeout.HasValue && copyBudget <= TimeSpan.Zero;
+
+        while (true)
+        {
+            if (copyClock is not null && !allowOneAttempt && copyClock.Elapsed >= copyBudget)
+            {
+                metrics = default;
+                return false;
+            }
+
+            allowOneAttempt = false;
+
+            int first = Volatile.Read(ref message.SequenceNumber);
+            if ((first & 1) != 0)
+            {
+                Thread.Yield();
+                continue;
+            }
+
+            if (message.SlotIndex == 0)
+            {
+                metrics = default;
+                return false;
+            }
+
+            if (message.SlotIndex != deviceIndex)
+            {
+                throw new DsHidMiniInteropUnexpectedReplyException();
+            }
+
+            DsInputReportMetrics copy = message;
+            int second = Volatile.Read(ref message.SequenceNumber);
+            if (first != second)
+            {
+                continue;
+            }
+
+            metrics = copy;
+            _lastSeenMetricsSequences[deviceIndex] = first;
+            return true;
+        }
+    }
+
+    /// <summary>
     ///     Copies a stable HID slot snapshot using the driver seqlock.
     /// </summary>
     private bool TryCopyRawInputReport(

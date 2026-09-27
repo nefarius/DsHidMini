@@ -181,6 +181,31 @@
                                 DockPanel.Dock="Right"
                                 Text="{Binding BatteryStatusInText}" />
                         </DockPanel>
+                        <!--  Input report arrival cadence from driver IPC  -->
+                        <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                            <ui:TextBlock
+                                DockPanel.Dock="Left"
+                                Style="{StaticResource MyKey_InfoDescriptionTextbox}"
+                                Text="Input report rate:" />
+                            <ui:TextBlock
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                DockPanel.Dock="Right"
+                                Text="{Binding InputReportRateDisplay}"
+                                ToolTip="{Binding InputReportRateToolTip}" />
+                        </DockPanel>
+                        <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                            <ui:TextBlock
+                                DockPanel.Dock="Left"
+                                Style="{StaticResource MyKey_InfoDescriptionTextbox}"
+                                Text="Average report interval:" />
+                            <ui:TextBlock
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                DockPanel.Dock="Right"
+                                Text="{Binding AverageReportIntervalDisplay}"
+                                ToolTip="{Binding AverageReportIntervalToolTip}" />
+                        </DockPanel>
                         <!--  Authenticity approximations: sourced-chip OUI and Feature 0x01, shown independently  -->
                         <ui:InfoBar
                             Title="Authenticity checks (best effort)"

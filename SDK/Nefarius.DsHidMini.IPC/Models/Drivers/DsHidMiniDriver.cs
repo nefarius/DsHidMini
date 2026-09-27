@@ -123,6 +123,16 @@ public static class DsHidMiniDriver
         Guid.Parse("{3FECF510-CC94-4FBE-8839-738201F84D59}"), 15,
         typeof(int));
 
+    /// <summary>
+    ///     IPC input-report metrics ABI version (<c>DS_INPUT_REPORT_METRICS_VERSION</c>,
+    ///     currently <c>1</c>). Advertises that a live 1 Hz snapshot is published
+    ///     in the fourth shared-memory region. The rate and interval themselves
+    ///     are not written to this property. Absent on older drivers.
+    /// </summary>
+    public static DevicePropertyKey InputReportMetricsVersionProperty => CustomDeviceProperty.CreateCustomDeviceProperty(
+        Guid.Parse("{3FECF510-CC94-4FBE-8839-738201F84D59}"), 16,
+        typeof(uint));
+
     #endregion
 
     #region Common device properties

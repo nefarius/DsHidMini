@@ -865,6 +865,8 @@ VOID DsUsb_EvtUsbInterruptPipeReadComplete(
 		}
 	}
 
+	DsInputReportMetrics_NoteArrival(pDevCtx);
+
 	QueryPerformanceFrequency(&freq);
 	LARGE_INTEGER* t1 = &pDevCtx->Connection.Usb.ChargingCycleTimestamp;
 
@@ -1032,6 +1034,8 @@ DsBth_HidInterruptReadContinuousRequestCompleted(
 	{
 		return ContinuousRequestTarget_BufferDisposition_ContinuousRequestTargetAndContinueStreaming;
 	}
+
+	DsInputReportMetrics_NoteArrival(pDevCtx);
 
 	//
 	// Skip to report ID

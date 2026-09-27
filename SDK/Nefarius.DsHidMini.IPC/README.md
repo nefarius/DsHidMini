@@ -129,8 +129,10 @@ if (gotReport)
 | **`void Dispose()`** | Releases mapped views, file mapping, and events. Implement `IDisposable` and dispose when done. |
 | **`void Reconnect()`** | Re-opens the required command mutex, read/write events, and shared-memory mapping (e.g. after all devices were removed). Throws `DsHidMiniInteropUnavailableException` if any required object is unavailable. |
 | **`bool HasMotionTelemetry`** | `true` when this client mapped the driver’s motion region. `false` on older drivers. |
+| **`bool HasInputReportMetrics`** | `true` when this client mapped the driver’s input-report metrics region. `false` on older drivers. |
 | **`bool GetRawInputReport(int deviceIndex, ref DS3_RAW_INPUT_REPORT report, TimeSpan? timeout)`** | Fills `report` with the last or next raw HID report. Use `timeout: null` for immediate read; use e.g. `TimeSpan.FromMilliseconds(20)` for event-based waiting on the driver’s named per-slot manual-reset event (`Global\DsHidMiniHidReportEvent` + index). Multiple clients can wait on the same slot. Returns `false` if the slot is empty, or if a timeout was requested and no wait object exists for that slot (nothing connected there). |
 | **`bool GetMotionSnapshot(int deviceIndex, out DsMotionSnapshot snapshot, TimeSpan? timeout)`** | Fills `snapshot` with the last or next seqlock-protected motion telemetry. Uses the same per-slot wait event as `GetRawInputReport`. Returns `false` when the driver has no motion region, the slot is empty, or a timeout expires. |
+| **`bool GetInputReportMetrics(int deviceIndex, out DsInputReportMetrics metrics, TimeSpan? timeout)`** | Fills `metrics` with the last 1 Hz input-report rate (Hz) and average inter-arrival time (µs). Mapping the fourth region is optional. Returns `false` when the driver has no metrics region, the slot is empty, or a timeout expires. |
 | **`void SendPing()`** | Sends a ping to the driver and waits for a reply (liveness check). |
 | **`SetHostResult SetHostAddress(int deviceIndex, PhysicalAddress hostAddress)`** | Writes the new Bluetooth host address (pairing). Does not persist pairing mode. Returns write/read NTSTATUS in `SetHostResult`. |
 | **`SetHostResult PairToCurrentHost(int deviceIndex)`** | Pairs the device to the active local Bluetooth radio. Wired devices only; does not persist pairing mode. |
@@ -152,6 +154,7 @@ All device-indexed APIs use a **one-based** device index (see [Device index](#de
 - **Discovery:** Use **`DsHidMiniInterop.TryGetIpcSlotIndex(PnPDevice)`**, which reads the read-only device property **`DsHidMiniDriver.IpcSlotIndexProperty`** (`DEVPROP_TYPE_UINT32`, same value the driver publishes after claiming a slot). Enumerate DsHidMini device interfaces and query this property per `PnPDevice`—do **not** assume SetupAPI / `CM_Get_Device_Interface_List` ordering matches slot order (e.g. after a middle device disconnects, remaining devices may occupy non-contiguous slots such as `1` and `3`).  
 - **Older drivers:** If the property is absent, fall back to your own mapping; ordering-only heuristics may be wrong when slots are not contiguous.  
 - **Output stall:** `DsHidMiniDriver.OutputReportStatusProperty` (`DEVPROP_TYPE_NTSTATUS`, property id 15) is `0` while a ShanWan PS1/PS2 adapter is acknowledging output reports, and a failing NTSTATUS while no controller is linked to the receiver. The driver learns this about 0.5 s after power-up (one stop report) and clears it on its own once a controller links. Other device types stay at `0`. Absent on drivers older than the build that added it.  
+- **Input report metrics:** `DsHidMiniDriver.InputReportMetricsVersionProperty` (`DEVPROP_TYPE_UINT32`, property id 16) is the live IPC metrics ABI version (`1`). It is assigned once and does not change with the rate. Read `GetInputReportMetrics` for the 1 Hz snapshot. Absent on older drivers.  
 - **Invalid index:** APIs throw `DsHidMiniInteropInvalidDeviceIndexException` if `deviceIndex` is ≤ 0 or &gt; 255.
 
 ---
@@ -173,6 +176,13 @@ All device-indexed APIs use a **one-based** device index (see [Device index](#de
 - **Calibration:** EEPROM `AccelZero*` / `AccelOneG*` pairs, `GyroZero`, `GyroEepromCal`, live `CalByte`, `ZeroRef`, `MotionPath`.
 - **Samples:** raw and Sony-corrected axes, milli-g, milli-deg/s, `SampleIndex`, QPC timestamp.
 - **Compatibility:** mapping the third region is optional. `HasMotionTelemetry` is `false` and `GetMotionSnapshot` returns `false` against older drivers.
+
+### `DsInputReportMetrics` (arrival cadence)
+
+- **Layout:** 28-byte `Pack = 1` struct, version `DsInputReportMetrics.CurrentVersion` (`1`). Must stay in sync with driver `IPC_INPUT_REPORT_METRICS_MESSAGE`.
+- **Fields:** `ReportRateHz` (completed reports in the last ~1 s window, scaled by actual elapsed QPC), `AverageIntervalUs` (mean completion-to-completion interval in that window), `TimestampQpc` of publication.
+- **Semantics:** interval is host-side arrival spacing of successful USB interrupt completions or Bluetooth interrupt packets. It is a real-world transport cadence metric, not one-way packet latency (the pad does not stamp transmit time). `0` means no sufficient reports in the last window.
+- **Compatibility:** mapping the fourth region (at `3 * allocation granularity`) is optional. `HasInputReportMetrics` is `false` and `GetInputReportMetrics` returns `false` against older drivers.
 
 ### `SetHostResult` (pairing result)
 

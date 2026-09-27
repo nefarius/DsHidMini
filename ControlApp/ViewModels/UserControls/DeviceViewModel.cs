@@ -9,6 +9,7 @@ using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.Enums;
+using Nefarius.DsHidMini.ControlApp.Models.Input;
 using Nefarius.DsHidMini.ControlApp.Models.Rumble;
 using Nefarius.DsHidMini.ControlApp.Models.Util;
 using Nefarius.DsHidMini.ControlApp.Models.Util.Web;
@@ -32,9 +33,15 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     private readonly AppSnackbarMessagesService _appSnackbarMessagesService;
     private readonly Timer _batteryQuery;
     private readonly Timer? _outputStatusQuery;
+    private readonly Timer _inputReportMetricsQuery;
     private readonly object _outputStallLock = new();
+    private readonly object _inputReportMetricsLock = new();
     private bool? _lastNotifiedOutputStalled;
     private int _outputStallDisposed;
+    private int _inputReportMetricsDisposed;
+    private DsHidMiniInterop? _inputReportMetricsInterop;
+    private string _lastNotifiedInputReportRateDisplay = InputReportMetricsFormatter.FormatRateHz(null);
+    private string _lastNotifiedAverageReportIntervalDisplay = InputReportMetricsFormatter.FormatIntervalUs(null);
     private readonly IContentDialogService _contentDialogService;
 
     private int _xInputSlotRefreshGeneration;
@@ -148,6 +155,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         _addressValidator = addressValidator;
         _bluetoothDiagnosticSession = bluetoothDiagnosticSession;
         _batteryQuery = new Timer(UpdateBatteryStatus, null, 1500, 10000);
+        _inputReportMetricsQuery = new Timer(UpdateInputReportMetrics, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
         _outputStatusQuery = null;
         if (!string.IsNullOrEmpty(DsDeviceCapabilities.OutputStallGuidance(DeviceType)))
         {
@@ -266,6 +274,25 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     public string DeviceTypeDisplay => DsDeviceCapabilities.DisplayName(DeviceType);
 
     public string DeviceCapabilityNote => DsDeviceCapabilities.HidModeGuidance(DeviceType);
+
+    /// <summary>
+    ///     Last published input-report rate from driver IPC, or "Unknown" when
+    ///     the current driver does not advertise metrics.
+    /// </summary>
+    [ObservableProperty]
+    private string _inputReportRateDisplay = InputReportMetricsFormatter.FormatRateHz(null);
+
+    /// <summary>
+    ///     Last published average inter-arrival interval from driver IPC.
+    /// </summary>
+    [ObservableProperty]
+    private string _averageReportIntervalDisplay = InputReportMetricsFormatter.FormatIntervalUs(null);
+
+    public string InputReportRateToolTip =>
+        "Completed input reports per second over the driver's last one-second window.";
+
+    public string AverageReportIntervalToolTip =>
+        "Average time between completed USB interrupt transfers or Bluetooth interrupt packets. This is host-side arrival spacing, not one-way packet latency.";
 
     public bool HasDeviceCapabilityNote => !string.IsNullOrEmpty(DeviceCapabilityNote);
 
@@ -807,12 +834,109 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         });
     }
 
+    private void UpdateInputReportMetrics(object? state)
+    {
+        if (Volatile.Read(ref _inputReportMetricsDisposed) != 0)
+        {
+            return;
+        }
+
+        uint? rateHz = null;
+        uint? intervalUs = null;
+
+        if (TryReadInputReportMetricsVersion() is not null)
+        {
+            int? slot = DsHidMiniInterop.TryGetIpcSlotIndex(Device);
+            if (slot is int deviceIndex && DsHidMiniInterop.IsAvailable)
+            {
+                try
+                {
+                    DsHidMiniInterop interop = EnsureInputReportMetricsInterop();
+                    if (interop.HasInputReportMetrics &&
+                        interop.GetInputReportMetrics(deviceIndex, out DsInputReportMetrics metrics))
+                    {
+                        rateHz = metrics.ReportRateHz;
+                        intervalUs = metrics.AverageIntervalUs;
+                    }
+                    else
+                    {
+                        rateHz = 0;
+                        intervalUs = 0;
+                    }
+                }
+                catch (Exception)
+                {
+                    rateHz = 0;
+                    intervalUs = 0;
+                }
+            }
+            else
+            {
+                rateHz = 0;
+                intervalUs = 0;
+            }
+        }
+
+        string rateDisplay = InputReportMetricsFormatter.FormatRateHz(rateHz);
+        string intervalDisplay = InputReportMetricsFormatter.FormatIntervalUs(intervalUs);
+
+        lock (_inputReportMetricsLock)
+        {
+            if (_lastNotifiedInputReportRateDisplay == rateDisplay &&
+                _lastNotifiedAverageReportIntervalDisplay == intervalDisplay)
+            {
+                return;
+            }
+
+            _lastNotifiedInputReportRateDisplay = rateDisplay;
+            _lastNotifiedAverageReportIntervalDisplay = intervalDisplay;
+        }
+
+        Application.Current?.Dispatcher.BeginInvoke(() =>
+        {
+            if (Volatile.Read(ref _inputReportMetricsDisposed) != 0)
+            {
+                return;
+            }
+
+            InputReportRateDisplay = rateDisplay;
+            AverageReportIntervalDisplay = intervalDisplay;
+        });
+    }
+
+    private DsHidMiniInterop EnsureInputReportMetricsInterop()
+    {
+        lock (_inputReportMetricsLock)
+        {
+            return _inputReportMetricsInterop ??= new DsHidMiniInterop();
+        }
+    }
+
+    private uint? TryReadInputReportMetricsVersion()
+    {
+        try
+        {
+            return Device.GetProperty<uint>(DsHidMiniDriver.InputReportMetricsVersionProperty);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
     public void Dispose()
     {
         Interlocked.Exchange(ref _outputStallDisposed, 1);
+        Interlocked.Exchange(ref _inputReportMetricsDisposed, 1);
         Interlocked.Increment(ref _xInputSlotRefreshGeneration);
         _outputStatusQuery?.Dispose();
+        _inputReportMetricsQuery.Dispose();
         _batteryQuery.Dispose();
+        lock (_inputReportMetricsLock)
+        {
+            _inputReportMetricsInterop?.Dispose();
+            _inputReportMetricsInterop = null;
+        }
         CloseInputTester();
         CloseMotionViewer();
         CloseRumbleTester();

@@ -137,6 +137,16 @@ typedef struct _DSHM_DRIVER_CONTEXT
 				PUCHAR Buffer;
 				size_t BufferSize;
 			} Motion;
+
+			//
+			// 1 Hz input-report rate / inter-arrival metrics. Mapped at
+			// 3 * allocation granularity so older SDKs keep working.
+			//
+			struct
+			{
+				PUCHAR Buffer;
+				size_t BufferSize;
+			} InputMetrics;
 		} SharedRegions;
 
 		//

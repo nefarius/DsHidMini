@@ -72,6 +72,14 @@ public class ThirdPartyHidCapabilityTests
     }
 
     [Fact]
+    public void InputReportMetricsVersionProperty_IsDistinctReadOnlyKey()
+    {
+        Assert.NotEqual(DsHidMiniDriver.OutputReportStatusProperty, DsHidMiniDriver.InputReportMetricsVersionProperty);
+        Assert.NotEqual(DsHidMiniDriver.IpcSlotIndexProperty, DsHidMiniDriver.InputReportMetricsVersionProperty);
+        Assert.Equal(16u, DsHidMiniDriver.InputReportMetricsVersionProperty.PropertyIdentifier);
+    }
+
+    [Fact]
     public void SettingsEditor_ThirdPartyHidHidesLedsAndWirelessAndKeepsRumble()
     {
         SettingsEditorViewModel editor = new();
