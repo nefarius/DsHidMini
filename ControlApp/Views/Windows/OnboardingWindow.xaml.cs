@@ -133,7 +133,8 @@ public partial class OnboardingWindow
                 Title = "Skip setup?",
                 Content = body,
                 PrimaryButtonText = "I understand and skip",
-                CloseButtonText = "Go back"
+                CloseButtonText = "Go back",
+                DefaultButton = ContentDialogButton.Close
             });
 
         return result == ContentDialogResult.Primary;
