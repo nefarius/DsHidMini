@@ -938,16 +938,23 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         using ManualResetEvent outputDone = new(false);
         using ManualResetEvent metricsDone = new(false);
         using ManualResetEvent batteryDone = new(false);
-        _outputStatusQuery?.Dispose(outputDone);
-        _inputReportMetricsQuery.Dispose(metricsDone);
-        _batteryQuery.Dispose(batteryDone);
-        if (_outputStatusQuery is not null)
+        bool waitOutput = _outputStatusQuery?.Dispose(outputDone) == true;
+        bool waitMetrics = _inputReportMetricsQuery.Dispose(metricsDone);
+        bool waitBattery = _batteryQuery.Dispose(batteryDone);
+        if (waitOutput)
         {
             outputDone.WaitOne();
         }
 
-        metricsDone.WaitOne();
-        batteryDone.WaitOne();
+        if (waitMetrics)
+        {
+            metricsDone.WaitOne();
+        }
+
+        if (waitBattery)
+        {
+            batteryDone.WaitOne();
+        }
 
         lock (_inputReportMetricsLock)
         {
