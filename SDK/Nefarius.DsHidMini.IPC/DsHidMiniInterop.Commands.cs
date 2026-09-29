@@ -42,68 +42,80 @@ public partial class DsHidMiniInterop
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public unsafe bool GetRawInputReport(int deviceIndex, ref DS3_RAW_INPUT_REPORT report, TimeSpan? timeout = null)
     {
-        if (_hidView is null)
+        _hidViewLock.EnterReadLock();
+        try
         {
-            throw new DsHidMiniInteropUnavailableException();
-        }
-
-        ValidateDeviceIndex(deviceIndex);
-
-        nuint byteOffset = (nuint)((deviceIndex - 1) * Marshal.SizeOf<IPC_HID_INPUT_REPORT_MESSAGE>());
-        void* pMessage = (byte*)_hidView.Value + byteOffset;
-        ref IPC_HID_INPUT_REPORT_MESSAGE message = ref Unsafe.AsRef<IPC_HID_INPUT_REPORT_MESSAGE>(pMessage);
-
-        if (timeout.HasValue)
-        {
-            EventWaitHandle waitEvent;
-            try
+            if (_hidView is null || IsNullMappedView(_hidView))
             {
-                waitEvent = GetOrOpenHidReportWaitEvent(deviceIndex);
+                throw new DsHidMiniInteropUnavailableException();
             }
-            catch (WaitHandleCannotBeOpenedException)
+
+            ValidateDeviceIndex(deviceIndex);
+
+            if (!TryGetMappedSlotOffset(deviceIndex, Marshal.SizeOf<IPC_HID_INPUT_REPORT_MESSAGE>(), out nuint byteOffset))
             {
                 return false;
             }
 
-            Stopwatch waitClock = Stopwatch.StartNew();
-            TimeSpan waitBudget = timeout.Value < TimeSpan.Zero ? TimeSpan.Zero : timeout.Value;
-            while (true)
+            void* pMessage = (byte*)_hidView.Value + byteOffset;
+            ref IPC_HID_INPUT_REPORT_MESSAGE message = ref Unsafe.AsRef<IPC_HID_INPUT_REPORT_MESSAGE>(pMessage);
+
+            if (timeout.HasValue)
             {
-                int sequence = Volatile.Read(ref message.SequenceNumber);
-                if ((sequence & 1) == 0
-                    && sequence != 0
-                    && (!_lastSeenSequences.TryGetValue(deviceIndex, out int lastSeen) || sequence != lastSeen))
+                EventWaitHandle waitEvent;
+                try
                 {
-                    return TryCopyRawInputReport(deviceIndex, ref message, waitBudget - waitClock.Elapsed, out report);
+                    waitEvent = GetOrOpenHidReportWaitEvent(deviceIndex);
                 }
-
-                if (message.SlotIndex == 0)
+                catch (WaitHandleCannotBeOpenedException)
                 {
                     return false;
                 }
 
-                TimeSpan waitRemaining = waitBudget - waitClock.Elapsed;
-                if (waitRemaining <= TimeSpan.Zero)
+                Stopwatch waitClock = Stopwatch.StartNew();
+                TimeSpan waitBudget = timeout.Value < TimeSpan.Zero ? TimeSpan.Zero : timeout.Value;
+                while (true)
                 {
-                    return false;
-                }
+                    int sequence = Volatile.Read(ref message.SequenceNumber);
+                    if ((sequence & 1) == 0
+                        && sequence != 0
+                        && (!_lastSeenSequences.TryGetValue(deviceIndex, out int lastSeen) || sequence != lastSeen))
+                    {
+                        return TryCopyRawInputReport(deviceIndex, ref message, waitBudget - waitClock.Elapsed, out report);
+                    }
 
-                if ((sequence & 1) == 0
-                    && _lastSeenSequences.TryGetValue(deviceIndex, out lastSeen)
-                    && sequence == lastSeen)
-                {
-                    // Already consumed this generation; the manual-reset event stays
-                    // signaled until the driver ResetEvent()s at the next write.
-                    Thread.Sleep((int)Math.Min(waitRemaining.TotalMilliseconds, 1));
-                }
-                else
-                {
-                    waitEvent.WaitOne(waitRemaining);
+                    if (message.SlotIndex == 0)
+                    {
+                        return false;
+                    }
+
+                    TimeSpan waitRemaining = waitBudget - waitClock.Elapsed;
+                    if (waitRemaining <= TimeSpan.Zero)
+                    {
+                        return false;
+                    }
+
+                    if ((sequence & 1) == 0
+                        && _lastSeenSequences.TryGetValue(deviceIndex, out lastSeen)
+                        && sequence == lastSeen)
+                    {
+                        // Already consumed this generation; the manual-reset event stays
+                        // signaled until the driver ResetEvent()s at the next write.
+                        Thread.Sleep((int)Math.Min(waitRemaining.TotalMilliseconds, 1));
+                    }
+                    else
+                    {
+                        waitEvent.WaitOne(waitRemaining);
+                    }
                 }
             }
-        }
 
-        return TryCopyRawInputReport(deviceIndex, ref message, timeout: null, out report);
+            return TryCopyRawInputReport(deviceIndex, ref message, timeout: null, out report);
+        }
+        finally
+        {
+            _hidViewLock.ExitReadLock();
+        }
     }
 
     /// <summary>
@@ -135,7 +147,11 @@ public partial class DsHidMiniInterop
 
             ValidateDeviceIndex(deviceIndex);
 
-            nuint byteOffset = (nuint)((deviceIndex - 1) * Marshal.SizeOf<DsMotionSnapshot>());
+            if (!TryGetMappedSlotOffset(deviceIndex, Marshal.SizeOf<DsMotionSnapshot>(), out nuint byteOffset))
+            {
+                return false;
+            }
+
             void* pMessage = (byte*)_motionView.Value + byteOffset;
             ref DsMotionSnapshot message = ref Unsafe.AsRef<DsMotionSnapshot>(pMessage);
 
@@ -278,7 +294,11 @@ public partial class DsHidMiniInterop
 
             ValidateDeviceIndex(deviceIndex);
 
-            nuint byteOffset = (nuint)((deviceIndex - 1) * Marshal.SizeOf<DsInputReportMetrics>());
+            if (!TryGetMappedSlotOffset(deviceIndex, Marshal.SizeOf<DsInputReportMetrics>(), out nuint byteOffset))
+            {
+                return false;
+            }
+
             void* pMessage = (byte*)_metricsView.Value + byteOffset;
             ref DsInputReportMetrics message = ref Unsafe.AsRef<DsInputReportMetrics>(pMessage);
 

@@ -125,7 +125,7 @@ if (gotReport)
 |--------|-------------|
 | **`static bool IsAvailable`** | `true` if the command mutex, read/write events, and shared-memory mapping can all be opened. This indicates that the driver is loaded with IPC enabled, not that a controller occupies a device slot. Check it before constructing. |
 | **`static int? TryGetIpcSlotIndex(PnPDevice device)`** | Reads the driver’s one-based IPC slot from `DsHidMiniDriver.IpcSlotIndexProperty`. Returns `null` when the property is missing or outside 1…255. |
-| **`DsHidMiniInterop()`** | Connects to the driver IPC. Throws if not available. Subscribes to device arrival/removal for reconnection. |
+| **`DsHidMiniInterop()`** / **`DsHidMiniInterop(bool subscribeToDeviceChanges)`** | Connects to the driver IPC. Throws if not available. The default constructor subscribes to device arrival/removal for reconnection. Pass `subscribeToDeviceChanges: false` for a passive reader that must not unmap shared memory when other devices come and go. |
 | **`void Dispose()`** | Releases mapped views, file mapping, and events. Implement `IDisposable` and dispose when done. |
 | **`void Reconnect()`** | Re-opens the required command mutex, read/write events, and shared-memory mapping (e.g. after all devices were removed). Throws `DsHidMiniInteropUnavailableException` if any required object is unavailable. |
 | **`bool HasMotionTelemetry`** | `true` when this client mapped the driver’s motion region. `false` on older drivers. |

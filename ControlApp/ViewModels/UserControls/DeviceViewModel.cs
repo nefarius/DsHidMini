@@ -155,7 +155,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         _addressValidator = addressValidator;
         _bluetoothDiagnosticSession = bluetoothDiagnosticSession;
         _batteryQuery = new Timer(UpdateBatteryStatus, null, 1500, 10000);
-        _inputReportMetricsQuery = new Timer(UpdateInputReportMetrics, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+        _inputReportMetricsQuery = new Timer(UpdateInputReportMetrics, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
         _outputStatusQuery = null;
         if (!string.IsNullOrEmpty(DsDeviceCapabilities.OutputStallGuidance(DeviceType)))
         {
@@ -913,7 +913,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
                 throw new ObjectDisposedException(nameof(DeviceViewModel));
             }
 
-            return _inputReportMetricsInterop ??= new DsHidMiniInterop();
+            return _inputReportMetricsInterop ??= new DsHidMiniInterop(subscribeToDeviceChanges: false);
         }
     }
 
@@ -934,9 +934,21 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         Interlocked.Exchange(ref _outputStallDisposed, 1);
         Interlocked.Exchange(ref _inputReportMetricsDisposed, 1);
         Interlocked.Increment(ref _xInputSlotRefreshGeneration);
-        _outputStatusQuery?.Dispose();
-        _inputReportMetricsQuery.Dispose();
-        _batteryQuery.Dispose();
+
+        using ManualResetEvent outputDone = new(false);
+        using ManualResetEvent metricsDone = new(false);
+        using ManualResetEvent batteryDone = new(false);
+        _outputStatusQuery?.Dispose(outputDone);
+        _inputReportMetricsQuery.Dispose(metricsDone);
+        _batteryQuery.Dispose(batteryDone);
+        if (_outputStatusQuery is not null)
+        {
+            outputDone.WaitOne();
+        }
+
+        metricsDone.WaitOne();
+        batteryDone.WaitOne();
+
         lock (_inputReportMetricsLock)
         {
             _inputReportMetricsInterop?.Dispose();
