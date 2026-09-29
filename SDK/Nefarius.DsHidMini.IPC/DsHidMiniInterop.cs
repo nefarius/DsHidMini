@@ -148,10 +148,9 @@ public sealed partial class DsHidMiniInterop : IDisposable
             ReleaseSharedMappingsUnlocked();
         }
 
-        _cmdViewLock.Dispose();
-        _hidViewLock.Dispose();
-        _motionViewLock.Dispose();
-        _metricsViewLock.Dispose();
+        // Do not Dispose the view locks here: ReaderWriterLockSlim.Dispose throws if
+        // readers are still queued after unmap, and ExitReadLock on a disposed lock
+        // is undefined. The instance is already marked disposed; GC collects the locks.
         _deviceListener.Dispose();
     }
 

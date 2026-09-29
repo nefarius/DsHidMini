@@ -19,6 +19,7 @@ public class DshmDevMan
     private DeviceNotificationListener? _xusbListener;
     private CancellationTokenSource? _xusbRefreshCts;
     private CancellationTokenSource? _deviceListRefreshCts;
+    private int _deviceListRefreshGeneration;
     private readonly object _devicesLock = new();
     private readonly List<PnPDevice> _devices = new();
     //private readonly HostRadio _hostRadio;
@@ -71,6 +72,7 @@ public class DshmDevMan
     public void StopListeningForDshmDevices()
     {
         Log.Logger.Information("Stopping detection of DsHidMini devices");
+        Interlocked.Increment(ref _deviceListRefreshGeneration);
         _deviceListRefreshCts?.Cancel();
         _deviceListRefreshCts?.Dispose();
         _deviceListRefreshCts = null;
@@ -106,6 +108,7 @@ public class DshmDevMan
         previous?.Cancel();
         previous?.Dispose();
 
+        int generation = Interlocked.Increment(ref _deviceListRefreshGeneration);
         CancellationToken token = cts.Token;
         _ = Task.Run(async () =>
         {
@@ -123,7 +126,7 @@ public class DshmDevMan
                 return;
             }
 
-            UpdateConnectedDshmDevicesList(token);
+            UpdateConnectedDshmDevicesList(token, generation);
         }, token);
     }
 
@@ -166,8 +169,12 @@ public class DshmDevMan
         }, token);
     }
 
-    private void UpdateConnectedDshmDevicesList(CancellationToken cancellationToken = default)
+    private void UpdateConnectedDshmDevicesList(CancellationToken cancellationToken = default, int generation = 0)
     {
+        int capturedGeneration = generation == 0
+            ? Interlocked.Increment(ref _deviceListRefreshGeneration)
+            : generation;
+
         XInputSlotResolver.InvalidateResolutionCache();
         Log.Logger.Debug("Rebuilding list of connected DsHidMini devices");
         List<PnPDevice> snapshot = [];
@@ -182,17 +189,18 @@ public class DshmDevMan
 
         lock (_devicesLock)
         {
-            if (cancellationToken.IsCancellationRequested)
+            if (cancellationToken.IsCancellationRequested
+                || capturedGeneration != Volatile.Read(ref _deviceListRefreshGeneration))
             {
                 return;
             }
 
             _devices.Clear();
             _devices.AddRange(snapshot);
-        }
 
-        Log.Logger.Debug("DsHidMini devices list rebuilt. {DevicesCount} connected devices", snapshot.Count);
-        ConnectedDeviceListUpdated?.Invoke(this, EventArgs.Empty);
+            Log.Logger.Debug("DsHidMini devices list rebuilt. {DevicesCount} connected devices", snapshot.Count);
+            ConnectedDeviceListUpdated?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     public static bool TryReconnectDevice(PnPDevice device)
