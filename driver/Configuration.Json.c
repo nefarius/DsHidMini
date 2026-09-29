@@ -17,8 +17,6 @@
 #define TraceError(Flags, Msg, ...)             ((void)0)
 #define TraceWarning(Flags, Msg, ...)           ((void)0)
 #define TraceVerbose(Flags, Msg, ...)           ((void)0)
-#define EventWriteOverrideSettingUInt(...)      ((void)0)
-#define EventWriteOverrideSettingDouble(...)    ((void)0)
 #define EventWriteLoadingDeviceSpecificConfig(...) ((void)0)
 #define TRACE_CONFIG                            0
 #define TRACE_DS3                               0
@@ -748,13 +746,11 @@ ConfigParseButtonComboSettings(
 	if (ConfigTryGetBool(ComboSettings, "IsEnabled", &isEnabled))
 	{
 		Combo->IsEnabled = isEnabled;
-		EventWriteOverrideSettingUInt(ComboSettings->string, "IsEnabled", Combo->IsEnabled);
 	}
 
 	if (ConfigTryGetULong(ComboSettings, "HoldTime", &holdTime))
 	{
 		Combo->HoldTime = holdTime;
-		EventWriteOverrideSettingUInt(ComboSettings->string, "HoldTime", Combo->HoldTime);
 	}
 
 	for (ULONGLONG buttonIndex = 0; buttonIndex < _countof(Combo->Buttons); buttonIndex++)
@@ -767,11 +763,6 @@ ConfigParseButtonComboSettings(
 		if (offset <= DS_BUTTON_COMBO_MAX_OFFSET)
 		{
 			Combo->Buttons[buttonIndex] = offset;
-			EventWriteOverrideSettingUInt(
-				ComboSettings->string,
-				G_DS_BUTTON_COMBO_NAMES[buttonIndex],
-				Combo->Buttons[buttonIndex]
-			);
 		}
 		else
 		{
@@ -801,13 +792,11 @@ ConfigParseRumbleSettings(
 	if (ConfigTryGetBool(RumbleSettings, "DisableLeft", &flag))
 	{
 		Config->RumbleSettings.DisableLeft = flag;
-		EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.DisableLeft", Config->RumbleSettings.DisableLeft);
 	}
 
 	if (ConfigTryGetBool(RumbleSettings, "DisableRight", &flag))
 	{
 		Config->RumbleSettings.DisableRight = flag;
-		EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.DisableRight", Config->RumbleSettings.DisableRight);
 	}
 
 	heavyRescale = ConfigGetObjectMember(RumbleSettings, "HeavyRescale");
@@ -816,19 +805,16 @@ ConfigParseRumbleSettings(
 		if (ConfigTryGetBool(heavyRescale, "IsEnabled", &flag))
 		{
 			Config->RumbleSettings.HeavyRescaling.IsEnabled = flag;
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.HeavyRescaling.IsEnabled", Config->RumbleSettings.HeavyRescaling.IsEnabled);
 		}
 
 		if (ConfigTryGetUChar(heavyRescale, "RescaleMinRange", &range))
 		{
 			Config->RumbleSettings.HeavyRescaling.MinRange = range;
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.HeavyRescaling.MinRange", Config->RumbleSettings.HeavyRescaling.MinRange);
 		}
 
 		if (ConfigTryGetUChar(heavyRescale, "RescaleMaxRange", &range))
 		{
 			Config->RumbleSettings.HeavyRescaling.MaxRange = range;
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.HeavyRescaling.MaxRange", Config->RumbleSettings.HeavyRescaling.MaxRange);
 		}
 	}
 
@@ -838,19 +824,16 @@ ConfigParseRumbleSettings(
 		if (ConfigTryGetBool(alternativeMode, "IsEnabled", &flag))
 		{
 			Config->RumbleSettings.AlternativeMode.IsEnabled = flag;
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.IsEnabled", Config->RumbleSettings.AlternativeMode.IsEnabled);
 		}
 
 		if (ConfigTryGetUChar(alternativeMode, "RescaleMinRange", &range))
 		{
 			Config->RumbleSettings.AlternativeMode.MinRange = range;
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.MinRange", Config->RumbleSettings.AlternativeMode.MinRange);
 		}
 
 		if (ConfigTryGetUChar(alternativeMode, "RescaleMaxRange", &range))
 		{
 			Config->RumbleSettings.AlternativeMode.MaxRange = range;
-			EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.MaxRange", Config->RumbleSettings.AlternativeMode.MaxRange);
 		}
 
 		toggleCombo = ConfigGetObjectMember(alternativeMode, "ToggleCombo");
@@ -865,25 +848,21 @@ ConfigParseRumbleSettings(
 			if (ConfigTryGetBool(forced, "IsHeavyThresholdEnabled", &flag))
 			{
 				Config->RumbleSettings.AlternativeMode.ForcedRight.IsHeavyThresholdEnabled = flag;
-				EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.IsHeavyThresholdEnabled", Config->RumbleSettings.AlternativeMode.ForcedRight.IsHeavyThresholdEnabled);
 			}
 
 			if (ConfigTryGetBool(forced, "IsLightThresholdEnabled", &flag))
 			{
 				Config->RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled = flag;
-				EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled", Config->RumbleSettings.AlternativeMode.ForcedRight.IsLightThresholdEnabled);
 			}
 
 			if (ConfigTryGetUChar(forced, "HeavyThreshold", &range))
 			{
 				Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold = range;
-				EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold", Config->RumbleSettings.AlternativeMode.ForcedRight.HeavyThreshold);
 			}
 
 			if (ConfigTryGetUChar(forced, "LightThreshold", &range))
 			{
 				Config->RumbleSettings.AlternativeMode.ForcedRight.LightThreshold = range;
-				EventWriteOverrideSettingUInt(RumbleSettings->string, "RumbleSettings.AlternativeMode.ForcedRight.LightThreshold", Config->RumbleSettings.AlternativeMode.ForcedRight.LightThreshold);
 			}
 		}
 	}
@@ -903,13 +882,11 @@ ConfigParseLEDSettings(
 	if (ConfigTryGetLedMode(LEDSettings, &mode))
 	{
 		Config->LEDSettings.Mode = mode;
-		EventWriteOverrideSettingUInt(LEDSettings->string, "Mode", Config->LEDSettings.Mode);
 	}
 
 	if (ConfigTryGetLedAuthority(LEDSettings, &authority))
 	{
 		Config->LEDSettings.Authority = authority;
-		EventWriteOverrideSettingUInt(LEDSettings->string, "Authority", Config->LEDSettings.Authority);
 	}
 
 	if (Config->LEDSettings.Mode != DsLEDModeCustomPattern)
@@ -958,25 +935,21 @@ ConfigParseLEDSettings(
 		if (ConfigTryGetUChar(player, "TotalDuration", &byteValue))
 		{
 			playerSlots[playerIndex]->TotalDuration = byteValue;
-			EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "TotalDuration", playerSlots[playerIndex]->TotalDuration);
 		}
 
 		if (ConfigTryGetUShort(player, "BasePortionDuration", &shortValue))
 		{
 			playerSlots[playerIndex]->BasePortionDuration = shortValue;
-			EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "BasePortionDuration", playerSlots[playerIndex]->BasePortionDuration);
 		}
 
 		if (ConfigTryGetUChar(player, "OffPortionMultiplier", &byteValue))
 		{
 			playerSlots[playerIndex]->OffPortionMultiplier = byteValue;
-			EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "OffPortionMultiplier", playerSlots[playerIndex]->OffPortionMultiplier);
 		}
 
 		if (ConfigTryGetUChar(player, "OnPortionMultiplier", &byteValue))
 		{
 			playerSlots[playerIndex]->OnPortionMultiplier = byteValue;
-			EventWriteOverrideSettingUInt(playerSlotNames[playerIndex], "OnPortionMultiplier", playerSlots[playerIndex]->OnPortionMultiplier);
 		}
 	}
 }
@@ -996,13 +969,11 @@ ConfigParseHidDeviceModeSpecificSettings(
 		if (ConfigTryGetPressureMode(NodeSettings, &pressureMode))
 		{
 			Config->SDF.PressureExposureMode = pressureMode;
-			EventWriteOverrideSettingUInt(NodeSettings->string, "SDF.PressureExposureMode", Config->SDF.PressureExposureMode);
 		}
 
 		if (ConfigTryGetDPadMode(NodeSettings, &dpadMode))
 		{
 			Config->SDF.DPadExposureMode = dpadMode;
-			EventWriteOverrideSettingUInt(NodeSettings->string, "SDF.DPadExposureMode", Config->SDF.DPadExposureMode);
 		}
 		break;
 
@@ -1010,13 +981,11 @@ ConfigParseHidDeviceModeSpecificSettings(
 		if (ConfigTryGetPressureMode(NodeSettings, &pressureMode))
 		{
 			Config->GPJ.PressureExposureMode = pressureMode;
-			EventWriteOverrideSettingUInt(NodeSettings->string, "GPJ.PressureExposureMode", Config->GPJ.PressureExposureMode);
 		}
 
 		if (ConfigTryGetDPadMode(NodeSettings, &dpadMode))
 		{
 			Config->GPJ.DPadExposureMode = dpadMode;
-			EventWriteOverrideSettingUInt(NodeSettings->string, "GPJ.DPadExposureMode", Config->GPJ.DPadExposureMode);
 		}
 		break;
 
@@ -1028,9 +997,7 @@ ConfigParseHidDeviceModeSpecificSettings(
 static void
 ConfigParseDeadZone(
 	_In_opt_ const cJSON* DeadZone,
-	_Inout_ PDS_AXIS_DEADZONE Target,
-	_In_z_ const CHAR* ApplyEventName,
-	_In_z_ const CHAR* PolarEventName
+	_Inout_ PDS_AXIS_DEADZONE Target
 )
 {
 	BOOLEAN apply = FALSE;
@@ -1044,7 +1011,6 @@ ConfigParseDeadZone(
 	if (ConfigTryGetBool(DeadZone, "Apply", &apply))
 	{
 		Target->Apply = apply;
-		EventWriteOverrideSettingUInt(DeadZone->string, ApplyEventName, Target->Apply);
 	}
 
 	if (ConfigTryGetNumber(DeadZone, "PolarValue", &polarValue))
@@ -1059,7 +1025,6 @@ ConfigParseDeadZone(
 		}
 
 		Target->PolarValue = polarValue;
-		EventWriteOverrideSettingDouble(DeadZone->string, PolarEventName, Target->PolarValue);
 	}
 }
 
@@ -1088,32 +1053,27 @@ ConfigNodeParse(
 		if (ConfigTryGetHidDeviceMode(ParentNode, &hidMode))
 		{
 			Config->HidDeviceMode = hidMode;
-			EventWriteOverrideSettingUInt(ParentNode->string, "HidDeviceMode", Config->HidDeviceMode);
 		}
 
 		if (ConfigTryGetBool(ParentNode, "AutoRestartOnHidModeMismatch", &flag))
 		{
 			Config->AutoRestartOnHidModeMismatch = flag;
-			EventWriteOverrideSettingUInt(ParentNode->string, "AutoRestartOnHidModeMismatch", Config->AutoRestartOnHidModeMismatch);
 		}
 
 		if (ConfigTryGetUsbTransport(ParentNode, &usbTransport))
 		{
 			Config->UsbOutputReportTransport = usbTransport;
-			EventWriteOverrideSettingUInt(ParentNode->string, "UsbOutputReportTransport", Config->UsbOutputReportTransport);
 		}
 	}
 
 	if (ConfigTryGetBluetoothTransport(ParentNode, &bluetoothTransport))
 	{
 		Config->BluetoothOutputReportTransport = bluetoothTransport;
-		EventWriteOverrideSettingUInt(ParentNode->string, "BluetoothOutputReportTransport", Config->BluetoothOutputReportTransport);
 	}
 
 	if (ConfigTryGetPairingMode(ParentNode, &pairingMode))
 	{
 		Config->DevicePairingMode = pairingMode;
-		EventWriteOverrideSettingUInt(ParentNode->string, "DevicePairingMode", Config->DevicePairingMode);
 	}
 
 	if (ConfigTryGetPairingAddress(ParentNode, "CustomPairingAddress", customAddress))
@@ -1134,25 +1094,21 @@ ConfigNodeParse(
 	if (ConfigTryGetBool(ParentNode, "IsOutputRateControlEnabled", &flag))
 	{
 		Config->IsOutputRateControlEnabled = flag;
-		EventWriteOverrideSettingUInt(ParentNode->string, "IsOutputRateControlEnabled", Config->IsOutputRateControlEnabled);
 	}
 
 	if (ConfigTryGetUChar(ParentNode, "OutputRateControlPeriodMs", &period))
 	{
 		Config->OutputRateControlPeriodMs = period;
-		EventWriteOverrideSettingUInt(ParentNode->string, "OutputRateControlPeriodMs", Config->OutputRateControlPeriodMs);
 	}
 
 	if (ConfigTryGetULong(ParentNode, "WirelessIdleTimeoutPeriodMs", &timeout))
 	{
 		Config->WirelessIdleTimeoutPeriodMs = timeout;
-		EventWriteOverrideSettingUInt(ParentNode->string, "WirelessIdleTimeoutPeriodMs", Config->WirelessIdleTimeoutPeriodMs);
 	}
 
 	if (ConfigTryGetBool(ParentNode, "DisableWirelessIdleTimeout", &flag))
 	{
 		Config->DisableWirelessIdleTimeout = flag;
-		EventWriteOverrideSettingUInt(ParentNode->string, "DisableWirelessIdleTimeout", Config->DisableWirelessIdleTimeout);
 	}
 
 	combo = ConfigGetObjectMember(ParentNode, "QuickDisconnectCombo");
@@ -1175,15 +1131,11 @@ ConfigNodeParse(
 			ConfigParseHidDeviceModeSpecificSettings(modeSpecific, Config);
 			ConfigParseDeadZone(
 				ConfigGetObjectMember(modeSpecific, "DeadZoneLeft"),
-				&Config->ThumbSettings.DeadZoneLeft,
-				"ThumbSettings.DeadZoneLeft.Apply",
-				"ThumbSettings.DeadZoneLeft.PolarValue"
+				&Config->ThumbSettings.DeadZoneLeft
 			);
 			ConfigParseDeadZone(
 				ConfigGetObjectMember(modeSpecific, "DeadZoneRight"),
-				&Config->ThumbSettings.DeadZoneRight,
-				"ThumbSettings.DeadZoneRight.Apply",
-				"ThumbSettings.DeadZoneRight.PolarValue"
+				&Config->ThumbSettings.DeadZoneRight
 			);
 
 			rumbleSettings = ConfigGetObjectMember(modeSpecific, "RumbleSettings");
