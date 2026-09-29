@@ -75,6 +75,8 @@ public partial class SettingsEditorViewModel : ObservableObject
 
     public bool HideRumbleSettings { get; private set; }
 
+    public string DeviceTypeDisplay => DsDeviceCapabilities.DisplayName(_deviceType);
+
     public string DeviceCapabilityNote { get; private set; } = string.Empty;
 
     public bool HasDeviceCapabilityNote => !string.IsNullOrEmpty(DeviceCapabilityNote);
@@ -99,6 +101,7 @@ public partial class SettingsEditorViewModel : ObservableObject
 
         DeviceCapabilityNote = DsDeviceCapabilities.HidModeGuidance(deviceType);
         OnPropertyChanged(nameof(HideRumbleSettings));
+        OnPropertyChanged(nameof(DeviceTypeDisplay));
         OnPropertyChanged(nameof(DeviceCapabilityNote));
         OnPropertyChanged(nameof(HasDeviceCapabilityNote));
         UpdateLockStateOfGroups();

@@ -78,11 +78,13 @@ public static class DsDeviceCapabilities
 
     public static bool HasRumble(DsDeviceType type) => type != DsDeviceType.Navigation;
 
-    public static bool HasLeds(DsDeviceType type) => type != DsDeviceType.ThirdPartyHid;
+    public static bool HasLeds(DsDeviceType type) =>
+        type != DsDeviceType.ThirdPartyHid && type != DsDeviceType.Ds3IdentityAdapter;
 
     public static bool HasSingleLed(DsDeviceType type) => type == DsDeviceType.Navigation;
 
-    public static bool SupportsBluetooth(DsDeviceType type) => type != DsDeviceType.ThirdPartyHid;
+    public static bool SupportsBluetooth(DsDeviceType type) =>
+        type != DsDeviceType.ThirdPartyHid && type != DsDeviceType.Ds3IdentityAdapter;
 
     public static bool IsNavigation(DsDeviceType type) => type == DsDeviceType.Navigation;
 
@@ -94,6 +96,7 @@ public static class DsDeviceCapabilities
             DsDeviceType.Motion => "Motion Controller",
             DsDeviceType.Wireless => "DualShock 4",
             DsDeviceType.ThirdPartyHid => "PS1/PS2 USB Adapter (ShanWan)",
+            DsDeviceType.Ds3IdentityAdapter => "PS1/PS2 USB Adapter (Ejoyous, DualShock 3 identity)",
             _ => "DS3 Compatible HID Device"
         };
 
@@ -104,6 +107,8 @@ public static class DsDeviceCapabilities
                 "XInput is recommended. SDF, GPJ, SXS, and DS4Windows stay available for partial-input compatibility, but missing buttons, the right stick, extra pressure axes, rumble, and extra LEDs stay neutral or have no effect.",
             DsDeviceType.ThirdPartyHid =>
                 "Buttons, hat, sticks, and pressure axes come from the adapter report. Motion stays neutral. There are no LEDs and no Bluetooth pairing.",
+            DsDeviceType.Ds3IdentityAdapter =>
+                "This adapter presents itself as a DualShock 3. Buttons, sticks, and pressure come from the adapter; motion data and calibration are fabricated, there are no LEDs, and the reported Bluetooth address is not a real radio, so pairing is unavailable.",
             _ => string.Empty
         };
 

@@ -467,6 +467,9 @@ NTSTATUS DsDevice_ReadProperties(WDFDEVICE Device)
 // property so ControlApp does not infer capabilities from display names.
 // Sony Navigation is VID_054C / PID_042F (issue #48).
 // ShanWan PS1/PS2 adapter is VID_2563 / PID_0575.
+// USB adapters that impersonate DualShock 3 (054C:0268) report
+// bMaxPacketSize0 != 64; a genuine DS3 always uses 64. The USB
+// descriptor is already cached; Bluetooth has no descriptor.
 // 
 VOID
 DsDevice_AssignDeviceType(
@@ -476,6 +479,7 @@ DsDevice_AssignDeviceType(
 	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(Device);
 	WDF_DEVICE_PROPERTY_DATA propertyData;
 	UCHAR deviceType;
+	UCHAR maxPacketSize0 = 0;
 
 	if (pDevCtx->VendorId == DS_SONY_VENDOR_ID &&
 		pDevCtx->ProductId == DS_SONY_PID_NAVIGATION)
@@ -485,7 +489,21 @@ DsDevice_AssignDeviceType(
 	else if (pDevCtx->VendorId == DS_SONY_VENDOR_ID &&
 		pDevCtx->ProductId == DS_SONY_PID_SIXAXIS)
 	{
-		pDevCtx->DeviceType = DsDeviceTypeSixaxis;
+		if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
+		{
+			maxPacketSize0 =
+				pDevCtx->Connection.Usb.UsbDeviceDescriptor.bMaxPacketSize0;
+		}
+
+		if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb &&
+			maxPacketSize0 != DS_SONY_DS3_MAX_PACKET_SIZE0)
+		{
+			pDevCtx->DeviceType = DsDeviceTypeDs3IdentityAdapter;
+		}
+		else
+		{
+			pDevCtx->DeviceType = DsDeviceTypeSixaxis;
+		}
 	}
 	else if (pDevCtx->VendorId == DS_SHANWAN_VENDOR_ID &&
 		pDevCtx->ProductId == DS_SHANWAN_PID_PS_ADAPTER)
@@ -519,10 +537,11 @@ DsDevice_AssignDeviceType(
 
 	TraceVerbose(
 		TRACE_DEVICE,
-		"DeviceType=%u (VID=0x%04X PID=0x%04X)",
+		"DeviceType=%u (VID=0x%04X PID=0x%04X bMaxPacketSize0=0x%02X)",
 		pDevCtx->DeviceType,
 		pDevCtx->VendorId,
-		pDevCtx->ProductId
+		pDevCtx->ProductId,
+		maxPacketSize0
 	);
 }
 
