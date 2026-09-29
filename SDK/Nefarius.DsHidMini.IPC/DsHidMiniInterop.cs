@@ -42,6 +42,7 @@ public sealed partial class DsHidMiniInterop : IDisposable
     private int _disposed;
     private uint _allocationGranularity;
     private MEMORY_MAPPED_VIEW_ADDRESS? _cmdView;
+    private readonly ReaderWriterLockSlim _cmdViewLock = new();
 
     private Mutex? _commandMutex;
 
@@ -147,6 +148,7 @@ public sealed partial class DsHidMiniInterop : IDisposable
             ReleaseSharedMappingsUnlocked();
         }
 
+        _cmdViewLock.Dispose();
         _hidViewLock.Dispose();
         _motionViewLock.Dispose();
         _metricsViewLock.Dispose();
@@ -205,13 +207,21 @@ public sealed partial class DsHidMiniInterop : IDisposable
                 throw new DsHidMiniInteropUnavailableException();
             }
 
-            _cmdView = PInvoke.MapViewOfFile(
-                _fileMapping,
-                FILE_MAP.FILE_MAP_READ | FILE_MAP.FILE_MAP_WRITE,
-                0,
-                0,
-                systemInfo.dwAllocationGranularity
-            );
+            _cmdViewLock.EnterWriteLock();
+            try
+            {
+                _cmdView = PInvoke.MapViewOfFile(
+                    _fileMapping,
+                    FILE_MAP.FILE_MAP_READ | FILE_MAP.FILE_MAP_WRITE,
+                    0,
+                    0,
+                    systemInfo.dwAllocationGranularity
+                );
+            }
+            finally
+            {
+                _cmdViewLock.ExitWriteLock();
+            }
 
             if (IsNullMappedView(_cmdView))
             {
@@ -389,12 +399,20 @@ public sealed partial class DsHidMiniInterop : IDisposable
 
     private void ReleaseSharedMappingsUnlocked()
     {
-        if (_cmdView.HasValue && !IsNullMappedView(_cmdView))
+        _cmdViewLock.EnterWriteLock();
+        try
         {
-            PInvoke.UnmapViewOfFile(_cmdView.Value);
-        }
+            if (_cmdView.HasValue && !IsNullMappedView(_cmdView))
+            {
+                PInvoke.UnmapViewOfFile(_cmdView.Value);
+            }
 
-        _cmdView = null;
+            _cmdView = null;
+        }
+        finally
+        {
+            _cmdViewLock.ExitWriteLock();
+        }
 
         _hidViewLock.EnterWriteLock();
         try
@@ -654,6 +672,23 @@ public sealed partial class DsHidMiniInterop : IDisposable
 
         byteOffset = (nuint)offset;
         return true;
+    }
+
+    /// <summary>
+    ///     Holds <see cref="_cmdViewLock" /> shared so reconnect/dispose cannot unmap
+    ///     <see cref="_cmdView" /> until the caller exits the matching read lock.
+    ///     Distinct from <see cref="_commandMutex" />, which only serializes driver IPC.
+    /// </summary>
+    private void EnterCommandViewShared()
+    {
+        _cmdViewLock.EnterReadLock();
+        if (_commandMutex is not null && _cmdView is not null)
+        {
+            return;
+        }
+
+        _cmdViewLock.ExitReadLock();
+        throw new DsHidMiniInteropUnavailableException();
     }
 
     private void AcquireCommandLock()

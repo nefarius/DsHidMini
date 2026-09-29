@@ -484,16 +484,14 @@ public partial class DsHidMiniInterop
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public unsafe void SendPing()
     {
-        if (_commandMutex is null || _cmdView is null)
-        {
-            throw new DsHidMiniInteropUnavailableException();
-        }
-
-        AcquireCommandLock();
-
+        EnterCommandViewShared();
         try
         {
-            ref DSHM_IPC_MSG_HEADER message = ref Unsafe.AsRef<DSHM_IPC_MSG_HEADER>(_cmdView);
+            AcquireCommandLock();
+
+            try
+            {
+                ref DSHM_IPC_MSG_HEADER message = ref Unsafe.AsRef<DSHM_IPC_MSG_HEADER>(_cmdView);
 
             message.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
             message.Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DRIVER;
@@ -523,10 +521,15 @@ public partial class DsHidMiniInterop
             }
 
             throw new DsHidMiniInteropUnexpectedReplyException(ref reply);
+            }
+            finally
+            {
+                _commandMutex.ReleaseMutex();
+            }
         }
         finally
         {
-            _commandMutex.ReleaseMutex();
+            _cmdViewLock.ExitReadLock();
         }
     }
 
@@ -550,18 +553,16 @@ public partial class DsHidMiniInterop
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public unsafe SetHostResult SetHostAddress(int deviceIndex, PhysicalAddress hostAddress)
     {
-        if (_commandMutex is null || _cmdView is null)
-        {
-            throw new DsHidMiniInteropUnavailableException();
-        }
-
         ValidateDeviceIndex(deviceIndex);
 
-        AcquireCommandLock();
-
+        EnterCommandViewShared();
         try
         {
-            ref DSHM_IPC_MSG_PAIR_TO_REQUEST request = ref Unsafe.AsRef<DSHM_IPC_MSG_PAIR_TO_REQUEST>(_cmdView);
+            AcquireCommandLock();
+
+            try
+            {
+                ref DSHM_IPC_MSG_PAIR_TO_REQUEST request = ref Unsafe.AsRef<DSHM_IPC_MSG_PAIR_TO_REQUEST>(_cmdView);
 
             request.Header.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
             request.Header.Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DEVICE;
@@ -606,10 +607,15 @@ public partial class DsHidMiniInterop
             }
 
             throw new DsHidMiniInteropUnexpectedReplyException(ref reply.Header);
+            }
+            finally
+            {
+                _commandMutex.ReleaseMutex();
+            }
         }
         finally
         {
-            _commandMutex.ReleaseMutex();
+            _cmdViewLock.ExitReadLock();
         }
     }
 
@@ -637,11 +643,6 @@ public partial class DsHidMiniInterop
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public unsafe UInt32 SetPlayerIndex(int deviceIndex, byte playerIndex)
     {
-        if (_commandMutex is null || _cmdView is null)
-        {
-            throw new DsHidMiniInteropUnavailableException();
-        }
-
         ValidateDeviceIndex(deviceIndex);
 
         if (playerIndex is < 1 or > 7)
@@ -650,11 +651,14 @@ public partial class DsHidMiniInterop
                 "Player index must be between (including) 1 and 7.");
         }
 
-        AcquireCommandLock();
-
+        EnterCommandViewShared();
         try
         {
-            ref DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST request =
+            AcquireCommandLock();
+
+            try
+            {
+                ref DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST request =
                 ref Unsafe.AsRef<DSHM_IPC_MSG_SET_PLAYER_INDEX_REQUEST>(_cmdView);
 
             request.Header.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
@@ -689,10 +693,15 @@ public partial class DsHidMiniInterop
             }
 
             throw new DsHidMiniInteropUnexpectedReplyException(ref reply.Header);
+            }
+            finally
+            {
+                _commandMutex.ReleaseMutex();
+            }
         }
         finally
         {
-            _commandMutex.ReleaseMutex();
+            _cmdViewLock.ExitReadLock();
         }
     }
 
@@ -713,18 +722,16 @@ public partial class DsHidMiniInterop
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public unsafe PowerOffUsbResult PowerOffUsbDevice(int deviceIndex)
     {
-        if (_commandMutex is null || _cmdView is null)
-        {
-            throw new DsHidMiniInteropUnavailableException();
-        }
-
         ValidateDeviceIndex(deviceIndex);
 
-        AcquireCommandLock();
-
+        EnterCommandViewShared();
         try
         {
-            ref DSHM_IPC_MSG_USB_POWER_OFF_REQUEST request =
+            AcquireCommandLock();
+
+            try
+            {
+                ref DSHM_IPC_MSG_USB_POWER_OFF_REQUEST request =
                 ref Unsafe.AsRef<DSHM_IPC_MSG_USB_POWER_OFF_REQUEST>(_cmdView);
 
             request.Header.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
@@ -758,10 +765,15 @@ public partial class DsHidMiniInterop
             }
 
             throw new DsHidMiniInteropUnexpectedReplyException(ref reply.Header);
+            }
+            finally
+            {
+                _commandMutex.ReleaseMutex();
+            }
         }
         finally
         {
-            _commandMutex.ReleaseMutex();
+            _cmdViewLock.ExitReadLock();
         }
     }
 
@@ -786,18 +798,16 @@ public partial class DsHidMiniInterop
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public unsafe UInt32 SetRumble(int deviceIndex, byte largeMotor, byte smallMotor)
     {
-        if (_commandMutex is null || _cmdView is null)
-        {
-            throw new DsHidMiniInteropUnavailableException();
-        }
-
         ValidateDeviceIndex(deviceIndex);
 
-        AcquireCommandLock();
-
+        EnterCommandViewShared();
         try
         {
-            ref DSHM_IPC_MSG_SET_RUMBLE_REQUEST request =
+            AcquireCommandLock();
+
+            try
+            {
+                ref DSHM_IPC_MSG_SET_RUMBLE_REQUEST request =
                 ref Unsafe.AsRef<DSHM_IPC_MSG_SET_RUMBLE_REQUEST>(_cmdView);
 
             request.Header.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
@@ -830,10 +840,15 @@ public partial class DsHidMiniInterop
             }
 
             throw new DsHidMiniInteropUnexpectedReplyException(ref reply.Header);
+            }
+            finally
+            {
+                _commandMutex.ReleaseMutex();
+            }
         }
         finally
         {
-            _commandMutex.ReleaseMutex();
+            _cmdViewLock.ExitReadLock();
         }
     }
 
@@ -857,18 +872,16 @@ public partial class DsHidMiniInterop
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public unsafe UInt32 SetAlternateRumbleMode(int deviceIndex, bool enabled)
     {
-        if (_commandMutex is null || _cmdView is null)
-        {
-            throw new DsHidMiniInteropUnavailableException();
-        }
-
         ValidateDeviceIndex(deviceIndex);
 
-        AcquireCommandLock();
-
+        EnterCommandViewShared();
         try
         {
-            ref DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REQUEST request =
+            AcquireCommandLock();
+
+            try
+            {
+                ref DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REQUEST request =
                 ref Unsafe.AsRef<DSHM_IPC_MSG_SET_ALTERNATE_RUMBLE_MODE_REQUEST>(_cmdView);
 
             request.Header.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
@@ -900,10 +913,15 @@ public partial class DsHidMiniInterop
             }
 
             throw new DsHidMiniInteropUnexpectedReplyException(ref reply.Header);
+            }
+            finally
+            {
+                _commandMutex.ReleaseMutex();
+            }
         }
         finally
         {
-            _commandMutex.ReleaseMutex();
+            _cmdViewLock.ExitReadLock();
         }
     }
 
@@ -926,18 +944,16 @@ public partial class DsHidMiniInterop
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public unsafe SetHostResult PairToCurrentHost(int deviceIndex)
     {
-        if (_commandMutex is null || _cmdView is null)
-        {
-            throw new DsHidMiniInteropUnavailableException();
-        }
-
         ValidateDeviceIndex(deviceIndex);
 
-        AcquireCommandLock();
-
+        EnterCommandViewShared();
         try
         {
-            ref DSHM_IPC_MSG_PAIR_TO_CURRENT_HOST_REQUEST request =
+            AcquireCommandLock();
+
+            try
+            {
+                ref DSHM_IPC_MSG_PAIR_TO_CURRENT_HOST_REQUEST request =
                 ref Unsafe.AsRef<DSHM_IPC_MSG_PAIR_TO_CURRENT_HOST_REQUEST>(_cmdView);
 
             request.Header.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
@@ -967,10 +983,15 @@ public partial class DsHidMiniInterop
             }
 
             throw new DsHidMiniInteropUnexpectedReplyException(ref reply.Header);
+            }
+            finally
+            {
+                _commandMutex.ReleaseMutex();
+            }
         }
         finally
         {
-            _commandMutex.ReleaseMutex();
+            _cmdViewLock.ExitReadLock();
         }
     }
 
@@ -992,18 +1013,16 @@ public partial class DsHidMiniInterop
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public unsafe UInt32 DisconnectBluetoothDevice(int deviceIndex)
     {
-        if (_commandMutex is null || _cmdView is null)
-        {
-            throw new DsHidMiniInteropUnavailableException();
-        }
-
         ValidateDeviceIndex(deviceIndex);
 
-        AcquireCommandLock();
-
+        EnterCommandViewShared();
         try
         {
-            ref DSHM_IPC_MSG_DISCONNECT_BLUETOOTH_REQUEST request =
+            AcquireCommandLock();
+
+            try
+            {
+                ref DSHM_IPC_MSG_DISCONNECT_BLUETOOTH_REQUEST request =
                 ref Unsafe.AsRef<DSHM_IPC_MSG_DISCONNECT_BLUETOOTH_REQUEST>(_cmdView);
 
             request.Header.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
@@ -1033,10 +1052,15 @@ public partial class DsHidMiniInterop
             }
 
             throw new DsHidMiniInteropUnexpectedReplyException(ref reply.Header);
+            }
+            finally
+            {
+                _commandMutex.ReleaseMutex();
+            }
         }
         finally
         {
-            _commandMutex.ReleaseMutex();
+            _cmdViewLock.ExitReadLock();
         }
     }
 
@@ -1065,11 +1089,6 @@ public partial class DsHidMiniInterop
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public unsafe UInt32 SetLedPattern(int deviceIndex, Ds3LedPattern pattern)
     {
-        if (_commandMutex is null || _cmdView is null)
-        {
-            throw new DsHidMiniInteropUnavailableException();
-        }
-
         ValidateDeviceIndex(deviceIndex);
 
         if (!Ds3LedPattern.AreFlagsValid(pattern.Flags))
@@ -1078,11 +1097,14 @@ public partial class DsHidMiniInterop
                 "LED flags may only use the documented DS3 LED bits (1-4 and off).");
         }
 
-        AcquireCommandLock();
-
+        EnterCommandViewShared();
         try
         {
-            ref DSHM_IPC_MSG_SET_LED_PATTERN_REQUEST request =
+            AcquireCommandLock();
+
+            try
+            {
+                ref DSHM_IPC_MSG_SET_LED_PATTERN_REQUEST request =
                 ref Unsafe.AsRef<DSHM_IPC_MSG_SET_LED_PATTERN_REQUEST>(_cmdView);
 
             request.Header.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
@@ -1121,10 +1143,15 @@ public partial class DsHidMiniInterop
             }
 
             throw new DsHidMiniInteropUnexpectedReplyException(ref reply.Header);
+            }
+            finally
+            {
+                _commandMutex.ReleaseMutex();
+            }
         }
         finally
         {
-            _commandMutex.ReleaseMutex();
+            _cmdViewLock.ExitReadLock();
         }
     }
 

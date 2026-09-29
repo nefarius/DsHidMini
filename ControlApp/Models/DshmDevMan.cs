@@ -123,7 +123,7 @@ public class DshmDevMan
                 return;
             }
 
-            UpdateConnectedDshmDevicesList();
+            UpdateConnectedDshmDevicesList(token);
         }, token);
     }
 
@@ -166,7 +166,7 @@ public class DshmDevMan
         }, token);
     }
 
-    private void UpdateConnectedDshmDevicesList()
+    private void UpdateConnectedDshmDevicesList(CancellationToken cancellationToken = default)
     {
         XInputSlotResolver.InvalidateResolutionCache();
         Log.Logger.Debug("Rebuilding list of connected DsHidMini devices");
@@ -182,6 +182,11 @@ public class DshmDevMan
 
         lock (_devicesLock)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
             _devices.Clear();
             _devices.AddRange(snapshot);
         }
