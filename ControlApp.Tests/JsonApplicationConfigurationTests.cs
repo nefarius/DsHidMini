@@ -1,4 +1,6 @@
 using System.IO;
+using System.Security.AccessControl;
+using System.Security.Principal;
 
 using Nefarius.DsHidMini.ControlApp.Models;
 
@@ -62,7 +64,38 @@ public class JsonApplicationConfigurationTests : IDisposable
         Assert.True(loaded.MinimizeToTray);
         Assert.Equal(1, loaded.CompletedOnboardingVersion);
         Assert.Null(loaded.SkippedOnboardingVersion);
-        Assert.False(File.Exists(ConfigPath + ".tmp"));
+        Assert.Empty(Directory.GetFiles(_root, "*.tmp"));
+    }
+
+    [Fact]
+    public void Save_WhenDeleteIsDenied_OverwritesExistingFile()
+    {
+        ApplicationConfiguration original = new()
+        {
+            IsLoggingEnabled = false,
+            MinimizeToTray = false
+        };
+        JsonApplicationConfiguration.Save(FileName, original, _root);
+
+        ApplicationConfiguration changed = new()
+        {
+            IsLoggingEnabled = true,
+            MinimizeToTray = true
+        };
+
+        using (DenyFileReplacement(ConfigPath))
+        {
+            string accessSddl = GetAccessSddl(ConfigPath);
+            Assert.True(HasExplicitDeleteDenial(ConfigPath));
+            JsonApplicationConfiguration.Save(FileName, changed, _root);
+            Assert.Equal(accessSddl, GetAccessSddl(ConfigPath));
+            Assert.True(HasExplicitDeleteDenial(ConfigPath));
+        }
+
+        ApplicationConfiguration loaded = JsonApplicationConfiguration.Load<ApplicationConfiguration>(FileName, _root);
+        Assert.True(loaded.IsLoggingEnabled);
+        Assert.True(loaded.MinimizeToTray);
+        Assert.Empty(Directory.GetFiles(_root, "*.tmp"));
     }
 
     [Fact]
@@ -116,11 +149,12 @@ public class JsonApplicationConfigurationTests : IDisposable
 
         using (new FileStream(ConfigPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
         {
-            ApplicationConfiguration loaded =
-                JsonApplicationConfiguration.Load<ApplicationConfiguration>(FileName, _root);
+            JsonApplicationConfiguration.ConfigurationLoadResult<ApplicationConfiguration> loaded =
+                JsonApplicationConfiguration.LoadResult<ApplicationConfiguration>(FileName, _root);
 
-            Assert.False(loaded.IsLoggingEnabled);
-            Assert.True(loaded.IsUpdateCheckEnabled);
+            Assert.False(loaded.Configuration.IsLoggingEnabled);
+            Assert.True(loaded.Configuration.IsUpdateCheckEnabled);
+            Assert.False(loaded.PersistenceEnabled);
             Assert.Empty(Directory.GetFiles(_root, FileName + ".json.corrupt-*"));
         }
 
@@ -140,5 +174,79 @@ public class JsonApplicationConfigurationTests : IDisposable
 
         Assert.True(reloaded.MinimizeToTray);
         Assert.True(reloaded.IsUpdateCheckEnabled);
+    }
+
+    private static string GetAccessSddl(string path) =>
+        new FileInfo(path).GetAccessControl().GetSecurityDescriptorSddlForm(AccessControlSections.Access);
+
+    private static bool HasExplicitDeleteDenial(string path)
+    {
+        SecurityIdentifier user = CurrentUserSid();
+        AuthorizationRuleCollection rules = new FileInfo(path)
+            .GetAccessControl()
+            .GetAccessRules(includeExplicit: true, includeInherited: false, typeof(SecurityIdentifier));
+
+        return rules
+            .OfType<FileSystemAccessRule>()
+            .Any(rule =>
+                rule.IdentityReference.Equals(user)
+                && rule.AccessControlType == AccessControlType.Deny
+                && rule.FileSystemRights.HasFlag(FileSystemRights.Delete));
+    }
+
+    private static RestoreReplacementDenial DenyFileReplacement(string path)
+    {
+        FileInfo file = new(path);
+        DirectoryInfo directory = file.Directory
+                                  ?? throw new InvalidOperationException("Configuration file has no parent directory.");
+        FileSecurity originalFile = file.GetAccessControl();
+        DirectorySecurity originalDirectory = directory.GetAccessControl();
+        SecurityIdentifier user = CurrentUserSid();
+
+        FileSecurity fileSecurity = file.GetAccessControl();
+        fileSecurity.AddAccessRule(new FileSystemAccessRule(
+            user,
+            FileSystemRights.Delete,
+            AccessControlType.Deny));
+        file.SetAccessControl(fileSecurity);
+
+        DirectorySecurity directorySecurity = directory.GetAccessControl();
+        directorySecurity.AddAccessRule(new FileSystemAccessRule(
+            user,
+            FileSystemRights.DeleteSubdirectoriesAndFiles,
+            AccessControlType.Deny));
+        directory.SetAccessControl(directorySecurity);
+
+        return new RestoreReplacementDenial(file, originalFile, directory, originalDirectory);
+    }
+
+    private static SecurityIdentifier CurrentUserSid() =>
+        WindowsIdentity.GetCurrent().User
+        ?? throw new InvalidOperationException("Current Windows user SID is unavailable.");
+
+    private sealed class RestoreReplacementDenial : IDisposable
+    {
+        private readonly FileInfo _file;
+        private readonly FileSecurity _originalFile;
+        private readonly DirectoryInfo _directory;
+        private readonly DirectorySecurity _originalDirectory;
+
+        public RestoreReplacementDenial(
+            FileInfo file,
+            FileSecurity originalFile,
+            DirectoryInfo directory,
+            DirectorySecurity originalDirectory)
+        {
+            _file = file;
+            _originalFile = originalFile;
+            _directory = directory;
+            _originalDirectory = originalDirectory;
+        }
+
+        public void Dispose()
+        {
+            _file.SetAccessControl(_originalFile);
+            _directory.SetAccessControl(_originalDirectory);
+        }
     }
 }

@@ -9,10 +9,15 @@ public class ApplicationConfiguration
     ///     Implicitly loads configuration from file.
     /// </summary>
     private static readonly Lazy<ApplicationConfiguration> AppConfigLazy =
-        new(() => JsonApplicationConfiguration
-            .Load<ApplicationConfiguration>(
-                GlobalConfigFileName,
-                true));
+        new(() =>
+        {
+            JsonApplicationConfiguration.ConfigurationLoadResult<ApplicationConfiguration> loaded =
+                JsonApplicationConfiguration.LoadResult<ApplicationConfiguration>(
+                    GlobalConfigFileName,
+                    true);
+            loaded.Configuration.PersistenceEnabled = loaded.PersistenceEnabled;
+            return loaded.Configuration;
+        });
 
     /// <summary>
     ///     JSON (and schema) file name holding global configuration values.
@@ -125,13 +130,23 @@ public class ApplicationConfiguration
     public static ApplicationConfiguration Instance => AppConfigLazy.Value;
 
     /// <summary>
+    ///     <see langword="false" /> when the persisted file existed but could not be read, so
+    ///     later saves must not overwrite it with in-memory defaults.
+    /// </summary>
+    internal bool PersistenceEnabled { get; set; } = true;
+
+    /// <summary>
     ///     Write changes to file.
     /// </summary>
     public void Save()
     {
-        //
-        // Store (modified) configuration to disk
-        // 
+        if (!PersistenceEnabled)
+        {
+            Log.Logger.Warning(
+                "Skipping configuration save because the original file could not be read.");
+            return;
+        }
+
         JsonApplicationConfiguration.Save(
             GlobalConfigFileName,
             this,

@@ -26,11 +26,8 @@ public static class JsonApplicationConfiguration
     /// <returns>The configuration object. </returns>
     /// <exception cref="IOException">An I/O error occurred while opening the file. </exception>
     public static T Load<T>(string fileNameWithoutExtension, bool storeInAppData)
-        where T : new()
-    {
-        string configPath = CreateFilePath(fileNameWithoutExtension, ConfigExtension, storeInAppData);
-        return LoadFromPath<T>(configPath);
-    }
+        where T : new() =>
+        LoadResult<T>(fileNameWithoutExtension, storeInAppData).Configuration;
 
     /// <summary>Saves the configuration. </summary>
     /// <param name="fileNameWithoutExtension">The configuration file name without extension. </param>
@@ -47,11 +44,25 @@ public static class JsonApplicationConfiguration
     ///     Test seam: load from an explicit directory instead of AppData.
     /// </summary>
     internal static T Load<T>(string fileNameWithoutExtension, string directory)
+        where T : new() =>
+        LoadResult<T>(fileNameWithoutExtension, directory).Configuration;
+
+    internal static ConfigurationLoadResult<T> LoadResult<T>(string fileNameWithoutExtension, bool storeInAppData)
+        where T : new()
+    {
+        string configPath = CreateFilePath(fileNameWithoutExtension, ConfigExtension, storeInAppData);
+        return LoadFromPath<T>(configPath);
+    }
+
+    internal static ConfigurationLoadResult<T> LoadResult<T>(string fileNameWithoutExtension, string directory)
         where T : new()
     {
         string configPath = CreateFilePath(fileNameWithoutExtension, ConfigExtension, directory);
         return LoadFromPath<T>(configPath);
     }
+
+    internal readonly record struct ConfigurationLoadResult<T>(T Configuration, bool PersistenceEnabled)
+        where T : new();
 
     /// <summary>
     ///     Test seam: save to an explicit directory instead of AppData.
@@ -76,11 +87,11 @@ public static class JsonApplicationConfiguration
         }
     }
 
-    private static T LoadFromPath<T>(string configPath) where T : new()
+    private static ConfigurationLoadResult<T> LoadFromPath<T>(string configPath) where T : new()
     {
         if (!File.Exists(configPath))
         {
-            return CreateDefaultConfigurationFile<T>(configPath);
+            return new ConfigurationLoadResult<T>(CreateDefaultConfigurationFile<T>(configPath), true);
         }
 
         try
@@ -91,32 +102,32 @@ public static class JsonApplicationConfiguration
                 Log.Logger.Error(
                     "Configuration file {ConfigPath} is empty. Backing up and using defaults.",
                     configPath);
-                return RecoverWithDefaults<T>(configPath);
+                return new ConfigurationLoadResult<T>(RecoverWithDefaults<T>(configPath), true);
             }
 
             T? loaded = JsonConvert.DeserializeObject<T>(content);
             if (loaded is not null)
             {
-                return loaded;
+                return new ConfigurationLoadResult<T>(loaded, true);
             }
 
             Log.Logger.Error(
                 "Configuration file {ConfigPath} deserialized to null. Backing up and using defaults.",
                 configPath);
-            return RecoverWithDefaults<T>(configPath);
+            return new ConfigurationLoadResult<T>(RecoverWithDefaults<T>(configPath), true);
         }
         catch (JsonException ex)
         {
             Log.Logger.Error(ex, "Failed to load configuration from {ConfigPath}. Backing up corrupt file.",
                 configPath);
-            return RecoverWithDefaults<T>(configPath);
+            return new ConfigurationLoadResult<T>(RecoverWithDefaults<T>(configPath), true);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             Log.Logger.Error(ex,
                 "Failed to read configuration from {ConfigPath}. Using in-memory defaults without replacing the file.",
                 configPath);
-            return new T();
+            return new ConfigurationLoadResult<T>(new T(), false);
         }
     }
 
@@ -131,7 +142,7 @@ public static class JsonApplicationConfiguration
             Directory.CreateDirectory(directoryPath);
         }
 
-        string tempPath = configPath + ".tmp";
+        string tempPath = $"{configPath}.{Guid.NewGuid():N}.tmp";
         try
         {
             File.WriteAllText(tempPath, JsonConvert.SerializeObject(configuration, Formatting.Indented, settings),
