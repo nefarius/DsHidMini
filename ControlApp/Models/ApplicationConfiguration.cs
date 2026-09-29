@@ -12,7 +12,7 @@ public class ApplicationConfiguration
         new(() => JsonApplicationConfiguration
             .Load<ApplicationConfiguration>(
                 GlobalConfigFileName,
-                true)!);
+                true));
 
     /// <summary>
     ///     JSON (and schema) file name holding global configuration values.
