@@ -61,6 +61,30 @@ Assert-Equal (Get-DsHidMiniPreviousSetupReleaseTag -CurrentTag 'setup-v2.0.0' -T
 Assert-Equal (Get-DsHidMiniPreviousSetupReleaseTag -CurrentTag 'setup-v3.1.0' -Tags @('setup-v3.0.0-r2', 'setup-v3.2.0')) 'setup-v3.0.0-r2' 'skips newer setup tags'
 Assert-Throws { Get-DsHidMiniPreviousSetupReleaseTag -CurrentTag 'v3.2.0' -Tags $tags } 'driver tag rejected as current'
 
+$publishedReleases = @(
+    [pscustomobject]@{ tag_name = 'setup-v3.17.2'; draft = $true; prerelease = $false }
+    [pscustomobject]@{ tag_name = 'setup-v3.17.1'; draft = $true; prerelease = $false }
+    [pscustomobject]@{ tag_name = 'setup-v3.17.0'; draft = $true; prerelease = $false }
+    [pscustomobject]@{ tag_name = 'setup-v3.16.1'; draft = $true; prerelease = $false }
+    [pscustomobject]@{ tag_name = 'setup-v3.16.0'; draft = $true; prerelease = $false }
+    [pscustomobject]@{ tag_name = 'setup-v3.15.0'; draft = $false; prerelease = $false }
+    [pscustomobject]@{ tag_name = 'setup-v3.5.1'; draft = $false; prerelease = $false }
+    [pscustomobject]@{ tag_name = 'setup-v3.4.0'; draft = $false; prerelease = $true }
+    [pscustomobject]@{ tag_name = 'setup-v3.0.0-r6'; draft = $false; prerelease = $false }
+    [pscustomobject]@{ tag_name = 'setup-v3.0.0'; draft = $false; prerelease = $false }
+    [pscustomobject]@{ tag_name = 'v2.2.282.0'; draft = $false; prerelease = $false }
+)
+Assert-Equal (Get-DsHidMiniPreviousPublishedSetupReleaseTag -CurrentTag 'setup-v3.17.2' -Releases $publishedReleases) 'setup-v3.15.0' 'v3.17.2 notes use latest published release, not draft tags'
+Assert-Equal (Get-DsHidMiniPreviousPublishedSetupReleaseTag -CurrentTag 'setup-v3.16.0' -Releases $publishedReleases) 'setup-v3.15.0' 'draft 3.16.0 still baselines to published 3.15.0'
+Assert-Equal (Get-DsHidMiniPreviousPublishedSetupReleaseTag -CurrentTag 'setup-v3.5.1' -Releases $publishedReleases) 'setup-v3.4.0' 'published prereleases remain a valid baseline'
+Assert-Equal (Get-DsHidMiniPreviousPublishedSetupReleaseTag -CurrentTag 'setup-v3.0.0-r6' -Releases $publishedReleases) 'setup-v3.0.0' 'published respin compares to previous published base'
+Assert-Equal (Get-DsHidMiniPreviousPublishedSetupReleaseTag -CurrentTag 'setup-v3.0.0' -Releases $publishedReleases) $null 'oldest published setup has no previous'
+Assert-Equal (Get-DsHidMiniPreviousPublishedSetupReleaseTag -CurrentTag 'setup-v3.17.2' -Releases @(
+        [pscustomobject]@{ tagName = 'setup-v3.17.1'; isDraft = $true }
+        [pscustomobject]@{ tagName = 'setup-v3.15.0'; isDraft = $false }
+    )) 'setup-v3.15.0' 'accepts tagName/isDraft aliases'
+Assert-Equal (@(Get-DsHidMiniPublishedSetupReleaseTags -Releases $publishedReleases) -join ',') 'setup-v3.15.0,setup-v3.5.1,setup-v3.4.0,setup-v3.0.0-r6,setup-v3.0.0' 'published filter drops drafts and driver tags'
+
 $template = @"
 # v{{SetupVersion}} changelog
 
@@ -137,10 +161,21 @@ try {
         -SetupTags $tags `
         -GenerateNotes { param($Repository, $SetupTag, $Previous) "$Repository $SetupTag $Previous`n* Title by @user in https://github.com/nefarius/DsHidMini/pull/1" } `
         -HighlightsProvider { '- From provider' }
-    Assert-Equal $notes.PreviousSetupTag 'setup-v3.0.0-r6' 'generator selects previous setup tag'
+    Assert-Equal $notes.PreviousPublishedSetupTag 'setup-v3.0.0-r6' 'generator selects previous published setup tag'
     Assert-Equal $notes.Title 'DsHidMini Driver v3.2.0' 'generator title'
     Assert-True ($notes.Body -match '- From provider') 'injectable highlights used when PRs exist'
-    Assert-True ($notes.WhatsChanged -match 'setup-v3.0.0-r6') 'generate-notes receives previous tag'
+    Assert-True ($notes.WhatsChanged -match 'setup-v3.0.0-r6') 'generate-notes receives previous published tag'
+
+    $cumulative = New-DsHidMiniReleaseNotes `
+        -SetupVersion '3.17.2' `
+        -SetupTag 'setup-v3.17.2' `
+        -Repository 'nefarius/DsHidMini' `
+        -TemplatePath $templatePath `
+        -Releases $publishedReleases `
+        -GenerateNotes { param($Repository, $SetupTag, $Previous) "$Repository $SetupTag $Previous`n* Title by @user in https://github.com/nefarius/DsHidMini/pull/1" } `
+        -HighlightsProvider { '- From provider' }
+    Assert-Equal $cumulative.PreviousPublishedSetupTag 'setup-v3.15.0' 'generator skips draft 3.16/3.17 tags'
+    Assert-True ($cumulative.WhatsChanged -match 'setup-v3.15.0') 'generate-notes receives published 3.15.0 baseline'
 
     $fallbackNotes = New-DsHidMiniReleaseNotes `
         -SetupVersion '3.2.0' `

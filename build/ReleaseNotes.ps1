@@ -5,9 +5,11 @@
 
 .DESCRIPTION
     Deterministic sections come from GitHub's generate-notes API using the
-    previous setup-v* tag as the compare base. Highlights are produced by an
-    injectable provider (Copilot CLI in CI). Existing published releases are
-    never modified; draft reruns replace notes and the MSI asset.
+    latest published (non-draft) setup-v* release as the compare base.
+    Intervening draft tags are ignored so notes stay cumulative until a
+    release is published. Highlights are produced by an injectable provider
+    (Copilot CLI in CI). Existing published releases are never modified;
+    draft reruns replace notes and the MSI asset.
 #>
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -91,6 +93,112 @@ function Get-DsHidMiniPreviousSetupReleaseTag {
     }
 
     return $previous.Tag
+}
+
+function Get-DsHidMiniGitHubReleases {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $Repository
+    )
+
+    $pages = gh api --paginate --slurp "repos/$Repository/releases?per_page=100" | ConvertFrom-Json
+    if ($LASTEXITCODE) {
+        throw "Failed to list GitHub Releases for $Repository."
+    }
+
+    @(
+        foreach ($page in @($pages)) {
+            foreach ($item in @($page)) {
+                $item
+            }
+        }
+    )
+}
+
+function Get-DsHidMiniReleaseTagName {
+    [CmdletBinding()]
+    param(
+        $Release
+    )
+
+    if ($null -eq $Release) {
+        return ''
+    }
+
+    if ($Release.PSObject.Properties['tag_name']) {
+        return [string]$Release.tag_name
+    }
+
+    if ($Release.PSObject.Properties['tagName']) {
+        return [string]$Release.tagName
+    }
+
+    return ''
+}
+
+function Test-DsHidMiniReleaseIsDraft {
+    [CmdletBinding()]
+    param(
+        $Release
+    )
+
+    if ($null -eq $Release) {
+        return $false
+    }
+
+    if ($Release.PSObject.Properties['draft']) {
+        return [bool]$Release.draft
+    }
+
+    if ($Release.PSObject.Properties['isDraft']) {
+        return [bool]$Release.isDraft
+    }
+
+    return $false
+}
+
+function Get-DsHidMiniPublishedSetupReleaseTags {
+    [CmdletBinding()]
+    param(
+        [AllowNull()]
+        [AllowEmptyCollection()]
+        $Releases = @()
+    )
+
+    if ($null -eq $Releases) {
+        $Releases = @()
+    }
+
+    @(
+        foreach ($release in @($Releases)) {
+            if (Test-DsHidMiniReleaseIsDraft -Release $release) {
+                continue
+            }
+
+            $identity = ConvertTo-DsHidMiniSetupReleaseTagIdentity -Tag (Get-DsHidMiniReleaseTagName -Release $release)
+            if ($null -eq $identity) {
+                continue
+            }
+
+            $identity.Tag
+        }
+    )
+}
+
+function Get-DsHidMiniPreviousPublishedSetupReleaseTag {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $CurrentTag,
+
+        [AllowNull()]
+        [AllowEmptyCollection()]
+        $Releases = @()
+    )
+
+    $published = Get-DsHidMiniPublishedSetupReleaseTags -Releases $Releases
+    return Get-DsHidMiniPreviousSetupReleaseTag -CurrentTag $CurrentTag -Tags $published
 }
 
 function Get-DsHidMiniReleaseNotesTemplate {
@@ -592,17 +700,21 @@ function New-DsHidMiniReleaseNotes {
         [AllowNull()]
         [string[]] $SetupTags = $null,
 
+        [AllowEmptyCollection()]
+        [AllowNull()]
+        $Releases = $null,
+
         [scriptblock] $GenerateNotes = $null,
 
         [scriptblock] $HighlightsProvider = $null
     )
 
     if ($null -eq $SetupTags) {
-        if (-not (Get-Command Get-DsHidMiniAllSetupReleaseTags -ErrorAction SilentlyContinue)) {
-            . (Join-Path $PSScriptRoot 'SetupRelease.ps1')
+        if ($null -eq $Releases) {
+            $Releases = Get-DsHidMiniGitHubReleases -Repository $Repository
         }
 
-        $SetupTags = Get-DsHidMiniAllSetupReleaseTags -Repository $Repository
+        $SetupTags = Get-DsHidMiniPublishedSetupReleaseTags -Releases $Releases
     }
 
     $previous = Get-DsHidMiniPreviousSetupReleaseTag -CurrentTag $SetupTag -Tags $SetupTags
@@ -636,7 +748,7 @@ function New-DsHidMiniReleaseNotes {
         Body             = $body
         Highlights       = $highlights
         WhatsChanged     = $generated
-        PreviousSetupTag = $previous
+        PreviousPublishedSetupTag = $previous
         Title            = "DsHidMini Driver v$SetupVersion"
     }
 }
