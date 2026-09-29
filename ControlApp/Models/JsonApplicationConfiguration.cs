@@ -50,15 +50,30 @@ public static class JsonApplicationConfiguration
     internal static ConfigurationLoadResult<T> LoadResult<T>(string fileNameWithoutExtension, bool storeInAppData)
         where T : new()
     {
-        string configPath = CreateFilePath(fileNameWithoutExtension, ConfigExtension, storeInAppData);
-        return LoadFromPath<T>(configPath);
+        return LoadResult<T>(() =>
+            CreateFilePath(fileNameWithoutExtension, ConfigExtension, storeInAppData));
     }
 
     internal static ConfigurationLoadResult<T> LoadResult<T>(string fileNameWithoutExtension, string directory)
         where T : new()
     {
-        string configPath = CreateFilePath(fileNameWithoutExtension, ConfigExtension, directory);
-        return LoadFromPath<T>(configPath);
+        return LoadResult<T>(() =>
+            CreateFilePath(fileNameWithoutExtension, ConfigExtension, directory));
+    }
+
+    private static ConfigurationLoadResult<T> LoadResult<T>(Func<string> resolvePath)
+        where T : new()
+    {
+        try
+        {
+            return LoadFromPath<T>(resolvePath());
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Log.Logger.Error(ex,
+                "Failed to resolve or persist configuration. Using in-memory defaults without writing.");
+            return new ConfigurationLoadResult<T>(new T(), false);
+        }
     }
 
     internal readonly record struct ConfigurationLoadResult<T>(T Configuration, bool PersistenceEnabled)
@@ -89,14 +104,35 @@ public static class JsonApplicationConfiguration
 
     private static ConfigurationLoadResult<T> LoadFromPath<T>(string configPath) where T : new()
     {
-        if (!File.Exists(configPath))
+        string content;
+        try
         {
-            return new ConfigurationLoadResult<T>(CreateDefaultConfigurationFile<T>(configPath), true);
+            content = File.ReadAllText(configPath, Encoding.UTF8);
+        }
+        catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
+        {
+            try
+            {
+                return new ConfigurationLoadResult<T>(CreateDefaultConfigurationFile<T>(configPath), true);
+            }
+            catch (Exception createEx) when (createEx is IOException or UnauthorizedAccessException)
+            {
+                Log.Logger.Error(createEx,
+                    "Failed to create default configuration at {ConfigPath}. Using in-memory defaults.",
+                    configPath);
+                return new ConfigurationLoadResult<T>(new T(), false);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Log.Logger.Error(ex,
+                "Failed to read configuration from {ConfigPath}. Using in-memory defaults without replacing the file.",
+                configPath);
+            return new ConfigurationLoadResult<T>(new T(), false);
         }
 
         try
         {
-            string content = File.ReadAllText(configPath, Encoding.UTF8);
             if (string.IsNullOrWhiteSpace(content))
             {
                 Log.Logger.Error(
@@ -122,13 +158,6 @@ public static class JsonApplicationConfiguration
                 configPath);
             return new ConfigurationLoadResult<T>(RecoverWithDefaults<T>(configPath), true);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            Log.Logger.Error(ex,
-                "Failed to read configuration from {ConfigPath}. Using in-memory defaults without replacing the file.",
-                configPath);
-            return new ConfigurationLoadResult<T>(new T(), false);
-        }
     }
 
     private static void SaveToPath<T>(string configPath, T configuration) where T : new()
@@ -149,10 +178,22 @@ public static class JsonApplicationConfiguration
                 Encoding.UTF8);
             try
             {
-                File.Move(tempPath, configPath, overwrite: true);
+                if (File.Exists(configPath))
+                {
+                    File.Replace(tempPath, configPath, destinationBackupFileName: null);
+                }
+                else
+                {
+                    File.Move(tempPath, configPath);
+                }
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
+                if (!File.Exists(configPath))
+                {
+                    throw;
+                }
+
                 Log.Logger.Warning(ex,
                     "Atomic replace of configuration file {ConfigPath} failed. Falling back to in-place overwrite.",
                     configPath);
@@ -206,10 +247,35 @@ public static class JsonApplicationConfiguration
 
     private static void OverwriteExistingFile(string sourcePath, string destinationPath)
     {
-        using FileStream source = File.OpenRead(sourcePath);
-        using FileStream destination = new(destinationPath, FileMode.Open, FileAccess.Write, FileShare.Read);
-        destination.SetLength(0);
-        source.CopyTo(destination);
+        byte[] content = File.ReadAllBytes(sourcePath);
+        string backupPath = $"{destinationPath}.{Guid.NewGuid():N}.bak";
+        File.Copy(destinationPath, backupPath, overwrite: true);
+        try
+        {
+            using FileStream destination = new(destinationPath, FileMode.Open, FileAccess.Write, FileShare.Read);
+            destination.Write(content, 0, content.Length);
+            destination.SetLength(content.Length);
+            destination.Flush(flushToDisk: true);
+        }
+        catch
+        {
+            try
+            {
+                File.Copy(backupPath, destinationPath, overwrite: true);
+            }
+            catch (Exception restoreEx) when (restoreEx is IOException or UnauthorizedAccessException)
+            {
+                Log.Logger.Error(restoreEx,
+                    "Failed to restore configuration file {ConfigPath} from backup {BackupPath}.",
+                    destinationPath, backupPath);
+            }
+
+            throw;
+        }
+        finally
+        {
+            TryDeleteTemporaryFile(backupPath);
+        }
     }
 
     private static void TryDeleteTemporaryFile(string path)

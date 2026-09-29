@@ -99,6 +99,30 @@ public class JsonApplicationConfigurationTests : IDisposable
     }
 
     [Fact]
+    public void Save_WhenDestinationHasExplicitAcl_PreservesAcl()
+    {
+        ApplicationConfiguration original = new() { IsLoggingEnabled = false };
+        JsonApplicationConfiguration.Save(FileName, original, _root);
+
+        FileInfo file = new(ConfigPath);
+        FileSecurity security = file.GetAccessControl();
+        security.AddAccessRule(new FileSystemAccessRule(
+            new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null),
+            FileSystemRights.Read,
+            AccessControlType.Allow));
+        file.SetAccessControl(security);
+        string accessSddl = GetAccessSddl(ConfigPath);
+
+        JsonApplicationConfiguration.Save(FileName, new ApplicationConfiguration { IsLoggingEnabled = true }, _root);
+
+        Assert.Equal(accessSddl, GetAccessSddl(ConfigPath));
+        ApplicationConfiguration loaded = JsonApplicationConfiguration.Load<ApplicationConfiguration>(FileName, _root);
+        Assert.True(loaded.IsLoggingEnabled);
+        Assert.Empty(Directory.GetFiles(_root, "*.tmp"));
+        Assert.Empty(Directory.GetFiles(_root, "*.bak"));
+    }
+
+    [Fact]
     public void Load_EmptyFile_ReturnsDefaultsAndPreservesCorruptBackup()
     {
         File.WriteAllText(ConfigPath, "   ");
