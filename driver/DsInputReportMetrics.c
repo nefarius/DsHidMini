@@ -155,8 +155,23 @@ DsInputReportMetrics_EvtPublishTimer(
 {
 	const WDFDEVICE device = WdfTimerGetParentObject(Timer);
 	const PDEVICE_CONTEXT context = DeviceGetContext(device);
+	BOOLEAN restart = FALSE;
 
 	DsInputReportMetrics_ComputeAndPublish(context);
+
+	WdfSpinLockAcquire(context->InputReportMetrics.Lock);
+	{
+		restart = context->InputReportMetrics.Running;
+	}
+	WdfSpinLockRelease(context->InputReportMetrics.Lock);
+
+	if (restart)
+	{
+		WdfTimerStart(
+			Timer,
+			WDF_REL_TIMEOUT_IN_MS(DS_INPUT_REPORT_METRICS_PERIOD_MS)
+		);
+	}
 }
 
 _Use_decl_annotations_
@@ -189,10 +204,14 @@ DsInputReportMetrics_Create(
 	attributes.ParentObject = Device;
 	attributes.ExecutionLevel = WdfExecutionLevelPassive;
 
-	WDF_TIMER_CONFIG_INIT_PERIODIC(
+	//
+	// One-shot: WDF does not allow periodic timers at PassiveLevel, which
+	// is the level UMDF callbacks (and this publisher, which takes IpcLock)
+	// run at. EvtPublishTimer re-arms while Running remains set.
+	//
+	WDF_TIMER_CONFIG_INIT(
 		&timerCfg,
-		DsInputReportMetrics_EvtPublishTimer,
-		DS_INPUT_REPORT_METRICS_PERIOD_MS
+		DsInputReportMetrics_EvtPublishTimer
 	);
 
 	status = WdfTimerCreate(
@@ -231,6 +250,7 @@ DsInputReportMetrics_D0Entry(
 	WdfSpinLockAcquire(Context->InputReportMetrics.Lock);
 	{
 		DsInputReportMetrics_ResetWindow(&Context->InputReportMetrics, TRUE);
+		Context->InputReportMetrics.Running = TRUE;
 	}
 	WdfSpinLockRelease(Context->InputReportMetrics.Lock);
 
@@ -253,18 +273,19 @@ DsInputReportMetrics_Stop(
 	BOOLEAN Wait
 )
 {
-	if (Context->InputReportMetrics.PublishTimer)
-	{
-		WdfTimerStop(Context->InputReportMetrics.PublishTimer, Wait);
-	}
-
 	if (Context->InputReportMetrics.Lock)
 	{
 		WdfSpinLockAcquire(Context->InputReportMetrics.Lock);
 		{
+			Context->InputReportMetrics.Running = FALSE;
 			DsInputReportMetrics_ResetWindow(&Context->InputReportMetrics, TRUE);
 		}
 		WdfSpinLockRelease(Context->InputReportMetrics.Lock);
+	}
+
+	if (Context->InputReportMetrics.PublishTimer)
+	{
+		WdfTimerStop(Context->InputReportMetrics.PublishTimer, Wait);
 	}
 
 	WdfWaitLockAcquire(DriverGetContext(WdfGetDriver())->IpcLock, NULL);
