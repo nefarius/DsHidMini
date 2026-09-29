@@ -109,6 +109,25 @@ public class JsonApplicationConfigurationTests : IDisposable
     }
 
     [Fact]
+    public void Load_UnreadableFile_ReturnsInMemoryDefaultsWithoutReplacingFile()
+    {
+        const string original = """{"IsLoggingEnabled":true,"IsUpdateCheckEnabled":false}""";
+        File.WriteAllText(ConfigPath, original);
+
+        using (new FileStream(ConfigPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        {
+            ApplicationConfiguration loaded =
+                JsonApplicationConfiguration.Load<ApplicationConfiguration>(FileName, _root);
+
+            Assert.False(loaded.IsLoggingEnabled);
+            Assert.True(loaded.IsUpdateCheckEnabled);
+            Assert.Empty(Directory.GetFiles(_root, FileName + ".json.corrupt-*"));
+        }
+
+        Assert.Equal(original, File.ReadAllText(ConfigPath));
+    }
+
+    [Fact]
     public void Load_RecoveredDefaults_CanBeSavedAndReloaded()
     {
         File.WriteAllText(ConfigPath, "null");

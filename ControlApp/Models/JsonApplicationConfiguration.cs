@@ -105,11 +105,18 @@ public static class JsonApplicationConfiguration
                 configPath);
             return RecoverWithDefaults<T>(configPath);
         }
-        catch (Exception ex)
+        catch (JsonException ex)
         {
             Log.Logger.Error(ex, "Failed to load configuration from {ConfigPath}. Backing up corrupt file.",
                 configPath);
             return RecoverWithDefaults<T>(configPath);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Log.Logger.Error(ex,
+                "Failed to read configuration from {ConfigPath}. Using in-memory defaults without replacing the file.",
+                configPath);
+            return new T();
         }
     }
 
