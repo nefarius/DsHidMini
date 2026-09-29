@@ -43,6 +43,7 @@ public class ThirdPartyHidCapabilityTests
     [InlineData(DsDeviceType.Navigation)]
     [InlineData(DsDeviceType.Motion)]
     [InlineData(DsDeviceType.Wireless)]
+    [InlineData(DsDeviceType.Ds3IdentityAdapter)]
     public void OutputStallGuidance_IsEmptyExceptThirdPartyHid(DsDeviceType type)
     {
         Assert.Equal(string.Empty, DsDeviceCapabilities.OutputStallGuidance(type));

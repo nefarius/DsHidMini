@@ -331,7 +331,17 @@ public enum DsDeviceType : byte
     ///     and other pads that reuse this identity). Rumble, no LEDs, no Bluetooth.
     /// </summary>
     [Description("Third-party HID")]
-    ThirdPartyHid = 5
+    ThirdPartyHid = 5,
+
+    /// <summary>
+    ///     USB adapter that impersonates DualShock 3 (VID 0x054C / PID 0x0268) but
+    ///     reports <c>bMaxPacketSize0 != 64</c>. Genuine DS3/SIXAXIS always uses 64.
+    ///     Ejoyous Controller Adapter and resold firmware share this fingerprint.
+    ///     Speaks the DS3 protocol (Feature 0x01/0xF2/0xEF/0xF4). Rumble, no LEDs,
+    ///     no Bluetooth; the reported MAC is not a real radio.
+    /// </summary>
+    [Description("PS1/PS2 USB Adapter (DualShock 3 identity)")]
+    Ds3IdentityAdapter = 6
 }
 
 /// <summary>

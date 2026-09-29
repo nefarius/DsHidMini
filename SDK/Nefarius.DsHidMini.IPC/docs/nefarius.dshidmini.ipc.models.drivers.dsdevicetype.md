@@ -23,3 +23,4 @@ Attributes [TypeConverterAttribute](https://learn.microsoft.com/dotnet/api/syste
 | Motion | 3 | Sony PlayStation Move Motion Controller. Not supported. |
 | Wireless | 4 | Sony DualShock 4. Not supported as a DsHidMini target. |
 | ThirdPartyHid | 5 | Third-party HID gamepad. ShanWan VID 0x2563 / PID 0x0575. Rumble, no LEDs, no Bluetooth. |
+| Ds3IdentityAdapter | 6 | USB adapter that impersonates DualShock 3 (VID 0x054C / PID 0x0268) with `bMaxPacketSize0 != 64`. Ejoyous and resold firmware. Rumble, no LEDs, no Bluetooth. |

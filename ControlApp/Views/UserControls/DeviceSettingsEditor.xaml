@@ -901,7 +901,7 @@
             LastChildFill="False">
 
             <ui:InfoBar
-                Title="Navigation Controller"
+                Title="{Binding DeviceTypeDisplay}"
                 Margin="0,0,0,14"
                 DockPanel.Dock="Top"
                 IsClosable="False"

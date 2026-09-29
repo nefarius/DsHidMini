@@ -48,12 +48,21 @@ typedef enum
 	// value stored in DEVPKEY_DsHidMini_RO_DeviceType stays stable.
 	// ShanWan USB WirelessGamepad / PS1-PS2 adapter is VID 2563 / PID 0575.
 	// 
-	DsDeviceTypeThirdPartyHid
+	DsDeviceTypeThirdPartyHid,
+
+	//
+	// USB adapter that impersonates DualShock 3 (VID 054C / PID 0268) but
+	// reports bMaxPacketSize0 != 64. Genuine DS3/SIXAXIS always uses 64.
+	// Ejoyous Controller Adapter and resold firmware share this fingerprint.
+	// Appended so DEVPKEY_DsHidMini_RO_DeviceType values stay stable.
+	// 
+	DsDeviceTypeDs3IdentityAdapter
 } DS_DEVICE_TYPE, * PDS_DEVICE_TYPE;
 
 #define DS_SONY_VENDOR_ID			0x054C
 #define DS_SONY_PID_SIXAXIS			0x0268
 #define DS_SONY_PID_NAVIGATION		0x042F
+#define DS_SONY_DS3_MAX_PACKET_SIZE0	0x40
 #define DS_SHANWAN_VENDOR_ID		0x2563
 #define DS_SHANWAN_PID_PS_ADAPTER	0x0575
 

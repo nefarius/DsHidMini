@@ -211,6 +211,7 @@ All device-indexed APIs use a **one-based** device index (see [Device index](#de
 ### Driver / model enums (see API docs)
 
 - **`DsBatteryStatus`** — Unknown, Dying, Low, Medium, High, Full, Charging, Charged.  
+- **`DsDeviceType`** — Unknown, Sixaxis, Navigation, Motion, Wireless, ThirdPartyHid (ShanWan `2563:0575`), Ds3IdentityAdapter (USB `054C:0268` with `bMaxPacketSize0 != 64`).  
 - **`DsHidDeviceMode`** — SDF, GPJ, SXS, DS4W, XInput (driver mode; useful when integrating with device properties).  
 - **`DsHidMiniDriver`** — Static class with `DeviceInterfaceGuid` and device property keys (e.g. battery, host address, mode) for use with plug-and-play APIs.
 
