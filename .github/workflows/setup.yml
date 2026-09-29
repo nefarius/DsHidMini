@@ -387,7 +387,7 @@ jobs:
           $summary = @(
             "Draft release ``$($artifact.SetupTag)`` ($action)"
             "- Title: $($notes.Title)"
-            "- Previous setup tag: $(if ($notes.PreviousSetupTag) { $notes.PreviousSetupTag } else { '(none)' })"
+            "- Previous published setup tag: $(if ($notes.PreviousPublishedSetupTag) { $notes.PreviousPublishedSetupTag } else { '(none)' })"
             "- MSI: ``$($artifact.MsiName)``"
             "- Review the draft, smoke-test the MSI, then publish the GitHub Release."
           ) -join [Environment]::NewLine
