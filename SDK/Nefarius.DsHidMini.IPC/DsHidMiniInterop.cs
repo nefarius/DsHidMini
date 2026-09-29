@@ -37,12 +37,18 @@ public sealed partial class DsHidMiniInterop : IDisposable
 
     private readonly Dictionary<int, PnPDevice> _connectedDevices = new();
     private readonly DeviceNotificationListener _deviceListener = new();
+    private readonly object _reconnectLock = new();
+    private readonly bool _subscribeToDeviceChanges;
+    private int _disposed;
+    private uint _allocationGranularity;
     private MEMORY_MAPPED_VIEW_ADDRESS? _cmdView;
+    private readonly ReaderWriterLockSlim _cmdViewLock = new();
 
     private Mutex? _commandMutex;
 
     private SafeFileHandle? _fileMapping;
     private MEMORY_MAPPED_VIEW_ADDRESS? _hidView;
+    private readonly ReaderWriterLockSlim _hidViewLock = new();
     private MEMORY_MAPPED_VIEW_ADDRESS? _motionView;
     private readonly ReaderWriterLockSlim _motionViewLock = new();
     private MEMORY_MAPPED_VIEW_ADDRESS? _metricsView;
@@ -64,13 +70,40 @@ public sealed partial class DsHidMiniInterop : IDisposable
     ///     <see cref="IsAvailable" /> first to avoid this exception.
     /// </exception>
     public DsHidMiniInterop()
+        : this(subscribeToDeviceChanges: true)
     {
+    }
+
+    /// <summary>
+    ///     Creates a new <see cref="DsHidMiniInterop" /> instance by connecting to the driver IPC mechanism.
+    /// </summary>
+    /// <param name="subscribeToDeviceChanges">
+    ///     When <see langword="true" />, this instance watches DsHidMini arrivals/removals
+    ///     and remaps shared memory after the last device leaves. Passive readers
+    ///     (periodic metrics polls) should pass <see langword="false" /> so a device
+    ///     burst cannot unmap a view another thread is still reading.
+    /// </param>
+    /// <exception cref="DsHidMiniInteropUnavailableException">
+    ///     One or more required driver IPC objects are unavailable. Make sure the driver is loaded
+    ///     with IPC enabled. Call <see cref="IsAvailable" /> first to avoid this exception.
+    /// </exception>
+    public DsHidMiniInterop(bool subscribeToDeviceChanges)
+    {
+        _subscribeToDeviceChanges = subscribeToDeviceChanges;
         Reconnect();
+
+        if (!_subscribeToDeviceChanges)
+        {
+            return;
+        }
 
         _deviceListener.RegisterDeviceArrived(DsHidMiniDeviceArrived, DsHidMiniDriver.DeviceInterfaceGuid);
         _deviceListener.RegisterDeviceRemoved(DsHidMiniDeviceRemoved, DsHidMiniDriver.DeviceInterfaceGuid);
 
-        RefreshDevices();
+        lock (_reconnectLock)
+        {
+            RefreshDevices();
+        }
     }
 
     /// <summary>
@@ -103,51 +136,22 @@ public sealed partial class DsHidMiniInterop : IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
-        if (_cmdView.HasValue)
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
         {
-            PInvoke.UnmapViewOfFile(_cmdView.Value);
+            return;
         }
 
-        if (_hidView.HasValue)
+        StopDeviceNotifications();
+
+        lock (_reconnectLock)
         {
-            PInvoke.UnmapViewOfFile(_hidView.Value);
+            ReleaseSharedMappingsUnlocked();
         }
 
-        _motionViewLock.EnterWriteLock();
-        try
-        {
-            if (_motionView.HasValue)
-            {
-                PInvoke.UnmapViewOfFile(_motionView.Value);
-                _motionView = null;
-            }
-        }
-        finally
-        {
-            _motionViewLock.ExitWriteLock();
-        }
-
-        _metricsViewLock.EnterWriteLock();
-        try
-        {
-            if (_metricsView.HasValue)
-            {
-                PInvoke.UnmapViewOfFile(_metricsView.Value);
-                _metricsView = null;
-            }
-        }
-        finally
-        {
-            _metricsViewLock.ExitWriteLock();
-        }
-
-        _fileMapping?.Dispose();
-
-        _readEvent?.Dispose();
-        _writeEvent?.Dispose();
-        DisposeInputReportWaitEvents();
-
-        _commandMutex?.Dispose();
+        // Do not Dispose the view locks here: ReaderWriterLockSlim.Dispose throws if
+        // readers are still queued after unmap, and ExitReadLock on a disposed lock
+        // is undefined. The instance is already marked disposed; GC collects the locks.
+        _deviceListener.Dispose();
     }
 
     /// <summary>
@@ -159,9 +163,23 @@ public sealed partial class DsHidMiniInterop : IDisposable
     /// </exception>
     public void Reconnect()
     {
-        DisposeInputReportWaitEvents();
+        lock (_reconnectLock)
+        {
+            ReconnectUnlocked();
+        }
+    }
+
+    private void ReconnectUnlocked()
+    {
+        if (Volatile.Read(ref _disposed) != 0)
+        {
+            throw new ObjectDisposedException(nameof(DsHidMiniInterop));
+        }
+
+        ReleaseSharedMappingsUnlocked();
 
         PInvoke.GetSystemInfo(out SYSTEM_INFO systemInfo);
+        _allocationGranularity = systemInfo.dwAllocationGranularity;
 
         try
         {
@@ -188,13 +206,21 @@ public sealed partial class DsHidMiniInterop : IDisposable
                 throw new DsHidMiniInteropUnavailableException();
             }
 
-            _cmdView = PInvoke.MapViewOfFile(
-                _fileMapping,
-                FILE_MAP.FILE_MAP_READ | FILE_MAP.FILE_MAP_WRITE,
-                0,
-                0,
-                systemInfo.dwAllocationGranularity
-            );
+            _cmdViewLock.EnterWriteLock();
+            try
+            {
+                _cmdView = PInvoke.MapViewOfFile(
+                    _fileMapping,
+                    FILE_MAP.FILE_MAP_READ | FILE_MAP.FILE_MAP_WRITE,
+                    0,
+                    0,
+                    systemInfo.dwAllocationGranularity
+                );
+            }
+            finally
+            {
+                _cmdViewLock.ExitWriteLock();
+            }
 
             if (IsNullMappedView(_cmdView))
             {
@@ -205,13 +231,21 @@ public sealed partial class DsHidMiniInterop : IDisposable
             long alignedOffset = systemInfo.dwAllocationGranularity / pageSize * pageSize;
             long offsetWithinPage = systemInfo.dwAllocationGranularity % pageSize;
 
-            _hidView = PInvoke.MapViewOfFile(
-                _fileMapping,
-                FILE_MAP.FILE_MAP_READ,
-                0,
-                (uint)alignedOffset,
-                (uint)(systemInfo.dwAllocationGranularity + offsetWithinPage)
-            );
+            _hidViewLock.EnterWriteLock();
+            try
+            {
+                _hidView = PInvoke.MapViewOfFile(
+                    _fileMapping,
+                    FILE_MAP.FILE_MAP_READ,
+                    0,
+                    (uint)alignedOffset,
+                    (uint)(systemInfo.dwAllocationGranularity + offsetWithinPage)
+                );
+            }
+            finally
+            {
+                _hidViewLock.ExitWriteLock();
+            }
 
             if (IsNullMappedView(_hidView))
             {
@@ -341,12 +375,100 @@ public sealed partial class DsHidMiniInterop : IDisposable
         }
 
         //
-        // We need to let go of all shared resources or the driver won't be able to re-create the named objects
+        // We need to let go of all shared resources or the driver won't be able to re-create the named objects.
+        // Do not Dispose() the live instance: device callbacks and reader threads still own it.
         // 
         if (_connectedDevices.Count == 0)
         {
-            Dispose();
+            ReleaseSharedMappingsUnlocked();
         }
+    }
+
+    private void StopDeviceNotifications()
+    {
+        if (!_subscribeToDeviceChanges)
+        {
+            return;
+        }
+
+        _deviceListener.UnregisterDeviceArrived(DsHidMiniDeviceArrived);
+        _deviceListener.UnregisterDeviceRemoved(DsHidMiniDeviceRemoved);
+        _deviceListener.StopListen();
+    }
+
+    private void ReleaseSharedMappingsUnlocked()
+    {
+        _cmdViewLock.EnterWriteLock();
+        try
+        {
+            if (_cmdView.HasValue && !IsNullMappedView(_cmdView))
+            {
+                PInvoke.UnmapViewOfFile(_cmdView.Value);
+            }
+
+            _cmdView = null;
+        }
+        finally
+        {
+            _cmdViewLock.ExitWriteLock();
+        }
+
+        _hidViewLock.EnterWriteLock();
+        try
+        {
+            if (_hidView.HasValue && !IsNullMappedView(_hidView))
+            {
+                PInvoke.UnmapViewOfFile(_hidView.Value);
+            }
+
+            _hidView = null;
+        }
+        finally
+        {
+            _hidViewLock.ExitWriteLock();
+        }
+
+        _motionViewLock.EnterWriteLock();
+        try
+        {
+            if (_motionView.HasValue && !IsNullMappedView(_motionView))
+            {
+                PInvoke.UnmapViewOfFile(_motionView.Value);
+            }
+
+            _motionView = null;
+        }
+        finally
+        {
+            _motionViewLock.ExitWriteLock();
+        }
+
+        _metricsViewLock.EnterWriteLock();
+        try
+        {
+            if (_metricsView.HasValue && !IsNullMappedView(_metricsView))
+            {
+                PInvoke.UnmapViewOfFile(_metricsView.Value);
+            }
+
+            _metricsView = null;
+        }
+        finally
+        {
+            _metricsViewLock.ExitWriteLock();
+        }
+
+        _fileMapping?.Dispose();
+        _fileMapping = null;
+
+        _readEvent?.Dispose();
+        _readEvent = null;
+        _writeEvent?.Dispose();
+        _writeEvent = null;
+        DisposeInputReportWaitEvents();
+
+        _commandMutex?.Dispose();
+        _commandMutex = null;
     }
 
     private static string GetDeviceIdentity(PnPDevice device)
@@ -388,17 +510,43 @@ public sealed partial class DsHidMiniInterop : IDisposable
 
     private void DsHidMiniDeviceRemoved(DeviceEventArgs _)
     {
-        RefreshDevices();
+        if (Volatile.Read(ref _disposed) != 0)
+        {
+            return;
+        }
+
+        lock (_reconnectLock)
+        {
+            if (Volatile.Read(ref _disposed) != 0)
+            {
+                return;
+            }
+
+            RefreshDevices();
+        }
     }
 
     private void DsHidMiniDeviceArrived(DeviceEventArgs obj)
     {
-        if (_connectedDevices.Count == 0)
+        if (Volatile.Read(ref _disposed) != 0)
         {
-            Reconnect();
+            return;
         }
 
-        RefreshDevices();
+        lock (_reconnectLock)
+        {
+            if (Volatile.Read(ref _disposed) != 0)
+            {
+                return;
+            }
+
+            if (_connectedDevices.Count == 0)
+            {
+                ReconnectUnlocked();
+            }
+
+            RefreshDevices();
+        }
     }
 
     private void DisposeInputReportWaitEvents()
@@ -498,6 +646,48 @@ public sealed partial class DsHidMiniInterop : IDisposable
     private static bool IsNullMappedView(MEMORY_MAPPED_VIEW_ADDRESS? view)
     {
         return view is not { } mapped || mapped.Equals(default(MEMORY_MAPPED_VIEW_ADDRESS));
+    }
+
+    internal bool TryGetMappedSlotOffset(int deviceIndex, int slotSize, out nuint byteOffset) =>
+        TryGetMappedSlotOffset(deviceIndex, slotSize, _allocationGranularity, out byteOffset);
+
+    internal static bool TryGetMappedSlotOffset(
+        int deviceIndex,
+        int slotSize,
+        uint allocationGranularity,
+        out nuint byteOffset)
+    {
+        byteOffset = 0;
+        if (allocationGranularity == 0 || slotSize <= 0)
+        {
+            return false;
+        }
+
+        long offset = (long)(deviceIndex - 1) * slotSize;
+        if (offset < 0 || offset + slotSize > allocationGranularity)
+        {
+            return false;
+        }
+
+        byteOffset = (nuint)offset;
+        return true;
+    }
+
+    /// <summary>
+    ///     Holds <see cref="_cmdViewLock" /> shared so reconnect/dispose cannot unmap
+    ///     <see cref="_cmdView" /> until the caller exits the matching read lock.
+    ///     Distinct from <see cref="_commandMutex" />, which only serializes driver IPC.
+    /// </summary>
+    private void EnterCommandViewShared()
+    {
+        _cmdViewLock.EnterReadLock();
+        if (_commandMutex is not null && _cmdView is not null)
+        {
+            return;
+        }
+
+        _cmdViewLock.ExitReadLock();
+        throw new DsHidMiniInteropUnavailableException();
     }
 
     private void AcquireCommandLock()

@@ -13,13 +13,31 @@ namespace Nefarius.DsHidMini.ControlApp.Models;
 public class DshmDevMan
 {
     private static readonly TimeSpan XusbRefreshDebounce = TimeSpan.FromMilliseconds(250);
+    private static readonly TimeSpan DeviceListRefreshDebounce = TimeSpan.FromMilliseconds(250);
 
     private DeviceNotificationListener? _listener;
     private DeviceNotificationListener? _xusbListener;
     private CancellationTokenSource? _xusbRefreshCts;
+    private CancellationTokenSource? _deviceListRefreshCts;
+    private int _deviceListRefreshGeneration;
+    private readonly object _devicesLock = new();
+    private readonly List<PnPDevice> _devices = new();
     //private readonly HostRadio _hostRadio;
 
-    public List<PnPDevice> Devices { get; } = new();
+    /// <summary>
+    ///     Snapshot of currently enumerated DsHidMini devices. Each read copies under
+    ///     a lock so UI rebuilds cannot race a PnP-thread Clear/Add.
+    /// </summary>
+    public List<PnPDevice> Devices
+    {
+        get
+        {
+            lock (_devicesLock)
+            {
+                return [.. _devices];
+            }
+        }
+    }
 
     public void StartListeningForDshmDevices()
     {
@@ -54,7 +72,14 @@ public class DshmDevMan
     public void StopListeningForDshmDevices()
     {
         Log.Logger.Information("Stopping detection of DsHidMini devices");
-        Devices.Clear();
+        Interlocked.Increment(ref _deviceListRefreshGeneration);
+        _deviceListRefreshCts?.Cancel();
+        _deviceListRefreshCts?.Dispose();
+        _deviceListRefreshCts = null;
+        lock (_devicesLock)
+        {
+            _devices.Clear();
+        }
         _xusbRefreshCts?.Cancel();
         _xusbRefreshCts?.Dispose();
         _xusbRefreshCts = null;
@@ -69,7 +94,40 @@ public class DshmDevMan
     private void OnListenerDevicesRemovedOrAdded(DeviceEventArgs e)
     {
         Log.Logger.Information("DsHidMini devices added or removed. Updating device list");
-        UpdateConnectedDshmDevicesList();
+        QueueDeviceListRefresh();
+    }
+
+    /// <summary>
+    ///     Coalesces DsHidMini arrive/remove bursts so a second controller coming
+    ///     online does not rebuild the UI list on every intermediate PnP event.
+    /// </summary>
+    private void QueueDeviceListRefresh()
+    {
+        CancellationTokenSource cts = new();
+        CancellationTokenSource? previous = Interlocked.Exchange(ref _deviceListRefreshCts, cts);
+        previous?.Cancel();
+        previous?.Dispose();
+
+        int generation = Interlocked.Increment(ref _deviceListRefreshGeneration);
+        CancellationToken token = cts.Token;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(DeviceListRefreshDebounce, token).ConfigureAwait(false);
+            }
+            catch (TaskCanceledException)
+            {
+                return;
+            }
+
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+
+            UpdateConnectedDshmDevicesList(token, generation);
+        }, token);
     }
 
     private void OnXusbInterfaceChanged(DeviceEventArgs e)
@@ -111,22 +169,38 @@ public class DshmDevMan
         }, token);
     }
 
-    private void UpdateConnectedDshmDevicesList()
+    private void UpdateConnectedDshmDevicesList(CancellationToken cancellationToken = default, int generation = 0)
     {
+        int capturedGeneration = generation == 0
+            ? Interlocked.Increment(ref _deviceListRefreshGeneration)
+            : generation;
+
         XInputSlotResolver.InvalidateResolutionCache();
         Log.Logger.Debug("Rebuilding list of connected DsHidMini devices");
-        Devices.Clear();
+        List<PnPDevice> snapshot = [];
         int instance = 0;
         while (Devcon.FindByInterfaceGuid(DsHidMiniDriver.DeviceInterfaceGuid, out string? path, out string? instanceId,
                    instance++))
         {
             Log.Logger.Debug(
                 "DsHidMini device detected and added to devices list. InstanceID: {InstanceId}", instanceId);
-            Devices.Add(PnPDevice.GetDeviceByInstanceId(instanceId));
+            snapshot.Add(PnPDevice.GetDeviceByInstanceId(instanceId));
         }
 
-        Log.Logger.Debug("DsHidMini devices list rebuilt. {DevicesCount} connected devices", Devices.Count);
-        ConnectedDeviceListUpdated?.Invoke(this, EventArgs.Empty);
+        lock (_devicesLock)
+        {
+            if (cancellationToken.IsCancellationRequested
+                || capturedGeneration != Volatile.Read(ref _deviceListRefreshGeneration))
+            {
+                return;
+            }
+
+            _devices.Clear();
+            _devices.AddRange(snapshot);
+
+            Log.Logger.Debug("DsHidMini devices list rebuilt. {DevicesCount} connected devices", snapshot.Count);
+            ConnectedDeviceListUpdated?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     public static bool TryReconnectDevice(PnPDevice device)

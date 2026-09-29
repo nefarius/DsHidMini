@@ -9,6 +9,7 @@ using Nefarius.DsHidMini.ControlApp.Models.Util.Web;
 using Nefarius.DsHidMini.ControlApp.Services;
 using Nefarius.DsHidMini.ControlApp.ViewModels.UserControls;
 using Nefarius.DsHidMini.ControlApp.Views.Pages;
+using Nefarius.Utilities.DeviceManagement.PnP;
 
 using Wpf.Ui;
 using Wpf.Ui.Abstractions.Controls;
@@ -266,28 +267,62 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
             try
             {
                 string? selectedAddress = SelectedDevice?.DeviceAddress;
-                SelectedDevice = null;
-                List<DeviceViewModel> previous = Devices.ToList();
-                Devices.Clear();
-                HasConnectedDevices = false;
-                foreach (DeviceViewModel oldDev in previous)
+                List<PnPDevice> connected = _dshmDevMan.Devices;
+                DeviceListMerge.Result merge = DeviceListMerge.Compute(
+                    Devices.Select(device => device.InstanceId).ToList(),
+                    connected.Select(device => device.InstanceId).ToList());
+
+                foreach (string instanceId in merge.InstanceIdsToRemove)
                 {
+                    DeviceViewModel? oldDev = Devices.FirstOrDefault(device =>
+                        string.Equals(device.InstanceId, instanceId, StringComparison.OrdinalIgnoreCase));
+                    if (oldDev is null)
+                    {
+                        continue;
+                    }
+
+                    if (ReferenceEquals(SelectedDevice, oldDev))
+                    {
+                        SelectedDevice = null;
+                    }
+
+                    Devices.Remove(oldDev);
                     oldDev.Dispose();
                 }
 
-                foreach (DeviceViewModel newDev in _dshmDevMan.Devices.Select(device => new DeviceViewModel(
-                             device,
-                             _dshmDevMan,
-                             _dshmConfigManager,
-                             _appSnackbarMessagesService,
-                             _contentDialogService,
-                             _addressValidator,
-                             _bluetoothDiagnosticSession
-                         )))
+                Dictionary<string, PnPDevice> connectedById = new(StringComparer.OrdinalIgnoreCase);
+                foreach (PnPDevice device in connected)
+                {
+                    connectedById[device.InstanceId] = device;
+                }
+
+                foreach (string instanceId in merge.InstanceIdsToAdd)
                 {
                     if (generation != _refreshGeneration)
                     {
+                        HasConnectedDevices = Devices.Count > 0;
+                        return;
+                    }
+
+                    if (!connectedById.TryGetValue(instanceId, out PnPDevice? device))
+                    {
+                        continue;
+                    }
+
+                    DeviceViewModel newDev = new(
+                        device,
+                        _dshmDevMan,
+                        _dshmConfigManager,
+                        _appSnackbarMessagesService,
+                        _contentDialogService,
+                        _addressValidator,
+                        _bluetoothDiagnosticSession
+                    );
+
+                    if (generation != _refreshGeneration)
+                    {
                         newDev.Dispose();
+                        HasConnectedDevices = Devices.Count > 0;
                         return;
                     }
 
@@ -300,6 +335,14 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
                     {
                         SelectedDevice = newDev;
                     }
+                }
+
+                HasConnectedDevices = Devices.Count > 0;
+                if (SelectedDevice is null && selectedAddress is not null)
+                {
+                    SelectedDevice = Devices.FirstOrDefault(device =>
+                        string.Equals(device.DeviceAddress, selectedAddress,
+                            StringComparison.OrdinalIgnoreCase));
                 }
             }
             catch (Exception e)
