@@ -15,8 +15,16 @@ typedef struct _DS_INPUT_REPORT_METRICS_STATE
 
 	//
 	// 1 Hz publisher. Created at PassiveLevel so it can take IpcLock.
+	// UMDF rejects periodic passive timers, so this is a one-shot that
+	// re-arms itself while Running is set.
 	//
 	WDFTIMER PublishTimer;
+
+	//
+	// TRUE while D0 publication is armed. Cleared before WdfTimerStop so
+	// a racing callback cannot restart the timer after teardown.
+	//
+	BOOLEAN Running;
 
 	LARGE_INTEGER WindowStartQpc;
 
