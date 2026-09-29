@@ -155,23 +155,20 @@ DsInputReportMetrics_EvtPublishTimer(
 {
 	const WDFDEVICE device = WdfTimerGetParentObject(Timer);
 	const PDEVICE_CONTEXT context = DeviceGetContext(device);
-	BOOLEAN restart = FALSE;
 
 	DsInputReportMetrics_ComputeAndPublish(context);
 
 	WdfSpinLockAcquire(context->InputReportMetrics.Lock);
 	{
-		restart = context->InputReportMetrics.Running;
+		if (context->InputReportMetrics.Running)
+		{
+			WdfTimerStart(
+				Timer,
+				WDF_REL_TIMEOUT_IN_MS(DS_INPUT_REPORT_METRICS_PERIOD_MS)
+			);
+		}
 	}
 	WdfSpinLockRelease(context->InputReportMetrics.Lock);
-
-	if (restart)
-	{
-		WdfTimerStart(
-			Timer,
-			WDF_REL_TIMEOUT_IN_MS(DS_INPUT_REPORT_METRICS_PERIOD_MS)
-		);
-	}
 }
 
 _Use_decl_annotations_
