@@ -1,0 +1,92 @@
+name: Publish Dual Controller installer
+
+on:
+  push:
+    branches: [feat/physical-dualshock4]
+    paths: ['.github/workflows/publish-dual-controller.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: publish-dual-controller-0.1.0
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'headd16/DsHidMini'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_RUN: '36777621469'
+      SOURCE_COMMIT: '6a6acdb5e0035eceff3fd16b56e5a4bd2f367171'
+      RELEASE_TAG: dual-controller-v0.1.0
+    steps:
+      - name: Verify the successful source build
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh run view "$SOURCE_RUN" --repo "$GITHUB_REPOSITORY" \
+            --json headSha,conclusion > source-run.json
+          jq -e --arg sha "$SOURCE_COMMIT" \
+            '.headSha == $sha and .conclusion == "success"' source-run.json
+      - name: Download the previously built installer
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: DualController-Setup-0.1.0-x64
+          path: release-assets
+          repository: headd16/DsHidMini
+          run-id: 36777621469
+          github-token: ${{ github.token }}
+      - name: Verify installer and prepare release notes
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd release-assets
+          printf '%s  %s\n' \
+            '4b52e4aea610b7fb623c4efdfbcc0ba925573fd3d8911a5a3622d63b978588ec' \
+            'DualController-Setup-0.1.0-x64.exe' > SHA256SUMS.txt
+          sha256sum --check SHA256SUMS.txt
+          cd ..
+          cat > release-notes.md <<'NOTES'
+          ## Download and install
+
+          Download **DualController-Setup-0.1.0-x64.exe** from Assets below.
+          For Windows 10 1809+ / Windows 11 x64. Choose the full PS3 + PS4
+          installation. Set PS3 to XInput in DsHidMini ControlApp. Keep the
+          Dual Controller tray app running for PS4 Xbox input. Connection
+          instructions are in INSTALL.txt.
+
+          This experimental community fork combines the existing signed PS3
+          driver with a new PS4 USB/Bluetooth companion backend. It is not an
+          official Nefarius release. The new app and setup are unsigned; the
+          included upstream driver installers retain their signatures.
+
+          Source build: 6a6acdb5e0035eceff3fd16b56e5a4bd2f367171.
+          Windows build, 103 protocol/device-origin checks, native HID smoke
+          check, installer compilation and dependency signature/hash checks
+          passed. Real-controller USB/Bluetooth operation and clean-PC
+          installation remain unverified. PS4 Xbox mapping uses retired
+          ViGEmBus 1.22.0; PS4 motion, touchpad gestures and audio are not mapped.
+
+          This release publishes the exact installer from successful build
+          36777621469. SHA256SUMS.txt provides its verified checksum.
+          NOTES
+      - name: Publish installer assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            target=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" --jq '.object.sha')
+            test "$target" = "$SOURCE_COMMIT"
+            gh release upload "$RELEASE_TAG" release-assets/* \
+              --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$RELEASE_TAG" release-assets/* \
+              --repo "$GITHUB_REPOSITORY" --target "$SOURCE_COMMIT" \
+              --title 'Dual Controller 0.1.0 — Experimental PS3 + PS4' \
+              --prerelease --notes-file release-notes.md
+          fi
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json url,assets
