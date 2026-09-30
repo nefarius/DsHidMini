@@ -14,8 +14,9 @@ namespace Nefarius.DsHidMini.ControlApp.ViewModels.Windows;
 ///     Drives the first-run setup window. Reuses the same
 ///     <see cref="BluetoothDiagnosticSession" /> pair/unplug/connect sequence as the guided
 ///     diagnostic, framed as a one-time setup instead of troubleshooting. The user may
-///     finish successfully, skip after accepting the unsupported-configuration warning,
-///     or close the application.
+///     finish successfully, continue as USB-only without pairing, skip Bluetooth
+///     verification after accepting the unsupported-configuration warning, or close the
+///     application.
 /// </summary>
 public sealed partial class OnboardingViewModel : ObservableObject, IDisposable
 {
@@ -145,6 +146,10 @@ public sealed partial class OnboardingViewModel : ObservableObject, IDisposable
         SetupCompleted?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>
+    ///     Records a versioned skip and continues to the main window. Used by the USB-only
+    ///     path and by the warning-confirmed Bluetooth bypass.
+    /// </summary>
     [RelayCommand(CanExecute = nameof(CanSkip))]
     private void Skip()
     {

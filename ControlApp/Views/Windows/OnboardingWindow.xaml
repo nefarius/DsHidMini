@@ -51,7 +51,7 @@
                     <ui:TextBlock
                         Margin="0,8,0,0"
                         FontSize="14"
-                        Text="This one-time setup pairs your controller and confirms it reconnects over Bluetooth on its own. Follow the instruction below one step at a time."
+                        Text="This one-time setup pairs your controller and confirms it reconnects over Bluetooth on its own. Follow the instruction below one step at a time. If you only use USB and this PC has no Bluetooth, you can continue to the app without pairing."
                         TextWrapping="Wrap" />
                 </StackPanel>
 
@@ -157,6 +157,19 @@
                         <ui:Button
                             Click="ExitApplication_OnClick"
                             Content="Exit DsHidMini ControlApp" />
+                    </StackPanel>
+                    <StackPanel Margin="0,12,0,0">
+                        <ui:TextBlock
+                            FontSize="13"
+                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            Text="No Bluetooth on this PC? USB-only use does not need this pairing check."
+                            TextWrapping="Wrap" />
+                        <ui:Button
+                            Margin="0,8,0,0"
+                            HorizontalAlignment="Left"
+                            Command="{Binding SkipCommand}"
+                            Content="Continue with USB only"
+                            IsEnabled="{Binding CanSkip}" />
                     </StackPanel>
                 </StackPanel>
             </Grid>
