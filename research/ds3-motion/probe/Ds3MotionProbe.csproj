@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Standalone research tool; deliberately NOT part of dshidmini.sln or the NUKE build.
-    Build and run from this folder:  dotnet build -c Release ; dotnet run -c Release [args], see ../README.md
+    Standalone research tool; deliberately NOT part of dshidmini.sln or the default NUKE compile.
+    The explicit NUKE PublishDs3DiagnosticTool target creates the runnable end-user ZIP; see ../README.md.
     Requires a DS3/SIXAXIS (054C:0268) bound to WinUSB via Zadig, see ../README.md.
   -->
 

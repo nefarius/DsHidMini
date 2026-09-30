@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 
 using JetBrains.Annotations;
@@ -295,6 +296,67 @@ partial class Build : NukeBuild
             });
 
             Log.Information("ControlApp published to {PublishOutput}", publishOutput);
+        });
+
+    /// <summary>
+    /// Publishes the WinUSB DS3 research probe as a self-contained, single-file
+    /// Windows x64 executable and packages it with the end-user capture guide.
+    /// </summary>
+    [UsedImplicitly]
+    public Target PublishDs3DiagnosticTool => _ => _
+        .Executes(() =>
+        {
+            AbsolutePath project = RootDirectory / "research" / "ds3-motion" / "probe" / "Ds3MotionProbe.csproj";
+            AbsolutePath launcher = RootDirectory / "research" / "ds3-motion" / "probe" / "Run-Diagnostics.cmd";
+            AbsolutePath guide = RootDirectory / "docs" / "DS3_DIAGNOSTIC_CAPTURE.md";
+            AbsolutePath license = RootDirectory / "LICENSE";
+            AbsolutePath packageDirectory = ResolvedArtifactsPath / "Ds3DiagnosticTool-win-x64";
+            AbsolutePath archive = ResolvedArtifactsPath / "Ds3DiagnosticTool-win-x64.zip";
+
+            foreach (AbsolutePath required in new[] { project, launcher, guide, license })
+            {
+                if (!required.FileExists())
+                {
+                    throw new InvalidOperationException($"Diagnostic package input not found at {required}");
+                }
+            }
+
+            if (packageDirectory.DirectoryExists())
+            {
+                Directory.Delete(packageDirectory, recursive: true);
+            }
+
+            Directory.CreateDirectory(packageDirectory);
+            Directory.CreateDirectory(ResolvedArtifactsPath);
+
+            DotNetTasks.DotNetPublish(s => s
+                .SetProject(project)
+                .SetConfiguration(Configuration.Release)
+                .SetRuntime("win-x64")
+                .SetOutput(packageDirectory)
+                .SetSelfContained(true)
+                .SetProperty("PublishSingleFile", true)
+                .SetProperty("IncludeNativeLibrariesForSelfExtract", true)
+                .SetProperty("PublishTrimmed", false)
+                .SetProperty("DebugSymbols", false)
+                .SetProperty("DebugType", "None"));
+
+            foreach (string pdb in Directory.EnumerateFiles(packageDirectory, "*.pdb"))
+            {
+                File.Delete(pdb);
+            }
+
+            File.Copy(launcher, packageDirectory / "Run-Diagnostics.cmd", overwrite: true);
+            File.Copy(guide, packageDirectory / "README.md", overwrite: true);
+            File.Copy(license, packageDirectory / "LICENSE", overwrite: true);
+
+            if (archive.FileExists())
+            {
+                File.Delete(archive);
+            }
+
+            ZipFile.CreateFromDirectory(packageDirectory, archive, CompressionLevel.Optimal, includeBaseDirectory: false);
+            Log.Information("DS3 diagnostic package created at {Archive}", archive);
         });
 
     IEnumerable<(Configuration config, MSBuildTargetPlatform platform)> XInputBridgeBuildCombinations()

@@ -4,7 +4,7 @@
 //
 //   Ds3MotionProbe --name <label> [--out <dir>] [--seconds N] [--interactive] [--calbyte] [--no-stream] [--wait]
 //
-// --out defaults to ../dumps relative to this project (i.e. research/ds3-motion/dumps).
+// --out defaults to a "captures" folder beside the executable.
 // --wait polls for up to two minutes until a WinUSB-bound pad appears AND answers on EP0, so the
 // dump starts the instant the pad is plugged in (for pads that go dead on the bus shortly after -
 // original SIXAXIS units do this under WinUSB).
@@ -22,9 +22,8 @@ using System.Text;
 using Ds3MotionProbe;
 using Microsoft.Win32;
 string name = "controller";
-// bin/<Configuration>/<tfm>/ -> project folder -> ../dumps
-string projectDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", ".."));
-string outDir = Path.Combine(projectDir, "..", "dumps");
+// Keep packaged runs self-contained. Developer invocations can still override this with --out.
+string outDir = Path.Combine(AppContext.BaseDirectory, "captures");
 int seconds = 15;
 bool interactive = false, calByteTest = false, stream = true, waitForDevice = false;
 
@@ -63,6 +62,19 @@ static string Hex(ReadOnlySpan<byte> b)
     {
         if (i > 0 && i % 16 == 0) sb.Append("\n    ");
         sb.Append(b[i].ToString("x2")).Append(' ');
+    }
+
+    return sb.ToString().TrimEnd();
+}
+
+static string HexRedacted(ReadOnlySpan<byte> b, params int[] redactedOffsets)
+{
+    var redacted = redactedOffsets.ToHashSet();
+    var sb = new StringBuilder(b.Length * 3);
+    for (int i = 0; i < b.Length; i++)
+    {
+        if (i > 0 && i % 16 == 0) sb.Append("\n    ");
+        sb.Append(redacted.Contains(i) ? "xx" : b[i].ToString("x2")).Append(' ');
     }
 
     return sb.ToString().TrimEnd();
@@ -189,12 +201,13 @@ void SetFeature(byte id, ReadOnlySpan<byte> data) => usb.ControlOut(ReqTypeSetCl
 
 void SetOutput(ReadOnlySpan<byte> data48) => usb.ControlOut(ReqTypeSetClassItf, SetReport, 0x0201, 0, data48);
 
-byte[] TryGetFeature(byte id, string label)
+byte[] TryGetFeature(byte id, string label, params int[] redactedOffsets)
 {
     try
     {
         byte[] r = GetFeature(id);
-        Log($"GET Feature 0x{id:X2} ({label}) len={r.Length}\n    {Hex(r)}");
+        string rendered = redactedOffsets.Length == 0 ? Hex(r) : HexRedacted(r, redactedOffsets);
+        Log($"GET Feature 0x{id:X2} ({label}) len={r.Length}\n    {rendered}");
         return r;
     }
     catch (Exception ex)
@@ -273,8 +286,10 @@ catch (Exception ex) { Log($"# SET_IDLE rejected (genuine DS3 STALLs this too): 
 // --- feature dumps -------------------------------------------------------------------------
 Log("\n## Feature report dumps");
 byte[] f01 = TryGetFeature(0x01, "identification");
-TryGetFeature(0xF2, "BT address / firmware");
-TryGetFeature(0xF5, "host address");
+// Keep the vendor prefix from the controller address, but redact its unique suffix.
+TryGetFeature(0xF2, "BT address / firmware", 7, 8, 9);
+// The paired host address is not needed for diagnosis.
+TryGetFeature(0xF5, "host address", 2, 3, 4, 5, 6, 7);
 byte[] efPlain = TryGetFeature(0xEF, "plain, no page select");
 TryGetFeature(0xF8, "F8 plain");
 TryGetFeature(0xF7, "F7 status");

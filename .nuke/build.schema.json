@@ -35,6 +35,7 @@
         "HardwareTestXInputBridge",
         "IngestMicrosoftPackage",
         "PublishControlApp",
+        "PublishDs3DiagnosticTool",
         "Restore",
         "TestConfigParser",
         "TestControlApp",
