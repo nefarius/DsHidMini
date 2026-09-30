@@ -1,0 +1,56 @@
+Dual Controller 0.1 — EXPERIMENTAL COMMUNITY BUILD
+
+This fork adds a PS4 companion backend to DsHidMini. It is not an official
+Nefarius release. The installer itself and the new app are unsigned; the
+bundled upstream driver installers retain their existing signatures.
+The app is compiled, but real-controller USB/Bluetooth testing is still required.
+
+INSTALL
+1. Run DualController-Setup-0.1.0-x64.exe on Windows 10 1809+ or Windows 11 x64.
+2. Choose the full installation for PS3 and PS4 with USB and Bluetooth.
+3. Restart Windows if requested, then open Dual Controller.
+
+PS3 / DUALSHOCK 3
+- Connect by USB and open DsHidMini ControlApp from the Start menu.
+- Complete the original first-run wizard and choose the XInput profile.
+- For Bluetooth, pair to the PC using ControlApp while connected by USB.
+  Then unplug USB. BthPS3 and a compatible Bluetooth adapter are required.
+- DsHidMini continues managing PS3 input; do not change its driver to a PS4 ID.
+
+PS4 / DUALSHOCK 4
+- USB: plug the controller into a data-capable cable; the bridge detects it.
+- Bluetooth: hold SHARE + PS until the light flashes. In Windows Bluetooth
+  settings add "Wireless Controller". The bridge detects the connection.
+- Keep Dual Controller running, or enable its optional sign-in startup task.
+  Closing its window keeps it in the system tray; Exit stops PS4 Xbox mapping.
+- Both controllers can be connected simultaneously. XInput supports four
+  total slots; other active Xbox controllers may consume those slots.
+
+SCOPE AND LIMITATIONS
+- Physical Sony DS4 v1 (054C:05C4) and v2 (054C:09CC) are recognized.
+- PS4 buttons, sticks, analogue triggers, Xbox mapping, rumble and lightbar
+  reports are implemented. Touchpad gestures, motion mapping and the headset
+  port are outside this bridge's scope. PS3 retains its original features.
+- ViGEmBus 1.22.0 supplies Xbox emulation for PS4. It is an upstream project
+  that has been retired; this fork does not claim to replace or maintain it.
+- The native PS4 remains visible. If a game receives input twice, pause
+  "PS4 Xbox mapping" and use the game's native PS4 support or Steam Input.
+  Do not run two Xbox mapping apps for the same controller simultaneously.
+- If HidHide was configured previously, allow DualController.exe to see the
+  PS4 device or remove that device's hiding rule; otherwise it cannot read it.
+- Unsupported clones and Bluetooth adapters may need separate testing.
+- This does not promise compatibility with games that block virtual input.
+
+TROUBLESHOOT
+- Use the Logs button for %LOCALAPPDATA%\DualController\Logs\bridge.log.
+- PS3 problems: use the original DsHidMini ControlApp diagnostics.
+- PS4 missing: check Windows Bluetooth pairing, USB cable, and other mapping
+  software; reconnect, then inspect the live status and log.
+- Disconnected controllers are removed; reconnect attempts occur automatically.
+
+UNINSTALL
+Remove Dual Controller using Windows Apps. Shared driver packages and .NET
+remain installed so other applications using them are not disrupted.
+Remove DsHidMini, BthPS3, ViGEmBus and .NET separately if no longer needed.
+
+Source: https://github.com/headd16/DsHidMini/tree/feat/physical-dualshock4

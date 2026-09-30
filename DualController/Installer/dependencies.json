@@ -1,0 +1,32 @@
+[
+  {
+    "name": "DsHidMini.msi",
+    "url": "https://github.com/nefarius/DsHidMini/releases/download/setup-v3.17.1-r1/Nefarius_DsHidMini_Drivers_x64_arm64_v3.17.1.msi",
+    "algorithm": "SHA256",
+    "hash": "ee99f916f638e43cab6084d9b8a0fc6e92f5aec3c0da77bce9ddd83932381f2f"
+  },
+  {
+    "name": "BthPS3.msi",
+    "url": "https://github.com/nefarius/BthPS3/releases/download/setup-v3.2.0/Nefarius_BthPS3_Drivers_x64_arm64_v3.2.0.msi",
+    "algorithm": "SHA256",
+    "hash": "750cfe3caeb38d3443db5293599a8d4ce952702aa108610bc5c7248322990b77"
+  },
+  {
+    "name": "ViGEmBus.exe",
+    "url": "https://github.com/nefarius/ViGEmBus/releases/download/v1.22.0/ViGEmBus_1.22.0_x64_x86_arm64.exe",
+    "algorithm": "SHA256",
+    "hash": "89220a7865076b342892f98865f3499fb7c4cfd673159e89d352c360fd014c6a"
+  },
+  {
+    "name": "DesktopRuntime.exe",
+    "url": "https://builds.dotnet.microsoft.com/dotnet/WindowsDesktop/10.0.12/windowsdesktop-runtime-10.0.12-win-x64.exe",
+    "algorithm": "SHA512",
+    "hash": "0b907e9312867172a4eb82f4b5ab3f7c2d25e27d8349546d77eeb5d5b8cbecab9ebebfed189b13e9669dc578d892756c548366da539d47b3ddac5efcb7ae72fe"
+  },
+  {
+    "name": "InnoSetup.exe",
+    "url": "https://github.com/jrsoftware/issrc/releases/download/is-7_1_0/innosetup-7.1.0-x64.exe",
+    "algorithm": "SHA256",
+    "hash": "0362a383ed217d4c4239b5933866dd96d3eb2102737da92f80f6057a4b40df2f"
+  }
+]

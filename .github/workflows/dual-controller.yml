@@ -1,0 +1,82 @@
+name: Dual controller installer
+
+on:
+  push:
+    branches: [feat/physical-dualshock4]
+    paths: ['DualController/**', '.github/workflows/dual-controller.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dual-controller-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          lfs: false
+          submodules: false
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+      - name: Protocol and device-origin tests
+        shell: pwsh
+        run: dotnet run --project DualController/Tests -c Release
+      - name: Publish self-contained Windows x64 bridge
+        shell: pwsh
+        run: |
+          dotnet publish DualController/Bridge -c Release -r win-x64 --self-contained true `
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
+            -o DualController/artifacts/app --configfile DualController/nuget.config
+          if ($LASTEXITCODE -ne 0) { throw 'Bridge publish failed' }
+      - name: Windows HID interop smoke check
+        shell: pwsh
+        run: |
+          $diagnostics = Join-Path $PWD 'DualController/artifacts/windows-hid-check.json'
+          $p = Start-Process -FilePath 'DualController/artifacts/app/DualController.exe' `
+            -ArgumentList '--self-test', "--diagnostics-file=$diagnostics" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "HID smoke check failed: $($p.ExitCode)" }
+          Get-Content $diagnostics
+      - name: Verify pinned dependencies
+        shell: pwsh
+        run: ./DualController/Installer/Fetch-Dependencies.ps1
+      - name: Install pinned Inno Setup compiler
+        shell: pwsh
+        run: |
+          $compiler = Join-Path $env:RUNNER_TEMP 'InnoSetup7'
+          $p = Start-Process -FilePath 'DualController/artifacts/dependencies/InnoSetup.exe' `
+            -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/DIR=$compiler" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "Compiler setup failed: $($p.ExitCode)" }
+          "INNO_COMPILER=$compiler/ISCC.exe" >> $env:GITHUB_ENV
+      - name: Build combined installer
+        shell: pwsh
+        run: |
+          & $env:INNO_COMPILER DualController/Installer/DualController.iss
+          if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
+          Get-FileHash DualController/artifacts/installer/*.exe -Algorithm SHA256 |
+            Format-List | Out-File DualController/artifacts/installer/SHA256.txt
+          Copy-Item DualController/INSTALL.txt,DualController/THIRD-PARTY-NOTICES.txt DualController/artifacts/installer/
+          Copy-Item DualController/*-LICENSE.txt,DualController/DOTNET-THIRD-PARTY-NOTICES.txt DualController/artifacts/installer/
+          Copy-Item DualController/artifacts/dependencies/verified-dependencies.json DualController/artifacts/installer/
+          Copy-Item DualController/artifacts/windows-hid-check.json DualController/artifacts/installer/
+      - name: Upload installer and validation manifest
+        uses: actions/upload-artifact@v7
+        with:
+          name: DualController-Setup-0.1.0-x64
+          path: DualController/artifacts/installer/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload portable PS4 bridge
+        uses: actions/upload-artifact@v7
+        with:
+          name: DualController-Portable-0.1.0-x64
+          path: DualController/artifacts/app/DualController.exe
+          if-no-files-found: error
+          retention-days: 30
