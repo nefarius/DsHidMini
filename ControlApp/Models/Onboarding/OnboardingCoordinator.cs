@@ -39,8 +39,8 @@ public sealed class OnboardingCoordinator
 
     /// <summary>
     ///     <see langword="true" /> once this installation skipped setup at
-    ///     <see cref="CurrentOnboardingVersion" /> or later after accepting the unsupported-
-    ///     configuration warning.
+    ///     <see cref="CurrentOnboardingVersion" /> or later, either as a USB-only user or
+    ///     after accepting the unsupported-configuration warning.
     /// </summary>
     public bool IsSkipped => IsVersionSkipped(ApplicationConfiguration.Instance.SkippedOnboardingVersion);
 
@@ -122,8 +122,9 @@ public sealed class OnboardingCoordinator
     }
 
     /// <summary>
-    ///     Records that the user accepted the skip warning for the current setup version.
-    ///     Does not mark setup as completed.
+    ///     Records that the user skipped pairing for the current setup version, either as a
+    ///     USB-only user or after accepting the Bluetooth bypass warning. Does not mark
+    ///     setup as completed.
     /// </summary>
     public void MarkSkipped()
     {
