@@ -118,6 +118,11 @@ typedef enum
 	// Apply a full volatile LED pattern (flags + four effect blocks)
 	// 
 	DSHM_IPC_MSG_CMD_DEVICE_SET_LED_PATTERN,
+	//
+	// Runs the bounded, read-only USB diagnostic sweep (descriptors, strings,
+	// endpoints, Features 0xF7/0xF8 and EEPROM pages) and returns the raw results
+	// 
+	DSHM_IPC_MSG_CMD_DEVICE_COLLECT_DIAGNOSTICS,
 } DSHM_IPC_MSG_CMD_DEVICE;
 
 //
@@ -388,6 +393,137 @@ typedef struct _DSHM_IPC_MSG_SET_LED_PATTERN_REPLY
 	NTSTATUS NtStatus;
 
 } DSHM_IPC_MSG_SET_LED_PATTERN_REPLY, *PDSHM_IPC_MSG_SET_LED_PATTERN_REPLY;
+
+//
+// Diagnostics sweep layout. Must stay in sync with the SDK CmdStructs.cs
+// (all members are naturally aligned so C and C# Sequential layouts match).
+// 
+#define DSHM_IPC_DIAG_VERSION				1
+//
+// Wall-clock budget for the USB sweep. Must stay below the SDK's 30 s IPC wait
+// so a slow/stalling pad cannot miss the reply.
+// 
+#define DSHM_IPC_DIAG_SWEEP_BUDGET_MS		20000
+#define DSHM_IPC_DIAG_DEVICE_DESCRIPTOR_LEN	18
+#define DSHM_IPC_DIAG_CONFIG_DESCRIPTOR_MAX	256
+#define DSHM_IPC_DIAG_MAX_PIPES				8
+#define DSHM_IPC_DIAG_STRING_COUNT			3
+#define DSHM_IPC_DIAG_STRING_CCH			64
+#define DSHM_IPC_DIAG_FEATURE_COUNT			5
+#define DSHM_IPC_DIAG_EEPROM_PAGE_COUNT		16
+#define DSHM_IPC_DIAG_REPORT_LEN			64
+
+//
+// One raw feature report or EEPROM page. For EEPROM pages Id holds the page
+// number and SetStatus the page-select result; for plain features Id is the
+// report ID and SetStatus is unused (zero).
+// 
+typedef struct _DSHM_IPC_DIAG_REPORT
+{
+	UCHAR Id;
+	UCHAR Reserved;
+	USHORT Length;
+	NTSTATUS SetStatus;
+	NTSTATUS GetStatus;
+	UCHAR Data[DSHM_IPC_DIAG_REPORT_LEN];
+
+} DSHM_IPC_DIAG_REPORT, *PDSHM_IPC_DIAG_REPORT;
+
+//
+// One USB string descriptor. Kind: 0 = manufacturer, 1 = product, 2 = serial.
+// 
+typedef struct _DSHM_IPC_DIAG_STRING
+{
+	UCHAR Index;
+	UCHAR Reserved;
+	USHORT Length;
+	NTSTATUS Status;
+	WCHAR Text[DSHM_IPC_DIAG_STRING_CCH];
+
+} DSHM_IPC_DIAG_STRING, *PDSHM_IPC_DIAG_STRING;
+
+//
+// One configured USB pipe/endpoint
+// 
+typedef struct _DSHM_IPC_DIAG_PIPE
+{
+	UCHAR PipeType;
+	UCHAR EndpointAddress;
+	USHORT MaximumPacketSize;
+	UCHAR Interval;
+	UCHAR Reserved[3];
+
+} DSHM_IPC_DIAG_PIPE, *PDSHM_IPC_DIAG_PIPE;
+
+//
+// Request a diagnostics sweep (USB devices only)
+// 
+typedef struct _DSHM_IPC_MSG_COLLECT_DIAGNOSTICS_REQUEST
+{
+	DSHM_IPC_MSG_HEADER Header;
+
+	//
+	// Layout version the client understands
+	// 
+	UINT32 Version;
+
+	UINT32 Flags;
+
+} DSHM_IPC_MSG_COLLECT_DIAGNOSTICS_REQUEST, *PDSHM_IPC_MSG_COLLECT_DIAGNOSTICS_REQUEST;
+
+//
+// Reply to struct _DSHM_IPC_MSG_COLLECT_DIAGNOSTICS_REQUEST
+// 
+typedef struct _DSHM_IPC_MSG_COLLECT_DIAGNOSTICS_REPLY
+{
+	DSHM_IPC_MSG_HEADER Header;
+
+	UINT32 Version;
+
+	//
+	// Overall status; STATUS_NOT_SUPPORTED for non-USB devices. Per-item
+	// statuses below are valid when this is STATUS_SUCCESS.
+	// 
+	NTSTATUS NtStatus;
+
+	UCHAR DeviceDescriptor[DSHM_IPC_DIAG_DEVICE_DESCRIPTOR_LEN];
+	UCHAR Reserved0[2];
+
+	USHORT ConfigDescriptorLength;
+	USHORT Reserved1;
+	NTSTATUS ConfigDescriptorStatus;
+	UCHAR ConfigDescriptor[DSHM_IPC_DIAG_CONFIG_DESCRIPTOR_MAX];
+
+	UINT32 PipeCount;
+	DSHM_IPC_DIAG_PIPE Pipes[DSHM_IPC_DIAG_MAX_PIPES];
+
+	DSHM_IPC_DIAG_STRING Strings[DSHM_IPC_DIAG_STRING_COUNT];
+
+	//
+	// Features 0x01, 0xF2, 0xF5, 0xF7, 0xF8 (in that order)
+	// 
+	DSHM_IPC_DIAG_REPORT Features[DSHM_IPC_DIAG_FEATURE_COUNT];
+
+	//
+	// EEPROM pages 0x00, 0x10, ... 0xF0
+	// 
+	DSHM_IPC_DIAG_REPORT EepromPages[DSHM_IPC_DIAG_EEPROM_PAGE_COUNT];
+
+	//
+	// Result of re-selecting the motion calibration page (0xA0) afterwards
+	// 
+	NTSTATUS RestoreStatus;
+
+} DSHM_IPC_MSG_COLLECT_DIAGNOSTICS_REPLY, *PDSHM_IPC_MSG_COLLECT_DIAGNOSTICS_REPLY;
+
+//
+// Runs the sweep and fills the reply in place (implemented in DsUsb.c)
+// 
+NTSTATUS
+DsUsb_CollectDiagnostics(
+	_In_ PDEVICE_CONTEXT DeviceContext,
+	_Inout_ PDSHM_IPC_MSG_COLLECT_DIAGNOSTICS_REPLY Reply
+);
 
 typedef
 _Function_class_(EVT_DSHM_IPC_DispatchDeviceMessage)

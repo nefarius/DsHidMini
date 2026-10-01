@@ -894,3 +894,290 @@ void EvtUsbRequestCompletionRoutine(
 
 	WdfObjectDelete(Request);
 }
+
+//
+// Reads one feature report into a diagnostics report slot.
+// 
+static
+VOID
+DsUsb_DiagReadFeature(
+	_In_ PDEVICE_CONTEXT DeviceContext,
+	_In_ UCHAR ReportId,
+	_Inout_ PDSHM_IPC_DIAG_REPORT Slot
+)
+{
+	UCHAR buffer[DSHM_IPC_DIAG_REPORT_LEN];
+	ULONG transferred = 0;
+
+	RtlZeroMemory(buffer, sizeof(buffer));
+
+	Slot->Id = ReportId;
+	Slot->GetStatus = USB_SendControlRequest(
+		DeviceContext,
+		BmRequestDeviceToHost,
+		BmRequestClass,
+		GetReport,
+		(USHORT)(0x0300 | ReportId),
+		0,
+		buffer,
+		sizeof(buffer),
+		&transferred
+	);
+
+	if (NT_SUCCESS(Slot->GetStatus))
+	{
+		if (transferred > sizeof(buffer))
+		{
+			transferred = sizeof(buffer);
+		}
+
+		Slot->Length = (USHORT)transferred;
+		RtlCopyMemory(Slot->Data, buffer, transferred);
+	}
+}
+
+//
+// Selects a 0xEF EEPROM page. Returns the SET status.
+// 
+static
+NTSTATUS
+DsUsb_DiagSelectEepromPage(
+	_In_ PDEVICE_CONTEXT DeviceContext,
+	_In_ UCHAR Page
+)
+{
+	UCHAR select[48] = { 0 };
+
+	select[4] = 0x03;
+	select[5] = 0x01;
+	select[6] = Page;
+
+	return USB_SendControlRequest(
+		DeviceContext,
+		BmRequestHostToDevice,
+		BmRequestClass,
+		SetReport,
+		Ds3FeatureEeprom,
+		0,
+		select,
+		sizeof(select),
+		NULL
+	);
+}
+
+//
+// Bounded, read-only diagnostic sweep of a USB DS3. Never fails as a whole once
+// started: each item records its own NTSTATUS so partial data is still useful.
+// The only stateful device access is the 0xEF page select, and page 0xA0 (the
+// motion calibration page the driver itself relies on) is always re-selected
+// before returning.
+// 
+_Use_decl_annotations_
+NTSTATUS
+DsUsb_CollectDiagnostics(
+	PDEVICE_CONTEXT DeviceContext,
+	PDSHM_IPC_MSG_COLLECT_DIAGNOSTICS_REPLY Reply
+)
+{
+	FuncEntry(TRACE_DSUSB);
+
+	const struct USB_DEVICE_CONTEXT* usb = &DeviceContext->Connection.Usb;
+	const WDFUSBDEVICE usbDevice = usb->UsbDevice;
+	ULONG i;
+
+	Reply->Version = DSHM_IPC_DIAG_VERSION;
+	Reply->NtStatus = STATUS_SUCCESS;
+
+	const ULONGLONG deadlineMs = GetTickCount64() + DSHM_IPC_DIAG_SWEEP_BUDGET_MS;
+
+	//
+	// Descriptors
+	// 
+	RtlCopyMemory(
+		Reply->DeviceDescriptor,
+		&usb->UsbDeviceDescriptor,
+		min(sizeof(usb->UsbDeviceDescriptor), sizeof(Reply->DeviceDescriptor))
+	);
+
+	{
+		USHORT configLength = 0;
+		NTSTATUS cfgStatus = WdfUsbTargetDeviceRetrieveConfigDescriptor(usbDevice, NULL, &configLength);
+
+		if (cfgStatus == STATUS_BUFFER_TOO_SMALL && configLength > 0)
+		{
+			UCHAR configBuffer[DSHM_IPC_DIAG_CONFIG_DESCRIPTOR_MAX];
+
+			//
+			// The framework requires the exact size; fetch into a stack copy
+			// only when it fits, otherwise record the overflow.
+			// 
+			if (configLength <= sizeof(configBuffer))
+			{
+				cfgStatus = WdfUsbTargetDeviceRetrieveConfigDescriptor(usbDevice, configBuffer, &configLength);
+
+				if (NT_SUCCESS(cfgStatus))
+				{
+					Reply->ConfigDescriptorLength = configLength;
+					RtlCopyMemory(Reply->ConfigDescriptor, configBuffer, configLength);
+				}
+			}
+			else
+			{
+				cfgStatus = STATUS_BUFFER_OVERFLOW;
+				Reply->ConfigDescriptorLength = 0;
+			}
+		}
+
+		Reply->ConfigDescriptorStatus = cfgStatus;
+	}
+
+	//
+	// Endpoints of the configured interface
+	// 
+	if (usb->UsbInterface)
+	{
+		const UCHAR pipeCount = WdfUsbInterfaceGetNumConfiguredPipes(usb->UsbInterface);
+
+		for (i = 0; i < pipeCount && i < DSHM_IPC_DIAG_MAX_PIPES; i++)
+		{
+			WDF_USB_PIPE_INFORMATION info;
+			WDF_USB_PIPE_INFORMATION_INIT(&info);
+
+			const WDFUSBPIPE pipe = WdfUsbInterfaceGetConfiguredPipe(usb->UsbInterface, (UCHAR)i, &info);
+
+			if (!pipe)
+			{
+				continue;
+			}
+
+			Reply->Pipes[Reply->PipeCount].PipeType = (UCHAR)info.PipeType;
+			Reply->Pipes[Reply->PipeCount].EndpointAddress = info.EndpointAddress;
+			Reply->Pipes[Reply->PipeCount].MaximumPacketSize = (USHORT)info.MaximumPacketSize;
+			Reply->Pipes[Reply->PipeCount].Interval = info.Interval;
+			Reply->PipeCount++;
+		}
+	}
+
+	//
+	// Manufacturer, product and serial number strings (US English)
+	// 
+	{
+		const UCHAR indices[DSHM_IPC_DIAG_STRING_COUNT] = {
+			usb->UsbDeviceDescriptor.iManufacturer,
+			usb->UsbDeviceDescriptor.iProduct,
+			usb->UsbDeviceDescriptor.iSerialNumber
+		};
+
+		for (i = 0; i < DSHM_IPC_DIAG_STRING_COUNT; i++)
+		{
+			PDSHM_IPC_DIAG_STRING slot = &Reply->Strings[i];
+
+			slot->Index = indices[i];
+
+			if (indices[i] == 0)
+			{
+				slot->Status = STATUS_NOT_FOUND;
+				continue;
+			}
+
+			//
+			// Leave room for a terminator; Length counts characters.
+			// 
+			USHORT cch = DSHM_IPC_DIAG_STRING_CCH - 1;
+
+			slot->Status = WdfUsbTargetDeviceQueryString(
+				usbDevice,
+				NULL,
+				NULL,
+				slot->Text,
+				&cch,
+				indices[i],
+				0x0409
+			);
+
+			if (NT_SUCCESS(slot->Status))
+			{
+				slot->Length = cch;
+			}
+			else
+			{
+				RtlZeroMemory(slot->Text, sizeof(slot->Text));
+			}
+		}
+	}
+
+	//
+	// Plain feature reports
+	// 
+	{
+		static const UCHAR featureIds[DSHM_IPC_DIAG_FEATURE_COUNT] = { 0x01, 0xF2, 0xF5, 0xF7, 0xF8 };
+
+		for (i = 0; i < DSHM_IPC_DIAG_FEATURE_COUNT; i++)
+		{
+			if (GetTickCount64() >= deadlineMs)
+			{
+				Reply->Features[i].Id = featureIds[i];
+				Reply->Features[i].GetStatus = STATUS_CANCELLED;
+				continue;
+			}
+
+			DsUsb_DiagReadFeature(DeviceContext, featureIds[i], &Reply->Features[i]);
+		}
+	}
+
+	//
+	// EEPROM pages: SET page select, then GET. Abort remaining pages after
+	// three total transfer failures or when the sweep budget expires so a
+	// non-responsive clone cannot stall the dispatch thread past the SDK wait.
+	// 
+	{
+		ULONG totalFailures = 0;
+
+		for (i = 0; i < DSHM_IPC_DIAG_EEPROM_PAGE_COUNT; i++)
+		{
+			PDSHM_IPC_DIAG_REPORT slot = &Reply->EepromPages[i];
+			const UCHAR page = (UCHAR)(i * 0x10);
+
+			slot->Id = page;
+
+			if (totalFailures >= 3 || GetTickCount64() >= deadlineMs)
+			{
+				slot->SetStatus = STATUS_CANCELLED;
+				slot->GetStatus = STATUS_CANCELLED;
+				continue;
+			}
+
+			slot->SetStatus = DsUsb_DiagSelectEepromPage(DeviceContext, page);
+
+			if (!NT_SUCCESS(slot->SetStatus))
+			{
+				slot->GetStatus = STATUS_CANCELLED;
+				totalFailures++;
+				continue;
+			}
+
+			if (GetTickCount64() >= deadlineMs)
+			{
+				slot->GetStatus = STATUS_CANCELLED;
+				continue;
+			}
+
+			DsUsb_DiagReadFeature(DeviceContext, Ds3FeatureEeprom & 0xFF, slot);
+			slot->Id = page;
+
+			if (!NT_SUCCESS(slot->GetStatus))
+			{
+				totalFailures++;
+			}
+		}
+	}
+
+	//
+	// Always leave the controller on the calibration page the driver expects
+	// 
+	Reply->RestoreStatus = DsUsb_DiagSelectEepromPage(DeviceContext, DS_MOTION_EEPROM_PAGE);
+
+	FuncExit(TRACE_DSUSB, "restore=%!STATUS!", Reply->RestoreStatus);
+
+	return STATUS_SUCCESS;
+}

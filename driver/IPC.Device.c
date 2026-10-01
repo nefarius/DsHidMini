@@ -367,6 +367,54 @@ DSHM_EvtDispatchDeviceMessage(
 
 		status = STATUS_SUCCESS;
 	}
+	else if (MessageHeader->Command.Device == DSHM_IPC_MSG_CMD_DEVICE_COLLECT_DIAGNOSTICS)
+	{
+		NTSTATUS overall = STATUS_NOT_SUPPORTED;
+		BOOLEAN runSweep = FALSE;
+
+		if (MessageHeader->Size < sizeof(DSHM_IPC_MSG_COLLECT_DIAGNOSTICS_REQUEST))
+		{
+			overall = STATUS_INVALID_USER_BUFFER;
+		}
+		else if (((PDSHM_IPC_MSG_COLLECT_DIAGNOSTICS_REQUEST)MessageHeader)->Version != DSHM_IPC_DIAG_VERSION)
+		{
+			overall = STATUS_REVISION_MISMATCH;
+		}
+		else if (DeviceContext->ConnectionType != DsDeviceConnectionTypeUsb)
+		{
+			TraceWarning(TRACE_IPC, "Diagnostics requested for a non-USB device");
+		}
+		else if (DeviceContext->DeviceType == DsDeviceTypeThirdPartyHid)
+		{
+			TraceWarning(TRACE_IPC, "Diagnostics requested for a third-party HID device");
+		}
+		else
+		{
+			runSweep = TRUE;
+		}
+
+		const PDSHM_IPC_MSG_COLLECT_DIAGNOSTICS_REPLY reply = (PDSHM_IPC_MSG_COLLECT_DIAGNOSTICS_REPLY)MessageHeader;
+		const UINT32 deviceIndex = MessageHeader->TargetIndex;
+
+		//
+		// The reply overlays the request buffer; request fields are consumed above
+		// 
+		RtlZeroMemory(reply, sizeof(*reply));
+		reply->Header.Type = DSHM_IPC_MSG_TYPE_REQUEST_REPLY;
+		reply->Header.Target = DSHM_IPC_MSG_TARGET_CLIENT;
+		reply->Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE_COLLECT_DIAGNOSTICS;
+		reply->Header.TargetIndex = deviceIndex;
+		reply->Header.Size = sizeof(*reply);
+		reply->Version = DSHM_IPC_DIAG_VERSION;
+		reply->NtStatus = overall;
+
+		if (runSweep)
+		{
+			(void)DsUsb_CollectDiagnostics(DeviceContext, reply);
+		}
+
+		status = STATUS_SUCCESS;
+	}
 
 	FuncExit(TRACE_IPC, "status=%!STATUS!", status);
 

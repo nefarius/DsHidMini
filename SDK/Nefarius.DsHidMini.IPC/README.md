@@ -142,6 +142,7 @@ if (gotReport)
 | **`uint SetRumble(int deviceIndex, byte largeMotor, byte smallMotor)`** | Sets heavy/left and light/right motor strengths (0–255). Volatile; processed through rescale, alternative mode, keep-alive, and Navigation suppression. Returns NTSTATUS. |
 | **`uint SetAlternateRumbleMode(int deviceIndex, bool enabled)`** | Enables or disables alternative rumble mode for the current session only. A config reload restores the JSON value. Returns NTSTATUS. |
 | **`PowerOffUsbResult PowerOffUsbDevice(int deviceIndex)`** | Sends the PlayStation 3 USB power-off sequence (zero output report, then Feature 0xF4 disable). Wired devices only; the controller stays enumerated. |
+| **`ControllerDiagnosticsResult CollectControllerDiagnostics(int deviceIndex)`** | Runs a bounded, read-only USB sweep (device/config descriptors, endpoints, strings, Features 0x01/0xF2/0xF5/0xF7/0xF8, all 16 EEPROM pages) and re-selects EEPROM page 0xA0 afterwards. Wired DS3 only; each item carries its own NTSTATUS. Non-success `Status` for Bluetooth (`STATUS_NOT_SUPPORTED`) or older drivers (`STATUS_NOT_IMPLEMENTED`). Allow up to ~30 s. |
 
 All device-indexed APIs use a **one-based** device index (see [Device index](#device-index)).
 

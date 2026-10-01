@@ -116,12 +116,18 @@
                                     ToolTipService.InitialShowDelay="200"
                                     ToolTipService.ShowOnDisabled="True" />
                                 <ui:Button
+                                    Margin="0,0,8,0"
                                     Command="{Binding OpenRumbleTesterCommand}"
                                     Content="Rumble tester"
                                     IsEnabled="{Binding CanOpenRumbleTester}"
                                     ToolTip="{Binding RumbleTesterToolTip}"
                                     ToolTipService.InitialShowDelay="200"
                                     ToolTipService.ShowOnDisabled="True" />
+                                <ui:Button
+                                    Command="{Binding OpenExportDiagnosticsCommand}"
+                                    Content="Export diagnostics"
+                                    ToolTip="{Binding ExportDiagnosticsToolTip}"
+                                    ToolTipService.InitialShowDelay="200" />
                             </StackPanel>
                         </DockPanel>
                         <ui:InfoBar

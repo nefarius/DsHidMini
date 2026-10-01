@@ -189,6 +189,28 @@ public class AppSnackbarMessagesService
         );
     }
 
+    public void ShowControllerDiagnosticsExportedMessage(string path, bool partial)
+    {
+        _snackbarService.Show(
+            partial ? "Diagnostics exported (partial)" : "Diagnostics exported",
+            $"Saved to {path}",
+            partial ? ControlAppearance.Caution : ControlAppearance.Success,
+            new SymbolIcon(partial ? SymbolRegular.Warning24 : SymbolRegular.CheckmarkCircle24),
+            TimeSpan.FromSeconds(8)
+        );
+    }
+
+    public void ShowControllerDiagnosticsExportFailedMessage(string detail)
+    {
+        _snackbarService.Show(
+            "Diagnostics export failed",
+            detail,
+            ControlAppearance.Danger,
+            new SymbolIcon(SymbolRegular.DismissCircle24),
+            TimeSpan.FromSeconds(8)
+        );
+    }
+
     public void ShowMotionViewerFailedMessage(string detail)
     {
         _snackbarService.Show(

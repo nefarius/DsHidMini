@@ -129,5 +129,10 @@ internal enum DSHM_IPC_MSG_CMD_DEVICE : UInt32
     /// <summary>
     ///     Apply a full volatile LED pattern (flags + four effect blocks)
     /// </summary>
-    DSHM_IPC_MSG_CMD_DEVICE_SET_LED_PATTERN
+    DSHM_IPC_MSG_CMD_DEVICE_SET_LED_PATTERN,
+
+    /// <summary>
+    ///     Runs the bounded, read-only USB diagnostic sweep and returns the raw results
+    /// </summary>
+    DSHM_IPC_MSG_CMD_DEVICE_COLLECT_DIAGNOSTICS
 }

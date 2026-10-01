@@ -1155,6 +1155,175 @@ public partial class DsHidMiniInterop
         }
     }
 
+    /// <summary>
+    ///     Runs the driver's bounded, read-only USB diagnostic sweep on a wired DS3 and returns the raw results:
+    ///     device/configuration descriptors, endpoints, string descriptors, Features 0x01/0xF2/0xF5/0xF7/0xF8
+    ///     and all 16 EEPROM pages. The motion calibration page (0xA0) is re-selected afterwards.
+    ///     Returns a result with a non-success <see cref="ControllerDiagnosticsResult.Status" /> for Bluetooth
+    ///     devices (<c>STATUS_NOT_SUPPORTED</c>) and for drivers that predate this command
+    ///     (<c>STATUS_NOT_IMPLEMENTED</c>).
+    /// </summary>
+    /// <param name="deviceIndex">The one-based device index.</param>
+    /// <returns>The versioned raw diagnostics result.</returns>
+    /// <exception cref="DsHidMiniInteropUnavailableException">
+    ///     One or more required driver IPC objects are unavailable.
+    /// </exception>
+    /// <exception cref="DsHidMiniInteropInvalidDeviceIndexException">
+    ///     The <paramref name="deviceIndex" /> was outside the valid range 1..255.
+    /// </exception>
+    /// <exception cref="DsHidMiniInteropConcurrencyException">A different thread is currently performing a data exchange.</exception>
+    /// <exception cref="DsHidMiniInteropReplyTimeoutException">The driver didn't respond within an expected period.</exception>
+    /// <exception cref="DsHidMiniInteropUnexpectedReplyException">The driver returned unexpected or malformed data.</exception>
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
+    public unsafe ControllerDiagnosticsResult CollectControllerDiagnostics(int deviceIndex)
+    {
+        const uint statusNotImplemented = 0xC0000002;
+
+        ValidateDeviceIndex(deviceIndex);
+
+        EnterCommandViewShared();
+        try
+        {
+            AcquireCommandLock();
+
+            try
+            {
+                ref DSHM_IPC_MSG_COLLECT_DIAGNOSTICS_REQUEST request =
+                    ref Unsafe.AsRef<DSHM_IPC_MSG_COLLECT_DIAGNOSTICS_REQUEST>(_cmdView);
+
+                request.Header.Type = DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE;
+                request.Header.Target = DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_DEVICE;
+                request.Header.Command.Device = DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_COLLECT_DIAGNOSTICS;
+                request.Header.TargetIndex = (uint)deviceIndex;
+                request.Header.Size = (uint)Marshal.SizeOf<DSHM_IPC_MSG_COLLECT_DIAGNOSTICS_REQUEST>();
+                request.Version = DiagnosticsLayout.Version;
+                request.Flags = 0;
+
+                // The sweep issues dozens of control transfers; allow far more than the default 500 ms.
+                if (!SendAndWait(TimeSpan.FromSeconds(30)))
+                {
+                    throw new DsHidMiniInteropReplyTimeoutException();
+                }
+
+                ref DSHM_IPC_MSG_COLLECT_DIAGNOSTICS_REPLY reply =
+                    ref Unsafe.AsRef<DSHM_IPC_MSG_COLLECT_DIAGNOSTICS_REPLY>(_cmdView);
+
+                if (reply.Header is
+                    {
+                        Type: DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_REPLY,
+                        Target: DSHM_IPC_MSG_TARGET.DSHM_IPC_MSG_TARGET_CLIENT,
+                        Command.Device: DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_COLLECT_DIAGNOSTICS
+                    }
+                    && reply.Header.TargetIndex == deviceIndex
+                    && reply.Header.Size == sizeof(DSHM_IPC_MSG_COLLECT_DIAGNOSTICS_REPLY))
+                {
+                    return ParseDiagnosticsReply(ref reply);
+                }
+
+                // Older drivers leave the request untouched for unknown commands.
+                if (reply.Header is
+                    {
+                        Type: DSHM_IPC_MSG_TYPE.DSHM_IPC_MSG_TYPE_REQUEST_RESPONSE,
+                        Command.Device: DSHM_IPC_MSG_CMD_DEVICE.DSHM_IPC_MSG_CMD_DEVICE_COLLECT_DIAGNOSTICS
+                    })
+                {
+                    return new ControllerDiagnosticsResult { Version = 0, Status = statusNotImplemented };
+                }
+
+                throw new DsHidMiniInteropUnexpectedReplyException(ref reply.Header);
+            }
+            finally
+            {
+                _commandMutex.ReleaseMutex();
+            }
+        }
+        finally
+        {
+            _cmdViewLock.ExitReadLock();
+        }
+    }
+
+    private static unsafe ControllerDiagnosticsResult ParseDiagnosticsReply(
+        ref DSHM_IPC_MSG_COLLECT_DIAGNOSTICS_REPLY reply)
+    {
+        fixed (DSHM_IPC_MSG_COLLECT_DIAGNOSTICS_REPLY* p = &reply)
+        {
+            int configLength = Math.Min((int)p->ConfigDescriptorLength, DiagnosticsLayout.ConfigDescriptorMax);
+            int pipeCount = (int)Math.Min(p->PipeCount, (uint)DiagnosticsLayout.MaxPipes);
+
+            var pipes = new List<DiagnosticsPipe>(pipeCount);
+            DSHM_IPC_DIAG_PIPE* pipeBase = (DSHM_IPC_DIAG_PIPE*)p->Pipes;
+            for (int i = 0; i < pipeCount; i++)
+            {
+                pipes.Add(new DiagnosticsPipe
+                {
+                    PipeType = pipeBase[i].PipeType,
+                    EndpointAddress = pipeBase[i].EndpointAddress,
+                    MaximumPacketSize = pipeBase[i].MaximumPacketSize,
+                    Interval = pipeBase[i].Interval
+                });
+            }
+
+            var strings = new List<DiagnosticsString>(DiagnosticsLayout.StringCount);
+            DSHM_IPC_DIAG_STRING* stringBase = (DSHM_IPC_DIAG_STRING*)p->Strings;
+            for (int i = 0; i < DiagnosticsLayout.StringCount; i++)
+            {
+                bool ok = PowerOffUsbResult.IsNtSuccess(stringBase[i].Status);
+                int chars = Math.Min((int)stringBase[i].Length, DiagnosticsLayout.StringChars);
+                strings.Add(new DiagnosticsString
+                {
+                    Index = stringBase[i].Index,
+                    Status = stringBase[i].Status,
+                    Text = ok ? new string(stringBase[i].Text, 0, chars) : null
+                });
+            }
+
+            return new ControllerDiagnosticsResult
+            {
+                Version = (int)p->Version,
+                Status = p->NtStatus,
+                DeviceDescriptor = CopyBytes(p->DeviceDescriptor, DiagnosticsLayout.DeviceDescriptorLength),
+                ConfigDescriptor = CopyBytes(p->ConfigDescriptor, configLength),
+                ConfigDescriptorStatus = p->ConfigDescriptorStatus,
+                Pipes = pipes,
+                Strings = strings,
+                Features = ParseReports((DSHM_IPC_DIAG_REPORT*)p->Features, DiagnosticsLayout.FeatureCount),
+                EepromPages = ParseReports((DSHM_IPC_DIAG_REPORT*)p->EepromPages, DiagnosticsLayout.EepromPageCount),
+                RestoreStatus = p->RestoreStatus
+            };
+        }
+    }
+
+    private static unsafe List<DiagnosticsReport> ParseReports(DSHM_IPC_DIAG_REPORT* reports, int count)
+    {
+        var list = new List<DiagnosticsReport>(count);
+        for (int i = 0; i < count; i++)
+        {
+            bool ok = PowerOffUsbResult.IsNtSuccess(reports[i].GetStatus);
+            int length = Math.Min((int)reports[i].Length, DiagnosticsLayout.ReportLength);
+            list.Add(new DiagnosticsReport
+            {
+                Id = reports[i].Id,
+                SetStatus = reports[i].SetStatus,
+                GetStatus = reports[i].GetStatus,
+                Data = ok ? CopyBytes(reports[i].Data, length) : Array.Empty<byte>()
+            });
+        }
+
+        return list;
+    }
+
+    private static unsafe byte[] CopyBytes(byte* source, int length)
+    {
+        var result = new byte[length];
+        if (length > 0)
+        {
+            Marshal.Copy((IntPtr)source, result, 0, length);
+        }
+
+        return result;
+    }
+
     private static DSHM_IPC_LED_EFFECT ToIpcLedEffect(Ds3LedEffect effect)
     {
         return new DSHM_IPC_LED_EFFECT
