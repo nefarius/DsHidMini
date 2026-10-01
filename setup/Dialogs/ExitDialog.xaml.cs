@@ -88,7 +88,7 @@ namespace Nefarius.DsHidMini.Setup.Dialogs
             try
             {
                 Process.Start(new ProcessStartInfo("shutdown.exe",
-                    "/r /t 5 /c \"Restarting to finish the DsHidMini driver update.\"")
+                    "/r /t 0 /c \"Restarting to finish the DsHidMini driver update.\"")
                 {
                     CreateNoWindow = true,
                     UseShellExecute = false

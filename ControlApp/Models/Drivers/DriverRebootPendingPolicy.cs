@@ -32,8 +32,6 @@ internal static class DriverRebootPendingPolicy
     public const uint ProblemNeedRestart = 14;
     public const uint DnNeedRestart = 0x00000100;
 
-    public static readonly TimeSpan BootTolerance = TimeSpan.FromMinutes(1);
-
     public static DateTime GetLastBootUtc()
     {
         return DateTime.UtcNow - TimeSpan.FromMilliseconds(Environment.TickCount64);
@@ -51,7 +49,7 @@ internal static class DriverRebootPendingPolicy
         if (marker.IsSet)
         {
             // A marker without a timestamp can't be proven stale, so it counts as outstanding.
-            if (marker.SinceUtc is { } since && since < lastBootUtc - BootTolerance)
+            if (marker.SinceUtc is { } since && since < lastBootUtc)
             {
                 markerIsStale = true;
             }

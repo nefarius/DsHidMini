@@ -27,7 +27,7 @@ internal static class DsHidMiniSetup
             DateTime? since = null;
             if (key.GetValue("RebootPendingSince") is string raw &&
                 DateTime.TryParse(raw, CultureInfo.InvariantCulture,
-                    DateTimeStyles.RoundtripKind | DateTimeStyles.AdjustToUniversal, out DateTime parsed))
+                    DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out DateTime parsed))
             {
                 since = parsed;
             }

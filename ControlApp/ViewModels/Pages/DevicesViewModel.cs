@@ -105,12 +105,24 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
 
         try
         {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("shutdown.exe",
-                "/r /t 10 /c \"Restarting to finish the DsHidMini driver update.\"")
+            // /t 0 without /f: a non-zero timeout would implicitly force-close applications.
+            using System.Diagnostics.Process? process = System.Diagnostics.Process.Start(
+                new System.Diagnostics.ProcessStartInfo("shutdown.exe",
+                    "/r /t 0 /c \"Restarting to finish the DsHidMini driver update.\"")
+                {
+                    CreateNoWindow = true,
+                    UseShellExecute = false
+                });
+            if (process is null)
             {
-                CreateNoWindow = true,
-                UseShellExecute = false
-            });
+                throw new InvalidOperationException("shutdown.exe did not start.");
+            }
+
+            await process.WaitForExitAsync();
+            if (process.ExitCode != 0)
+            {
+                throw new InvalidOperationException($"shutdown.exe exited with code {process.ExitCode}.");
+            }
         }
         catch (Exception ex)
         {
@@ -118,7 +130,7 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
             _ = await new MessageBox
             {
                 Title = "Could not restart Windows",
-                Content = "Please restart the computer manually."
+                Content = "Please close open applications and restart the computer manually."
             }.ShowDialogAsync();
         }
     }

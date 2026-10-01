@@ -35,6 +35,15 @@ public class DriverRebootPendingPolicyTests
     }
 
     [Fact]
+    public void MarkerWrittenJustBeforeBoot_IsStale()
+    {
+        DriverRebootPendingState state = DriverRebootPendingPolicy.Evaluate(
+            new DriverRebootMarker(true, Boot.AddSeconds(-30), "x"), Boot, Package, []);
+        Assert.False(state.IsPending);
+        Assert.True(state.MarkerIsStale);
+    }
+
+    [Fact]
     public void DeviceFlags_ArePendingWithoutMarker()
     {
         Assert.True(DriverRebootPendingPolicy.Evaluate(NoMarker, Boot, Package, [Device(reboot: true)]).IsPending);
