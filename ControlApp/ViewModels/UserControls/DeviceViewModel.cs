@@ -63,6 +63,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     private readonly BluetoothDiagnosticSession _bluetoothDiagnosticSession;
     private InputTesterWindow? _inputTester;
     private MotionViewerWindow? _motionViewer;
+    private ControllerDiagnosticExportWindow? _diagnosticsExport;
     private RumbleTesterWindow? _rumbleTester;
     private BluetoothDiagnosticWindow? _bluetoothDiagnosticWindow;
 
@@ -963,6 +964,8 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         }
         CloseInputTester();
         CloseMotionViewer();
+        _diagnosticsExport?.Close();
+        _diagnosticsExport = null;
         CloseRumbleTester();
         GC.SuppressFinalize(this);
     }
@@ -1494,6 +1497,66 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         };
         _motionViewer.Closed += (_, _) => _motionViewer = null;
         _motionViewer.Show();
+    }
+
+    /// <summary>
+    ///     The export works partially without IPC (cached identification data only), so it is always offered.
+    /// </summary>
+    public string ExportDiagnosticsToolTip =>
+        IsWireless
+            ? "Export identification data and a motion recording. Connect via USB for the complete USB probe."
+            : "Export descriptors, feature reports and a short motion recording to help identify genuine and clone controllers.";
+
+    [RelayCommand]
+    private void OpenExportDiagnostics()
+    {
+        if (_diagnosticsExport is { IsVisible: true })
+        {
+            _diagnosticsExport.Activate();
+            return;
+        }
+
+        byte[]? identification = null;
+        try
+        {
+            identification = Device.GetProperty<byte[]>(DsHidMiniDriver.IdentificationDataProperty);
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Warning(ex, "Failed to read identification data of device '{Address}'", DeviceAddress);
+        }
+
+        string authenticity = $"{AddressVendorSummary}; {IdentificationCheckSummary}";
+        int? slot = DsHidMiniInterop.IsAvailable ? DsHidMiniInterop.TryGetIpcSlotIndex(Device) : null;
+        bool synthesized = false;
+        try
+        {
+            synthesized = IsDeviceAddressSynthesized;
+        }
+        catch (Exception)
+        {
+            // Older drivers do not publish the property.
+        }
+
+        ControllerExportRequest request = new(
+            DeviceAddressFriendly ?? DeviceAddress ?? "Controller",
+            DeviceType.ToString(),
+            IsWireless ? "Bluetooth" : "USB",
+            IsWireless,
+            slot,
+            DeviceAddress,
+            synthesized,
+            DriverVersion,
+            identification is { Length: > 0 } ? identification : null,
+            authenticity);
+
+        ControllerDiagnosticExportViewModel viewModel = new(request, _appSnackbarMessagesService);
+        _diagnosticsExport = new ControllerDiagnosticExportWindow(viewModel)
+        {
+            Owner = Application.Current.MainWindow
+        };
+        _diagnosticsExport.Closed += (_, _) => _diagnosticsExport = null;
+        _diagnosticsExport.Show();
     }
 
     private void CloseMotionViewer()

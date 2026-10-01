@@ -6,6 +6,28 @@ SIXAXIS controller. It is written for Windows users who are comfortable
 installing utilities and using Device Manager, but no development tools or
 commands are required.
 
+## Quickest option: export from the DsHidMini Control App
+
+If the controller is plugged in via USB and DsHidMini (with the driver update
+that includes the diagnostics command) is installed, you can skip everything
+below:
+
+1. Open the DsHidMini Control App and select the controller.
+2. Open the **Info** tab and click **Export diagnostics**.
+3. Leave **Mask Bluetooth addresses and the serial number** ticked.
+4. Click **Start export**. The app reads the controller's USB descriptors,
+   feature reports and EEPROM pages, then asks you to keep the controller flat,
+   tilt it, and shake it for about 15 seconds.
+5. Choose where to save the ZIP and send it.
+
+If the driver is too old, the controller is connected over Bluetooth, or a read
+fails, the export still completes with the data that is available and says what
+is missing (see `summary.json` inside the ZIP). A partial export is still
+useful. The manual method below remains the fallback when the app cannot run
+the probe.
+
+## Manual method (fallback)
+
 Please complete both captures in order:
 
 1. Wireshark + USBPcap while DsHidMini is still installed.
