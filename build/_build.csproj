@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <Compile Include="..\setup\OpenArticleDecision.cs" Link="OpenArticleDecision.cs" />
+    <Compile Include="..\setup\RebootPendingDecision.cs" Link="RebootPendingDecision.cs" />
   </ItemGroup>
 
 </Project>

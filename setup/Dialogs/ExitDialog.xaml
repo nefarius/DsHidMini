@@ -68,14 +68,35 @@
                     TextWrapping="WrapWithOverflow">
                     [ExitDialogTitle]
                 </TextBlock>
-                <TextBlock
-                    x:Name="DialogDescription"
-                    Grid.Row="2"
-                    Grid.Column="1"
-                    Margin="10"
-                    TextWrapping="WrapWithOverflow">
-                    [ExitDialogDescription]
-                </TextBlock>
+                <StackPanel Grid.Row="1" Grid.Column="1" Margin="10">
+                    <TextBlock
+                        x:Name="DialogDescription"
+                        TextWrapping="WrapWithOverflow">
+                        [ExitDialogDescription]
+                    </TextBlock>
+                    <Border
+                        x:Name="RebootWarning"
+                        Margin="0,12,0,0"
+                        Padding="8"
+                        Background="#FFF4CE"
+                        BorderBrush="#E0A800"
+                        BorderThickness="1"
+                        Visibility="Collapsed">
+                        <StackPanel>
+                            <TextBlock FontWeight="SemiBold" Text="Restart required" />
+                            <TextBlock
+                                Margin="0,4,0,0"
+                                Text="The driver was updated, but the previous version is still active until Windows restarts. Controllers may misbehave until you restart."
+                                TextWrapping="WrapWithOverflow" />
+                            <Button
+                                Margin="0,8,0,0"
+                                Padding="8,2"
+                                HorizontalAlignment="Left"
+                                Click="RestartNow_Click"
+                                Content="Restart now" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
             </Grid>
         </Border>
 

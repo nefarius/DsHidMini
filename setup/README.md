@@ -45,6 +45,21 @@ framework-dependent win-x64 app and requires the **.NET 10 Desktop Runtime
      .\Nefarius_DsHidMini_Drivers_x64_arm64_v3.6.0.msi
    ```
 
+## Pending reboot after upgrade
+
+An in-place upgrade can leave the previous driver loaded. After installing, the
+`InstallDrivers` action inspects the DsHidMini devnodes (reboot-required flag,
+problem code 14, `DN_NEED_RESTART`, bound driver version vs. packaged version)
+and, when a reboot is needed, writes these values under
+`HKLM\Software\Nefarius Software Solutions e.U.\Nefarius DsHidMini Driver`:
+
+- `RebootPending` (DWORD 1)
+- `RebootPendingSince` (UTC ISO 8601 string)
+- `RebootPendingReason` (string)
+
+The Exit dialog shows a "Restart now" warning while the marker is set, and
+ControlApp shows a Devices page warning until the system has rebooted.
+
 ## Outputs
 
 - Actions artifact `dshidmini-setup` (signed MSI plus `setup-metadata.json`)
