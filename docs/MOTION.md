@@ -149,13 +149,18 @@ path, **`HW_CAL` wins** if field `0x07` is present. Those pads also match
 
 ### Clone heuristic
 
-A **heuristic**, not a verdict. Both known counterfeits (Obigben, Fake DS3) and
-no genuine pad in the [pad matrix](#pad-matrix) match:
+An **internal motion-path marker**, not an authenticity verdict. ControlApp
+treats a match as inconclusive because the same Feature `0x01` bytes appear on
+known counterfeits (Obigben, Fake DS3) **and** on at least one genuine CECHZC2E
+whose EEPROM, Feature `0xF7`/`0xF8`, and live gyro did not match those clones.
+
+The driver still sets the marker when:
 
 - the calibration field list is exactly `01 02` (count 2, no leading `00`), **and**
 - byte `0x29` is `0x64`
 
-This is independent of the OUI / MAC genuine check used elsewhere.
+That flag only selects the clone-heuristic `PLAIN_ZERO` software-zero path.
+Authenticity in the Control App uses the separate OUI / MAC check.
 
 Two observations from the [pad matrix](#pad-matrix) constrain how this may be
 implemented:

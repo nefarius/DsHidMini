@@ -18,7 +18,8 @@ public static class DeviceAuthenticityPresentation
         "The address check looks for Bluetooth chip vendors Sony typically sourced (such as ALPS); " +
         "Sony does not own those prefixes, and aftermarket pads can copy them. " +
         "A different, usually cheaper, chip vendor is assumed more likely aftermarket. " +
-        "The identification pattern only flags one known aftermarket signature. " +
+        "The identification pattern is inconclusive: the same Feature 0x01 signature " +
+        "has been seen on genuine and aftermarket pads. " +
         "USB vendor/product IDs and the product name are almost always copied from Sony.";
 
     public static AuthenticityCheckDisplay ForBluetoothAddress(
@@ -74,9 +75,9 @@ public static class DeviceAuthenticityPresentation
         if (cloneHeuristic)
         {
             return new AuthenticityCheckDisplay(
-                "Known aftermarket pattern",
-                "The identification report matches a known aftermarket signature. That is a strong clue, not a verdict.",
-                true);
+                "Inconclusive",
+                "The identification report matches a Feature 0x01 signature seen on both genuine and aftermarket pads. This is not evidence either way.",
+                false);
         }
 
         return new AuthenticityCheckDisplay(
