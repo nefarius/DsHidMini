@@ -60,6 +60,7 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
         AddressValidator addressValidator,
         BthPS3StatusService bthPs3,
         DefenderBtStatusService defenderBt,
+        UnsupportedAdapterStatusService unsupportedAdapter,
         DsHidMiniDriverStatusService driverStatus,
         INavigationService navigationService,
         BluetoothDiagnosticSession bluetoothDiagnosticSession
@@ -76,6 +77,7 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
         _addressValidator = addressValidator;
         BthPs3 = bthPs3;
         DefenderBt = defenderBt;
+        UnsupportedAdapter = unsupportedAdapter;
         DriverStatus = driverStatus;
         _navigationService = navigationService;
         RefreshDevicesList();
@@ -84,6 +86,8 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
     public BthPS3StatusService BthPs3 { get; }
 
     public DefenderBtStatusService DefenderBt { get; }
+
+    public UnsupportedAdapterStatusService UnsupportedAdapter { get; }
 
     public DsHidMiniDriverStatusService DriverStatus { get; }
 

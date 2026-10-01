@@ -67,6 +67,17 @@
                 Content="Switch to PS3 mode"
                 IsEnabled="{Binding ViewModel.DefenderBt.CanSwitch}" />
         </StackPanel>
+        <StackPanel
+            Margin="0,0,0,8"
+            DockPanel.Dock="Top"
+            Visibility="{Binding ViewModel.UnsupportedAdapter.IsDetected, Converter={StaticResource BoolToVis_TV_FC}}">
+            <ui:InfoBar
+                Title="{Binding ViewModel.UnsupportedAdapter.StatusTitle}"
+                IsClosable="False"
+                IsOpen="True"
+                Message="{Binding ViewModel.UnsupportedAdapter.StatusMessage}"
+                Severity="{Binding ViewModel.UnsupportedAdapter.Severity}" />
+        </StackPanel>
         <Grid VerticalAlignment="Stretch">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="250" />

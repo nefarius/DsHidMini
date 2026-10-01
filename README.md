@@ -51,8 +51,10 @@ DsHidMini is a self-contained [user-mode driver](https://learn.microsoft.com/win
 
 ## Unsupported hardware
 
-The PlayStation Move Motion Controller is not in scope. See the
-[issue tracker](https://github.com/nefarius/DsHidMini/issues) for known bugs
+- The PlayStation Move Motion Controller is not in scope.
+- **Twin USB Joystick / GreenAsia-PantherLord PS1/PS2 adapter** (`VID_0810` / `PID_0001`) — left to the Windows inbox HID driver; ControlApp warns when one is present. See [docs/TWIN_USB_ADAPTER.md](docs/TWIN_USB_ADAPTER.md).
+
+See the [issue tracker](https://github.com/nefarius/DsHidMini/issues) for known bugs
 and in-progress work.
 
 ## Repository layout
