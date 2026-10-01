@@ -17,6 +17,7 @@ public partial class UnsupportedAdapterStatusService : ObservableObject, IDispos
     /// </summary>
     private static readonly TimeSpan RescanDebounce = TimeSpan.FromMilliseconds(250);
 
+    private readonly object _rescanGate = new();
     private DeviceNotificationListener? _listener;
     private CancellationTokenSource? _debounceCts;
     private int _scanGeneration;
@@ -62,9 +63,12 @@ public partial class UnsupportedAdapterStatusService : ObservableObject, IDispos
         _listener?.Dispose();
         _listener = null;
 
-        _debounceCts?.Cancel();
-        _debounceCts?.Dispose();
-        _debounceCts = null;
+        lock (_rescanGate)
+        {
+            _debounceCts?.Cancel();
+            _debounceCts?.Dispose();
+            _debounceCts = null;
+        }
     }
 
     private void OnListenerDevicesArrivedOrRemoved(DeviceEventArgs e)
@@ -74,13 +78,19 @@ public partial class UnsupportedAdapterStatusService : ObservableObject, IDispos
 
     private void QueueRescan()
     {
-        CancellationTokenSource cts = new();
-        CancellationTokenSource? previous = Interlocked.Exchange(ref _debounceCts, cts);
-        previous?.Cancel();
-        previous?.Dispose();
+        CancellationToken token;
+        int generation;
 
-        int generation = Interlocked.Increment(ref _scanGeneration);
-        CancellationToken token = cts.Token;
+        lock (_rescanGate)
+        {
+            CancellationTokenSource cts = new();
+            CancellationTokenSource? previous = _debounceCts;
+            _debounceCts = cts;
+            previous?.Cancel();
+            previous?.Dispose();
+            generation = ++_scanGeneration;
+            token = cts.Token;
+        }
 
         _ = Task.Run(async () =>
         {
