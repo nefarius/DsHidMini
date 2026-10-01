@@ -89,7 +89,7 @@ public class DeviceAuthenticityPresentationTests
     }
 
     [Fact]
-    public void Identification_KnownAftermarketDump_IsAClueNotAVerdict()
+    public void Identification_SharedPatternDump_IsInconclusive()
     {
         Assert.True(DsIdentification.TryParse(ParseHex(AftermarketDs3), out DsIdentificationInfo? info));
         AuthenticityCheckDisplay display = DeviceAuthenticityPresentation.ForIdentification(
@@ -98,9 +98,9 @@ public class DeviceAuthenticityPresentationTests
             cloneHeuristic: info!.CloneHeuristic);
 
         Assert.True(info.CloneHeuristic);
-        Assert.Equal("Known aftermarket pattern", display.Summary);
-        Assert.Contains("not a verdict", display.Detail, StringComparison.Ordinal);
-        Assert.True(display.ShowWarning);
+        Assert.Equal("Inconclusive", display.Summary);
+        Assert.Contains("genuine and aftermarket", display.Detail, StringComparison.Ordinal);
+        Assert.False(display.ShowWarning);
     }
 
     [Fact]
