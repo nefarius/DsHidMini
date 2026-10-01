@@ -988,6 +988,8 @@ DsUsb_CollectDiagnostics(
 	Reply->Version = DSHM_IPC_DIAG_VERSION;
 	Reply->NtStatus = STATUS_SUCCESS;
 
+	const ULONGLONG deadlineMs = GetTickCount64() + DSHM_IPC_DIAG_SWEEP_BUDGET_MS;
+
 	//
 	// Descriptors
 	// 
@@ -1112,17 +1114,24 @@ DsUsb_CollectDiagnostics(
 
 		for (i = 0; i < DSHM_IPC_DIAG_FEATURE_COUNT; i++)
 		{
+			if (GetTickCount64() >= deadlineMs)
+			{
+				Reply->Features[i].Id = featureIds[i];
+				Reply->Features[i].GetStatus = STATUS_CANCELLED;
+				continue;
+			}
+
 			DsUsb_DiagReadFeature(DeviceContext, featureIds[i], &Reply->Features[i]);
 		}
 	}
 
 	//
-	// EEPROM pages: SET page select, then GET. Abort the rest of the sweep after
-	// three consecutive failures so a non-responsive clone cannot stall the
-	// dispatch thread for minutes of 3 s timeouts.
+	// EEPROM pages: SET page select, then GET. Abort remaining pages after
+	// three total transfer failures or when the sweep budget expires so a
+	// non-responsive clone cannot stall the dispatch thread past the SDK wait.
 	// 
 	{
-		ULONG consecutiveFailures = 0;
+		ULONG totalFailures = 0;
 
 		for (i = 0; i < DSHM_IPC_DIAG_EEPROM_PAGE_COUNT; i++)
 		{
@@ -1131,7 +1140,7 @@ DsUsb_CollectDiagnostics(
 
 			slot->Id = page;
 
-			if (consecutiveFailures >= 3)
+			if (totalFailures >= 3 || GetTickCount64() >= deadlineMs)
 			{
 				slot->SetStatus = STATUS_CANCELLED;
 				slot->GetStatus = STATUS_CANCELLED;
@@ -1143,20 +1152,22 @@ DsUsb_CollectDiagnostics(
 			if (!NT_SUCCESS(slot->SetStatus))
 			{
 				slot->GetStatus = STATUS_CANCELLED;
-				consecutiveFailures++;
+				totalFailures++;
+				continue;
+			}
+
+			if (GetTickCount64() >= deadlineMs)
+			{
+				slot->GetStatus = STATUS_CANCELLED;
 				continue;
 			}
 
 			DsUsb_DiagReadFeature(DeviceContext, Ds3FeatureEeprom & 0xFF, slot);
 			slot->Id = page;
 
-			if (NT_SUCCESS(slot->GetStatus))
+			if (!NT_SUCCESS(slot->GetStatus))
 			{
-				consecutiveFailures = 0;
-			}
-			else
-			{
-				consecutiveFailures++;
+				totalFailures++;
 			}
 		}
 	}

@@ -964,6 +964,11 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         }
         CloseInputTester();
         CloseMotionViewer();
+        if (_diagnosticsExport?.DataContext is ControllerDiagnosticExportViewModel export)
+        {
+            export.RequestCancel();
+        }
+
         _diagnosticsExport?.Close();
         _diagnosticsExport = null;
         CloseRumbleTester();

@@ -135,6 +135,27 @@ public class ControllerDiagnosticExportTests
     }
 
     [Fact]
+    public async Task Bundle_CancelledWrite_PreservesExistingDestination()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"diag-{Guid.NewGuid():N}.zip");
+        await File.WriteAllTextAsync(path, "keep-me");
+        try
+        {
+            using CancellationTokenSource cts = new();
+            cts.Cancel();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                new ControllerDiagnosticBundleWriter().WriteAsync(Content(SampleSweep(), null), path, true, cts.Token));
+
+            Assert.Equal("keep-me", await File.ReadAllTextAsync(path));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task Bundle_WithoutSweepOrTelemetry_StillWrites()
     {
         var content = Content(null, null);

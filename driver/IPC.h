@@ -399,6 +399,11 @@ typedef struct _DSHM_IPC_MSG_SET_LED_PATTERN_REPLY
 // (all members are naturally aligned so C and C# Sequential layouts match).
 // 
 #define DSHM_IPC_DIAG_VERSION				1
+//
+// Wall-clock budget for the USB sweep. Must stay below the SDK's 30 s IPC wait
+// so a slow/stalling pad cannot miss the reply.
+// 
+#define DSHM_IPC_DIAG_SWEEP_BUDGET_MS		20000
 #define DSHM_IPC_DIAG_DEVICE_DESCRIPTOR_LEN	18
 #define DSHM_IPC_DIAG_CONFIG_DESCRIPTOR_MAX	256
 #define DSHM_IPC_DIAG_MAX_PIPES				8

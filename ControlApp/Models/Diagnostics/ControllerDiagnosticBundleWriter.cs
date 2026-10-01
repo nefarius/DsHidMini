@@ -93,75 +93,112 @@ public sealed class ControllerDiagnosticBundleWriter : IControllerDiagnosticBund
 
         byte[] salt = RandomNumberGenerator.GetBytes(16);
 
-        string? directory = Path.GetDirectoryName(Path.GetFullPath(destinationZipPath));
+        string destination = Path.GetFullPath(destinationZipPath);
+        string? directory = Path.GetDirectoryName(destination);
         if (!string.IsNullOrEmpty(directory))
         {
             Directory.CreateDirectory(directory);
         }
 
-        if (File.Exists(destinationZipPath))
+        string tempPath = destination + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
         {
-            File.Delete(destinationZipPath);
-        }
+            await using FileStream fileStream = File.Create(tempPath);
+            using ZipArchive archive = new(fileStream, ZipArchiveMode.Create);
 
-        await using FileStream fileStream = File.Create(destinationZipPath);
-        using ZipArchive archive = new(fileStream, ZipArchiveMode.Create);
-
-        await WriteJsonEntryAsync(archive, "summary.json", BuildSummary(content, redact, salt), cancellationToken)
-            .ConfigureAwait(false);
-
-        if (content.IdentificationBlob is { Length: > 0 } blob)
-        {
-            await WriteJsonEntryAsync(archive, "identification.json", new
-            {
-                Feature = "0x01",
-                Length = blob.Length,
-                Hex = Convert.ToHexString(blob)
-            }, cancellationToken).ConfigureAwait(false);
-        }
-
-        if (content.DriverSweep is { } sweep)
-        {
-            await WriteJsonEntryAsync(archive, "driver-sweep.json", BuildSweep(sweep, redact, salt), cancellationToken)
+            await WriteJsonEntryAsync(archive, "summary.json", BuildSummary(content, redact, salt), cancellationToken)
                 .ConfigureAwait(false);
-        }
 
-        if (content.Telemetry is { } telemetry)
-        {
-            await WriteJsonEntryAsync(archive, "telemetry/phases.json", new
+            if (content.IdentificationBlob is { Length: > 0 } blob)
             {
-                telemetry.MotionAvailable,
-                telemetry.Note,
-                telemetry.Phases
-            }, cancellationToken).ConfigureAwait(false);
-
-            if (telemetry.MotionCsv.Length > 0)
-            {
-                ZipArchiveEntry csv = archive.CreateEntry("telemetry/motion.csv", CompressionLevel.Optimal);
-                await using Stream stream = csv.Open();
-                await stream.WriteAsync(telemetry.MotionCsv, cancellationToken).ConfigureAwait(false);
+                await WriteJsonEntryAsync(archive, "identification.json", new
+                {
+                    Feature = "0x01",
+                    Length = blob.Length,
+                    Hex = Convert.ToHexString(blob)
+                }, cancellationToken).ConfigureAwait(false);
             }
 
-            if (telemetry.ReportRates.Count > 0)
+            if (content.DriverSweep is { } sweep)
             {
-                ZipArchiveEntry rates = archive.CreateEntry("telemetry/report-rate.csv", CompressionLevel.Optimal);
-                await using Stream stream = rates.Open();
-                await using StreamWriter writer = new(stream, new UTF8Encoding(false));
-                await writer.WriteLineAsync("OffsetMs,ReportRateHz,AverageIntervalUs").ConfigureAwait(false);
-                foreach (ControllerReportRateSample sample in telemetry.ReportRates)
+                await WriteJsonEntryAsync(archive, "driver-sweep.json", BuildSweep(sweep, redact, salt), cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            if (content.Telemetry is { } telemetry)
+            {
+                await WriteJsonEntryAsync(archive, "telemetry/phases.json", new
                 {
-                    await writer.WriteLineAsync(string.Create(
-                        CultureInfo.InvariantCulture,
-                        $"{sample.OffsetMs:0.0},{sample.ReportRateHz},{sample.AverageIntervalUs}")).ConfigureAwait(false);
+                    telemetry.MotionAvailable,
+                    telemetry.Note,
+                    telemetry.Phases
+                }, cancellationToken).ConfigureAwait(false);
+
+                if (telemetry.MotionCsv.Length > 0)
+                {
+                    ZipArchiveEntry csv = archive.CreateEntry("telemetry/motion.csv", CompressionLevel.Optimal);
+                    await using Stream stream = csv.Open();
+                    await stream.WriteAsync(telemetry.MotionCsv, cancellationToken).ConfigureAwait(false);
+                }
+
+                if (telemetry.ReportRates.Count > 0)
+                {
+                    ZipArchiveEntry rates = archive.CreateEntry("telemetry/report-rate.csv", CompressionLevel.Optimal);
+                    await using Stream stream = rates.Open();
+                    await using StreamWriter writer = new(stream, new UTF8Encoding(false));
+                    await writer.WriteLineAsync("OffsetMs,ReportRateHz,AverageIntervalUs").ConfigureAwait(false);
+                    foreach (ControllerReportRateSample sample in telemetry.ReportRates)
+                    {
+                        await writer.WriteLineAsync(string.Create(
+                            CultureInfo.InvariantCulture,
+                            $"{sample.OffsetMs:0.0},{sample.ReportRateHz},{sample.AverageIntervalUs}")).ConfigureAwait(false);
+                    }
                 }
             }
+
+            ZipArchiveEntry readme = archive.CreateEntry("README.txt", CompressionLevel.Optimal);
+            await using (Stream stream = readme.Open())
+            await using (StreamWriter writer = new(stream, new UTF8Encoding(false)))
+            {
+                await writer.WriteAsync(BuildReadme(redact)).ConfigureAwait(false);
+            }
+        }
+        catch
+        {
+            TryDelete(tempPath);
+            throw;
         }
 
-        ZipArchiveEntry readme = archive.CreateEntry("README.txt", CompressionLevel.Optimal);
-        await using (Stream stream = readme.Open())
-        await using (StreamWriter writer = new(stream, new UTF8Encoding(false)))
+        try
         {
-            await writer.WriteAsync(BuildReadme(redact)).ConfigureAwait(false);
+            if (File.Exists(destination))
+            {
+                File.Replace(tempPath, destination, destinationBackupFileName: null);
+            }
+            else
+            {
+                File.Move(tempPath, destination);
+            }
+        }
+        catch
+        {
+            TryDelete(tempPath);
+            throw;
+        }
+    }
+
+    private static void TryDelete(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Debug(ex, "Failed to delete temporary diagnostic export '{Path}'.", path);
         }
     }
 

@@ -132,10 +132,14 @@ public sealed partial class ControllerDiagnosticExportViewModel : ObservableObje
             await _writer.WriteAsync(content, dialog.FileName, Redact, token);
 
             LastExportPath = dialog.FileName;
-            StatusText = sweep.Note is null
-                ? $"Saved {dialog.FileName}"
-                : $"Saved {dialog.FileName} (partial: {sweep.Note})";
-            _snackbar.ShowControllerDiagnosticsExportedMessage(dialog.FileName, sweep.Note is not null);
+            string? note = string.Join(
+                " ",
+                new[] { sweep.Note, telemetry?.Note }.Where(n => !string.IsNullOrEmpty(n)));
+            bool partial = note.Length > 0;
+            StatusText = partial
+                ? $"Saved {dialog.FileName} (partial: {note})"
+                : $"Saved {dialog.FileName}";
+            _snackbar.ShowControllerDiagnosticsExportedMessage(dialog.FileName, partial);
         }
         catch (OperationCanceledException)
         {
@@ -189,10 +193,15 @@ public sealed partial class ControllerDiagnosticExportViewModel : ObservableObje
         }
     }
 
+    public void RequestCancel()
+    {
+        _cts?.Cancel();
+    }
+
     [RelayCommand]
     private void Cancel()
     {
-        _cts?.Cancel();
+        RequestCancel();
     }
 
     [RelayCommand]

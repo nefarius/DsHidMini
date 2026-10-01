@@ -8,13 +8,6 @@ public partial class ControllerDiagnosticExportWindow
     {
         DataContext = viewModel;
         InitializeComponent();
-        Closing += (_, e) =>
-        {
-            // Do not close mid-export; the user must cancel first.
-            if (viewModel.IsRunning)
-            {
-                e.Cancel = true;
-            }
-        };
+        Closing += (_, _) => viewModel.RequestCancel();
     }
 }
