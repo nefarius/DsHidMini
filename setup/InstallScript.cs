@@ -423,7 +423,29 @@ internal class InstallScript
     {
         if (e.IsUninstalling)
         {
-            CustomActions.UninstallDrivers(e.Session);
+            bool rebootRequired = CustomActions.UninstallDrivers(e.Session);
+
+            // During an upgrade the old product is removed first; keep (or record) the requirement so
+            // the new product's InstallDrivers can carry it forward. Only a full uninstall clears it.
+            bool upgrading = !string.IsNullOrEmpty(e.Session.Property("UPGRADINGPRODUCTCODE"));
+            if (!upgrading)
+            {
+                CustomActions.ClearRebootMarker(e.Session);
+            }
+            else if (rebootRequired)
+            {
+                CustomActions.WriteRebootMarker(e.Session, "removal of the previous driver requires a reboot");
+            }
+
+            if (rebootRequired)
+            {
+                e.Session.Log("Driver removal requires a reboot to complete.");
+                Record record = new(1);
+                record[1] = "9000";
+                e.Session.Message(
+                    InstallMessage.User | (InstallMessage)MessageButtons.OK | (InstallMessage)MessageIcon.Information,
+                    record);
+            }
         }
     }
 }
@@ -546,6 +568,24 @@ public static class CustomActions
         }
 
         Devcon.Refresh();
+
+        // An upgrade removes the old product first, which can leave the previous driver
+        // loaded without any reboot flag reaching this action. Inspect the devnodes.
+        Version? packageVersion = TryReadFileVersion(Path.Combine(driversDir, archShortName, "dshidmini.dll"));
+        List<DevNodeRebootInfo> devNodes = CollectDevNodeRebootInfo(session);
+        if (RebootPendingDecision.Decide(rebootRequired, packageVersion, devNodes, out string rebootReason))
+        {
+            session.Log($"Reboot pending after driver install: {rebootReason}");
+            rebootRequired = true;
+            WriteRebootMarker(session, rebootReason);
+        }
+        else if (TryReadOutstandingRebootMarker(session, out _, out string outstandingReason))
+        {
+            // This run found nothing new, but an earlier operation (e.g. the old product's removal)
+            // left a reboot outstanding; keep the marker and keep telling the user.
+            session.Log($"Earlier reboot requirement still outstanding: {outstandingReason}");
+            rebootRequired = true;
+        }
 
         if (rebootRequired)
         {
@@ -757,6 +797,164 @@ public static class CustomActions
     public static ActionResult RollbackUninstallManifest(Session session)
     {
         return InstallManifest(session);
+    }
+
+    internal const string SetupRegistryKey = @"Software\Nefarius Software Solutions e.U.\" + InstallScript.ProductName;
+
+    private static Version? TryReadFileVersion(string path)
+    {
+        try
+        {
+            return Version.Parse(FileVersionInfo.GetVersionInfo(path).FileVersion);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    private static List<DevNodeRebootInfo> CollectDevNodeRebootInfo(Session session)
+    {
+        List<DevNodeRebootInfo> result = new();
+        int instance = 0;
+        while (Devcon.FindByInterfaceGuid(DsHidMiniDriver.DeviceInterfaceGuid, out PnPDevice device, instance++, false))
+        {
+            DevNodeRebootInfo info = new() { InstanceId = device.InstanceId };
+
+            try { info.IsRebootRequired = device.GetProperty<bool>(DevicePropertyKey.Device_IsRebootRequired); }
+            catch (Exception ex) { session.Log($"IsRebootRequired unreadable for {device.InstanceId}: {ex.Message}"); }
+
+            try { info.ProblemCode = device.GetProperty<uint>(DevicePropertyKey.Device_ProblemCode); }
+            catch (Exception ex) { session.Log($"ProblemCode unreadable for {device.InstanceId}: {ex.Message}"); }
+
+            try { info.DevNodeStatus = device.GetProperty<uint>(DevicePropertyKey.Device_DevNodeStatus); }
+            catch (Exception ex) { session.Log($"DevNodeStatus unreadable for {device.InstanceId}: {ex.Message}"); }
+
+            try
+            {
+                string? raw = device.GetProperty<string>(DevicePropertyKey.Device_DriverVersion);
+                if (raw != null)
+                {
+                    int comma = raw.LastIndexOf(',');
+                    if (Version.TryParse(comma >= 0 ? raw.Substring(comma + 1).Trim() : raw.Trim(), out Version? v))
+                    {
+                        info.BoundDriverVersion = v;
+                    }
+                }
+            }
+            catch (Exception ex) { session.Log($"DriverVersion unreadable for {device.InstanceId}: {ex.Message}"); }
+
+            session.Log(
+                $"DevNode {info.InstanceId}: rebootRequired={info.IsRebootRequired}, problem={info.ProblemCode}, " +
+                $"status={info.DevNodeStatus}, driver={info.BoundDriverVersion}");
+            result.Add(info);
+        }
+
+        return result;
+    }
+
+    [DllImport("kernel32.dll")]
+    private static extern ulong GetTickCount64();
+
+    private static DateTime GetLastBootUtc()
+    {
+        return DateTime.UtcNow - TimeSpan.FromMilliseconds(GetTickCount64());
+    }
+
+    /// <summary>
+    ///     Reads a reboot marker written before the current boot session ended; an older one is
+    ///     stale (the reboot happened) and is removed.
+    /// </summary>
+    internal static bool TryReadOutstandingRebootMarker(Session session, out DateTime since, out string reason)
+    {
+        since = DateTime.UtcNow;
+        reason = "";
+        try
+        {
+            using Microsoft.Win32.RegistryKey? key = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryView.Registry64)
+                .OpenSubKey(SetupRegistryKey);
+            if (!(key?.GetValue("RebootPending") is int pending) || pending == 0)
+            {
+                return false;
+            }
+
+            reason = key.GetValue("RebootPendingReason") as string ?? "";
+            if (key.GetValue("RebootPendingSince") is string raw &&
+                DateTime.TryParse(raw, System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal,
+                    out DateTime parsed))
+            {
+                since = parsed;
+                if (since < GetLastBootUtc())
+                {
+                    session.Log("Discarding stale reboot marker from before the last boot.");
+                    reason = "";
+                    ClearRebootMarker(session);
+                    return false;
+                }
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            session.Log($"Reading reboot marker failed: {ex}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    ///     Records a pending reboot, keeping the timestamp and reason of a still-outstanding earlier one.
+    /// </summary>
+    internal static void WriteRebootMarker(Session session, string reason)
+    {
+        try
+        {
+            DateTime since = DateTime.UtcNow;
+            if (TryReadOutstandingRebootMarker(session, out DateTime earlierSince, out string earlierReason))
+            {
+                since = earlierSince;
+                if (!string.IsNullOrEmpty(earlierReason) && earlierReason.IndexOf(reason, StringComparison.Ordinal) < 0)
+                {
+                    reason = earlierReason + "; " + reason;
+                }
+                else if (!string.IsNullOrEmpty(earlierReason))
+                {
+                    reason = earlierReason;
+                }
+            }
+
+            using Microsoft.Win32.RegistryKey key = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryView.Registry64)
+                .CreateSubKey(SetupRegistryKey)!;
+            key.SetValue("RebootPending", 1, Microsoft.Win32.RegistryValueKind.DWord);
+            key.SetValue("RebootPendingSince", since.ToString("o"), Microsoft.Win32.RegistryValueKind.String);
+            key.SetValue("RebootPendingReason", reason, Microsoft.Win32.RegistryValueKind.String);
+        }
+        catch (Exception ex)
+        {
+            session.Log($"Writing reboot marker failed: {ex}");
+        }
+    }
+
+    internal static void ClearRebootMarker(Session session)
+    {
+        try
+        {
+            using Microsoft.Win32.RegistryKey? key = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryView.Registry64)
+                .OpenSubKey(SetupRegistryKey, true);
+            if (key == null)
+            {
+                return;
+            }
+
+            key.DeleteValue("RebootPending", false);
+            key.DeleteValue("RebootPendingSince", false);
+            key.DeleteValue("RebootPendingReason", false);
+        }
+        catch (Exception ex)
+        {
+            session.Log($"Clearing reboot marker failed: {ex}");
+        }
     }
 
     public static bool UninstallDrivers(Session session)

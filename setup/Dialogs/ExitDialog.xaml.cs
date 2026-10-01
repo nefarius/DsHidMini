@@ -57,8 +57,48 @@ namespace Nefarius.DsHidMini.Setup.Dialogs
                 DialogDescription.Text = Shell.CustomErrorDescription ?? "[FatalErrorDescription1]";
             }
 
+            else if (IsRebootPending())
+            {
+                RebootWarning.Visibility = Visibility.Visible;
+            }
+
             // `Localize` resolves [...] titles and descriptions into the localized strings stored in MSI resources tables
             this.Localize();
+        }
+
+        static bool IsRebootPending()
+        {
+            try
+            {
+                using (Microsoft.Win32.RegistryKey key = Microsoft.Win32.RegistryKey
+                           .OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryView.Registry64)
+                           .OpenSubKey(CustomActions.SetupRegistryKey))
+                {
+                    return key?.GetValue("RebootPending") is int value && value != 0;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        void RestartNow_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo("shutdown.exe",
+                    "/r /t 0 /c \"Restarting to finish the DsHidMini driver update.\"")
+                {
+                    CreateNoWindow = true,
+                    UseShellExecute = false
+                });
+                model.GoExit();
+            }
+            catch
+            {
+                // Best effort; the user can still restart manually.
+            }
         }
 
         void ViewLog_Click(object sender, RoutedEventArgs e)

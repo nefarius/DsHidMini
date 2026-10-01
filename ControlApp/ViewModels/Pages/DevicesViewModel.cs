@@ -60,6 +60,7 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
         AddressValidator addressValidator,
         BthPS3StatusService bthPs3,
         DefenderBtStatusService defenderBt,
+        DsHidMiniDriverStatusService driverStatus,
         INavigationService navigationService,
         BluetoothDiagnosticSession bluetoothDiagnosticSession
     )
@@ -75,6 +76,7 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
         _addressValidator = addressValidator;
         BthPs3 = bthPs3;
         DefenderBt = defenderBt;
+        DriverStatus = driverStatus;
         _navigationService = navigationService;
         RefreshDevicesList();
     }
@@ -82,6 +84,56 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
     public BthPS3StatusService BthPs3 { get; }
 
     public DefenderBtStatusService DefenderBt { get; }
+
+    public DsHidMiniDriverStatusService DriverStatus { get; }
+
+    [RelayCommand]
+    private async Task RestartNow()
+    {
+        ContentDialogResult result = await _contentDialogService.ShowSimpleDialogAsync(
+            new SimpleContentDialogCreateOptions
+            {
+                Title = "Restart Windows now?",
+                Content = "Unsaved work in other applications may be lost.",
+                PrimaryButtonText = "Restart",
+                CloseButtonText = "Cancel"
+            });
+        if (result != ContentDialogResult.Primary)
+        {
+            return;
+        }
+
+        try
+        {
+            // /t 0 without /f: a non-zero timeout would implicitly force-close applications.
+            using System.Diagnostics.Process? process = System.Diagnostics.Process.Start(
+                new System.Diagnostics.ProcessStartInfo("shutdown.exe",
+                    "/r /t 0 /c \"Restarting to finish the DsHidMini driver update.\"")
+                {
+                    CreateNoWindow = true,
+                    UseShellExecute = false
+                });
+            if (process is null)
+            {
+                throw new InvalidOperationException("shutdown.exe did not start.");
+            }
+
+            await process.WaitForExitAsync();
+            if (process.ExitCode != 0)
+            {
+                throw new InvalidOperationException($"shutdown.exe exited with code {process.ExitCode}.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Error(ex, "Failed to start restart.");
+            _ = await new MessageBox
+            {
+                Title = "Could not restart Windows",
+                Content = "Please close open applications and restart the computer manually."
+            }.ShowDialogAsync();
+        }
+    }
 
 
     /// <summary>
@@ -99,6 +151,7 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
         Log.Logger.Debug(
             "Navigating to Devices page. Refreshing dynamic properties of each connected Device ViewModel.");
         BthPs3.Refresh();
+        DriverStatus.Refresh(_dshmDevMan.Devices);
         foreach (DeviceViewModel device in Devices)
         {
             await device.RefreshDeviceSettings();
@@ -338,6 +391,7 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
                 }
 
                 HasConnectedDevices = Devices.Count > 0;
+                DriverStatus.Refresh(connected);
                 if (SelectedDevice is null && selectedAddress is not null)
                 {
                     SelectedDevice = Devices.FirstOrDefault(device =>

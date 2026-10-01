@@ -16,6 +16,7 @@ static class ReleasePipelineTests
         TestIngestFromDirectoryAndZip();
         TestSignatureParser();
         OpenArticleTests.Run();
+        RebootPendingTests.Run();
         Console.WriteLine("ReleasePipeline fixture tests passed");
     }
 
