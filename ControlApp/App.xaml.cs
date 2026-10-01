@@ -90,6 +90,7 @@ public partial class App
             services.AddSingleton<DshmConfigManager>();
             services.AddSingleton<BthPS3StatusService>();
             services.AddSingleton<DefenderBtStatusService>();
+            services.AddSingleton<UnsupportedAdapterStatusService>();
             services.AddSingleton<DsHidMiniDriverStatusService>();
 
             services.AddSingleton<IPreflightProbe, BluetoothPreflightProbe>();

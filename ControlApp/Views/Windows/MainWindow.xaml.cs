@@ -16,6 +16,7 @@ public partial class MainWindow : INavigationWindow
 {
     private readonly DshmDevMan _dshmDevMan;
     private readonly DefenderBtStatusService _defenderBtStatusService;
+    private readonly UnsupportedAdapterStatusService _unsupportedAdapterStatusService;
     private readonly DonationPromptService _donationPromptService;
     private readonly ControlAppUpdateService _updateService;
     private bool _startupPromptsStarted;
@@ -24,6 +25,7 @@ public partial class MainWindow : INavigationWindow
         MainWindowViewModel viewModel,
         DshmDevMan dshmDevMan, //
         DefenderBtStatusService defenderBtStatusService,
+        UnsupportedAdapterStatusService unsupportedAdapterStatusService,
         INavigationService navigationService,
         IServiceProvider serviceProvider,
         ISnackbarService snackbarService,
@@ -37,6 +39,7 @@ public partial class MainWindow : INavigationWindow
 
         _dshmDevMan = dshmDevMan;
         _defenderBtStatusService = defenderBtStatusService;
+        _unsupportedAdapterStatusService = unsupportedAdapterStatusService;
         _updateService = updateService;
         _donationPromptService = donationPromptService;
 
@@ -80,6 +83,7 @@ public partial class MainWindow : INavigationWindow
 
         _dshmDevMan.StartListeningForDshmDevices();
         _defenderBtStatusService.StartListening();
+        _unsupportedAdapterStatusService.StartListening();
         ApplyMinimizeToTraySetting();
     }
 
@@ -147,6 +151,7 @@ public partial class MainWindow : INavigationWindow
 
         _dshmDevMan.StopListeningForDshmDevices();
         _defenderBtStatusService.StopListening();
+        _unsupportedAdapterStatusService.StopListening();
         base.OnClosing(e);
     }
 
