@@ -14,3 +14,4 @@ In-repo notes:
 - [PS3_USB_STARTUP.md](PS3_USB_STARTUP.md) — observed PS3 USB startup sequence
 - [MOTION.md](MOTION.md) — motion research, calibration paths, current driver behavior, and IPC telemetry
 - [STEAM_GAMEINPUT_DUPLICATES.md](STEAM_GAMEINPUT_DUPLICATES.md) — Steam listing one XInput-mode pad twice (GameInput + XInput backends)
+- [STEAM_INPUT_PRESSURE.md](STEAM_INPUT_PRESSURE.md) — DualShock 3 pressure buttons, HID-mode axis map, and Steam Input limits
