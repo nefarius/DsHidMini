@@ -1,0 +1,25 @@
+---
+description: Review dependencies before adding or upgrading packages
+alwaysApply: true
+---
+
+# Review dependencies before adding them
+
+Prefer platform APIs and code already in this repository for small features.
+Do not add a package when a short local implementation is enough.
+
+Before adding or upgrading a PackageReference:
+
+- Inspect the package and its transitives for extra shared frameworks,
+  especially `Microsoft.AspNetCore.App` in ControlApp.
+- ControlApp is a framework-dependent WPF app. It must require only
+  `Microsoft.NETCore.App` and `Microsoft.WindowsDesktop.App`.
+- After publish, confirm the embedded runtimeconfig still lists those two
+  frameworks at the `10.0.0` baseline and does not mention ASP.NET.
+
+```xml
+<!-- BAD: a desktop HTTP cache that silently requires ASP.NET Core -->
+<PackageReference Include="Nefarius.HttpClient.LiteDbCache" Version="2.5.0" />
+
+<!-- GOOD: keep the feature in-repo when the package graph is heavier than the need -->
+```
