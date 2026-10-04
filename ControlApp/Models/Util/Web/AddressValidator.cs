@@ -111,8 +111,7 @@ public sealed class AddressValidator(IHttpClientFactory clientFactory, ILogger<A
 {
     public async Task<AddressAuthenticityStatus> CheckAddress(PhysicalAddress address)
     {
-        // global:: avoids the Nefarius.HttpClient namespace introduced by the cache package.
-        using global::System.Net.Http.HttpClient client = clientFactory.CreateClient(DocsHttpClient.Name);
+        using HttpClient client = clientFactory.CreateClient(DocsHttpClient.Name);
 
         try
         {

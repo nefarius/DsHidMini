@@ -102,8 +102,7 @@ public class DocsHttpCacheTests
             throw new HttpRequestException("unexpected request");
         });
 
-        // global:: avoids the Nefarius.HttpClient namespace introduced by the cache package.
-        using global::System.Net.Http.HttpClient client = host.Factory.CreateClient(DocsHttpClient.Name);
+        using HttpClient client = host.Factory.CreateClient(DocsHttpClient.Name);
         using HttpResponseMessage unrelated = await client.GetAsync("/unrelated");
         Assert.True(unrelated.IsSuccessStatusCode);
 
@@ -151,7 +150,7 @@ public class DocsHttpCacheTests
         Directory.CreateDirectory(root);
         string blockingFile = Path.Combine(root, "blocked");
         await File.WriteAllTextAsync(blockingFile, "not a directory");
-        string databasePath = Path.Combine(blockingFile, "docs-http-cache.db");
+        string cacheFilePath = Path.Combine(blockingFile, "genuine-oui-db.json");
 
         await using CacheHost host = await CacheHost.StartAsync(
             TimeSpan.FromHours(1),
@@ -164,7 +163,7 @@ public class DocsHttpCacheTests
 
                 throw new HttpRequestException("offline");
             },
-            databasePath,
+            cacheFilePath,
             root);
 
         Assert.Equal(AddressAuthenticityStatus.SonyPrefixRecognized, await host.Validator.CheckAddress(GenuineAddress));
@@ -203,25 +202,25 @@ public class DocsHttpCacheTests
         public static async Task<CacheHost> StartAsync(
             TimeSpan cacheLifetime,
             Func<int, HttpResponseMessage> respond,
-            string? databasePath = null,
+            string? cacheFilePath = null,
             string? cleanupDirectory = null)
         {
             return await StartAsync(
                 cacheLifetime,
                 (_, call) => respond(call),
-                databasePath,
+                cacheFilePath,
                 cleanupDirectory);
         }
 
         public static async Task<CacheHost> StartAsync(
             TimeSpan cacheLifetime,
             Func<HttpRequestMessage, int, HttpResponseMessage> respond,
-            string? databasePath = null,
+            string? cacheFilePath = null,
             string? cleanupDirectory = null)
         {
             string directory = cleanupDirectory
                                ?? Path.Combine(Path.GetTempPath(), "DsHidMini-docs-cache-" + Guid.NewGuid().ToString("N"));
-            databasePath ??= Path.Combine(directory, "docs-http-cache.db");
+            cacheFilePath ??= Path.Combine(directory, "genuine-oui-db.json");
             ScriptedHandler handler = new(respond);
 
             IHost host = Host.CreateDefaultBuilder()
@@ -229,7 +228,7 @@ public class DocsHttpCacheTests
                 {
                     services.AddDocsHttpClient(
                         "ControlApp.Tests",
-                        databasePath,
+                        cacheFilePath,
                         cacheLifetime,
                         () => handler,
                         options =>

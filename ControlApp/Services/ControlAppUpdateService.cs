@@ -121,8 +121,7 @@ public sealed class ControlAppUpdateService(
         ArtifactMetaData? metadata;
         try
         {
-            // global:: avoids the Nefarius.HttpClient namespace introduced by the cache package.
-            global::System.Net.Http.HttpClient client = httpClientFactory.CreateClient("Buildbot");
+            HttpClient client = httpClientFactory.CreateClient("Buildbot");
             metadata = await client.GetFromJsonAsync<ArtifactMetaData>(
                 MetadataRelativePath,
                 cancellationToken).ConfigureAwait(false);
