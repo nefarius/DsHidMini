@@ -18,7 +18,8 @@ public enum SettingsContext
     XInput,
     General,
     Global,
-    CGP
+    CGP,
+    CGS
 }
 
 [SuppressMessage("ReSharper", "InconsistentNaming")]

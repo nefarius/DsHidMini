@@ -103,9 +103,37 @@ DSHM_GetFeature(
 #endif
 
 	//
+	// Standard HID Sensor properties (CGS mode)
+	// 
+	if ((Packet->reportId == DS_MOTION_HID_REPORT_ID_ACCEL || Packet->reportId == DS_MOTION_HID_REPORT_ID_GYRO)
+		&& DeviceContext->Configuration.HidDeviceMode == DsHidMiniDeviceModeCGS)
+	{
+		if (Packet->reportBufferLen < DS_MOTION_HID_SENSOR_FEATURE_REPORT_SIZE)
+		{
+			status = STATUS_BUFFER_TOO_SMALL;
+		}
+		else
+		{
+			const ULONG sensor = Packet->reportId == DS_MOTION_HID_REPORT_ID_ACCEL
+				? DS_MOTION_HID_SENSOR_ACCEL
+				: DS_MOTION_HID_SENSOR_GYRO;
+
+			DsMotionHid_WriteSensorFeatureReport(
+				Packet->reportId,
+				DeviceContext->Motion.HasSample ? DS_MOTION_HID_STATUS_READY : DS_MOTION_HID_STATUS_NO_DATA,
+				&DeviceContext->Motion.SensorHid[sensor],
+				Packet->reportBuffer
+			);
+
+			*ReportSize = DS_MOTION_HID_SENSOR_FEATURE_REPORT_SIZE - 1;
+
+			status = STATUS_SUCCESS;
+		}
+	}
+	//
 	// SIXAXIS.SYS emulation
 	// 
-	if (Packet->reportId == 0x00 && DeviceContext->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
+	else if (Packet->reportId == 0x00 && DeviceContext->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
 	{
 		//
 		// Copy last received raw report to buffer
@@ -187,9 +215,36 @@ DSHM_SetFeature(
 {
 	FuncEntry(TRACE_DSHIDMINIDRV);
 
-	UNREFERENCED_PARAMETER(DeviceContext);
-
 	NTSTATUS status = STATUS_SUCCESS;
+
+	//
+	// Standard HID Sensor properties (CGS mode)
+	// 
+	if ((Packet->reportId == DS_MOTION_HID_REPORT_ID_ACCEL || Packet->reportId == DS_MOTION_HID_REPORT_ID_GYRO)
+		&& DeviceContext->Configuration.HidDeviceMode == DsHidMiniDeviceModeCGS)
+	{
+		if (Packet->reportBufferLen < DS_MOTION_HID_SENSOR_FEATURE_REPORT_SIZE)
+		{
+			status = STATUS_BUFFER_TOO_SMALL;
+		}
+		else
+		{
+			DsMotionHid_ReadSensorFeatureReport(
+				Packet->reportBuffer,
+				&DeviceContext->Motion.SensorHid[
+					Packet->reportId == DS_MOTION_HID_REPORT_ID_ACCEL
+						? DS_MOTION_HID_SENSOR_ACCEL
+						: DS_MOTION_HID_SENSOR_GYRO
+				]
+			);
+
+			*ReportSize = Packet->reportBufferLen;
+		}
+
+		FuncExit(TRACE_DSHIDMINIDRV, "status=%!STATUS!", status);
+
+		return status;
+	}
 
 #ifdef DSHM_FEATURE_FFB
 

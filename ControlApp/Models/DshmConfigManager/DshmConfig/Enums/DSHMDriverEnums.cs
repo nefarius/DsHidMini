@@ -8,7 +8,8 @@ public enum HidDeviceMode
     SXS,
     DS4Windows,
     XInput,
-    CGP
+    CGP,
+    CGS
 }
 
 public enum DevicePairingMode

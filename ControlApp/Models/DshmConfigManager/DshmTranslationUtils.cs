@@ -21,7 +21,8 @@ public class DshmManagerToDriverConversion
         { SettingsContext.SXS, DshmConfig.Enums.HidDeviceMode.SXS },
         { SettingsContext.DS4W, DshmConfig.Enums.HidDeviceMode.DS4Windows },
         { SettingsContext.XInput, DshmConfig.Enums.HidDeviceMode.XInput },
-        { SettingsContext.CGP, DshmConfig.Enums.HidDeviceMode.CGP }
+        { SettingsContext.CGP, DshmConfig.Enums.HidDeviceMode.CGP },
+        { SettingsContext.CGS, DshmConfig.Enums.HidDeviceMode.CGS }
     };
 
     public static Dictionary<HidDeviceMode, SettingsContext> HidDeviceModeDriverToManager = new()
@@ -31,7 +32,8 @@ public class DshmManagerToDriverConversion
         { DshmConfig.Enums.HidDeviceMode.SXS, SettingsContext.SXS },
         { DshmConfig.Enums.HidDeviceMode.DS4Windows, SettingsContext.DS4W },
         { DshmConfig.Enums.HidDeviceMode.XInput, SettingsContext.XInput },
-        { DshmConfig.Enums.HidDeviceMode.CGP, SettingsContext.CGP }
+        { DshmConfig.Enums.HidDeviceMode.CGP, SettingsContext.CGP },
+        { DshmConfig.Enums.HidDeviceMode.CGS, SettingsContext.CGS }
     };
 
     public static Dictionary<LEDsMode, DshmConfig.Enums.LEDsMode> LedModeManagerToDriver = new()

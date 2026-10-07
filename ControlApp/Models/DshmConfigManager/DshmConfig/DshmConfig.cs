@@ -39,6 +39,7 @@ public class DshmDeviceSettings
     public DshmHidModeSettings? DS4Windows => HidDeviceMode == Enums.HidDeviceMode.DS4Windows ? ContextSettings : null;
     public DshmHidModeSettings? XInput => HidDeviceMode == Enums.HidDeviceMode.XInput ? ContextSettings : null;
     public DshmHidModeSettings? CGP => HidDeviceMode == Enums.HidDeviceMode.CGP ? ContextSettings : null;
+    public DshmHidModeSettings? CGS => HidDeviceMode == Enums.HidDeviceMode.CGS ? ContextSettings : null;
 
     public class DeadZoneSettings
     {

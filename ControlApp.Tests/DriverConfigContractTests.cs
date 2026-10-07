@@ -16,7 +16,7 @@ namespace Nefarius.DsHidMini.ControlApp.Tests;
 
 public class DriverConfigContractTests
 {
-    private static readonly string[] HidModes = ["SDF", "GPJ", "SXS", "DS4Windows", "XInput", "CGP"];
+    private static readonly string[] HidModes = ["SDF", "GPJ", "SXS", "DS4Windows", "XInput", "CGP", "CGS"];
 
     [Fact]
     public void Serialize_UsesNativePropertyNames_AndOmitsUnsupportedKeys()
@@ -44,6 +44,7 @@ public class DriverConfigContractTests
     [InlineData(SettingsContext.DS4W, "DS4Windows")]
     [InlineData(SettingsContext.XInput, "XInput")]
     [InlineData(SettingsContext.CGP, "CGP")]
+    [InlineData(SettingsContext.CGS, "CGS")]
     public void Serialize_EmitsExactlyOneActiveModeBlock(SettingsContext context, string expectedMode)
     {
         JsonNode global = JsonNode.Parse(SerializeDefaultProfile(context))!["Global"]!;
@@ -174,6 +175,33 @@ public class DriverConfigContractTests
     public void ToHidDeviceModePropertyValue_Cgp_MapsToByteSix()
     {
         Assert.Equal(0x06, DshmDriverTranslationUtils.ToHidDeviceModePropertyValue(SettingsContext.CGP));
+    }
+
+    [Fact]
+    public void ToHidDeviceModePropertyValue_Cgs_MapsToByteSeven()
+    {
+        Assert.Equal(0x07, DshmDriverTranslationUtils.ToHidDeviceModePropertyValue(SettingsContext.CGS));
+    }
+
+    [Fact]
+    public void RoundTrip_CgsMode_PreservesHidModeAndOmitsPressureAndDPadSettings()
+    {
+        DeviceSettings original = new();
+        original.HidMode.SettingsContext = SettingsContext.CGS;
+
+        DshmDeviceSettings driver = new();
+        DshmManagerToDriverConversion.ConvertDeviceSettingsToDriverFormat(original, driver);
+        Assert.Equal(HidDeviceMode.CGS, driver.HidDeviceMode);
+        Assert.Null(driver.ContextSettings.PressureExposureMode);
+        Assert.Null(driver.ContextSettings.DPadExposureMode);
+
+        string json = DshmConfigSerialization.Serialize(new DshmConfiguration { Global = driver });
+        Assert.Equal("CGS", JsonNode.Parse(json)!["Global"]!["HidDeviceMode"]!.GetValue<string>());
+
+        DshmConfiguration parsed = DshmConfigSerialization.Deserialize(json);
+        DeviceSettings restored = new();
+        DshmManagerToDriverConversion.ConvertDriverFormatToDeviceSettings(parsed.Global, restored);
+        Assert.Equal(SettingsContext.CGS, restored.HidMode.SettingsContext);
     }
 
     [Fact]

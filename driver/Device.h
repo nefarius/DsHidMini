@@ -585,6 +585,20 @@ typedef struct
 	UCHAR InputReport[DS3_COMMON_MAX_HID_INPUT_REPORT_SIZE];
 
 	//
+	// Size of the report currently staged in InputReport for modes that send
+	// reports of differing sizes (CGS)
+	//
+	ULONG InputReportSize;
+
+	//
+	// CGS reports that had no pending HID read; retried in order on the next
+	// Generate. One slot per collection; same report ID replaces in place.
+	//
+	UCHAR CgsQueuedReports[3][DS3_COMMON_MAX_HID_INPUT_REPORT_SIZE];
+	ULONG CgsQueuedSizes[3];
+	ULONG CgsQueueCount;
+
+	//
 	// Raw input report for SIXAXIS.SYS GET_FEATURE report
 	// 
 	DS3_RAW_INPUT_REPORT GetFeatureReport;

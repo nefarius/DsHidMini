@@ -21,7 +21,8 @@ public class HidModeSettingsViewModel : DeviceSettingsViewModel
         SettingsContext.SXS,
         SettingsContext.DS4W,
         SettingsContext.XInput,
-        SettingsContext.CGP
+        SettingsContext.CGP,
+        SettingsContext.CGS
     };
 
     public List<SettingsContext> HIDDeviceModesList => hidDeviceModesList;

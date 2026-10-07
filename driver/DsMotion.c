@@ -489,6 +489,8 @@ DsMotion_Initialize(
 	RtlZeroMemory(Motion, sizeof(*Motion));
 	Motion->Fallback = TRUE;
 	Motion->Path = DsIdentificationMotionPathUnknown;
+	DsMotionHid_SensorPropsInit(&Motion->SensorHid[DS_MOTION_HID_SENSOR_ACCEL]);
+	DsMotionHid_SensorPropsInit(&Motion->SensorHid[DS_MOTION_HID_SENSOR_GYRO]);
 
 	for (i = 0; i < 3; i++)
 	{

@@ -1,6 +1,288 @@
 #include "Driver.h"
 #include "InputReport.tmh"
 
+//
+// Writes DS4 gyro, accelerometer and timestamp from the canonical motion sample
+// (see DsMotionHid.h for frame and units). Zeroes them while no sample exists.
+// 
+static
+VOID
+DSHM_FillDs4Motion(
+	_In_ const PDEVICE_CONTEXT DeviceContext,
+	_Inout_ PUCHAR Output
+)
+{
+	const PDS_MOTION_STATE motion = &DeviceContext->Motion;
+	DS_MOTION_HID_FRAME frame;
+	USHORT timestamp = 0;
+
+	RtlZeroMemory(&frame, sizeof(frame));
+
+	if (motion->HasSample)
+	{
+		LARGE_INTEGER frequency;
+
+		DsMotionHid_ToDeviceFrame(
+			motion->Sample.AccelMilliGX,
+			motion->Sample.AccelMilliGY,
+			motion->Sample.AccelMilliGZ,
+			motion->Sample.GyroMilliDps,
+			&frame
+		);
+
+		QueryPerformanceFrequency(&frequency);
+		timestamp = DsMotionHid_Ds4Timestamp(motion->Sample.TimestampQpc.QuadPart, frequency.QuadPart);
+	}
+
+	DsMotionHid_WriteDs4Report(&frame, Output);
+	Output[DS_MOTION_HID_DS4_OFFSET_TIMESTAMP] = (UCHAR)(timestamp & 0xFF);
+	Output[DS_MOTION_HID_DS4_OFFSET_TIMESTAMP + 1] = (UCHAR)(timestamp >> 8);
+}
+
+static
+BOOLEAN
+DSHM_TrySendStagedInputReport(
+	_In_ DMF_CONTEXT_DsHidMini* ModuleDeviceContext
+)
+{
+	const NTSTATUS status = DMF_VirtualHidMini_InputReportGenerate(
+		ModuleDeviceContext->DmfModuleVirtualHidMini,
+		DsHidMini_RetrieveNextInputReport
+	);
+
+	if (NT_SUCCESS(status))
+	{
+		return TRUE;
+	}
+
+	if (status != STATUS_NO_MORE_ENTRIES)
+	{
+		TraceError(
+			TRACE_DSHIDMINIDRV,
+			"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!",
+			status
+		);
+		EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_VirtualHidMini_InputReportGenerate", status);
+	}
+
+	return FALSE;
+}
+
+static
+VOID
+DSHM_EnqueueCgsReport(
+	_In_ DMF_CONTEXT_DsHidMini* ModuleDeviceContext,
+	_In_ ULONG ReportSize
+)
+{
+	const UCHAR reportId = ModuleDeviceContext->InputReport[0];
+	ULONG index;
+
+	//
+	// One slot per collection (gamepad / accel / gyro). A newer sample
+	// replaces the same report ID in place so gamepad or accel traffic
+	// cannot evict a queued gyrometer report.
+	//
+	for (index = 0; index < ModuleDeviceContext->CgsQueueCount; index++)
+	{
+		if (ModuleDeviceContext->CgsQueuedReports[index][0] == reportId)
+		{
+			RtlCopyMemory(
+				ModuleDeviceContext->CgsQueuedReports[index],
+				ModuleDeviceContext->InputReport,
+				ReportSize
+			);
+			ModuleDeviceContext->CgsQueuedSizes[index] = ReportSize;
+			return;
+		}
+	}
+
+	if (ModuleDeviceContext->CgsQueueCount >= ARRAYSIZE(ModuleDeviceContext->CgsQueuedSizes))
+	{
+		return;
+	}
+
+	index = ModuleDeviceContext->CgsQueueCount;
+	RtlCopyMemory(
+		ModuleDeviceContext->CgsQueuedReports[index],
+		ModuleDeviceContext->InputReport,
+		ReportSize
+	);
+	ModuleDeviceContext->CgsQueuedSizes[index] = ReportSize;
+	ModuleDeviceContext->CgsQueueCount++;
+}
+
+static
+VOID
+DSHM_DequeueCgsReportById(
+	_In_ DMF_CONTEXT_DsHidMini* ModuleDeviceContext,
+	_In_ UCHAR ReportId
+)
+{
+	ULONG index;
+
+	for (index = 0; index < ModuleDeviceContext->CgsQueueCount; index++)
+	{
+		if (ModuleDeviceContext->CgsQueuedReports[index][0] != ReportId)
+		{
+			continue;
+		}
+
+		const ULONG remaining = ModuleDeviceContext->CgsQueueCount - index - 1;
+
+		if (remaining > 0)
+		{
+			RtlMoveMemory(
+				ModuleDeviceContext->CgsQueuedReports[index],
+				ModuleDeviceContext->CgsQueuedReports[index + 1],
+				sizeof(ModuleDeviceContext->CgsQueuedReports[0]) * remaining
+			);
+			RtlMoveMemory(
+				&ModuleDeviceContext->CgsQueuedSizes[index],
+				&ModuleDeviceContext->CgsQueuedSizes[index + 1],
+				sizeof(ModuleDeviceContext->CgsQueuedSizes[0]) * remaining
+			);
+		}
+
+		ModuleDeviceContext->CgsQueueCount--;
+		return;
+	}
+}
+
+static
+VOID
+DSHM_FlushCgsQueue(
+	_In_ DMF_CONTEXT_DsHidMini* ModuleDeviceContext
+)
+{
+	while (ModuleDeviceContext->CgsQueueCount > 0)
+	{
+		const ULONG size = ModuleDeviceContext->CgsQueuedSizes[0];
+
+		RtlCopyMemory(
+			ModuleDeviceContext->InputReport,
+			ModuleDeviceContext->CgsQueuedReports[0],
+			size
+		);
+		ModuleDeviceContext->InputReportSize = size;
+
+		if (!DSHM_TrySendStagedInputReport(ModuleDeviceContext))
+		{
+			return;
+		}
+
+		if (ModuleDeviceContext->CgsQueueCount > 1)
+		{
+			RtlMoveMemory(
+				ModuleDeviceContext->CgsQueuedReports[0],
+				ModuleDeviceContext->CgsQueuedReports[1],
+				sizeof(ModuleDeviceContext->CgsQueuedReports[0]) * (ModuleDeviceContext->CgsQueueCount - 1)
+			);
+			RtlMoveMemory(
+				&ModuleDeviceContext->CgsQueuedSizes[0],
+				&ModuleDeviceContext->CgsQueuedSizes[1],
+				sizeof(ModuleDeviceContext->CgsQueuedSizes[0]) * (ModuleDeviceContext->CgsQueueCount - 1)
+			);
+		}
+
+		ModuleDeviceContext->CgsQueueCount--;
+	}
+}
+
+//
+// Sends one report of the CGS mode; each report has its own size. If no HID
+// read is pending the report is queued and retried on the next Generate.
+// 
+static
+VOID
+DSHM_GenerateInputReport(
+	_In_ DMF_CONTEXT_DsHidMini* ModuleDeviceContext,
+	_In_ ULONG ReportSize
+)
+{
+	ModuleDeviceContext->InputReportSize = ReportSize;
+
+	if (DSHM_TrySendStagedInputReport(ModuleDeviceContext))
+	{
+		DSHM_DequeueCgsReportById(ModuleDeviceContext, ModuleDeviceContext->InputReport[0]);
+		DSHM_FlushCgsQueue(ModuleDeviceContext);
+	}
+	else
+	{
+		DSHM_EnqueueCgsReport(ModuleDeviceContext, ReportSize);
+	}
+}
+
+//
+// CGS: gamepad report (ID 1) followed by accelerometer and gyrometer
+// HID Sensor reports (IDs 0x30 and 0x31)
+// 
+static
+VOID
+DSHM_ProcessCgsInputReport(
+	_In_ const PDEVICE_CONTEXT DeviceContext,
+	_In_ DMF_CONTEXT_DsHidMini* ModuleDeviceContext,
+	_In_ const PDS3_RAW_INPUT_REPORT Report
+)
+{
+	const PDS_MOTION_STATE motion = &DeviceContext->Motion;
+	DS_MOTION_HID_FRAME frame;
+
+	DSHM_FlushCgsQueue(ModuleDeviceContext);
+
+	DS3_RAW_TO_SDF_HID_INPUT_REPORT(
+		Report,
+		ModuleDeviceContext->InputReport,
+		DsPressureExposureModeDigital,
+		DsDPadExposureModeHAT,
+		&DeviceContext->Configuration.ThumbSettings,
+		&DeviceContext->Configuration.FlipAxis
+	);
+	DSHM_GenerateInputReport(ModuleDeviceContext, DS3_CGP_HID_INPUT_REPORT_SIZE);
+
+	if (!motion->HasSample)
+	{
+		return;
+	}
+
+	DsMotionHid_ToDeviceFrame(
+		motion->Sample.AccelMilliGX,
+		motion->Sample.AccelMilliGY,
+		motion->Sample.AccelMilliGZ,
+		motion->Sample.GyroMilliDps,
+		&frame
+	);
+
+	if (motion->SensorHid[DS_MOTION_HID_SENSOR_ACCEL].ReportingState != DS_MOTION_HID_REPORTING_STATE_NO_EVENTS)
+	{
+		DsMotionHid_WriteSensorInputReport(
+			DS_MOTION_HID_REPORT_ID_ACCEL,
+			DS_MOTION_HID_STATUS_READY,
+			frame.AccelMilliG,
+			ModuleDeviceContext->InputReport
+		);
+		DSHM_GenerateInputReport(ModuleDeviceContext, DS_MOTION_HID_SENSOR_INPUT_REPORT_SIZE);
+	}
+
+	if (motion->SensorHid[DS_MOTION_HID_SENSOR_GYRO].ReportingState != DS_MOTION_HID_REPORTING_STATE_NO_EVENTS)
+	{
+		INT32 gyro[3];
+
+		for (int i = 0; i < 3; i++)
+		{
+			gyro[i] = (frame.GyroMilliDps[i] * DS_MOTION_HID_GYRO_UNIT_PER_DPS) / 1000;
+		}
+
+		DsMotionHid_WriteSensorInputReport(
+			DS_MOTION_HID_REPORT_ID_GYRO,
+			DS_MOTION_HID_STATUS_READY,
+			gyro,
+			ModuleDeviceContext->InputReport
+		);
+		DSHM_GenerateInputReport(ModuleDeviceContext, DS_MOTION_HID_SENSOR_INPUT_REPORT_SIZE);
+	}
+}
+
 
 //
 // Protocol-agnostic function that transforms the raw input report to HID-mode-compatible ones
@@ -113,6 +395,16 @@ DSHM_ParseInputReport(
 		);
 
 		break;
+	case DsHidMiniDeviceModeCGS:
+
+		//
+		// Sends its own set of reports; nothing left to do here
+		// 
+		DSHM_ProcessCgsInputReport(DeviceContext, ModuleDeviceContext, Report);
+
+		FuncExitNoReturn(TRACE_DSHIDMINIDRV);
+
+		return;
 	default:
 		break;
 	}
@@ -208,6 +500,11 @@ DSHM_ParseInputReport(
 			&DeviceContext->Configuration.ThumbSettings,
 			&DeviceContext->Configuration.FlipAxis
 		);
+
+		//
+		// Gyro, accelerometer and timestamp from the canonical motion sample
+		// 
+		DSHM_FillDs4Motion(DeviceContext, ModuleDeviceContext->InputReport);
 
 		//
 		// Notify new Input Report is available

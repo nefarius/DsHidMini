@@ -11,7 +11,8 @@ internal static class DshmDriverTranslationUtils
         { 0x03, SettingsContext.SXS },
         { 0x04, SettingsContext.DS4W },
         { 0x05, SettingsContext.XInput },
-        { 0x06, SettingsContext.CGP }
+        { 0x06, SettingsContext.CGP },
+        { 0x07, SettingsContext.CGS }
     };
 
     /// <summary>

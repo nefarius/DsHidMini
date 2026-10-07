@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "DsCommon.h"
+#include "DsMotionHid.h"
 #include "Configuration.Json.h"
 
 static int g_passed;
@@ -424,6 +425,181 @@ TEST(Parse_CgpHidDeviceMode_Recognized)
     return 0;
 }
 
+TEST(Parse_CgsHidDeviceMode_Recognized)
+{
+    DS_DRIVER_CONFIGURATION parsed;
+    const CHAR* json = "{\"Global\":{\"HidDeviceMode\":\"CGS\"}}";
+
+    EXPECT_STATUS(ParseText(json, FALSE, NULL, NULL, &parsed, NULL), STATUS_SUCCESS);
+    EXPECT(parsed.HidDeviceMode == DsHidMiniDeviceModeCGS);
+    return 0;
+}
+
+static void
+MotionFrame(
+    _In_ INT32 ax,
+    _In_ INT32 ay,
+    _In_ INT32 az,
+    _In_ INT32 gyro,
+    _Out_ DS_MOTION_HID_FRAME* frame
+)
+{
+    DsMotionHid_ToDeviceFrame(ax, ay, az, gyro, frame);
+}
+
+TEST(Motion_Rest_FlatFaceUp_ReportsPlusOneGOnDeviceY)
+{
+    DS_MOTION_HID_FRAME frame;
+    UCHAR ds4[64] = { 0 };
+
+    // DS3 flat, buttons up: Z reads -1 g, X/Y 0, gyro 0
+    MotionFrame(0, 0, -1000, 0, &frame);
+    EXPECT(frame.AccelMilliG[0] == 0);
+    EXPECT(frame.AccelMilliG[1] == 1000);
+    EXPECT(frame.AccelMilliG[2] == 0);
+    EXPECT(frame.GyroMilliDps[1] == 0);
+
+    DsMotionHid_WriteDs4Report(&frame, ds4);
+    // accel Y at bytes 21-22 = +8192 (0x2000) little endian
+    EXPECT(ds4[21] == 0x00 && ds4[22] == 0x20);
+    EXPECT(ds4[19] == 0 && ds4[20] == 0 && ds4[23] == 0 && ds4[24] == 0);
+    EXPECT(ds4[13] == 0 && ds4[14] == 0 && ds4[15] == 0 && ds4[16] == 0 && ds4[17] == 0 && ds4[18] == 0);
+    return 0;
+}
+
+TEST(Motion_SixPoses_MapToDeviceFrame)
+{
+    DS_MOTION_HID_FRAME frame;
+
+    // Left grip down: Sony X (towards left grip) points down -> -1 g; device X (right) points up -> +1 g
+    MotionFrame(-1000, 0, 0, 0, &frame);
+    EXPECT(frame.AccelMilliG[0] == 1000 && frame.AccelMilliG[1] == 0 && frame.AccelMilliG[2] == 0);
+
+    // Right grip down
+    MotionFrame(1000, 0, 0, 0, &frame);
+    EXPECT(frame.AccelMilliG[0] == -1000);
+
+    // Upside down (buttons on desk): Sony Z +1 g -> device Y -1 g
+    MotionFrame(0, 0, 1000, 0, &frame);
+    EXPECT(frame.AccelMilliG[1] == -1000);
+
+    // Back edge down (triggers up): Sony Y +1 g -> device Z (towards player) -1 g
+    MotionFrame(0, 1000, 0, 0, &frame);
+    EXPECT(frame.AccelMilliG[2] == -1000);
+
+    // Front edge down (triggers on desk): Sony Y -1 g -> device Z +1 g
+    MotionFrame(0, -1000, 0, 0, &frame);
+    EXPECT(frame.AccelMilliG[2] == 1000);
+    return 0;
+}
+
+TEST(Motion_Yaw_ClockwiseFromAbove_IsNegativeOnDeviceY)
+{
+    DS_MOTION_HID_FRAME frame;
+    UCHAR ds4[64] = { 0 };
+
+    // 90 deg/s clockwise seen from above (positive in the source)
+    MotionFrame(0, 0, 0, 90000, &frame);
+    EXPECT(frame.GyroMilliDps[0] == 0 && frame.GyroMilliDps[2] == 0);
+    EXPECT(frame.GyroMilliDps[1] == -90000);
+
+    DsMotionHid_WriteDs4Report(&frame, ds4);
+    // gyro Y at bytes 15-16: -90 * 16 = -1440 = 0xFA60
+    EXPECT(ds4[15] == 0x60 && ds4[16] == 0xFA);
+
+    // counter-clockwise
+    MotionFrame(0, 0, 0, -90000, &frame);
+    EXPECT(frame.GyroMilliDps[1] == 90000);
+    return 0;
+}
+
+TEST(Motion_Saturation_ClampsToSymmetricInt16)
+{
+    DS_MOTION_HID_FRAME frame;
+    UCHAR ds4[64] = { 0 };
+    UCHAR sensor[DS_MOTION_HID_SENSOR_INPUT_REPORT_SIZE];
+    INT32 vector[3] = { 100000, -100000, 0 };
+
+    MotionFrame(0, 0, -100000, 3000000, &frame);
+    DsMotionHid_WriteDs4Report(&frame, ds4);
+    EXPECT(ds4[21] == 0xFF && ds4[22] == 0x7F);
+    EXPECT(ds4[15] == 0x01 && ds4[16] == 0x80);
+
+    DsMotionHid_WriteSensorInputReport(DS_MOTION_HID_REPORT_ID_ACCEL, DS_MOTION_HID_STATUS_READY, vector, sensor);
+    EXPECT(sensor[3] == 0xFF && sensor[4] == 0x7F);
+    EXPECT(sensor[5] == 0x01 && sensor[6] == 0x80);
+    return 0;
+}
+
+TEST(Motion_SensorInputReport_ExactBytes)
+{
+    UCHAR sensor[DS_MOTION_HID_SENSOR_INPUT_REPORT_SIZE];
+    INT32 vector[3] = { 1000, -2, 258 };
+
+    DsMotionHid_WriteSensorInputReport(DS_MOTION_HID_REPORT_ID_GYRO, DS_MOTION_HID_STATUS_READY, vector, sensor);
+    EXPECT(sensor[0] == 0x31);
+    EXPECT(sensor[1] == DS_MOTION_HID_STATUS_READY);
+    EXPECT(sensor[2] == DS_MOTION_HID_EVENT_DATA_UPDATED);
+    EXPECT(sensor[3] == 0xE8 && sensor[4] == 0x03);
+    EXPECT(sensor[5] == 0xFE && sensor[6] == 0xFF);
+    EXPECT(sensor[7] == 0x02 && sensor[8] == 0x01);
+    return 0;
+}
+
+TEST(Motion_SensorFeatureReport_RoundTrips)
+{
+    DS_MOTION_HID_SENSOR_PROPS props;
+    DS_MOTION_HID_SENSOR_PROPS parsed;
+    UCHAR report[DS_MOTION_HID_SENSOR_FEATURE_REPORT_SIZE];
+
+    DsMotionHid_SensorPropsInit(&props);
+    EXPECT(props.ReportingState == DS_MOTION_HID_REPORTING_STATE_ALL_EVENTS);
+    EXPECT(props.IntervalMs == DS_MOTION_HID_DEFAULT_INTERVAL_MS);
+
+    props.Sensitivity = 0x1234;
+    props.IntervalMs = 0x01020304;
+    DsMotionHid_WriteSensorFeatureReport(DS_MOTION_HID_REPORT_ID_ACCEL, DS_MOTION_HID_STATUS_NO_DATA, &props, report);
+    EXPECT(report[0] == 0x30 && report[2] == DS_MOTION_HID_STATUS_NO_DATA);
+    EXPECT(report[3] == 0x34 && report[4] == 0x12);
+    EXPECT(report[5] == 0x04 && report[8] == 0x01);
+
+    DsMotionHid_ReadSensorFeatureReport(report, &parsed);
+    EXPECT(parsed.ReportingState == props.ReportingState);
+    EXPECT(parsed.Sensitivity == 0x1234);
+    EXPECT(parsed.IntervalMs == 0x01020304);
+
+    report[1] = 0xFF;
+    DsMotionHid_ReadSensorFeatureReport(report, &parsed);
+    EXPECT(parsed.ReportingState == DS_MOTION_HID_REPORTING_STATE_ALL_EVENTS);
+    return 0;
+}
+
+TEST(Motion_Ds4Timestamp_UsesFiveThirdMicrosecondTicksAndWraps)
+{
+    // 1 s at 10 MHz = 187500 ticks -> 187500 & 0xFFFF
+    EXPECT(DsMotionHid_Ds4Timestamp(10000000, 10000000) == (USHORT)(187500 & 0xFFFF));
+    EXPECT(DsMotionHid_Ds4Timestamp(0, 10000000) == 0);
+    EXPECT(DsMotionHid_Ds4Timestamp(5, 0) == 0);
+    // Very large QPC values must not overflow
+    EXPECT(DsMotionHid_Ds4Timestamp(0x7000000000000000LL, 10000000) ==
+        (USHORT)((((0x7000000000000000LL / 10000000) * 187500) + (((0x7000000000000000LL % 10000000) * 187500) / 10000000)) & 0xFFFF));
+    return 0;
+}
+
+TEST(Motion_Descriptors_HaveExpectedLengthsAndIds)
+{
+    // Guards the contract between the descriptor and the report writers
+    EXPECT(DS_MOTION_HID_SENSOR_INPUT_REPORT_SIZE == 1 + 1 + 1 + 6);
+    EXPECT(DS_MOTION_HID_SENSOR_FEATURE_REPORT_SIZE == 1 + 1 + 1 + 2 + 4);
+    EXPECT(DS_MOTION_HID_REPORT_ID_ACCEL != DS_MOTION_HID_REPORT_ID_GYRO);
+    EXPECT(DS_MOTION_HID_REPORTING_STATE_NO_EVENTS == 0);
+    EXPECT(DS_MOTION_HID_REPORTING_STATE_ALL_EVENTS == 1);
+    EXPECT(DS_MOTION_HID_STATUS_READY == 1);
+    EXPECT(DS_MOTION_HID_STATUS_NO_DATA == 3);
+    EXPECT(DS_MOTION_HID_EVENT_DATA_UPDATED == 3);
+    return 0;
+}
+
 TEST(Parse_MalformedJson_Fails)
 {
     DS_DRIVER_CONFIGURATION parsed;
@@ -633,6 +809,15 @@ int main(void)
     RUN(Parse_UnknownKeys_AreIgnored);
     RUN(Parse_SdfAndGpjModeSpecificSettings);
     RUN(Parse_CgpHidDeviceMode_Recognized);
+    RUN(Parse_CgsHidDeviceMode_Recognized);
+    RUN(Motion_Rest_FlatFaceUp_ReportsPlusOneGOnDeviceY);
+    RUN(Motion_SixPoses_MapToDeviceFrame);
+    RUN(Motion_Yaw_ClockwiseFromAbove_IsNegativeOnDeviceY);
+    RUN(Motion_Saturation_ClampsToSymmetricInt16);
+    RUN(Motion_SensorInputReport_ExactBytes);
+    RUN(Motion_SensorFeatureReport_RoundTrips);
+    RUN(Motion_Ds4Timestamp_UsesFiveThirdMicrosecondTicksAndWraps);
+    RUN(Motion_Descriptors_HaveExpectedLengthsAndIds);
     RUN(Parse_MalformedJson_Fails);
     RUN(Parse_TrailingGarbage_Fails);
     RUN(Parse_RootArray_Fails);

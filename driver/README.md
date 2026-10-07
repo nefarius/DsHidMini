@@ -69,7 +69,8 @@ restart. The driver can perform this automatically when
 | `DsIdentification.c`, `DsMotion.c` | Controller identification, calibration, and motion processing |
 | `DsLed.c`, `OutputReport.c` | LEDs, rumble, and transport-specific output |
 | `Configuration.c`, `Configuration.Json.c` | JSON defaults, validation, overrides, and runtime reload |
-| `HID/` | HID report descriptors (GamePad, Joystick, Sixaxis, DS4, XInput, CGP) |
+| `HID/` | HID report descriptors (GamePad, Joystick, Sixaxis, DS4, XInput, CGP, CGS sensors) |
+| `DsMotionHid.h` | Pure conversions from the calibrated motion sample to DS4 and HID Sensor reports (unit-tested in `ConfigParser.Tests`) |
 | `HID.Reports.c`, `InputReport.c`, `OutputReport.c` | Report assembly and handling |
 | `HID.FeatureReport.c` | HID feature report handling |
 | `PID/` | Physical Interface Device Force Feedback reports and types |

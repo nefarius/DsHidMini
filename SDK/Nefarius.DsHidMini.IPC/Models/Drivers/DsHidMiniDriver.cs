@@ -388,5 +388,12 @@ public enum DsHidDeviceMode : byte
     ///     button sliders, improving compatibility with older games (see issue #68).
     /// </summary>
     [Description("CGP (Common Gamepad)")]
-    CGP = 0x06
+    CGP = 0x06,
+
+    /// <summary>
+    ///     Common Gamepad plus standard HID Sensor (accelerometer, gyrometer) collections.
+    ///     DirectInput sees the gamepad only; HIDAPI, Windows Sensors and GameInput see motion.
+    /// </summary>
+    [Description("CGS (Common Gamepad with motion sensors)")]
+    CGS = 0x07
 }
