@@ -39,8 +39,112 @@ DSHM_FillDs4Motion(
 	Output[DS_MOTION_HID_DS4_OFFSET_TIMESTAMP + 1] = (UCHAR)(timestamp >> 8);
 }
 
+static
+BOOLEAN
+DSHM_TrySendStagedInputReport(
+	_In_ DMF_CONTEXT_DsHidMini* ModuleDeviceContext
+)
+{
+	const NTSTATUS status = DMF_VirtualHidMini_InputReportGenerate(
+		ModuleDeviceContext->DmfModuleVirtualHidMini,
+		DsHidMini_RetrieveNextInputReport
+	);
+
+	if (NT_SUCCESS(status))
+	{
+		return TRUE;
+	}
+
+	if (status != STATUS_NO_MORE_ENTRIES)
+	{
+		TraceError(
+			TRACE_DSHIDMINIDRV,
+			"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!",
+			status
+		);
+		EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_VirtualHidMini_InputReportGenerate", status);
+	}
+
+	return FALSE;
+}
+
+static
+VOID
+DSHM_EnqueueCgsReport(
+	_In_ DMF_CONTEXT_DsHidMini* ModuleDeviceContext,
+	_In_ ULONG ReportSize
+)
+{
+	ULONG index;
+
+	if (ModuleDeviceContext->CgsQueueCount == ARRAYSIZE(ModuleDeviceContext->CgsQueuedSizes))
+	{
+		RtlMoveMemory(
+			ModuleDeviceContext->CgsQueuedReports[0],
+			ModuleDeviceContext->CgsQueuedReports[1],
+			sizeof(ModuleDeviceContext->CgsQueuedReports[0]) * (ARRAYSIZE(ModuleDeviceContext->CgsQueuedSizes) - 1)
+		);
+		RtlMoveMemory(
+			&ModuleDeviceContext->CgsQueuedSizes[0],
+			&ModuleDeviceContext->CgsQueuedSizes[1],
+			sizeof(ModuleDeviceContext->CgsQueuedSizes[0]) * (ARRAYSIZE(ModuleDeviceContext->CgsQueuedSizes) - 1)
+		);
+		ModuleDeviceContext->CgsQueueCount--;
+	}
+
+	index = ModuleDeviceContext->CgsQueueCount;
+	RtlCopyMemory(
+		ModuleDeviceContext->CgsQueuedReports[index],
+		ModuleDeviceContext->InputReport,
+		ReportSize
+	);
+	ModuleDeviceContext->CgsQueuedSizes[index] = ReportSize;
+	ModuleDeviceContext->CgsQueueCount++;
+}
+
+static
+VOID
+DSHM_FlushCgsQueue(
+	_In_ DMF_CONTEXT_DsHidMini* ModuleDeviceContext
+)
+{
+	while (ModuleDeviceContext->CgsQueueCount > 0)
+	{
+		const ULONG size = ModuleDeviceContext->CgsQueuedSizes[0];
+
+		RtlCopyMemory(
+			ModuleDeviceContext->InputReport,
+			ModuleDeviceContext->CgsQueuedReports[0],
+			size
+		);
+		ModuleDeviceContext->InputReportSize = size;
+
+		if (!DSHM_TrySendStagedInputReport(ModuleDeviceContext))
+		{
+			return;
+		}
+
+		if (ModuleDeviceContext->CgsQueueCount > 1)
+		{
+			RtlMoveMemory(
+				ModuleDeviceContext->CgsQueuedReports[0],
+				ModuleDeviceContext->CgsQueuedReports[1],
+				sizeof(ModuleDeviceContext->CgsQueuedReports[0]) * (ModuleDeviceContext->CgsQueueCount - 1)
+			);
+			RtlMoveMemory(
+				&ModuleDeviceContext->CgsQueuedSizes[0],
+				&ModuleDeviceContext->CgsQueuedSizes[1],
+				sizeof(ModuleDeviceContext->CgsQueuedSizes[0]) * (ModuleDeviceContext->CgsQueueCount - 1)
+			);
+		}
+
+		ModuleDeviceContext->CgsQueueCount--;
+	}
+}
+
 //
-// Sends one report of the CGS mode; each report has its own size.
+// Sends one report of the CGS mode; each report has its own size. If no HID
+// read is pending the report is queued and retried on the next Generate.
 // 
 static
 VOID
@@ -51,24 +155,19 @@ DSHM_GenerateInputReport(
 {
 	ModuleDeviceContext->InputReportSize = ReportSize;
 
-	const NTSTATUS status = DMF_VirtualHidMini_InputReportGenerate(
-		ModuleDeviceContext->DmfModuleVirtualHidMini,
-		DsHidMini_RetrieveNextInputReport
-	);
-	if (!NT_SUCCESS(status) && status != STATUS_NO_MORE_ENTRIES)
+	if (DSHM_TrySendStagedInputReport(ModuleDeviceContext))
 	{
-		TraceError(
-			TRACE_DSHIDMINIDRV,
-			"DMF_VirtualHidMini_InputReportGenerate failed with status %!STATUS!",
-			status
-		);
-		EventWriteFailedWithNTStatus(__FUNCTION__, L"DMF_VirtualHidMini_InputReportGenerate", status);
+		DSHM_FlushCgsQueue(ModuleDeviceContext);
+	}
+	else
+	{
+		DSHM_EnqueueCgsReport(ModuleDeviceContext, ReportSize);
 	}
 }
 
 //
 // CGS: gamepad report (ID 1) followed by accelerometer and gyrometer
-// HID Sensor reports (IDs 0x20 and 0x21)
+// HID Sensor reports (IDs 0x30 and 0x31)
 // 
 static
 VOID
@@ -80,6 +179,8 @@ DSHM_ProcessCgsInputReport(
 {
 	const PDS_MOTION_STATE motion = &DeviceContext->Motion;
 	DS_MOTION_HID_FRAME frame;
+
+	DSHM_FlushCgsQueue(ModuleDeviceContext);
 
 	DS3_RAW_TO_SDF_HID_INPUT_REPORT(
 		Report,

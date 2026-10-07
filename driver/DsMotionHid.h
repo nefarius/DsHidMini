@@ -50,13 +50,14 @@
 //
 #define DS_MOTION_HID_GYRO_UNIT_PER_DPS          10
 
-#define DS_MOTION_HID_REPORTING_STATE_NO_EVENTS  1
-#define DS_MOTION_HID_REPORTING_STATE_ALL_EVENTS 2
+// Zero-based indices into the array selectors declared in 07_CGS_Col2/Col3
+#define DS_MOTION_HID_REPORTING_STATE_NO_EVENTS  0
+#define DS_MOTION_HID_REPORTING_STATE_ALL_EVENTS 1
 
-#define DS_MOTION_HID_STATUS_READY               2
-#define DS_MOTION_HID_STATUS_NO_DATA             4
+#define DS_MOTION_HID_STATUS_READY               1
+#define DS_MOTION_HID_STATUS_NO_DATA             3
 
-#define DS_MOTION_HID_EVENT_DATA_UPDATED         4
+#define DS_MOTION_HID_EVENT_DATA_UPDATED         3
 #define DS_MOTION_HID_DEFAULT_INTERVAL_MS        10
 
 typedef struct _DS_MOTION_HID_FRAME
@@ -231,7 +232,9 @@ DsMotionHid_ReadSensorFeatureReport(
 	_Out_ PDS_MOTION_HID_SENSOR_PROPS Props
 )
 {
-	Props->ReportingState = Input[1];
+	Props->ReportingState = Input[1] > DS_MOTION_HID_REPORTING_STATE_ALL_EVENTS
+		? DS_MOTION_HID_REPORTING_STATE_ALL_EVENTS
+		: Input[1];
 	Props->Sensitivity = (USHORT)(Input[3] | (Input[4] << 8));
 	Props->IntervalMs = (ULONG)Input[5] | ((ULONG)Input[6] << 8) | ((ULONG)Input[7] << 16) | ((ULONG)Input[8] << 24);
 }

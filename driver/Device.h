@@ -591,6 +591,14 @@ typedef struct
 	ULONG InputReportSize;
 
 	//
+	// CGS reports that had no pending HID read; retried in order on the next
+	// Generate. Depth is one full cycle (gamepad + accel + gyro).
+	//
+	UCHAR CgsQueuedReports[3][DS3_COMMON_MAX_HID_INPUT_REPORT_SIZE];
+	ULONG CgsQueuedSizes[3];
+	ULONG CgsQueueCount;
+
+	//
 	// Raw input report for SIXAXIS.SYS GET_FEATURE report
 	// 
 	DS3_RAW_INPUT_REPORT GetFeatureReport;

@@ -567,6 +567,10 @@ TEST(Motion_SensorFeatureReport_RoundTrips)
     EXPECT(parsed.ReportingState == props.ReportingState);
     EXPECT(parsed.Sensitivity == 0x1234);
     EXPECT(parsed.IntervalMs == 0x01020304);
+
+    report[1] = 0xFF;
+    DsMotionHid_ReadSensorFeatureReport(report, &parsed);
+    EXPECT(parsed.ReportingState == DS_MOTION_HID_REPORTING_STATE_ALL_EVENTS);
     return 0;
 }
 
@@ -588,6 +592,11 @@ TEST(Motion_Descriptors_HaveExpectedLengthsAndIds)
     EXPECT(DS_MOTION_HID_SENSOR_INPUT_REPORT_SIZE == 1 + 1 + 1 + 6);
     EXPECT(DS_MOTION_HID_SENSOR_FEATURE_REPORT_SIZE == 1 + 1 + 1 + 2 + 4);
     EXPECT(DS_MOTION_HID_REPORT_ID_ACCEL != DS_MOTION_HID_REPORT_ID_GYRO);
+    EXPECT(DS_MOTION_HID_REPORTING_STATE_NO_EVENTS == 0);
+    EXPECT(DS_MOTION_HID_REPORTING_STATE_ALL_EVENTS == 1);
+    EXPECT(DS_MOTION_HID_STATUS_READY == 1);
+    EXPECT(DS_MOTION_HID_STATUS_NO_DATA == 3);
+    EXPECT(DS_MOTION_HID_EVENT_DATA_UPDATED == 3);
     return 0;
 }
 
