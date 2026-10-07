@@ -592,7 +592,7 @@ typedef struct
 
 	//
 	// CGS reports that had no pending HID read; retried in order on the next
-	// Generate. Depth is one full cycle (gamepad + accel + gyro).
+	// Generate. One slot per collection; same report ID replaces in place.
 	//
 	UCHAR CgsQueuedReports[3][DS3_COMMON_MAX_HID_INPUT_REPORT_SIZE];
 	ULONG CgsQueuedSizes[3];

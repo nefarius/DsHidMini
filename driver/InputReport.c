@@ -75,21 +75,31 @@ DSHM_EnqueueCgsReport(
 	_In_ ULONG ReportSize
 )
 {
+	const UCHAR reportId = ModuleDeviceContext->InputReport[0];
 	ULONG index;
 
-	if (ModuleDeviceContext->CgsQueueCount == ARRAYSIZE(ModuleDeviceContext->CgsQueuedSizes))
+	//
+	// One slot per collection (gamepad / accel / gyro). A newer sample
+	// replaces the same report ID in place so gamepad or accel traffic
+	// cannot evict a queued gyrometer report.
+	//
+	for (index = 0; index < ModuleDeviceContext->CgsQueueCount; index++)
 	{
-		RtlMoveMemory(
-			ModuleDeviceContext->CgsQueuedReports[0],
-			ModuleDeviceContext->CgsQueuedReports[1],
-			sizeof(ModuleDeviceContext->CgsQueuedReports[0]) * (ARRAYSIZE(ModuleDeviceContext->CgsQueuedSizes) - 1)
-		);
-		RtlMoveMemory(
-			&ModuleDeviceContext->CgsQueuedSizes[0],
-			&ModuleDeviceContext->CgsQueuedSizes[1],
-			sizeof(ModuleDeviceContext->CgsQueuedSizes[0]) * (ARRAYSIZE(ModuleDeviceContext->CgsQueuedSizes) - 1)
-		);
-		ModuleDeviceContext->CgsQueueCount--;
+		if (ModuleDeviceContext->CgsQueuedReports[index][0] == reportId)
+		{
+			RtlCopyMemory(
+				ModuleDeviceContext->CgsQueuedReports[index],
+				ModuleDeviceContext->InputReport,
+				ReportSize
+			);
+			ModuleDeviceContext->CgsQueuedSizes[index] = ReportSize;
+			return;
+		}
+	}
+
+	if (ModuleDeviceContext->CgsQueueCount >= ARRAYSIZE(ModuleDeviceContext->CgsQueuedSizes))
+	{
+		return;
 	}
 
 	index = ModuleDeviceContext->CgsQueueCount;
