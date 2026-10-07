@@ -114,6 +114,43 @@ DSHM_EnqueueCgsReport(
 
 static
 VOID
+DSHM_DequeueCgsReportById(
+	_In_ DMF_CONTEXT_DsHidMini* ModuleDeviceContext,
+	_In_ UCHAR ReportId
+)
+{
+	ULONG index;
+
+	for (index = 0; index < ModuleDeviceContext->CgsQueueCount; index++)
+	{
+		if (ModuleDeviceContext->CgsQueuedReports[index][0] != ReportId)
+		{
+			continue;
+		}
+
+		const ULONG remaining = ModuleDeviceContext->CgsQueueCount - index - 1;
+
+		if (remaining > 0)
+		{
+			RtlMoveMemory(
+				ModuleDeviceContext->CgsQueuedReports[index],
+				ModuleDeviceContext->CgsQueuedReports[index + 1],
+				sizeof(ModuleDeviceContext->CgsQueuedReports[0]) * remaining
+			);
+			RtlMoveMemory(
+				&ModuleDeviceContext->CgsQueuedSizes[index],
+				&ModuleDeviceContext->CgsQueuedSizes[index + 1],
+				sizeof(ModuleDeviceContext->CgsQueuedSizes[0]) * remaining
+			);
+		}
+
+		ModuleDeviceContext->CgsQueueCount--;
+		return;
+	}
+}
+
+static
+VOID
 DSHM_FlushCgsQueue(
 	_In_ DMF_CONTEXT_DsHidMini* ModuleDeviceContext
 )
@@ -167,6 +204,7 @@ DSHM_GenerateInputReport(
 
 	if (DSHM_TrySendStagedInputReport(ModuleDeviceContext))
 	{
+		DSHM_DequeueCgsReportById(ModuleDeviceContext, ModuleDeviceContext->InputReport[0]);
 		DSHM_FlushCgsQueue(ModuleDeviceContext);
 	}
 	else
