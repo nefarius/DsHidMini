@@ -1,5 +1,7 @@
 #pragma once
 
+#include "DsMotionHid.h"
+
 #define DS_MOTION_ACCEL_GAIN                 113
 #define DS_MOTION_NOMINAL_ZERO               512
 #define DS_MOTION_NOMINAL_ONE_G              (DS_MOTION_NOMINAL_ZERO - DS_MOTION_ACCEL_GAIN)
@@ -92,6 +94,10 @@ typedef struct _DS_MOTION_STATE
 	DS_MOTION_AXIS_CAL Gyro;
 	DS_GYRO_TRACKER Tracker;
 	DS_MOTION_SAMPLE Sample;
+	//
+	// Host-writable HID Sensor feature properties (CGS mode)
+	//
+	DS_MOTION_HID_SENSOR_PROPS SensorHid[DS_MOTION_HID_SENSOR_COUNT];
 } DS_MOTION_STATE, *PDS_MOTION_STATE;
 
 #include <pshpack1.h>

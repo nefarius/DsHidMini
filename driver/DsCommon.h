@@ -124,7 +124,12 @@ typedef enum
 	// Common Gamepad: single DirectInput-friendly device without pressure
 	// sliders (see issue #68)
 	// 
-	DsHidMiniDeviceModeCGP
+	DsHidMiniDeviceModeCGP,
+	//
+	// Common Gamepad with standard HID Sensor (accelerometer, gyrometer)
+	// collections for HIDAPI, Windows Sensors and GameInput
+	// 
+	DsHidMiniDeviceModeCGS
 } DS_HID_DEVICE_MODE, * PDS_HID_DEVICE_MODE;
 
 //
@@ -138,7 +143,8 @@ static CONST PSTR G_HID_DEVICE_MODE_NAMES[] =
 	"SXS",
 	"DS4Windows",
 	"XInput",
-	"CGP"
+	"CGP",
+	"CGS"
 };
 
 //

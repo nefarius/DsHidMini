@@ -825,9 +825,9 @@ both platforms, so on Linux it is not zeroed either.
   frozen and subtracted from samples that already pass the deadzone, so a
   ~1 deg/s PLAIN_ZERO residual does not ride along during turns. A Record button writes
   `%ProgramData%\DsHidMini\Log\Motion\motion-slot<N>-<timestamp>.csv`.
-- **DS4Windows-compatible mode** (`driver/DsHid.c`, `DS3_RAW_TO_DS4WINDOWS_HID_INPUT_REPORT`):
-  still leaves the DS4 gyro/accel fields at offsets 13-24 zero. Mapping is
-  deferred until the axis permutation is verified.
+- **DS4Windows-compatible mode and CGS**: publish motion in the DS4 report
+  and in standard HID Sensor collections; see
+  [Exposing motion to applications](#exposing-motion-to-applications).
 - `0xF8`/`0xF7` are still not sent.
 
 ### Discrepancies a driver implementation must resolve
@@ -894,11 +894,78 @@ Ordered by how visible they are to an application that expects `sixaxis.sys`:
     reads the USB instance's cached values back from device properties
     instead of asking the pad.
 
+## Exposing motion to applications
+
+Two public channels are fed from the same calibrated `Motion.Sample` the SXS
+GetFeature report and the IPC snapshot use. Neither needs IPC or the SDK.
+`driver/DsMotionHid.h` holds the conversions; `ConfigParser.Tests` covers them.
+
+### Device frame and units
+
+Both channels use one frame (GameInput's "Y-up right-handed" gamepad frame, also
+SDL's): **X towards the right grip, Y out of the face (button) side, Z towards
+the player**. Flat on a table, face up: accel `(0, +1 g, 0)`. Angular velocity
+follows the right-hand rule, so counter-clockwise seen from above is positive on
+Y. The DS3 has only a yaw gyro: X and Z rotation are always `0`.
+
+The source frame (see the orientation table above, after Sony's X mirror) maps as
+`right = -X`, `up = -Z`, `towards player = -Y`, and `gyroY = -yaw`. This was
+derived from the measured table and documented conventions; it has **not** yet
+been checked against a real DS4 or on real hardware (see below).
+
+### DS4Windows mode (`DS4Windows`)
+
+Fills DS4 report bytes 13-18 (gyro X/Y/Z) and 19-24 (accel X/Y/Z), plus the
+timestamp at 10-11 (5.33 us ticks, wraps at 16 bit). Scale is a real DS4's:
+16 LSB per deg/s, 8192 LSB per g, little-endian, clamped to +-32767. Note the
+mode advertises VID/PID `7331:0001`, so this reaches consumers that read the DS4
+report layout (DS4Windows) but is not recognised as a Sony pad by SDL's HIDAPI
+driver, which keys on Sony's VID/PID.
+
+### CGS mode (`HidDeviceMode: "CGS"`, value `0x07`)
+
+One HID interface, three top-level collections; Windows creates a separate
+device path for each, so enumerate by usage page/usage in HIDAPI:
+
+| Collection | Usage page / usage | Report ID | Input report | Feature report |
+| --- | --- | --- | --- | --- |
+| Gamepad (as CGP) | `0x01` / `0x05` | `0x01` | 10 bytes, unchanged from CGP | PID force feedback |
+| Accelerometer 3D | `0x20` / `0x01` (physical `0x73`) | `0x30` | ID, state, event, X, Y, Z | ID, reporting state, status, sensitivity, interval |
+| Gyrometer 3D | `0x20` / `0x01` (physical `0x76`) | `0x31` | ID, state, event, X, Y, Z | same layout |
+
+Input: state = `2` (ready), event = `4` (data updated), then three signed
+16-bit little-endian values in `-32767..32767`. Accelerometer is milli-g
+(unit exponent -3); gyro is 0.1 deg/s (exponent -1, about +-3276 deg/s). Feature:
+reporting state (u8, `1` = no events pauses that sensor, default `2`), sensor
+status (u8, `2` ready / `4` no data), change sensitivity (u16), report interval
+(u32 ms). Sensitivity and interval are stored and returned but do not yet
+throttle output: a report is sent per pad report (about 100 Hz). Reports are only
+sent once a motion sample exists.
+
+DirectInput sees only the gamepad collection. HIDAPI (`hid_read`) can stream the
+sensor collections directly. Windows Sensors and GameInput consume standard HID
+Sensors; no GameInput registry mapping is shipped because whether one is needed
+has not been verified.
+
+### Not verified yet
+
+Nothing below could be tested in the build environment and should be checked
+before relying on it:
+
+- Mapping and scale against a real DS4 in six poses plus a known-rate turntable.
+- That Windows accepts a Gyrometer 3D whose X/Z axes are constant zero, the
+  unit codes in `driver/HID/07_CGS_*.h`, and the sensor property usages
+  (validate with SensorExplorer).
+- GameInput 3.4 reporting accelerometer/gyrometer capabilities for CGS.
+- DirectInput listing one clean gamepad without phantom axes in CGS.
+- USB and Bluetooth, on a `PLAIN_ZERO` and an `HW_CAL` pad.
+
 ## Deferred work
 
 The items below were deliberately left out of the current implementation.
 
-1. DS4Windows motion-field mapping: `accel_ds4 = (raw - zero) * 8192 / (zero - oneG)`
+1. Reference-DS4 verification of the DS4Windows motion mapping (implemented, see
+   above; unchecked against a real DS4). Original notes: `accel_ds4 = (raw - zero) * 8192 / (zero - oneG)`
    with the axis permutation checked against a reference DS4; gyro yaw scaled by
    the measured ~1.4 counts per (deg/s) into the DS4 gyro-Y slot (a gain of about
    11.4 for DS4's 16 LSB per deg/s).
