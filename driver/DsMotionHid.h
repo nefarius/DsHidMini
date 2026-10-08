@@ -56,6 +56,7 @@
 #define DS_MOTION_HID_REPORTING_STATE_NO_EVENTS_WAKE 4
 
 #define DS_MOTION_HID_POWER_STATE_D0             2
+#define DS_MOTION_HID_POWER_STATE_D4             6
 
 #define DS_MOTION_HID_STATUS_READY               2
 #define DS_MOTION_HID_STATUS_NO_DATA             4

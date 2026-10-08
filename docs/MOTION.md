@@ -938,7 +938,7 @@ Input: state = `2` (ready), event = `4` (data updated), then three signed
 (HID unit m/s^2, exponent -3); gyro is 0.1 deg/s (HID unit deg/s, exponent
 -1, about +-3276 deg/s). Feature: reporting state (u8, `1` = no events and
 `4` = no events wake pause that sensor, default `2` = all events), power state
-(u8, `2` = D0), sensor
+(u8, `2` = D0, `6` = D4 pauses that sensor), sensor
 state (u8, `2` ready / `4` no data), change sensitivity (u16), report interval
 (u32, milliseconds as seconds with exponent -3). These are the HID Sensor
 usage-table enum values used by Microsoft's in-box examples. Sensitivity and
