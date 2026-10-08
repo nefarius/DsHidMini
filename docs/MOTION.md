@@ -979,9 +979,10 @@ that frame on both sensor collections:
 | Yaw clockwise from above | gyro Y negative | gyro Z negative |
 
 Acceleration and angular velocity are remapped separately so the accelerometer
-becomes the gravity vector while gyro keeps the right-hand rule: acceleration
-maps `X -> -X`, `Y -> Z`, `Z -> -Y`; angular velocity maps `X -> X`, `Y -> Z`,
-`Z -> -Y`. The DS4Windows report is not affected by this setting.
+becomes the gravity vector while gyro keeps the right-hand rule (gamepad axis
+`->` Windows axis): acceleration maps `X -> -X`, `Y -> -Z`, `Z -> Y`; angular
+velocity maps `X -> X`, `Y -> Z`, `Z -> -Y`. The DS4Windows report is not
+affected by this setting.
 
 ```json
 "Global": {
