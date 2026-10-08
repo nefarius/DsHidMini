@@ -1,5 +1,8 @@
 ﻿using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
+using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
+
+using PressureMode = Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums.PressureMode;
 
 namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls.DeviceSettings;
 
@@ -11,6 +14,11 @@ public class HidModeSettingsViewModel : DeviceSettingsViewModel
     };
 
     public static readonly List<DPadMode> listOfDPadModes = new() { DPadMode.Default, DPadMode.HAT, DPadMode.Buttons };
+
+    public static readonly List<MotionSensorFrame> listOfMotionSensorFrames = new()
+    {
+        MotionSensorFrame.Gamepad, MotionSensorFrame.Windows
+    };
 
     private readonly HidModeSettings _tempBackingData = new();
 
@@ -28,6 +36,7 @@ public class HidModeSettingsViewModel : DeviceSettingsViewModel
     public List<SettingsContext> HIDDeviceModesList => hidDeviceModesList;
     public static List<PressureMode> ListOfPressureModes => listOfPressureModes;
     public static List<DPadMode> ListOfDPadModes => listOfDPadModes;
+    public static List<MotionSensorFrame> ListOfMotionSensorFrames => listOfMotionSensorFrames;
     protected override DeviceSubSettings _mySubSetting => _tempBackingData;
 
     public override SettingsModeGroups Group { get; } = SettingsModeGroups.Unique_All;
@@ -58,6 +67,17 @@ public class HidModeSettingsViewModel : DeviceSettingsViewModel
         set
         {
             _tempBackingData.DPadExposureMode = value;
+            OnPropertyChanged();
+        }
+    }
+
+    // CGS
+    public MotionSensorFrame MotionSensorFrame
+    {
+        get => _tempBackingData.MotionSensorFrame;
+        set
+        {
+            _tempBackingData.MotionSensorFrame = value;
             OnPropertyChanged();
         }
     }

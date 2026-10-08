@@ -96,6 +96,7 @@ public class HidModeSettings : DeviceSubSettings
     public SettingsContext SettingsContext { get; set; } = SettingsContext.XInput;
     public PressureMode PressureExposureMode { get; set; } = PressureMode.Default;
     public DPadMode DPadExposureMode { get; set; } = DPadMode.Default;
+    public MotionSensorFrame MotionSensorFrame { get; set; } = MotionSensorFrame.Gamepad;
     public bool IsLEDsAsXInputSlotEnabled { get; set; }
     public bool PreventRemappingConflictsInSXSMode { get; set; }
     public bool PreventRemappingConflictsInDS4WMode { get; set; }
@@ -115,6 +116,7 @@ public class HidModeSettings : DeviceSubSettings
         destiny.SettingsContext = source.SettingsContext;
         destiny.PressureExposureMode = source.PressureExposureMode;
         destiny.DPadExposureMode = source.DPadExposureMode;
+        destiny.MotionSensorFrame = source.MotionSensorFrame;
         destiny.IsLEDsAsXInputSlotEnabled = source.IsLEDsAsXInputSlotEnabled;
         destiny.PreventRemappingConflictsInDS4WMode = source.PreventRemappingConflictsInDS4WMode;
         destiny.PreventRemappingConflictsInSXSMode = source.PreventRemappingConflictsInSXSMode;

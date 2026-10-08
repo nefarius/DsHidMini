@@ -54,6 +54,22 @@ public enum DPadExposureMode
     Default
 }
 
+/// <summary>
+///     Coordinate frame of the HID Sensor collections in CGS mode (<c>CGS.MotionSensorFrame</c>).
+/// </summary>
+public enum MotionSensorFrame
+{
+    /// <summary>
+    ///     GameInput/SDL/DS4 gamepad frame: Y points out of the face, flat face-up reads (0, +1 g, 0).
+    /// </summary>
+    Gamepad,
+
+    /// <summary>
+    ///     Windows tablet screen frame: Z points out of the face, flat face-up reads (0, 0, -1 g).
+    /// </summary>
+    Windows
+}
+
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 public enum LEDsMode
 {

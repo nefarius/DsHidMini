@@ -132,6 +132,7 @@ public class DshmHidModeSettings
 
     public PressureMode? PressureExposureMode { get; set; }
     public DPadExposureMode? DPadExposureMode { get; set; }
+    public MotionSensorFrame? MotionSensorFrame { get; set; }
     public DshmDeviceSettings.DeadZoneSettings DeadZoneLeft { get; set; } = new();
     public DshmDeviceSettings.DeadZoneSettings DeadZoneRight { get; set; } = new();
     public DshmDeviceSettings.AllRumbleSettings RumbleSettings { get; set; } = new();

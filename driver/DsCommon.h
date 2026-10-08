@@ -367,6 +367,38 @@ static CONST PSTR G_DPAD_EXPOSURE_MODE_NAMES[] =
 };
 
 //
+// Coordinate frame of the HID Sensor (Accelerometer/Gyrometer) collections in CGS mode
+//
+typedef enum
+{
+	//
+	// GameInput/SDL/DS4 gamepad frame: X right grip, Y out of the face, Z towards
+	// the player; an axis reads +1 g when pointing up (flat face-up: 0, +1, 0)
+	//
+	DsMotionSensorFrameGamepad = 0,
+	//
+	// Windows screen frame used by Windows.Devices.Sensors on tablets: X right,
+	// Y towards the far (trigger) edge, Z out of the face; the reading is the
+	// gravity vector (flat face-up: 0, 0, -1)
+	//
+	DsMotionSensorFrameWindows = 1,
+	//
+	// Default behaviour is the gamepad frame
+	//
+	DsMotionSensorFrameDefault = DsMotionSensorFrameGamepad
+} DS_MOTION_SENSOR_FRAME, * PDS_MOTION_SENSOR_FRAME;
+
+//
+// Friendly names for reading from JSON
+//
+static CONST PSTR G_MOTION_SENSOR_FRAME_NAMES[] =
+{
+	"Gamepad",
+	"Windows",
+	"Default"
+};
+
+//
 // Possible LED modes
 // 
 typedef enum
@@ -753,4 +785,12 @@ typedef struct _DS_DRIVER_CONFIGURATION
 
 		DS_DPAD_EXPOSURE_MODE DPadExposureMode;
 	} GPJ;
+
+	//
+	// CGS-mode specific
+	//
+	struct
+	{
+		DS_MOTION_SENSOR_FRAME MotionSensorFrame;
+	} CGS;
 } DS_DRIVER_CONFIGURATION, * PDS_DRIVER_CONFIGURATION;
