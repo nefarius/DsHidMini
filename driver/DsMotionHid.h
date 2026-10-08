@@ -34,30 +34,34 @@
 
 //
 // Input report: ID, state, event, X, Y, Z (3 x int16 LE)
-// Feature report: ID, reporting state, sensor status, sensitivity (u16 LE),
-// report interval (u32 LE, milliseconds)
+// Feature report: ID, reporting state, power state, sensor state,
+// sensitivity (u16 LE), report interval (u32 LE, milliseconds)
 //
 #define DS_MOTION_HID_SENSOR_INPUT_REPORT_SIZE   9
-#define DS_MOTION_HID_SENSOR_FEATURE_REPORT_SIZE 9
+#define DS_MOTION_HID_SENSOR_FEATURE_REPORT_SIZE 10
 
 #define DS_MOTION_HID_SENSOR_COUNT               2
 #define DS_MOTION_HID_SENSOR_ACCEL               0
 #define DS_MOTION_HID_SENSOR_GYRO                1
 
 //
-// Accelerometer values are milli-g (unit exponent -3), gyroscope values are
-// 0.1 deg/s (unit exponent -1).
+// Accelerometer HID values are 0.001 m/s^2 (unit exponent -3), gyroscope
+// values are 0.1 deg/s (unit exponent -1).
 //
 #define DS_MOTION_HID_GYRO_UNIT_PER_DPS          10
 
-// Zero-based indices into the array selectors declared in 07_CGS_Col2/Col3
-#define DS_MOTION_HID_REPORTING_STATE_NO_EVENTS  0
-#define DS_MOTION_HID_REPORTING_STATE_ALL_EVENTS 1
+// HID Sensor usage-table enum values (matching DMF's proven sensor modules)
+#define DS_MOTION_HID_REPORTING_STATE_NO_EVENTS  1
+#define DS_MOTION_HID_REPORTING_STATE_ALL_EVENTS 2
+#define DS_MOTION_HID_REPORTING_STATE_NO_EVENTS_WAKE 4
 
-#define DS_MOTION_HID_STATUS_READY               1
-#define DS_MOTION_HID_STATUS_NO_DATA             3
+#define DS_MOTION_HID_POWER_STATE_D0             2
+#define DS_MOTION_HID_POWER_STATE_D4             6
 
-#define DS_MOTION_HID_EVENT_DATA_UPDATED         3
+#define DS_MOTION_HID_STATUS_READY               2
+#define DS_MOTION_HID_STATUS_NO_DATA             4
+
+#define DS_MOTION_HID_EVENT_DATA_UPDATED         4
 #define DS_MOTION_HID_DEFAULT_INTERVAL_MS        10
 
 typedef struct _DS_MOTION_HID_FRAME
@@ -71,6 +75,8 @@ typedef struct _DS_MOTION_HID_FRAME
 typedef struct _DS_MOTION_HID_SENSOR_PROPS
 {
 	UCHAR ReportingState;
+	UCHAR PowerState;
+	UCHAR SensorState;
 	USHORT Sensitivity;
 	ULONG IntervalMs;
 } DS_MOTION_HID_SENSOR_PROPS, *PDS_MOTION_HID_SENSOR_PROPS;
@@ -124,6 +130,16 @@ DsMotionHid_WriteS16(
 {
 	Destination[0] = (UCHAR)((USHORT)Value & 0xFF);
 	Destination[1] = (UCHAR)(((USHORT)Value >> 8) & 0xFF);
+}
+
+static __inline
+INT32
+DsMotionHid_MilliGToMilliMetersPerSecondSquared(
+	_In_ INT32 MilliG
+)
+{
+	// 1 g = 9.80665 m/s^2
+	return (INT32)(((INT64)MilliG * 980665) / 100000);
 }
 
 //
@@ -201,6 +217,8 @@ DsMotionHid_SensorPropsInit(
 )
 {
 	Props->ReportingState = DS_MOTION_HID_REPORTING_STATE_ALL_EVENTS;
+	Props->PowerState = DS_MOTION_HID_POWER_STATE_D0;
+	Props->SensorState = DS_MOTION_HID_STATUS_NO_DATA;
 	Props->Sensitivity = 0;
 	Props->IntervalMs = DS_MOTION_HID_DEFAULT_INTERVAL_MS;
 }
@@ -216,13 +234,14 @@ DsMotionHid_WriteSensorFeatureReport(
 {
 	Output[0] = ReportId;
 	Output[1] = Props->ReportingState;
-	Output[2] = Status;
-	Output[3] = (UCHAR)(Props->Sensitivity & 0xFF);
-	Output[4] = (UCHAR)(Props->Sensitivity >> 8);
-	Output[5] = (UCHAR)(Props->IntervalMs & 0xFF);
-	Output[6] = (UCHAR)((Props->IntervalMs >> 8) & 0xFF);
-	Output[7] = (UCHAR)((Props->IntervalMs >> 16) & 0xFF);
-	Output[8] = (UCHAR)((Props->IntervalMs >> 24) & 0xFF);
+	Output[2] = Props->PowerState;
+	Output[3] = Status;
+	Output[4] = (UCHAR)(Props->Sensitivity & 0xFF);
+	Output[5] = (UCHAR)(Props->Sensitivity >> 8);
+	Output[6] = (UCHAR)(Props->IntervalMs & 0xFF);
+	Output[7] = (UCHAR)((Props->IntervalMs >> 8) & 0xFF);
+	Output[8] = (UCHAR)((Props->IntervalMs >> 16) & 0xFF);
+	Output[9] = (UCHAR)((Props->IntervalMs >> 24) & 0xFF);
 }
 
 static __inline
@@ -232,9 +251,13 @@ DsMotionHid_ReadSensorFeatureReport(
 	_Out_ PDS_MOTION_HID_SENSOR_PROPS Props
 )
 {
-	Props->ReportingState = Input[1] > DS_MOTION_HID_REPORTING_STATE_ALL_EVENTS
+	Props->ReportingState = Input[1] < DS_MOTION_HID_REPORTING_STATE_NO_EVENTS || Input[1] > 6
 		? DS_MOTION_HID_REPORTING_STATE_ALL_EVENTS
 		: Input[1];
-	Props->Sensitivity = (USHORT)(Input[3] | (Input[4] << 8));
-	Props->IntervalMs = (ULONG)Input[5] | ((ULONG)Input[6] << 8) | ((ULONG)Input[7] << 16) | ((ULONG)Input[8] << 24);
+	Props->PowerState = Input[2] < 1 || Input[2] > 6
+		? DS_MOTION_HID_POWER_STATE_D0
+		: Input[2];
+	Props->SensorState = Input[3];
+	Props->Sensitivity = (USHORT)(Input[4] | (Input[5] << 8));
+	Props->IntervalMs = (ULONG)Input[6] | ((ULONG)Input[7] << 8) | ((ULONG)Input[8] << 16) | ((ULONG)Input[9] << 24);
 }
