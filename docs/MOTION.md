@@ -930,19 +930,20 @@ device path for each, so enumerate by usage page/usage in HIDAPI:
 | Collection | Usage page / usage | Report ID | Input report | Feature report |
 | --- | --- | --- | --- | --- |
 | Gamepad (as CGP) | `0x01` / `0x05` | `0x01` | 10 bytes, unchanged from CGP | PID force feedback |
-| Accelerometer 3D | `0x20` / `0x73` | `0x30` | ID, state, event, X, Y, Z | ID, reporting state, status, sensitivity, interval |
+| Accelerometer 3D | `0x20` / `0x73` | `0x30` | ID, state, event, X, Y, Z | ID, reporting state, power state, sensor state, sensitivity, interval |
 | Gyrometer 3D | `0x20` / `0x76` | `0x31` | ID, state, event, X, Y, Z | same layout |
 
-Input: state = `1` (ready), event = `3` (data updated), then three signed
-16-bit little-endian values in `-32767..32767`. Those state/event values are
-zero-based indices into the descriptor's array selectors. Accelerometer is
-milli-g (HID unit m/s^2, exponent -3); gyro is 0.1 deg/s (HID unit deg/s,
-exponent -1, about +-3276 deg/s). Feature: reporting state (u8, `0` = no
-events pauses that sensor, default `1` = all events), sensor status (u8,
-`1` ready / `3` no data), change sensitivity (u16), report interval (u32,
-milliseconds as seconds with exponent -3). Sensitivity and interval are stored
-and returned but do not yet throttle output: a report is sent per pad report
-(about 100 Hz). Reports are only sent once a motion sample exists.
+Input: state = `2` (ready), event = `4` (data updated), then three signed
+16-bit little-endian values in `-32767..32767`. Accelerometer is 0.001 m/s^2
+(HID unit m/s^2, exponent -3); gyro is 0.1 deg/s (HID unit deg/s, exponent
+-1, about +-3276 deg/s). Feature: reporting state (u8, `1` = no events pauses
+that sensor, default `2` = all events), power state (u8, `2` = D0), sensor
+state (u8, `2` ready / `4` no data), change sensitivity (u16), report interval
+(u32, milliseconds as seconds with exponent -3). These are the HID Sensor
+usage-table enum values used by Microsoft's in-box examples. Sensitivity and
+interval are stored and returned but do not yet throttle output: a report is
+sent per pad report (about 100 Hz). Reports are only sent once a motion sample
+exists.
 
 DirectInput sees only the gamepad collection. HIDAPI (`hid_read`) can stream the
 sensor collections directly. Windows Sensors and GameInput consume standard HID

@@ -255,10 +255,17 @@ DSHM_ProcessCgsInputReport(
 
 	if (motion->SensorHid[DS_MOTION_HID_SENSOR_ACCEL].ReportingState != DS_MOTION_HID_REPORTING_STATE_NO_EVENTS)
 	{
+		INT32 accel[3];
+
+		for (int i = 0; i < 3; i++)
+		{
+			accel[i] = DsMotionHid_MilliGToMilliMetersPerSecondSquared(frame.AccelMilliG[i]);
+		}
+
 		DsMotionHid_WriteSensorInputReport(
 			DS_MOTION_HID_REPORT_ID_ACCEL,
 			DS_MOTION_HID_STATUS_READY,
-			frame.AccelMilliG,
+			accel,
 			ModuleDeviceContext->InputReport
 		);
 		DSHM_GenerateInputReport(ModuleDeviceContext, DS_MOTION_HID_SENSOR_INPUT_REPORT_SIZE);
