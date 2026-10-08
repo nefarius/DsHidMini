@@ -357,6 +357,40 @@ public class DriverConfigContractTests
     }
 
     [Fact]
+    public void Overlay_MotionSensorFrameOnly_RetainsValueWithoutHidDeviceMode()
+    {
+        DshmDeviceSettings baseline = new()
+        {
+            HidDeviceMode = HidDeviceMode.CGS
+        };
+        baseline.ContextSettings.MotionSensorFrame = MotionSensorFrame.Gamepad;
+
+        DshmDeviceSettings overlay = new();
+        overlay.ContextSettings.MotionSensorFrame = MotionSensorFrame.Windows;
+
+        DshmDeviceSettings merged = DshmManagerToDriverConversion.OverlayDeviceSettings(baseline, overlay);
+        Assert.Equal(MotionSensorFrame.Windows, merged.ContextSettings.MotionSensorFrame);
+        Assert.Equal(HidDeviceMode.CGS, merged.HidDeviceMode);
+    }
+
+    [Fact]
+    public void Overlay_DPadExposureModeOnly_RetainsValueWithoutHidDeviceMode()
+    {
+        DshmDeviceSettings baseline = new()
+        {
+            HidDeviceMode = HidDeviceMode.SDF
+        };
+        baseline.ContextSettings.DPadExposureMode = DPadExposureMode.HAT;
+
+        DshmDeviceSettings overlay = new();
+        overlay.ContextSettings.DPadExposureMode = DPadExposureMode.IndividualButtons;
+
+        DshmDeviceSettings merged = DshmManagerToDriverConversion.OverlayDeviceSettings(baseline, overlay);
+        Assert.Equal(DPadExposureMode.IndividualButtons, merged.ContextSettings.DPadExposureMode);
+        Assert.Equal(HidDeviceMode.SDF, merged.HidDeviceMode);
+    }
+
+    [Fact]
     public void Overlay_BluetoothOutputReportTransport_OverridesBaseline()
     {
         DshmDeviceSettings baseline = new()

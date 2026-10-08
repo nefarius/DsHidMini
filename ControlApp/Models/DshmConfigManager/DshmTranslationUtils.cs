@@ -1,4 +1,4 @@
-﻿using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig;
+using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 
@@ -383,8 +383,9 @@ public class DshmManagerToDriverConversion
         {
             if (HasModeContent(overlay.ContextSettings) || overlay.HidDeviceMode is not null)
             {
-                merged.ContextSettings = CloneHidModeSettings(overlay.ContextSettings);
-                merged.ContextSettings.HidDeviceMode = overlay.HidDeviceMode ?? merged.HidDeviceMode;
+                HidDeviceMode? inheritedMode = overlay.HidDeviceMode ?? merged.HidDeviceMode;
+                merged.ContextSettings = CloneHidModeSettings(overlay.ContextSettings, inheritedMode);
+                merged.ContextSettings.HidDeviceMode = inheritedMode;
             }
         }
 
@@ -586,13 +587,25 @@ public class DshmManagerToDriverConversion
         clone.CustomPairingAddress = source.CustomPairingAddress;
         clone.UsbOutputReportTransport = source.UsbOutputReportTransport;
         clone.BluetoothOutputReportTransport = source.BluetoothOutputReportTransport;
+        CopyNullableModeSettings(source.ContextSettings, clone.ContextSettings);
         return clone;
     }
 
-    private static DshmHidModeSettings CloneHidModeSettings(DshmHidModeSettings source)
+    private static DshmHidModeSettings CloneHidModeSettings(DshmHidModeSettings source, HidDeviceMode? inheritedMode)
     {
-        DshmDeviceSettings wrapper = new() { ContextSettings = source, HidDeviceMode = source.HidDeviceMode };
+        DshmDeviceSettings wrapper = new()
+        {
+            ContextSettings = source,
+            HidDeviceMode = inheritedMode ?? source.HidDeviceMode
+        };
         DshmDeviceSettings clone = CloneDriverSettings(wrapper);
         return clone.ContextSettings;
+    }
+
+    private static void CopyNullableModeSettings(DshmHidModeSettings source, DshmHidModeSettings dest)
+    {
+        dest.PressureExposureMode = source.PressureExposureMode;
+        dest.DPadExposureMode = source.DPadExposureMode;
+        dest.MotionSensorFrame = source.MotionSensorFrame;
     }
 }
