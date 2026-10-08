@@ -48,12 +48,18 @@
 0x0A, 0x06, 0x08,  //     Usage (State: Error)
 0xB1, 0x00,        //     Feature (Data,Arr,Abs)
 0xC0,              //   End Collection
-// Feature: absolute change sensitivity, unit deg/s, exponent -1
-0x0A, 0x0F, 0x03,  //   Usage (Property: Change Sensitivity Absolute)
+// Feature: per-axis absolute change sensitivity in 0.1 deg/s (exponent -1).
+// SensorsHid only creates the data thresholds the sensor class extension
+// requires (PKEY_SensorData_AngularVelocityX/Y/Z_DegreesPerSecond) from
+// data-field usages carrying the Change Sensitivity Absolute modifier
+// (0x1000 | data field); the sensor-wide property 0x030F is not enough.
+0x0A, 0x57, 0x14,  //   Usage (Angular Velocity Axis X | Mod: Change Sensitivity Abs)
+0x0A, 0x58, 0x14,  //   Usage (Angular Velocity Axis Y | Mod: Change Sensitivity Abs)
+0x0A, 0x59, 0x14,  //   Usage (Angular Velocity Axis Z | Mod: Change Sensitivity Abs)
 0x15, 0x00,        //   Logical Minimum (0)
 0x27, 0xFF, 0xFF, 0x00, 0x00, // Logical Maximum (65535)
 0x75, 0x10,        //   Report Size (16)
-0x95, 0x01,        //   Report Count (1)
+0x95, 0x03,        //   Report Count (3)
 0x66, 0x14, 0xF0,  //   Unit (Eng Rot: Rotation^1 Time^-1 = deg/s)
 0x55, 0x0F,        //   Unit Exponent (-1)
 0xB1, 0x02,        //   Feature (Data,Var,Abs)
