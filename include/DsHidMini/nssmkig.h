@@ -18,6 +18,9 @@
 // of the stack.
 //
 // IOCTL_NSSMKIG_REENUMERATE_SELF
+//   Access: FILE_READ_DATA | FILE_WRITE_DATA (not FILE_ANY_ACCESS). A
+//           handle opened with no read/write desired access must not be
+//           able to force a device removal.
 //   Input:  NUL-terminated UTF-16 device instance ID (as returned by
 //           DEVPKEY_Device_InstanceId) of the devnode nssmkig is attached to.
 //   Output: none.
@@ -42,4 +45,4 @@
 #endif
 
 #define IOCTL_NSSMKIG_REENUMERATE_SELF \
-	CTL_CODE(FILE_DEVICE_NSSMKIG, 0x800, METHOD_BUFFERED, FILE_ANY_ACCESS)
+	CTL_CODE(FILE_DEVICE_NSSMKIG, 0x800, METHOD_BUFFERED, FILE_READ_DATA | FILE_WRITE_DATA)

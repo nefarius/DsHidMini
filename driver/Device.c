@@ -628,6 +628,11 @@ DsDevice_RequestNssmkigReenumerate(
 
 	RtlInitUnicodeString(&deviceName, NSSMKIG_WIN32_DEVICE_NAME);
 
+	//
+	// IOCTL_NSSMKIG_REENUMERATE_SELF requires FILE_READ_DATA |
+	// FILE_WRITE_DATA. GENERIC_READ | GENERIC_WRITE maps to that; a
+	// FILE_ANY_ACCESS / zero-desired-access open would be rejected.
+	//
 	WDF_IO_TARGET_OPEN_PARAMS_INIT_OPEN_BY_NAME(
 		&openParams,
 		&deviceName,
