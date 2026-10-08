@@ -5,7 +5,7 @@
 // Feature: reporting state
 0x0A, 0x16, 0x03,  //   Usage (Property: Reporting State)
 0x15, 0x00,        //   Logical Minimum (0)
-0x25, 0x05,        //   Logical Maximum (5)
+0x25, 0x06,        //   Logical Maximum (6)
 0x75, 0x08,        //   Report Size (8)
 0x95, 0x01,        //   Report Count (1)
 0xA1, 0x02,        //   Collection (Logical)
@@ -20,7 +20,7 @@
 // Feature: power state
 0x0A, 0x19, 0x03,  //   Usage (Property: Power State)
 0x15, 0x00,        //   Logical Minimum (0)
-0x25, 0x05,        //   Logical Maximum (5)
+0x25, 0x06,        //   Logical Maximum (6)
 0x75, 0x08,        //   Report Size (8)
 0x95, 0x01,        //   Report Count (1)
 0xA1, 0x02,        //   Collection (Logical)
@@ -87,7 +87,7 @@
 // Input: sensor event
 0x0A, 0x02, 0x02,  //   Usage (Data Field: Sensor Event)
 0x15, 0x00,        //   Logical Minimum (0)
-0x25, 0x05,        //   Logical Maximum (5)
+0x25, 0x06,        //   Logical Maximum (6)
 0x75, 0x08,        //   Report Size (8)
 0x95, 0x01,        //   Report Count (1)
 0xA1, 0x02,        //   Collection (Logical)

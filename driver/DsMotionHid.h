@@ -53,6 +53,7 @@
 // HID Sensor usage-table enum values (matching DMF's proven sensor modules)
 #define DS_MOTION_HID_REPORTING_STATE_NO_EVENTS  1
 #define DS_MOTION_HID_REPORTING_STATE_ALL_EVENTS 2
+#define DS_MOTION_HID_REPORTING_STATE_NO_EVENTS_WAKE 4
 
 #define DS_MOTION_HID_POWER_STATE_D0             2
 

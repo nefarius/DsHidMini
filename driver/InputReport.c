@@ -253,7 +253,8 @@ DSHM_ProcessCgsInputReport(
 		&frame
 	);
 
-	if (motion->SensorHid[DS_MOTION_HID_SENSOR_ACCEL].ReportingState != DS_MOTION_HID_REPORTING_STATE_NO_EVENTS)
+	if (motion->SensorHid[DS_MOTION_HID_SENSOR_ACCEL].ReportingState != DS_MOTION_HID_REPORTING_STATE_NO_EVENTS
+		&& motion->SensorHid[DS_MOTION_HID_SENSOR_ACCEL].ReportingState != DS_MOTION_HID_REPORTING_STATE_NO_EVENTS_WAKE)
 	{
 		INT32 accel[3];
 
@@ -271,7 +272,8 @@ DSHM_ProcessCgsInputReport(
 		DSHM_GenerateInputReport(ModuleDeviceContext, DS_MOTION_HID_SENSOR_INPUT_REPORT_SIZE);
 	}
 
-	if (motion->SensorHid[DS_MOTION_HID_SENSOR_GYRO].ReportingState != DS_MOTION_HID_REPORTING_STATE_NO_EVENTS)
+	if (motion->SensorHid[DS_MOTION_HID_SENSOR_GYRO].ReportingState != DS_MOTION_HID_REPORTING_STATE_NO_EVENTS
+		&& motion->SensorHid[DS_MOTION_HID_SENSOR_GYRO].ReportingState != DS_MOTION_HID_REPORTING_STATE_NO_EVENTS_WAKE)
 	{
 		INT32 gyro[3];
 
