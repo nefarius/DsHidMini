@@ -257,17 +257,11 @@ DSHM_ProcessCgsInputReport(
 		&& motion->SensorHid[DS_MOTION_HID_SENSOR_ACCEL].ReportingState != DS_MOTION_HID_REPORTING_STATE_NO_EVENTS_WAKE
 		&& motion->SensorHid[DS_MOTION_HID_SENSOR_ACCEL].PowerState != DS_MOTION_HID_POWER_STATE_D4)
 	{
-		INT32 accel[3];
-
-		for (int i = 0; i < 3; i++)
-		{
-			accel[i] = DsMotionHid_MilliGToMilliMetersPerSecondSquared(frame.AccelMilliG[i]);
-		}
-
+		// Descriptor unit is 0.001 g, the frame is already in milli-g
 		DsMotionHid_WriteSensorInputReport(
 			DS_MOTION_HID_REPORT_ID_ACCEL,
 			DS_MOTION_HID_STATUS_READY,
-			accel,
+			frame.AccelMilliG,
 			ModuleDeviceContext->InputReport
 		);
 		DSHM_GenerateInputReport(ModuleDeviceContext, DS_MOTION_HID_SENSOR_INPUT_REPORT_SIZE);

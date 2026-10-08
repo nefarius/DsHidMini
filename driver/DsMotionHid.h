@@ -35,18 +35,23 @@
 //
 // Input report: ID, state, event, X, Y, Z (3 x int16 LE)
 // Feature report: ID, reporting state, power state, sensor state,
-// sensitivity (u16 LE), report interval (u32 LE, milliseconds)
+// per-axis change sensitivity X, Y, Z (3 x u16 LE), report interval
+// (u32 LE, milliseconds)
 //
 #define DS_MOTION_HID_SENSOR_INPUT_REPORT_SIZE   9
-#define DS_MOTION_HID_SENSOR_FEATURE_REPORT_SIZE 10
+#define DS_MOTION_HID_SENSOR_FEATURE_REPORT_SIZE 14
 
 #define DS_MOTION_HID_SENSOR_COUNT               2
 #define DS_MOTION_HID_SENSOR_ACCEL               0
 #define DS_MOTION_HID_SENSOR_GYRO                1
 
 //
-// Accelerometer HID values are 0.001 m/s^2 (unit exponent -3), gyroscope
-// values are 0.1 deg/s (unit exponent -1).
+// The Windows sensor stack (SensorsHid) ignores the HID Unit item and scales
+// raw values by the Unit Exponent only, in the unit the HID Sensor usage
+// table defines for the usage: g for acceleration, deg/s for angular
+// velocity. Accelerometer HID values are therefore 0.001 g (unit exponent
+// -3), gyroscope values are 0.1 deg/s (unit exponent -1). The change
+// sensitivity feature values use the same encoding as their data field.
 //
 #define DS_MOTION_HID_GYRO_UNIT_PER_DPS          10
 
@@ -77,7 +82,8 @@ typedef struct _DS_MOTION_HID_SENSOR_PROPS
 	UCHAR ReportingState;
 	UCHAR PowerState;
 	UCHAR SensorState;
-	USHORT Sensitivity;
+	// Per-axis change sensitivity (X, Y, Z) in the data field's HID unit
+	USHORT Sensitivity[3];
 	ULONG IntervalMs;
 } DS_MOTION_HID_SENSOR_PROPS, *PDS_MOTION_HID_SENSOR_PROPS;
 
@@ -130,16 +136,6 @@ DsMotionHid_WriteS16(
 {
 	Destination[0] = (UCHAR)((USHORT)Value & 0xFF);
 	Destination[1] = (UCHAR)(((USHORT)Value >> 8) & 0xFF);
-}
-
-static __inline
-INT32
-DsMotionHid_MilliGToMilliMetersPerSecondSquared(
-	_In_ INT32 MilliG
-)
-{
-	// 1 g = 9.80665 m/s^2
-	return (INT32)(((INT64)MilliG * 980665) / 100000);
 }
 
 //
@@ -219,7 +215,9 @@ DsMotionHid_SensorPropsInit(
 	Props->ReportingState = DS_MOTION_HID_REPORTING_STATE_ALL_EVENTS;
 	Props->PowerState = DS_MOTION_HID_POWER_STATE_D0;
 	Props->SensorState = DS_MOTION_HID_STATUS_NO_DATA;
-	Props->Sensitivity = 0;
+	Props->Sensitivity[0] = 0;
+	Props->Sensitivity[1] = 0;
+	Props->Sensitivity[2] = 0;
 	Props->IntervalMs = DS_MOTION_HID_DEFAULT_INTERVAL_MS;
 }
 
@@ -236,12 +234,15 @@ DsMotionHid_WriteSensorFeatureReport(
 	Output[1] = Props->ReportingState;
 	Output[2] = Props->PowerState;
 	Output[3] = Status;
-	Output[4] = (UCHAR)(Props->Sensitivity & 0xFF);
-	Output[5] = (UCHAR)(Props->Sensitivity >> 8);
-	Output[6] = (UCHAR)(Props->IntervalMs & 0xFF);
-	Output[7] = (UCHAR)((Props->IntervalMs >> 8) & 0xFF);
-	Output[8] = (UCHAR)((Props->IntervalMs >> 16) & 0xFF);
-	Output[9] = (UCHAR)((Props->IntervalMs >> 24) & 0xFF);
+	for (int i = 0; i < 3; i++)
+	{
+		Output[4 + (i * 2)] = (UCHAR)(Props->Sensitivity[i] & 0xFF);
+		Output[5 + (i * 2)] = (UCHAR)(Props->Sensitivity[i] >> 8);
+	}
+	Output[10] = (UCHAR)(Props->IntervalMs & 0xFF);
+	Output[11] = (UCHAR)((Props->IntervalMs >> 8) & 0xFF);
+	Output[12] = (UCHAR)((Props->IntervalMs >> 16) & 0xFF);
+	Output[13] = (UCHAR)((Props->IntervalMs >> 24) & 0xFF);
 }
 
 static __inline
@@ -258,6 +259,9 @@ DsMotionHid_ReadSensorFeatureReport(
 		? DS_MOTION_HID_POWER_STATE_D0
 		: Input[2];
 	Props->SensorState = Input[3];
-	Props->Sensitivity = (USHORT)(Input[4] | (Input[5] << 8));
-	Props->IntervalMs = (ULONG)Input[6] | ((ULONG)Input[7] << 8) | ((ULONG)Input[8] << 16) | ((ULONG)Input[9] << 24);
+	for (int i = 0; i < 3; i++)
+	{
+		Props->Sensitivity[i] = (USHORT)(Input[4 + (i * 2)] | (Input[5 + (i * 2)] << 8));
+	}
+	Props->IntervalMs = (ULONG)Input[10] | ((ULONG)Input[11] << 8) | ((ULONG)Input[12] << 16) | ((ULONG)Input[13] << 24);
 }

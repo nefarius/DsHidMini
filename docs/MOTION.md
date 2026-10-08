@@ -930,21 +930,35 @@ device path for each, so enumerate by usage page/usage in HIDAPI:
 | Collection | Usage page / usage | Report ID | Input report | Feature report |
 | --- | --- | --- | --- | --- |
 | Gamepad (as CGP) | `0x01` / `0x05` | `0x01` | 10 bytes, unchanged from CGP | PID force feedback |
-| Accelerometer 3D | `0x20` / `0x73` | `0x30` | ID, state, event, X, Y, Z | ID, reporting state, power state, sensor state, sensitivity, interval |
+| Accelerometer 3D | `0x20` / `0x73` | `0x30` | ID, state, event, X, Y, Z | ID, reporting state, power state, sensor state, sensitivity X/Y/Z, interval |
 | Gyrometer 3D | `0x20` / `0x76` | `0x31` | ID, state, event, X, Y, Z | same layout |
 
 Input: state = `2` (ready), event = `4` (data updated), then three signed
-16-bit little-endian values in `-32767..32767`. Accelerometer is 0.001 m/s^2
-(HID unit m/s^2, exponent -3); gyro is 0.1 deg/s (HID unit deg/s, exponent
--1, about +-3276 deg/s). Feature: reporting state (u8, `1` = no events and
-`4` = no events wake pause that sensor, default `2` = all events), power state
-(u8, `2` = D0, `6` = D4 pauses that sensor), sensor
-state (u8, `2` ready / `4` no data), change sensitivity (u16), report interval
-(u32, milliseconds as seconds with exponent -3). These are the HID Sensor
-usage-table enum values used by Microsoft's in-box examples. Sensitivity and
-interval are stored and returned but do not yet throttle output: a report is
-sent per pad report (about 100 Hz). Reports are only sent once a motion sample
-exists.
+16-bit little-endian values in `-32767..32767`. Accelerometer is 0.001 g
+(exponent -3, about +-32 g); gyro is 0.1 deg/s (exponent -1, about +-3276
+deg/s). The Windows sensor stack ignores the HID Unit item and scales the raw
+value by the Unit Exponent only, in the unit the HID Sensor usage table
+defines for that usage (g for acceleration, deg/s for angular velocity), so
+the descriptor declares no unit for acceleration. Feature (14 bytes): reporting
+state (u8, `1` = no events and `4` = no events wake pause that sensor, default
+`2` = all events), power state (u8, `2` = D0, `6` = D4 pauses that sensor),
+sensor state (u8, `2` ready / `4` no data), per-axis change sensitivity X, Y,
+Z (3 x u16, same encoding as the data field), report interval (u32,
+milliseconds). These are the HID Sensor usage-table enum values used by
+Microsoft's in-box examples. Sensitivity and interval are stored and returned
+but do not yet throttle output: a report is sent per pad report (about 100
+Hz). Reports are only sent once a motion sample exists.
+
+The per-axis sensitivities are declared with the HID Sensor *Change
+Sensitivity Absolute* data-field modifier (`0x1000 | data field`, e.g.
+`0x1453` for Acceleration X). `SensorsHid.sys` only creates the data
+thresholds (`PKEY_SensorData_AccelerationX/Y/Z_Gs`,
+`PKEY_SensorData_AngularVelocityX/Y/Z_DegreesPerSecond`) from these usages,
+and `SensorsCx` looks them up unconditionally when a client first opens the
+sensor. A descriptor that only carries the sensor-wide property `0x030F` makes
+that lookup fail with `STATUS_NOT_FOUND`, which `Windows.Devices.Sensors`
+surfaces as a crash in the client (`Accelerometer.GetDefault()` and tools like
+SensorExplorer).
 
 DirectInput sees only the gamepad collection. HIDAPI (`hid_read`) can stream the
 sensor collections directly. Windows Sensors and GameInput consume standard HID

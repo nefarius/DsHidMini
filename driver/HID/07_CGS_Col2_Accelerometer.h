@@ -48,13 +48,19 @@
 0x0A, 0x06, 0x08,  //     Usage (State: Error)
 0xB1, 0x00,        //     Feature (Data,Arr,Abs)
 0xC0,              //   End Collection
-// Feature: absolute change sensitivity, unit m/s^2, exponent -3
-0x0A, 0x0F, 0x03,  //   Usage (Property: Change Sensitivity Absolute)
+// Feature: per-axis absolute change sensitivity in 0.001 g (exponent -3).
+// SensorsHid only creates the data thresholds the sensor class extension
+// requires (PKEY_SensorData_AccelerationX/Y/Z_Gs) from data-field usages
+// carrying the Change Sensitivity Absolute modifier (0x1000 | data field);
+// the sensor-wide property 0x030F is not enough and the first open fails.
+0x0A, 0x53, 0x14,  //   Usage (Acceleration Axis X | Mod: Change Sensitivity Abs)
+0x0A, 0x54, 0x14,  //   Usage (Acceleration Axis Y | Mod: Change Sensitivity Abs)
+0x0A, 0x55, 0x14,  //   Usage (Acceleration Axis Z | Mod: Change Sensitivity Abs)
 0x15, 0x00,        //   Logical Minimum (0)
 0x27, 0xFF, 0xFF, 0x00, 0x00, // Logical Maximum (65535)
 0x75, 0x10,        //   Report Size (16)
-0x95, 0x01,        //   Report Count (1)
-0x66, 0x11, 0xE0,  //   Unit (SI Lin: Length^1 Time^-2 = m/s^2)
+0x95, 0x03,        //   Report Count (3)
+0x65, 0x00,        //   Unit (None; HID has no code for g, usage implies it)
 0x55, 0x0D,        //   Unit Exponent (-3)
 0xB1, 0x02,        //   Feature (Data,Var,Abs)
 // Feature: report interval, unit seconds, exponent -3 = milliseconds
@@ -99,7 +105,9 @@
 0x0A, 0x15, 0x08,  //     Usage (Event: Change Sensitivity)
 0x81, 0x00,        //     Input (Data,Arr,Abs)
 0xC0,              //   End Collection
-// Input: acceleration X, Y, Z in 0.001 m/s^2
+// Input: acceleration X, Y, Z in 0.001 g. The sensor stack ignores the HID
+// Unit item and scales the raw value by the exponent only, in the unit the
+// HID Sensor usage table defines for the usage (g for acceleration).
 0x0A, 0x53, 0x04,  //   Usage (Data Field: Acceleration Axis X)
 0x0A, 0x54, 0x04,  //   Usage (Data Field: Acceleration Axis Y)
 0x0A, 0x55, 0x04,  //   Usage (Data Field: Acceleration Axis Z)
@@ -107,7 +115,7 @@
 0x26, 0xFF, 0x7F,  //   Logical Maximum (32767)
 0x75, 0x10,        //   Report Size (16)
 0x95, 0x03,        //   Report Count (3)
-0x66, 0x11, 0xE0,  //   Unit (SI Lin: Length^1 Time^-2 = m/s^2)
+0x65, 0x00,        //   Unit (None)
 0x55, 0x0D,        //   Unit Exponent (-3)
 0x81, 0x02,        //   Input (Data,Var,Abs)
 0xC0,              // End Collection
