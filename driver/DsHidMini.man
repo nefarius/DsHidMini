@@ -67,6 +67,7 @@
 					<event value="23" channel="SYSTEM" level="win:Informational" message="$(string.UsbOutputTransportSelected.EventMessage)" opcode="win:Info" symbol="UsbOutputTransportSelected" template="tid_device_address_uint"/>
 					<event value="24" channel="SYSTEM" level="win:Informational" message="$(string.BluetoothInputStreamStarted.EventMessage)" opcode="win:Info" symbol="BluetoothInputStreamStarted" template="tid_device_address"/>
 					<event value="25" channel="SYSTEM" level="win:Informational" message="$(string.WirelessDisconnectRequested.EventMessage)" opcode="win:Info" symbol="WirelessDisconnectRequested" template="tid_device_address_uint"/>
+					<event value="26" channel="SYSTEM" level="win:Warning" message="$(string.HidModeMismatchRestartUnavailable.EventMessage)" opcode="win:Info" symbol="HidModeMismatchRestartUnavailable" template="tid_device_address"/>
 				</events>
 			</provider>
 		</events>
@@ -95,7 +96,8 @@
 				<string id="DeviceAddressUnavailableUsingFallback.EventMessage" value="Device %1 did not report its own Bluetooth address (status %2); using a synthesized fallback address instead. Bluetooth pairing is unavailable for this device."/>
 				<string id="UsbOutputTransportSelected.EventMessage" value="Device %1 will use output report transport %2 (0 = Auto, 1 = InterruptOut, 2 = ControlEndpoint)"/>
 				<string id="BluetoothInputStreamStarted.EventMessage" value="Device %1 started consuming Bluetooth HID interrupt input reports"/>
-				<string id="WirelessDisconnectRequested.EventMessage" value="Wireless disconnect requested for device %1 (reason %2: 0 = Unknown, 1 = ButtonCombo, 2 = IdleTimeout, 3 = YieldWired, 4 = SelfManagedIoSuspend, 5 = IpcRequest, 6 = UsbSignal)"/>
+				<string id="WirelessDisconnectRequested.EventMessage" value="Wireless disconnect requested for device %1 (reason %2: 0 = Unknown, 1 = ButtonCombo, 2 = IdleTimeout, 3 = YieldWired, 4 = SelfManagedIoSuspend, 5 = IpcRequest, 6 = UsbSignal, 7 = HidModeMismatch)"/>
+				<string id="HidModeMismatchRestartUnavailable.EventMessage" value="Device %1 HID mode configuration mismatched the mode already probed by PnP; automatic restart is unavailable, replug required"/>
 			</stringTable>
 		</resources>
 	</localization>

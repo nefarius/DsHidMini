@@ -50,6 +50,7 @@
     <ClInclude Include="..\include\DsHidMini\Ds3Types.h" />
     <ClInclude Include="..\include\DsHidMini\ScpTypes.h" />
     <ClInclude Include="..\include\DsHidMini\dshmguid.h" />
+    <ClInclude Include="..\include\DsHidMini\nssmkig.h" />
     <ClInclude Include="Configuration.h" />
     <ClInclude Include="Configuration.Json.h" />
     <ClInclude Include="Device.h" />

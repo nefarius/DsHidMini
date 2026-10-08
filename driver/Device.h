@@ -283,17 +283,18 @@ typedef struct _DEVICE_CONTEXT
 	BOOLEAN InputReportDropLogged;
 
 	//
-	// Timer used to defer a self re-enumeration request off the D0Entry
+	// Timer used to defer a HID-mode mismatch restart off the D0Entry
 	// path when DMF_DsHidMini_Open detects that the HID mode loaded from
 	// configuration differs from the mode already exposed via
-	// DEVPKEY_DsHidMini_RW_HidDeviceMode (see issue #374).
+	// DEVPKEY_DsHidMini_RW_HidDeviceMode (see issue #374). Bluetooth
+	// uses DsBth_SendDisconnectRequest; USB asks nssmkig to re-enumerate.
+	// WdfDeviceSetFailed is not used: on this UMDF stack it ends in Code 43.
 	// 
 	WDFTIMER HidModeRestartTimer;
 
 	//
-	// Set once a self re-enumeration has been requested because of a HID
-	// mode mismatch, so this power-up only asks for it once. Reset in
-	// DsHidMini_EvtDeviceD0Entry.
+	// Set once a HID-mode mismatch restart has been attempted, so this
+	// power-up only asks for it once. Reset in DsHidMini_EvtDeviceD0Entry.
 	// 
 	BOOLEAN HidModeRestartRequested;
 	
@@ -645,6 +646,12 @@ EVT_DSHM_IPC_DispatchDeviceMessage DSHM_EvtDispatchDeviceMessage;
 NTSTATUS
 DsDevice_ReadProperties(
 	WDFDEVICE Device
+);
+
+NTSTATUS
+DsDevice_AssignHidDeviceModeProperty(
+	_In_ WDFDEVICE Device,
+	_In_ DS_HID_DEVICE_MODE Mode
 );
 
 VOID

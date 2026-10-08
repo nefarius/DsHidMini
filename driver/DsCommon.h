@@ -248,7 +248,8 @@ typedef enum
 	DsBthDisconnectReasonYieldWired,
 	DsBthDisconnectReasonSelfManagedIoSuspend,
 	DsBthDisconnectReasonIpcRequest,
-	DsBthDisconnectReasonUsbSignal
+	DsBthDisconnectReasonUsbSignal,
+	DsBthDisconnectReasonHidModeMismatch
 } DS_BTH_DISCONNECT_REASON, * PDS_BTH_DISCONNECT_REASON;
 
 //

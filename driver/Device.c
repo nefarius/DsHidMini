@@ -546,14 +546,136 @@ DsDevice_AssignDeviceType(
 }
 
 //
-// Deferred callback that requests a self re-enumeration when
-// DMF_DsHidMini_Open detected that the HID mode loaded from configuration
-// differs from the mode already exposed via
-// DEVPKEY_DsHidMini_RW_HidDeviceMode (see issue #374).
+// Persist the HID mode this instance is configured for so nssmkig and the
+// next PnP build see the same value (issue #374).
 //
-// Running this from a timer rather than inline in DMF_DsHidMini_Open keeps
-// WdfDeviceSetFailed off the power-up call stack, mirroring the approach
-// already used for the failed-resume restart in DsUsb.c (issue #311).
+NTSTATUS
+DsDevice_AssignHidDeviceModeProperty(
+	_In_ WDFDEVICE Device,
+	_In_ DS_HID_DEVICE_MODE Mode
+)
+{
+	WDF_DEVICE_PROPERTY_DATA propertyData;
+
+	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_DsHidMini_RW_HidDeviceMode);
+	propertyData.Flags |= PLUGPLAY_PROPERTY_PERSISTENT;
+	propertyData.Lcid = LOCALE_NEUTRAL;
+
+	return WdfDeviceAssignProperty(
+		Device,
+		&propertyData,
+		DEVPROP_TYPE_BYTE,
+		sizeof(BYTE),
+		&Mode
+	);
+}
+
+//
+// Asks the KMDF lower filter nssmkig to re-enumerate this devnode through
+// its control device (see include/DsHidMini/nssmkig.h). UMDF cannot do that
+// itself: WdfDeviceSetFailed(AttemptRestart) was traced to never reach
+// usbhub3 on this stack and ends in Code 43 (issue #374). Returns
+// STATUS_NOT_FOUND when the control device cannot be opened, i.e. the
+// installed nssmkig predates 1.2.
+// 
+static
+NTSTATUS
+DsDevice_RequestNssmkigReenumerate(
+	_In_ WDFDEVICE Device
+)
+{
+	NTSTATUS status;
+	WDF_DEVICE_PROPERTY_DATA propertyData;
+	WDFMEMORY instanceIdMemory = NULL;
+	DEVPROPTYPE propType = DEVPROP_TYPE_EMPTY;
+	WDFIOTARGET ioTarget = NULL;
+	WDF_IO_TARGET_OPEN_PARAMS openParams;
+	WDF_MEMORY_DESCRIPTOR inputDescriptor;
+	UNICODE_STRING deviceName;
+
+	WDF_DEVICE_PROPERTY_DATA_INIT(&propertyData, &DEVPKEY_Device_InstanceId);
+
+	status = WdfDeviceAllocAndQueryPropertyEx(
+		Device,
+		&propertyData,
+		NonPagedPoolNx,
+		WDF_NO_OBJECT_ATTRIBUTES,
+		&instanceIdMemory,
+		&propType
+	);
+	if (!NT_SUCCESS(status))
+	{
+		TraceError(
+			TRACE_DEVICE,
+			"Querying DEVPKEY_Device_InstanceId failed with status %!STATUS!",
+			status
+		);
+		return status;
+	}
+
+	if (propType != DEVPROP_TYPE_STRING)
+	{
+		WdfObjectDelete(instanceIdMemory);
+		return STATUS_OBJECT_TYPE_MISMATCH;
+	}
+
+	status = WdfIoTargetCreate(Device, WDF_NO_OBJECT_ATTRIBUTES, &ioTarget);
+	if (!NT_SUCCESS(status))
+	{
+		WdfObjectDelete(instanceIdMemory);
+		return status;
+	}
+
+	RtlInitUnicodeString(&deviceName, NSSMKIG_WIN32_DEVICE_NAME);
+
+	WDF_IO_TARGET_OPEN_PARAMS_INIT_OPEN_BY_NAME(
+		&openParams,
+		&deviceName,
+		GENERIC_READ | GENERIC_WRITE
+	);
+	openParams.ShareAccess = FILE_SHARE_READ | FILE_SHARE_WRITE;
+
+	status = WdfIoTargetOpen(ioTarget, &openParams);
+	if (!NT_SUCCESS(status))
+	{
+		TraceWarning(
+			TRACE_DEVICE,
+			"Opening %wZ failed with status %!STATUS!, nssmkig 1.2 or later required",
+			&deviceName,
+			status
+		);
+		status = STATUS_NOT_FOUND;
+	}
+	else
+	{
+		WDF_MEMORY_DESCRIPTOR_INIT_HANDLE(&inputDescriptor, instanceIdMemory, NULL);
+
+		status = WdfIoTargetSendIoctlSynchronously(
+			ioTarget,
+			NULL,
+			IOCTL_NSSMKIG_REENUMERATE_SELF,
+			&inputDescriptor,
+			NULL,
+			NULL,
+			NULL
+		);
+		WdfIoTargetClose(ioTarget);
+	}
+
+	WdfObjectDelete(ioTarget);
+	WdfObjectDelete(instanceIdMemory);
+	return status;
+}
+
+//
+// Deferred callback that restarts the device when DMF_DsHidMini_Open
+// detected that the HID mode loaded from configuration differs from the
+// mode already exposed via DEVPKEY_DsHidMini_RW_HidDeviceMode (issue #374).
+//
+// Bluetooth: drop the link; the next PS-button connect is a fresh BthPS3
+// enumeration. USB: ask nssmkig (KMDF) to re-enumerate. If neither path is
+// available the device keeps running in the already-probed mode and a
+// replug-required event is logged; the devnode is never marked failed.
 // 
 _Use_decl_annotations_
 VOID
@@ -565,15 +687,67 @@ DsDevice_EvtHidModeRestartTimerFunc(
 
 	const WDFDEVICE device = WdfTimerGetParentObject(Timer);
 	const PDEVICE_CONTEXT pDevCtx = DeviceGetContext(device);
+	BOOLEAN restartRequested = FALSE;
+	NTSTATUS status;
 
-	TraceWarning(
-		TRACE_DEVICE,
-		"Requesting a device restart, HID mode from configuration mismatched the mode already probed by PnP"
-	);
+	if (pDevCtx->ConnectionType == DsDeviceConnectionTypeBth)
+	{
+		TraceWarning(
+			TRACE_DEVICE,
+			"HID mode from configuration mismatched the mode already probed by PnP; disconnecting the wireless instance"
+		);
 
-	EventWriteRequestingDeviceRestartOnHidModeMismatch(pDevCtx->DeviceAddressString);
+		EventWriteRequestingDeviceRestartOnHidModeMismatch(pDevCtx->DeviceAddressString);
 
-	WdfDeviceSetFailed(device, WdfDeviceFailedAttemptRestart);
+		status = DsBth_SendDisconnectRequest(pDevCtx, DsBthDisconnectReasonHidModeMismatch);
+		if (NT_SUCCESS(status))
+		{
+			restartRequested = TRUE;
+		}
+		else
+		{
+			TraceError(
+				TRACE_DEVICE,
+				"DsBth_SendDisconnectRequest failed with status %!STATUS!",
+				status
+			);
+			EventWriteFailedWithNTStatus(__FUNCTION__, L"DsBth_SendDisconnectRequest", status);
+		}
+	}
+	else if (pDevCtx->ConnectionType == DsDeviceConnectionTypeUsb)
+	{
+		status = DsDevice_RequestNssmkigReenumerate(device);
+		if (NT_SUCCESS(status))
+		{
+			TraceWarning(
+				TRACE_DEVICE,
+				"HID mode from configuration mismatched the mode already probed by PnP; requested nssmkig re-enumeration"
+			);
+			EventWriteRequestingDeviceRestartOnHidModeMismatch(pDevCtx->DeviceAddressString);
+			restartRequested = TRUE;
+		}
+		else
+		{
+			TraceWarning(
+				TRACE_DEVICE,
+				"nssmkig re-enumeration unavailable (status %!STATUS!)",
+				status
+			);
+			if (status != STATUS_NOT_FOUND)
+			{
+				EventWriteFailedWithNTStatus(__FUNCTION__, L"DsDevice_RequestNssmkigReenumerate", status);
+			}
+		}
+	}
+
+	if (!restartRequested)
+	{
+		TraceWarning(
+			TRACE_DEVICE,
+			"HID mode mismatch automatic restart is unavailable; device remains in the probed mode, replug required"
+		);
+		EventWriteHidModeMismatchRestartUnavailable(pDevCtx->DeviceAddressString);
+	}
 
 	FuncExitNoReturn(TRACE_DEVICE);
 }
@@ -928,8 +1102,9 @@ DsDevice_InitContext(
 		}
 
 		//
-		// Create timer used to defer a self re-enumeration request when a
-		// HID mode mismatch is detected (see issue #374)
+		// Create timer used to defer a HID-mode mismatch restart when the
+		// configured mode differs from the mode already probed by PnP
+		// (see issue #374)
 		// 
 
 		WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
@@ -1212,6 +1387,29 @@ DsDevice_HotReloadEventCallback(
 		);
 
 		WdfWaitLockRelease(pDevCtx->ConfigurationDirectoryWatcherLock);
+
+		//
+		// Persist the HID mode this reload just applied so the next PnP
+		// build (and nssmkig) see the configured value. A mode change made
+		// while the device is connected cannot take effect until the next
+		// plug; writing the property here prevents a mismatch then
+		// (issue #374).
+		//
+		{
+			const NTSTATUS assignStatus = DsDevice_AssignHidDeviceModeProperty(
+				WdfObjectContextGetObject(pDevCtx),
+				pDevCtx->Configuration.HidDeviceMode
+			);
+			if (!NT_SUCCESS(assignStatus))
+			{
+				TraceWarning(
+					TRACE_DEVICE,
+					"DsDevice_AssignHidDeviceModeProperty failed with status %!STATUS!",
+					assignStatus
+				);
+				EventWriteFailedWithNTStatus(__FUNCTION__, L"DsDevice_AssignHidDeviceModeProperty", assignStatus);
+			}
+		}
 
 		//
 		// Restore the Automatic authority hand-off for this reload before

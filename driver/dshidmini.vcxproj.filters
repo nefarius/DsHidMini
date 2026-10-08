@@ -153,6 +153,9 @@
     <ClInclude Include="..\include\DsHidMini\dshmguid.h">
       <Filter>Header Files\Public</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\DsHidMini\nssmkig.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
     <ClInclude Include="HID\02_GPJ_Col1_GamePad.h">
       <Filter>Header Files\HID</Filter>
     </ClInclude>
