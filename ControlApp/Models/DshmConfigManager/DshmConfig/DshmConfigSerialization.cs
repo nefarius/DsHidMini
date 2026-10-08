@@ -330,7 +330,8 @@ internal static class DshmConfigSerialization
         DshmHidModeSettings settings = new()
         {
             PressureExposureMode = ReadEnum<PressureMode>(element, "PressureExposureMode"),
-            DPadExposureMode = ReadEnum<DPadExposureMode>(element, "DPadExposureMode")
+            DPadExposureMode = ReadEnum<DPadExposureMode>(element, "DPadExposureMode"),
+            MotionSensorFrame = ReadEnum<MotionSensorFrame>(element, "MotionSensorFrame")
         };
 
         if (TryGetProperty(element, "DeadZoneLeft", out JsonElement leftDz))

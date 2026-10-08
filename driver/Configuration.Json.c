@@ -652,6 +652,47 @@ ConfigTryGetDPadMode(
 }
 
 static BOOLEAN
+ConfigTryGetMotionSensorFrame(
+	_In_opt_ const cJSON* Object,
+	_Out_ PDS_MOTION_SENSOR_FRAME Frame
+)
+{
+	const CHAR* name = NULL;
+
+	*Frame = DsMotionSensorFrameDefault;
+
+	if (!ConfigTryGetString(Object, "MotionSensorFrame", &name))
+	{
+		return FALSE;
+	}
+
+	if (!_strcmpi(name, G_MOTION_SENSOR_FRAME_NAMES[0]))
+	{
+		*Frame = DsMotionSensorFrameGamepad;
+		return TRUE;
+	}
+
+	if (!_strcmpi(name, G_MOTION_SENSOR_FRAME_NAMES[1]))
+	{
+		*Frame = DsMotionSensorFrameWindows;
+		return TRUE;
+	}
+
+	if (!_strcmpi(name, G_MOTION_SENSOR_FRAME_NAMES[2]))
+	{
+		*Frame = DsMotionSensorFrameDefault;
+		return TRUE;
+	}
+
+	TraceWarning(
+		TRACE_CONFIG,
+		"Unknown MotionSensorFrame '%s', ignoring",
+		name
+	);
+	return FALSE;
+}
+
+static BOOLEAN
 ConfigTryGetLedMode(
 	_In_opt_ const cJSON* Object,
 	_Out_ DS_LED_MODE* Mode
@@ -962,6 +1003,7 @@ ConfigParseHidDeviceModeSpecificSettings(
 {
 	DS_PRESSURE_EXPOSURE_MODE pressureMode = DsPressureExposureModeDefault;
 	DS_DPAD_EXPOSURE_MODE dpadMode = DsDPadExposureModeDefault;
+	DS_MOTION_SENSOR_FRAME sensorFrame = DsMotionSensorFrameDefault;
 
 	switch (Config->HidDeviceMode)
 	{
@@ -986,6 +1028,13 @@ ConfigParseHidDeviceModeSpecificSettings(
 		if (ConfigTryGetDPadMode(NodeSettings, &dpadMode))
 		{
 			Config->GPJ.DPadExposureMode = dpadMode;
+		}
+		break;
+
+	case DsHidMiniDeviceModeCGS:
+		if (ConfigTryGetMotionSensorFrame(NodeSettings, &sensorFrame))
+		{
+			Config->CGS.MotionSensorFrame = sensorFrame;
 		}
 		break;
 
@@ -1251,6 +1300,7 @@ ConfigSetDefaults(
 	Config->SDF.DPadExposureMode = DsDPadExposureModeDefault;
 	Config->GPJ.PressureExposureMode = DsPressureExposureModeDefault;
 	Config->GPJ.DPadExposureMode = DsDPadExposureModeDefault;
+	Config->CGS.MotionSensorFrame = DsMotionSensorFrameDefault;
 
 	FuncExitNoReturn(TRACE_CONFIG);
 }

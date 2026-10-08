@@ -127,6 +127,39 @@ DsMotionHid_ToDeviceFrame(
 	Frame->GyroMilliDps[2] = 0;
 }
 
+//
+// Converts the gamepad frame into the Windows screen frame used by
+// Windows.Devices.Sensors on tablets (X right, Y towards the far/trigger
+// edge, Z out of the face) where the accelerometer reports the gravity
+// vector, i.e. flat face-up reads (0, 0, -1 g) instead of (0, +1 g, 0).
+// Angular velocity keeps the right-hand rule, so only the axes are remapped.
+// Safe to call in place (Source == Target).
+//
+static __inline
+VOID
+DsMotionHid_ToWindowsFrame(
+	_In_ const DS_MOTION_HID_FRAME* Source,
+	_Out_ PDS_MOTION_HID_FRAME Target
+)
+{
+	const INT32 accelRight = Source->AccelMilliG[0];
+	const INT32 accelUp = Source->AccelMilliG[1];
+	const INT32 accelTowardsPlayer = Source->AccelMilliG[2];
+	const INT32 gyroRight = Source->GyroMilliDps[0];
+	const INT32 gyroUp = Source->GyroMilliDps[1];
+	const INT32 gyroTowardsPlayer = Source->GyroMilliDps[2];
+
+	// Windows X = right, Y = away from the player, Z = out of the face;
+	// gravity vector is the negated reaction force the gamepad frame reports
+	Target->AccelMilliG[0] = -accelRight;
+	Target->AccelMilliG[1] = accelTowardsPlayer;
+	Target->AccelMilliG[2] = -accelUp;
+
+	Target->GyroMilliDps[0] = gyroRight;
+	Target->GyroMilliDps[1] = -gyroTowardsPlayer;
+	Target->GyroMilliDps[2] = gyroUp;
+}
+
 static __inline
 VOID
 DsMotionHid_WriteS16(

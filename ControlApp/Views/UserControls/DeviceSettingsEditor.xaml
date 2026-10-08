@@ -186,6 +186,22 @@
                         ItemsSource="{Binding ListOfDPadModes}"
                         SelectedItem="{Binding DPadExposureMode, FallbackValue=0}" />
                 </DockPanel>
+                <!--  CGS: HID Sensor coordinate frame  -->
+                <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}"
+                           ToolTip="Gamepad: Y points out of the face, flat face-up reads (0, +1 g, 0) like a DS4, SDL and GameInput. Windows: tablet screen frame, Z points out of the face, flat face-up reads (0, 0, -1 g) as Windows sensor tools expect."
+                           Visibility="{Binding Path=Context, Converter={StaticResource VisibilityPerHIDModeConverterKey}, ConverterParameter=100000000}">
+                    <ui:TextBlock
+                        Style="{StaticResource SettingsFieldLabel}"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        DockPanel.Dock="Left"
+                        Text="Motion sensor coordinate frame:" />
+                    <ComboBox
+                        VerticalAlignment="Center"
+                        DockPanel.Dock="Right"
+                        ItemsSource="{Binding ListOfMotionSensorFrames}"
+                        SelectedItem="{Binding MotionSensorFrame, FallbackValue=0}" />
+                </DockPanel>
             </StackPanel>
         </DataTemplate>
 

@@ -960,6 +960,35 @@ that lookup fail with `STATUS_NOT_FOUND`, which `Windows.Devices.Sensors`
 surfaces as a crash in the client (`Accelerometer.GetDefault()` and tools like
 SensorExplorer).
 
+#### Coordinate frame (`CGS.MotionSensorFrame`)
+
+The sensor collections default to the gamepad frame described above
+(`"Gamepad"`). Windows' own sensor tooling (SensorExplorer's bubble level,
+orientation demos, anything written for tablets) assumes the Windows screen
+frame instead: X right, Y towards the far (trigger) edge, Z out of the face,
+and the accelerometer reports the gravity vector, so flat face-up reads
+`(0, 0, -1 g)` rather than `(0, +1 g, 0)`. Set `"MotionSensorFrame": "Windows"`
+in the `CGS` block (ControlApp: "Motion sensor coordinate frame") to publish
+that frame on both sensor collections:
+
+| | Gamepad (default) | Windows |
+| --- | --- | --- |
+| Flat, face up | accel `(0, +1, 0)` | accel `(0, 0, -1)` |
+| Right grip down | accel `(-1, 0, 0)` | accel `(+1, 0, 0)` |
+| Trigger edge down | accel `(0, 0, +1)` | accel `(0, +1, 0)` |
+| Yaw clockwise from above | gyro Y negative | gyro Z negative |
+
+Angular velocity keeps the right-hand rule in both frames; only the axes are
+remapped (`X -> X`, `Y -> Z`, `Z -> -Y`). The DS4Windows report is not
+affected by this setting.
+
+```json
+"Global": {
+  "HidDeviceMode": "CGS",
+  "CGS": { "MotionSensorFrame": "Windows" }
+}
+```
+
 DirectInput sees only the gamepad collection. HIDAPI (`hid_read`) can stream the
 sensor collections directly. Windows Sensors and GameInput consume standard HID
 Sensors; no GameInput registry mapping is shipped because whether one is needed

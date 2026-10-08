@@ -415,6 +415,31 @@ TEST(Parse_SdfAndGpjModeSpecificSettings)
     return 0;
 }
 
+TEST(Parse_CgsMotionSensorFrame)
+{
+    DS_DRIVER_CONFIGURATION parsed;
+
+    EXPECT_STATUS(ParseText("{\"Global\":{\"HidDeviceMode\":\"CGS\"}}", FALSE, NULL, NULL, &parsed, NULL), STATUS_SUCCESS);
+    EXPECT(parsed.CGS.MotionSensorFrame == DsMotionSensorFrameGamepad);
+
+    EXPECT_STATUS(ParseText(
+        "{\"Global\":{\"HidDeviceMode\":\"CGS\",\"CGS\":{\"MotionSensorFrame\":\"Windows\"}}}",
+        FALSE, NULL, NULL, &parsed, NULL), STATUS_SUCCESS);
+    EXPECT(parsed.CGS.MotionSensorFrame == DsMotionSensorFrameWindows);
+
+    // Unknown values and blocks of inactive modes are ignored
+    EXPECT_STATUS(ParseText(
+        "{\"Global\":{\"HidDeviceMode\":\"CGS\",\"CGS\":{\"MotionSensorFrame\":\"Bogus\"}}}",
+        FALSE, NULL, NULL, &parsed, NULL), STATUS_SUCCESS);
+    EXPECT(parsed.CGS.MotionSensorFrame == DsMotionSensorFrameGamepad);
+
+    EXPECT_STATUS(ParseText(
+        "{\"Global\":{\"HidDeviceMode\":\"CGP\",\"CGS\":{\"MotionSensorFrame\":\"Windows\"}}}",
+        FALSE, NULL, NULL, &parsed, NULL), STATUS_SUCCESS);
+    EXPECT(parsed.CGS.MotionSensorFrame == DsMotionSensorFrameGamepad);
+    return 0;
+}
+
 TEST(Parse_CgpHidDeviceMode_Recognized)
 {
     DS_DRIVER_CONFIGURATION parsed;
@@ -490,6 +515,32 @@ TEST(Motion_SixPoses_MapToDeviceFrame)
     // Front edge down (triggers on desk): Sony Y -1 g -> device Z +1 g
     MotionFrame(0, -1000, 0, 0, &frame);
     EXPECT(frame.AccelMilliG[2] == 1000);
+    return 0;
+}
+
+TEST(Motion_WindowsFrame_FlatFaceUpReadsMinusOneOnZ)
+{
+    DS_MOTION_HID_FRAME frame;
+
+    // Flat, face up: gamepad (0, +1 g, 0) -> Windows gravity vector (0, 0, -1 g)
+    MotionFrame(0, 0, -1000, 0, &frame);
+    DsMotionHid_ToWindowsFrame(&frame, &frame);
+    EXPECT(frame.AccelMilliG[0] == 0 && frame.AccelMilliG[1] == 0 && frame.AccelMilliG[2] == -1000);
+
+    // Right grip down: gamepad X -1 g -> gravity points right, Windows X +1 g
+    MotionFrame(1000, 0, 0, 0, &frame);
+    DsMotionHid_ToWindowsFrame(&frame, &frame);
+    EXPECT(frame.AccelMilliG[0] == 1000 && frame.AccelMilliG[1] == 0 && frame.AccelMilliG[2] == 0);
+
+    // Front (trigger) edge down: gamepad Z +1 g -> gravity points towards the far edge, Windows Y +1 g
+    MotionFrame(0, -1000, 0, 0, &frame);
+    DsMotionHid_ToWindowsFrame(&frame, &frame);
+    EXPECT(frame.AccelMilliG[0] == 0 && frame.AccelMilliG[1] == 1000 && frame.AccelMilliG[2] == 0);
+
+    // Yaw about the face normal keeps the right-hand rule: gamepad Y -> Windows Z
+    MotionFrame(0, 0, 0, 90000, &frame);
+    DsMotionHid_ToWindowsFrame(&frame, &frame);
+    EXPECT(frame.GyroMilliDps[0] == 0 && frame.GyroMilliDps[1] == 0 && frame.GyroMilliDps[2] == -90000);
     return 0;
 }
 
@@ -826,8 +877,10 @@ int main(void)
     RUN(Parse_SdfAndGpjModeSpecificSettings);
     RUN(Parse_CgpHidDeviceMode_Recognized);
     RUN(Parse_CgsHidDeviceMode_Recognized);
+    RUN(Parse_CgsMotionSensorFrame);
     RUN(Motion_Rest_FlatFaceUp_ReportsPlusOneGOnDeviceY);
     RUN(Motion_SixPoses_MapToDeviceFrame);
+    RUN(Motion_WindowsFrame_FlatFaceUpReadsMinusOneOnZ);
     RUN(Motion_Yaw_ClockwiseFromAbove_IsNegativeOnDeviceY);
     RUN(Motion_Saturation_ClampsToSymmetricInt16);
     RUN(Motion_SensorInputReport_ExactBytes);

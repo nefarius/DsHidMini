@@ -253,6 +253,11 @@ DSHM_ProcessCgsInputReport(
 		&frame
 	);
 
+	if (DeviceContext->Configuration.CGS.MotionSensorFrame == DsMotionSensorFrameWindows)
+	{
+		DsMotionHid_ToWindowsFrame(&frame, &frame);
+	}
+
 	if (motion->SensorHid[DS_MOTION_HID_SENSOR_ACCEL].ReportingState != DS_MOTION_HID_REPORTING_STATE_NO_EVENTS
 		&& motion->SensorHid[DS_MOTION_HID_SENSOR_ACCEL].ReportingState != DS_MOTION_HID_REPORTING_STATE_NO_EVENTS_WAKE
 		&& motion->SensorHid[DS_MOTION_HID_SENSOR_ACCEL].PowerState != DS_MOTION_HID_POWER_STATE_D4)

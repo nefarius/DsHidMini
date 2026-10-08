@@ -205,6 +205,47 @@ public class DriverConfigContractTests
     }
 
     [Fact]
+    public void RoundTrip_CgsMode_PersistsMotionSensorFrameOnlyForCgs()
+    {
+        DeviceSettings original = new();
+        original.HidMode.SettingsContext = SettingsContext.CGS;
+        original.HidMode.MotionSensorFrame = MotionSensorFrame.Windows;
+
+        DshmDeviceSettings driver = new();
+        DshmManagerToDriverConversion.ConvertDeviceSettingsToDriverFormat(original, driver);
+        Assert.Equal(MotionSensorFrame.Windows, driver.ContextSettings.MotionSensorFrame);
+
+        string json = DshmConfigSerialization.Serialize(new DshmConfiguration { Global = driver });
+        JsonNode global = JsonNode.Parse(json)!["Global"]!;
+        Assert.Equal("Windows", global["CGS"]!["MotionSensorFrame"]!.GetValue<string>());
+
+        DshmConfiguration parsed = DshmConfigSerialization.Deserialize(json);
+        DeviceSettings restored = new();
+        DshmManagerToDriverConversion.ConvertDriverFormatToDeviceSettings(parsed.Global, restored);
+        Assert.Equal(SettingsContext.CGS, restored.HidMode.SettingsContext);
+        Assert.Equal(MotionSensorFrame.Windows, restored.HidMode.MotionSensorFrame);
+
+        // Other modes never emit the CGS-only key, even if the app-side value was changed
+        original.HidMode.SettingsContext = SettingsContext.CGP;
+        DshmDeviceSettings cgp = new();
+        DshmManagerToDriverConversion.ConvertDeviceSettingsToDriverFormat(original, cgp);
+        Assert.Null(cgp.ContextSettings.MotionSensorFrame);
+    }
+
+    [Fact]
+    public void Deserialize_CgsBlockWithoutMotionSensorFrame_DefaultsToGamepad()
+    {
+        const string json = """{"Global":{"HidDeviceMode":"CGS","CGS":{}}}""";
+
+        DshmConfiguration parsed = DshmConfigSerialization.Deserialize(json);
+        Assert.Null(parsed.Global.ContextSettings.MotionSensorFrame);
+
+        DeviceSettings restored = new();
+        DshmManagerToDriverConversion.ConvertDriverFormatToDeviceSettings(parsed.Global, restored);
+        Assert.Equal(MotionSensorFrame.Gamepad, restored.HidMode.MotionSensorFrame);
+    }
+
+    [Fact]
     public void Serialize_DefaultSettings_EmitsControlBluetoothOutputTransport()
     {
         JsonNode global = JsonNode.Parse(SerializeDefaultProfile(SettingsContext.XInput))!["Global"]!;

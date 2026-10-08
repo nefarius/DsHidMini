@@ -136,6 +136,11 @@ public class DshmManagerToDriverConversion
                 ? DPadExposureModeManagerToDriver[x_HidMode.DPadExposureMode]
                 : null;
 
+        driverFormat.ContextSettings.MotionSensorFrame =
+            x_HidMode.SettingsContext is SettingsContext.CGS
+                ? x_HidMode.MotionSensorFrame
+                : null;
+
         LedsSettings x_Leds = appFormat.LEDs;
         DshmDeviceSettings.AllLEDSettings dshm_AllLEDsSettings = driverFormat.ContextSettings.LEDSettings;
 
@@ -233,6 +238,11 @@ public class DshmManagerToDriverConversion
             DPadExposureModeDriverToManager.TryGetValue(dpad, out DPadMode appDpad))
         {
             appFormat.HidMode.DPadExposureMode = appDpad;
+        }
+
+        if (driverFormat.ContextSettings.MotionSensorFrame is { } sensorFrame)
+        {
+            appFormat.HidMode.MotionSensorFrame = sensorFrame;
         }
 
         if (driverFormat.ContextSettings.LEDSettings.Mode is { } ledMode &&
@@ -392,6 +402,7 @@ public class DshmManagerToDriverConversion
     {
         return settings.PressureExposureMode is not null
                || settings.DPadExposureMode is not null
+               || settings.MotionSensorFrame is not null
                || settings.DeadZoneLeft.Apply is not null
                || settings.DeadZoneLeft.PolarValue is not null
                || settings.DeadZoneRight.Apply is not null
