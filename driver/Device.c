@@ -653,7 +653,17 @@ DsDevice_RequestNssmkigReenumerate(
 	}
 	else
 	{
+		WDF_REQUEST_SEND_OPTIONS sendOptions;
+
 		WDF_MEMORY_DESCRIPTOR_INIT_HANDLE(&inputDescriptor, instanceIdMemory, NULL);
+
+		//
+		// Longer than nssmkig's own cycle-port wait so a stuck hub is
+		// reported by the filter (STATUS_IO_TIMEOUT) rather than by this
+		// send timing out first and abandoning the request.
+		//
+		WDF_REQUEST_SEND_OPTIONS_INIT(&sendOptions, WDF_REQUEST_SEND_OPTION_TIMEOUT);
+		sendOptions.Timeout = WDF_REL_TIMEOUT_IN_SEC(15);
 
 		status = WdfIoTargetSendIoctlSynchronously(
 			ioTarget,
@@ -661,7 +671,7 @@ DsDevice_RequestNssmkigReenumerate(
 			IOCTL_NSSMKIG_REENUMERATE_SELF,
 			&inputDescriptor,
 			NULL,
-			NULL,
+			&sendOptions,
 			NULL
 		);
 		WdfIoTargetClose(ioTarget);

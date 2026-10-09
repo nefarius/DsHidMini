@@ -64,11 +64,12 @@ and restarts without marking the device failed (issue #374):
   in the new mode.
 - USB: `IOCTL_NSSMKIG_REENUMERATE_SELF` sent to the nssmkig (igfilter)
   control device `\\.\nssmkig` declared in `include/DsHidMini/nssmkig.h`;
-  nssmkig asks the hub PDO (`GUID_REENUMERATE_SELF_INTERFACE_STANDARD`) to
-  surprise-remove and re-enumerate the devnode. This requires nssmkig 1.2 or
-  later, shipped with the same DsHidMini setup. Older nssmkig binaries leave
-  the device running in the already-probed mode and log event 26 (replug
-  required).
+  nssmkig cycles the USB port (`IOCTL_INTERNAL_USB_CYCLE_PORT` to the PDO).
+  usbhub3 does not implement `GUID_REENUMERATE_SELF_INTERFACE_STANDARD` on
+  device PDOs, so that interface is only the fallback for other buses.
+  This requires nssmkig 1.2 or later, shipped with the same DsHidMini setup.
+  Older nssmkig binaries leave the device running in the already-probed mode
+  and log event 26 (replug required).
 - A configuration hot-reload writes `DEVPKEY_DsHidMini_RW_HidDeviceMode` so
   a later plug does not mismatch.
 

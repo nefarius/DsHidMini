@@ -24,15 +24,16 @@
 //   Input:  NUL-terminated UTF-16 device instance ID (as returned by
 //           DEVPKEY_Device_InstanceId) of the devnode nssmkig is attached to.
 //   Output: none.
-//   nssmkig queries GUID_REENUMERATE_SELF_INTERFACE_STANDARD from the PDO of
-//   the matching devnode and calls SurpriseRemoveAndReenumerateSelf, which
-//   makes the bus driver tear the devnode down and enumerate it afresh.
+//   USB instance IDs (prefix USB\) are re-enumerated with
+//   IOCTL_INTERNAL_USB_CYCLE_PORT sent to the PDO. usbhub3 does not
+//   implement GUID_REENUMERATE_SELF_INTERFACE_STANDARD on device PDOs.
+//   Other buses, and USB stacks that reject the cycle, fall back to
+//   querying that interface and calling SurpriseRemoveAndReenumerateSelf.
 //   Returns STATUS_NOT_FOUND when no nssmkig instance is attached to the
 //   given instance ID, STATUS_DEVICE_NOT_READY when a matching instance
 //   exists but its PDO is unavailable, the RtlStringCchCopyW error when
-//   the matched ID cannot be copied, and STATUS_NOT_SUPPORTED when the
-//   bus driver does not implement the interface (for example a Bluetooth
-//   PDO).
+//   the matched ID cannot be copied, and STATUS_NOT_SUPPORTED when neither
+//   mechanism is available (for example a Bluetooth PDO).
 //
 // Older nssmkig binaries do not create the control device; opening
 // NSSMKIG_WIN32_DEVICE_NAME then fails and DsHidMini leaves the device
