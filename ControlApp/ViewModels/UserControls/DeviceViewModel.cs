@@ -174,11 +174,57 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     public PnPDevice Device { get; private set; }
 
     /// <summary>
-    ///     Points this card at the devnode that replaced one with the same instance ID.
+    ///     Points this card at the devnode that replaced one with the same instance ID
+    ///     when that devnode is still the same controller. A different Bluetooth address
+    ///     leaves <see cref="Device"/> in place so the caller can build a new card bound
+    ///     to that address. A missing address is not treated as a different controller.
     /// </summary>
-    internal void Retarget(PnPDevice device)
+    internal bool TryRetarget(PnPDevice device)
     {
+        string? candidateAddress = TryReadDeviceAddress(device);
+        if (RequiresNewViewModel(_deviceUserData.DeviceMac, candidateAddress))
+        {
+            Log.Logger.Information(
+                "Instance {InstanceId} now reports address {CandidateAddress} instead of {BoundAddress}. Replacing the device card.",
+                device.InstanceId,
+                candidateAddress,
+                _deviceUserData.DeviceMac);
+            return false;
+        }
+
         Device = device;
+        return true;
+    }
+
+    /// <summary>
+    ///     True when <paramref name="candidateAddress"/> identifies a different controller
+    ///     than the card was built for. An unreadable candidate keeps the existing card.
+    /// </summary>
+    internal static bool RequiresNewViewModel(string? boundMac, string? candidateAddress)
+    {
+        string candidate = MacAddressFormatter.Normalize(candidateAddress);
+        if (candidate.Length == 0)
+        {
+            return false;
+        }
+
+        return !string.Equals(
+            MacAddressFormatter.Normalize(boundMac),
+            candidate,
+            StringComparison.Ordinal);
+    }
+
+    private static string? TryReadDeviceAddress(PnPDevice device)
+    {
+        try
+        {
+            return device.GetProperty<string>(DsHidMiniDriver.DeviceAddressProperty);
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Debug(ex, "Could not read the device address while retargeting.");
+            return null;
+        }
     }
 
     /// <summary>
@@ -1058,6 +1104,8 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     internal async Task RefreshLiveDeviceState()
     {
         OnPropertyChanged(nameof(HidEmulationMode));
+        OnPropertyChanged(nameof(DisplayName));
+        OnPropertyChanged(nameof(DriverVersion));
         OnPropertyChanged(nameof(HidModeShort));
         OnPropertyChanged(nameof(ExpectedHidMode));
         OnPropertyChanged(nameof(IsHidModeMismatched));

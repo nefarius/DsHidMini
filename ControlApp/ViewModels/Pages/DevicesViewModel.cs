@@ -372,21 +372,16 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
                     connectedById[device.InstanceId] = device;
                 }
 
-                foreach (string instanceId in merge.InstanceIdsToAdd)
+                async Task<bool> AddDeviceAsync(PnPDevice pnpDevice)
                 {
                     if (generation != _refreshGeneration)
                     {
                         HasConnectedDevices = Devices.Count > 0;
-                        return;
-                    }
-
-                    if (!connectedById.TryGetValue(instanceId, out PnPDevice? device))
-                    {
-                        continue;
+                        return false;
                     }
 
                     DeviceViewModel newDev = new(
-                        device,
+                        pnpDevice,
                         _dshmDevMan,
                         _dshmConfigManager,
                         _appSnackbarMessagesService,
@@ -399,7 +394,7 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
                     {
                         newDev.Dispose();
                         HasConnectedDevices = Devices.Count > 0;
-                        return;
+                        return false;
                     }
 
                     Devices.Add(newDev);
@@ -410,6 +405,21 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
                             StringComparison.OrdinalIgnoreCase))
                     {
                         SelectedDevice = newDev;
+                    }
+
+                    return true;
+                }
+
+                foreach (string instanceId in merge.InstanceIdsToAdd)
+                {
+                    if (!connectedById.TryGetValue(instanceId, out PnPDevice? device))
+                    {
+                        continue;
+                    }
+
+                    if (!await AddDeviceAsync(device))
+                    {
+                        return;
                     }
                 }
 
@@ -428,8 +438,23 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
                         continue;
                     }
 
-                    kept.Retarget(device);
-                    await kept.RefreshLiveDeviceState();
+                    if (kept.TryRetarget(device))
+                    {
+                        await kept.RefreshLiveDeviceState();
+                        continue;
+                    }
+
+                    if (ReferenceEquals(SelectedDevice, kept))
+                    {
+                        SelectedDevice = null;
+                    }
+
+                    Devices.Remove(kept);
+                    kept.Dispose();
+                    if (!await AddDeviceAsync(device))
+                    {
+                        return;
+                    }
                 }
 
                 HasConnectedDevices = Devices.Count > 0;

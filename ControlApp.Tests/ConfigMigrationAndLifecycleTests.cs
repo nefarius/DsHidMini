@@ -527,7 +527,6 @@ public class ConfigMigrationAndLifecycleTests : IDisposable
         string temp = DriverFile + "." + Guid.NewGuid().ToString("N") + ".tmp";
         File.WriteAllText(temp, json);
         File.Move(temp, DriverFile, overwrite: true);
-        File.WriteAllText(DriverFile, json);
 
         Task finished = await Task.WhenAny(signaled.Task, Task.Delay(TimeSpan.FromSeconds(5)));
         Assert.Same(signaled.Task, finished);
