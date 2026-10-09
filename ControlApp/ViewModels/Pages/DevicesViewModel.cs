@@ -73,6 +73,7 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
         _dshmDevMan.ConnectedDeviceListUpdated += OnConnectedDevicesListUpdated;
         _dshmDevMan.XInputInterfacesUpdated += OnXInputInterfacesUpdated;
         _dshmConfigManager.DshmConfigurationUpdated += OnDshmConfigUpdated;
+        _dshmConfigManager.EffectiveDriverConfigurationChanged += OnEffectiveDriverConfigurationChanged;
         _contentDialogService = contentDialogService;
         _addressValidator = addressValidator;
         BthPs3 = bthPs3;
@@ -223,6 +224,24 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
         }
     }
 
+    private void OnEffectiveDriverConfigurationChanged(object? sender, EventArgs e)
+    {
+        Application.Current?.Dispatcher.BeginInvoke(new Action(async void () =>
+        {
+            try
+            {
+                foreach (DeviceViewModel device in Devices.ToList())
+                {
+                    await device.RefreshLiveDeviceState();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Error(ex, "Error refreshing devices after DsHidMini.json changed");
+            }
+        }));
+    }
+
     private void OnDshmConfigUpdated(object? obj, EventArgs? eventArgs)
     {
         if (eventArgs is DshmConfigManager.DshmUpdatedEventArgs { UpdatedSuccessfully: false })
@@ -353,21 +372,16 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
                     connectedById[device.InstanceId] = device;
                 }
 
-                foreach (string instanceId in merge.InstanceIdsToAdd)
+                async Task<bool> AddDeviceAsync(PnPDevice pnpDevice)
                 {
                     if (generation != _refreshGeneration)
                     {
                         HasConnectedDevices = Devices.Count > 0;
-                        return;
-                    }
-
-                    if (!connectedById.TryGetValue(instanceId, out PnPDevice? device))
-                    {
-                        continue;
+                        return false;
                     }
 
                     DeviceViewModel newDev = new(
-                        device,
+                        pnpDevice,
                         _dshmDevMan,
                         _dshmConfigManager,
                         _appSnackbarMessagesService,
@@ -380,7 +394,7 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
                     {
                         newDev.Dispose();
                         HasConnectedDevices = Devices.Count > 0;
-                        return;
+                        return false;
                     }
 
                     Devices.Add(newDev);
@@ -391,6 +405,60 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
                             StringComparison.OrdinalIgnoreCase))
                     {
                         SelectedDevice = newDev;
+                    }
+
+                    return true;
+                }
+
+                foreach (string instanceId in merge.InstanceIdsToAdd)
+                {
+                    if (!connectedById.TryGetValue(instanceId, out PnPDevice? device))
+                    {
+                        continue;
+                    }
+
+                    if (!await AddDeviceAsync(device))
+                    {
+                        return;
+                    }
+                }
+
+                foreach (string instanceId in merge.InstanceIdsToKeep)
+                {
+                    if (generation != _refreshGeneration)
+                    {
+                        HasConnectedDevices = Devices.Count > 0;
+                        return;
+                    }
+
+                    DeviceViewModel? kept = Devices.FirstOrDefault(device =>
+                        string.Equals(device.InstanceId, instanceId, StringComparison.OrdinalIgnoreCase));
+                    if (kept is null || !connectedById.TryGetValue(instanceId, out PnPDevice? device))
+                    {
+                        continue;
+                    }
+
+                    switch (kept.TryRetarget(device))
+                    {
+                        case DeviceViewModel.DeviceRetargetDecision.UpdateExisting:
+                            await kept.RefreshLiveDeviceState();
+                            break;
+                        case DeviceViewModel.DeviceRetargetDecision.KeepUntilReadable:
+                            break;
+                        case DeviceViewModel.DeviceRetargetDecision.Replace:
+                            if (ReferenceEquals(SelectedDevice, kept))
+                            {
+                                SelectedDevice = null;
+                            }
+
+                            Devices.Remove(kept);
+                            kept.Dispose();
+                            if (!await AddDeviceAsync(device))
+                            {
+                                return;
+                            }
+
+                            break;
                     }
                 }
 

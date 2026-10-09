@@ -1,4 +1,5 @@
 using Nefarius.DsHidMini.ControlApp.Models;
+using Nefarius.DsHidMini.ControlApp.ViewModels.UserControls;
 using Nefarius.DsHidMini.IPC;
 using Nefarius.DsHidMini.IPC.Models.Public;
 
@@ -63,6 +64,40 @@ public class DeviceListMergeTests
             Assert.Empty(removed.InstanceIdsToAdd);
             current = [first];
         }
+    }
+
+    [Fact]
+    public void SameInstanceReenumeration_RefreshesInPlace()
+    {
+        string id = @"USB\VID_054C&PID_0268\6&4b29c3c&0&2";
+        DeviceListMerge.Result result = DeviceListMerge.Compute([id], [id]);
+
+        Assert.Empty(result.InstanceIdsToRemove);
+        Assert.Empty(result.InstanceIdsToAdd);
+        Assert.Equal([id], result.InstanceIdsToKeep);
+    }
+
+    [Theory]
+    [InlineData("E0AE5E728C62", "e0:ae:5e:72:8c:62", "update")]
+    [InlineData("E0AE5E728C62", "001122334455", "replace")]
+    [InlineData("E0AE5E728C62", null, "wait")]
+    [InlineData("E0AE5E728C62", "", "wait")]
+    [InlineData(null, "E0AE5E728C62", "replace")]
+    [InlineData(null, null, "wait")]
+    public void SameInstanceAddressChange_ReplacesOnlyWhenTheControllerChanges(
+        string? boundMac,
+        string? candidateAddress,
+        string expected)
+    {
+        DeviceViewModel.DeviceRetargetDecision decision = expected switch
+        {
+            "update" => DeviceViewModel.DeviceRetargetDecision.UpdateExisting,
+            "replace" => DeviceViewModel.DeviceRetargetDecision.Replace,
+            "wait" => DeviceViewModel.DeviceRetargetDecision.KeepUntilReadable,
+            _ => throw new ArgumentOutOfRangeException(nameof(expected))
+        };
+
+        Assert.Equal(decision, DeviceViewModel.DecideRetarget(boundMac, candidateAddress));
     }
 
     [Fact]

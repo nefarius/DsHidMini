@@ -1,5 +1,6 @@
 using System.IO;
 using System.Security.AccessControl;
+using System.Threading;
 using System.Security.Principal;
 using System.Text.Json.Nodes;
 
@@ -423,6 +424,117 @@ public class ConfigMigrationAndLifecycleTests : IDisposable
         Assert.Equal(
             BluetoothOutputReportTransport.Interrupt,
             manager.ResolveEffectiveBluetoothOutputReportTransport(device));
+    }
+
+    [Fact]
+    public void ResolveHidMode_OnDiskGlobal_WinsOverUserData_WithoutImportingIt()
+    {
+        using DshmConfigManager manager = CreateManager();
+        DeviceData device = manager.GetDeviceData("AABBCCDDEEFF");
+        device.SettingsMode = SettingsModes.Custom;
+        device.Settings.HidMode.SettingsContext = SettingsContext.CGS;
+        int profileCount = manager.GetListOfProfilesWithDefault().Count;
+
+        File.WriteAllText(DriverFile, """
+            {
+              "Global": { "HidDeviceMode": "XInput" },
+              "Devices": {}
+            }
+            """);
+
+        Assert.Equal(SettingsContext.XInput, manager.ResolveEffectiveHidMode(device));
+        Assert.Equal(SettingsContext.XInput, manager.GetDeviceExpectedHidMode(device));
+        Assert.Equal(SettingsContext.CGS, device.Settings.HidMode.SettingsContext);
+        Assert.Equal(SettingsModes.Custom, device.SettingsMode);
+        Assert.Equal(profileCount, manager.GetListOfProfilesWithDefault().Count);
+    }
+
+    [Fact]
+    public void ResolveHidMode_DeviceOverlay_WinsOverGlobal()
+    {
+        using DshmConfigManager manager = CreateManager();
+        DeviceData device = manager.GetDeviceData("AABBCCDDEEFF");
+
+        File.WriteAllText(DriverFile, """
+            {
+              "Global": { "HidDeviceMode": "SDF" },
+              "Devices": {
+                "aa:bb:cc:dd:ee:ff": { "HidDeviceMode": "XInput" }
+              }
+            }
+            """);
+
+        Assert.Equal(SettingsContext.XInput, manager.ResolveEffectiveHidMode(device));
+    }
+
+    [Fact]
+    public void ResolveHidMode_SparseDeviceOverlay_UsesGlobal()
+    {
+        using DshmConfigManager manager = CreateManager();
+        DeviceData device = manager.GetDeviceData("AABBCCDDEEFF");
+
+        File.WriteAllText(DriverFile, """
+            {
+              "Global": { "HidDeviceMode": "GPJ" },
+              "Devices": {
+                "AABBCCDDEEFF": { "DevicePairingMode": "Custom" }
+              }
+            }
+            """);
+
+        Assert.Equal(SettingsContext.GPJ, manager.ResolveEffectiveHidMode(device));
+    }
+
+    [Fact]
+    public void ResolveHidMode_MissingOrMalformedFile_FallsBackToUserData()
+    {
+        using DshmConfigManager manager = CreateManager();
+        DeviceData device = manager.GetDeviceData("AABBCCDDEEFF");
+        device.SettingsMode = SettingsModes.Custom;
+        device.Settings.HidMode.SettingsContext = SettingsContext.SXS;
+
+        Assert.Equal(SettingsContext.SXS, manager.ResolveEffectiveHidMode(device));
+
+        File.WriteAllText(DriverFile, "{ not-json");
+
+        Assert.Equal(SettingsContext.SXS, manager.ResolveEffectiveHidMode(device));
+        Assert.Equal(SettingsContext.SXS, device.Settings.HidMode.SettingsContext);
+    }
+
+    [Fact]
+    public async Task DriverConfigWatcher_NotifiesOnceAfterAtomicReplace()
+    {
+        using DshmConfigManager manager = CreateManager();
+        DeviceData device = manager.GetDeviceData("AABBCCDDEEFF");
+        device.SettingsMode = SettingsModes.Custom;
+        device.Settings.HidMode.SettingsContext = SettingsContext.CGS;
+        int notifications = 0;
+        TaskCompletionSource signaled = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        manager.EffectiveDriverConfigurationChanged += (_, _) =>
+        {
+            if (Interlocked.Increment(ref notifications) == 1)
+            {
+                signaled.TrySetResult();
+            }
+        };
+
+        string json = """
+            {
+              "Global": { "HidDeviceMode": "XInput" },
+              "Devices": {}
+            }
+            """;
+        string temp = DriverFile + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        File.WriteAllText(temp, json);
+        File.Move(temp, DriverFile, overwrite: true);
+
+        Task finished = await Task.WhenAny(signaled.Task, Task.Delay(TimeSpan.FromSeconds(5)));
+        Assert.Same(signaled.Task, finished);
+        await Task.Delay(TimeSpan.FromMilliseconds(600));
+
+        Assert.Equal(1, notifications);
+        Assert.Equal(SettingsContext.XInput, manager.GetDeviceExpectedHidMode(device));
+        Assert.Equal(SettingsContext.CGS, device.Settings.HidMode.SettingsContext);
     }
 
     [Fact]

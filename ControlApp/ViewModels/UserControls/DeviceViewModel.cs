@@ -171,7 +171,103 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         //DisplayName = DeviceAddress;
     }
 
-    public PnPDevice Device { get; }
+    public PnPDevice Device { get; private set; }
+
+    /// <summary>
+    ///     Points this card at the devnode that replaced one with the same instance ID
+    ///     when that devnode reports the same controller. A different Bluetooth address
+    ///     leaves <see cref="Device"/> in place so the caller can build a new card.
+    ///     An unreadable address also leaves the current devnode and user-data binding
+    ///     in place until a later refresh can identify the replacement.
+    /// </summary>
+    internal DeviceRetargetDecision TryRetarget(PnPDevice device)
+    {
+        string? candidateAddress = TryReadDeviceAddress(device);
+        DeviceRetargetDecision decision = DecideRetarget(_deviceUserData.DeviceMac, candidateAddress);
+        if (decision == DeviceRetargetDecision.Replace)
+        {
+            Log.Logger.Information(
+                "Instance {InstanceId} now reports address {CandidateAddress} instead of {BoundAddress}. Replacing the device card.",
+                device.InstanceId,
+                candidateAddress,
+                _deviceUserData.DeviceMac);
+            return decision;
+        }
+
+        if (decision == DeviceRetargetDecision.KeepUntilReadable)
+        {
+            Log.Logger.Debug(
+                "Instance {InstanceId} has no readable address yet. Keeping the current device card.",
+                device.InstanceId);
+            return decision;
+        }
+
+        Device = device;
+        return decision;
+    }
+
+    /// <summary>
+    ///     How <see cref="TryRetarget"/> treats a replacement devnode.
+    /// </summary>
+    internal enum DeviceRetargetDecision
+    {
+        /// <summary>The address matches, so the existing card follows the new devnode.</summary>
+        UpdateExisting,
+
+        /// <summary>The address identifies a different controller, so the card must be rebuilt.</summary>
+        Replace,
+
+        /// <summary>The address cannot be read, so the current devnode and user data stay in place.</summary>
+        KeepUntilReadable
+    }
+
+    /// <summary>
+    ///     Chooses whether a same-instance devnode updates this card, replaces it, or waits
+    ///     until its Bluetooth address can be read. An unreadable address never updates the
+    ///     card while it still carries the previous controller's user data.
+    /// </summary>
+    internal static DeviceRetargetDecision DecideRetarget(string? boundMac, string? candidateAddress)
+    {
+        if (MacAddressFormatter.Normalize(candidateAddress).Length == 0)
+        {
+            return DeviceRetargetDecision.KeepUntilReadable;
+        }
+
+        return RequiresNewViewModel(boundMac, candidateAddress)
+            ? DeviceRetargetDecision.Replace
+            : DeviceRetargetDecision.UpdateExisting;
+    }
+
+    /// <summary>
+    ///     True when <paramref name="candidateAddress"/> identifies a different controller
+    ///     than the card was built for. An empty candidate is not a changed address.
+    /// </summary>
+    internal static bool RequiresNewViewModel(string? boundMac, string? candidateAddress)
+    {
+        string candidate = MacAddressFormatter.Normalize(candidateAddress);
+        if (candidate.Length == 0)
+        {
+            return false;
+        }
+
+        return !string.Equals(
+            MacAddressFormatter.Normalize(boundMac),
+            candidate,
+            StringComparison.Ordinal);
+    }
+
+    private static string? TryReadDeviceAddress(PnPDevice device)
+    {
+        try
+        {
+            return device.GetProperty<string>(DsHidMiniDriver.DeviceAddressProperty);
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Debug(ex, "Could not read the device address while retargeting.");
+            return null;
+        }
+    }
 
     /// <summary>
     ///     Current HID device emulation mode.
@@ -199,7 +295,8 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     private string? _xInputSlotDetail;
 
     /// <summary>
-    ///     The Hid Mode the device is expected to be based on the device's user data
+    ///     The HID mode the device is expected to be in. Prefers the live
+    ///     <c>DsHidMini.json</c> the driver reads, then ControlApp user data.
     /// </summary>
     public SettingsContext ExpectedHidMode => _dshmConfigManager.GetDeviceExpectedHidMode(_deviceUserData);
 
@@ -1038,6 +1135,27 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(IsHidModeMismatched));
         OnPropertyChanged(nameof(BluetoothOutputReportTransport));
         NotifyAddressAuthenticityProperties();
+        NotifyIdentificationProperties();
+        await RefreshXInputSlotLabelAsync();
+    }
+
+    /// <summary>
+    ///     Re-reads live device properties and the on-disk expected HID mode.
+    ///     Does not repeat the network address check.
+    /// </summary>
+    internal async Task RefreshLiveDeviceState()
+    {
+        OnPropertyChanged(nameof(HidEmulationMode));
+        OnPropertyChanged(nameof(DisplayName));
+        OnPropertyChanged(nameof(DriverVersion));
+        OnPropertyChanged(nameof(IsDriverOutdated));
+        OnPropertyChanged(nameof(DriverOutdatedNote));
+        OnPropertyChanged(nameof(HidModeShort));
+        OnPropertyChanged(nameof(ExpectedHidMode));
+        OnPropertyChanged(nameof(IsHidModeMismatched));
+        OnPropertyChanged(nameof(IsXInputHidMode));
+        OnPropertyChanged(nameof(DeviceSettingsStatus));
+        OnPropertyChanged(nameof(BluetoothOutputReportTransport));
         NotifyIdentificationProperties();
         await RefreshXInputSlotLabelAsync();
     }
