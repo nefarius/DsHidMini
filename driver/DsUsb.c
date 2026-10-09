@@ -815,6 +815,11 @@ NTSTATUS DsUsb_D0Entry(WDFDEVICE Device, WDF_POWER_DEVICE_STATE PreviousState)
 		// restart (re-enumerate) it instead. WDF caps the number of
 		// consecutive automatic restart attempts on its own, so this cannot
 		// loop forever.
+		//
+		// Follow-up: the traced HID-mode mismatch path (issue #374) showed
+		// that on this UMDF stack WdfDeviceSetFailed(AttemptRestart) never
+		// reaches usbhub3 and ends in Code 43. This resume path is left
+		// unchanged here and most likely has the same defect.
 		// 
 		TraceWarning(
 			TRACE_DSUSB,

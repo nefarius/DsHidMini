@@ -568,12 +568,9 @@ DMF_DsHidMini_Open(
 		&previousModePropType
 	);
 
-	status = WdfDeviceAssignProperty(
+	status = DsDevice_AssignHidDeviceModeProperty(
 		device,
-		&propertyData,
-		DEVPROP_TYPE_BYTE,
-		sizeof(BYTE),
-		&pDevCtx->Configuration.HidDeviceMode
+		pDevCtx->Configuration.HidDeviceMode
 	);
 
 	if (NT_SUCCESS(status)

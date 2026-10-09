@@ -34,6 +34,7 @@
 #include "Device.h"
 
 #include <DsHidMini/dshmguid.h>
+#include <DsHidMini/nssmkig.h>
 #include "DsInternal.h"
 #include "DsHidMiniDrv.h"
 #include "Power.h"

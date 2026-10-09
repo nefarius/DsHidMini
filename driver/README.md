@@ -56,8 +56,25 @@ service is not required.
   enabled or disabled with the root-level `IPCEnabled` setting
 
 Changing settings that alter the exposed HID descriptor requires the device to
-restart. The driver can perform this automatically when
-`AutoRestartOnHidModeMismatch` is enabled.
+restart. When `AutoRestartOnHidModeMismatch` is enabled, the driver detects a
+mismatch between the configured HID mode and the mode already probed by PnP
+and restarts without marking the device failed (issue #374):
+
+- Bluetooth: `IOCTL_BTH_DISCONNECT_DEVICE`. Press the PS button to reconnect
+  in the new mode.
+- USB: `IOCTL_NSSMKIG_REENUMERATE_SELF` sent to the nssmkig (igfilter)
+  control device `\\.\nssmkig` declared in `include/DsHidMini/nssmkig.h`;
+  nssmkig asks the hub PDO (`GUID_REENUMERATE_SELF_INTERFACE_STANDARD`) to
+  surprise-remove and re-enumerate the devnode. This requires nssmkig 1.2 or
+  later, shipped with the same DsHidMini setup. Older nssmkig binaries leave
+  the device running in the already-probed mode and log event 26 (replug
+  required).
+- A configuration hot-reload writes `DEVPKEY_DsHidMini_RW_HidDeviceMode` so
+  a later plug does not mismatch.
+
+UMDF `WdfDeviceSetFailed(WdfDeviceFailedAttemptRestart)` is not used for
+this: on this stack the reflector never issues a re-enumeration request to
+the hub and the device ends in Code 43.
 
 ## Project layout
 
