@@ -28,8 +28,11 @@
 //   the matching devnode and calls SurpriseRemoveAndReenumerateSelf, which
 //   makes the bus driver tear the devnode down and enumerate it afresh.
 //   Returns STATUS_NOT_FOUND when no nssmkig instance is attached to the
-//   given instance ID and STATUS_NOT_SUPPORTED when the bus driver does not
-//   implement the interface (for example a Bluetooth PDO).
+//   given instance ID, STATUS_DEVICE_NOT_READY when a matching instance
+//   exists but its PDO is unavailable, the RtlStringCchCopyW error when
+//   the matched ID cannot be copied, and STATUS_NOT_SUPPORTED when the
+//   bus driver does not implement the interface (for example a Bluetooth
+//   PDO).
 //
 // Older nssmkig binaries do not create the control device; opening
 // NSSMKIG_WIN32_DEVICE_NAME then fails and DsHidMini leaves the device
