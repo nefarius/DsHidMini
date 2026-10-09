@@ -171,7 +171,15 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         //DisplayName = DeviceAddress;
     }
 
-    public PnPDevice Device { get; }
+    public PnPDevice Device { get; private set; }
+
+    /// <summary>
+    ///     Points this card at the devnode that replaced one with the same instance ID.
+    /// </summary>
+    internal void Retarget(PnPDevice device)
+    {
+        Device = device;
+    }
 
     /// <summary>
     ///     Current HID device emulation mode.
@@ -199,7 +207,8 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     private string? _xInputSlotDetail;
 
     /// <summary>
-    ///     The Hid Mode the device is expected to be based on the device's user data
+    ///     The HID mode the device is expected to be in. Prefers the live
+    ///     <c>DsHidMini.json</c> the driver reads, then ControlApp user data.
     /// </summary>
     public SettingsContext ExpectedHidMode => _dshmConfigManager.GetDeviceExpectedHidMode(_deviceUserData);
 
@@ -1038,6 +1047,23 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(IsHidModeMismatched));
         OnPropertyChanged(nameof(BluetoothOutputReportTransport));
         NotifyAddressAuthenticityProperties();
+        NotifyIdentificationProperties();
+        await RefreshXInputSlotLabelAsync();
+    }
+
+    /// <summary>
+    ///     Re-reads live device properties and the on-disk expected HID mode.
+    ///     Does not repeat the network address check.
+    /// </summary>
+    internal async Task RefreshLiveDeviceState()
+    {
+        OnPropertyChanged(nameof(HidEmulationMode));
+        OnPropertyChanged(nameof(HidModeShort));
+        OnPropertyChanged(nameof(ExpectedHidMode));
+        OnPropertyChanged(nameof(IsHidModeMismatched));
+        OnPropertyChanged(nameof(IsXInputHidMode));
+        OnPropertyChanged(nameof(DeviceSettingsStatus));
+        OnPropertyChanged(nameof(BluetoothOutputReportTransport));
         NotifyIdentificationProperties();
         await RefreshXInputSlotLabelAsync();
     }

@@ -1,4 +1,5 @@
 using System.IO;
+using System.Threading;
 
 using Newtonsoft.Json;
 
@@ -12,11 +13,18 @@ namespace Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 /// <summary>
 ///     Class for managing user's dshidmini settings and applying them to the DsHidMini Configuration File
 /// </summary>
-public class DshmConfigManager
+public class DshmConfigManager : IDisposable
 {
+    private static readonly TimeSpan DriverConfigRefreshDebounce = TimeSpan.FromMilliseconds(250);
+
     private readonly DshmConfigLocations _locations;
     private readonly DshmConfigManagerUserData _userData;
+    private readonly object _driverConfigWatchLock = new();
     private string? _lastGeneratedDriverJson;
+    private FileSystemWatcher? _driverConfigWatcher;
+    private CancellationTokenSource? _driverConfigRefreshCts;
+    private EventHandler? _effectiveDriverConfigurationChanged;
+    private int _disposed;
 
     public DshmConfigManager() : this(DshmConfigLocations.Default)
     {
@@ -172,6 +180,70 @@ public class DshmConfigManager
         return ResolveEffectiveSettings(device).OutputReport.BluetoothOutputReportTransport;
     }
 
+    /// <summary>
+    ///     HID mode the driver will apply for this device: on-disk <c>DsHidMini.json</c>
+    ///     (device overlay, then Global), or ControlApp-managed settings when that
+    ///     file cannot be read. Does not import the file into profiles or user data.
+    /// </summary>
+    public SettingsContext ResolveEffectiveHidMode(DeviceData device)
+    {
+        if (DshmConfigSerialization.TryReadDriverConfigFile(
+                out DshmConfiguration? configuration,
+                _locations.DriverConfigDirectory)
+            && configuration is not null)
+        {
+            string mac = MacAddressFormatter.Normalize(device.DeviceMac);
+            DshmDeviceData? overlay = configuration.Devices.FirstOrDefault(candidate =>
+                string.Equals(
+                    MacAddressFormatter.Normalize(candidate.DeviceAddress),
+                    mac,
+                    StringComparison.OrdinalIgnoreCase));
+
+            HidDeviceMode? mode = overlay?.DeviceSettings.HidDeviceMode
+                                  ?? configuration.Global.HidDeviceMode;
+            if (mode is { } resolved &&
+                DshmManagerToDriverConversion.HidDeviceModeDriverToManager.TryGetValue(
+                    resolved,
+                    out SettingsContext context))
+            {
+                return context;
+            }
+        }
+
+        return ResolveEffectiveSettings(device).HidMode.SettingsContext;
+    }
+
+    /// <summary>
+    ///     Raised after <c>DsHidMini.json</c> changes on disk, including an external edit
+    ///     or an atomic replace. Subscribing starts a debounced watcher. The handler must
+    ///     not treat this as a request to overwrite ControlApp user data.
+    /// </summary>
+    public event EventHandler? EffectiveDriverConfigurationChanged
+    {
+        add
+        {
+            EnsureDriverConfigWatcher();
+            _effectiveDriverConfigurationChanged += value;
+        }
+        remove => _effectiveDriverConfigurationChanged -= value;
+    }
+
+    public void Dispose()
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
+            return;
+        }
+
+        lock (_driverConfigWatchLock)
+        {
+            _driverConfigRefreshCts?.Cancel();
+            _driverConfigRefreshCts?.Dispose();
+            _driverConfigRefreshCts = null;
+            DisposeDriverConfigWatcher();
+        }
+    }
+
     public bool SaveChangesAndUpdateDsHidMiniConfigFile()
     {
         string userDataPath = _locations.UserDataFilePath;
@@ -320,7 +392,138 @@ public class DshmConfigManager
     }
 
     public SettingsContext GetDeviceExpectedHidMode(DeviceData dev) =>
-        ResolveEffectiveSettings(dev).HidMode.SettingsContext;
+        ResolveEffectiveHidMode(dev);
+
+    private void EnsureDriverConfigWatcher()
+    {
+        if (Volatile.Read(ref _disposed) != 0)
+        {
+            return;
+        }
+
+        lock (_driverConfigWatchLock)
+        {
+            if (_driverConfigWatcher is not null || Volatile.Read(ref _disposed) != 0)
+            {
+                return;
+            }
+
+            try
+            {
+                Directory.CreateDirectory(_locations.DriverConfigDirectory);
+                FileSystemWatcher watcher = new(_locations.DriverConfigDirectory)
+                {
+                    Filter = DshmConfigSerialization.DriverFileName,
+                    NotifyFilter = NotifyFilters.FileName
+                                   | NotifyFilters.LastWrite
+                                   | NotifyFilters.Size
+                                   | NotifyFilters.CreationTime,
+                    IncludeSubdirectories = false
+                };
+                watcher.Changed += OnDriverConfigFileChanged;
+                watcher.Created += OnDriverConfigFileChanged;
+                watcher.Deleted += OnDriverConfigFileChanged;
+                watcher.Renamed += OnDriverConfigFileRenamed;
+                watcher.Error += OnDriverConfigWatcherError;
+                watcher.EnableRaisingEvents = true;
+                _driverConfigWatcher = watcher;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+            {
+                Log.Logger.Warning(ex,
+                    "Failed to watch DsHidMini configuration in {Directory}.",
+                    _locations.DriverConfigDirectory);
+            }
+        }
+    }
+
+    private void DisposeDriverConfigWatcher()
+    {
+        if (_driverConfigWatcher is null)
+        {
+            return;
+        }
+
+        _driverConfigWatcher.EnableRaisingEvents = false;
+        _driverConfigWatcher.Changed -= OnDriverConfigFileChanged;
+        _driverConfigWatcher.Created -= OnDriverConfigFileChanged;
+        _driverConfigWatcher.Deleted -= OnDriverConfigFileChanged;
+        _driverConfigWatcher.Renamed -= OnDriverConfigFileRenamed;
+        _driverConfigWatcher.Error -= OnDriverConfigWatcherError;
+        _driverConfigWatcher.Dispose();
+        _driverConfigWatcher = null;
+    }
+
+    private void OnDriverConfigFileChanged(object sender, FileSystemEventArgs e)
+    {
+        if (IsDriverConfigFile(e.FullPath))
+        {
+            QueueEffectiveDriverConfigurationRefresh();
+        }
+    }
+
+    private void OnDriverConfigFileRenamed(object sender, RenamedEventArgs e)
+    {
+        if (IsDriverConfigFile(e.FullPath) || IsDriverConfigFile(e.OldFullPath))
+        {
+            QueueEffectiveDriverConfigurationRefresh();
+        }
+    }
+
+    private void OnDriverConfigWatcherError(object sender, ErrorEventArgs e)
+    {
+        Log.Logger.Warning(e.GetException(), "DsHidMini configuration watcher failed.");
+    }
+
+    private static bool IsDriverConfigFile(string? path) =>
+        path is not null &&
+        string.Equals(
+            Path.GetFileName(path),
+            DshmConfigSerialization.DriverFileName,
+            StringComparison.OrdinalIgnoreCase);
+
+    private void QueueEffectiveDriverConfigurationRefresh()
+    {
+        if (Volatile.Read(ref _disposed) != 0)
+        {
+            return;
+        }
+
+        CancellationToken token;
+        lock (_driverConfigWatchLock)
+        {
+            if (Volatile.Read(ref _disposed) != 0)
+            {
+                return;
+            }
+
+            CancellationTokenSource cts = new();
+            CancellationTokenSource? previous = Interlocked.Exchange(ref _driverConfigRefreshCts, cts);
+            previous?.Cancel();
+            previous?.Dispose();
+            token = cts.Token;
+        }
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(DriverConfigRefreshDebounce, token).ConfigureAwait(false);
+            }
+            catch (TaskCanceledException)
+            {
+                return;
+            }
+
+            if (token.IsCancellationRequested || Volatile.Read(ref _disposed) != 0)
+            {
+                return;
+            }
+
+            Log.Logger.Debug("DsHidMini.json changed. Refreshing the effective driver configuration.");
+            _effectiveDriverConfigurationChanged?.Invoke(this, EventArgs.Empty);
+        }, token);
+    }
 
     public DeviceData GetDeviceData(string deviceMac)
     {

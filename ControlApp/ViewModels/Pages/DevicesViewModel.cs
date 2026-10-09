@@ -73,6 +73,7 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
         _dshmDevMan.ConnectedDeviceListUpdated += OnConnectedDevicesListUpdated;
         _dshmDevMan.XInputInterfacesUpdated += OnXInputInterfacesUpdated;
         _dshmConfigManager.DshmConfigurationUpdated += OnDshmConfigUpdated;
+        _dshmConfigManager.EffectiveDriverConfigurationChanged += OnEffectiveDriverConfigurationChanged;
         _contentDialogService = contentDialogService;
         _addressValidator = addressValidator;
         BthPs3 = bthPs3;
@@ -221,6 +222,24 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
                 _appSnackbarMessagesService.ShowDefenderBtSwitchToPs3ModeFailedMessage();
                 break;
         }
+    }
+
+    private void OnEffectiveDriverConfigurationChanged(object? sender, EventArgs e)
+    {
+        Application.Current?.Dispatcher.BeginInvoke(new Action(async void () =>
+        {
+            try
+            {
+                foreach (DeviceViewModel device in Devices.ToList())
+                {
+                    await device.RefreshLiveDeviceState();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Error(ex, "Error refreshing devices after DsHidMini.json changed");
+            }
+        }));
     }
 
     private void OnDshmConfigUpdated(object? obj, EventArgs? eventArgs)
@@ -392,6 +411,25 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
                     {
                         SelectedDevice = newDev;
                     }
+                }
+
+                foreach (string instanceId in merge.InstanceIdsToKeep)
+                {
+                    if (generation != _refreshGeneration)
+                    {
+                        HasConnectedDevices = Devices.Count > 0;
+                        return;
+                    }
+
+                    DeviceViewModel? kept = Devices.FirstOrDefault(device =>
+                        string.Equals(device.InstanceId, instanceId, StringComparison.OrdinalIgnoreCase));
+                    if (kept is null || !connectedById.TryGetValue(instanceId, out PnPDevice? device))
+                    {
+                        continue;
+                    }
+
+                    kept.Retarget(device);
+                    await kept.RefreshLiveDeviceState();
                 }
 
                 HasConnectedDevices = Devices.Count > 0;

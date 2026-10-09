@@ -66,6 +66,17 @@ public class DeviceListMergeTests
     }
 
     [Fact]
+    public void SameInstanceReenumeration_RefreshesInPlace()
+    {
+        string id = @"USB\VID_054C&PID_0268\6&4b29c3c&0&2";
+        DeviceListMerge.Result result = DeviceListMerge.Compute([id], [id]);
+
+        Assert.Empty(result.InstanceIdsToRemove);
+        Assert.Empty(result.InstanceIdsToAdd);
+        Assert.Equal([id], result.InstanceIdsToKeep);
+    }
+
+    [Fact]
     public void IdenticalRefresh_IsANoOp()
     {
         string[] ids = ["USB\\1", "BTH\\2"];
