@@ -78,20 +78,26 @@ public class DeviceListMergeTests
     }
 
     [Theory]
-    [InlineData("E0AE5E728C62", "e0:ae:5e:72:8c:62", false)]
-    [InlineData("E0AE5E728C62", "001122334455", true)]
-    [InlineData("E0AE5E728C62", null, false)]
-    [InlineData("E0AE5E728C62", "", false)]
-    [InlineData(null, "E0AE5E728C62", true)]
-    [InlineData(null, null, false)]
+    [InlineData("E0AE5E728C62", "e0:ae:5e:72:8c:62", "update")]
+    [InlineData("E0AE5E728C62", "001122334455", "replace")]
+    [InlineData("E0AE5E728C62", null, "wait")]
+    [InlineData("E0AE5E728C62", "", "wait")]
+    [InlineData(null, "E0AE5E728C62", "replace")]
+    [InlineData(null, null, "wait")]
     public void SameInstanceAddressChange_ReplacesOnlyWhenTheControllerChanges(
         string? boundMac,
         string? candidateAddress,
-        bool requiresNewViewModel)
+        string expected)
     {
-        Assert.Equal(
-            requiresNewViewModel,
-            DeviceViewModel.RequiresNewViewModel(boundMac, candidateAddress));
+        DeviceViewModel.DeviceRetargetDecision decision = expected switch
+        {
+            "update" => DeviceViewModel.DeviceRetargetDecision.UpdateExisting,
+            "replace" => DeviceViewModel.DeviceRetargetDecision.Replace,
+            "wait" => DeviceViewModel.DeviceRetargetDecision.KeepUntilReadable,
+            _ => throw new ArgumentOutOfRangeException(nameof(expected))
+        };
+
+        Assert.Equal(decision, DeviceViewModel.DecideRetarget(boundMac, candidateAddress));
     }
 
     [Fact]

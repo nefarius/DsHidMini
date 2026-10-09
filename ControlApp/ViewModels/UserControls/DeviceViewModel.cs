@@ -175,30 +175,72 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
 
     /// <summary>
     ///     Points this card at the devnode that replaced one with the same instance ID
-    ///     when that devnode is still the same controller. A different Bluetooth address
-    ///     leaves <see cref="Device"/> in place so the caller can build a new card bound
-    ///     to that address. A missing address is not treated as a different controller.
+    ///     when that devnode reports the same controller. A different Bluetooth address
+    ///     leaves <see cref="Device"/> in place so the caller can build a new card.
+    ///     An unreadable address also leaves the current devnode and user-data binding
+    ///     in place until a later refresh can identify the replacement.
     /// </summary>
-    internal bool TryRetarget(PnPDevice device)
+    internal DeviceRetargetDecision TryRetarget(PnPDevice device)
     {
         string? candidateAddress = TryReadDeviceAddress(device);
-        if (RequiresNewViewModel(_deviceUserData.DeviceMac, candidateAddress))
+        DeviceRetargetDecision decision = DecideRetarget(_deviceUserData.DeviceMac, candidateAddress);
+        if (decision == DeviceRetargetDecision.Replace)
         {
             Log.Logger.Information(
                 "Instance {InstanceId} now reports address {CandidateAddress} instead of {BoundAddress}. Replacing the device card.",
                 device.InstanceId,
                 candidateAddress,
                 _deviceUserData.DeviceMac);
-            return false;
+            return decision;
+        }
+
+        if (decision == DeviceRetargetDecision.KeepUntilReadable)
+        {
+            Log.Logger.Debug(
+                "Instance {InstanceId} has no readable address yet. Keeping the current device card.",
+                device.InstanceId);
+            return decision;
         }
 
         Device = device;
-        return true;
+        return decision;
+    }
+
+    /// <summary>
+    ///     How <see cref="TryRetarget"/> treats a replacement devnode.
+    /// </summary>
+    internal enum DeviceRetargetDecision
+    {
+        /// <summary>The address matches, so the existing card follows the new devnode.</summary>
+        UpdateExisting,
+
+        /// <summary>The address identifies a different controller, so the card must be rebuilt.</summary>
+        Replace,
+
+        /// <summary>The address cannot be read, so the current devnode and user data stay in place.</summary>
+        KeepUntilReadable
+    }
+
+    /// <summary>
+    ///     Chooses whether a same-instance devnode updates this card, replaces it, or waits
+    ///     until its Bluetooth address can be read. An unreadable address never updates the
+    ///     card while it still carries the previous controller's user data.
+    /// </summary>
+    internal static DeviceRetargetDecision DecideRetarget(string? boundMac, string? candidateAddress)
+    {
+        if (MacAddressFormatter.Normalize(candidateAddress).Length == 0)
+        {
+            return DeviceRetargetDecision.KeepUntilReadable;
+        }
+
+        return RequiresNewViewModel(boundMac, candidateAddress)
+            ? DeviceRetargetDecision.Replace
+            : DeviceRetargetDecision.UpdateExisting;
     }
 
     /// <summary>
     ///     True when <paramref name="candidateAddress"/> identifies a different controller
-    ///     than the card was built for. An unreadable candidate keeps the existing card.
+    ///     than the card was built for. An empty candidate is not a changed address.
     /// </summary>
     internal static bool RequiresNewViewModel(string? boundMac, string? candidateAddress)
     {
@@ -1106,6 +1148,8 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(HidEmulationMode));
         OnPropertyChanged(nameof(DisplayName));
         OnPropertyChanged(nameof(DriverVersion));
+        OnPropertyChanged(nameof(IsDriverOutdated));
+        OnPropertyChanged(nameof(DriverOutdatedNote));
         OnPropertyChanged(nameof(HidModeShort));
         OnPropertyChanged(nameof(ExpectedHidMode));
         OnPropertyChanged(nameof(IsHidModeMismatched));

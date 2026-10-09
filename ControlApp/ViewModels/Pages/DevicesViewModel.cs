@@ -438,22 +438,27 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
                         continue;
                     }
 
-                    if (kept.TryRetarget(device))
+                    switch (kept.TryRetarget(device))
                     {
-                        await kept.RefreshLiveDeviceState();
-                        continue;
-                    }
+                        case DeviceViewModel.DeviceRetargetDecision.UpdateExisting:
+                            await kept.RefreshLiveDeviceState();
+                            break;
+                        case DeviceViewModel.DeviceRetargetDecision.KeepUntilReadable:
+                            break;
+                        case DeviceViewModel.DeviceRetargetDecision.Replace:
+                            if (ReferenceEquals(SelectedDevice, kept))
+                            {
+                                SelectedDevice = null;
+                            }
 
-                    if (ReferenceEquals(SelectedDevice, kept))
-                    {
-                        SelectedDevice = null;
-                    }
+                            Devices.Remove(kept);
+                            kept.Dispose();
+                            if (!await AddDeviceAsync(device))
+                            {
+                                return;
+                            }
 
-                    Devices.Remove(kept);
-                    kept.Dispose();
-                    if (!await AddDeviceAsync(device))
-                    {
-                        return;
+                            break;
                     }
                 }
 
