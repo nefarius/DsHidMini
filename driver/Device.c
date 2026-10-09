@@ -653,7 +653,17 @@ DsDevice_RequestNssmkigReenumerate(
 	}
 	else
 	{
+		WDF_REQUEST_SEND_OPTIONS sendOptions;
+
 		WDF_MEMORY_DESCRIPTOR_INIT_HANDLE(&inputDescriptor, instanceIdMemory, NULL);
+
+		//
+		// Longer than the time nssmkig waits before it cancels a cycle-port
+		// IRP. nssmkig still does not return until the hub completes that
+		// cancel, so a hub that ignores cancellation can outlive this send.
+		//
+		WDF_REQUEST_SEND_OPTIONS_INIT(&sendOptions, WDF_REQUEST_SEND_OPTION_TIMEOUT);
+		sendOptions.Timeout = WDF_REL_TIMEOUT_IN_SEC(15);
 
 		status = WdfIoTargetSendIoctlSynchronously(
 			ioTarget,
@@ -661,7 +671,7 @@ DsDevice_RequestNssmkigReenumerate(
 			IOCTL_NSSMKIG_REENUMERATE_SELF,
 			&inputDescriptor,
 			NULL,
-			NULL,
+			&sendOptions,
 			NULL
 		);
 		WdfIoTargetClose(ioTarget);
