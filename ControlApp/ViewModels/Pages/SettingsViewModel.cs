@@ -128,11 +128,6 @@ public partial class SettingsViewModel : ObservableObject, INavigationAware
     }
 
     /// <summary>
-    ///     When enabled, a Retro Fighters Defender Bluetooth Edition detected in DualShock 4 mode is switched
-    ///     into PS3 (DualShock 3) mode immediately on arrival (see issue #282). A late button click is less
-    ///     reliable because the PS3 sent the probe a few milliseconds after SET_IDLE.
-    /// </summary>
-    /// <summary>
     ///     When enabled, SDL (and therefore Steam) selects the sixaxis.sys HIDAPI driver for
     ///     054C:0268. SXS mode speaks that protocol. Steam must be fully restarted afterwards.
     /// </summary>
@@ -181,6 +176,11 @@ public partial class SettingsViewModel : ObservableObject, INavigationAware
         }
     }
 
+    /// <summary>
+    ///     When enabled, a Retro Fighters Defender Bluetooth Edition detected in DualShock 4 mode is switched
+    ///     into PS3 (DualShock 3) mode immediately on arrival (see issue #282). A late button click is less
+    ///     reliable because the PS3 sent the probe a few milliseconds after SET_IDLE.
+    /// </summary>
     public bool AutoSwitchDefenderBtToPs3Mode
     {
         get => ApplicationConfiguration.Instance.AutoSwitchDefenderBtToPs3Mode;
