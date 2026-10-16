@@ -82,6 +82,7 @@ DriverEntry(
 	}
 
 	BOOLEAN ipcEnabled = TRUE;
+	BOOLEAN ipcStateChanged = FALSE;
 	const NTSTATUS loadStatus = ConfigLoadIpcEnabled(&ipcEnabled);
 	if (!NT_SUCCESS(loadStatus))
 	{
@@ -94,12 +95,17 @@ DriverEntry(
 		ipcEnabled = TRUE;
 	}
 
-	if (!NT_SUCCESS(status = DSHM_IPC_Reconcile(ipcEnabled)))
+	if (!NT_SUCCESS(status = DSHM_IPC_Reconcile(ipcEnabled, &ipcStateChanged)))
 	{
 		TraceEvents(TRACE_LEVEL_ERROR, TRACE_DRIVER, "DSHM_IPC_Reconcile failed with status %!STATUS!", status);
 		WPP_CLEANUP(DriverObject);
 		return status;
 	}
+
+	EventWriteIpcState(
+		(UCHAR)(ipcEnabled ? 1 : 0),
+		(ULONG)DSHM_IPC_APPLY_DRIVER_STARTUP
+	);
 
 	DsDriver_RegisterConfigWatcher(context);
 
@@ -147,7 +153,8 @@ DsDriver_HotReloadEventCallback(
 	}
 	else
 	{
-		const NTSTATUS reconcileStatus = DSHM_IPC_Reconcile(ipcEnabled);
+		BOOLEAN ipcStateChanged = FALSE;
+		const NTSTATUS reconcileStatus = DSHM_IPC_Reconcile(ipcEnabled, &ipcStateChanged);
 		if (!NT_SUCCESS(reconcileStatus))
 		{
 			TraceEvents(
@@ -155,6 +162,13 @@ DsDriver_HotReloadEventCallback(
 				TRACE_DRIVER,
 				"DSHM_IPC_Reconcile failed with status %!STATUS! during hot-reload",
 				reconcileStatus
+			);
+		}
+		else if (ipcStateChanged)
+		{
+			EventWriteIpcState(
+				(UCHAR)(ipcEnabled ? 1 : 0),
+				(ULONG)DSHM_IPC_APPLY_LIVE_RELOAD
 			);
 		}
 	}

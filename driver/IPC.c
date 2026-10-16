@@ -400,7 +400,8 @@ static void DSHM_IPC_DestroyResources(
 }
 
 NTSTATUS DSHM_IPC_Reconcile(
-	_In_ BOOLEAN Enabled
+	_In_ BOOLEAN Enabled,
+	_Out_ PBOOLEAN StateChanged
 )
 {
 	FuncEntry(TRACE_IPC);
@@ -408,6 +409,8 @@ NTSTATUS DSHM_IPC_Reconcile(
 	const WDFDRIVER driver = WdfGetDriver();
 	const PDSHM_DRIVER_CONTEXT context = DriverGetContext(driver);
 	NTSTATUS status = STATUS_SUCCESS;
+
+	*StateChanged = FALSE;
 
 	WdfWaitLockAcquire(context->IpcLock, NULL);
 	{
@@ -417,12 +420,14 @@ NTSTATUS DSHM_IPC_Reconcile(
 			{
 				TraceInformation(TRACE_IPC, "Enabling IPC resources");
 				status = DSHM_IPC_CreateResources(context);
+				*StateChanged = NT_SUCCESS(status);
 			}
 		}
 		else if (context->IPC.IsEnabled)
 		{
 			TraceInformation(TRACE_IPC, "Disabling IPC resources");
 			DSHM_IPC_DestroyResources(context);
+			*StateChanged = TRUE;
 		}
 	}
 	WdfWaitLockRelease(context->IpcLock);
