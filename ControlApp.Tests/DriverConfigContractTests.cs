@@ -1,4 +1,6 @@
 using System.IO;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -647,6 +649,55 @@ public class DriverConfigContractTests
 
         DshmConfiguration reloaded = DshmConfigSerialization.Deserialize(mergedJson);
         Assert.False(reloaded.IPCEnabled);
+    }
+
+    [Fact]
+    public void WriteDriverConfigFile_WhenReplacementIsDenied_PreservesContentAndExplicitAcl()
+    {
+        string root = Path.Combine(Path.GetTempPath(), "dshm-driver-acl-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        string path = Path.Combine(root, DshmConfigSerialization.DriverFileName);
+        try
+        {
+            File.WriteAllText(path, """{ "IPCEnabled": true }""");
+            FileInfo file = new(path);
+            FileSecurity security = file.GetAccessControl();
+            security.AddAccessRule(new FileSystemAccessRule(
+                WindowsIdentity.GetCurrent().User!,
+                FileSystemRights.Delete,
+                AccessControlType.Deny));
+            file.SetAccessControl(security);
+            DirectoryInfo directory = new(root);
+            DirectorySecurity directorySecurity = directory.GetAccessControl();
+            directorySecurity.AddAccessRule(new FileSystemAccessRule(
+                WindowsIdentity.GetCurrent().User!,
+                FileSystemRights.DeleteSubdirectoriesAndFiles,
+                AccessControlType.Deny));
+            directory.SetAccessControl(directorySecurity);
+
+            string accessSddl = file.GetAccessControl().GetSecurityDescriptorSddlForm(AccessControlSections.Access);
+            const string updated = """{ "IPCEnabled": false }""";
+
+            Assert.True(DshmConfigSerialization.WriteDriverConfigFile(updated, root));
+            Assert.Equal(updated, File.ReadAllText(path));
+            Assert.Equal(
+                accessSddl,
+                new FileInfo(path).GetAccessControl().GetSecurityDescriptorSddlForm(AccessControlSections.Access));
+        }
+        finally
+        {
+            try
+            {
+                if (Directory.Exists(root))
+                {
+                    Directory.Delete(root, recursive: true);
+                }
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // The denial ACL can outlive the assertion. Leaving the temp directory is safer than failing cleanup.
+            }
+        }
     }
 
     private static string SerializeDefaultProfile(SettingsContext context)

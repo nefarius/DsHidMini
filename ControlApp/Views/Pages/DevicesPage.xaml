@@ -65,7 +65,10 @@
                 HorizontalAlignment="Left"
                 Command="{Binding ViewModel.SwitchDefenderBtToPs3ModeCommand}"
                 Content="Switch to PS3 mode"
-                IsEnabled="{Binding ViewModel.DefenderBt.CanSwitch}" />
+                IsEnabled="{Binding ViewModel.DefenderBt.CanSwitch}"
+                ToolTip="Restart ControlApp as Administrator to reset the USB port and switch this controller to PS3 mode."
+                ToolTipService.InitialShowDelay="200"
+                ToolTipService.ShowOnDisabled="True" />
         </StackPanel>
         <StackPanel
             Margin="0,0,0,8"
@@ -254,8 +257,10 @@
                                                     HorizontalContentAlignment="Stretch"
                                                     Command="{Binding RestartDeviceCommand}"
                                                     FontStyle="Normal"
+                                                    IsEnabled="{Binding CanRestartDevice}"
                                                     ToolTip="{Binding RestartDeviceToolTip}"
-                                                    ToolTipService.InitialShowDelay="200">
+                                                    ToolTipService.InitialShowDelay="200"
+                                                    ToolTipService.ShowOnDisabled="True">
                                                     <ui:Button.Content>
                                                         <Viewbox>
                                                             <ui:SymbolIcon

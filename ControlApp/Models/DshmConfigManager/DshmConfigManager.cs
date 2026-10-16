@@ -4,6 +4,7 @@ using System.Threading;
 using Newtonsoft.Json;
 
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig;
+using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.Util;
@@ -26,8 +27,18 @@ public class DshmConfigManager : IDisposable
     private EventHandler? _effectiveDriverConfigurationChanged;
     private int _disposed;
 
-    public DshmConfigManager() : this(DshmConfigLocations.Default)
+    public DshmConfigManager() : this(CreateDefaultLocations())
     {
+    }
+
+    private static DshmConfigLocations CreateDefaultLocations()
+    {
+        // Repair the shared store before migration reads it, so an elevated launch leaves
+        // a standard user able to save on the next run.
+        SharedConfigurationPermissions.TryEnsureLayout(
+            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+            SecurityUtil.IsElevated);
+        return DshmConfigLocations.Default;
     }
 
     internal DshmConfigManager(DshmConfigLocations locations)
@@ -82,6 +93,17 @@ public class DshmConfigManager : IDisposable
         get => _userData.IPCEnabled;
         set => _userData.IPCEnabled = value;
     }
+
+    private bool? _canPersistSharedConfiguration;
+
+    /// <summary>
+    ///     True when this process can write both the ControlApp user-data store and <c>DsHidMini.json</c>.
+    /// </summary>
+    public bool CanPersistSharedConfiguration =>
+        _canPersistSharedConfiguration ??= SharedConfigurationAccess.CanPersist(_locations);
+
+    public DriverIpcConfigReading ReadDriverIpcConfig() =>
+        IpcRuntimeStatus.ReadDriverConfig(_locations.DriverConfigDirectory);
 
     public event EventHandler<DshmUpdatedEventArgs>? DshmConfigurationUpdated;
 

@@ -1,4 +1,4 @@
-﻿using Nefarius.DsHidMini.ControlApp.Helpers;
+using Nefarius.DsHidMini.ControlApp.Helpers;
 using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Services;
@@ -45,6 +45,10 @@ public partial class ProfilesViewModel : ObservableObject, INavigationAware
     // ----------------------------------------------------------- PROPERTIES
 
     public List<ProfileData> ProfilesDatas => _dshmConfigManager.GetListOfProfilesWithDefault();
+
+    public bool CanEditSharedConfiguration => _dshmConfigManager.CanPersistSharedConfiguration;
+
+    private bool CanMutateSharedConfiguration() => CanEditSharedConfiguration;
 
 
     // ---------------------------------------- Methods
@@ -103,7 +107,7 @@ public partial class ProfilesViewModel : ObservableObject, INavigationAware
         AnyProfileSelected = SelectedProfileVM != null;
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanMutateSharedConfiguration))]
     private void SetProfileAsGlobal(ProfileViewModel? obj)
     {
         if (obj != null)
@@ -125,7 +129,7 @@ public partial class ProfilesViewModel : ObservableObject, INavigationAware
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanMutateSharedConfiguration))]
     private void CreateProfile()
     {
         Log.Logger.Information("Creating new profile generic name.");
@@ -138,7 +142,7 @@ public partial class ProfilesViewModel : ObservableObject, INavigationAware
         UpdateProfileList();
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanMutateSharedConfiguration))]
     private void DeleteProfile(ProfileViewModel? obj)
     {
         if (obj == null)
@@ -168,7 +172,7 @@ public partial class ProfilesViewModel : ObservableObject, INavigationAware
         UpdateProfileList();
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanMutateSharedConfiguration))]
     private void ReorderProfile(ListViewReorderRequest? request)
     {
         if (request?.Item is not ProfileViewModel profileVm || !profileVm.CanReorder)

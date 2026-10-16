@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -114,21 +115,34 @@ internal static class DshmConfigSerialization
 
     public static bool WriteDriverConfigFile(string json, string? directory = null)
     {
+        string? tempPath = null;
         try
         {
             string targetDirectory = directory ?? GetDriverConfigDirectory();
             Directory.CreateDirectory(targetDirectory);
             string configPath = GetDriverConfigFilePath(targetDirectory);
-            string tempPath = Path.Combine(targetDirectory, $"{DriverFileName}.{Guid.NewGuid():N}.tmp");
+            tempPath = Path.Combine(targetDirectory, $"{DriverFileName}.{Guid.NewGuid():N}.tmp");
             try
             {
                 File.WriteAllText(tempPath, json);
                 File.Move(tempPath, configPath, overwrite: true);
+                // Replacement creates a new file and drops an explicit DACL. Put the standard-user
+                // write ACE back when this process is allowed to change the descriptor.
+                SharedConfigurationPermissions.TryGrantDriverConfigFileAccess(configPath);
             }
-            catch
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 TryDeleteFile(tempPath);
-                throw;
+                if (!File.Exists(configPath))
+                {
+                    throw;
+                }
+
+                // The parent directory can deny delete/replace while the file itself remains writable.
+                Log.Logger.Warning(ex,
+                    "Atomic replace of DsHidMini configuration {ConfigPath} failed. Falling back to in-place overwrite.",
+                    configPath);
+                OverwriteExistingFile(json, configPath);
             }
 
             return true;
@@ -138,6 +152,22 @@ internal static class DshmConfigSerialization
             Log.Logger.Error(e, "Serialization or saving to disk failed.");
             return false;
         }
+        finally
+        {
+            if (tempPath is not null)
+            {
+                TryDeleteFile(tempPath);
+            }
+        }
+    }
+
+    private static void OverwriteExistingFile(string json, string destinationPath)
+    {
+        byte[] content = Encoding.UTF8.GetBytes(json);
+        using FileStream destination = new(destinationPath, FileMode.Open, FileAccess.Write, FileShare.Read);
+        destination.Write(content, 0, content.Length);
+        destination.SetLength(content.Length);
+        destination.Flush(flushToDisk: true);
     }
 
     /// <summary>

@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <Compile Remove="GeneratedBuildVariables.g.cs" />
+    <Compile Include="..\ControlApp\Models\DshmConfigManager\SharedConfigurationPermissions.cs" Link="Util\SharedConfigurationPermissions.cs" />
   </ItemGroup>
 
   <Target Name="GenerateBuildVariableFile" BeforeTargets="BeforeCompile;CoreCompile">

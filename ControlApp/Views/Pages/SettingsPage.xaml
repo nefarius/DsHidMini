@@ -1,4 +1,4 @@
-﻿<Page
+<Page
     x:Class="Nefarius.DsHidMini.ControlApp.Views.Pages.SettingsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -20,10 +20,22 @@
         HorizontalScrollBarVisibility="Disabled"
         VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="20">
+            <ui:InfoBar
+                Margin="0,0,0,12"
+                Title="Shared configuration is read-only"
+                Message="Restart as Administrator to repair access to the DsHidMini configuration. Driver IPC and HID-mode restart stay unchanged until then."
+                IsClosable="False"
+                IsOpen="True"
+                Severity="Informational"
+                Visibility="{Binding ViewModel.CanEditSharedConfiguration, Converter={StaticResource BoolToVis_TC_FV}}" />
             <CheckBox
                 Margin="0,0,0,8"
                 Content="Automatically restart devices on HID mode mismatch"
-                IsChecked="{Binding ViewModel.AutoRestartOnHidModeMismatch, Mode=TwoWay}" />
+                IsChecked="{Binding ViewModel.AutoRestartOnHidModeMismatch, Mode=TwoWay}"
+                IsEnabled="{Binding ViewModel.CanEditSharedConfiguration}"
+                ToolTip="Restart as Administrator if this setting is unavailable."
+                ToolTipService.InitialShowDelay="200"
+                ToolTipService.ShowOnDisabled="True" />
             <TextBlock
                 MaxWidth="600"
                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"
@@ -51,12 +63,24 @@
             <CheckBox
                 Margin="0,16,0,8"
                 Content="Enable driver IPC"
-                IsChecked="{Binding ViewModel.IPCEnabled, Mode=TwoWay}" />
+                IsChecked="{Binding ViewModel.IPCEnabled, Mode=TwoWay}"
+                IsEnabled="{Binding ViewModel.CanEditSharedConfiguration}"
+                ToolTip="Restart as Administrator if this setting is unavailable."
+                ToolTipService.InitialShowDelay="200"
+                ToolTipService.ShowOnDisabled="True" />
             <TextBlock
                 MaxWidth="600"
                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                Text="When enabled (default), DsHidMini exposes shared-memory IPC for pairing, power-off, and similar ControlApp commands. Changes apply immediately without reloading the driver."
+                Text="When enabled (default), DsHidMini exposes shared-memory IPC for pairing, power-off, and similar ControlApp commands. A current driver applies the change without a reload. The checkbox shows the saved setting."
                 TextWrapping="Wrap" />
+            <ui:InfoBar
+                Margin="0,8,0,0"
+                Title="Driver IPC is not active"
+                Message="{Binding ViewModel.IpcRuntimeStatusMessage}"
+                IsClosable="False"
+                IsOpen="True"
+                Severity="Warning"
+                Visibility="{Binding ViewModel.IsIpcRuntimeStale, Converter={StaticResource BoolToVis_TV_FC}}" />
 
             <ui:TextBlock
                 Margin="0,28,0,8"

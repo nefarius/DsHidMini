@@ -48,6 +48,7 @@
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
         <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
         <PackageReference Include="Serilog.Sinks.File" Version="7.0.0"/>
+        <PackageReference Include="System.IO.FileSystem.AccessControl" Version="5.0.0" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.5" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
         <PackageReference Include="HelixToolkit.Wpf" Version="3.1.2" />

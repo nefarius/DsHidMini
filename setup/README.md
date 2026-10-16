@@ -60,6 +60,24 @@ and, when a reboot is needed, writes these values under
 The Exit dialog shows a "Restart now" warning while the marker is set, and
 ControlApp shows a Devices page warning until the system has rebooted.
 
+## Shared configuration access
+
+`InstallDrivers` creates `%ProgramData%\DsHidMini` when needed and repairs two
+narrow permissions without opening the rest of ProgramData:
+
+- `DsHidMini.json` can be modified by `BUILTIN\Users`, but not deleted. An
+  existing file is kept. A missing file is created as a minimal
+  `IPCEnabled: true` document, which uses the same driver defaults as a missing
+  file.
+- `%ProgramData%\DsHidMini\ControlApp` grants users inheritable create, write,
+  and delete-child access for profiles and the save pipeline's temporary files.
+  The directory itself is not granted delete access.
+
+SYSTEM and Administrators keep full control. An elevated ControlApp launch
+applies the same repair, so **Restart as Administrator** restores standard-user
+editing without reinstalling. Any local user can then change the machine-wide
+driver and profile settings.
+
 ## Outputs
 
 - Actions artifact `dshidmini-setup` (signed MSI plus `setup-metadata.json`)

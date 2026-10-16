@@ -40,8 +40,9 @@ SDK to communicate with the driver and provides:
 
 Application preferences are stored under **%AppData%**. Driver configuration
 and ControlApp profile data are stored under **%ProgramData%\DsHidMini**. The
-app does not require administrator rights to run, but editing shared
-configuration and some device actions require elevation.
+app does not require administrator rights to run. After installation, a
+standard user can edit the shared configuration. Device restart over USB,
+Bluetooth-stack repair, and the driver trace still require elevation.
 
 ---
 
@@ -96,7 +97,7 @@ repository `bin` folder. The NUKE task uses:
 ### Devices page
 
 - **Device list** — All DsHidMini devices currently connected; selection drives the detail panel.
-- **Per-device settings** — Edit settings for the selected device (when running with sufficient permissions):
+- **Per-device settings** — Edit settings for the selected device when the shared configuration is writable:
   - **HID mode** — SDF, GPJ, SXS, DS4Windows, XInput.
   - **LEDs** — Mode and timing (e.g. battery indicator, player index).
   - **Wireless** — Pairing mode, custom host address, idle timeout, quick-disconnect combo.
@@ -126,7 +127,7 @@ repository `bin` folder. The NUKE task uses:
 - **Minimize to tray** — When enabled, Minimize and Close hide ControlApp to the notification area; use the tray icon to reopen or Exit to quit.
 - **Automatically switch Defender BT** — Detect a Retro Fighters Defender
   Bluetooth Edition in DS4 mode and switch it to PS3 mode on arrival.
-- **Enable driver IPC** — Persist the driver-wide `IPCEnabled` flag in `DsHidMini.json`. The driver applies the change at runtime without a reload.
+- **Enable driver IPC** — Persist the driver-wide `IPCEnabled` flag in `DsHidMini.json`. A current driver applies the change without a reload once a controller is connected, because the driver loads on demand. If a controller is connected and the saved setting or the driver file says IPC is on, but the running driver does not answer a ping, Settings says so. That usually means the previous driver is still loaded after an update until Windows restarts.
 - **BthPS3 status** — Show the installed version and required Bluetooth stack
   settings, with an elevated repair action when needed.
 - **Application configuration** — Stored in %AppData%; see [Configuration](#configuration).
@@ -158,14 +159,23 @@ The files managed by the app are:
 
 ## Elevation and permissions
 
-- The app runs **as invoker** (no mandatory elevation). Normal users can open the app, view devices and profiles, and change application settings.
-- **“Restart as Administrator”** — Shown in the title bar when not elevated;
-  use it to enable device/profile editing, device restart and power-cycle
-  actions, and BthPS3 settings repair.
-- **Driver IPC** — The underlying SDK IPC objects allow authenticated users
-  and do not inherently require elevation. The ControlApp still gates its
-  device-editing workflow because saving shared configuration and some device
-  management operations require administrator access.
+- The app runs **as invoker** (no mandatory elevation).
+- **Shared configuration** — `%ProgramData%\DsHidMini\DsHidMini.json` and
+  `%ProgramData%\DsHidMini\ControlApp` are writable by standard users after
+  setup. The parent driver directory stays protected: users can update the
+  driver file in place, and can create profile files only inside `ControlApp`.
+  These files are machine-wide, so any local user who can sign in can change
+  them. If the ACLs are missing or damaged, the related controls are disabled
+  and **Restart as Administrator** repairs access for the next unelevated run.
+- **Works without elevation** — View devices and profiles, change per-user
+  preferences in `%AppData%`, use driver IPC (pairing, wireless disconnect,
+  rumble, LEDs, and USB power-off), and export diagnostics.
+- **Requires elevation** — Restart a USB controller or write its HID-mode
+  device property, reset a USB port while switching a Retro Fighters Defender
+  BT controller to PS3 mode, repair BthPS3 registry settings, and start the
+  Bluetooth diagnostic ETW trace.
+- **“Restart as Administrator”** — Shown in the title bar when the process
+  token is not elevated.
 
 ---
 

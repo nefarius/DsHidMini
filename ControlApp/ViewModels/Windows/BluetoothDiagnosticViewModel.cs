@@ -48,13 +48,22 @@ public sealed partial class BluetoothDiagnosticViewModel : ObservableObject, IDi
 
     public bool NeedsElevation => !SecurityUtil.IsElevated;
 
+    /// <summary>
+    ///     The check pairs the controller and then starts an ETW trace, which requires an elevated token.
+    /// </summary>
+    public bool CanStartDiagnostic => !IsBusy && SecurityUtil.IsElevated;
+
+    private bool CanExecuteStart() => CanStartDiagnostic;
+
+    partial void OnIsBusyChanged(bool value) => OnPropertyChanged(nameof(CanStartDiagnostic));
+
     public void Dispose()
     {
         _session.PropertyChanged -= OnSessionPropertyChanged;
         _session.TimelineUpdated -= OnSessionTimelineUpdated;
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanExecuteStart))]
     private async Task Start()
     {
         IsBusy = true;

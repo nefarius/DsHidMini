@@ -14,7 +14,10 @@ controller as one or more configurable HID devices over USB or Bluetooth.
 - **Platforms:** Windows 10 version 1809 or newer and Windows 11, on x64 and
   ARM64
 - **Configuration:** `%ProgramData%\DsHidMini\DsHidMini.json`, with global and
-  per-device settings plus runtime IPC used by the ControlApp and SDK
+  per-device settings plus runtime IPC used by the ControlApp and SDK. Setup
+  leaves this file writable by standard users while the surrounding driver
+  directory remains protected. The file is machine-wide, so local users share
+  one configuration.
 
 ### How it works
 
