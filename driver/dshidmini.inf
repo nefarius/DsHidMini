@@ -133,13 +133,13 @@ AddReg=dshidmini_AddReg_FFB ; Common
 ;       Provides maximum compatibility with most known gaming API.
 ; - 3 = SIXAXIS.SYS compatible mode. Sony "official" report descriptor.
 ;       Emulates the exact gamepad layout the Sony SIXAXIS.SYS driver uses.
-;       Provides best compatibility with RPCS3, Steam and some special games.
+;       Provides best compatibility with RPCS3 and the SCP XInput Bridge proxy DLL.
 ; - 4 = DualShock 4 compatible mode. DualShock 4 Rev1 report descriptor.
 ;       Emulates the exact gamepad layout the DualShock 4 uses.
 ;       Provides best compatibility with Ryochan7's DS4Windows.
 ; - 5 = XInput compatible mode. Xbox One Controller report descriptor.
 ;       Emulates the exact gamepad layout the Xbox One Controller uses.
-;       Provides best compatibility with most modern PC-based games.
+;       Provides best compatibility with most modern PC-based games, including Steam.
 [DSHM_HidDeviceMode]
 ; DEVPKEY_DsHidMini_RW_HidDeviceMode
 {6D293077-C3D6-4062-9597-BE4389404C02}, 2, 3, 0x00000001 , 5 ; Default to XINPUT mode

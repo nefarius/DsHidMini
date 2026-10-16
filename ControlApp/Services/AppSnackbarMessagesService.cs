@@ -15,8 +15,8 @@ public class AppSnackbarMessagesService
     public void ShowSteamSixaxisHintSavedMessage()
     {
         _snackbarService.Show(
-            "Steam will use the SIXAXIS driver",
-            "Fully quit Steam, including the tray icon, and start it again. SXS controllers then get rumble and player LEDs.",
+            "SDL SIXAXIS driver turned on",
+            "Fully quit the program and start it again. SDL3 programs then open SXS controllers over the SIXAXIS driver.",
             ControlAppearance.Success,
             new SymbolIcon(SymbolRegular.CheckmarkCircle24),
             TimeSpan.FromSeconds(8)
@@ -26,8 +26,8 @@ public class AppSnackbarMessagesService
     public void ShowSteamSixaxisHintClearedMessage()
     {
         _snackbarService.Show(
-            "Steam SIXAXIS driver turned off",
-            "Fully quit Steam and start it again for the change to apply.",
+            "SDL SIXAXIS driver turned off",
+            "Fully quit the program and start it again for the change to apply.",
             ControlAppearance.Secondary,
             new SymbolIcon(SymbolRegular.Info24),
             TimeSpan.FromSeconds(6)
@@ -37,7 +37,7 @@ public class AppSnackbarMessagesService
     public void ShowSteamSixaxisHintFailedMessage()
     {
         _snackbarService.Show(
-            "Couldn't update the Steam setting",
+            "Couldn't update the SDL SIXAXIS driver setting",
             "The user environment variable could not be saved.",
             ControlAppearance.Danger,
             new SymbolIcon(SymbolRegular.DismissCircle24),

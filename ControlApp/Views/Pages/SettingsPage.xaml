@@ -62,14 +62,14 @@
 
             <CheckBox
                 Margin="0,16,0,8"
-                Content="Let Steam talk to SXS controllers natively"
+                Content="Use SDL's SIXAXIS driver for SXS controllers"
                 IsChecked="{Binding ViewModel.SteamSixaxisDriver, Mode=TwoWay}"
-                ToolTip="Sets SDL_JOYSTICK_HIDAPI_PS3_SIXAXIS_DRIVER for your user account. Fully quit Steam, including the tray icon, and start it again. In SXS mode Steam then uses rumble and player LEDs. Steam's own tester shows Rumble only after SDL reports that capability."
+                ToolTip="Sets the user variable SDL_JOYSTICK_HIDAPI_PS3_SIXAXIS_DRIVER. SDL3 programs, Steam included, then open SXS pads over the SIXAXIS driver instead of DirectInput and can drive rumble and player LEDs. Fully quit the program and start it again. Steam Input still does not forward game rumble to a PlayStation 3 controller; use XInput mode for Steam."
                 ToolTipService.InitialShowDelay="200" />
             <TextBlock
                 MaxWidth="600"
                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                Text="When enabled, Steam opens an SXS controller through SDL's SIXAXIS driver instead of DirectInput. Rumble and player LEDs need that path. Quit Steam completely and start it again after changing this."
+                Text="When enabled, SDL3 programs open an SXS controller through SDL's SIXAXIS driver instead of DirectInput, which lets them drive rumble and player LEDs. Quit the program completely and start it again after changing this. Steam Input still does not rumble a PlayStation 3 controller; use XInput mode for Steam."
                 TextWrapping="Wrap" />
 
             <CheckBox
