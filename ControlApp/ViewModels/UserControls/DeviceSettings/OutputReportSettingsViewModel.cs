@@ -40,6 +40,19 @@ public class OutputReportSettingsViewModel : DeviceSettingsViewModel
         }
     }
 
+    public UsbOutputReportTransport UsbOutputReportTransport
+    {
+        get => _tempBackingData.UsbOutputReportTransport;
+        set
+        {
+            _tempBackingData.UsbOutputReportTransport = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public static IReadOnlyList<UsbOutputReportTransport> UsbOutputReportTransports { get; } =
+        Enum.GetValues<UsbOutputReportTransport>();
+
     public BluetoothOutputReportTransport BluetoothOutputReportTransport
     {
         get => _tempBackingData.BluetoothOutputReportTransport;

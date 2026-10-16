@@ -325,6 +325,8 @@ public class OutputReportSettings : DeviceSubSettings
     public bool IsOutputReportRateControlEnabled { get; set; } = true;
     public int MaxOutputRate { get; set; } = 150;
     public bool IsOutputReportDeduplicatorEnabled { get; set; }
+    public UsbOutputReportTransport UsbOutputReportTransport { get; set; } =
+        UsbOutputReportTransport.Auto;
     public BluetoothOutputReportTransport BluetoothOutputReportTransport { get; set; } =
         BluetoothOutputReportTransport.Control;
 
@@ -342,6 +344,7 @@ public class OutputReportSettings : DeviceSubSettings
         destiny.IsOutputReportDeduplicatorEnabled = source.IsOutputReportDeduplicatorEnabled;
         destiny.IsOutputReportRateControlEnabled = source.IsOutputReportRateControlEnabled;
         destiny.MaxOutputRate = source.MaxOutputRate;
+        destiny.UsbOutputReportTransport = source.UsbOutputReportTransport;
         destiny.BluetoothOutputReportTransport = source.BluetoothOutputReportTransport;
     }
 }

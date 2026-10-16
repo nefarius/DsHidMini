@@ -41,6 +41,8 @@ public class SettingsCopyAndBindingTests
         original.GeneralRumble.IsAltRumbleModeEnabled = true;
         original.GeneralRumble.AltModeToggleButtonCombo.IsEnabled = true;
         original.OutputReport.MaxOutputRate = 80;
+        original.OutputReport.UsbOutputReportTransport =
+            Models.DshmConfigManager.DshmConfig.Enums.UsbOutputReportTransport.ControlEndpoint;
         original.OutputReport.BluetoothOutputReportTransport =
             Models.DshmConfigManager.DshmConfig.Enums.BluetoothOutputReportTransport.Interrupt;
         original.LeftMotorRescaling.LeftMotorStrRescalingLowerRange = 40;
@@ -58,6 +60,8 @@ public class SettingsCopyAndBindingTests
         Assert.Equal(original.GeneralRumble.AlwaysStartInNormalMode, copy.GeneralRumble.AlwaysStartInNormalMode);
         Assert.True(copy.GeneralRumble.IsAltModeToggleButtonComboEnabled);
         Assert.Equal(original.OutputReport.MaxOutputRate, copy.OutputReport.MaxOutputRate);
+        Assert.Equal(original.OutputReport.UsbOutputReportTransport,
+            copy.OutputReport.UsbOutputReportTransport);
         Assert.Equal(original.OutputReport.BluetoothOutputReportTransport,
             copy.OutputReport.BluetoothOutputReportTransport);
         Assert.Equal(original.LeftMotorRescaling.LeftMotorStrRescalingLowerRange,

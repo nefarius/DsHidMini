@@ -188,6 +188,7 @@ public class DshmManagerToDriverConversion
         OutputReportSettings x_OutRep = appFormat.OutputReport;
         driverFormat.IsOutputRateControlEnabled = x_OutRep.IsOutputReportRateControlEnabled;
         driverFormat.OutputRateControlPeriodMs = (byte)x_OutRep.MaxOutputRate;
+        driverFormat.UsbOutputReportTransport = x_OutRep.UsbOutputReportTransport;
         driverFormat.BluetoothOutputReportTransport = x_OutRep.BluetoothOutputReportTransport;
 
         LeftMotorRescalingSettings x_LeftMRescale = appFormat.LeftMotorRescaling;
@@ -304,6 +305,11 @@ public class DshmManagerToDriverConversion
         if (driverFormat.OutputRateControlPeriodMs is { } rateMs)
         {
             appFormat.OutputReport.MaxOutputRate = rateMs;
+        }
+
+        if (driverFormat.UsbOutputReportTransport is { } usbTransport)
+        {
+            appFormat.OutputReport.UsbOutputReportTransport = usbTransport;
         }
 
         if (driverFormat.BluetoothOutputReportTransport is { } bluetoothTransport)

@@ -146,6 +146,7 @@ public class DriverConfigContractTests
         Assert.True(restored.GeneralRumble.IsAltRumbleModeEnabled);
         Assert.True(restored.GeneralRumble.AlwaysStartInNormalMode);
         Assert.Equal(90, restored.AltRumbleAdjusts.RightRumbleConversionUpperRange);
+        Assert.Equal(UsbOutputReportTransport.Auto, restored.OutputReport.UsbOutputReportTransport);
         Assert.Equal(BluetoothOutputReportTransport.Control, restored.OutputReport.BluetoothOutputReportTransport);
     }
 
@@ -248,10 +249,34 @@ public class DriverConfigContractTests
     }
 
     [Fact]
-    public void Serialize_DefaultSettings_EmitsControlBluetoothOutputTransport()
+    public void Serialize_DefaultSettings_EmitsAutoUsbAndControlBluetoothOutputTransport()
     {
         JsonNode global = JsonNode.Parse(SerializeDefaultProfile(SettingsContext.XInput))!["Global"]!;
+        Assert.Equal("Auto", global["UsbOutputReportTransport"]!.GetValue<string>());
         Assert.Equal("Control", global["BluetoothOutputReportTransport"]!.GetValue<string>());
+    }
+
+    [Theory]
+    [InlineData(UsbOutputReportTransport.Auto, "Auto")]
+    [InlineData(UsbOutputReportTransport.InterruptOut, "InterruptOut")]
+    [InlineData(UsbOutputReportTransport.ControlEndpoint, "ControlEndpoint")]
+    public void RoundTrip_UsbOutputReportTransport_PreservesValue(
+        UsbOutputReportTransport transport,
+        string expectedName)
+    {
+        DeviceSettings original = new();
+        original.OutputReport.UsbOutputReportTransport = transport;
+
+        DshmDeviceSettings driver = new();
+        DshmManagerToDriverConversion.ConvertDeviceSettingsToDriverFormat(original, driver);
+        string json = DshmConfigSerialization.Serialize(new DshmConfiguration { Global = driver });
+        JsonNode global = JsonNode.Parse(json)!["Global"]!;
+        Assert.Equal(expectedName, global["UsbOutputReportTransport"]!.GetValue<string>());
+
+        DshmConfiguration parsed = DshmConfigSerialization.Deserialize(json);
+        DeviceSettings restored = new();
+        DshmManagerToDriverConversion.ConvertDriverFormatToDeviceSettings(parsed.Global, restored);
+        Assert.Equal(transport, restored.OutputReport.UsbOutputReportTransport);
     }
 
     [Theory]
@@ -359,6 +384,28 @@ public class DriverConfigContractTests
     }
 
     [Fact]
+    public void Deserialize_LegacyConfigWithoutUsbTransport_KeepsAutoDefault()
+    {
+        const string json = """
+            {
+              "Global": {
+                "HidDeviceMode": "XInput",
+                "IsOutputRateControlEnabled": true,
+                "OutputRateControlPeriodMs": 150
+              },
+              "Devices": {}
+            }
+            """;
+
+        DshmConfiguration parsed = DshmConfigSerialization.Deserialize(json);
+        Assert.Null(parsed.Global.UsbOutputReportTransport);
+
+        DeviceSettings restored = new();
+        DshmManagerToDriverConversion.ConvertDriverFormatToDeviceSettings(parsed.Global, restored);
+        Assert.Equal(UsbOutputReportTransport.Auto, restored.OutputReport.UsbOutputReportTransport);
+    }
+
+    [Fact]
     public void Overlay_MotionSensorFrameOnly_RetainsValueWithoutHidDeviceMode()
     {
         DshmDeviceSettings baseline = new()
@@ -406,6 +453,22 @@ public class DriverConfigContractTests
 
         DshmDeviceSettings merged = DshmManagerToDriverConversion.OverlayDeviceSettings(baseline, overlay);
         Assert.Equal(BluetoothOutputReportTransport.Interrupt, merged.BluetoothOutputReportTransport);
+    }
+
+    [Fact]
+    public void Overlay_UsbOutputReportTransport_OverridesBaseline()
+    {
+        DshmDeviceSettings baseline = new()
+        {
+            UsbOutputReportTransport = UsbOutputReportTransport.Auto
+        };
+        DshmDeviceSettings overlay = new()
+        {
+            UsbOutputReportTransport = UsbOutputReportTransport.ControlEndpoint
+        };
+
+        DshmDeviceSettings merged = DshmManagerToDriverConversion.OverlayDeviceSettings(baseline, overlay);
+        Assert.Equal(UsbOutputReportTransport.ControlEndpoint, merged.UsbOutputReportTransport);
     }
 
     [Fact]

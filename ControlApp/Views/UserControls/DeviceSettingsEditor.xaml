@@ -684,6 +684,19 @@
                     Content="Enable output report deduplicator"
                     DockPanel.Dock="Top"
                     IsChecked="{Binding IsOutputReportDeduplicatorEnabled}" />
+                <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
+                    <ui:TextBlock
+                        Style="{StaticResource SettingsFieldLabel}"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        DockPanel.Dock="Left"
+                        Text="USB output transport:" />
+                    <ComboBox
+                        VerticalAlignment="Center"
+                        DockPanel.Dock="Right"
+                        ItemsSource="{Binding UsbOutputReportTransports}"
+                        SelectedItem="{Binding UsbOutputReportTransport}" />
+                </DockPanel>
                 <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}">
                     <ui:TextBlock
                         Style="{StaticResource SettingsFieldLabel}"
