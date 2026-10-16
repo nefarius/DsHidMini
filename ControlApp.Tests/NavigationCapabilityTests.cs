@@ -141,4 +141,55 @@ public class NavigationCapabilityTests
         Assert.Equal(0, editor.LedsSettingsVM.CurrentLEDCustomsIndex);
         Assert.True(editor.LedsSettingsVM.IsSingleLedDevice);
     }
+
+    [Fact]
+    public void SettingsEditor_Ds4wRemappingOptionExplainsLockedSticks()
+    {
+        SettingsEditorViewModel editor = new();
+        editor.HidModeVM.Context = SettingsContext.DS4W;
+        editor.HidModeVM.PreventRemappingConflictsInDS4WMode = true;
+
+        Assert.True(editor.SticksSettingsVM.IsGroupLocked);
+        Assert.Equal(SettingsEditorViewModel.Ds4wStickLockReason, editor.SticksSettingsVM.LockReason);
+        Assert.Contains("Prevent remapping issues in DS4W mode", editor.SticksSettingsVM.LockReason);
+        Assert.Contains("HID Mode", editor.SticksSettingsVM.LockReason);
+        Assert.False(editor.GeneralRumbleSettingsVM.IsGroupLocked);
+
+        editor.HidModeVM.PreventRemappingConflictsInDS4WMode = false;
+
+        Assert.False(editor.SticksSettingsVM.IsGroupLocked);
+        Assert.Equal(string.Empty, editor.SticksSettingsVM.LockReason);
+
+        editor.HidModeVM.PreventRemappingConflictsInDS4WMode = true;
+        editor.HidModeVM.Context = SettingsContext.GPJ;
+
+        Assert.False(editor.SticksSettingsVM.IsGroupLocked);
+        Assert.Equal(string.Empty, editor.SticksSettingsVM.LockReason);
+    }
+
+    [Fact]
+    public void SettingsEditor_SxsExplainsLockedRumbleAndClearsAfterModeChange()
+    {
+        SettingsEditorViewModel editor = new();
+        editor.HidModeVM.Context = SettingsContext.SXS;
+
+        Assert.True(editor.GeneralRumbleSettingsVM.IsGroupLocked);
+        Assert.True(editor.LeftMotorRescaleSettingsVM.IsGroupLocked);
+        Assert.True(editor.AltRumbleSettingsVM.IsGroupLocked);
+        Assert.Equal(SettingsEditorViewModel.SxsRumbleLockReason, editor.GeneralRumbleSettingsVM.LockReason);
+        Assert.Equal(editor.GeneralRumbleSettingsVM.LockReason, editor.LeftMotorRescaleSettingsVM.LockReason);
+        Assert.Equal(editor.GeneralRumbleSettingsVM.LockReason, editor.AltRumbleSettingsVM.LockReason);
+        Assert.Contains("directly", editor.GeneralRumbleSettingsVM.LockReason, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("another HID emulation mode", editor.GeneralRumbleSettingsVM.LockReason);
+        Assert.False(editor.SticksSettingsVM.IsGroupLocked);
+
+        editor.HidModeVM.Context = SettingsContext.XInput;
+
+        Assert.False(editor.GeneralRumbleSettingsVM.IsGroupLocked);
+        Assert.False(editor.LeftMotorRescaleSettingsVM.IsGroupLocked);
+        Assert.False(editor.AltRumbleSettingsVM.IsGroupLocked);
+        Assert.Equal(string.Empty, editor.GeneralRumbleSettingsVM.LockReason);
+        Assert.Equal(string.Empty, editor.LeftMotorRescaleSettingsVM.LockReason);
+        Assert.Equal(string.Empty, editor.AltRumbleSettingsVM.LockReason);
+    }
 }
