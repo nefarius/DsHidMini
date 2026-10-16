@@ -1,3 +1,5 @@
+using System.IO;
+
 using Nefarius.DsHidMini.ControlApp.Helpers;
 using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
@@ -181,12 +183,28 @@ public partial class ProfilesViewModel : ObservableObject, INavigationAware
         }
 
         int userIndex = request.NewIndex - 1;
+        int previousUserIndex = ProfilesViewModels.IndexOf(profileVm) - 1;
         if (!_dshmConfigManager.MoveUserProfile(profileVm.ProfileData, userIndex))
         {
             return;
         }
 
-        _dshmConfigManager.SaveChanges();
+        try
+        {
+            _dshmConfigManager.SaveChanges();
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+        {
+            Log.Logger.Warning(ex, "Failed to persist profile order.");
+            if (previousUserIndex >= 0)
+            {
+                _dshmConfigManager.MoveUserProfile(profileVm.ProfileData, previousUserIndex);
+            }
+
+            _appSnackbarMessagesService.ShowDsHidMiniConfigurationUpdateFailedMessage();
+            return;
+        }
+
         UpdateProfileList();
     }
 }

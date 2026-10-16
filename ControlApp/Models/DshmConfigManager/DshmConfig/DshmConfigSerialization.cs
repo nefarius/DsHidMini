@@ -164,10 +164,86 @@ internal static class DshmConfigSerialization
     private static void OverwriteExistingFile(string json, string destinationPath)
     {
         byte[] content = Encoding.UTF8.GetBytes(json);
+        // The driver directory does not let a standard user create a replacement file.
+        // Flush the new bytes onto an alternate stream of the existing file, and leave
+        // the live stream unchanged until that copy is durable.
+        string stagedPath = AlternateDataStreamPath(destinationPath, "dshm-next");
+        try
+        {
+            WriteAlternateStream(stagedPath, content);
+            if (!ReadAlternateStream(stagedPath).AsSpan().SequenceEqual(content))
+            {
+                throw new IOException($"Staged driver configuration did not match the payload for {destinationPath}.");
+            }
+
+            byte[] previous = File.ReadAllBytes(destinationPath);
+            try
+            {
+                CommitInPlace(destinationPath, content);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                try
+                {
+                    CommitInPlace(destinationPath, previous);
+                }
+                catch (Exception restoreEx) when (restoreEx is IOException or UnauthorizedAccessException)
+                {
+                    Log.Logger.Error(restoreEx,
+                        "Failed to restore driver configuration {ConfigPath} after an in-place write failed.",
+                        destinationPath);
+                }
+
+                throw;
+            }
+        }
+        finally
+        {
+            TryClearAlternateStream(stagedPath);
+        }
+    }
+
+    private static void CommitInPlace(string destinationPath, byte[] content)
+    {
         using FileStream destination = new(destinationPath, FileMode.Open, FileAccess.Write, FileShare.Read);
         destination.Write(content, 0, content.Length);
+        destination.Flush(flushToDisk: true);
         destination.SetLength(content.Length);
         destination.Flush(flushToDisk: true);
+    }
+
+    private static string AlternateDataStreamPath(string filePath, string streamName) =>
+        filePath + ":" + streamName;
+
+    private static void WriteAlternateStream(string streamPath, byte[] content)
+    {
+        using FileStream stream = new(streamPath, FileMode.Create, FileAccess.Write, FileShare.Read);
+        stream.Write(content, 0, content.Length);
+        stream.Flush(flushToDisk: true);
+        stream.SetLength(content.Length);
+        stream.Flush(flushToDisk: true);
+    }
+
+    private static byte[] ReadAlternateStream(string streamPath)
+    {
+        using FileStream stream = new(streamPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        using MemoryStream copy = new();
+        stream.CopyTo(copy);
+        return copy.ToArray();
+    }
+
+    private static void TryClearAlternateStream(string streamPath)
+    {
+        try
+        {
+            using FileStream stream = new(streamPath, FileMode.Open, FileAccess.Write, FileShare.Read);
+            stream.SetLength(0);
+            stream.Flush(flushToDisk: true);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Log.Logger.Debug(ex, "Failed to clear staged driver configuration stream {Path}.", streamPath);
+        }
     }
 
     /// <summary>
