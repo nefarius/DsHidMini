@@ -1,4 +1,4 @@
-﻿using Nefarius.DsHidMini.ControlApp.Helpers;
+using Nefarius.DsHidMini.ControlApp.Helpers;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Services;
 
@@ -32,6 +32,10 @@ public partial class ProfileViewModel : ObservableObject, IListReorderable
 
     public bool CanReorder => ProfileData != ProfileData.DefaultProfile;
 
+    public bool CanEditSharedConfiguration => _dshmConfigManager.CanPersistSharedConfiguration;
+
+    private bool CanMutateSharedConfiguration() => CanEditSharedConfiguration;
+
     public bool IsEditEnabled
     {
         get => VmGroupsCont.AllowEditing;
@@ -45,9 +49,14 @@ public partial class ProfileViewModel : ObservableObject, IListReorderable
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanMutateSharedConfiguration))]
     private void EnableEditing()
     {
+        if (!CanEditSharedConfiguration)
+        {
+            return;
+        }
+
         if (ProfileData == ProfileData.DefaultProfile)
         {
             _appSnackbarMessagesService.ShowDefaultProfileEditingBlockedMessage();
@@ -57,9 +66,15 @@ public partial class ProfileViewModel : ObservableObject, IListReorderable
         IsEditEnabled = true;
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanMutateSharedConfiguration))]
     private void SaveChanges()
     {
+        if (!CanEditSharedConfiguration)
+        {
+            _appSnackbarMessagesService.ShowDsHidMiniConfigurationUpdateFailedMessage();
+            return;
+        }
+
         Log.Logger.Information($"Saving changes to profile '{ProfileData.ProfileName}' ({ProfileData.ProfileGuid})");
         if (string.IsNullOrEmpty(Name))
         {
@@ -78,13 +93,13 @@ public partial class ProfileViewModel : ObservableObject, IListReorderable
         if (_dshmConfigManager.SaveChangesAndUpdateDsHidMiniConfigFile())
         {
             _appSnackbarMessagesService.ShowProfileUpdateMessage();
-        }
-        else
-        {
-            _appSnackbarMessagesService.ShowDsHidMiniConfigurationUpdateFailedMessage();
+            IsEditEnabled = false;
+            return;
         }
 
-        IsEditEnabled = false;
+        VmGroupsCont.LoadDatasToAllGroups(ProfileData.Settings);
+        Name = ProfileData.ProfileName;
+        _appSnackbarMessagesService.ShowDsHidMiniConfigurationUpdateFailedMessage();
     }
 
     [RelayCommand]

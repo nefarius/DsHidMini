@@ -111,7 +111,10 @@
                         Appearance="Primary"
                         Command="{Binding StartCommand}"
                         Content="Start check"
-                        IsEnabled="{Binding IsBusy, Converter={StaticResource BoolInverter}}" />
+                        IsEnabled="{Binding CanStartDiagnostic}"
+                        ToolTip="Restart as Administrator to capture the driver trace used by this check."
+                        ToolTipService.InitialShowDelay="200"
+                        ToolTipService.ShowOnDisabled="True" />
                     <ui:Button
                         Margin="0,0,8,0"
                         Command="{Binding CancelCommand}"

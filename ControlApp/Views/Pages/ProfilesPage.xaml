@@ -19,6 +19,15 @@
     ScrollViewer.CanContentScroll="False"
     mc:Ignorable="d">
     <DockPanel VerticalAlignment="Stretch">
+        <ui:InfoBar
+            Margin="0,0,0,8"
+            Title="Shared configuration is read-only"
+            Message="Restart as Administrator to repair access before creating, editing, or reordering profiles."
+            DockPanel.Dock="Top"
+            IsClosable="False"
+            IsOpen="True"
+            Severity="Informational"
+            Visibility="{Binding ViewModel.CanEditSharedConfiguration, Converter={StaticResource BoolToVis_TC_FV}}" />
         <DockPanel
             Width="250"
             MaxWidth="250"

@@ -73,7 +73,8 @@ public partial class DefenderBtStatusService : ObservableObject, IDisposable
     /// <summary>
     ///     True if a switch attempt can currently be made.
     /// </summary>
-    public bool CanSwitch => IsDetected && !IsSwitching;
+    public bool CanSwitch =>
+        ControlAppActionPolicy.CanSwitchDefenderBt(IsDetected, IsSwitching, SecurityUtil.IsElevated);
 
     public void Dispose()
     {
@@ -336,8 +337,9 @@ public partial class DefenderBtStatusService : ObservableObject, IDisposable
         if (IsDetected)
         {
             StatusTitle = "Retro Fighters Defender BT detected in DualShock 4 mode";
-            StatusMessage =
-                "Switch it to PS3 (DualShock 3) mode so DsHidMini can bind to it and Bluetooth pairing becomes available. If a late switch is ignored, the USB port is reset and the probe is retried immediately after re-enumeration.";
+            StatusMessage = SecurityUtil.IsElevated
+                ? "Switch it to PS3 (DualShock 3) mode so DsHidMini can bind to it and Bluetooth pairing becomes available. If a late switch is ignored, the USB port is reset and the probe is retried immediately after re-enumeration."
+                : "Switching this controller to PS3 mode needs a USB port reset. Restart ControlApp as Administrator, then use Switch to PS3 mode.";
             Severity = InfoBarSeverity.Informational;
         }
         else

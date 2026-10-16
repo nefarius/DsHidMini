@@ -1,5 +1,6 @@
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.Drivers;
+using Nefarius.DsHidMini.ControlApp.Models.Util;
 using Nefarius.DsHidMini.ControlApp.Services;
 using Nefarius.DsHidMini.IPC;
 using Nefarius.DsHidMini.IPC.Models.Drivers;
@@ -79,7 +80,10 @@ public sealed class BluetoothPreflightProbe : IPreflightProbe
             !_bthPs3Status.AreSettingsIncorrect
                 ? "Required BthPS3 settings (RAW PDO off, PSM patching on) are already correct."
                 : "Required settings need correcting. Run this setup as Administrator to fix them automatically.",
-            CanAutoRepair: _bthPs3Status.IsFilterAvailable && _bthPs3Status.AreSettingsIncorrect));
+            CanAutoRepair: ControlAppActionPolicy.CanAutoRepairBthPs3Settings(
+                _isElevated(),
+                _bthPs3Status.IsFilterAvailable,
+                _bthPs3Status.AreSettingsIncorrect)));
 
         candidateDevice ??= FindEligibleUsbController();
 

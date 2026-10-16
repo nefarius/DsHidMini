@@ -206,6 +206,11 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
     [RelayCommand]
     private async Task SwitchDefenderBtToPs3Mode()
     {
+        if (!DefenderBt.CanSwitch)
+        {
+            return;
+        }
+
         DefenderBtModeSwitchResult result = await DefenderBt.SwitchToPs3ModeAsync();
         switch (result)
         {
@@ -260,9 +265,16 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
         {
             if (devVM.IsHidModeMismatched)
             {
-                // Best-effort: write the expected mode to the device property first, so the driver's
-                // D0Entry-time mismatch check (issue #374) sees a matching value on the very next power-up.
-                bool propertyApplyResult = devVM.ApplyExpectedHidModeProperty();
+                if (!devVM.CanRestartDevice)
+                {
+                    oneOrMoreFails = true;
+                    continue;
+                }
+
+                // USB restart writes the expected mode before the port cycle so the driver's
+                // D0Entry-time mismatch check (issue #374) sees a matching value. Wireless
+                // disconnect uses IPC and does not need that elevated device-property write.
+                bool propertyApplyResult = devVM.IsWireless || devVM.ApplyExpectedHidModeProperty();
                 if (!DshmDevMan.TryReconnectDevice(devVM.Device) || !propertyApplyResult)
                 {
                     oneOrMoreFails = true;

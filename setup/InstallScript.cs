@@ -12,6 +12,7 @@ using System.Runtime.InteropServices;
 using CliWrap;
 using CliWrap.Buffered;
 
+using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.Setup.Dialogs;
 using Nefarius.DsHidMini.Setup.Util;
 using Nefarius.Utilities.DeviceManagement.Drivers;
@@ -595,6 +596,17 @@ public static class CustomActions
             session.Message(
                 InstallMessage.User | (InstallMessage)MessageButtons.OK | (InstallMessage)MessageIcon.Information,
                 record);
+        }
+
+        try
+        {
+            string programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+            SharedConfigurationPermissions.EnsureLayout(programData);
+            session.Log($"Shared DsHidMini configuration permissions ensured under {programData}.");
+        }
+        catch (Exception ex)
+        {
+            session.Log($"Failed to ensure shared DsHidMini configuration permissions: {ex}");
         }
 
         return ActionResult.Success;

@@ -164,6 +164,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         }
         _deviceUserData = _dshmConfigManager.GetDeviceData(DeviceAddress);
         _pairingMode = _deviceUserData.BluetoothPairingMode;
+        DeviceCustomsVM.AllowEditing = _dshmConfigManager.CanPersistSharedConfiguration;
         DeviceCustomsVM.ApplyDeviceCapabilities(DeviceType);
         // Loads correspondent controller data based on controller's MAC address 
 
@@ -628,10 +629,26 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     /// <summary>
     ///     Tooltip for the list-card restart / disconnect button.
     /// </summary>
+    public bool CanEditSharedConfiguration => _dshmConfigManager.CanPersistSharedConfiguration;
+
+    private bool CanExecuteApplyChanges() => CanEditSharedConfiguration;
+
+    public bool CanRestartDevice =>
+        ControlAppActionPolicy.CanRestartDevice(IsWireless, SecurityUtil.IsElevated);
+
+    private bool CanExecuteRestartDevice() => CanRestartDevice;
+
+    public string SharedConfigurationToolTip =>
+        CanEditSharedConfiguration
+            ? "Save these settings to the shared DsHidMini configuration."
+            : "Shared DsHidMini configuration is read-only. Restart as Administrator to repair access.";
+
     public string RestartDeviceToolTip =>
         IsWireless
             ? "Disconnect this wireless controller"
-            : "Restart this USB controller. Requires running as Administrator.";
+            : CanRestartDevice
+                ? "Restart this USB controller."
+                : "Restart this USB controller. Restart ControlApp as Administrator to do that.";
 
     /// <summary>
     ///     Wired controllers can receive the console USB power-off sequence.
@@ -1080,7 +1097,8 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     private void AdjustSettingsTabState()
     {
         IsProfileSelectorVisible = CurrentDeviceSettingsMode != SettingsModes.Custom;
-        IsProfileSelectorEnabled = CurrentDeviceSettingsMode == SettingsModes.Profile;
+        IsProfileSelectorEnabled = CanEditSharedConfiguration &&
+                                   CurrentDeviceSettingsMode == SettingsModes.Profile;
         IsEditorVisible = CurrentDeviceSettingsMode == SettingsModes.Custom;
         SelectedProfile = CurrentDeviceSettingsMode switch
         {
@@ -1263,9 +1281,15 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         });
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanExecuteApplyChanges))]
     private async Task ApplyChanges()
     {
+        if (!CanEditSharedConfiguration)
+        {
+            _appSnackbarMessagesService.ShowDsHidMiniConfigurationUpdateFailedMessage();
+            return;
+        }
+
         Log.Logger.Information("Saving and applying changes made to Device '{DeviceAddress}'", DeviceAddress);
         _deviceUserData.BluetoothPairingMode = PairingMode;
 
@@ -1320,10 +1344,21 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanExecuteRestartDevice))]
     private void RestartDevice()
     {
-        bool propertyApplyResult = ApplyExpectedHidModeProperty();
+        if (!CanRestartDevice)
+        {
+            _appSnackbarMessagesService.ShowPowerCyclingDeviceMessage(IsWireless, SecurityUtil.IsElevated, false);
+            return;
+        }
+
+        bool propertyApplyResult = true;
+        if (!IsWireless)
+        {
+            propertyApplyResult = ApplyExpectedHidModeProperty();
+        }
+
         bool reconnectionResult = DshmDevMan.TryReconnectDevice(Device);
         Log.Logger.Information(
             "User instructed {Wireless} device '{DeviceAddress}' to restart/disconnect.",

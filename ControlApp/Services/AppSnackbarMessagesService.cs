@@ -1,4 +1,4 @@
-﻿using Wpf.Ui;
+using Wpf.Ui;
 using Wpf.Ui.Controls;
 
 namespace Nefarius.DsHidMini.ControlApp.Services;
@@ -26,11 +26,11 @@ public class AppSnackbarMessagesService
     public void ShowDsHidMiniConfigurationUpdateFailedMessage()
     {
         _snackbarService.Show(
-            "Failed to updated DsHidMini configuration",
-            "",
+            "Couldn't save shared configuration",
+            "The DsHidMini configuration files could not be updated. Restart as Administrator if this keeps happening.",
             ControlAppearance.Danger,
             new SymbolIcon(SymbolRegular.DismissCircle24),
-            TimeSpan.FromSeconds(3)
+            TimeSpan.FromSeconds(6)
         );
     }
 

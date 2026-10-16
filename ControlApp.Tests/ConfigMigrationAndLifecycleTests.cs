@@ -242,6 +242,26 @@ public class ConfigMigrationAndLifecycleTests : IDisposable
     }
 
     [Fact]
+    public void SaveChangesAndUpdate_WhenDriverReplacementIsDenied_UpdatesFileInPlace()
+    {
+        DshmConfigManager manager = CreateManager();
+        manager.IPCEnabled = true;
+        Assert.True(manager.SaveChangesAndUpdateDsHidMiniConfigFile());
+
+        using (DenyFileReplacement(DriverFile))
+        {
+            string accessSddl = GetAccessSddl(DriverFile);
+            manager.IPCEnabled = false;
+            Assert.True(manager.SaveChangesAndUpdateDsHidMiniConfigFile());
+            Assert.Equal(accessSddl, GetAccessSddl(DriverFile));
+        }
+
+        JsonNode root = JsonNode.Parse(File.ReadAllText(DriverFile))!;
+        Assert.False(root["IPCEnabled"]!.GetValue<bool>());
+        Assert.Empty(Directory.GetFiles(DriverDir, "DsHidMini.json.*.tmp"));
+    }
+
+    [Fact]
     public void SaveChangesAndUpdate_WhenUserDataWriteFails_RestoresMemoryAndReportsFailure()
     {
         DshmConfigLocations locations = new(UserDir, DriverDir);
