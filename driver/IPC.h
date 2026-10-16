@@ -741,8 +741,25 @@ DSHM_IPC_MSG_SET_LED_PATTERN_RESPONSE_INIT(
 }
 
 
+//
+// How the reported IPC state was applied. These values are part of the
+// ETW IpcState payload and must stay stable.
+//
+typedef enum _DSHM_IPC_APPLY_MODE
+{
+	//
+	// The running driver applied the setting immediately.
+	//
+	DSHM_IPC_APPLY_LIVE_RELOAD = 0,
+	//
+	// The setting was read while the driver was starting.
+	//
+	DSHM_IPC_APPLY_DRIVER_STARTUP = 1,
+} DSHM_IPC_APPLY_MODE;
+
 NTSTATUS DSHM_IPC_Reconcile(
-	_In_ BOOLEAN Enabled
+	_In_ BOOLEAN Enabled,
+	_Out_ PBOOLEAN StateChanged
 );
 
 void DestroyIPC(void);
