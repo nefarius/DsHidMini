@@ -1,4 +1,5 @@
 ﻿#include "Driver.h"
+#include "DsSxsOutput.h"
 #include "HID.Reports.tmh"
 
 
@@ -273,12 +274,10 @@ DSHM_WriteReport(
 	//
 	// SIXAXIS.SYS emulation
 	// 
-	if (Packet->reportId == 0x00 && DeviceContext->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
+	if (DeviceContext->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
 	{
-		//
-		// External output report overrides internal behaviour, keep note
-		// 
-		DeviceContext->OutputReport.Mode = Ds3OutputReportModeWriteReportPassThrough;
+		ULONG written = 0;
+		const NTSTATUS previousStatus = status;
 
 		//
 		// Get raw buffer pointer (connection agnostic)
@@ -290,52 +289,35 @@ DSHM_WriteReport(
 		);
 
 		//
-		// Prevent LED states from being overwritten from outside
+		// Report id 0 keeps the RPCS3/XInputBridge copy from byte 3.
+		// SDL's generic PS3 driver instead sends its effect image, with or
+		// without the extra leading report id. Both carry the DS3 small
+		// motor as on/off, which SendOutputReport records for ShanWan.
 		// 
-		if (DsLed_IsDriverInCharge(DeviceContext))
+		status = DsSxsOutput_Apply(
+			Packet->reportBuffer,
+			Packet->reportBufferLen,
+			Packet->reportId,
+			DsLed_IsDriverInCharge(DeviceContext),
+			buffer,
+			(ULONG)bufferSize,
+			&written
+		);
+
+		if (status == STATUS_NOT_IMPLEMENTED)
 		{
-			UCHAR ledBlock[sizeof(UCHAR) + (sizeof(DS_LED) * 4)];
-
-			//
-			// Backup LED states
-			// 
-			RtlCopyMemory(ledBlock, &buffer[9], ARRAYSIZE(ledBlock));
-
-			//
-			// Overwrite with what we received
-			// 
-			RtlCopyMemory(
-				buffer,
-				&Packet->reportBuffer[3],
-				bufferSize
-			);
-
-			//
-			// Restore LED states
-			// 
-			RtlCopyMemory(&buffer[9], ledBlock, ARRAYSIZE(ledBlock));
+			status = previousStatus;
 		}
-		else
+		else if (NT_SUCCESS(status))
 		{
 			//
-			// Overwrite with what we received
+			// External output report overrides internal behaviour, keep note
 			// 
-			RtlCopyMemory(
-				buffer,
-				&Packet->reportBuffer[3],
-				bufferSize
-			);
-		}
+			DeviceContext->OutputReport.Mode = Ds3OutputReportModeWriteReportPassThrough;
 
-			//
-			// The copied DS3 small-motor byte is on/off. SendOutputReport
-			// stores THIRD_PARTY_HID_SMALL_MOTOR_ON_STRENGTH with this
-			// queued report when that byte is set, because this path does
-			// not write a 0-255 magnitude into LightCache.
-			// 
 			(void)DSHM_SendOutputReport(DeviceContext, Ds3OutputReportSourcePassThrough);
-
-		status = STATUS_SUCCESS;
+			*ReportSize = written;
+		}
 	}
 
 	//

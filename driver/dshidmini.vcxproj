@@ -65,6 +65,7 @@
     <ClInclude Include="DsInternal.h" />
     <ClInclude Include="DsLed.h" />
     <ClInclude Include="DsMotion.h" />
+    <ClInclude Include="DsSxsOutput.h" />
     <ClInclude Include="DsUsb.h" />
     <ClInclude Include="HID.ReportHandlers.h" />
     <ClInclude Include="HID\01_SDF_Col1_GamePad.h" />
