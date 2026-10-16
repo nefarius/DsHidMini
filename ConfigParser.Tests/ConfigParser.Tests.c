@@ -7,6 +7,15 @@
 #include "DsMotionHid.h"
 #include "Configuration.Json.h"
 
+#ifndef STATUS_BUFFER_TOO_SMALL
+#define STATUS_BUFFER_TOO_SMALL ((NTSTATUS)0xC0000023L)
+#endif
+#ifndef STATUS_NOT_IMPLEMENTED
+#define STATUS_NOT_IMPLEMENTED ((NTSTATUS)0xC0000002L)
+#endif
+
+#include "DsSxsOutput.h"
+
 static int g_passed;
 static int g_failed;
 
@@ -857,6 +866,350 @@ TEST(DeriveRumble_InvalidRange_DisallowsRescale)
     return 0;
 }
 
+static void
+FillBytes(UCHAR* Buffer, ULONG Length, UCHAR Value)
+{
+    memset(Buffer, Value, Length);
+}
+
+static int
+ExpectUnchanged(const UCHAR* Unified, ULONG Length, UCHAR Value)
+{
+    ULONG index;
+
+    for (index = 0; index < Length; index++)
+    {
+        EXPECT(Unified[index] == Value);
+    }
+
+    return 0;
+}
+
+TEST(Sxs_RpcS3Envelope_CopiesBodyFromOffset3)
+{
+    UCHAR report[3 + DS_SXS_UNIFIED_OUTPUT_LENGTH];
+    UCHAR unified[DS_SXS_UNIFIED_OUTPUT_LENGTH];
+    UCHAR expect[DS_SXS_UNIFIED_OUTPUT_LENGTH];
+    ULONG index;
+    ULONG written = 0xFFFFFFFFu;
+    NTSTATUS status;
+
+    report[0] = 0x02;
+    report[1] = 0x00;
+    report[2] = 0x00;
+    for (index = 0; index < DS_SXS_UNIFIED_OUTPUT_LENGTH; index++)
+    {
+        expect[index] = (UCHAR)(0x10 + index);
+        report[3 + index] = expect[index];
+    }
+
+    FillBytes(unified, sizeof(unified), 0xA5);
+    status = DsSxsOutput_Apply(
+        report,
+        sizeof(report),
+        0x00,
+        FALSE,
+        unified,
+        sizeof(unified),
+        &written);
+
+    EXPECT_STATUS(status, STATUS_SUCCESS);
+    EXPECT(written == sizeof(report));
+    EXPECT(memcmp(unified, expect, sizeof(unified)) == 0);
+    return 0;
+}
+
+TEST(Sxs_ShortHidBuffer_DoesNotReadPastTheWrite)
+{
+    UCHAR report[48];
+    UCHAR unified[DS_SXS_UNIFIED_OUTPUT_LENGTH];
+    ULONG index;
+    ULONG written = 0;
+    NTSTATUS status;
+
+    report[0] = 0x02;
+    report[1] = 0x00;
+    report[2] = 0x00;
+    for (index = 3; index < sizeof(report); index++)
+    {
+        report[index] = (UCHAR)index;
+    }
+
+    FillBytes(unified, sizeof(unified), 0x5A);
+    status = DsSxsOutput_Apply(
+        report,
+        sizeof(report),
+        0x00,
+        FALSE,
+        unified,
+        sizeof(unified),
+        &written);
+
+    EXPECT_STATUS(status, STATUS_SUCCESS);
+    EXPECT(written == sizeof(report));
+    EXPECT(memcmp(unified, &report[3], 45) == 0);
+    EXPECT(unified[45] == 0x5A);
+    EXPECT(unified[46] == 0x5A);
+    EXPECT(unified[47] == 0x5A);
+    return 0;
+}
+
+TEST(Sxs_DriverLedAuthority_PreservesExistingBlock)
+{
+    UCHAR report[3 + DS_SXS_UNIFIED_OUTPUT_LENGTH];
+    UCHAR unified[DS_SXS_UNIFIED_OUTPUT_LENGTH];
+    UCHAR saved[DS_SXS_LED_BLOCK_LENGTH];
+    ULONG index;
+    ULONG written = 0;
+    NTSTATUS status;
+
+    EXPECT(DS_SXS_LED_BLOCK_OFFSET + DS_SXS_LED_BLOCK_LENGTH <= DS_SXS_UNIFIED_OUTPUT_LENGTH);
+
+    report[0] = 0x02;
+    report[1] = 0x00;
+    report[2] = 0x00;
+    for (index = 0; index < DS_SXS_UNIFIED_OUTPUT_LENGTH; index++)
+    {
+        report[3 + index] = 0x22;
+    }
+
+    FillBytes(unified, sizeof(unified), 0x10);
+    FillBytes(saved, sizeof(saved), 0x11);
+    memcpy(&unified[DS_SXS_LED_BLOCK_OFFSET], saved, sizeof(saved));
+
+    status = DsSxsOutput_Apply(
+        report,
+        sizeof(report),
+        0x00,
+        TRUE,
+        unified,
+        sizeof(unified),
+        &written);
+
+    EXPECT_STATUS(status, STATUS_SUCCESS);
+    EXPECT(memcmp(&unified[DS_SXS_LED_BLOCK_OFFSET], saved, sizeof(saved)) == 0);
+    EXPECT(unified[0] == 0x22);
+    EXPECT(unified[8] == 0x22);
+    EXPECT(unified[DS_SXS_LED_BLOCK_OFFSET + DS_SXS_LED_BLOCK_LENGTH] == 0x22);
+    return 0;
+}
+
+TEST(Sxs_ApplicationLedAuthority_OverwritesBlock)
+{
+    UCHAR report[3 + DS_SXS_UNIFIED_OUTPUT_LENGTH];
+    UCHAR unified[DS_SXS_UNIFIED_OUTPUT_LENGTH];
+    ULONG index;
+    ULONG written = 0;
+    NTSTATUS status;
+
+    report[0] = 0x02;
+    report[1] = 0x00;
+    report[2] = 0x00;
+    for (index = 0; index < DS_SXS_UNIFIED_OUTPUT_LENGTH; index++)
+    {
+        report[3 + index] = 0x22;
+    }
+
+    FillBytes(unified, sizeof(unified), 0x11);
+    status = DsSxsOutput_Apply(
+        report,
+        sizeof(report),
+        0x00,
+        FALSE,
+        unified,
+        sizeof(unified),
+        &written);
+
+    EXPECT_STATUS(status, STATUS_SUCCESS);
+    EXPECT(memcmp(unified, &report[3], sizeof(unified)) == 0);
+    return 0;
+}
+
+static int
+ExpectSteamMotors(const UCHAR* Unified, UCHAR SmallOn, UCHAR LargeForce, UCHAR LedFlags)
+{
+    EXPECT(Unified[0] == 0x00);
+    EXPECT(Unified[1] == 0xFF);
+    EXPECT(Unified[2] == SmallOn);
+    EXPECT(Unified[3] == 0xFF);
+    EXPECT(Unified[4] == LargeForce);
+    EXPECT(Unified[DS_SXS_LED_BLOCK_OFFSET] == LedFlags);
+    return 0;
+}
+
+TEST(Sxs_SteamPrefixed_StartsAndStopsMotors)
+{
+    UCHAR on[49];
+    UCHAR off[49];
+    UCHAR unified[DS_SXS_UNIFIED_OUTPUT_LENGTH];
+    ULONG written = 0;
+    NTSTATUS status;
+
+    FillBytes(on, sizeof(on), 0x00);
+    on[0] = 0x01;
+    on[1] = 0x01;
+    on[2] = 0xFF;
+    on[3] = 0x01;
+    on[4] = 0xFF;
+    on[5] = 0x80;
+    on[10] = 0x04;
+
+    FillBytes(unified, sizeof(unified), 0xA5);
+    status = DsSxsOutput_Apply(on, sizeof(on), 0x00, FALSE, unified, sizeof(unified), &written);
+    EXPECT_STATUS(status, STATUS_SUCCESS);
+    EXPECT(written == sizeof(on));
+    if (ExpectSteamMotors(unified, 0x01, 0x80, 0x04) != 0)
+    {
+        return 1;
+    }
+
+    FillBytes(off, sizeof(off), 0x00);
+    off[0] = 0x01;
+    off[1] = 0x01;
+    off[2] = 0xFF;
+    off[3] = 0x00;
+    off[4] = 0xFF;
+    off[5] = 0x00;
+    off[10] = 0x00;
+
+    status = DsSxsOutput_Apply(off, sizeof(off), 0x01, FALSE, unified, sizeof(unified), &written);
+    EXPECT_STATUS(status, STATUS_SUCCESS);
+    EXPECT(written == sizeof(off));
+    return ExpectSteamMotors(unified, 0x00, 0x00, 0x00);
+}
+
+TEST(Sxs_SteamAligned_MatchesPrefixedMotors)
+{
+    UCHAR report[48];
+    UCHAR unified[DS_SXS_UNIFIED_OUTPUT_LENGTH];
+    ULONG written = 0;
+    NTSTATUS status;
+
+    FillBytes(report, sizeof(report), 0x00);
+    report[0] = 0x01;
+    report[1] = 0xFF;
+    report[2] = 0x01;
+    report[3] = 0xFF;
+    report[4] = 0x80;
+    report[9] = 0x04;
+
+    FillBytes(unified, sizeof(unified), 0xA5);
+    status = DsSxsOutput_Apply(report, sizeof(report), 0x00, FALSE, unified, sizeof(unified), &written);
+    EXPECT_STATUS(status, STATUS_SUCCESS);
+    EXPECT(written == sizeof(report));
+    return ExpectSteamMotors(unified, 0x01, 0x80, 0x04);
+}
+
+TEST(Sxs_SteamPrefixed_DriverLedsStayPut)
+{
+    UCHAR report[49];
+    UCHAR unified[DS_SXS_UNIFIED_OUTPUT_LENGTH];
+    UCHAR saved[DS_SXS_LED_BLOCK_LENGTH];
+    ULONG written = 0;
+    NTSTATUS status;
+
+    FillBytes(report, sizeof(report), 0x00);
+    report[0] = 0x01;
+    report[1] = 0x01;
+    report[2] = 0xFF;
+    report[3] = 0x01;
+    report[4] = 0xFF;
+    report[5] = 0x80;
+    report[10] = 0x04;
+
+    FillBytes(unified, sizeof(unified), 0x10);
+    FillBytes(saved, sizeof(saved), 0x11);
+    memcpy(&unified[DS_SXS_LED_BLOCK_OFFSET], saved, sizeof(saved));
+
+    status = DsSxsOutput_Apply(report, sizeof(report), 0x00, TRUE, unified, sizeof(unified), &written);
+    EXPECT_STATUS(status, STATUS_SUCCESS);
+    EXPECT(unified[2] == 0x01);
+    EXPECT(unified[4] == 0x80);
+    EXPECT(memcmp(&unified[DS_SXS_LED_BLOCK_OFFSET], saved, sizeof(saved)) == 0);
+    return 0;
+}
+
+TEST(Sxs_TruncatedSteamPrefix_LeavesUnifiedUntouched)
+{
+    UCHAR report[4] = { 0x01, 0x01, 0xFF, 0x01 };
+    UCHAR unified[DS_SXS_UNIFIED_OUTPUT_LENGTH];
+    ULONG written = 0xFFFFFFFFu;
+    NTSTATUS status;
+
+    FillBytes(unified, sizeof(unified), 0x5A);
+    status = DsSxsOutput_Apply(report, sizeof(report), 0x00, FALSE, unified, sizeof(unified), &written);
+    EXPECT_STATUS(status, STATUS_BUFFER_TOO_SMALL);
+    EXPECT(written == 0xFFFFFFFFu);
+    return ExpectUnchanged(unified, sizeof(unified), 0x5A);
+}
+
+TEST(Sxs_TruncatedSteamAligned_LeavesUnifiedUntouched)
+{
+    UCHAR report[3] = { 0x01, 0xFF, 0x01 };
+    UCHAR unified[DS_SXS_UNIFIED_OUTPUT_LENGTH];
+    ULONG written = 0xFFFFFFFFu;
+    NTSTATUS status;
+
+    FillBytes(unified, sizeof(unified), 0x5A);
+    status = DsSxsOutput_Apply(report, sizeof(report), 0x00, FALSE, unified, sizeof(unified), &written);
+    EXPECT_STATUS(status, STATUS_BUFFER_TOO_SMALL);
+    EXPECT(written == 0xFFFFFFFFu);
+    return ExpectUnchanged(unified, sizeof(unified), 0x5A);
+}
+
+TEST(Sxs_LinuxStyleCommand_StaysOnPassthrough)
+{
+    UCHAR report[16];
+    UCHAR unified[DS_SXS_UNIFIED_OUTPUT_LENGTH];
+    ULONG written = 0;
+    NTSTATUS status;
+
+    FillBytes(report, sizeof(report), 0x00);
+    report[0] = 0x01;
+    report[1] = 0x00;
+    report[2] = 0xFF;
+    report[3] = 0x00;
+    report[4] = 0xFF;
+    report[5] = 0xAA;
+
+    FillBytes(unified, sizeof(unified), 0x5A);
+    status = DsSxsOutput_Apply(report, sizeof(report), 0x00, FALSE, unified, sizeof(unified), &written);
+    EXPECT_STATUS(status, STATUS_SUCCESS);
+    EXPECT(written == sizeof(report));
+    EXPECT(memcmp(unified, &report[3], sizeof(report) - 3) == 0);
+    EXPECT(unified[sizeof(report) - 3] == 0x5A);
+    return 0;
+}
+
+TEST(Sxs_UnknownReportId_DoesNotModifyUnified)
+{
+    UCHAR report[10];
+    UCHAR unified[DS_SXS_UNIFIED_OUTPUT_LENGTH];
+    ULONG written = 0xFFFFFFFFu;
+    NTSTATUS status;
+
+    FillBytes(report, sizeof(report), 0xAB);
+    FillBytes(unified, sizeof(unified), 0x5A);
+    status = DsSxsOutput_Apply(report, sizeof(report), 0x07, FALSE, unified, sizeof(unified), &written);
+    EXPECT_STATUS(status, STATUS_NOT_IMPLEMENTED);
+    EXPECT(written == 0xFFFFFFFFu);
+    return ExpectUnchanged(unified, sizeof(unified), 0x5A);
+}
+
+TEST(Sxs_ShortPassthrough_LeavesUnifiedUntouched)
+{
+    UCHAR report[2] = { 0x02, 0x00 };
+    UCHAR unified[DS_SXS_UNIFIED_OUTPUT_LENGTH];
+    ULONG written = 0xFFFFFFFFu;
+    NTSTATUS status;
+
+    FillBytes(unified, sizeof(unified), 0x5A);
+    status = DsSxsOutput_Apply(report, sizeof(report), 0x00, FALSE, unified, sizeof(unified), &written);
+    EXPECT_STATUS(status, STATUS_BUFFER_TOO_SMALL);
+    EXPECT(written == 0xFFFFFFFFu);
+    return ExpectUnchanged(unified, sizeof(unified), 0x5A);
+}
+
 int main(void)
 {
     printf("ConfigParser.Tests\n");
@@ -903,6 +1256,18 @@ int main(void)
     RUN(Parse_IpcEnabled_InvalidDocument_LeavesOutputUntouched);
     RUN(Parse_IpcEnabled_Duplicate_LeavesOutputUntouched);
     RUN(DeriveRumble_InvalidRange_DisallowsRescale);
+    RUN(Sxs_RpcS3Envelope_CopiesBodyFromOffset3);
+    RUN(Sxs_ShortHidBuffer_DoesNotReadPastTheWrite);
+    RUN(Sxs_DriverLedAuthority_PreservesExistingBlock);
+    RUN(Sxs_ApplicationLedAuthority_OverwritesBlock);
+    RUN(Sxs_SteamPrefixed_StartsAndStopsMotors);
+    RUN(Sxs_SteamAligned_MatchesPrefixedMotors);
+    RUN(Sxs_SteamPrefixed_DriverLedsStayPut);
+    RUN(Sxs_TruncatedSteamPrefix_LeavesUnifiedUntouched);
+    RUN(Sxs_TruncatedSteamAligned_LeavesUnifiedUntouched);
+    RUN(Sxs_LinuxStyleCommand_StaysOnPassthrough);
+    RUN(Sxs_UnknownReportId_DoesNotModifyUnified);
+    RUN(Sxs_ShortPassthrough_LeavesUnifiedUntouched);
 
     printf("%d passed, %d failed\n", g_passed, g_failed);
     return g_failed == 0 ? 0 : 1;

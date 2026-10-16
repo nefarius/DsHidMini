@@ -63,6 +63,9 @@
     <ClInclude Include="DsMotion.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DsSxsOutput.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="DsThirdPartyHid.h">
       <Filter>Header Files</Filter>
     </ClInclude>
