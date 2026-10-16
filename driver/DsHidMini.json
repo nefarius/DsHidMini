@@ -7,7 +7,6 @@
     "BluetoothOutputReportTransport": "Control",
     "IsOutputRateControlEnabled": true,
     "OutputRateControlPeriodMs": 150,
-    "IsOutputDeduplicatorEnabled": false,
     "WirelessIdleTimeoutPeriodMs": 300000,
     "QuickDisconnectCombo": {
       "IsEnabled": true,
@@ -369,7 +368,6 @@
       "DevicePairingMode": "Auto",
       "IsOutputRateControlEnabled": true,
       "OutputRateControlPeriodMs": 150,
-      "IsOutputDeduplicatorEnabled": false,
       "WirelessIdleTimeoutPeriodMs": 300000,
       "SDF": {
         "PressureExposureMode": "Default",
@@ -385,7 +383,6 @@
       "DevicePairingMode": "Auto",
       "IsOutputRateControlEnabled": true,
       "OutputRateControlPeriodMs": 150,
-      "IsOutputDeduplicatorEnabled": false,
       "WirelessIdleTimeoutPeriodMs": 300000,
       "SDF": {
         "PressureExposureMode": "Default",

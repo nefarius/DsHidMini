@@ -211,10 +211,22 @@
             <ContentControl>
                 <StackPanel>
                     <!--  LEDs mode selection  -->
-                    <ui:ToggleSwitch
-                        Margin="{StaticResource MyKey_NextLineSpacement}"
-                        Content="Allow apps and games to take over LEDs control"
-                        IsChecked="{Binding AllowLedsOverride}" />
+                    <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}"
+                               ToolTip="Automatic lets a game take over after it writes an output report. Driver always keeps the LEDs selected here. Application never applies driver LED patterns."
+                               ToolTipService.InitialShowDelay="200">
+                        <ui:TextBlock
+                            Style="{StaticResource SettingsFieldLabel}"
+                            VerticalAlignment="Center"
+                            DockPanel.Dock="Left"
+                            Text="LED control authority:" />
+                        <ComboBox
+                            VerticalAlignment="Center"
+                            DisplayMemberPath="Label"
+                            DockPanel.Dock="Right"
+                            ItemsSource="{Binding LedAuthorityOptions}"
+                            SelectedValue="{Binding LedAuthority}"
+                            SelectedValuePath="Authority" />
+                    </DockPanel>
                     <ui:InfoBar
                         Title="One LED"
                         Margin="{StaticResource MyKey_NextLineSpacement}"
@@ -297,11 +309,6 @@
                                         Margin="{StaticResource MyKey_NextLineSpacement}"
                                         Content="Enable LED"
                                         IsChecked="{Binding IsEnabled}" />
-                                    <ui:ToggleSwitch
-                                        x:Name="UseLEDEffects_Checkbox"
-                                        Margin="{StaticResource MyKey_NextLineSpacement}"
-                                        Content="Use advanced effects"
-                                        IsChecked="{Binding UseEffects}" />
                                     <Grid Style="{StaticResource SettingsSliderRow}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
@@ -480,6 +487,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <!--  Row 0: Labels  -->
                     <ui:TextBlock
@@ -496,68 +504,96 @@
                         Margin="4,0,4,8"
                         HorizontalAlignment="Center"
                         Text="Right Stick" />
-                    <!--  Row 1: DeadZone  -->
+                    <!--  Row 1: Apply dead zone  -->
                     <ui:TextBlock
                         Style="{StaticResource SettingsFieldLabel}"
                         Grid.Row="1"
+                        Grid.Column="0"
+                        Margin="0,6,12,6"
+                        HorizontalAlignment="Left"
+                        Text="Apply dead zone:"
+                        ToolTip="When off, the driver reports the raw stick position for that side."
+                        ToolTipService.InitialShowDelay="200" />
+                    <ui:ToggleSwitch
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        Margin="4,6"
+                        HorizontalAlignment="Center"
+                        IsChecked="{Binding ApplyLeftStickDeadZone}"
+                        ToolTip="When off, the driver reports the raw left stick position."
+                        ToolTipService.InitialShowDelay="200" />
+                    <ui:ToggleSwitch
+                        Grid.Row="1"
+                        Grid.Column="2"
+                        Margin="4,6"
+                        HorizontalAlignment="Center"
+                        IsChecked="{Binding ApplyRightStickDeadZone}"
+                        ToolTip="When off, the driver reports the raw right stick position."
+                        ToolTipService.InitialShowDelay="200" />
+                    <!--  Row 2: DeadZone  -->
+                    <ui:TextBlock
+                        Style="{StaticResource SettingsFieldLabel}"
+                        Grid.Row="2"
                         Grid.Column="0"
                         Margin="0,6,12,6"
                         HorizontalAlignment="Left"
                         Text="DeadZone (%):" />
                     <ui:NumberBox
-                        Grid.Row="1"
+                        Grid.Row="2"
                         Grid.Column="1"
                         Margin="4,6"
                         ClearButtonEnabled="False"
                         ClipToBounds="True"
+                        IsEnabled="{Binding ApplyLeftStickDeadZone}"
                         Maximum="142"
                         Minimum="0"
                         Value="{Binding LeftStickDeadZone, UpdateSourceTrigger=PropertyChanged}" />
                     <ui:NumberBox
-                        Grid.Row="1"
+                        Grid.Row="2"
                         Grid.Column="2"
                         Margin="4,6"
                         ClearButtonEnabled="False"
                         ClipToBounds="True"
+                        IsEnabled="{Binding ApplyRightStickDeadZone}"
                         Maximum="142"
                         Minimum="0"
                         Value="{Binding RightStickDeadZone, UpdateSourceTrigger=PropertyChanged}" />
-                    <!--  Row 2: Invert X  -->
+                    <!--  Row 3: Invert X  -->
                     <ui:TextBlock
                         Style="{StaticResource SettingsFieldLabel}"
-                        Grid.Row="2"
+                        Grid.Row="3"
                         Grid.Column="0"
                         Margin="0,6,12,6"
                         HorizontalAlignment="Left"
                         Text="Invert horizontally (X-Axis):" />
                     <ui:ToggleSwitch
-                        Grid.Row="2"
+                        Grid.Row="3"
                         Grid.Column="1"
                         Margin="4,6"
                         HorizontalAlignment="Center"
                         IsChecked="{Binding InvertLSX}" />
                     <ui:ToggleSwitch
-                        Grid.Row="2"
+                        Grid.Row="3"
                         Grid.Column="2"
                         Margin="4,6"
                         HorizontalAlignment="Center"
                         IsChecked="{Binding InvertRSX}" />
-                    <!--  Row 3: Invert Y  -->
+                    <!--  Row 4: Invert Y  -->
                     <ui:TextBlock
                         Style="{StaticResource SettingsFieldLabel}"
-                        Grid.Row="3"
+                        Grid.Row="4"
                         Grid.Column="0"
                         Margin="0,6,12,6"
                         HorizontalAlignment="Left"
                         Text="Invert vertically (Y-Axis):" />
                     <ui:ToggleSwitch
-                        Grid.Row="3"
+                        Grid.Row="4"
                         Grid.Column="1"
                         Margin="4,6"
                         HorizontalAlignment="Center"
                         IsChecked="{Binding InvertLSY}" />
                     <ui:ToggleSwitch
-                        Grid.Row="3"
+                        Grid.Row="4"
                         Grid.Column="2"
                         Margin="4,6"
                         HorizontalAlignment="Center"
@@ -677,13 +713,6 @@
                         TickFrequency="1"
                         Value="{Binding MaxOutputRate}" />
                 </Grid>
-                <!--  Output report detuplicator  -->
-                <ui:ToggleSwitch
-                    Margin="{StaticResource MyKey_NextLineSpacement}"
-                    VerticalContentAlignment="Center"
-                    Content="Enable output report deduplicator"
-                    DockPanel.Dock="Top"
-                    IsChecked="{Binding IsOutputReportDeduplicatorEnabled}" />
                 <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}" DockPanel.Dock="Top">
                     <ui:TextBlock
                         Style="{StaticResource SettingsFieldLabel}"

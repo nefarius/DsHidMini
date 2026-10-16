@@ -1,4 +1,5 @@
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
+using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.Util;
 using Nefarius.DsHidMini.ControlApp.ViewModels.UserControls;
 using Nefarius.DsHidMini.ControlApp.ViewModels.UserControls.DeviceSettings;
@@ -36,7 +37,10 @@ public class SettingsCopyAndBindingTests
         original.Wireless.IsWirelessIdleDisconnectEnabled = false;
         original.Wireless.WirelessIdleDisconnectTime = 120000;
         original.Sticks.LeftStickData.DeadZone = 20;
+        original.Sticks.LeftStickData.IsDeadZoneEnabled = false;
+        original.Sticks.RightStickData.IsDeadZoneEnabled = true;
         original.Sticks.RightStickData.InvertYAxis = true;
+        original.LEDs.LedAuthority = DSHM_LEDsAuthority.Application;
         original.GeneralRumble.AlwaysStartInNormalMode = true;
         original.GeneralRumble.IsAltRumbleModeEnabled = true;
         original.GeneralRumble.AltModeToggleButtonCombo.IsEnabled = true;
@@ -56,7 +60,10 @@ public class SettingsCopyAndBindingTests
         Assert.Equal(original.Wireless.IsWirelessIdleDisconnectEnabled, copy.Wireless.IsWirelessIdleDisconnectEnabled);
         Assert.Equal(original.Wireless.WirelessIdleDisconnectTime, copy.Wireless.WirelessIdleDisconnectTime);
         Assert.Equal(original.Sticks.LeftStickData.DeadZone, copy.Sticks.LeftStickData.DeadZone);
+        Assert.False(copy.Sticks.LeftStickData.IsDeadZoneEnabled);
+        Assert.True(copy.Sticks.RightStickData.IsDeadZoneEnabled);
         Assert.Equal(original.Sticks.RightStickData.InvertYAxis, copy.Sticks.RightStickData.InvertYAxis);
+        Assert.Equal(DSHM_LEDsAuthority.Application, copy.LEDs.LedAuthority);
         Assert.Equal(original.GeneralRumble.AlwaysStartInNormalMode, copy.GeneralRumble.AlwaysStartInNormalMode);
         Assert.True(copy.GeneralRumble.IsAltModeToggleButtonComboEnabled);
         Assert.Equal(original.OutputReport.MaxOutputRate, copy.OutputReport.MaxOutputRate);

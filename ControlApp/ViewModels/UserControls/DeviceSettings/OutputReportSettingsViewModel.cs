@@ -30,16 +30,6 @@ public class OutputReportSettingsViewModel : DeviceSettingsViewModel
         }
     }
 
-    public bool IsOutputReportDeduplicatorEnabled
-    {
-        get => _tempBackingData.IsOutputReportDeduplicatorEnabled;
-        set
-        {
-            _tempBackingData.IsOutputReportDeduplicatorEnabled = value;
-            OnPropertyChanged();
-        }
-    }
-
     public UsbOutputReportTransport UsbOutputReportTransport
     {
         get => _tempBackingData.UsbOutputReportTransport;

@@ -145,8 +145,7 @@ public class DshmManagerToDriverConversion
         DshmDeviceSettings.AllLEDSettings dshm_AllLEDsSettings = driverFormat.ContextSettings.LEDSettings;
 
         dshm_AllLEDsSettings.Mode = LedModeManagerToDriver[x_Leds.LeDMode];
-        dshm_AllLEDsSettings.Authority =
-            x_Leds.AllowExternalLedsControl ? DSHM_LEDsAuthority.Automatic : DSHM_LEDsAuthority.Driver;
+        dshm_AllLEDsSettings.Authority = x_Leds.LedAuthority;
 
         if (x_Leds.LeDMode is LEDsMode.CustomPattern or LEDsMode.CustomStatic)
         {
@@ -254,7 +253,7 @@ public class DshmManagerToDriverConversion
 
         if (driverFormat.ContextSettings.LEDSettings.Authority is { } authority)
         {
-            appFormat.LEDs.AllowExternalLedsControl = authority != DSHM_LEDsAuthority.Driver;
+            appFormat.LEDs.LedAuthority = authority;
         }
 
         ReadCustomLedPatterns(driverFormat.ContextSettings.LEDSettings, appFormat.LEDs);
