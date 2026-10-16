@@ -66,11 +66,11 @@
                         Visibility="{Binding IsGroupLocked, Converter={StaticResource BoolToVis_TC_FV}}" />
                     <!--  Warning when settings are locked for specific mode  -->
                     <ui:InfoBar
-                        Title="Settings locked"
+                        Title="Unavailable with the current configuration"
                         DockPanel.Dock="Top"
                         IsClosable="False"
                         IsOpen="{Binding IsGroupLocked}"
-                        Message="Settings locked by another option to prevent conflicts"
+                        Message="{Binding LockReason}"
                         Severity="Informational" />
                 </DockPanel>
             </ui:Card>

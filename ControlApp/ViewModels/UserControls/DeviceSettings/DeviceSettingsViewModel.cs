@@ -29,7 +29,10 @@ public abstract partial class DeviceSettingsViewModel : ObservableObject
     private List<string> _controlAppProfiles = new() { "profile 1", "profile 2", "profile 3" };
 
     [ObservableProperty]
-    private bool _isGroupLocked;
+    [NotifyPropertyChangedFor(nameof(IsGroupLocked))]
+    private string _lockReason = string.Empty;
+
+    public bool IsGroupLocked => !string.IsNullOrWhiteSpace(LockReason);
 
     [ObservableProperty]
     private bool _isGroupVisible = true;

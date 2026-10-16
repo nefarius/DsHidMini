@@ -81,6 +81,12 @@ public partial class SettingsEditorViewModel : ObservableObject
 
     public bool HasDeviceCapabilityNote => !string.IsNullOrEmpty(DeviceCapabilityNote);
 
+    public const string Ds4wStickLockReason =
+        "Stick dead zones and axis inversion stay off while \"Prevent remapping issues in DS4W mode\" is enabled. Turn that option off under HID Mode to let the driver apply these adjustments.";
+
+    public const string SxsRumbleLockReason =
+        "SXS passes rumble commands directly to the controller, so these driver-side rumble settings have no effect. Select another HID emulation mode to change them.";
+
     public void ApplyDeviceCapabilities(DsDeviceType deviceType)
     {
         _deviceType = deviceType;
@@ -111,22 +117,22 @@ public partial class SettingsEditorViewModel : ObservableObject
     {
         foreach (DeviceSettingsViewModel group in groupSettingsList)
         {
-            group.IsGroupLocked = false;
+            group.LockReason = string.Empty;
             group.IsGroupVisible = true;
         }
 
-        if (HidModeVM.Context == SettingsContext.DS4W)
+        if (HidModeVM.Context == SettingsContext.DS4W && HidModeVM.PreventRemappingConflictsInDS4WMode)
         {
-            SticksSettingsVM.IsGroupLocked = HidModeVM.PreventRemappingConflictsInDS4WMode;
+            SticksSettingsVM.LockReason = Ds4wStickLockReason;
         }
 
         if (HidModeVM.Context == SettingsContext.SXS)
         {
             // Rumble related settings currently don't matter in SXS mode
             // rumble instructions are directly passthru to the controller
-            GeneralRumbleSettingsVM.IsGroupLocked = true;
-            LeftMotorRescaleSettingsVM.IsGroupLocked = true;
-            AltRumbleSettingsVM.IsGroupLocked = true;
+            GeneralRumbleSettingsVM.LockReason = SxsRumbleLockReason;
+            LeftMotorRescaleSettingsVM.LockReason = SxsRumbleLockReason;
+            AltRumbleSettingsVM.LockReason = SxsRumbleLockReason;
         }
 
         if (HideRumbleSettings)
