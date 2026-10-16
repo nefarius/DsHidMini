@@ -1,6 +1,8 @@
 ﻿using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 
+using DSHM_LEDsAuthority = Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.Enums.DSHM_LEDsAuthority;
+
 using static Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.LedsSettings.All4LEDsCustoms;
 
 namespace Nefarius.DsHidMini.ControlApp.ViewModels.UserControls.DeviceSettings;
@@ -44,15 +46,22 @@ public partial class LedsSettingsViewModel : DeviceSettingsViewModel
 
     protected override DeviceSubSettings _mySubSetting => _tempBackingData;
 
-    public bool AllowLedsOverride
+    public DSHM_LEDsAuthority LedAuthority
     {
-        get => _tempBackingData.AllowExternalLedsControl;
+        get => _tempBackingData.LedAuthority;
         set
         {
-            _tempBackingData.AllowExternalLedsControl = value;
+            _tempBackingData.LedAuthority = value;
             OnPropertyChanged();
         }
     }
+
+    public IReadOnlyList<LedAuthorityOption> LedAuthorityOptions { get; } =
+    [
+        new(DSHM_LEDsAuthority.Automatic, "Automatic — games can take over"),
+        new(DSHM_LEDsAuthority.Driver, "Driver — keep the configured LEDs"),
+        new(DSHM_LEDsAuthority.Application, "Application — only games control the LEDs")
+    ];
 
     partial void OnCurrentLEDCustomsIndexChanged(int value)
     {
@@ -103,16 +112,6 @@ public partial class LedsSettingsViewModel : DeviceSettingsViewModel
             }
         }
 
-        public bool UseEffects
-        {
-            get => singleLEDCustoms.UseLEDEffects;
-            set
-            {
-                singleLEDCustoms.UseLEDEffects = value;
-                OnPropertyChanged();
-            }
-        }
-
         public byte Duration
         {
             get => singleLEDCustoms.Duration;
@@ -159,4 +158,11 @@ public partial class LedsSettingsViewModel : DeviceSettingsViewModel
             OnPropertyChanged(string.Empty);
         }
     }
+}
+
+public sealed class LedAuthorityOption(DSHM_LEDsAuthority authority, string label)
+{
+    public DSHM_LEDsAuthority Authority { get; } = authority;
+
+    public string Label { get; } = label;
 }

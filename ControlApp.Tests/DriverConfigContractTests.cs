@@ -4,6 +4,9 @@ using System.Security.Principal;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.Enums;
@@ -299,6 +302,102 @@ public class DriverConfigContractTests
         DeviceSettings restored = new();
         DshmManagerToDriverConversion.ConvertDriverFormatToDeviceSettings(parsed.Global, restored);
         Assert.Equal(transport, restored.OutputReport.BluetoothOutputReportTransport);
+    }
+
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public void RoundTrip_DeadZoneApply_PreservesEachStick(bool leftApply, bool rightApply)
+    {
+        DeviceSettings original = new();
+        original.Sticks.LeftStickData.IsDeadZoneEnabled = leftApply;
+        original.Sticks.RightStickData.IsDeadZoneEnabled = rightApply;
+
+        DshmDeviceSettings driver = new();
+        DshmManagerToDriverConversion.ConvertDeviceSettingsToDriverFormat(original, driver);
+        string json = DshmConfigSerialization.Serialize(new DshmConfiguration { Global = driver });
+        JsonNode mode = JsonNode.Parse(json)!["Global"]!["XInput"]!;
+        Assert.Equal(leftApply, mode["DeadZoneLeft"]!["Apply"]!.GetValue<bool>());
+        Assert.Equal(rightApply, mode["DeadZoneRight"]!["Apply"]!.GetValue<bool>());
+
+        DshmConfiguration parsed = DshmConfigSerialization.Deserialize(json);
+        DeviceSettings restored = new();
+        DshmManagerToDriverConversion.ConvertDriverFormatToDeviceSettings(parsed.Global, restored);
+        Assert.Equal(leftApply, restored.Sticks.LeftStickData.IsDeadZoneEnabled);
+        Assert.Equal(rightApply, restored.Sticks.RightStickData.IsDeadZoneEnabled);
+    }
+
+    [Theory]
+    [InlineData(DSHM_LEDsAuthority.Automatic, "Automatic")]
+    [InlineData(DSHM_LEDsAuthority.Driver, "Driver")]
+    [InlineData(DSHM_LEDsAuthority.Application, "Application")]
+    public void RoundTrip_LedAuthority_PreservesValue(DSHM_LEDsAuthority authority, string expectedName)
+    {
+        DeviceSettings original = new();
+        original.LEDs.LedAuthority = authority;
+
+        DshmDeviceSettings driver = new();
+        DshmManagerToDriverConversion.ConvertDeviceSettingsToDriverFormat(original, driver);
+        Assert.Equal(authority, driver.ContextSettings.LEDSettings.Authority);
+
+        string json = DshmConfigSerialization.Serialize(new DshmConfiguration { Global = driver });
+        JsonNode leds = JsonNode.Parse(json)!["Global"]!["XInput"]!["LEDSettings"]!;
+        Assert.Equal(expectedName, leds["Authority"]!.GetValue<string>());
+
+        DshmConfiguration parsed = DshmConfigSerialization.Deserialize(json);
+        DeviceSettings restored = new();
+        DshmManagerToDriverConversion.ConvertDriverFormatToDeviceSettings(parsed.Global, restored);
+        Assert.Equal(authority, restored.LEDs.LedAuthority);
+    }
+
+    [Fact]
+    public void Deserialize_MissingLedAuthority_KeepsAutomatic()
+    {
+        const string json = """
+            {
+              "Global": {
+                "HidDeviceMode": "XInput",
+                "XInput": { "LEDSettings": { "Mode": "BatteryIndicatorPlayerIndex" } }
+              }
+            }
+            """;
+
+        DshmConfiguration parsed = DshmConfigSerialization.Deserialize(json);
+        DeviceSettings restored = new();
+        DshmManagerToDriverConversion.ConvertDriverFormatToDeviceSettings(parsed.Global, restored);
+        Assert.Equal(DSHM_LEDsAuthority.Automatic, restored.LEDs.LedAuthority);
+    }
+
+    [Theory]
+    [InlineData(true, DSHM_LEDsAuthority.Automatic)]
+    [InlineData(false, DSHM_LEDsAuthority.Driver)]
+    public void Deserialize_LegacyAllowExternalLedsControl_MapsToAuthority(
+        bool allowExternal,
+        DSHM_LEDsAuthority expected)
+    {
+        string json = "{\"LEDs\":{\"AllowExternalLedsControl\":" + (allowExternal ? "true" : "false") + "}}";
+        DeviceSettings loaded = DeserializeUserSettings(json);
+        Assert.Equal(expected, loaded.LEDs.LedAuthority);
+
+        string saved = JsonConvert.SerializeObject(loaded, new JsonSerializerSettings
+        {
+            Converters = { new StringEnumConverter() }
+        });
+        Assert.Contains($"\"LedAuthority\":\"{expected}\"", saved, StringComparison.Ordinal);
+        Assert.DoesNotContain("AllowExternalLedsControl", saved, StringComparison.Ordinal);
+
+        DeviceSettings reloaded = DeserializeUserSettings(saved);
+        Assert.Equal(expected, reloaded.LEDs.LedAuthority);
+    }
+
+    [Fact]
+    public void Deserialize_ExplicitLedAuthority_WinsOverLegacyBoolean()
+    {
+        DeviceSettings loaded = DeserializeUserSettings("""
+            {"LEDs":{"LedAuthority":"Application","AllowExternalLedsControl":false}}
+            """);
+
+        Assert.Equal(DSHM_LEDsAuthority.Application, loaded.LEDs.LedAuthority);
     }
 
     [Fact]
@@ -808,6 +907,16 @@ public class DriverConfigContractTests
                 // The denial ACL can outlive the assertion. Leaving the temp directory is safer than failing cleanup.
             }
         }
+    }
+
+    private static DeviceSettings DeserializeUserSettings(string json)
+    {
+        JsonSerializerSettings settings = new()
+        {
+            Error = (_, args) => args.ErrorContext.Handled = true
+        };
+        return JsonConvert.DeserializeObject<DeviceSettings>(json, settings)
+               ?? throw new InvalidOperationException("User settings JSON deserialized to null.");
     }
 
     private static string SerializeDefaultProfile(SettingsContext context)

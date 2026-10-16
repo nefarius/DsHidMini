@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
@@ -126,10 +127,34 @@ public class HidModeSettings : DeviceSubSettings
 
 public class LedsSettings : DeviceSubSettings
 {
+    private bool _ledAuthorityWasInJson;
+
+    [Newtonsoft.Json.JsonIgnore]
+    public DSHM_LEDsAuthority LedAuthority { get; set; } = DSHM_LEDsAuthority.Automatic;
+
     public LEDsMode LeDMode { get; set; } = LEDsMode.BatteryIndicatorPlayerIndex;
-    public bool AllowExternalLedsControl { get; set; }
     public All4LEDsCustoms LEDsCustoms { get; set; } = new();
 
+    [Newtonsoft.Json.JsonProperty("LedAuthority")]
+    private DSHM_LEDsAuthority? PersistedLedAuthority
+    {
+        get => LedAuthority;
+        set
+        {
+            if (value is not { } authority)
+            {
+                return;
+            }
+
+            LedAuthority = authority;
+            _ledAuthorityWasInJson = true;
+        }
+    }
+
+    // User data written before the three-way authority stored this as a bool.
+    [Newtonsoft.Json.JsonProperty("AllowExternalLedsControl",
+        NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+    private bool? LegacyAllowExternalLedsControl { get; set; }
 
     public override void ResetToDefault()
     {
@@ -143,8 +168,22 @@ public class LedsSettings : DeviceSubSettings
     public static void CopySettings(LedsSettings destiny, LedsSettings source)
     {
         destiny.LeDMode = source.LeDMode;
-        destiny.AllowExternalLedsControl = source.AllowExternalLedsControl;
+        destiny.LedAuthority = source.LedAuthority;
         destiny.LEDsCustoms.CopyLEDsCustoms(source.LEDsCustoms);
+    }
+
+    [OnDeserialized]
+    private void ApplyLegacyLedAuthority(StreamingContext _)
+    {
+        if (!_ledAuthorityWasInJson && LegacyAllowExternalLedsControl is bool allowExternal)
+        {
+            LedAuthority = allowExternal
+                ? DSHM_LEDsAuthority.Automatic
+                : DSHM_LEDsAuthority.Driver;
+        }
+
+        LegacyAllowExternalLedsControl = null;
+        _ledAuthorityWasInJson = false;
     }
 
     public class All4LEDsCustoms
@@ -188,7 +227,6 @@ public class LedsSettings : DeviceSubSettings
             public int LEDIndex { get; }
 
             public bool IsLedEnabled { get; set; }
-            public bool UseLEDEffects { get; set; }
 
             public byte Duration { get; set; }
             public int CycleDuration { get; set; } = 0x4000;
@@ -203,7 +241,6 @@ public class LedsSettings : DeviceSubSettings
             public void CopyCustoms(singleLEDCustoms copySource)
             {
                 IsLedEnabled = copySource.IsLedEnabled;
-                UseLEDEffects = copySource.UseLEDEffects;
                 Duration = copySource.Duration;
                 CycleDuration = copySource.CycleDuration;
                 OnPeriodCycles = copySource.OnPeriodCycles;
@@ -324,7 +361,6 @@ public class OutputReportSettings : DeviceSubSettings
 {
     public bool IsOutputReportRateControlEnabled { get; set; } = true;
     public int MaxOutputRate { get; set; } = 150;
-    public bool IsOutputReportDeduplicatorEnabled { get; set; }
     public UsbOutputReportTransport UsbOutputReportTransport { get; set; } =
         UsbOutputReportTransport.Auto;
     public BluetoothOutputReportTransport BluetoothOutputReportTransport { get; set; } =
@@ -341,7 +377,6 @@ public class OutputReportSettings : DeviceSubSettings
 
     public static void CopySettings(OutputReportSettings destiny, OutputReportSettings source)
     {
-        destiny.IsOutputReportDeduplicatorEnabled = source.IsOutputReportDeduplicatorEnabled;
         destiny.IsOutputReportRateControlEnabled = source.IsOutputReportRateControlEnabled;
         destiny.MaxOutputRate = source.MaxOutputRate;
         destiny.UsbOutputReportTransport = source.UsbOutputReportTransport;
