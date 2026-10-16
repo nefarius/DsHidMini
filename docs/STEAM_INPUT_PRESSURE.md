@@ -35,8 +35,8 @@ that only reads digital buttons or XInput triggers.
 
 ## What Steam does with SXS mode
 
-SXS is the mode Steam already treats as a DualShock 3. ControlApp labels
-it `SXS (Steam, RPCS3, PCSX2 Qt-Edition)`. The 12-byte DirectInput
+Steam recognizes the SXS layout as a PlayStation 3 controller. ControlApp labels
+it `SXS (RPCS3, PCSX2 Qt-Edition)`. The 12-byte DirectInput
 joystick report is only half of that compatibility: Steam's SDL HIDAPI
 path (`HIDAPI_DriverPS3SonySixaxis` in
 [`SDL_hidapi_ps3.c`](https://github.com/libsdl-org/SDL/blob/main/src/joystick/hidapi/SDL_hidapi_ps3.c))
@@ -65,10 +65,13 @@ Valve's published Steam Input documentation is aimed at game developers
 HID report that would make Steam Input bind twelve analog buttons. A new
 DsHidMini descriptor cannot add a source type Steam Input does not have.
 
-SXS remains the cleanest mode when you want Steam to treat the pad as a
-PlayStation controller and you do **not** need pressure in Steam Input.
-It also avoids the XInput-mode duplicate-device issue documented in
-[STEAM_GAMEINPUT_DUPLICATES.md](STEAM_GAMEINPUT_DUPLICATES.md).
+XInput is the recommended Steam mode. Steam recognizes SXS as a PlayStation 3
+controller, but in the tested SXS and SDF configurations Steam Input did not
+forward rumble to the pad. See
+[Steam, SXS, and rumble](https://docs.nefarius.at/projects/DsHidMini/v3/Steam-SXS-Rumble/).
+SXS also avoids the XInput-mode duplicate-device issue documented in
+[STEAM_GAMEINPUT_DUPLICATES.md](STEAM_GAMEINPUT_DUPLICATES.md), at the cost of
+that rumble.
 
 ## Pressure axes by HID mode
 
@@ -222,5 +225,7 @@ the `sixaxis.sys` layout staying byte-identical.
 - [SIXAXIS.md](SIXAXIS.md) — SXS digital button table and axis names
 - [STEAM_GAMEINPUT_DUPLICATES.md](STEAM_GAMEINPUT_DUPLICATES.md) — one
   XInput-mode pad listed twice in Steam
+- [Steam, SXS, and rumble](https://docs.nefarius.at/projects/DsHidMini/v3/Steam-SXS-Rumble/)
+  — why XInput is the Steam mode and why Steam Input stays silent on a PS3 type
 - [XINPUTHID.md](XINPUTHID.md) — XInput-compatible HID report
 - [docs.nefarius.at/projects/DsHidMini](https://docs.nefarius.at/projects/DsHidMini/)

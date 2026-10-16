@@ -128,8 +128,9 @@ public partial class SettingsViewModel : ObservableObject, INavigationAware
     }
 
     /// <summary>
-    ///     When enabled, SDL (and therefore Steam) selects the sixaxis.sys HIDAPI driver for
-    ///     054C:0268. SXS mode speaks that protocol. Steam must be fully restarted afterwards.
+    ///     When enabled, SDL3 programs (Steam among them) select the sixaxis.sys HIDAPI driver for
+    ///     054C:0268. SXS mode speaks that protocol. The program must be fully restarted afterwards.
+    ///     Steam Input rumble is not affected; use XInput mode for Steam.
     /// </summary>
     public bool SteamSixaxisDriver
     {

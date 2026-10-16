@@ -368,7 +368,7 @@ public enum DsHidDeviceMode : byte
     /// <summary>
     ///     SIXAXIS.SYS mode.
     /// </summary>
-    [Description("SXS (Steam, RPCS3, PCSX2 Qt-Edition)")]
+    [Description("SXS (RPCS3, PCSX2 Qt-Edition)")]
     SXS = 0x03,
 
     /// <summary>
@@ -380,7 +380,7 @@ public enum DsHidDeviceMode : byte
     /// <summary>
     ///     Xbox One Controller mode.
     /// </summary>
-    [Description("XInput (Xbox One)")]
+    [Description("XInput (Xbox One, Steam)")]
     XInput = 0x05,
 
     /// <summary>

@@ -76,17 +76,19 @@ that date the same log (back to 2026-06) showed XInput-only entries.
 
 ## Workarounds
 
-Until Steam ships an SDL build that includes `c4cfb739`, pick one:
+Until Steam ships an SDL build that includes `c4cfb739`, stay in XInput mode and pick one:
 
-1. **SXS mode** in ControlApp for Steam use. Steam has native DualShock 3
-   support in that layout, so the XInput / GameInput overlap does not exist.
-   This is the cleanest option.
-2. Uninstall **Microsoft GameInput** from Apps & Features. Steam then falls
+1. Uninstall **Microsoft GameInput** from Apps & Features. Steam then falls
    back to XInput-only enumeration, as it did before the redistributable
    arrived. A game that depends on GameInput may reinstall it later.
-3. In Steam, disable Steam Input for Xbox controllers (Settings > Controller).
+2. In Steam, disable Steam Input for Xbox controllers (Settings > Controller).
    Steam stops binding either entry; XInput games keep talking to the pad
-   directly.
+   directly, rumble included.
+
+Switching to **SXS mode** avoids the duplicate because Steam then sees a
+PlayStation 3 controller, but in the tested SXS and SDF configurations Steam
+Input did not forward rumble to the pad, so it trades one problem for another.
+See [Steam, SXS, and rumble](https://docs.nefarius.at/projects/DsHidMini/v3/Steam-SXS-Rumble/).
 
 Changing DsHidMini serials, container IDs, or HID descriptors will not merge
 the two Steam entries. No driver change is planned for this.
