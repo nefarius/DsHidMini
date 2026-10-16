@@ -12,6 +12,39 @@ public class AppSnackbarMessagesService
         _snackbarService = snackbarService;
     }
 
+    public void ShowSteamSixaxisHintSavedMessage()
+    {
+        _snackbarService.Show(
+            "Steam will use the SIXAXIS driver",
+            "Fully quit Steam, including the tray icon, and start it again. SXS controllers then get rumble and player LEDs.",
+            ControlAppearance.Success,
+            new SymbolIcon(SymbolRegular.CheckmarkCircle24),
+            TimeSpan.FromSeconds(8)
+        );
+    }
+
+    public void ShowSteamSixaxisHintClearedMessage()
+    {
+        _snackbarService.Show(
+            "Steam SIXAXIS driver turned off",
+            "Fully quit Steam and start it again for the change to apply.",
+            ControlAppearance.Secondary,
+            new SymbolIcon(SymbolRegular.Info24),
+            TimeSpan.FromSeconds(6)
+        );
+    }
+
+    public void ShowSteamSixaxisHintFailedMessage()
+    {
+        _snackbarService.Show(
+            "Couldn't update the Steam setting",
+            "The user environment variable could not be saved.",
+            ControlAppearance.Danger,
+            new SymbolIcon(SymbolRegular.DismissCircle24),
+            TimeSpan.FromSeconds(6)
+        );
+    }
+
     public void ShowDsHidMiniConfigurationUpdateSuccessMessage()
     {
         _snackbarService.Show(
