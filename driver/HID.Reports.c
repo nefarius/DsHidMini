@@ -276,6 +276,7 @@ DSHM_WriteReport(
 	// 
 	if (DeviceContext->Configuration.HidDeviceMode == DsHidMiniDeviceModeSixaxisCompatible)
 	{
+		DS_SXS_OUTPUT parsed = { 0 };
 		ULONG written = 0;
 		const NTSTATUS previousStatus = status;
 
@@ -288,35 +289,75 @@ DSHM_WriteReport(
 			&bufferSize
 		);
 
+		TraceVerbose(
+			TRACE_DSHIDMINIDRV,
+			"-- SXS write reportId: %d, reportBufferLen: %d",
+			Packet->reportId,
+			Packet->reportBufferLen
+		);
+
+		DumpAsHex("-- SXS write", Packet->reportBuffer, Packet->reportBufferLen);
+
 		//
-		// Report id 0 keeps the RPCS3/XInputBridge copy from byte 3.
-		// SDL's generic PS3 driver instead sends its effect image, with or
-		// without the extra leading report id. Both carry the DS3 small
-		// motor as on/off, which SendOutputReport records for ShanWan.
+		// Classify before taking LED ownership. sixaxis.sys command 2 with a
+		// full DS3 body (RPCS3, XInputBridge) still copies from byte 3.
+		// SDL's motor command has no LED body, so only the motor bytes move.
+		// Command 1 is player LEDs, not a motor image.
 		// 
-		status = DsSxsOutput_Apply(
+		status = DsSxsOutput_Inspect(
 			Packet->reportBuffer,
 			Packet->reportBufferLen,
 			Packet->reportId,
-			DsLed_IsDriverInCharge(DeviceContext),
-			buffer,
-			(ULONG)bufferSize,
-			&written
+			&parsed
 		);
 
 		if (status == STATUS_NOT_IMPLEMENTED)
 		{
 			status = previousStatus;
 		}
+		else if (NT_SUCCESS(status) && parsed.Kind == DsSxsOutputKindNoOutput)
+		{
+			*ReportSize = Packet->reportBufferLen;
+		}
 		else if (NT_SUCCESS(status))
 		{
+			static const DS_LED staticEffect = DS3_LED_EFFECT_STATIC;
+			static const DS_LED slowFlashEffect = DS3_LED_EFFECT_SLOW_FLASH;
+
 			//
-			// External output report overrides internal behaviour, keep note
+			// An application write ends driver-owned Automatic LEDs before
+			// the command is applied, matching the DS4Windows path. Driver
+			// authority stays in charge and the LED block is preserved.
 			// 
 			DeviceContext->OutputReport.Mode = Ds3OutputReportModeWriteReportPassThrough;
 
-			(void)DSHM_SendOutputReport(DeviceContext, Ds3OutputReportSourcePassThrough);
-			*ReportSize = written;
+			status = DsSxsOutput_Apply(
+				Packet->reportBuffer,
+				Packet->reportBufferLen,
+				Packet->reportId,
+				DsLed_IsDriverInCharge(DeviceContext),
+				buffer,
+				(ULONG)bufferSize,
+				&written,
+				&parsed
+			);
+
+			if (NT_SUCCESS(status)
+				&& parsed.Kind == DsSxsOutputKindLeds
+				&& !DsLed_IsDriverInCharge(DeviceContext))
+			{
+				DsLed_SetFlagsAndEffects(
+					DeviceContext,
+					parsed.LedFlags,
+					parsed.AnyFlashing ? &slowFlashEffect : &staticEffect
+				);
+			}
+
+			if (NT_SUCCESS(status))
+			{
+				(void)DSHM_SendOutputReport(DeviceContext, Ds3OutputReportSourcePassThrough);
+				*ReportSize = written;
+			}
 		}
 	}
 

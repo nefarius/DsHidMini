@@ -911,7 +911,8 @@ TEST(Sxs_RpcS3Envelope_CopiesBodyFromOffset3)
         FALSE,
         unified,
         sizeof(unified),
-        &written);
+        &written,
+        NULL);
 
     EXPECT_STATUS(status, STATUS_SUCCESS);
     EXPECT(written == sizeof(report));
@@ -943,7 +944,8 @@ TEST(Sxs_ShortHidBuffer_DoesNotReadPastTheWrite)
         FALSE,
         unified,
         sizeof(unified),
-        &written);
+        &written,
+        NULL);
 
     EXPECT_STATUS(status, STATUS_SUCCESS);
     EXPECT(written == sizeof(report));
@@ -984,7 +986,8 @@ TEST(Sxs_DriverLedAuthority_PreservesExistingBlock)
         TRUE,
         unified,
         sizeof(unified),
-        &written);
+        &written,
+        NULL);
 
     EXPECT_STATUS(status, STATUS_SUCCESS);
     EXPECT(memcmp(&unified[DS_SXS_LED_BLOCK_OFFSET], saved, sizeof(saved)) == 0);
@@ -1018,167 +1021,241 @@ TEST(Sxs_ApplicationLedAuthority_OverwritesBlock)
         FALSE,
         unified,
         sizeof(unified),
-        &written);
+        &written,
+        NULL);
 
     EXPECT_STATUS(status, STATUS_SUCCESS);
     EXPECT(memcmp(unified, &report[3], sizeof(unified)) == 0);
     return 0;
 }
 
-static int
-ExpectSteamMotors(const UCHAR* Unified, UCHAR SmallOn, UCHAR LargeForce, UCHAR LedFlags)
+static void
+FillMotorCommand(UCHAR* Report, ULONG Length, UCHAR SmallOn, UCHAR LargeForce)
 {
-    EXPECT(Unified[0] == 0x00);
-    EXPECT(Unified[1] == 0xFF);
-    EXPECT(Unified[2] == SmallOn);
-    EXPECT(Unified[3] == 0xFF);
-    EXPECT(Unified[4] == LargeForce);
-    EXPECT(Unified[DS_SXS_LED_BLOCK_OFFSET] == LedFlags);
-    return 0;
+    FillBytes(Report, Length, 0x00);
+    Report[0] = 0x02;
+    Report[4] = 0xFF;
+    Report[5] = SmallOn;
+    Report[6] = 0xFF;
+    Report[7] = LargeForce;
 }
 
-TEST(Sxs_SteamPrefixed_StartsAndStopsMotors)
+TEST(Sxs_XInputBridgeEnvelope_MatchesRpcS3Copy)
 {
-    UCHAR on[49];
-    UCHAR off[49];
+    UCHAR report[3 + DS_SXS_UNIFIED_OUTPUT_LENGTH];
     UCHAR unified[DS_SXS_UNIFIED_OUTPUT_LENGTH];
+    DS_SXS_OUTPUT parsed;
+    ULONG index;
     ULONG written = 0;
     NTSTATUS status;
 
-    FillBytes(on, sizeof(on), 0x00);
-    on[0] = 0x01;
-    on[1] = 0x01;
-    on[2] = 0xFF;
-    on[3] = 0x01;
-    on[4] = 0xFF;
-    on[5] = 0x80;
-    on[10] = 0x04;
-
-    FillBytes(unified, sizeof(unified), 0xA5);
-    status = DsSxsOutput_Apply(on, sizeof(on), 0x00, FALSE, unified, sizeof(unified), &written);
-    EXPECT_STATUS(status, STATUS_SUCCESS);
-    EXPECT(written == sizeof(on));
-    if (ExpectSteamMotors(unified, 0x01, 0x80, 0x04) != 0)
+    report[0] = 0x02;
+    report[1] = 0x00;
+    report[2] = 0x00;
+    for (index = 0; index < DS_SXS_UNIFIED_OUTPUT_LENGTH; index++)
     {
-        return 1;
+        report[3 + index] = (UCHAR)(0x40 + index);
     }
 
-    FillBytes(off, sizeof(off), 0x00);
-    off[0] = 0x01;
-    off[1] = 0x01;
-    off[2] = 0xFF;
-    off[3] = 0x00;
-    off[4] = 0xFF;
-    off[5] = 0x00;
-    off[10] = 0x00;
-
-    status = DsSxsOutput_Apply(off, sizeof(off), 0x01, FALSE, unified, sizeof(unified), &written);
+    FillBytes(unified, sizeof(unified), 0xA5);
+    status = DsSxsOutput_Apply(
+        report, sizeof(report), 0x00, FALSE, unified, sizeof(unified), &written, &parsed);
     EXPECT_STATUS(status, STATUS_SUCCESS);
-    EXPECT(written == sizeof(off));
-    return ExpectSteamMotors(unified, 0x00, 0x00, 0x00);
+    EXPECT(parsed.Kind == DsSxsOutputKindMotors);
+    EXPECT(parsed.HasFullBody == TRUE);
+    EXPECT(memcmp(unified, &report[3], sizeof(unified)) == 0);
+    return 0;
 }
 
-TEST(Sxs_SteamAligned_MatchesPrefixedMotors)
+TEST(Sxs_Command2MotorsOnly_LeavesLedBlockUntouched)
 {
     UCHAR report[48];
     UCHAR unified[DS_SXS_UNIFIED_OUTPUT_LENGTH];
+    DS_SXS_OUTPUT parsed;
     ULONG written = 0;
     NTSTATUS status;
+    BOOLEAN preserve;
 
-    FillBytes(report, sizeof(report), 0x00);
-    report[0] = 0x01;
-    report[1] = 0xFF;
-    report[2] = 0x01;
-    report[3] = 0xFF;
-    report[4] = 0x80;
-    report[9] = 0x04;
+    for (preserve = FALSE; preserve <= TRUE; preserve++)
+    {
+        FillMotorCommand(report, sizeof(report), 0x01, 0x80);
+        FillBytes(unified, sizeof(unified), 0xA5);
+        status = DsSxsOutput_Apply(
+            report, sizeof(report), 0x00, preserve, unified, sizeof(unified), &written, &parsed);
+        EXPECT_STATUS(status, STATUS_SUCCESS);
+        EXPECT(parsed.Kind == DsSxsOutputKindMotors);
+        EXPECT(parsed.HasFullBody == FALSE);
+        EXPECT(unified[0] == 0x00);
+        EXPECT(unified[1] == 0xFF);
+        EXPECT(unified[2] == 0x01);
+        EXPECT(unified[3] == 0xFF);
+        EXPECT(unified[4] == 0x80);
+        EXPECT(unified[5] == 0xA5);
+        EXPECT(unified[DS_SXS_LED_FLAGS_OFFSET] == 0xA5);
+        EXPECT(unified[47] == 0xA5);
 
-    FillBytes(unified, sizeof(unified), 0xA5);
-    status = DsSxsOutput_Apply(report, sizeof(report), 0x00, FALSE, unified, sizeof(unified), &written);
-    EXPECT_STATUS(status, STATUS_SUCCESS);
-    EXPECT(written == sizeof(report));
-    return ExpectSteamMotors(unified, 0x01, 0x80, 0x04);
-}
+        FillMotorCommand(report, sizeof(report), 0x00, 0x00);
+        status = DsSxsOutput_Apply(
+            report, sizeof(report), 0x00, preserve, unified, sizeof(unified), &written, &parsed);
+        EXPECT_STATUS(status, STATUS_SUCCESS);
+        EXPECT(unified[2] == 0x00);
+        EXPECT(unified[4] == 0x00);
+        EXPECT(unified[DS_SXS_LED_FLAGS_OFFSET] == 0xA5);
+    }
 
-TEST(Sxs_SteamPrefixed_DriverLedsStayPut)
-{
-    UCHAR report[49];
-    UCHAR unified[DS_SXS_UNIFIED_OUTPUT_LENGTH];
-    UCHAR saved[DS_SXS_LED_BLOCK_LENGTH];
-    ULONG written = 0;
-    NTSTATUS status;
-
-    FillBytes(report, sizeof(report), 0x00);
-    report[0] = 0x01;
-    report[1] = 0x01;
-    report[2] = 0xFF;
-    report[3] = 0x01;
-    report[4] = 0xFF;
-    report[5] = 0x80;
-    report[10] = 0x04;
-
-    FillBytes(unified, sizeof(unified), 0x10);
-    FillBytes(saved, sizeof(saved), 0x11);
-    memcpy(&unified[DS_SXS_LED_BLOCK_OFFSET], saved, sizeof(saved));
-
-    status = DsSxsOutput_Apply(report, sizeof(report), 0x00, TRUE, unified, sizeof(unified), &written);
-    EXPECT_STATUS(status, STATUS_SUCCESS);
-    EXPECT(unified[2] == 0x01);
-    EXPECT(unified[4] == 0x80);
-    EXPECT(memcmp(&unified[DS_SXS_LED_BLOCK_OFFSET], saved, sizeof(saved)) == 0);
     return 0;
 }
 
-TEST(Sxs_TruncatedSteamPrefix_LeavesUnifiedUntouched)
+static int
+ExpectLedEffect(const UCHAR* Unified, UCHAR LedIndex, const UCHAR Effect[5])
 {
-    UCHAR report[4] = { 0x01, 0x01, 0xFF, 0x01 };
-    UCHAR unified[DS_SXS_UNIFIED_OUTPUT_LENGTH];
-    ULONG written = 0xFFFFFFFFu;
-    NTSTATUS status;
+    const UCHAR slot = (UCHAR)(3 - LedIndex);
+    const ULONG offset = DS_SXS_LED_EFFECT_OFFSET + ((ULONG)slot * DS_SXS_LED_EFFECT_BYTES);
 
-    FillBytes(unified, sizeof(unified), 0x5A);
-    status = DsSxsOutput_Apply(report, sizeof(report), 0x00, FALSE, unified, sizeof(unified), &written);
-    EXPECT_STATUS(status, STATUS_BUFFER_TOO_SMALL);
-    EXPECT(written == 0xFFFFFFFFu);
-    return ExpectUnchanged(unified, sizeof(unified), 0x5A);
+    EXPECT(memcmp(&Unified[offset], Effect, DS_SXS_LED_EFFECT_BYTES) == 0);
+    return 0;
 }
 
-TEST(Sxs_TruncatedSteamAligned_LeavesUnifiedUntouched)
-{
-    UCHAR report[3] = { 0x01, 0xFF, 0x01 };
-    UCHAR unified[DS_SXS_UNIFIED_OUTPUT_LENGTH];
-    ULONG written = 0xFFFFFFFFu;
-    NTSTATUS status;
-
-    FillBytes(unified, sizeof(unified), 0x5A);
-    status = DsSxsOutput_Apply(report, sizeof(report), 0x00, FALSE, unified, sizeof(unified), &written);
-    EXPECT_STATUS(status, STATUS_BUFFER_TOO_SMALL);
-    EXPECT(written == 0xFFFFFFFFu);
-    return ExpectUnchanged(unified, sizeof(unified), 0x5A);
-}
-
-TEST(Sxs_LinuxStyleCommand_StaysOnPassthrough)
+TEST(Sxs_Command1_DecodesPlayerLedsAndFlash)
 {
     UCHAR report[16];
     UCHAR unified[DS_SXS_UNIFIED_OUTPUT_LENGTH];
+    DS_SXS_OUTPUT parsed;
+    ULONG written = 0;
+    NTSTATUS status;
+    UCHAR player;
+    static const UCHAR solid[5] = DS_SXS_EFFECT_STATIC;
+    static const UCHAR flash[5] = DS_SXS_EFFECT_SLOW_FLASH;
+    static const UCHAR none[5] = DS_SXS_EFFECT_NONE;
+    static const UCHAR bits[4] = { DS3_LED_1, DS3_LED_2, DS3_LED_3, DS3_LED_4 };
+
+    for (player = 0; player < 4; player++)
+    {
+        UCHAR led;
+
+        FillBytes(report, sizeof(report), 0x00);
+        report[0] = 0x01;
+        report[7 - player] = 0x01;
+        FillBytes(unified, sizeof(unified), 0xA5);
+        unified[0] = 0x11;
+        unified[4] = 0x22;
+
+        status = DsSxsOutput_Apply(
+            report, sizeof(report), 0x00, FALSE, unified, sizeof(unified), &written, &parsed);
+        EXPECT_STATUS(status, STATUS_SUCCESS);
+        EXPECT(parsed.Kind == DsSxsOutputKindLeds);
+        EXPECT(parsed.AnyFlashing == FALSE);
+        EXPECT(parsed.LedFlags == bits[player]);
+        EXPECT(unified[0] == 0x11);
+        EXPECT(unified[4] == 0x22);
+        EXPECT(unified[DS_SXS_LED_FLAGS_OFFSET] == bits[player]);
+
+        for (led = 0; led < 4; led++)
+        {
+            if (ExpectLedEffect(unified, led, led == player ? solid : none) != 0)
+            {
+                return 1;
+            }
+        }
+    }
+
+    FillBytes(report, sizeof(report), 0x00);
+    report[0] = 0x01;
+    report[7] = 0x02;
+    FillBytes(unified, sizeof(unified), 0xA5);
+    status = DsSxsOutput_Apply(
+        report, sizeof(report), 0x00, FALSE, unified, sizeof(unified), &written, &parsed);
+    EXPECT_STATUS(status, STATUS_SUCCESS);
+    EXPECT(parsed.AnyFlashing == TRUE);
+    EXPECT(unified[DS_SXS_LED_FLAGS_OFFSET] == DS3_LED_1);
+    return ExpectLedEffect(unified, 0, flash);
+}
+
+TEST(Sxs_Command1_DriverAuthorityLeavesLedsUntouched)
+{
+    UCHAR report[16];
+    UCHAR unified[DS_SXS_UNIFIED_OUTPUT_LENGTH];
+    DS_SXS_OUTPUT parsed;
     ULONG written = 0;
     NTSTATUS status;
 
     FillBytes(report, sizeof(report), 0x00);
     report[0] = 0x01;
-    report[1] = 0x00;
-    report[2] = 0xFF;
-    report[3] = 0x00;
-    report[4] = 0xFF;
-    report[5] = 0xAA;
+    report[7] = 0x01;
+    FillBytes(unified, sizeof(unified), 0x5C);
+    status = DsSxsOutput_Apply(
+        report, sizeof(report), 0x00, TRUE, unified, sizeof(unified), &written, &parsed);
+    EXPECT_STATUS(status, STATUS_SUCCESS);
+    EXPECT(parsed.Kind == DsSxsOutputKindLeds);
+    EXPECT(parsed.LedFlags == DS3_LED_1);
+    return ExpectUnchanged(unified, sizeof(unified), 0x5C);
+}
+
+TEST(Sxs_Command3_IsANoOp)
+{
+    UCHAR report[8] = { 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00 };
+    UCHAR unified[DS_SXS_UNIFIED_OUTPUT_LENGTH];
+    DS_SXS_OUTPUT parsed;
+    ULONG written = 0;
+    NTSTATUS status;
 
     FillBytes(unified, sizeof(unified), 0x5A);
-    status = DsSxsOutput_Apply(report, sizeof(report), 0x00, FALSE, unified, sizeof(unified), &written);
+    status = DsSxsOutput_Apply(
+        report, sizeof(report), 0x00, FALSE, unified, sizeof(unified), &written, &parsed);
     EXPECT_STATUS(status, STATUS_SUCCESS);
     EXPECT(written == sizeof(report));
+    EXPECT(parsed.Kind == DsSxsOutputKindNoOutput);
+    return ExpectUnchanged(unified, sizeof(unified), 0x5A);
+}
+
+TEST(Sxs_UnknownCommand_FallsBackToPassthrough)
+{
+    UCHAR report[16];
+    UCHAR unified[DS_SXS_UNIFIED_OUTPUT_LENGTH];
+    DS_SXS_OUTPUT parsed;
+    ULONG written = 0;
+    NTSTATUS status;
+
+    FillBytes(report, sizeof(report), 0x3C);
+    report[0] = 0x04;
+    FillBytes(unified, sizeof(unified), 0x5A);
+    status = DsSxsOutput_Apply(
+        report, sizeof(report), 0x00, FALSE, unified, sizeof(unified), &written, &parsed);
+    EXPECT_STATUS(status, STATUS_SUCCESS);
+    EXPECT(parsed.Kind == DsSxsOutputKindPassthrough);
     EXPECT(memcmp(unified, &report[3], sizeof(report) - 3) == 0);
     EXPECT(unified[sizeof(report) - 3] == 0x5A);
     return 0;
+}
+
+TEST(Sxs_TruncatedCommand2_LeavesUnifiedUntouched)
+{
+    UCHAR report[7] = { 0x02, 0x00, 0x00, 0x00, 0xFF, 0x01, 0xFF };
+    UCHAR unified[DS_SXS_UNIFIED_OUTPUT_LENGTH];
+    ULONG written = 0xFFFFFFFFu;
+    NTSTATUS status;
+
+    FillBytes(unified, sizeof(unified), 0x5A);
+    status = DsSxsOutput_Apply(
+        report, sizeof(report), 0x00, FALSE, unified, sizeof(unified), &written, NULL);
+    EXPECT_STATUS(status, STATUS_BUFFER_TOO_SMALL);
+    EXPECT(written == 0xFFFFFFFFu);
+    return ExpectUnchanged(unified, sizeof(unified), 0x5A);
+}
+
+TEST(Sxs_TruncatedCommand1_LeavesUnifiedUntouched)
+{
+    UCHAR report[5] = { 0x01, 0x00, 0x00, 0x00, 0x01 };
+    UCHAR unified[DS_SXS_UNIFIED_OUTPUT_LENGTH];
+    ULONG written = 0xFFFFFFFFu;
+    NTSTATUS status;
+
+    FillBytes(unified, sizeof(unified), 0x5A);
+    status = DsSxsOutput_Apply(
+        report, sizeof(report), 0x00, FALSE, unified, sizeof(unified), &written, NULL);
+    EXPECT_STATUS(status, STATUS_BUFFER_TOO_SMALL);
+    EXPECT(written == 0xFFFFFFFFu);
+    return ExpectUnchanged(unified, sizeof(unified), 0x5A);
 }
 
 TEST(Sxs_UnknownReportId_DoesNotModifyUnified)
@@ -1190,7 +1267,7 @@ TEST(Sxs_UnknownReportId_DoesNotModifyUnified)
 
     FillBytes(report, sizeof(report), 0xAB);
     FillBytes(unified, sizeof(unified), 0x5A);
-    status = DsSxsOutput_Apply(report, sizeof(report), 0x07, FALSE, unified, sizeof(unified), &written);
+    status = DsSxsOutput_Apply(report, sizeof(report), 0x07, FALSE, unified, sizeof(unified), &written, NULL);
     EXPECT_STATUS(status, STATUS_NOT_IMPLEMENTED);
     EXPECT(written == 0xFFFFFFFFu);
     return ExpectUnchanged(unified, sizeof(unified), 0x5A);
@@ -1204,7 +1281,7 @@ TEST(Sxs_ShortPassthrough_LeavesUnifiedUntouched)
     NTSTATUS status;
 
     FillBytes(unified, sizeof(unified), 0x5A);
-    status = DsSxsOutput_Apply(report, sizeof(report), 0x00, FALSE, unified, sizeof(unified), &written);
+    status = DsSxsOutput_Apply(report, sizeof(report), 0x00, FALSE, unified, sizeof(unified), &written, NULL);
     EXPECT_STATUS(status, STATUS_BUFFER_TOO_SMALL);
     EXPECT(written == 0xFFFFFFFFu);
     return ExpectUnchanged(unified, sizeof(unified), 0x5A);
@@ -1260,12 +1337,14 @@ int main(void)
     RUN(Sxs_ShortHidBuffer_DoesNotReadPastTheWrite);
     RUN(Sxs_DriverLedAuthority_PreservesExistingBlock);
     RUN(Sxs_ApplicationLedAuthority_OverwritesBlock);
-    RUN(Sxs_SteamPrefixed_StartsAndStopsMotors);
-    RUN(Sxs_SteamAligned_MatchesPrefixedMotors);
-    RUN(Sxs_SteamPrefixed_DriverLedsStayPut);
-    RUN(Sxs_TruncatedSteamPrefix_LeavesUnifiedUntouched);
-    RUN(Sxs_TruncatedSteamAligned_LeavesUnifiedUntouched);
-    RUN(Sxs_LinuxStyleCommand_StaysOnPassthrough);
+    RUN(Sxs_XInputBridgeEnvelope_MatchesRpcS3Copy);
+    RUN(Sxs_Command2MotorsOnly_LeavesLedBlockUntouched);
+    RUN(Sxs_Command1_DecodesPlayerLedsAndFlash);
+    RUN(Sxs_Command1_DriverAuthorityLeavesLedsUntouched);
+    RUN(Sxs_Command3_IsANoOp);
+    RUN(Sxs_UnknownCommand_FallsBackToPassthrough);
+    RUN(Sxs_TruncatedCommand2_LeavesUnifiedUntouched);
+    RUN(Sxs_TruncatedCommand1_LeavesUnifiedUntouched);
     RUN(Sxs_UnknownReportId_DoesNotModifyUnified);
     RUN(Sxs_ShortPassthrough_LeavesUnifiedUntouched);
 

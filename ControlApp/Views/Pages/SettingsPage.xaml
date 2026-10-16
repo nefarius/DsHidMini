@@ -62,6 +62,18 @@
 
             <CheckBox
                 Margin="0,16,0,8"
+                Content="Let Steam talk to SXS controllers natively"
+                IsChecked="{Binding ViewModel.SteamSixaxisDriver, Mode=TwoWay}"
+                ToolTip="Sets SDL_JOYSTICK_HIDAPI_PS3_SIXAXIS_DRIVER for your user account. Fully quit Steam, including the tray icon, and start it again. In SXS mode Steam then uses rumble and player LEDs. Steam's own tester shows Rumble only after SDL reports that capability."
+                ToolTipService.InitialShowDelay="200" />
+            <TextBlock
+                MaxWidth="600"
+                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                Text="When enabled, Steam opens an SXS controller through SDL's SIXAXIS driver instead of DirectInput. Rumble and player LEDs need that path. Quit Steam completely and start it again after changing this."
+                TextWrapping="Wrap" />
+
+            <CheckBox
+                Margin="0,16,0,8"
                 Content="Enable driver IPC"
                 IsChecked="{Binding ViewModel.IPCEnabled, Mode=TwoWay}"
                 IsEnabled="{Binding ViewModel.CanEditSharedConfiguration}"
