@@ -21,6 +21,28 @@
         <StackPanel
             Margin="0,0,0,8"
             DockPanel.Dock="Top"
+            Visibility="{Binding ViewModel.DeviceFault.HasFault, Converter={StaticResource BoolToVis_TV_FC}}">
+            <ui:InfoBar
+                Title="{Binding ViewModel.DeviceFault.StatusTitle}"
+                IsClosable="False"
+                IsOpen="True"
+                Message="{Binding ViewModel.DeviceFault.StatusMessage}"
+                Severity="{Binding ViewModel.DeviceFault.Severity}" />
+            <StackPanel
+                Margin="0,4,0,0"
+                Orientation="Horizontal">
+                <ui:Button
+                    Command="{Binding ViewModel.OpenDeviceManagerCommand}"
+                    Content="Open Device Manager" />
+                <ui:Button
+                    Margin="8,0,0,0"
+                    Command="{Binding ViewModel.OpenEventViewerCommand}"
+                    Content="Open Event Viewer" />
+            </StackPanel>
+        </StackPanel>
+        <StackPanel
+            Margin="0,0,0,8"
+            DockPanel.Dock="Top"
             Visibility="{Binding ViewModel.DriverStatus.IsRebootPending, Converter={StaticResource BoolToVis_TV_FC}}">
             <ui:InfoBar
                 Title="{Binding ViewModel.DriverStatus.StatusTitle}"

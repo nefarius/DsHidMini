@@ -289,7 +289,29 @@ NTSTATUS DsHidMini_EvtDeviceD0Entry(
 		//
 		ThirdPartyHid_ProbeOutputPath(pDevCtx);
 	}
-	
+	else
+	{
+		//
+		// This is the status WDF turns into a Device Manager problem
+		// (commonly Code 10). Lower-level events keep the root cause;
+		// this one records the failed power-up boundary itself.
+		//
+		TraceError(
+			TRACE_POWER,
+			"Device power-up failed, PreviousState=%d, ConnectionType=%d, status=%!STATUS!",
+			PreviousState,
+			pDevCtx->ConnectionType,
+			status
+		);
+
+		EventWriteDevicePowerUpFailed(
+			pDevCtx->DeviceAddressString,
+			(ULONG)PreviousState,
+			(ULONG)pDevCtx->ConnectionType,
+			status
+		);
+	}
+
 	FuncExit(TRACE_POWER, "status=%!STATUS!", status);
 
 	return status;

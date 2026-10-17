@@ -21,6 +21,7 @@ public class ApplicationHostService : IHostedService
 {
     private readonly DefenderBtStatusService _defenderBtStatusService;
     private readonly UnsupportedAdapterStatusService _unsupportedAdapterStatusService;
+    private readonly DsHidMiniDeviceFaultStatusService _deviceFaultStatusService;
     private readonly DshmDevMan _dshmDevMan;
     private readonly OnboardingCoordinator _onboardingCoordinator;
     private readonly IServiceProvider _serviceProvider;
@@ -31,12 +32,14 @@ public class ApplicationHostService : IHostedService
         DshmDevMan dshmDevMan,
         DefenderBtStatusService defenderBtStatusService,
         UnsupportedAdapterStatusService unsupportedAdapterStatusService,
+        DsHidMiniDeviceFaultStatusService deviceFaultStatusService,
         OnboardingCoordinator onboardingCoordinator)
     {
         _serviceProvider = serviceProvider;
         _dshmDevMan = dshmDevMan;
         _defenderBtStatusService = defenderBtStatusService;
         _unsupportedAdapterStatusService = unsupportedAdapterStatusService;
+        _deviceFaultStatusService = deviceFaultStatusService;
         _onboardingCoordinator = onboardingCoordinator;
     }
 
@@ -58,6 +61,7 @@ public class ApplicationHostService : IHostedService
         _dshmDevMan.StopListeningForDshmDevices();
         _defenderBtStatusService.StopListening();
         _unsupportedAdapterStatusService.StopListening();
+        _deviceFaultStatusService.StopListening();
         await Task.CompletedTask;
     }
 

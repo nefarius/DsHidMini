@@ -60,6 +60,7 @@ public static class DsHidMiniEvents
     public const string WirelessDisconnectEventNotFound = "WirelessDisconnectEventNotFound";
     public const string WirelessDisconnectIoctlCompleted = "WirelessDisconnectIoctlCompleted";
     public const string YieldingToWiredInstance = "YieldingToWiredInstance";
+    public const string DevicePowerUpFailed = "DevicePowerUpFailed";
 
     /// <summary>
     ///     Known DsHidMini failure or disconnect events. These must not count as
@@ -77,7 +78,8 @@ public static class DsHidMiniEvents
         WirelessDisconnectSignaled or
         WirelessDisconnectEventNotFound or
         WirelessDisconnectIoctlCompleted or
-        YieldingToWiredInstance => true,
+        YieldingToWiredInstance or
+        DevicePowerUpFailed => true,
         _ => false
     };
 }

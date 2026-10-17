@@ -62,6 +62,7 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
         DefenderBtStatusService defenderBt,
         UnsupportedAdapterStatusService unsupportedAdapter,
         DsHidMiniDriverStatusService driverStatus,
+        DsHidMiniDeviceFaultStatusService deviceFault,
         INavigationService navigationService,
         BluetoothDiagnosticSession bluetoothDiagnosticSession
     )
@@ -80,6 +81,7 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
         DefenderBt = defenderBt;
         UnsupportedAdapter = unsupportedAdapter;
         DriverStatus = driverStatus;
+        DeviceFault = deviceFault;
         _navigationService = navigationService;
         RefreshDevicesList();
     }
@@ -91,6 +93,50 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
     public UnsupportedAdapterStatusService UnsupportedAdapter { get; }
 
     public DsHidMiniDriverStatusService DriverStatus { get; }
+
+    public DsHidMiniDeviceFaultStatusService DeviceFault { get; }
+
+    [RelayCommand]
+    private void OpenDeviceManager()
+    {
+        try
+        {
+            using System.Diagnostics.Process? process = System.Diagnostics.Process.Start(
+                new System.Diagnostics.ProcessStartInfo("devmgmt.msc")
+                {
+                    UseShellExecute = true
+                });
+            if (process is null)
+            {
+                throw new InvalidOperationException("devmgmt.msc did not start.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Warning(ex, "Failed to open Device Manager.");
+        }
+    }
+
+    [RelayCommand]
+    private void OpenEventViewer()
+    {
+        try
+        {
+            using System.Diagnostics.Process? process = System.Diagnostics.Process.Start(
+                new System.Diagnostics.ProcessStartInfo("eventvwr.exe", "/c:System")
+                {
+                    UseShellExecute = true
+                });
+            if (process is null)
+            {
+                throw new InvalidOperationException("eventvwr.exe did not start.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Warning(ex, "Failed to open Event Viewer.");
+        }
+    }
 
     [RelayCommand]
     private async Task RestartNow()

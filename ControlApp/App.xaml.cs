@@ -92,6 +92,7 @@ public partial class App
             services.AddSingleton<DefenderBtStatusService>();
             services.AddSingleton<UnsupportedAdapterStatusService>();
             services.AddSingleton<DsHidMiniDriverStatusService>();
+            services.AddSingleton<DsHidMiniDeviceFaultStatusService>();
 
             services.AddSingleton<IPreflightProbe, BluetoothPreflightProbe>();
             services.AddSingleton<ITraceCapture, EtwDiagnosticTraceCapture>();
