@@ -83,6 +83,65 @@ public class DsHidMiniDeviceFaultPolicyTests
     }
 
     [Fact]
+    public void Code22_IsSelectedAndDescribedAsDisabled()
+    {
+        DsHidMiniDevNodeSnapshot node = Node("DS3 Compatible HID Device", "dshidmini.USB", problemCode: 22);
+
+        IReadOnlyList<DsHidMiniDevNodeSnapshot> faulted = DsHidMiniDeviceFaultPolicy.SelectFaulted([node]);
+        DsHidMiniDeviceFaultNotice? notice = DsHidMiniDeviceFaultPolicy.Describe(faulted);
+
+        Assert.Single(faulted);
+        Assert.NotNull(notice);
+        Assert.Equal("DS3 Compatible HID Device is disabled", notice!.Title);
+        Assert.Contains("This device is disabled. (Code 22)", notice.Message);
+        Assert.DoesNotContain("could not start", notice.Title);
+        Assert.DoesNotContain("could not start", notice.Message);
+        Assert.DoesNotContain("stays out of the device list", notice.Message);
+    }
+
+    [Fact]
+    public void MultipleDisabledDevices_AreDescribedAsDisabled()
+    {
+        DsHidMiniDevNodeSnapshot[] nodes =
+        [
+            Node("Wireless DS3", "dshidmini.BTH", problemCode: 22, instanceId: "BTHPS3BUS\\SECOND"),
+            Node("Wired DS3", "dshidmini.USB", problemCode: 22, instanceId: "USB\\FIRST")
+        ];
+
+        DsHidMiniDeviceFaultNotice? notice =
+            DsHidMiniDeviceFaultPolicy.Describe(DsHidMiniDeviceFaultPolicy.SelectFaulted(nodes));
+
+        Assert.NotNull(notice);
+        Assert.Equal("2 controllers are disabled", notice!.Title);
+        Assert.Contains("This device is disabled. (Code 22)", notice.Message);
+        Assert.Contains("1 other controller is also disabled.", notice.Message);
+        Assert.DoesNotContain("could not start", notice.Title);
+        Assert.DoesNotContain("failed to start", notice.Message);
+    }
+
+    [Fact]
+    public void MixedDisabledAndStartFailure_DescribesEachCategory()
+    {
+        DsHidMiniDevNodeSnapshot[] nodes =
+        [
+            Node("Wireless DS3", "dshidmini.BTH", problemCode: 22, instanceId: "BTHPS3BUS\\SECOND"),
+            Node("Wired DS3", "dshidmini.USB", problemCode: 10, problemStatus: 0xC000009C,
+                instanceId: "USB\\FIRST")
+        ];
+
+        DsHidMiniDeviceFaultNotice? notice =
+            DsHidMiniDeviceFaultPolicy.Describe(DsHidMiniDeviceFaultPolicy.SelectFaulted(nodes));
+
+        Assert.NotNull(notice);
+        Assert.Equal("2 controllers have a problem", notice!.Title);
+        Assert.Contains("This device cannot start. (Code 10)", notice.Message);
+        Assert.Contains("1 controller could not start.", notice.Message);
+        Assert.Contains("1 controller is disabled.", notice.Message);
+        Assert.DoesNotContain("2 controllers could not start", notice.Title);
+        Assert.DoesNotContain("also failed to start", notice.Message);
+    }
+
+    [Fact]
     public void MultipleFailedDevices_ReportsTheCount()
     {
         DsHidMiniDevNodeSnapshot[] nodes =

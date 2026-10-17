@@ -11,7 +11,7 @@ internal sealed record DsHidMiniDevNodeSnapshot(
     uint? ProblemStatus);
 
 /// <summary>
-///     User-facing summary of one or more DsHidMini devnodes that Windows could not start.
+///     User-facing summary of DsHidMini devnodes that failed to start or are disabled.
 /// </summary>
 internal sealed record DsHidMiniDeviceFaultNotice(string Title, string Message, int DeviceCount);
 
@@ -20,6 +20,8 @@ internal sealed record DsHidMiniDeviceFaultNotice(string Title, string Message, 
 /// </summary>
 internal static class DsHidMiniDeviceFaultPolicy
 {
+    private const uint ProblemDisabled = 22;
+
     private static readonly Dictionary<uint, string> StatusNames = new()
     {
         [0xC0000001] = "STATUS_UNSUCCESSFUL",
@@ -60,16 +62,43 @@ internal static class DsHidMiniDeviceFaultPolicy
         DsHidMiniDevNodeSnapshot first = faulted[0];
         string name = string.IsNullOrWhiteSpace(first.DisplayName) ? first.InstanceId : first.DisplayName.Trim();
         string detail = $"{DescribeProblem(first.ProblemCode!.Value)} {DescribeStatus(first.ProblemStatus)}";
+        bool allDisabled = faulted.All(node => node.ProblemCode == ProblemDisabled);
 
         if (faulted.Count == 1)
         {
-            return new DsHidMiniDeviceFaultNotice(
-                $"{name} could not start",
-                $"{detail} This controller stays out of the device list until Windows can start its driver.",
-                1);
+            return allDisabled
+                ? new DsHidMiniDeviceFaultNotice(
+                    $"{name} is disabled",
+                    $"{detail} Enable this controller in Device Manager.",
+                    1)
+                : new DsHidMiniDeviceFaultNotice(
+                    $"{name} could not start",
+                    $"{detail} This controller stays out of the device list until Windows can start its driver.",
+                    1);
         }
 
         int others = faulted.Count - 1;
+        int disabledCount = faulted.Count(node => node.ProblemCode == ProblemDisabled);
+        int startFailureCount = faulted.Count - disabledCount;
+        if (disabledCount > 0 && startFailureCount > 0)
+        {
+            return new DsHidMiniDeviceFaultNotice(
+                $"{faulted.Count} controllers have a problem",
+                $"{name}: {detail} {DescribeStartFailures(startFailureCount)} {DescribeDisabled(disabledCount)}",
+                faulted.Count);
+        }
+
+        if (allDisabled)
+        {
+            string disabledExtra = others == 1
+                ? "1 other controller is also disabled."
+                : $"{others} other controllers are also disabled.";
+            return new DsHidMiniDeviceFaultNotice(
+                $"{faulted.Count} controllers are disabled",
+                $"{name}: {detail} {disabledExtra}",
+                faulted.Count);
+        }
+
         string extra = others == 1
             ? "1 other controller also failed to start."
             : $"{others} other controllers also failed to start.";
@@ -78,6 +107,16 @@ internal static class DsHidMiniDeviceFaultPolicy
             $"{faulted.Count} controllers could not start",
             $"{name}: {detail} {extra}",
             faulted.Count);
+    }
+
+    private static string DescribeStartFailures(int count)
+    {
+        return count == 1 ? "1 controller could not start." : $"{count} controllers could not start.";
+    }
+
+    private static string DescribeDisabled(int count)
+    {
+        return count == 1 ? "1 controller is disabled." : $"{count} controllers are disabled.";
     }
 
     public static string DescribeProblem(uint problemCode)

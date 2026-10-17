@@ -17,53 +17,83 @@ internal static class DsHidMiniDeviceFaultDetector
 
     public static IReadOnlyList<DsHidMiniDevNodeSnapshot> EnumeratePresent()
     {
+        const int maxAttempts = 3;
         const uint flags = SetupApiWrapper.CM_GETIDLIST_FILTER_CLASS |
                            SetupApiWrapper.CM_GETIDLIST_FILTER_PRESENT;
         string classId = HidClassGuid.ToString("B");
-        uint length = 0;
-        if (SetupApiWrapper.CM_Get_Device_ID_List_Size(ref length, classId, flags) !=
-            SetupApiWrapper.ConfigManagerResult.Success || length <= 1)
-        {
-            return [];
-        }
 
-        int byteCount = checked((int)length * sizeof(char));
-        IntPtr buffer = Marshal.AllocHGlobal(byteCount);
-        try
+        for (int attempt = 1; ; attempt++)
         {
-            if (SetupApiWrapper.CM_Get_Device_ID_List(classId, buffer, length, flags) !=
-                SetupApiWrapper.ConfigManagerResult.Success)
+            uint length = 0;
+            SetupApiWrapper.ConfigManagerResult sizeResult =
+                SetupApiWrapper.CM_Get_Device_ID_List_Size(ref length, classId, flags);
+            if (sizeResult != SetupApiWrapper.ConfigManagerResult.Success)
+            {
+                throw new InvalidOperationException(
+                    $"CM_Get_Device_ID_List_Size failed with {sizeResult}.");
+            }
+
+            // A successful size of one character is only the list terminator: no present devices.
+            if (length <= 1)
             {
                 return [];
             }
 
-            List<DsHidMiniDevNodeSnapshot> nodes = [];
-            foreach (string instanceId in ParseDoubleNullTerminatedUnicode(buffer, byteCount))
+            int byteCount = checked((int)length * sizeof(char));
+            IntPtr buffer = Marshal.AllocHGlobal(byteCount);
+            try
             {
-                if (string.IsNullOrWhiteSpace(instanceId))
+                SetupApiWrapper.ConfigManagerResult listResult =
+                    SetupApiWrapper.CM_Get_Device_ID_List(classId, buffer, length, flags);
+                if (listResult == SetupApiWrapper.ConfigManagerResult.BufferSmall)
                 {
+                    if (attempt >= maxAttempts)
+                    {
+                        throw new InvalidOperationException(
+                            $"CM_Get_Device_ID_List returned {listResult} after {maxAttempts} attempts.");
+                    }
+
                     continue;
                 }
 
-                try
+                if (listResult != SetupApiWrapper.ConfigManagerResult.Success)
                 {
-                    PnPDevice device = PnPDevice.GetDeviceByInstanceId(instanceId);
-                    nodes.Add(Read(device, instanceId));
+                    throw new InvalidOperationException($"CM_Get_Device_ID_List failed with {listResult}.");
                 }
-                catch (Exception ex)
-                {
-                    Log.Logger.Debug(ex,
-                        "Skipping HID devnode {InstanceId} while scanning for failed DsHidMini devices.",
-                        instanceId);
-                }
+
+                return ReadNodes(buffer, byteCount);
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(buffer);
+            }
+        }
+    }
+
+    private static List<DsHidMiniDevNodeSnapshot> ReadNodes(IntPtr buffer, int byteCount)
+    {
+        List<DsHidMiniDevNodeSnapshot> nodes = [];
+        foreach (string instanceId in ParseDoubleNullTerminatedUnicode(buffer, byteCount))
+        {
+            if (string.IsNullOrWhiteSpace(instanceId))
+            {
+                continue;
             }
 
-            return nodes;
+            try
+            {
+                PnPDevice device = PnPDevice.GetDeviceByInstanceId(instanceId);
+                nodes.Add(Read(device, instanceId));
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex,
+                    "Skipping HID devnode {InstanceId} while scanning for failed DsHidMini devices.",
+                    instanceId);
+            }
         }
-        finally
-        {
-            Marshal.FreeHGlobal(buffer);
-        }
+
+        return nodes;
     }
 
     private static IEnumerable<string> ParseDoubleNullTerminatedUnicode(IntPtr buffer, int byteLength)
