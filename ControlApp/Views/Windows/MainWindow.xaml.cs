@@ -17,6 +17,7 @@ public partial class MainWindow : INavigationWindow
     private readonly DshmDevMan _dshmDevMan;
     private readonly DefenderBtStatusService _defenderBtStatusService;
     private readonly UnsupportedAdapterStatusService _unsupportedAdapterStatusService;
+    private readonly DsHidMiniDeviceFaultStatusService _deviceFaultStatusService;
     private readonly DonationPromptService _donationPromptService;
     private readonly ControlAppUpdateService _updateService;
     private bool _startupPromptsStarted;
@@ -26,6 +27,7 @@ public partial class MainWindow : INavigationWindow
         DshmDevMan dshmDevMan, //
         DefenderBtStatusService defenderBtStatusService,
         UnsupportedAdapterStatusService unsupportedAdapterStatusService,
+        DsHidMiniDeviceFaultStatusService deviceFaultStatusService,
         INavigationService navigationService,
         IServiceProvider serviceProvider,
         ISnackbarService snackbarService,
@@ -40,6 +42,7 @@ public partial class MainWindow : INavigationWindow
         _dshmDevMan = dshmDevMan;
         _defenderBtStatusService = defenderBtStatusService;
         _unsupportedAdapterStatusService = unsupportedAdapterStatusService;
+        _deviceFaultStatusService = deviceFaultStatusService;
         _updateService = updateService;
         _donationPromptService = donationPromptService;
 
@@ -84,6 +87,7 @@ public partial class MainWindow : INavigationWindow
         _dshmDevMan.StartListeningForDshmDevices();
         _defenderBtStatusService.StartListening();
         _unsupportedAdapterStatusService.StartListening();
+        _deviceFaultStatusService.StartListening(this);
         ApplyMinimizeToTraySetting();
     }
 
@@ -152,6 +156,7 @@ public partial class MainWindow : INavigationWindow
         _dshmDevMan.StopListeningForDshmDevices();
         _defenderBtStatusService.StopListening();
         _unsupportedAdapterStatusService.StopListening();
+        _deviceFaultStatusService.StopListening();
         base.OnClosing(e);
     }
 

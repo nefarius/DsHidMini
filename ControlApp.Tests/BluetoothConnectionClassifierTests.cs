@@ -224,6 +224,27 @@ public class BluetoothConnectionClassifierTests
     }
 
     [Fact]
+    public void OnlineWithOnlyDevicePowerUpFailed_DoesNotCountAsLegacyActivity()
+    {
+        DateTimeOffset baseTime = DateTimeOffset.UtcNow;
+        List<DiagnosticEventRecord> timeline =
+        [
+            Bth(BthPS3Events.RemoteConnectReceived, at: baseTime),
+            Bth(BthPS3Events.RemoteDeviceIdentified, at: baseTime.AddMilliseconds(1)),
+            Bth(BthPS3Events.ChildDeviceCreationSuccessful, at: baseTime.AddMilliseconds(2)),
+            Bth(BthPS3Events.HidControlChannelConnected, at: baseTime.AddMilliseconds(3)),
+            Bth(BthPS3Events.HidInterruptChannelConnected, at: baseTime.AddMilliseconds(4)),
+            Bth(BthPS3Events.RemoteDeviceOnline, at: baseTime.AddMilliseconds(5)),
+            DsHid(DsHidMiniEvents.DevicePowerUpFailed, baseTime.AddMilliseconds(6))
+        ];
+
+        DiagnosticVerdict verdict = _classifier.Classify(AllPassed, timeline);
+
+        Assert.Equal(DiagnosticVerdictCode.BthPs3OnlineDsHidMiniMissing, verdict.Code);
+        Assert.Equal(DiagnosticConfidence.Medium, verdict.Confidence);
+    }
+
+    [Fact]
     public void OnlineWithDsHidMiniActivityAfterward_ProducesSuccess()
     {
         DateTimeOffset baseTime = DateTimeOffset.UtcNow;

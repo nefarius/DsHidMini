@@ -487,6 +487,24 @@ internal static class SetupApiWrapper
     /// </summary>
     internal const uint CM_GET_DEVICE_INTERFACE_LIST_PRESENT = 0;
 
+    internal const uint CM_GETIDLIST_FILTER_PRESENT = 0x00000100;
+    internal const uint CM_GETIDLIST_FILTER_CLASS = 0x00000200;
+
+    [DllImport("Cfgmgr32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    internal static extern ConfigManagerResult CM_Get_Device_ID_List_Size(
+        ref uint pulLen,
+        [MarshalAs(UnmanagedType.LPWStr)] string? pszFilter,
+        uint ulFlags
+    );
+
+    [DllImport("Cfgmgr32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    internal static extern ConfigManagerResult CM_Get_Device_ID_List(
+        [MarshalAs(UnmanagedType.LPWStr)] string? pszFilter,
+        IntPtr buffer,
+        uint bufferLen,
+        uint ulFlags
+    );
+
     [DllImport("Cfgmgr32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
     internal static extern ConfigManagerResult CM_Get_Device_Interface_List_SizeW(
         ref uint pulLen,
