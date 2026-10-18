@@ -229,7 +229,7 @@ jobs:
           Write-Output "Unsigned as required: $msi"
 
       - name: 'Sign MSI'
-        uses: nefarius/SignRelay@32a835709950140362aafd5b9d837b190e61785e
+        uses: nefarius/SignRelay@5a3ae05497dda0f8f582d3715324155168dddbca
         with:
           server: ${{ env.SIGN_RELAY_SERVER }}
           token: ${{ env.SIGN_RELAY_CI_TOKEN }}
