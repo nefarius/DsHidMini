@@ -354,7 +354,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: 'Sign ControlApp'
-        uses: nefarius/SignRelay@5a3ae05497dda0f8f582d3715324155168dddbca
+        uses: nefarius/SignRelay@31a8d34f0d7da6e44e9c4a794b0f51e0f5f2e8fd
         with:
           server: ${{ env.SIGN_RELAY_SERVER }}
           token: ${{ env.SIGN_RELAY_CI_TOKEN }}
@@ -362,7 +362,7 @@ jobs:
           files: bin/ControlApp.exe
 
       - name: 'Sign XInput DLLs'
-        uses: nefarius/SignRelay@5a3ae05497dda0f8f582d3715324155168dddbca
+        uses: nefarius/SignRelay@31a8d34f0d7da6e44e9c4a794b0f51e0f5f2e8fd
         with:
           server: ${{ env.SIGN_RELAY_SERVER }}
           token: ${{ env.SIGN_RELAY_CI_TOKEN }}
@@ -517,7 +517,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: 'Sign driver DLLs'
-        uses: nefarius/SignRelay@5a3ae05497dda0f8f582d3715324155168dddbca
+        uses: nefarius/SignRelay@31a8d34f0d7da6e44e9c4a794b0f51e0f5f2e8fd
         with:
           server: ${{ env.SIGN_RELAY_SERVER }}
           token: ${{ env.SIGN_RELAY_CI_TOKEN }}
@@ -562,7 +562,7 @@ jobs:
           Write-Output "Created disk1\$cabName"
 
       - name: 'Sign partner CAB'
-        uses: nefarius/SignRelay@5a3ae05497dda0f8f582d3715324155168dddbca
+        uses: nefarius/SignRelay@31a8d34f0d7da6e44e9c4a794b0f51e0f5f2e8fd
         with:
           server: ${{ env.SIGN_RELAY_SERVER }}
           token: ${{ env.SIGN_RELAY_CI_TOKEN }}
