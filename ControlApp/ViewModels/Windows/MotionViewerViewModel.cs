@@ -30,13 +30,15 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
     public MotionViewerViewModel(
         int deviceIndex,
         string deviceTitle,
-        DsMotionCalibrationSource calibrationSource = DsMotionCalibrationSource.LiveUsb)
+        DsMotionCalibrationSource calibrationSource = DsMotionCalibrationSource.LiveUsb,
+        bool useSoftwareRendering = false)
     {
         _deviceIndex = deviceIndex;
         _calibrationSource = calibrationSource;
         Title = $"Motion viewer — {deviceTitle}";
         _estimator = new MotionOrientationEstimator(Stopwatch.Frequency);
         StatusText = MotionStatusFormatter.StatusText(true, false, false, false);
+        UseSoftwareRendering = useSoftwareRendering;
     }
 
     public string Title { get; }
@@ -45,11 +47,24 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
 
     public event EventHandler? PoseChanged;
 
+    /// <summary>
+    ///     Raised when the 3D preview should switch between the graphics driver and the CPU rasterizer.
+    /// </summary>
+    public event EventHandler? SoftwareRenderingChanged;
+
     [ObservableProperty]
     private string _statusText = "";
 
     [ObservableProperty]
     private bool _isPaused;
+
+    [ObservableProperty]
+    private bool _useSoftwareRendering;
+
+    partial void OnUseSoftwareRenderingChanged(bool value)
+    {
+        SoftwareRenderingChanged?.Invoke(this, EventArgs.Empty);
+    }
 
     [ObservableProperty]
     private bool _isUnavailable;

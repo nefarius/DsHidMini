@@ -1,4 +1,4 @@
-﻿namespace Nefarius.DsHidMini.ControlApp.Models;
+namespace Nefarius.DsHidMini.ControlApp.Models;
 
 /// <summary>
 ///     Global settings of the UI tool (stored in %AppData%).
@@ -100,6 +100,12 @@ public class ApplicationConfiguration
     ///     Last non-minimized window state (Normal or Maximized).
     /// </summary>
     public WindowState WindowState { get; set; } = WindowState.Normal;
+
+    /// <summary>
+    ///     When true, the Motion viewer draws its 3D preview with the CPU rasterizer.
+    ///     The rest of ControlApp stays on the graphics driver.
+    /// </summary>
+    public bool MotionViewerSoftwareRendering { get; set; }
 
     /// <summary>
     ///     When true, Minimize and Close hide the window to the system tray instead of exiting.

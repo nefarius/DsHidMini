@@ -1648,7 +1648,11 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
                 DeviceAddress);
         }
 
-        MotionViewerViewModel viewer = new(deviceIndex, DeviceAddressFriendly ?? DeviceAddress, calibrationSource);
+        MotionViewerViewModel viewer = new(
+            deviceIndex,
+            DeviceAddressFriendly ?? DeviceAddress,
+            calibrationSource,
+            ApplicationConfiguration.Instance.MotionViewerSoftwareRendering);
         _motionViewer = new MotionViewerWindow(viewer)
         {
             Owner = Application.Current.MainWindow

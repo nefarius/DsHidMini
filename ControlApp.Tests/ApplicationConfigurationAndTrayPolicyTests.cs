@@ -36,6 +36,7 @@ public class ApplicationConfigurationAndTrayPolicyTests
         ApplicationConfiguration config = new();
 
         Assert.False(config.MinimizeToTray);
+        Assert.False(config.MotionViewerSoftwareRendering);
         Assert.True(config.IsUpdateCheckEnabled);
         Assert.Null(config.LastUpdateCheckDate);
     }
