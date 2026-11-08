@@ -270,9 +270,110 @@ jobs:
             bin/**/*.dll
             bin/*.exe
 
+  unsigned-tools:
+    name: 'Publish unsigned ControlApp and XInput'
+    needs: build
+    runs-on: windows-2022
+    permissions:
+      contents: read
+      actions: read
+    env:
+      WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: 'Download x64 artifacts'
+        uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: dshidmini-x64
+          path: platform/x64
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Download ARM64 artifacts'
+        uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: dshidmini-ARM64
+          path: platform/ARM64
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Download x86 artifacts'
+        uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: dshidmini-x86
+          path: platform/x86
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Assert tools are unsigned'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $files = @(
+            'platform\x64\bin\ControlApp.exe'
+            'platform\x64\bin\x64\XInput1_3.dll'
+            'platform\x86\bin\x86\XInput1_3.dll'
+            'platform\ARM64\bin\arm64\XInput1_3.dll'
+          )
+          foreach ($file in $files) {
+            if (-not (Test-Path -LiteralPath $file)) {
+              throw "File not found: $file"
+            }
+            $sig = Get-AuthenticodeSignature -LiteralPath $file
+            if ($sig.Status -ne 'NotSigned') {
+              throw "Expected unsigned $file but Get-AuthenticodeSignature returned $($sig.Status)."
+            }
+            Write-Output "Unsigned as required: $file"
+          }
+
+      - name: 'Stage unsigned ControlApp and XInput'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = 'control-app-unsigned-artifact'
+          $copies = @(
+            @{ Src = 'platform\x64\bin\ControlApp.exe'; Dest = "$root\bin\ControlApp.exe" }
+            @{ Src = 'platform\x64\bin\x64\XInput1_3.dll'; Dest = "$root\bin\x64\XInput1_3.dll" }
+            @{ Src = 'platform\x86\bin\x86\XInput1_3.dll'; Dest = "$root\bin\x86\XInput1_3.dll" }
+            @{ Src = 'platform\ARM64\bin\arm64\XInput1_3.dll'; Dest = "$root\bin\arm64\XInput1_3.dll" }
+          )
+          foreach ($copy in $copies) {
+            if (-not (Test-Path -LiteralPath $copy.Src)) {
+              throw "File not found: $($copy.Src)"
+            }
+            New-Item -ItemType Directory -Force -Path (Split-Path -Parent $copy.Dest) | Out-Null
+            Copy-Item -LiteralPath $copy.Src -Destination $copy.Dest
+          }
+
+          Get-ChildItem -LiteralPath $root -Recurse -File | ForEach-Object {
+            Write-Output $_.FullName.Substring((Resolve-Path $root).Path.Length + 1)
+          }
+
+      - name: 'Upload unsigned tools'
+        uses: actions/upload-artifact@v7
+        with:
+          name: control-app-unsigned
+          if-no-files-found: error
+          path: control-app-unsigned-artifact
+
+      # Keep the ZIP packed and do not retarget builds/DsHidMini/latest. That
+      # symlink is the signed ControlApp consumed by the in-app updater.
+      - name: 'Mirror unsigned tools'
+        if: "${{ env.WEBHOOK_URL != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}"
+        # nefarius/AppVeyorArtifactsReceiver@0f7518cedcb5cd881da597799c1c069a4a06a558 (master; provides skip-zip-extraction)
+        uses: nefarius/AppVeyorArtifactsReceiver@0f7518cedcb5cd881da597799c1c069a4a06a558
+        with:
+          webhook-url: ${{ secrets.WEBHOOK_URL }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          artifact-name: control-app-unsigned
+          skip-latest-symlink: true
+          skip-zip-extraction: true
+          job-label: unsigned-tools
+
   control-app:
     name: 'Sign and mirror ControlApp and XInput'
-    needs: [version, build]
+    needs: [version, unsigned-tools]
     if: needs.version.outputs.is-release == 'true'
     runs-on: windows-2022
     permissions:
@@ -293,24 +394,10 @@ jobs:
           if (-not $env:SIGN_RELAY_SERVER) { throw 'Repository variable SIGN_RELAY_SERVER is not set.' }
           if (-not $env:SIGN_RELAY_CI_TOKEN) { throw 'Repository secret SIGN_RELAY_CI_TOKEN is not set.' }
 
-      - name: 'Download x64 artifacts'
+      - name: 'Download unsigned tools'
         uses: ./.github/actions/download-artifact-with-retry
         with:
-          name: dshidmini-x64
-          path: .
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 'Download ARM64 artifacts'
-        uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: dshidmini-ARM64
-          path: .
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 'Download x86 artifacts'
-        uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: dshidmini-x86
+          name: control-app-unsigned
           path: .
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -335,7 +422,7 @@ jobs:
           $files = @(
             'bin\x64\XInput1_3.dll',
             'bin\x86\XInput1_3.dll',
-            'bin\ARM64\XInput1_3.dll'
+            'bin\arm64\XInput1_3.dll'
           )
           foreach ($file in $files) {
             if (-not (Test-Path -LiteralPath $file)) {
@@ -371,7 +458,7 @@ jobs:
           files: |
             bin/x64/XInput1_3.dll
             bin/x86/XInput1_3.dll
-            bin/ARM64/XInput1_3.dll
+            bin/arm64/XInput1_3.dll
 
       - name: 'Verify signed ControlApp'
         shell: pwsh
@@ -397,7 +484,7 @@ jobs:
           $files = @(
             'bin\x64\XInput1_3.dll',
             'bin\x86\XInput1_3.dll',
-            'bin\ARM64\XInput1_3.dll'
+            'bin\arm64\XInput1_3.dll'
           )
           foreach ($file in $files) {
             $sig = Get-AuthenticodeSignature -LiteralPath $file
@@ -424,7 +511,7 @@ jobs:
           $copies = @(
             @{ Src = 'bin\x64\XInput1_3.dll'; Dest = "$root\bin\x64\XInput1_3.dll" }
             @{ Src = 'bin\x86\XInput1_3.dll'; Dest = "$root\bin\x86\XInput1_3.dll" }
-            @{ Src = 'bin\ARM64\XInput1_3.dll'; Dest = "$root\bin\arm64\XInput1_3.dll" }
+            @{ Src = 'bin\arm64\XInput1_3.dll'; Dest = "$root\bin\arm64\XInput1_3.dll" }
           )
           foreach ($copy in $copies) {
             if (-not (Test-Path -LiteralPath $copy.Src)) {
