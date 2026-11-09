@@ -1,19 +1,30 @@
-using System.Windows.Interop;
-using System.Windows.Media;
-using System.Windows.Media.Media3D;
+using System.Windows.Threading;
 
-using HelixToolkit.Wpf;
+using Media3D = System.Windows.Media.Media3D;
+
+using Vector3 = System.Numerics.Vector3;
+
+using MediaColor = System.Windows.Media.Color;
+using MediaColors = System.Windows.Media.Colors;
+
+using HelixToolkit.Geometry;
+using HelixToolkit.Maths;
+using HelixToolkit.SharpDX;
+using HelixToolkit.Wpf.SharpDX;
 
 using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.Motion;
 using Nefarius.DsHidMini.ControlApp.ViewModels.Windows;
 
+
 namespace Nefarius.DsHidMini.ControlApp.Views.Windows;
 
 public partial class MotionViewerWindow
 {
-    private readonly QuaternionRotation3D _pose = new(new Quaternion(0, 0, 0, 1));
+    private readonly GroupModel3D _pad = new();
     private readonly MotionViewerViewModel _viewModel;
+    private int _renderGeneration;
+    private bool _effectsDisposed;
 
     public MotionViewerWindow(MotionViewerViewModel viewModel)
     {
@@ -26,22 +37,19 @@ public partial class MotionViewerWindow
             viewModel.UseSoftwareRendering = useSoftwareRendering;
         }
 
-        BuildPadModel();
+        BuildScene();
         viewModel.PoseChanged += OnPoseChanged;
         viewModel.SoftwareRenderingChanged += OnSoftwareRenderingChanged;
+        Loaded += (_, _) => Viewport.ZoomExtents(0);
         Closed += async (_, _) =>
         {
             viewModel.PoseChanged -= OnPoseChanged;
             viewModel.SoftwareRenderingChanged -= OnSoftwareRenderingChanged;
+            ReleaseEffectsManager();
             await viewModel.ShutdownAsync();
         };
+        ApplyRenderingMode();
         viewModel.Start();
-    }
-
-    protected override void OnSourceInitialized(EventArgs e)
-    {
-        base.OnSourceInitialized(e);
-        ApplySoftwareRendering();
     }
 
     private void OnSoftwareRenderingChanged(object? sender, EventArgs e)
@@ -56,21 +64,111 @@ public partial class MotionViewerWindow
             Log.Logger.Error(ex, "Failed to persist motion viewer software rendering.");
         }
 
-        ApplySoftwareRendering();
+        ApplyRenderingMode();
     }
 
-    private void ApplySoftwareRendering()
+    private void ApplyRenderingMode()
     {
+        if (_effectsDisposed)
+        {
+            return;
+        }
+
+        int generation = ++_renderGeneration;
+        DefaultEffectsManager? created = null;
         try
         {
-            MotionViewerRendering.Apply(
-                PresentationSource.FromVisual(this) as HwndSource,
-                _viewModel.UseSoftwareRendering);
-            Viewport.InvalidateVisual();
+            created = MotionViewerRendering.CreateEffectsManager(_viewModel.UseSoftwareRendering);
+            IEffectsManager? previous = Viewport.EffectsManager;
+
+            // Flip-model swap chains keep the HWND until the old device is released.
+            // Replacing the effects manager on the same call stack fails with E_ACCESSDENIED.
+            bool releaseSwapChainFirst = Viewport.IsLoaded && previous is not null;
+            if (releaseSwapChainFirst)
+            {
+                Viewport.EffectsManager = null;
+            }
+
+            if (previous is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+
+            if (!releaseSwapChainFirst)
+            {
+                Viewport.EffectsManager = created;
+                return;
+            }
+
+            DefaultEffectsManager pending = created;
+            created = null;
+            Dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
+            {
+                if (_effectsDisposed || generation != _renderGeneration)
+                {
+                    pending.Dispose();
+                    return;
+                }
+
+                float dpi = 1f;
+                bool restoreDpi = false;
+                try
+                {
+                    try
+                    {
+                        // Nulling the manager leaves the host's pixel size in place, and the
+                        // next start multiplies by DPI again. Collapse to logical size first.
+                        if (Viewport.RenderHost is HelixToolkit.SharpDX.Render.DX11RenderHostBase host
+                            && host.DpiScale > 1.001f)
+                        {
+                            dpi = host.DpiScale;
+                            host.DpiScale = 1f;
+                            restoreDpi = true;
+                        }
+
+                        Viewport.EffectsManager = pending;
+                    }
+                    finally
+                    {
+                        if (restoreDpi
+                            && Viewport.RenderHost is HelixToolkit.SharpDX.Render.DX11RenderHostBase host)
+                        {
+                            host.DpiScale = dpi;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Logger.Error(ex, "Failed to change motion viewer rendering mode.");
+                    pending.Dispose();
+                }
+            });
         }
         catch (Exception ex)
         {
+            created?.Dispose();
             Log.Logger.Error(ex, "Failed to change motion viewer rendering mode.");
+        }
+    }
+
+    private void ReleaseEffectsManager()
+    {
+        if (_effectsDisposed)
+        {
+            return;
+        }
+
+        _renderGeneration++;
+        _effectsDisposed = true;
+        try
+        {
+            IEffectsManager? current = Viewport.EffectsManager;
+            Viewport.EffectsManager = null;
+            (current as IDisposable)?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Error(ex, "Failed to release the motion viewer DirectX device.");
         }
     }
 
@@ -81,68 +179,72 @@ public partial class MotionViewerWindow
             _viewModel.Estimator.UpX,
             _viewModel.Estimator.UpY,
             _viewModel.Estimator.UpZ);
-        _pose.Quaternion = new Quaternion(q.X, q.Y, q.Z, q.W);
+        _pad.Transform = new Media3D.RotateTransform3D(
+            new Media3D.QuaternionRotation3D(new Media3D.Quaternion(q.X, q.Y, q.Z, q.W)));
+        Viewport.InvalidateRender();
     }
 
-    private void BuildPadModel()
+    private void BuildScene()
     {
-        PadModel.Children.Add(new BoxVisual3D
+        Viewport.Camera = new HelixToolkit.Wpf.SharpDX.PerspectiveCamera
         {
-            Center = new Point3D(0, 0.15, 0),
-            Length = 3.6,
-            Width = 1.8,
-            Height = 0.3,
-            Fill = new SolidColorBrush(Colors.SteelBlue)
-        });
-        PadModel.Children.Add(new BoxVisual3D
+            Position = new Media3D.Point3D(4, -3, 8),
+            LookDirection = new Media3D.Vector3D(-4, 3, -8),
+            UpDirection = new Media3D.Vector3D(0, 1, 0),
+            FieldOfView = 45,
+            NearPlaneDistance = 0.1,
+            FarPlaneDistance = 1000
+        };
+        _pad.Transform = Media3D.Transform3D.Identity;
+        AddPadBox(new Vector3(0, 0.15f, 0), 3.6f, 1.8f, 0.3f, MediaColors.SteelBlue);
+        AddPadBox(new Vector3(-1.7f, -0.15f, 0.15f), 0.9f, 1.3f, 0.45f, MediaColors.DodgerBlue);
+        AddPadBox(new Vector3(1.7f, -0.15f, 0.15f), 0.9f, 1.3f, 0.45f, MediaColors.DodgerBlue);
+        AddPadBox(new Vector3(0, 0.28f, 0.55f), 1.1f, 0.45f, 0.12f, MediaColors.LightSteelBlue);
+        Viewport.Items.Add(_pad);
+        Viewport.Items.Add(new LineGeometryModel3D
         {
-            Center = new Point3D(-1.7, -0.15, 0.15),
-            Length = 0.9,
-            Width = 1.3,
-            Height = 0.45,
-            Fill = new SolidColorBrush(Colors.DodgerBlue)
+            Geometry = LineBuilder.GenerateGrid(Vector3.UnitZ, -6, 6, -6, 6),
+            Color = MediaColors.DimGray,
+            Thickness = 1
         });
-        PadModel.Children.Add(new BoxVisual3D
-        {
-            Center = new Point3D(1.7, -0.15, 0.15),
-            Length = 0.9,
-            Width = 1.3,
-            Height = 0.45,
-            Fill = new SolidColorBrush(Colors.DodgerBlue)
-        });
-        PadModel.Children.Add(new BoxVisual3D
-        {
-            Center = new Point3D(0, 0.28, 0.55),
-            Length = 1.1,
-            Width = 0.45,
-            Height = 0.12,
-            Fill = new SolidColorBrush(Colors.LightSteelBlue)
-        });
+        AddArrow(new Vector3(2.4f, 0, 0), MediaColors.IndianRed);
+        AddArrow(new Vector3(0, 2.0f, 0), MediaColors.YellowGreen);
+        AddArrow(new Vector3(0, 0, 2.0f), MediaColors.CornflowerBlue);
+    }
 
-        Transform3DGroup transform = new();
-        transform.Children.Add(new RotateTransform3D(_pose));
-        PadModel.Transform = transform;
+    private void AddPadBox(Vector3 center, float length, float width, float height, MediaColor color)
+    {
+        MeshBuilder builder = new();
+        builder.AddBox(center, length, width, height);
+        _pad.Children.Add(new MeshGeometryModel3D
+        {
+            Geometry = builder.ToMeshGeometry3D(),
+            Material = CreateMaterial(color)
+        });
+    }
 
-        Viewport.Children.Add(new ArrowVisual3D
+    private void AddArrow(Vector3 tip, MediaColor color)
+    {
+        Vector3 shaftEnd = tip * 0.82f;
+        MeshBuilder builder = new();
+        builder.AddCylinder(Vector3.Zero, shaftEnd, 0.03f, 16);
+        builder.AddCone(shaftEnd, tip, 0.07f, true, 16);
+        Viewport.Items.Add(new MeshGeometryModel3D
         {
-            Point1 = new Point3D(0, 0, 0),
-            Point2 = new Point3D(2.4, 0, 0),
-            Diameter = 0.06,
-            Fill = Brushes.IndianRed
+            Geometry = builder.ToMeshGeometry3D(),
+            Material = CreateMaterial(color)
         });
-        Viewport.Children.Add(new ArrowVisual3D
+    }
+
+    private static PhongMaterial CreateMaterial(MediaColor color)
+    {
+        Color4 diffuse = new(color.ScR, color.ScG, color.ScB, color.ScA);
+        return new PhongMaterial
         {
-            Point1 = new Point3D(0, 0, 0),
-            Point2 = new Point3D(0, 2.0, 0),
-            Diameter = 0.06,
-            Fill = Brushes.YellowGreen
-        });
-        Viewport.Children.Add(new ArrowVisual3D
-        {
-            Point1 = new Point3D(0, 0, 0),
-            Point2 = new Point3D(0, 0, 2.0),
-            Diameter = 0.06,
-            Fill = Brushes.CornflowerBlue
-        });
+            DiffuseColor = diffuse,
+            AmbientColor = new Color4(diffuse.Red * 0.4f, diffuse.Green * 0.4f, diffuse.Blue * 0.4f, 1),
+            SpecularColor = new Color4(0.25f, 0.25f, 0.25f, 1),
+            SpecularShininess = 24
+        };
     }
 }
