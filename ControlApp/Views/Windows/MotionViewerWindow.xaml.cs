@@ -186,11 +186,13 @@ public partial class MotionViewerWindow
 
     private void BuildScene()
     {
+        // Z-up, the same view the pitch and roll map was verified against.
+        // Nose-up lifts the nose toward +Z, and grip-up lifts that grip toward +Z.
         Viewport.Camera = new HelixToolkit.Wpf.SharpDX.PerspectiveCamera
         {
-            Position = new Media3D.Point3D(4, -3, 8),
-            LookDirection = new Media3D.Vector3D(-4, 3, -8),
-            UpDirection = new Media3D.Vector3D(0, 1, 0),
+            Position = new Media3D.Point3D(2, 16, 20),
+            LookDirection = new Media3D.Vector3D(-2, -16, -20),
+            UpDirection = new Media3D.Vector3D(0, 0, 1),
             FieldOfView = 45,
             NearPlaneDistance = 0.1,
             FarPlaneDistance = 1000
