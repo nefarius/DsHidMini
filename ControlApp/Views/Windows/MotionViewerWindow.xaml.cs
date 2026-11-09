@@ -1,8 +1,10 @@
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 
 using HelixToolkit.Wpf;
 
+using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.Motion;
 using Nefarius.DsHidMini.ControlApp.ViewModels.Windows;
 
@@ -17,15 +19,59 @@ public partial class MotionViewerWindow
     {
         _viewModel = viewModel;
         DataContext = viewModel;
+        bool useSoftwareRendering = viewModel.UseSoftwareRendering;
         InitializeComponent();
+        if (viewModel.UseSoftwareRendering != useSoftwareRendering)
+        {
+            viewModel.UseSoftwareRendering = useSoftwareRendering;
+        }
+
         BuildPadModel();
         viewModel.PoseChanged += OnPoseChanged;
+        viewModel.SoftwareRenderingChanged += OnSoftwareRenderingChanged;
         Closed += async (_, _) =>
         {
             viewModel.PoseChanged -= OnPoseChanged;
+            viewModel.SoftwareRenderingChanged -= OnSoftwareRenderingChanged;
             await viewModel.ShutdownAsync();
         };
         viewModel.Start();
+    }
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        ApplySoftwareRendering();
+    }
+
+    private void OnSoftwareRenderingChanged(object? sender, EventArgs e)
+    {
+        try
+        {
+            ApplicationConfiguration.Instance.MotionViewerSoftwareRendering = _viewModel.UseSoftwareRendering;
+            ApplicationConfiguration.Instance.Save();
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Error(ex, "Failed to persist motion viewer software rendering.");
+        }
+
+        ApplySoftwareRendering();
+    }
+
+    private void ApplySoftwareRendering()
+    {
+        try
+        {
+            MotionViewerRendering.Apply(
+                PresentationSource.FromVisual(this) as HwndSource,
+                _viewModel.UseSoftwareRendering);
+            Viewport.InvalidateVisual();
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Error(ex, "Failed to change motion viewer rendering mode.");
+        }
     }
 
     private void OnPoseChanged(object? sender, EventArgs e)
