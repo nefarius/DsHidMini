@@ -1,4 +1,5 @@
 using Nefarius.DsHidMini.ControlApp.Models.Motion;
+using Nefarius.DsHidMini.IPC.Models.Public;
 
 using Xunit;
 
@@ -23,25 +24,25 @@ public class MotionViewerRotationTests
     }
 
     [Fact]
-    public void TiltFromUp_UsbUp_EqualsRxNeg90()
+    public void TiltFromUp_UsbUp_EqualsRxPos90()
     {
         MotionViewerQuaternion q = MotionViewerRotation.TiltFromUp(0, 1, 0);
-        MotionViewerQuaternion expected = MotionViewerRotation.FromAxisAngle(1, 0, 0, -90);
+        MotionViewerQuaternion expected = MotionViewerRotation.FromAxisAngle(1, 0, 0, 90);
 
         Assert.True(MotionViewerRotation.AlmostEqual(q, expected));
     }
 
     [Fact]
-    public void TiltFromUp_GripDown_EqualsRyNeg90()
+    public void TiltFromUp_RightGripDown_EqualsRyPos90()
     {
         MotionViewerQuaternion q = MotionViewerRotation.TiltFromUp(1, 0, 0);
-        MotionViewerQuaternion expected = MotionViewerRotation.FromAxisAngle(0, 1, 0, -90);
+        MotionViewerQuaternion expected = MotionViewerRotation.FromAxisAngle(0, 1, 0, 90);
 
         Assert.True(MotionViewerRotation.AlmostEqual(q, expected));
     }
 
     [Fact]
-    public void TiltFromUp_OnGripNoise_StaysNearRyNeg90()
+    public void TiltFromUp_OnGripNoise_StaysNearRyPos90()
     {
         MotionViewerQuaternion nominal = MotionViewerRotation.TiltFromUp(1, 0, 0);
         MotionViewerQuaternion noisy = MotionViewerRotation.TiltFromUp(0.997, 0.05, -0.06);
@@ -73,14 +74,48 @@ public class MotionViewerRotationTests
     }
 
     [Fact]
-    public void ComposeYawThenTilt_GripDownKeepsWorldUp()
+    public void ComposeYawThenTilt_GripDownLowersRightGrip()
     {
         MotionViewerQuaternion q = MotionViewerRotation.ComposeYawThenTilt(25, 1, 0, 0);
         (double x, double y, double z) = Rotate(q, 1, 0, 0);
 
         Assert.InRange(x, -0.02, 0.02);
         Assert.InRange(y, -0.02, 0.02);
-        Assert.InRange(z, 0.98, 1.02);
+        Assert.InRange(z, -1.02, -0.98);
+    }
+
+    [Theory]
+    [InlineData(0, 500, -866, 0, 1, 0.5)] // USB edge up.
+    [InlineData(0, -500, -866, 0, 1, -0.5)] // USB edge down.
+    [InlineData(500, 0, -866, 1, 0, -0.5)] // Right grip down.
+    [InlineData(-500, 0, -866, 1, 0, 0.5)] // Right grip up.
+    [InlineData(0, 1000, 0, 0, 1, 1.0)]
+    [InlineData(0, -1000, 0, 0, 1, -1.0)]
+    [InlineData(1000, 0, 0, 1, 0, -1.0)]
+    [InlineData(-1000, 0, 0, 1, 0, 1.0)]
+    public void SensorTilt_MovesModelLandmarksInPhysicalDirection(
+        int ax, int ay, int az, double modelX, double modelY, double expectedHeight)
+    {
+        MotionOrientationEstimator estimator = new(1_000_000, smoothing: 1.0);
+        estimator.Update(new DsMotionSnapshot
+        {
+            Flags = DsMotionSnapshotFlags.Available,
+            AccelMilliGX = ax,
+            AccelMilliGY = ay,
+            AccelMilliGZ = az,
+            SampleIndex = 1,
+            TimestampQpc = 1_000_000
+        });
+
+        // Check physical model points, rather than just quaternion signs.
+        // Turning the heading must not reverse which edge is raised.
+        foreach (double yaw in new[] { 0.0, 45.0, 90.0 })
+        {
+            MotionViewerQuaternion q = MotionViewerRotation.ComposeYawThenTilt(
+                yaw, estimator.UpX, estimator.UpY, estimator.UpZ);
+            (_, _, double height) = Rotate(q, modelX, modelY, 0);
+            Assert.InRange(height, expectedHeight - 0.001, expectedHeight + 0.001);
+        }
     }
 
     private static (double X, double Y, double Z) Rotate(MotionViewerQuaternion q, double x, double y, double z)

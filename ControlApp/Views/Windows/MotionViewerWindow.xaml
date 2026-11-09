@@ -124,6 +124,7 @@
                 ShowCoordinateSystem="True">
                 <hx:AmbientLight3D Color="#FF606060" />
                 <hx:DirectionalLight3D Direction="-0.4,-0.2,-1" Color="White" />
+                <hx:DirectionalLight3D Direction="0.5,0.8,1" Color="#FF69758A" />
             </hx:Viewport3DX>
         </Grid>
     </DockPanel>

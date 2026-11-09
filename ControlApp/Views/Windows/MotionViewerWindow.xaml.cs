@@ -186,22 +186,27 @@ public partial class MotionViewerWindow
 
     private void BuildScene()
     {
-        // Z-up, the same view the pitch and roll map was verified against.
-        // Nose-up lifts the nose toward +Z, and grip-up lifts that grip toward +Z.
+        // Look from the grips (-Y), with the face (+Z) visible. This places
+        // the D-pad on the left and the shoulders at the top at rest, while
+        // using the model frame mapped by MotionViewerRotation.
         Viewport.Camera = new HelixToolkit.Wpf.SharpDX.PerspectiveCamera
         {
-            Position = new Media3D.Point3D(2, 16, 20),
-            LookDirection = new Media3D.Vector3D(-2, -16, -20),
+            Position = new Media3D.Point3D(2, -16, 20),
+            LookDirection = new Media3D.Vector3D(-2, 16, -20),
             UpDirection = new Media3D.Vector3D(0, 0, 1),
             FieldOfView = 45,
             NearPlaneDistance = 0.1,
             FarPlaneDistance = 1000
         };
         _pad.Transform = Media3D.Transform3D.Identity;
-        AddPadBox(new Vector3(0, 0.15f, 0), 3.6f, 1.8f, 0.3f, MediaColors.SteelBlue);
-        AddPadBox(new Vector3(-1.7f, -0.15f, 0.15f), 0.9f, 1.3f, 0.45f, MediaColors.DodgerBlue);
-        AddPadBox(new Vector3(1.7f, -0.15f, 0.15f), 0.9f, 1.3f, 0.45f, MediaColors.DodgerBlue);
-        AddPadBox(new Vector3(0, 0.28f, 0.55f), 1.1f, 0.45f, 0.12f, MediaColors.LightSteelBlue);
+        foreach (Object3D part in MotionControllerModel.Load())
+        {
+            _pad.Children.Add(new MeshGeometryModel3D
+            {
+                Geometry = part.Geometry,
+                Material = MotionControllerModel.MaterialFor(part.Name)
+            });
+        }
         Viewport.Items.Add(_pad);
         Viewport.Items.Add(new LineGeometryModel3D
         {
@@ -212,17 +217,6 @@ public partial class MotionViewerWindow
         AddArrow(new Vector3(2.4f, 0, 0), MediaColors.IndianRed);
         AddArrow(new Vector3(0, 2.0f, 0), MediaColors.YellowGreen);
         AddArrow(new Vector3(0, 0, 2.0f), MediaColors.CornflowerBlue);
-    }
-
-    private void AddPadBox(Vector3 center, float length, float width, float height, MediaColor color)
-    {
-        MeshBuilder builder = new();
-        builder.AddBox(center, length, width, height);
-        _pad.Children.Add(new MeshGeometryModel3D
-        {
-            Geometry = builder.ToMeshGeometry3D(),
-            Material = CreateMaterial(color)
-        });
     }
 
     private void AddArrow(Vector3 tip, MediaColor color)
