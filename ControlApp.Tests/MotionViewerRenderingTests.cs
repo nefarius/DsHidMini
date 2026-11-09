@@ -1,4 +1,4 @@
-using System.Windows.Interop;
+using HelixToolkit.SharpDX;
 
 using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.Motion;
@@ -11,21 +11,19 @@ namespace Nefarius.DsHidMini.ControlApp.Tests;
 public class MotionViewerRenderingTests
 {
     [Fact]
-    public void Select_HardwareStaysOnTheGraphicsDriver()
+    public void Configuration_HardwareUsesTheGraphicsDriver()
     {
-        Assert.Equal(RenderMode.Default, MotionViewerRendering.Select(false));
+        EffectsManagerConfiguration configuration = MotionViewerRendering.CreateConfiguration(false);
+
+        Assert.False(configuration.EnableSoftwareRendering);
     }
 
     [Fact]
-    public void Select_SoftwareUsesTheCpuRasterizer()
+    public void Configuration_SoftwareUsesWarp()
     {
-        Assert.Equal(RenderMode.SoftwareOnly, MotionViewerRendering.Select(true));
-    }
+        EffectsManagerConfiguration configuration = MotionViewerRendering.CreateConfiguration(true);
 
-    [Fact]
-    public void Apply_NullWindowIsIgnored()
-    {
-        MotionViewerRendering.Apply(null, true);
+        Assert.True(configuration.EnableSoftwareRendering);
     }
 
     [Fact]

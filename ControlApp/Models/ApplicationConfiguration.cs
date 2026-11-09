@@ -102,7 +102,7 @@ public class ApplicationConfiguration
     public WindowState WindowState { get; set; } = WindowState.Normal;
 
     /// <summary>
-    ///     When true, the Motion viewer draws its 3D preview with the CPU rasterizer.
+    ///     When true, the Motion viewer draws its 3D preview with DirectX software rendering.
     ///     The rest of ControlApp stays on the graphics driver.
     /// </summary>
     public bool MotionViewerSoftwareRendering { get; set; }

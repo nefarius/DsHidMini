@@ -1,25 +1,23 @@
-using System.Windows.Interop;
+using HelixToolkit.SharpDX;
 
 namespace Nefarius.DsHidMini.ControlApp.Models.Motion;
 
 /// <summary>
-///     Selects the rasterizer for the Motion viewer window only.
-///     Software mode avoids the WPF Direct3D 9 device without changing the rest of ControlApp.
+///     Creates the DirectX 11 device for the Motion viewer.
+///     Software mode uses the WARP rasterizer for that viewport only.
 /// </summary>
 internal static class MotionViewerRendering
 {
-    public static RenderMode Select(bool useSoftwareRendering)
+    public static EffectsManagerConfiguration CreateConfiguration(bool useSoftwareRendering)
     {
-        return useSoftwareRendering ? RenderMode.SoftwareOnly : RenderMode.Default;
+        return new EffectsManagerConfiguration
+        {
+            EnableSoftwareRendering = useSoftwareRendering
+        };
     }
 
-    public static void Apply(HwndSource? source, bool useSoftwareRendering)
+    public static DefaultEffectsManager CreateEffectsManager(bool useSoftwareRendering)
     {
-        if (source?.CompositionTarget is null)
-        {
-            return;
-        }
-
-        source.CompositionTarget.RenderMode = Select(useSoftwareRendering);
+        return new DefaultEffectsManager(CreateConfiguration(useSoftwareRendering));
     }
 }
