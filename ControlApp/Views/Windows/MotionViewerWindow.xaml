@@ -110,7 +110,8 @@
                             Margin="0,12,0,0"
                             Content="Software rendering"
                             IsChecked="{Binding UseSoftwareRendering, Mode=TwoWay}"
-                            ToolTip="Draw this 3D view with DirectX software rendering if the pad or grid looks dotted or incomplete. The readout stays on the graphics driver." />
+                            ToolTip="Draw this 3D view with DirectX software rendering if the pad or grid looks dotted or incomplete. The readout stays on the graphics driver."
+                            ToolTipService.InitialShowDelay="200" />
                     </StackPanel>
                 </DockPanel>
             </ScrollViewer>
