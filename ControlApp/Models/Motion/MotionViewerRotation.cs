@@ -1,8 +1,8 @@
 namespace Nefarius.DsHidMini.ControlApp.Models.Motion;
 
 /// <summary>
-///     One Helix axis-angle applied to the face-on diagnostic pad
-///     (X right, Y up, Z toward the camera).
+///     One Helix axis-angle applied to the controller model
+///     (X right, Y toward the USB port, Z out of the button face).
 /// </summary>
 internal readonly record struct MotionViewerAxisAngle(
     double AxisX,
@@ -23,7 +23,7 @@ internal readonly record struct MotionViewerQuaternion(
 }
 
 /// <summary>
-///     Maps the Sony gravity-up vector and integrated yaw onto the face-on
+///     Maps the Sony gravity-up vector and integrated yaw onto the controller
 ///     Helix pad without an Euler singularity at roll ±90°.
 /// </summary>
 internal static class MotionViewerRotation
@@ -38,14 +38,15 @@ internal static class MotionViewerRotation
     /// <summary>
     ///     Shortest-arc tilt that takes the mapped pad-up vector onto Helix
     ///     world-up <c>(0, 0, 1)</c>. Pad frame to Helix is
-    ///     <c>M = diag(1, -1, -1)</c>, matching the hardware-verified Euler
-    ///     map (flat = identity, USB-up = <c>R_X(-90)</c>, grip-down =
-    ///     <c>R_Y(-90)</c>). Face-down uses axis X, 180°.
+    ///     <c>M = diag(-1, 1, -1)</c>: the model's +Y points toward the USB
+    ///     port and +X toward the right grip. USB-up therefore uses
+    ///     <c>R_X(+90)</c>, and right-grip-down uses <c>R_Y(+90)</c>.
+    ///     Flat is identity; face-down uses axis X, 180°.
     /// </summary>
     public static MotionViewerQuaternion TiltFromUp(double upX, double upY, double upZ)
     {
-        double vx = upX;
-        double vy = -upY;
+        double vx = -upX;
+        double vy = upY;
         double vz = -upZ;
         double mag = Math.Sqrt((vx * vx) + (vy * vy) + (vz * vz));
         if (mag < 1e-9)

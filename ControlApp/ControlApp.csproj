@@ -84,6 +84,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <EmbeddedResource Include="Resources\Models\MotionController.obj" LogicalName="MotionController.obj" />
         <EmbeddedResource Update="Resources\test.resx">
             <Generator>PublicResXFileCodeGenerator</Generator>
             <LastGenOutput>test.Designer.cs</LastGenOutput>
