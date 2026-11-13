@@ -157,6 +157,8 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         _addressValidator = addressValidator;
         _bluetoothDiagnosticSession = bluetoothDiagnosticSession;
         _cemuhookBridgeHost = new CemuhookBridgeHost(StartCemuhookBridgeService);
+        _cemuhookBridgeHost.StatusChanged += OnCemuhookBridgeStatusChanged;
+        DeviceCustomsVM.CemuhookUdpSettingsVM.PropertyChanged += (_, _) => ApplyChangesCommand.NotifyCanExecuteChanged();
         _batteryQuery = new Timer(UpdateBatteryStatus, null, 1500, 10000);
         _inputReportMetricsQuery = new Timer(UpdateInputReportMetrics, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
         _outputStatusQuery = null;
@@ -635,7 +637,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     /// </summary>
     public bool CanEditSharedConfiguration => _dshmConfigManager.CanPersistSharedConfiguration;
 
-    private bool CanExecuteApplyChanges() => CanEditSharedConfiguration;
+    private bool CanExecuteApplyChanges() => CanEditSharedConfiguration && DeviceCustomsVM.CemuhookUdpSettingsVM.CanApply;
 
     public bool CanRestartDevice =>
         ControlAppActionPolicy.CanRestartDevice(IsWireless, SecurityUtil.IsElevated);
@@ -1055,6 +1057,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
+        _cemuhookBridgeHost.StatusChanged -= OnCemuhookBridgeStatusChanged;
         _cemuhookBridgeHost.Dispose();
         Interlocked.Exchange(ref _outputStallDisposed, 1);
         Interlocked.Exchange(ref _inputReportMetricsDisposed, 1);
@@ -1299,6 +1302,10 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             _appSnackbarMessagesService.ShowDsHidMiniConfigurationUpdateFailedMessage();
             return;
         }
+
+        DeviceCustomsVM.CemuhookUdpSettingsVM.RefreshListenAddresses();
+        if (!DeviceCustomsVM.CemuhookUdpSettingsVM.CanApply)
+            return;
 
         Log.Logger.Information("Saving and applying changes made to Device '{DeviceAddress}'", DeviceAddress);
         _deviceUserData.BluetoothPairingMode = PairingMode;
@@ -1862,7 +1869,25 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
 
     private void UpdateCemuhookBridgeService()
     {
+        DeviceCustomsVM.CemuhookUdpSettingsVM.RefreshListenAddresses();
         _cemuhookBridgeHost.Update(_deviceUserData.Settings.CemuhookUdp, _deviceUserData.Settings.MotionControls);
+    }
+
+    private void OnCemuhookBridgeStatusChanged(object? sender, EventArgs e)
+    {
+        void ShowStatus()
+        {
+            if (Volatile.Read(ref _inputReportMetricsDisposed) != 0)
+                return;
+            var udp = _deviceUserData.Settings.CemuhookUdp;
+            DeviceCustomsVM.CemuhookUdpSettingsVM.ReportServerError(_cemuhookBridgeHost.ErrorMessage, udp.IpAddress, udp.Port);
+        }
+
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher != null && !dispatcher.CheckAccess())
+            dispatcher.BeginInvoke(ShowStatus);
+        else
+            ShowStatus();
     }
 
     private CemuhookBridgeService? StartCemuhookBridgeService(CemuhookUdpSettings udpSettings, MotionControlsSettings motionSettings)
@@ -1873,7 +1898,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             Log.Logger.Warning(
                 "Cannot start Cemuhook UDP bridge for device '{DeviceAddress}': no IPC slot available.",
                 DeviceAddress);
-            return null;
+            throw new InvalidOperationException("No controller IPC slot is available. Reconnect the controller and try again.");
         }
 
         if (!DsHidMiniInterop.IsAvailable)
@@ -1881,7 +1906,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             Log.Logger.Warning(
                 "Cannot start Cemuhook UDP bridge for device '{DeviceAddress}': DsHidMini IPC is unavailable.",
                 DeviceAddress);
-            return null;
+            throw new InvalidOperationException("DsHidMini IPC is unavailable. Check that the driver is running and try again.");
         }
 
         try
@@ -1897,7 +1922,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             Log.Logger.Error(ex,
                 "Failed to start Cemuhook UDP bridge for device '{DeviceAddress}'.",
                 DeviceAddress);
-            return null;
+            throw;
         }
     }
 }

@@ -91,7 +91,7 @@
             <StackPanel>
                 <ui:ToggleSwitch
                     Margin="{StaticResource MyKey_NextLineSpacement}"
-                    Content="Enable Cemuhook UDP broadcast"
+                    Content="Enable Cemuhook UDP server"
                     IsChecked="{Binding Enabled}" />
 
                 <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}"
@@ -100,12 +100,18 @@
                         Style="{StaticResource SettingsFieldLabel}"
                         VerticalAlignment="Center"
                         DockPanel.Dock="Left"
-                        Text="Broadcast IP:" />
-                    <TextBox
+                        Text="Listen address:" />
+                    <ComboBox
                         VerticalAlignment="Center"
                         DockPanel.Dock="Right"
-                        Text="{Binding IpAddress, UpdateSourceTrigger=PropertyChanged}"
-                        Width="150" />
+                        MinWidth="250"
+                        MaxWidth="500"
+                        IsEditable="False"
+                        DisplayMemberPath="DisplayName"
+                        ItemsSource="{Binding ListenAddresses}"
+                        SelectedItem="{Binding SelectedListenAddress, Mode=TwoWay}"
+                        DropDownOpened="CemuhookListenAddress_DropDownOpened"
+                        AutomationProperties.Name="Listen address" />
                 </DockPanel>
 
                 <StackPanel Margin="{StaticResource MyKey_NextLineSpacement}"
@@ -130,6 +136,13 @@
                         Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                         Text="Use different ports for multiple controllers" />
                 </StackPanel>
+                <ui:InfoBar
+                    Margin="0,8,0,0"
+                    Title="Cemuhook UDP server"
+                    IsClosable="False"
+                    IsOpen="{Binding HasError}"
+                    Message="{Binding ErrorMessage}"
+                    Severity="Error" />
             </StackPanel>
         </DataTemplate>
 
