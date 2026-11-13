@@ -94,6 +94,29 @@ public class DshmConfigManager : IDisposable
         set => _userData.IPCEnabled = value;
     }
 
+    /// <summary>One endpoint for every enabled controller. Migrate deterministically from legacy per-device endpoints.</summary>
+    public CemuhookUdpSettings SharedCemuhookUdp
+    {
+        get
+        {
+            if (_userData.CemuhookServer != null) return _userData.CemuhookServer;
+            var endpoint = new CemuhookUdpSettings();
+            var legacy = _userData.Devices.OrderBy(device => device.DeviceMac, StringComparer.OrdinalIgnoreCase)
+                .Select(device => device.Settings.CemuhookUdp).FirstOrDefault(settings => settings.Enabled);
+            if (legacy != null) CemuhookUdpSettings.CopySettings(endpoint, legacy);
+            return _userData.CemuhookServer = endpoint;
+        }
+    }
+
+    internal int? GetCemuhookSlot(string identity) => _userData.CemuhookSlots.TryGetValue(identity, out int slot) ? slot : null;
+
+    internal void RememberCemuhookSlot(string identity, int slot)
+    {
+        if (GetCemuhookSlot(identity) == slot) return;
+        _userData.CemuhookSlots[identity] = slot;
+        if (CanPersistSharedConfiguration) SaveChanges();
+    }
+
     private bool? _canPersistSharedConfiguration;
 
     /// <summary>

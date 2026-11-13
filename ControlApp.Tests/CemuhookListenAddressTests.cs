@@ -10,7 +10,6 @@ using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.Motion;
 using Nefarius.DsHidMini.ControlApp.Services;
 using Nefarius.DsHidMini.ControlApp.ViewModels.UserControls.DeviceSettings;
-using Nefarius.DsHidMini.IPC.Models.Public;
 
 using Xunit;
 
@@ -225,16 +224,16 @@ public class CemuhookListenAddressTests
         var udp = new CemuhookUdpSettings { Enabled = true, Port = port };
         var vm = CreateSettings();
         vm.LoadSettingsFromBackingDataContainer(new DeviceSettings { CemuhookUdp = udp });
-        using var host = new CemuhookBridgeHost((settings, motion) => new(settings, motion, () => new EmptySource()));
+        using var host = new CemuhookBridgeHost(settings => new CemuhookServer(settings.Port, settings.IpAddress, CemuhookPadState.Empty));
         host.StatusChanged += (_, _) => vm.ReportServerError(host.ErrorMessage, udp.IpAddress, udp.Port);
-        host.Update(udp, new());
+        host.Update(udp, udp.Enabled);
         Assert.Contains("already in use", host.ErrorMessage);
         Assert.Contains(port.ToString(), host.ErrorMessage);
         Assert.Equal(host.ErrorMessage, vm.ErrorMessage);
         Assert.True(vm.HasError);
         Assert.True(vm.CanApply);
         occupied.Dispose();
-        host.Update(udp, new());
+        host.Update(udp, udp.Enabled);
         Assert.Null(host.ErrorMessage);
         Assert.False(vm.HasError);
     }
@@ -244,12 +243,12 @@ public class CemuhookListenAddressTests
     {
         string? attempted = null;
         var udp = new CemuhookUdpSettings { Enabled = true, IpAddress = "192.168.1.42" };
-        using var host = new CemuhookBridgeHost((settings, _) =>
+        using var host = new CemuhookBridgeHost(settings =>
         {
             attempted = settings.IpAddress;
             throw new SocketException((int)SocketError.AddressNotAvailable);
         });
-        host.Update(udp, new());
+        host.Update(udp, udp.Enabled);
         Assert.Equal("192.168.1.42", attempted);
         Assert.Equal(attempted, udp.IpAddress);
         Assert.Contains("no longer available", host.ErrorMessage);
@@ -262,13 +261,13 @@ public class CemuhookListenAddressTests
     public void HostRejectsInvalidSavedEndpointsBeforeStartingAWorker(string address, int port)
     {
         bool started = false;
-        using var host = new CemuhookBridgeHost((_, _) => { started = true; return null; });
+        using var host = new CemuhookBridgeHost(_ => { started = true; throw new InvalidOperationException("Unexpected start"); });
         var udp = new CemuhookUdpSettings { Enabled = true, IpAddress = address, Port = port };
-        host.Update(udp, new());
+        host.Update(udp, udp.Enabled);
         Assert.False(started);
         Assert.False(string.IsNullOrWhiteSpace(host.ErrorMessage));
         udp.Enabled = false;
-        host.Update(udp, new());
+        host.Update(udp, udp.Enabled);
         Assert.Null(host.ErrorMessage);
     }
 
@@ -276,14 +275,14 @@ public class CemuhookListenAddressTests
     public async Task WorkerStartupFailureRaisesStatusWithoutWaitingForTheDeviceRefreshTimer()
     {
         var failure = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-        using var host = new CemuhookBridgeHost((settings, motion) => new(settings, motion,
-            () => throw new InvalidOperationException("Motion telemetry is unavailable.")));
+        using var host = new CemuhookBridgeHost(settings => new CemuhookServer(settings.Port, settings.IpAddress,
+            _ => throw new InvalidOperationException("Motion telemetry is unavailable.")));
         host.StatusChanged += (_, _) =>
         {
             if (host.ErrorMessage is { } error)
                 failure.TrySetResult(error);
         };
-        host.Update(new() { Enabled = true, Port = FreePort() }, new());
+        host.Update(new() { Enabled = true, Port = FreePort() }, true);
         string message = await failure.Task.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.Contains("Motion telemetry is unavailable", message);
         host.Dispose();
@@ -300,14 +299,4 @@ public class CemuhookListenAddressTests
         return ((IPEndPoint)udp.Client.LocalEndPoint!).Port;
     }
 
-    private sealed class EmptySource : ICemuhookMotionSource
-    {
-        public bool TryRead(out DsMotionSnapshot snapshot, TimeSpan timeout)
-        {
-            Thread.Sleep(timeout);
-            snapshot = default;
-            return false;
-        }
-        public void Dispose() { }
-    }
 }

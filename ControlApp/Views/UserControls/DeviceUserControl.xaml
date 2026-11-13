@@ -91,7 +91,7 @@
             <StackPanel>
                 <ui:ToggleSwitch
                     Margin="{StaticResource MyKey_NextLineSpacement}"
-                    Content="Enable Cemuhook UDP server"
+                    Content="Enable motion for this controller"
                     IsChecked="{Binding Enabled}" />
 
                 <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}"
@@ -100,7 +100,7 @@
                         Style="{StaticResource SettingsFieldLabel}"
                         VerticalAlignment="Center"
                         DockPanel.Dock="Left"
-                        Text="Listen address:" />
+                        Text="Shared listen address:" />
                     <ComboBox
                         VerticalAlignment="Center"
                         DockPanel.Dock="Right"
@@ -121,7 +121,7 @@
                             Style="{StaticResource SettingsFieldLabel}"
                             VerticalAlignment="Center"
                             DockPanel.Dock="Left"
-                            Text="UDP Port:" />
+                            Text="Shared UDP port:" />
                         <ui:NumberBox
                             VerticalAlignment="Center"
                             DockPanel.Dock="Right"
@@ -134,7 +134,8 @@
                     <TextBlock
                         Margin="0,4,0,0"
                         Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                        Text="Use different ports for multiple controllers" />
+                        Text="All enabled controllers share this endpoint (DSU slots 0–3)." />
+                    <TextBlock Margin="0,4,0,0" Text="{Binding SlotDisplay}" />
                 </StackPanel>
                 <ui:InfoBar
                     Margin="0,8,0,0"
@@ -753,7 +754,7 @@
                                     DockPanel.Dock="Top"
                                     IsClosable="False"
                                     IsOpen="True"
-                                    Message="Settings are saved per-controller. Each connected controller has its own UDP port and motion controls configuration."
+                                    Message="Up to four controllers share one UDP listener. Listen address and port apply to all controllers; enablement and motion controls are saved per controller."
                                     Severity="Informational" />
                                 <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding CemuhookGroups}">
                                     <ItemsControl.ItemTemplate>

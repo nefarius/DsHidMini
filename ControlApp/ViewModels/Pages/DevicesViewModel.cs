@@ -26,6 +26,7 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
     private readonly AppSnackbarMessagesService _appSnackbarMessagesService;
     private readonly IContentDialogService _contentDialogService;
     private readonly DshmConfigManager _dshmConfigManager;
+    private readonly CemuhookBridgeService _cemuhookBridgeService;
 
     private readonly DshmDevMan _dshmDevMan;
     private readonly INavigationService _navigationService;
@@ -64,13 +65,15 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
         DsHidMiniDriverStatusService driverStatus,
         DsHidMiniDeviceFaultStatusService deviceFault,
         INavigationService navigationService,
-        BluetoothDiagnosticSession bluetoothDiagnosticSession
+        BluetoothDiagnosticSession bluetoothDiagnosticSession,
+        CemuhookBridgeService cemuhookBridgeService
     )
     {
         _dshmDevMan = dshmDevMan;
         _dshmConfigManager = dshmConfigManager;
         _appSnackbarMessagesService = appSnackbarMessagesService;
         _bluetoothDiagnosticSession = bluetoothDiagnosticSession;
+        _cemuhookBridgeService = cemuhookBridgeService;
         _dshmDevMan.ConnectedDeviceListUpdated += OnConnectedDevicesListUpdated;
         _dshmDevMan.XInputInterfacesUpdated += OnXInputInterfacesUpdated;
         _dshmConfigManager.DshmConfigurationUpdated += OnDshmConfigUpdated;
@@ -445,7 +448,8 @@ public partial class DevicesViewModel : ObservableObject, INavigationAware
                         _appSnackbarMessagesService,
                         _contentDialogService,
                         _addressValidator,
-                        _bluetoothDiagnosticSession
+                        _bluetoothDiagnosticSession,
+                        _cemuhookBridgeService
                     );
 
                     if (generation != _refreshGeneration)

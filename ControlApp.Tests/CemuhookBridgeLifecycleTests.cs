@@ -1,227 +1,132 @@
 using System.Collections.Concurrent;
-using System.Net;
-using System.Net.Sockets;
-
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
+using Nefarius.DsHidMini.ControlApp.Models.Motion;
 using Nefarius.DsHidMini.ControlApp.Services;
 using Nefarius.DsHidMini.IPC.Models.Public;
-
 using Xunit;
 
 namespace Nefarius.DsHidMini.ControlApp.Tests;
 
 public class CemuhookBridgeLifecycleTests
 {
+    private static readonly CemuhookIpcBinding Binding = new("A", "INSTANCE-A", 1);
+    private static CemuhookMotionReader Reader(CemuhookTestSource source, MotionControlsSettings? settings = null) =>
+        new("A", settings ?? new(), () => Binding, _ => source, _ => { });
+
     [Fact]
     public async Task BlockingReaderRunsOnADedicatedBackgroundThread()
     {
-        using var source = new ScriptedSource();
-        using var service = new CemuhookBridgeService(Settings(), new(), () => source);
-        Thread reader = await source.ReaderThread.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        Assert.False(reader.IsThreadPoolThread);
-        Assert.True(reader.IsBackground);
+        using var source = new CemuhookTestSource();
+        using var reader = Reader(source);
+        Thread thread = await source.ReaderThread.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.False(thread.IsThreadPoolThread);
+        Assert.True(thread.IsBackground);
     }
 
     [Fact]
-    public async Task StartupFailureCompletesAndReleasesTheListener()
+    public async Task StartupFailureCompletesAndClearsTheSnapshot()
     {
-        var udp = Settings();
-        using var service = new CemuhookBridgeService(udp, new(),
-            () => throw new InvalidOperationException("source startup failed"));
-        var error = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.Completion.WaitAsync(TimeSpan.FromSeconds(5)));
+        using var reader = new CemuhookMotionReader("A", new(), () => Binding,
+            _ => throw new InvalidOperationException("source startup failed"), _ => { });
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => reader.Completion.WaitAsync(TimeSpan.FromSeconds(5)));
         Assert.Equal("source startup failed", error.Message);
-        Assert.False(service.LatestSnapshot.Connected);
-        using var rebound = new UdpClient(new IPEndPoint(IPAddress.Loopback, udp.Port));
+        Assert.False(reader.LatestSnapshot.Connected);
     }
 
     [Fact]
-    public async Task ProducerFailureClearsTheSnapshotDisposesTheSourceAndReleasesTheListener()
+    public async Task ProducerFailureClearsTheSnapshotAndDisposesTheSource()
     {
-        using var source = new ScriptedSource();
-        var udp = Settings();
-        using var service = new CemuhookBridgeService(udp, new(), () => source);
+        using var source = new CemuhookTestSource();
+        using var reader = Reader(source);
         source.Enqueue(CemuhookMotionProcessorTests.Sample(1, 1));
-        await Eventually(() => service.LatestSnapshot.Connected);
+        await CemuhookTestSource.Eventually(() => reader.LatestSnapshot.Connected);
         source.Fail(new InvalidOperationException("producer failed"));
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.Completion.WaitAsync(TimeSpan.FromSeconds(5)));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => reader.Completion.WaitAsync(TimeSpan.FromSeconds(5)));
         Assert.True(source.IsDisposed);
-        Assert.False(service.LatestSnapshot.Connected);
-        using var rebound = new UdpClient(new IPEndPoint(IPAddress.Loopback, udp.Port));
+        Assert.False(reader.LatestSnapshot.Connected);
     }
 
     [Fact]
-    public async Task MissingTelemetryDoesNotPublishNominalCalibrationOrAdvanceTheSample()
+    public async Task MissingTelemetryDoesNotChangeCalibrationOrAdvanceTheSample()
     {
-        using var source = new ScriptedSource();
-        using var service = new CemuhookBridgeService(Settings(), new() { KalmanFilterStrength = 0 }, () => source);
+        using var source = new CemuhookTestSource();
+        using var reader = Reader(source, new() { KalmanFilterStrength = 0 });
         var sample = CemuhookMotionProcessorTests.Sample(1, 1);
-        sample.AccelMilliGX = 321;
-        sample.GyroMilliDps = 12345;
+        sample.AccelMilliGX = 321; sample.GyroMilliDps = 12345;
         source.Enqueue(sample);
-        await Eventually(() => service.LatestSnapshot.Connected);
-        var published = service.LatestSnapshot;
+        await CemuhookTestSource.Eventually(() => reader.LatestSnapshot.Connected);
+        var published = reader.LatestSnapshot;
         int reads = source.Reads;
-        // Let the producer encounter several failed reads after the successful sample.
-        await Eventually(() => source.Reads >= reads + 3);
-        Assert.Same(published, service.LatestSnapshot);
+        await CemuhookTestSource.Eventually(() => source.Reads >= reads + 3);
+        Assert.Same(published, reader.LatestSnapshot);
         Assert.Equal(0.321, published.AccelXG);
         Assert.Equal(12.345, published.GyroAxisDegreesPerSecond);
         source.Enqueue(CemuhookMotionProcessorTests.Sample(2, 1.005));
-        await Eventually(() => service.LatestSnapshot.TimestampQpc != sample.TimestampQpc);
-        Assert.True(service.LatestSnapshot.Connected);
+        await CemuhookTestSource.Eventually(() => reader.LatestSnapshot.TimestampQpc != sample.TimestampQpc);
     }
 
     [Fact]
-    public async Task InputOutageExpiresTheSampleAndCanRecoverWithoutRestarting()
+    public async Task InputOutageExpiresAndRecoversWithoutRestarting()
     {
-        using var source = new ScriptedSource();
-        using var service = new CemuhookBridgeService(Settings(), new(), () => source);
+        using var source = new CemuhookTestSource();
+        using var reader = Reader(source);
         source.Enqueue(CemuhookMotionProcessorTests.Sample(5, 1));
-        await Eventually(() => service.LatestSnapshot.Connected);
-        await Eventually(() => !service.LatestSnapshot.Connected);
-        Assert.False(service.Completion.IsCompleted);
+        await CemuhookTestSource.Eventually(() => reader.LatestSnapshot.Connected);
+        await CemuhookTestSource.Eventually(() => !reader.LatestSnapshot.Connected);
+        Assert.False(reader.Completion.IsCompleted);
         source.Enqueue(CemuhookMotionProcessorTests.Sample(1, 4));
-        await Eventually(() => service.LatestSnapshot.Connected);
-        Assert.Equal(0, service.LatestSnapshot.PitchDegreesPerSecond);
-        Assert.Equal(0, service.LatestSnapshot.RollDegreesPerSecond);
+        await CemuhookTestSource.Eventually(() => reader.LatestSnapshot.Connected);
+        Assert.Equal(0, reader.LatestSnapshot.PitchDegreesPerSecond);
+        Assert.Equal(0, reader.LatestSnapshot.RollDegreesPerSecond);
     }
 
     [Fact]
-    public async Task DisposeWaitsForWorkersAndIsSafeToRepeat()
+    public async Task DisposeWaitsForTheReaderAndIsSafeToRepeat()
     {
-        using var source = new ScriptedSource();
-        var udp = Settings();
-        var service = new CemuhookBridgeService(udp, new(), () => source);
-        await source.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        await Task.Run(service.Dispose).WaitAsync(TimeSpan.FromSeconds(5));
-        Assert.True(service.Completion.IsCompletedSuccessfully);
+        using var source = new CemuhookTestSource();
+        var reader = Reader(source);
+        await source.ReaderThread.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await Task.Run(reader.Dispose).WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.True(reader.Completion.IsCompletedSuccessfully);
         Assert.True(source.IsDisposed);
-        Assert.False(service.LatestSnapshot.Connected);
-        service.Dispose();
-        using var rebound = new UdpClient(new IPEndPoint(IPAddress.Loopback, udp.Port));
+        Assert.False(reader.LatestSnapshot.Connected);
+        reader.Dispose();
     }
 
     [Fact]
-    public async Task ImmediateReadFailuresAreThrottledAndRemainCancellable()
+    public async Task ImmediateReadFailuresAreThrottledAndCancellable()
     {
-        using var source = new ScriptedSource(immediateMisses: true);
-        using var service = new CemuhookBridgeService(Settings(), new(), () => source);
-        await source.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        using var source = new CemuhookTestSource(immediateMisses: true);
+        using var reader = Reader(source);
+        await source.ReaderThread.Task.WaitAsync(TimeSpan.FromSeconds(5));
         await Task.Delay(150);
         Assert.InRange(source.Reads, 1, 100);
-        await Task.Run(service.Dispose).WaitAsync(TimeSpan.FromSeconds(5));
+        await Task.Run(reader.Dispose).WaitAsync(TimeSpan.FromSeconds(5));
         Assert.True(source.IsDisposed);
     }
+}
 
-    [Fact]
-    public async Task HostRecreatesAFailedBridgeAtTheUnchangedEndpoint()
+internal sealed class CemuhookTestSource(bool immediateMisses = false) : ICemuhookMotionSource
+{
+    private readonly BlockingCollection<Func<DsMotionSnapshot?>> _samples = new();
+    private int _reads, _disposed;
+    public int Reads => Volatile.Read(ref _reads);
+    public bool IsDisposed => Volatile.Read(ref _disposed) != 0;
+    public TaskCompletionSource<Thread> ReaderThread { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    public void Enqueue(DsMotionSnapshot sample) => _samples.Add(() => sample);
+    public void OnRead(Func<DsMotionSnapshot?> read) => _samples.Add(read);
+    public void Fail(Exception error) => _samples.Add(() => throw error);
+    public bool TryRead(out DsMotionSnapshot snapshot, TimeSpan timeout)
     {
-        var services = new List<CemuhookBridgeService>();
-        var sources = new List<ScriptedSource>();
-        using var host = new CemuhookBridgeHost((udp, motion) =>
-        {
-            var source = new ScriptedSource();
-            sources.Add(source);
-            var service = new CemuhookBridgeService(udp, motion, () => source);
-            services.Add(service);
-            return service;
-        });
-        var settings = Settings();
-        host.Update(settings, new());
-        sources[0].Fail(new InvalidOperationException("device read failed"));
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => services[0].Completion.WaitAsync(TimeSpan.FromSeconds(5)));
-        host.Update(settings, new());
-        Assert.Equal(2, services.Count);
-        Assert.False(services[1].Completion.IsCompleted);
-        Assert.True(sources[0].IsDisposed);
-        host.Update(settings, new());
-        Assert.Equal(2, services.Count);
-        host.Dispose();
-        Assert.True(services[1].Completion.IsCompletedSuccessfully);
-        host.Update(settings, new());
-        Assert.Equal(2, services.Count);
-        foreach (var source in sources)
-            source.Dispose();
+        Interlocked.Increment(ref _reads); ReaderThread.TrySetResult(Thread.CurrentThread);
+        if (_samples.TryTake(out var read, immediateMisses ? TimeSpan.Zero : timeout) && read() is { } value)
+        { snapshot = value; return true; }
+        snapshot = default; return false;
     }
-
-    [Fact]
-    public async Task HostStopsThePreviousBridgeBeforeRebindingAndDisabling()
-    {
-        var services = new List<CemuhookBridgeService>();
-        var sources = new List<ScriptedSource>();
-        using var host = new CemuhookBridgeHost((udp, motion) =>
-        {
-            var source = new ScriptedSource();
-            sources.Add(source);
-            var service = new CemuhookBridgeService(udp, motion, () => source);
-            services.Add(service);
-            return service;
-        });
-        var settings = Settings();
-        host.Update(settings, new());
-        await sources[0].Entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        int firstPort = settings.Port;
-        // Changing the address on the same settings instance must restart the listener.
-        settings.IpAddress = "0.0.0.0";
-        host.Update(settings, new());
-        Assert.Equal(2, services.Count);
-        Assert.True(services[0].Completion.IsCompletedSuccessfully);
-        await sources[1].Entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        settings.Enabled = false;
-        host.Update(settings, new());
-        Assert.True(services[1].Completion.IsCompletedSuccessfully);
-        using var rebound = new UdpClient(new IPEndPoint(IPAddress.Loopback, firstPort));
-        foreach (var source in sources)
-            source.Dispose();
-    }
-
-    private static CemuhookUdpSettings Settings()
-    {
-        using var reservation = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
-        return new() { Enabled = true, IpAddress = "127.0.0.1", Port = ((IPEndPoint)reservation.Client.LocalEndPoint!).Port };
-    }
-
-    private static async Task Eventually(Func<bool> condition)
+    public void Dispose() { if (Interlocked.Exchange(ref _disposed, 1) == 0) _samples.Dispose(); }
+    public static async Task Eventually(Func<bool> condition)
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        while (!condition())
-            await Task.Delay(10, timeout.Token);
-    }
-
-    private sealed class ScriptedSource(bool immediateMisses = false) : ICemuhookMotionSource
-    {
-        private readonly BlockingCollection<Func<DsMotionSnapshot>> _samples = new();
-        private int _reads;
-        private int _disposed;
-        public int Reads => Volatile.Read(ref _reads);
-        public bool IsDisposed => Volatile.Read(ref _disposed) != 0;
-        public TaskCompletionSource Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        public TaskCompletionSource<Thread> ReaderThread { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        public void Enqueue(DsMotionSnapshot sample) => _samples.Add(() => sample);
-        public void Fail(Exception error) => _samples.Add(() => throw error);
-
-        public bool TryRead(out DsMotionSnapshot snapshot, TimeSpan timeout)
-        {
-            Interlocked.Increment(ref _reads);
-            ReaderThread.TrySetResult(Thread.CurrentThread);
-            Entered.TrySetResult();
-            if (_samples.TryTake(out var read, immediateMisses ? TimeSpan.Zero : timeout))
-            {
-                snapshot = read();
-                return true;
-            }
-            snapshot = default;
-            return false;
-        }
-
-        public void Dispose()
-        {
-            if (Interlocked.Exchange(ref _disposed, 1) == 0)
-                _samples.Dispose();
-        }
+        while (!condition()) await Task.Delay(10, timeout.Token);
     }
 }

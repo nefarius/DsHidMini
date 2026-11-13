@@ -1,81 +1,71 @@
 using System.Net.Sockets;
-using System.Threading;
-using System.Threading.Tasks;
-
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.Motion;
 
 namespace Nefarius.DsHidMini.ControlApp.Services;
 
-/// <summary>Owns the bridge for one device. Update and Dispose run on the device view model's UI thread.</summary>
-internal sealed class CemuhookBridgeHost(
-    Func<CemuhookUdpSettings, MotionControlsSettings, CemuhookBridgeService?> start) : IDisposable
+/// <summary>Lifecycle and errors of the single shared UDP listener. Updated on the UI thread.</summary>
+internal sealed class CemuhookBridgeHost(Func<CemuhookUdpSettings, CemuhookServer> start) : IDisposable
 {
-    private CemuhookBridgeService? _service;
+    private CemuhookServer? _server;
+    private CancellationTokenSource? _cts;
+    private Task? _completion;
     private string? _activeIp;
     private int _activePort;
     private bool _disposed;
     private string? _startError;
-
-    // Worker completion can raise this event on a background thread; UI subscribers must dispatch it.
     public event EventHandler? StatusChanged;
-
     public string? ErrorMessage
     {
         get
         {
-            var service = _service;
-            return _startError ?? (service?.Completion.IsFaulted == true
-                ? $"The Cemuhook UDP server stopped: {service.Completion.Exception!.GetBaseException().Message}"
-                : null);
+            Task? completion = _completion;
+            return _startError ?? (completion?.IsFaulted == true
+                ? $"The Cemuhook UDP server stopped: {completion.Exception!.GetBaseException().Message}" : null);
         }
     }
+    public void NotifySnapshotAvailable(byte? slot = null) => _server?.NotifySnapshotAvailable(slot);
 
-    public void Update(CemuhookUdpSettings udp, MotionControlsSettings motion)
+    public void Update(CemuhookUdpSettings endpoint, bool enabled)
     {
-        if (_disposed)
-            return;
-
-        string? validation = udp.Enabled ? CemuhookListenAddresses.ValidateEndpoint(udp.IpAddress, udp.Port) : null;
-        if (_service != null && (!udp.Enabled || validation != null || _service.Completion.IsCompleted ||
-                                 udp.IpAddress != _activeIp || udp.Port != _activePort))
-        {
-            Stop();
-        }
-
+        if (_disposed) return;
+        string? validation = enabled ? CemuhookListenAddresses.ValidateEndpoint(endpoint.IpAddress, endpoint.Port) : null;
+        if (_server != null && (!enabled || validation != null || _completion!.IsCompleted ||
+            endpoint.IpAddress != _activeIp || endpoint.Port != _activePort)) Stop();
         _startError = validation;
-        if (udp.Enabled && validation == null && _service == null)
+        if (enabled && validation == null && _server == null)
         {
             try
             {
-                _service = start(udp, motion);
-                _activeIp = udp.IpAddress;
-                _activePort = udp.Port;
-                if (_service == null)
+                _server = start(endpoint);
+                _cts = new();
+                CancellationToken token = _cts.Token;
+                CemuhookServer server = _server;
+                _completion = Task.Run(() => server.RunAsync(token));
+                _activeIp = endpoint.IpAddress;
+                _activePort = endpoint.Port;
+                _ = _completion.ContinueWith(task =>
                 {
-                    _startError = "The Cemuhook UDP server could not start. Check that the controller and driver are available.";
-                }
-                else
-                {
-                    _ = _service.Completion.ContinueWith(
-                        _ => StatusChanged?.Invoke(this, EventArgs.Empty),
-                        CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
-                }
+                    if (task.IsFaulted) Log.Logger.Error(task.Exception, "Shared Cemuhook server failed.");
+                    StatusChanged?.Invoke(this, EventArgs.Empty);
+                }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
             }
-            catch (Exception ex)
+            catch (Exception error)
             {
-                _startError = FormatStartError(ex, udp);
+                Stop();
+                _startError = FormatStartError(error, endpoint);
             }
         }
-
         StatusChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    public void Dispose()
+    public void Dispose() { _disposed = true; Stop(); _startError = null; }
+    private void Stop()
     {
-        _disposed = true;
-        Stop();
-        _startError = null;
+        _cts?.Cancel();
+        try { _completion?.GetAwaiter().GetResult(); } catch (Exception) { }
+        _server?.Dispose(); _cts?.Dispose();
+        _server = null; _cts = null; _completion = null; _activeIp = null; _activePort = 0;
     }
 
     private static string FormatStartError(Exception error, CemuhookUdpSettings udp) => error switch
@@ -88,12 +78,4 @@ internal sealed class CemuhookBridgeHost(
             $"Access to {udp.IpAddress}:{udp.Port} was denied. Choose a different listen address or UDP port.",
         _ => $"Could not start the Cemuhook UDP server on {udp.IpAddress}:{udp.Port}: {error.Message}"
     };
-
-    private void Stop()
-    {
-        _service?.Dispose();
-        _service = null;
-        _activeIp = null;
-        _activePort = 0;
-    }
 }

@@ -15,6 +15,10 @@ public class CemuhookUdpSettingsViewModel : DeviceSettingsViewModel
     private IReadOnlyList<CemuhookListenAddress> _availableAddresses = CemuhookListenAddresses.CreateOptions([]);
     private string? _serverError;
     private string? _discoveryError;
+    private string? _loadedSharedAddress;
+    private int _loadedSharedPort;
+    private int? _dsuSlot;
+    public string SlotDisplay => _dsuSlot is { } slot ? $"DSU slot {slot}" : "No DSU slot assigned";
 
     public CemuhookUdpSettingsViewModel() : this(CemuhookListenAddresses.Discover)
     {
@@ -118,8 +122,30 @@ public class CemuhookUdpSettingsViewModel : DeviceSettingsViewModel
         base.NotifyAllPropertiesHaveChanged();
     }
 
-    public void ReportServerError(string? message, string address, int port)
+    public void LoadSharedEndpoint(CemuhookUdpSettings endpoint)
     {
+        IpAddress = endpoint.IpAddress;
+        Port = endpoint.Port;
+        _loadedSharedAddress = endpoint.IpAddress;
+        _loadedSharedPort = endpoint.Port;
+    }
+
+    public void RefreshSharedEndpoint(CemuhookUdpSettings endpoint)
+    {
+        if (_loadedSharedAddress == null || (IpAddress == _loadedSharedAddress && Port == _loadedSharedPort))
+            LoadSharedEndpoint(endpoint);
+    }
+
+    public void SaveSharedEndpoint(CemuhookUdpSettings endpoint)
+    {
+        endpoint.IpAddress = IpAddress;
+        endpoint.Port = Port;
+    }
+
+    public void ReportServerError(string? message, string address, int port, int? slot = null)
+    {
+        _dsuSlot = slot;
+        OnPropertyChanged(nameof(SlotDisplay));
         // Do not overlay an old endpoint's error while the user is editing a new endpoint.
         _serverError = Port == port && CemuhookListenAddresses.AddressKey(IpAddress) == CemuhookListenAddresses.AddressKey(address)
             ? message

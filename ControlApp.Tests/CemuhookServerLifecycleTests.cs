@@ -14,7 +14,7 @@ public class CemuhookServerLifecycleTests
     [Fact]
     public async Task SendWorkerFailureStopsReceiveWorkerAndReleasesSocket()
     {
-        using var server = new CemuhookServer(0, "127.0.0.1", () => throw new InvalidOperationException("send worker"));
+        using var server = CreateServer(() => throw new InvalidOperationException("send worker"));
         var endpoint = server.LocalEndPoint;
         var error = await Assert.ThrowsAsync<InvalidOperationException>(
             () => server.RunAsync(CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(5)));
@@ -25,7 +25,7 @@ public class CemuhookServerLifecycleTests
     [Fact]
     public async Task ClosingPendingReceiveStopsBothWorkersAndReleasesSocket()
     {
-        using var server = new CemuhookServer(0, "127.0.0.1", () => new(false, 0, 0, 0, 0, 0, 0));
+        using var server = CreateServer(() => new(false, 0, 0, 0, 0, 0, 0));
         var endpoint = server.LocalEndPoint;
         Task run = server.RunAsync(CancellationToken.None);
         // Close the pending receive without cancelling the caller's token.
@@ -44,7 +44,7 @@ public class CemuhookServerLifecycleTests
     public async Task CancellationStopsBothWorkersAndReleasesSocket()
     {
         using var cts = new CancellationTokenSource();
-        using var server = new CemuhookServer(0, "127.0.0.1", () => new(false, 0, 0, 0, 0, 0, 0));
+        using var server = CreateServer(() => new(false, 0, 0, 0, 0, 0, 0));
         var endpoint = server.LocalEndPoint;
         Task run = server.RunAsync(cts.Token);
         cts.Cancel();
@@ -58,7 +58,7 @@ public class CemuhookServerLifecycleTests
         ulong qpc = (ulong)Stopwatch.Frequency * 123;
         var sample = new Ds3MotionSnapshot(true, 0.25, 0.5, -1, -180, 90, 45, qpc);
         using var cts = new CancellationTokenSource();
-        using var server = new CemuhookServer(0, "127.0.0.1", () => sample);
+        using var server = CreateServer(() => sample);
         using var client = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
         Task run = server.RunAsync(cts.Token);
         try
@@ -97,7 +97,7 @@ public class CemuhookServerLifecycleTests
         var latest = new Ds3MotionSnapshot(false, 0, 0, 0, 0, 0, 0);
         Ds3MotionSnapshot? consumed = null;
         using var cts = new CancellationTokenSource();
-        using var server = new CemuhookServer(0, "127.0.0.1", () =>
+        using var server = CreateServer(() =>
         {
             Interlocked.Increment(ref reads);
             consumed = latest;
@@ -126,7 +126,7 @@ public class CemuhookServerLifecycleTests
     {
         var latest = new Ds3MotionSnapshot(true, 0, 0, -1, 0, 0, 0, (ulong)Stopwatch.Frequency);
         using var cts = new CancellationTokenSource();
-        using var server = new CemuhookServer(0, "127.0.0.1", () => Volatile.Read(ref latest));
+        using var server = CreateServer(() => Volatile.Read(ref latest));
         using var firstClient = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
         using var secondClient = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
         Task run = server.RunAsync(cts.Token);
@@ -155,7 +155,10 @@ public class CemuhookServerLifecycleTests
         }
     }
 
-    private static byte[] ClientPacket(uint type, byte[] payload)
+    private static CemuhookServer CreateServer(Func<Ds3MotionSnapshot> provider) =>
+        new(0, "127.0.0.1", slot => slot == 0 ? new(0, 0x020000000001, 1, provider()) : CemuhookPadState.Empty(slot));
+
+    internal static byte[] ClientPacket(uint type, byte[] payload)
     {
         byte[] packet = DsuPacket.BuildServerPacket(type, payload, 1);
         packet[3] = (byte)'C';

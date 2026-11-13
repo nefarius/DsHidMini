@@ -1,142 +1,125 @@
-using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
-
+using System.Collections.Concurrent;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.Motion;
 
 namespace Nefarius.DsHidMini.ControlApp.Services;
 
-/// <summary>Consumes coherent driver motion telemetry and broadcasts filtered DSU samples.</summary>
-internal sealed class CemuhookBridgeService : IDisposable
+/// <summary>Application-wide UDP listener with independent per-controller readers and stable DSU slots.</summary>
+public sealed class CemuhookBridgeService : IDisposable
 {
-    private static readonly Ds3MotionSnapshot InactiveSnapshot = new(false, 0, 0, 0, 0, 0, 0);
-    private readonly CancellationTokenSource _cts = new();
-    private readonly CemuhookServer _server;
-    private readonly object _lifetimeLock = new();
+    private sealed record Controller(CemuhookControllerIdentity Identity, CemuhookControllerRegistry.Lease Lease,
+        Func<CemuhookIpcBinding?> Resolve, CemuhookMotionReader Reader);
+    private readonly ConcurrentDictionary<object, Controller> _controllers = new();
+    private readonly ConcurrentDictionary<object, string> _errors = new();
+    private readonly CemuhookControllerRegistry _registry = new();
+    private readonly CemuhookBridgeHost _host;
+    private readonly Func<CemuhookUdpSettings> _endpoint;
+    private readonly Func<string, int?> _preferred;
+    private readonly Action<string, int> _remember;
+    private readonly Func<CemuhookIpcBinding, ICemuhookMotionSource> _open;
     private bool _disposed;
-    private Ds3MotionSnapshot _latestSnapshot = InactiveSnapshot;
+    public event EventHandler? StatusChanged;
 
-    public Ds3MotionSnapshot LatestSnapshot => Volatile.Read(ref _latestSnapshot);
-
-    /// <summary>Completes only after both workers have stopped and the socket has been released.</summary>
-    public Task Completion { get; }
-
-    public CemuhookBridgeService(int deviceSlot, CemuhookUdpSettings udpSettings, MotionControlsSettings motionSettings)
-        : this(udpSettings, motionSettings, () => new CemuhookMotionSource(deviceSlot))
+    public CemuhookBridgeService(DshmConfigManager configuration)
+        : this(() => configuration.SharedCemuhookUdp, configuration.GetCemuhookSlot,
+            configuration.RememberCemuhookSlot, binding => new CemuhookMotionSource(binding.Slot))
     {
+        configuration.DshmConfigurationUpdated += OnConfigurationChanged;
+        _configuration = configuration;
+    }
+    private readonly DshmConfigManager? _configuration;
+    private void OnConfigurationChanged(object? sender, EventArgs args)
+    {
+        if (args is not DshmConfigManager.DshmUpdatedEventArgs { UpdatedSuccessfully: false }) UpdateEndpoint();
     }
 
-    internal CemuhookBridgeService(
-        CemuhookUdpSettings udpSettings,
-        MotionControlsSettings motionSettings,
-        Func<ICemuhookMotionSource> sourceFactory)
+    internal CemuhookBridgeService(Func<CemuhookUdpSettings> endpoint, Func<string, int?> preferred,
+        Action<string, int> remember, Func<CemuhookIpcBinding, ICemuhookMotionSource> open)
     {
-        try
-        {
-            _server = new CemuhookServer(udpSettings.Port, udpSettings.IpAddress, () => LatestSnapshot);
-        }
-        catch
-        {
-            _cts.Dispose();
-            throw;
-        }
-
-        CancellationToken token = _cts.Token;
-        // The IPC API blocks synchronously for the device's lifetime. Give it a
-        // dedicated background thread instead of occupying a thread-pool worker.
-        Task producer = Task.Factory.StartNew(
-            () => RunBridge(sourceFactory, motionSettings, token),
-            CancellationToken.None,
-            TaskCreationOptions.LongRunning,
-            TaskScheduler.Default);
-        Task server = Task.Run(() => _server.RunAsync(token));
-        Completion = SuperviseAsync(producer, server);
-        // Observe background failures even before the owner next checks Completion.
-        _ = Completion.ContinueWith(
-            task => Log.Logger.Error(task.Exception, "Cemuhook bridge worker faulted."),
-            CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
-            TaskScheduler.Default);
+        _endpoint = endpoint; _preferred = preferred; _remember = remember; _open = open;
+        _ = _endpoint();
+        _host = new(settings => new CemuhookServer(settings.Port, settings.IpAddress, _registry.Get));
+        _host.StatusChanged += (_, _) => StatusChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    private async Task SuperviseAsync(Task producer, Task server)
+    internal string? GetError(object owner) => _errors.TryGetValue(owner, out string? error) ? error
+        : _controllers.TryGetValue(owner, out Controller? entry) && entry.Reader.Completion.IsFaulted
+            ? $"Controller motion stopped: {entry.Reader.Completion.Exception!.GetBaseException().Message}"
+            : _host.ErrorMessage;
+    internal int? GetSlot(object owner) => _controllers.TryGetValue(owner, out Controller? entry) ? entry.Lease.Slot : null;
+    internal CemuhookPadState GetPad(byte slot) => _registry.Get(slot);
+
+    internal void UpdateController(object owner, CemuhookControllerIdentity identity, bool enabled, byte connectionType,
+        MotionControlsSettings settings, Func<CemuhookIpcBinding?> resolve)
     {
-        try
+        if (_disposed) return;
+        _errors.TryRemove(owner, out _);
+        if (!enabled) { RemoveController(owner); return; }
+        if (_controllers.TryGetValue(owner, out Controller? current))
         {
-            await Task.WhenAny(producer, server).ConfigureAwait(false);
-            RequestStop();
-            await Task.WhenAll(producer, server).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException) when (_cts.IsCancellationRequested)
-        {
-        }
-        finally
-        {
-            Volatile.Write(ref _latestSnapshot, InactiveSnapshot);
-            _server.Dispose();
-            lock (_lifetimeLock)
+            if (current.Identity == identity && !current.Reader.Completion.IsCompleted)
             {
-                _disposed = true;
-                _cts.Dispose();
+                _registry.SetConnection(current.Lease, connectionType);
+                UpdateEndpoint();
+                return;
             }
+            RemoveReader(owner);
         }
-    }
-
-    private void RequestStop()
-    {
-        lock (_lifetimeLock)
+        foreach (var other in _controllers.Where(pair => pair.Value.Identity.Key == identity.Key).ToArray())
         {
-            if (!_disposed)
-                _cts.Cancel();
+            if (other.Value.Resolve()?.ControllerKey == identity.Key)
+            {
+                _errors[owner] = "This controller is already registered through another connection.";
+                StatusChanged?.Invoke(this, EventArgs.Empty);
+                return;
+            }
+            RemoveReader(other.Key);
         }
+        try
+        {
+            var lease = _registry.Attach(identity, connectionType, _preferred(identity.Key));
+            CemuhookMotionReader reader;
+            try
+            {
+                reader = new(identity.Key, settings, resolve, _open, snapshot =>
+                {
+                    if (_registry.Publish(lease, snapshot)) _host.NotifySnapshotAvailable(lease.Slot);
+                });
+            }
+            catch { _registry.Detach(lease); throw; }
+            _controllers[owner] = new(identity, lease, resolve, reader);
+            _ = reader.Completion.ContinueWith(_ => StatusChanged?.Invoke(this, EventArgs.Empty),
+                CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            try { _remember(identity.Key, lease.Slot); }
+            catch (Exception error) { Log.Logger.Warning(error, "Could not save the preferred Cemuhook slot."); }
+        }
+        catch (Exception error) { _errors[owner] = error.Message; }
+        UpdateEndpoint();
     }
 
+    internal void RemoveController(object owner)
+    {
+        _errors.TryRemove(owner, out _);
+        RemoveReader(owner);
+        if (!_disposed) UpdateEndpoint();
+    }
+    private void RemoveReader(object owner)
+    {
+        if (!_controllers.TryRemove(owner, out Controller? entry)) return;
+        _registry.Detach(entry.Lease);
+        _host.NotifySnapshotAvailable(entry.Lease.Slot);
+        entry.Reader.Dispose();
+    }
+    internal void UpdateEndpoint()
+    {
+        if (!_disposed) _host.Update(_endpoint(), !_controllers.IsEmpty);
+    }
     public void Dispose()
     {
-        RequestStop();
-        try
-        {
-            Completion.GetAwaiter().GetResult();
-        }
-        catch (Exception)
-        {
-            // Completion exposes the failure; the observer above logs it.
-        }
-    }
-
-    private void RunBridge(
-        Func<ICemuhookMotionSource> sourceFactory,
-        MotionControlsSettings motionSettings,
-        CancellationToken cancellationToken)
-    {
-        using ICemuhookMotionSource source = sourceFactory();
-        var processor = new CemuhookMotionProcessor(motionSettings);
-        long lastRead = Stopwatch.GetTimestamp();
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            long readStart = Stopwatch.GetTimestamp();
-            if (source.TryRead(out var sample, TimeSpan.FromMilliseconds(100)) &&
-                processor.TryProcess(in sample, out var snapshot))
-            {
-                if (cancellationToken.IsCancellationRequested)
-                    break;
-                lastRead = Stopwatch.GetTimestamp();
-                Volatile.Write(ref _latestSnapshot, snapshot);
-                _server.NotifySnapshotAvailable();
-                continue;
-            }
-
-            if (Stopwatch.GetElapsedTime(lastRead).TotalSeconds >= 2 && LatestSnapshot.Connected)
-            {
-                Volatile.Write(ref _latestSnapshot, InactiveSnapshot);
-                _server.NotifySnapshotAvailable();
-                processor.Reset();
-            }
-
-            // Empty slots and missing events can return immediately rather than wait.
-            TimeSpan remaining = TimeSpan.FromMilliseconds(10) - Stopwatch.GetElapsedTime(readStart);
-            if (remaining > TimeSpan.Zero)
-                cancellationToken.WaitHandle.WaitOne(remaining);
-        }
+        if (_disposed) return;
+        _disposed = true;
+        if (_configuration != null) _configuration.DshmConfigurationUpdated -= OnConfigurationChanged;
+        foreach (object owner in _controllers.Keys.ToArray()) RemoveReader(owner);
+        _host.Dispose(); _errors.Clear();
     }
 }

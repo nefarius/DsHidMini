@@ -10,6 +10,7 @@ using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.Input;
+using Nefarius.DsHidMini.ControlApp.Models.Motion;
 using Nefarius.DsHidMini.ControlApp.Models.Rumble;
 using Nefarius.DsHidMini.ControlApp.Models.Util;
 using Nefarius.DsHidMini.ControlApp.Models.Util.Web;
@@ -66,7 +67,8 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     private ControllerDiagnosticExportWindow? _diagnosticsExport;
     private RumbleTesterWindow? _rumbleTester;
     private BluetoothDiagnosticWindow? _bluetoothDiagnosticWindow;
-    private readonly CemuhookBridgeHost _cemuhookBridgeHost;
+    private readonly CemuhookBridgeService _cemuhookBridgeService;
+    private PnPDevice _cemuhookDevice;
 
     // ------------------------------------------------------ FIELDS
 
@@ -145,10 +147,12 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         AppSnackbarMessagesService appSnackbarMessagesService,
         IContentDialogService contentDialogService,
         AddressValidator addressValidator,
-        BluetoothDiagnosticSession bluetoothDiagnosticSession
+        BluetoothDiagnosticSession bluetoothDiagnosticSession,
+        CemuhookBridgeService cemuhookBridgeService
     )
     {
         Device = device;
+        _cemuhookDevice = device;
         Log.Logger.Debug("Creating Device ViewModel for device '{S}'", DeviceAddress);
         _dshmDevMan = dshmDevMan;
         _dshmConfigManager = dshmConfigManager;
@@ -156,8 +160,8 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         _contentDialogService = contentDialogService;
         _addressValidator = addressValidator;
         _bluetoothDiagnosticSession = bluetoothDiagnosticSession;
-        _cemuhookBridgeHost = new CemuhookBridgeHost(StartCemuhookBridgeService);
-        _cemuhookBridgeHost.StatusChanged += OnCemuhookBridgeStatusChanged;
+        _cemuhookBridgeService = cemuhookBridgeService;
+        _cemuhookBridgeService.StatusChanged += OnCemuhookBridgeStatusChanged;
         DeviceCustomsVM.CemuhookUdpSettingsVM.PropertyChanged += (_, _) => ApplyChangesCommand.NotifyCanExecuteChanged();
         _batteryQuery = new Timer(UpdateBatteryStatus, null, 1500, 10000);
         _inputReportMetricsQuery = new Timer(UpdateInputReportMetrics, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
@@ -210,6 +214,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         }
 
         Device = device;
+        Volatile.Write(ref _cemuhookDevice, device);
         return decision;
     }
 
@@ -1057,10 +1062,10 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
-        _cemuhookBridgeHost.StatusChanged -= OnCemuhookBridgeStatusChanged;
-        _cemuhookBridgeHost.Dispose();
-        Interlocked.Exchange(ref _outputStallDisposed, 1);
         Interlocked.Exchange(ref _inputReportMetricsDisposed, 1);
+        Interlocked.Exchange(ref _outputStallDisposed, 1);
+        _cemuhookBridgeService.StatusChanged -= OnCemuhookBridgeStatusChanged;
+        _cemuhookBridgeService.RemoveController(this);
         Interlocked.Increment(ref _xInputSlotRefreshGeneration);
 
         using ManualResetEvent outputDone = new(false);
@@ -1132,6 +1137,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         // Settings and selected profile
         CurrentDeviceSettingsMode = _deviceUserData.SettingsMode;
         DeviceCustomsVM.LoadDatasToAllGroups(_deviceUserData.Settings);
+        DeviceCustomsVM.CemuhookUdpSettingsVM.LoadSharedEndpoint(_dshmConfigManager.SharedCemuhookUdp);
         ListOfProfiles = _dshmConfigManager.GetListOfProfilesWithDefault();
 
         Log.Logger.Information(
@@ -1320,6 +1326,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
 
         DeviceCustomsVM.CemuhookUdpSettingsVM.SaveSettingsToBackingDataContainer(_deviceUserData.Settings);
         DeviceCustomsVM.MotionControlsSettingsVM.SaveSettingsToBackingDataContainer(_deviceUserData.Settings);
+        DeviceCustomsVM.CemuhookUdpSettingsVM.SaveSharedEndpoint(_dshmConfigManager.SharedCemuhookUdp);
 
         if (CurrentDeviceSettingsMode == SettingsModes.Profile)
         {
@@ -1869,8 +1876,12 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
 
     private void UpdateCemuhookBridgeService()
     {
+        if (Volatile.Read(ref _inputReportMetricsDisposed) != 0) return;
+        DeviceCustomsVM.CemuhookUdpSettingsVM.RefreshSharedEndpoint(_dshmConfigManager.SharedCemuhookUdp);
         DeviceCustomsVM.CemuhookUdpSettingsVM.RefreshListenAddresses();
-        _cemuhookBridgeHost.Update(_deviceUserData.Settings.CemuhookUdp, _deviceUserData.Settings.MotionControls);
+        var identity = CemuhookControllerIdentity.Create(_deviceUserData.DeviceMac, InstanceId);
+        _cemuhookBridgeService.UpdateController(this, identity, _deviceUserData.Settings.CemuhookUdp.Enabled,
+            IsWireless ? (byte)2 : (byte)1, _deviceUserData.Settings.MotionControls, ResolveCemuhookBinding);
     }
 
     private void OnCemuhookBridgeStatusChanged(object? sender, EventArgs e)
@@ -1879,50 +1890,34 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         {
             if (Volatile.Read(ref _inputReportMetricsDisposed) != 0)
                 return;
-            var udp = _deviceUserData.Settings.CemuhookUdp;
-            DeviceCustomsVM.CemuhookUdpSettingsVM.ReportServerError(_cemuhookBridgeHost.ErrorMessage, udp.IpAddress, udp.Port);
+            var udp = _dshmConfigManager.SharedCemuhookUdp;
+            DeviceCustomsVM.CemuhookUdpSettingsVM.RefreshSharedEndpoint(udp);
+            DeviceCustomsVM.CemuhookUdpSettingsVM.ReportServerError(_cemuhookBridgeService.GetError(this), udp.IpAddress, udp.Port,
+                _cemuhookBridgeService.GetSlot(this));
         }
 
         var dispatcher = Application.Current?.Dispatcher;
-        if (dispatcher != null && !dispatcher.CheckAccess())
+        if (dispatcher == null || dispatcher.HasShutdownStarted || dispatcher.HasShutdownFinished)
+            return;
+        if (!dispatcher.CheckAccess())
             dispatcher.BeginInvoke(ShowStatus);
         else
             ShowStatus();
     }
 
-    private CemuhookBridgeService? StartCemuhookBridgeService(CemuhookUdpSettings udpSettings, MotionControlsSettings motionSettings)
+    private CemuhookIpcBinding? ResolveCemuhookBinding()
     {
-        int? slot = DsHidMiniInterop.TryGetIpcSlotIndex(Device);
-        if (slot is not { } deviceIndex)
-        {
-            Log.Logger.Warning(
-                "Cannot start Cemuhook UDP bridge for device '{DeviceAddress}': no IPC slot available.",
-                DeviceAddress);
-            throw new InvalidOperationException("No controller IPC slot is available. Reconnect the controller and try again.");
-        }
-
-        if (!DsHidMiniInterop.IsAvailable)
-        {
-            Log.Logger.Warning(
-                "Cannot start Cemuhook UDP bridge for device '{DeviceAddress}': DsHidMini IPC is unavailable.",
-                DeviceAddress);
-            throw new InvalidOperationException("DsHidMini IPC is unavailable. Check that the driver is running and try again.");
-        }
-
         try
         {
-            var service = new CemuhookBridgeService(deviceIndex, udpSettings, motionSettings);
-            Log.Logger.Information(
-                "Cemuhook UDP bridge started for device '{DeviceAddress}' on {IpAddress}:{Port}.",
-                DeviceAddress, udpSettings.IpAddress, udpSettings.Port);
-            return service;
+            PnPDevice device = Volatile.Read(ref _cemuhookDevice);
+            if (!device.GetProperty<bool>(DevicePropertyKey.Device_IsPresent)) return null;
+            var identity = CemuhookControllerIdentity.Create(device.GetProperty<string>(DsHidMiniDriver.DeviceAddressProperty), device.InstanceId);
+            int? slot = DsHidMiniInterop.TryGetIpcSlotIndex(device);
+            return slot is { } index ? new(identity.Key, device.InstanceId, index) : null;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Log.Logger.Error(ex,
-                "Failed to start Cemuhook UDP bridge for device '{DeviceAddress}'.",
-                DeviceAddress);
-            throw;
+            return null;
         }
     }
 }
