@@ -10,6 +10,7 @@ using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.DshmConfig.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.Enums;
 using Nefarius.DsHidMini.ControlApp.Models.Input;
+using Nefarius.DsHidMini.ControlApp.Models.Motion;
 using Nefarius.DsHidMini.ControlApp.Models.Rumble;
 using Nefarius.DsHidMini.ControlApp.Models.Util;
 using Nefarius.DsHidMini.ControlApp.Models.Util.Web;
@@ -66,6 +67,8 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     private ControllerDiagnosticExportWindow? _diagnosticsExport;
     private RumbleTesterWindow? _rumbleTester;
     private BluetoothDiagnosticWindow? _bluetoothDiagnosticWindow;
+    private readonly CemuhookBridgeService _cemuhookBridgeService;
+    private PnPDevice _cemuhookDevice;
 
     // ------------------------------------------------------ FIELDS
 
@@ -144,10 +147,12 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         AppSnackbarMessagesService appSnackbarMessagesService,
         IContentDialogService contentDialogService,
         AddressValidator addressValidator,
-        BluetoothDiagnosticSession bluetoothDiagnosticSession
+        BluetoothDiagnosticSession bluetoothDiagnosticSession,
+        CemuhookBridgeService cemuhookBridgeService
     )
     {
         Device = device;
+        _cemuhookDevice = device;
         Log.Logger.Debug("Creating Device ViewModel for device '{S}'", DeviceAddress);
         _dshmDevMan = dshmDevMan;
         _dshmConfigManager = dshmConfigManager;
@@ -155,6 +160,9 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         _contentDialogService = contentDialogService;
         _addressValidator = addressValidator;
         _bluetoothDiagnosticSession = bluetoothDiagnosticSession;
+        _cemuhookBridgeService = cemuhookBridgeService;
+        _cemuhookBridgeService.StatusChanged += OnCemuhookBridgeStatusChanged;
+        DeviceCustomsVM.CemuhookUdpSettingsVM.PropertyChanged += (_, _) => ApplyChangesCommand.NotifyCanExecuteChanged();
         _batteryQuery = new Timer(UpdateBatteryStatus, null, 1500, 10000);
         _inputReportMetricsQuery = new Timer(UpdateInputReportMetrics, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
         _outputStatusQuery = null;
@@ -165,7 +173,9 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         _deviceUserData = _dshmConfigManager.GetDeviceData(DeviceAddress);
         _pairingMode = _deviceUserData.BluetoothPairingMode;
         DeviceCustomsVM.AllowEditing = _dshmConfigManager.CanPersistSharedConfiguration;
-        DeviceCustomsVM.ApplyDeviceCapabilities(DeviceType);
+        DeviceCustomsVM.ApplyDeviceCapabilities(
+            DeviceType,
+            IdentificationInfo?.MotionPath ?? DsIdentificationMotionPath.Unknown);
         // Loads correspondent controller data based on controller's MAC address 
 
 
@@ -204,6 +214,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         }
 
         Device = device;
+        Volatile.Write(ref _cemuhookDevice, device);
         return decision;
     }
 
@@ -631,7 +642,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     /// </summary>
     public bool CanEditSharedConfiguration => _dshmConfigManager.CanPersistSharedConfiguration;
 
-    private bool CanExecuteApplyChanges() => CanEditSharedConfiguration;
+    private bool CanExecuteApplyChanges() => CanEditSharedConfiguration && DeviceCustomsVM.CemuhookUdpSettingsVM.CanApply;
 
     public bool CanRestartDevice =>
         ControlAppActionPolicy.CanRestartDevice(IsWireless, SecurityUtil.IsElevated);
@@ -910,6 +921,11 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(IdentificationCheckSummary));
         OnPropertyChanged(nameof(IdentificationCheckDetail));
         OnPropertyChanged(nameof(ShowIdentificationCheckWarning));
+        // Update settings visibility whenever identification data changes
+        DeviceCustomsVM.ApplyDeviceCapabilities(
+            DeviceType,
+            IdentificationInfo?.MotionPath ?? DsIdentificationMotionPath.Unknown);
+        UpdateCemuhookBridgeService();
     }
 
     private void NotifyAddressAuthenticityProperties()
@@ -1046,8 +1062,10 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
-        Interlocked.Exchange(ref _outputStallDisposed, 1);
         Interlocked.Exchange(ref _inputReportMetricsDisposed, 1);
+        Interlocked.Exchange(ref _outputStallDisposed, 1);
+        _cemuhookBridgeService.StatusChanged -= OnCemuhookBridgeStatusChanged;
+        _cemuhookBridgeService.RemoveController(this);
         Interlocked.Increment(ref _xInputSlotRefreshGeneration);
 
         using ManualResetEvent outputDone = new(false);
@@ -1119,6 +1137,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         // Settings and selected profile
         CurrentDeviceSettingsMode = _deviceUserData.SettingsMode;
         DeviceCustomsVM.LoadDatasToAllGroups(_deviceUserData.Settings);
+        DeviceCustomsVM.CemuhookUdpSettingsVM.LoadSharedEndpoint(_dshmConfigManager.SharedCemuhookUdp);
         ListOfProfiles = _dshmConfigManager.GetListOfProfilesWithDefault();
 
         Log.Logger.Information(
@@ -1290,6 +1309,13 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             return;
         }
 
+        DeviceCustomsVM.CemuhookUdpSettingsVM.RefreshListenAddresses();
+        if (!DeviceCustomsVM.CemuhookUdpSettingsVM.CanApply)
+            return;
+        if (!DeviceCustomsVM.CemuhookUdpSettingsVM.SaveSharedEndpoint(_dshmConfigManager.SharedCemuhookUdp,
+                _cemuhookBridgeService.TryUpdateEndpoint))
+            return;
+
         Log.Logger.Information("Saving and applying changes made to Device '{DeviceAddress}'", DeviceAddress);
         _deviceUserData.BluetoothPairingMode = PairingMode;
 
@@ -1300,6 +1326,9 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         {
             DeviceCustomsVM.SaveAllChangesToBackingData(_deviceUserData.Settings);
         }
+
+        DeviceCustomsVM.CemuhookUdpSettingsVM.SaveSettingsToBackingDataContainer(_deviceUserData.Settings);
+        DeviceCustomsVM.MotionControlsSettingsVM.SaveSettingsToBackingDataContainer(_deviceUserData.Settings);
 
         if (CurrentDeviceSettingsMode == SettingsModes.Profile)
         {
@@ -1317,6 +1346,8 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         {
             _appSnackbarMessagesService.ShowDsHidMiniConfigurationUpdateFailedMessage();
         }
+
+        UpdateCemuhookBridgeService();
 
         await RefreshDeviceSettings();
     }
@@ -1652,7 +1683,8 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             deviceIndex,
             DeviceAddressFriendly ?? DeviceAddress,
             calibrationSource,
-            ApplicationConfiguration.Instance.MotionViewerSoftwareRendering);
+            ApplicationConfiguration.Instance.MotionViewerSoftwareRendering,
+            _deviceUserData.Settings.MotionControls);
         _motionViewer = new MotionViewerWindow(viewer)
         {
             Owner = Application.Current.MainWindow
@@ -1838,5 +1870,56 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             }
         );
         return result;
+    }
+
+    /* ------------------------------------------------------------------
+     * Cemuhook bridge
+     * ------------------------------------------------------------------ */
+
+    private void UpdateCemuhookBridgeService()
+    {
+        if (Volatile.Read(ref _inputReportMetricsDisposed) != 0) return;
+        DeviceCustomsVM.CemuhookUdpSettingsVM.RefreshSharedEndpoint(_dshmConfigManager.SharedCemuhookUdp);
+        DeviceCustomsVM.CemuhookUdpSettingsVM.RefreshListenAddresses();
+        var identity = CemuhookControllerIdentity.Create(_deviceUserData.DeviceMac, InstanceId);
+        _cemuhookBridgeService.UpdateController(this, identity, _deviceUserData.Settings.CemuhookUdp.Enabled,
+            IsWireless ? (byte)2 : (byte)1, _deviceUserData.Settings.MotionControls, ResolveCemuhookBinding);
+    }
+
+    private void OnCemuhookBridgeStatusChanged(object? sender, EventArgs e)
+    {
+        void ShowStatus()
+        {
+            if (Volatile.Read(ref _inputReportMetricsDisposed) != 0)
+                return;
+            var udp = _dshmConfigManager.SharedCemuhookUdp;
+            DeviceCustomsVM.CemuhookUdpSettingsVM.RefreshSharedEndpoint(udp);
+            DeviceCustomsVM.CemuhookUdpSettingsVM.ReportServerError(_cemuhookBridgeService.GetError(this), udp.IpAddress, udp.Port,
+                _cemuhookBridgeService.GetSlot(this));
+        }
+
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher == null || dispatcher.HasShutdownStarted || dispatcher.HasShutdownFinished)
+            return;
+        if (!dispatcher.CheckAccess())
+            dispatcher.BeginInvoke(ShowStatus);
+        else
+            ShowStatus();
+    }
+
+    private CemuhookIpcBinding? ResolveCemuhookBinding()
+    {
+        try
+        {
+            PnPDevice device = Volatile.Read(ref _cemuhookDevice);
+            if (!device.GetProperty<bool>(DevicePropertyKey.Device_IsPresent)) return null;
+            var identity = CemuhookControllerIdentity.Create(device.GetProperty<string>(DsHidMiniDriver.DeviceAddressProperty), device.InstanceId);
+            int? slot = DsHidMiniInterop.TryGetIpcSlotIndex(device);
+            return slot is { } index ? new(identity.Key, device.InstanceId, index) : null;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
     }
 }

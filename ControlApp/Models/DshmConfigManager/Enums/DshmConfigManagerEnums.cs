@@ -32,6 +32,8 @@ public enum SettingsModeGroups
     RumbleGeneral,
     RumbleLeftStrRescale,
     RumbleRightConversion,
+    CemuhookUdpBridge,
+    MotionControls,
     Unique_All,
     Unique_Global,
     Unique_General,

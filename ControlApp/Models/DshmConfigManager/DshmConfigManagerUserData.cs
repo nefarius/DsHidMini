@@ -28,6 +28,9 @@ internal class DshmConfigManagerUserData
 
     public bool IPCEnabled { get; set; } = true;
 
+    public CemuhookUdpSettings? CemuhookServer { get; set; }
+    public Dictionary<string, int> CemuhookSlots { get; } = new(StringComparer.OrdinalIgnoreCase);
+
     public List<ProfileData> Profiles { get; } = new();
 
     public List<DeviceData> Devices { get; } = new();
@@ -70,6 +73,12 @@ internal class DshmConfigManagerUserData
         GlobalProfileGuid = source.GlobalProfileGuid;
         AutoRestartOnHidModeMismatch = source.AutoRestartOnHidModeMismatch;
         IPCEnabled = source.IPCEnabled;
+        if (CemuhookServer != null && source.CemuhookServer != null)
+            CemuhookUdpSettings.CopySettings(CemuhookServer, source.CemuhookServer);
+        else
+            CemuhookServer = source.CemuhookServer;
+        CemuhookSlots.Clear();
+        foreach (var pair in source.CemuhookSlots) CemuhookSlots[pair.Key] = pair.Value;
         ReplaceProfiles(source.Profiles);
         ReplaceDevices(source.Devices);
     }

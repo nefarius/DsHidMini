@@ -88,6 +88,7 @@ public partial class App
 
             services.AddSingleton<DshmDevMan>();
             services.AddSingleton<DshmConfigManager>();
+            services.AddSingleton<CemuhookBridgeService>();
             services.AddSingleton<BthPS3StatusService>();
             services.AddSingleton<DefenderBtStatusService>();
             services.AddSingleton<UnsupportedAdapterStatusService>();
