@@ -130,12 +130,12 @@ internal sealed class CemuhookBridgeService : IDisposable
             if (!received)
             {
                 // Publish inactive snapshot after a bounded miss interval so stale
-                // motion values are not broadcast as fresh data.
+                // motion values are not broadcast as fresh data, then continue
+                // waiting for input so the service can recover.
                 double missedMs = Stopwatch.GetElapsedTime(lastReadTimestamp).TotalMilliseconds;
                 if (missedMs >= MissedReadTimeoutMs)
                 {
                     PublishSnapshot(new Ds3MotionSnapshot(false, 0, 0, 0, 0, 0, 0));
-                    return;
                 }
 
                 continue;
@@ -148,37 +148,37 @@ internal sealed class CemuhookBridgeService : IDisposable
             ushort rawAccelZ = BinaryPrimitives.ReverseEndianness(report.AccelerometerZ);
             ushort rawGyro = BinaryPrimitives.ReverseEndianness(report.Gyroscope);
 
-            // Check whether the driver provides per-device calibration data.
-            // When Fallback is set, EEPROM was not read; use nominal values.
+            // Read motion snapshot once for both calibration data and motion path.
             ushort accelZeroX = 512, accelZeroY = 512, accelZeroZ = 512;
             ushort accelOneGX = 399, accelOneGY = 399, accelOneGZ = 399;
+            DsIdentificationMotionPath motionPath = DsIdentificationMotionPath.Unknown;
+            ushort calGyro = 0;
 
             if (interop.GetMotionSnapshot(_deviceSlot, out var motionSnap, TimeSpan.Zero) &&
-                motionSnap.IsAvailable && !motionSnap.IsFallback)
+                motionSnap.IsAvailable)
             {
-                accelZeroX = motionSnap.AccelZeroX;
-                accelZeroY = motionSnap.AccelZeroY;
-                accelZeroZ = motionSnap.AccelZeroZ;
-                accelOneGX = motionSnap.AccelOneGX;
-                accelOneGY = motionSnap.AccelOneGY;
-                accelOneGZ = motionSnap.AccelOneGZ;
+                motionPath = motionSnap.MotionPath;
+                calGyro = motionSnap.CalGyro;
+
+                if (!motionSnap.IsFallback)
+                {
+                    accelZeroX = motionSnap.AccelZeroX;
+                    accelZeroY = motionSnap.AccelZeroY;
+                    accelZeroZ = motionSnap.AccelZeroZ;
+                    accelOneGX = motionSnap.AccelOneGX;
+                    accelOneGY = motionSnap.AccelOneGY;
+                    accelOneGZ = motionSnap.AccelOneGZ;
+                }
             }
 
             // For HwCal path the driver already applies the hardware cal byte;
             // for Sixaxis the GyroCal tracker provides the adjustment.
-            // For PlainZero the driver uses software-only tracking, so we skip
-            // the GyroCal retarget offset and use the raw gyro directly.
-            DsIdentificationMotionPath motionPath = DsIdentificationMotionPath.Unknown;
-            if (interop.GetMotionSnapshot(_deviceSlot, out motionSnap, TimeSpan.Zero) &&
-                motionSnap.IsAvailable)
-            {
-                motionPath = motionSnap.MotionPath;
-            }
-
+            // For PlainZero the driver uses software-only tracking, so we use
+            // the driver-calibrated gyro value directly.
             int calibratedGyro;
             if (motionPath == DsIdentificationMotionPath.PlainZero)
             {
-                calibratedGyro = rawGyro;
+                calibratedGyro = calGyro;
             }
             else
             {
