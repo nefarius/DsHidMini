@@ -24,6 +24,8 @@ internal sealed class CemuhookServer : IDisposable
     private readonly Func<Ds3MotionSnapshot> _snapshotProvider;
     private uint _packetNumber;
 
+    internal IPEndPoint LocalEndPoint => (IPEndPoint)_udp.Client.LocalEndPoint!;
+
     private sealed class Subscription
     {
         public required IPEndPoint Endpoint { get; init; }
@@ -41,16 +43,23 @@ internal sealed class CemuhookServer : IDisposable
 
     public async Task RunAsync(CancellationToken cancellationToken)
     {
-        Task receiveTask = ReceiveLoopAsync(cancellationToken);
-        Task sendTask = SendLoopAsync(cancellationToken);
+        using var workers = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        Task receiveTask = ReceiveLoopAsync(workers.Token);
+        Task sendTask = SendLoopAsync(workers.Token);
 
         try
         {
-            await Task.WhenAll(receiveTask, sendTask);
+            await Task.WhenAny(receiveTask, sendTask).ConfigureAwait(false);
+            workers.Cancel();
+            await Task.WhenAll(receiveTask, sendTask).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
-            when (cancellationToken.IsCancellationRequested)
+            when (workers.IsCancellationRequested)
         {
+        }
+        finally
+        {
+            Dispose();
         }
     }
 
@@ -62,7 +71,7 @@ internal sealed class CemuhookServer : IDisposable
 
             try
             {
-                received = await _udp.ReceiveAsync(cancellationToken);
+                received = await _udp.ReceiveAsync(cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -89,11 +98,11 @@ internal sealed class CemuhookServer : IDisposable
             switch (messageType)
             {
                 case DsuPacket.MessageVersion:
-                    await SendVersionResponseAsync(received.RemoteEndPoint);
+                    await SendVersionResponseAsync(received.RemoteEndPoint, cancellationToken).ConfigureAwait(false);
                     break;
 
                 case DsuPacket.MessageControllerInfo:
-                    await SendControllerInfoAsync(received.RemoteEndPoint, payload);
+                    await SendControllerInfoAsync(received.RemoteEndPoint, payload, cancellationToken).ConfigureAwait(false);
                     break;
 
                 case DsuPacket.MessageControllerData:
@@ -103,14 +112,14 @@ internal sealed class CemuhookServer : IDisposable
         }
     }
 
-    private async Task SendVersionResponseAsync(IPEndPoint endpoint)
+    private async Task SendVersionResponseAsync(IPEndPoint endpoint, CancellationToken cancellationToken)
     {
         byte[] payload = new byte[2];
         BinaryPrimitives.WriteUInt16LittleEndian(payload, DsuPacket.ProtocolVersion);
-        await SendPacketAsync(endpoint, DsuPacket.MessageVersion, payload);
+        await SendPacketAsync(endpoint, DsuPacket.MessageVersion, payload, cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task SendControllerInfoAsync(IPEndPoint endpoint, byte[] request)
+    private async Task SendControllerInfoAsync(IPEndPoint endpoint, byte[] request, CancellationToken cancellationToken)
     {
         if (request.Length < 4)
             return;
@@ -124,16 +133,16 @@ internal sealed class CemuhookServer : IDisposable
             byte slot = request[4 + i];
             if (slot != DsuSlot)
             {
-                await SendControllerInfoResponseAsync(endpoint, slot, false);
+                await SendControllerInfoResponseAsync(endpoint, slot, false, cancellationToken).ConfigureAwait(false);
                 continue;
             }
 
             Ds3MotionSnapshot snapshot = _snapshotProvider();
-            await SendControllerInfoResponseAsync(endpoint, DsuSlot, snapshot.Connected);
+            await SendControllerInfoResponseAsync(endpoint, DsuSlot, snapshot.Connected, cancellationToken).ConfigureAwait(false);
         }
     }
 
-    private async Task SendControllerInfoResponseAsync(IPEndPoint endpoint, byte slot, bool connected)
+    private async Task SendControllerInfoResponseAsync(IPEndPoint endpoint, byte slot, bool connected, CancellationToken cancellationToken)
     {
         byte[] payload = new byte[12];
         payload[0] = slot;
@@ -142,7 +151,7 @@ internal sealed class CemuhookServer : IDisposable
         payload[3] = connected ? (byte)1 : (byte)0;
         Array.Copy(DsuMac, 0, payload, 4, 6);
 
-        await SendPacketAsync(endpoint, DsuPacket.MessageControllerInfo, payload);
+        await SendPacketAsync(endpoint, DsuPacket.MessageControllerInfo, payload, cancellationToken).ConfigureAwait(false);
     }
 
     private void HandleSubscription(IPEndPoint endpoint, byte[] request)
@@ -181,7 +190,7 @@ internal sealed class CemuhookServer : IDisposable
     {
         using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(8));
 
-        while (await timer.WaitForNextTickAsync(cancellationToken))
+        while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
         {
             Ds3MotionSnapshot snapshot = _snapshotProvider();
             if (!snapshot.Connected)
@@ -204,7 +213,7 @@ internal sealed class CemuhookServer : IDisposable
                     continue;
 
                 byte[] payload = BuildControllerData(snapshot);
-                await SendPacketAsync(subscription.Endpoint, DsuPacket.MessageControllerData, payload);
+                await SendPacketAsync(subscription.Endpoint, DsuPacket.MessageControllerData, payload, cancellationToken).ConfigureAwait(false);
             }
         }
     }
@@ -227,7 +236,7 @@ internal sealed class CemuhookServer : IDisposable
         payload[22] = 128;
         payload[23] = 128;
 
-        ulong timestamp = unchecked((ulong)(Stopwatch.GetTimestamp() * 1_000_000.0 / Stopwatch.Frequency));
+        ulong timestamp = unchecked((ulong)(snapshot.TimestampQpc * 1_000_000.0 / Stopwatch.Frequency));
         BinaryPrimitives.WriteUInt64LittleEndian(payload.AsSpan(48, 8), timestamp);
 
         WriteFloat(payload, 56, (float)snapshot.AccelXG);
@@ -248,10 +257,10 @@ internal sealed class CemuhookServer : IDisposable
         BinaryPrimitives.WriteSingleLittleEndian(destination.AsSpan(offset, 4), value);
     }
 
-    private async Task SendPacketAsync(IPEndPoint endpoint, uint messageType, byte[] payload)
+    private async Task SendPacketAsync(IPEndPoint endpoint, uint messageType, byte[] payload, CancellationToken cancellationToken)
     {
         byte[] packet = DsuPacket.BuildServerPacket(messageType, payload, _serverId);
-        await _udp.SendAsync(packet, packet.Length, endpoint);
+        await _udp.SendAsync(packet, endpoint, cancellationToken).ConfigureAwait(false);
     }
 
     public void Dispose()

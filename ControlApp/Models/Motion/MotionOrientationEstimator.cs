@@ -165,7 +165,9 @@ internal sealed class MotionOrientationEstimator
         if (!snapshot.Connected)
             return;
 
-        ulong timestampQpc = (ulong)Stopwatch.GetTimestamp();
+        ulong timestampQpc = snapshot.TimestampQpc != 0
+            ? snapshot.TimestampQpc
+            : (ulong)Stopwatch.GetTimestamp();
         double gx = snapshot.AccelXG * 1000.0;
         double gy = snapshot.AccelYG * 1000.0;
         double gz = snapshot.AccelZG * 1000.0;

@@ -271,7 +271,8 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
                             filteredAccelZ,
                             filteredGyro,
                             0,
-                            0);
+                            0,
+                            snapshot.TimestampQpc);
                         _estimator.Update(in bridgeSnapshot);
                     }
                     else

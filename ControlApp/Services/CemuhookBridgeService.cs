@@ -1,263 +1,134 @@
-using System.Buffers.Binary;
 using System.Diagnostics;
-using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.Motion;
-using Nefarius.DsHidMini.IPC;
-using Nefarius.DsHidMini.IPC.Models.Drivers;
-using Nefarius.DsHidMini.IPC.Models.Public;
 
 namespace Nefarius.DsHidMini.ControlApp.Services;
 
-/// <summary>
-///     Reads DS3 motion data via DsHidMini IPC, applies gyro calibration,
-///     Kalman filtering, and orientation estimation, then broadcasts through
-///     the Cemuhook DSU protocol.
-/// </summary>
+/// <summary>Consumes coherent driver motion telemetry and broadcasts filtered DSU samples.</summary>
 internal sealed class CemuhookBridgeService : IDisposable
 {
-    private const int MissedReadTimeoutMs = 2000;
+    private static readonly Ds3MotionSnapshot InactiveSnapshot = new(false, 0, 0, 0, 0, 0, 0);
+    private readonly CancellationTokenSource _cts = new();
+    private readonly CemuhookServer _server;
+    private readonly object _lifetimeLock = new();
+    private bool _disposed;
+    private Ds3MotionSnapshot _latestSnapshot = InactiveSnapshot;
 
-    private readonly int _deviceSlot;
-    private readonly CemuhookUdpSettings _udpSettings;
-    private readonly MotionControlsSettings _motionSettings;
-    private readonly CancellationTokenSource _cts;
-    private readonly Task _bridgeTask;
-    private readonly Task? _dsuTask;
-    private readonly CemuhookServer _dsuServer;
-    private readonly object _latestLock = new();
-    private Ds3MotionSnapshot _latestSnapshot = new(false, 0, 0, 0, 0, 0, 0);
+    public Ds3MotionSnapshot LatestSnapshot => Volatile.Read(ref _latestSnapshot);
 
-    public Ds3MotionSnapshot LatestSnapshot
+    /// <summary>Completes only after both workers have stopped and the socket has been released.</summary>
+    public Task Completion { get; }
+
+    public CemuhookBridgeService(int deviceSlot, CemuhookUdpSettings udpSettings, MotionControlsSettings motionSettings)
+        : this(udpSettings, motionSettings, () => new CemuhookMotionSource(deviceSlot))
     {
-        get
+    }
+
+    internal CemuhookBridgeService(
+        CemuhookUdpSettings udpSettings,
+        MotionControlsSettings motionSettings,
+        Func<ICemuhookMotionSource> sourceFactory)
+    {
+        try
         {
-            lock (_latestLock)
-                return _latestSnapshot;
+            _server = new CemuhookServer(udpSettings.Port, udpSettings.IpAddress, () => LatestSnapshot);
+        }
+        catch
+        {
+            _cts.Dispose();
+            throw;
+        }
+
+        CancellationToken token = _cts.Token;
+        Task producer = Task.Run(() => RunBridge(sourceFactory, motionSettings, token));
+        Task server = Task.Run(() => _server.RunAsync(token));
+        Completion = SuperviseAsync(producer, server);
+        // Observe background failures even before the owner next checks Completion.
+        _ = Completion.ContinueWith(
+            task => Log.Logger.Error(task.Exception, "Cemuhook bridge worker faulted."),
+            CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default);
+    }
+
+    private async Task SuperviseAsync(Task producer, Task server)
+    {
+        try
+        {
+            await Task.WhenAny(producer, server).ConfigureAwait(false);
+            RequestStop();
+            await Task.WhenAll(producer, server).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (_cts.IsCancellationRequested)
+        {
+        }
+        finally
+        {
+            Volatile.Write(ref _latestSnapshot, InactiveSnapshot);
+            _server.Dispose();
+            lock (_lifetimeLock)
+            {
+                _disposed = true;
+                _cts.Dispose();
+            }
         }
     }
 
-    public CemuhookBridgeService(
-        int deviceSlot,
-        CemuhookUdpSettings udpSettings,
-        MotionControlsSettings motionSettings)
+    private void RequestStop()
     {
-        _deviceSlot = deviceSlot;
-        _udpSettings = udpSettings;
-        _motionSettings = motionSettings;
-        _cts = new CancellationTokenSource();
-        _dsuServer = new CemuhookServer(
-            udpSettings.Port,
-            udpSettings.IpAddress,
-            () => LatestSnapshot);
-
-        _bridgeTask = Task.Run(() => RunBridge(_cts.Token));
-        _dsuTask = Task.Run(async () => await _dsuServer.RunAsync(_cts.Token));
-
-        // Observe faults so a crash in one worker stops the other.
-        _ = Task.Run(async () =>
+        lock (_lifetimeLock)
         {
-            var completed = await Task.WhenAny(_bridgeTask, _dsuTask!);
-            if (completed.IsFaulted)
-            {
-                Log.Logger.Error(completed.Exception, "Cemuhook bridge worker faulted.");
-            }
-
-            if (!_cts.IsCancellationRequested)
-            {
+            if (!_disposed)
                 _cts.Cancel();
-            }
-        });
+        }
     }
 
     public void Dispose()
     {
-        _cts.Cancel();
-        _dsuServer.Dispose();
-        _cts.Dispose();
-    }
-
-    private void PublishSnapshot(Ds3MotionSnapshot snapshot)
-    {
-        lock (_latestLock)
+        RequestStop();
+        try
         {
-            _latestSnapshot = snapshot;
+            Completion.GetAwaiter().GetResult();
+        }
+        catch (Exception)
+        {
+            // Completion exposes the failure; the observer above logs it.
         }
     }
 
-    private void RunBridge(CancellationToken cancellationToken)
+    private void RunBridge(
+        Func<ICemuhookMotionSource> sourceFactory,
+        MotionControlsSettings motionSettings,
+        CancellationToken cancellationToken)
     {
-        if (!DsHidMiniInterop.IsAvailable)
-        {
-            Log.Logger.Warning("DsHidMini IPC is unavailable. Cemuhook bridge cannot start.");
-            return;
-        }
-
-        using var interop = new DsHidMiniInterop();
-        interop.SendPing();
-
-        var gyroCal = new GyroCal();
-        gyroCal.Initial(130, 522);
-
-        var orientationEstimator = new MotionOrientationEstimator(
-            Stopwatch.Frequency,
-            smoothing: 0.18);
-
-        var accelFilterX = new KalmanFilter1D(q: 0.01, r: 0.05);
-        var accelFilterY = new KalmanFilter1D(q: 0.01, r: 0.05);
-        var accelFilterZ = new KalmanFilter1D(q: 0.01, r: 0.05);
-        var gyroYawFilter = new KalmanFilter1D(q: 0.05, r: 0.2);
-        var pitchRateFilter = new KalmanFilter1D(q: 0.05, r: 0.2);
-        var rollRateFilter = new KalmanFilter1D(q: 0.05, r: 0.2);
-
-        bool hasPreviousTilt = false;
-        Quaternion previousTilt = Quaternion.Identity;
-        long previousOrientationTimestamp = 0;
-
-        var report = default(DS3_RAW_INPUT_REPORT);
-        long lastReadTimestamp = Stopwatch.GetTimestamp();
-
+        using ICemuhookMotionSource source = sourceFactory();
+        var processor = new CemuhookMotionProcessor(motionSettings);
+        long lastRead = Stopwatch.GetTimestamp();
         while (!cancellationToken.IsCancellationRequested)
         {
-            bool received = interop.GetRawInputReport(
-                _deviceSlot,
-                ref report,
-                TimeSpan.FromMilliseconds(100));
-
-            if (!received)
+            long readStart = Stopwatch.GetTimestamp();
+            if (source.TryRead(out var sample, TimeSpan.FromMilliseconds(100)) &&
+                processor.TryProcess(in sample, out var snapshot))
             {
-                // Publish inactive snapshot after a bounded miss interval so stale
-                // motion values are not broadcast as fresh data, then continue
-                // waiting for input so the service can recover.
-                double missedMs = Stopwatch.GetElapsedTime(lastReadTimestamp).TotalMilliseconds;
-                if (missedMs >= MissedReadTimeoutMs)
-                {
-                    PublishSnapshot(new Ds3MotionSnapshot(false, 0, 0, 0, 0, 0, 0));
-                }
-
+                if (cancellationToken.IsCancellationRequested)
+                    break;
+                lastRead = Stopwatch.GetTimestamp();
+                Volatile.Write(ref _latestSnapshot, snapshot);
                 continue;
             }
 
-            lastReadTimestamp = Stopwatch.GetTimestamp();
-
-            ushort rawAccelX = BinaryPrimitives.ReverseEndianness(report.AccelerometerX);
-            ushort rawAccelY = BinaryPrimitives.ReverseEndianness(report.AccelerometerY);
-            ushort rawAccelZ = BinaryPrimitives.ReverseEndianness(report.AccelerometerZ);
-            ushort rawGyro = BinaryPrimitives.ReverseEndianness(report.Gyroscope);
-
-            // Read motion snapshot once for both calibration data and motion path.
-            ushort accelZeroX = 512, accelZeroY = 512, accelZeroZ = 512;
-            ushort accelOneGX = 399, accelOneGY = 399, accelOneGZ = 399;
-            DsIdentificationMotionPath motionPath = DsIdentificationMotionPath.Unknown;
-            ushort calGyro = 0;
-
-            if (interop.GetMotionSnapshot(_deviceSlot, out var motionSnap, TimeSpan.Zero) &&
-                motionSnap.IsAvailable)
+            if (Stopwatch.GetElapsedTime(lastRead).TotalSeconds >= 2 && LatestSnapshot.Connected)
             {
-                motionPath = motionSnap.MotionPath;
-                calGyro = motionSnap.CalGyro;
-
-                if (!motionSnap.IsFallback)
-                {
-                    accelZeroX = motionSnap.AccelZeroX;
-                    accelZeroY = motionSnap.AccelZeroY;
-                    accelZeroZ = motionSnap.AccelZeroZ;
-                    accelOneGX = motionSnap.AccelOneGX;
-                    accelOneGY = motionSnap.AccelOneGY;
-                    accelOneGZ = motionSnap.AccelOneGZ;
-                }
+                Volatile.Write(ref _latestSnapshot, InactiveSnapshot);
+                processor.Reset();
             }
 
-            // For HwCal path the driver already applies the hardware cal byte;
-            // for Sixaxis the GyroCal tracker provides the adjustment.
-            // For PlainZero the driver uses software-only tracking, so we use
-            // the driver-calibrated gyro value directly.
-            int calibratedGyro;
-            if (motionPath == DsIdentificationMotionPath.PlainZero)
-            {
-                calibratedGyro = calGyro;
-            }
-            else
-            {
-                calibratedGyro = gyroCal.Runtime(
-                    rawGyro,
-                    out byte currentCalByte,
-                    out bool calChanged);
-            }
-
-            double gyroOutput = DsMotionMath.ToMilliDps(calibratedGyro) / 1000.0 * _motionSettings.GyroSensitivity;
-
-            // accelX and accelY are mirrored to match SixAxisBridge behavior (InvertTilt = false => mirror: true)
-            int accelX = DsMotionMath.CalibrateAccel(rawAccelX, accelZeroX, accelOneGX, mirror: true);
-            int accelY = DsMotionMath.CalibrateAccel(rawAccelY, accelZeroY, accelOneGY, mirror: true);
-            int accelZ = DsMotionMath.CalibrateAccel(rawAccelZ, accelZeroZ, accelOneGZ, mirror: false);
-
-            double accelXG = DsMotionMath.ToMilliG(accelX) / 1000.0 * _motionSettings.AccelSensitivity;
-            double accelYG = DsMotionMath.ToMilliG(accelY) / 1000.0 * _motionSettings.AccelSensitivity;
-            double accelZG = DsMotionMath.ToMilliG(accelZ) / 1000.0 * _motionSettings.AccelSensitivity;
-
-            double filterStrength = _motionSettings.KalmanFilterStrength;
-
-            double filteredAccelX = accelFilterX.Update(accelXG, filterStrength);
-            double filteredAccelY = accelFilterY.Update(accelYG, filterStrength);
-            double filteredAccelZ = accelFilterZ.Update(accelZG, filterStrength);
-            double filteredGyroOutput = gyroYawFilter.Update(gyroOutput, filterStrength);
-
-            // Decouple gravity smoothing from Kalman filter strength at the minimum
-            // so a 0.001 filter setting does not impose only 0.01 gravity weight.
-            double gravityWeight = filterStrength <= 0.001 ? 0.18 : Math.Clamp(filterStrength, 0.01, 1.0);
-            orientationEstimator.Smoothing = gravityWeight;
-
-            var motionSnapshot = new Ds3MotionSnapshot(
-                true,
-                filteredAccelX,
-                filteredAccelY,
-                filteredAccelZ,
-                filteredGyroOutput,
-                0,
-                0);
-            orientationEstimator.Update(in motionSnapshot);
-
-            Quaternion currentTilt = MotionOrientationEstimator.CreateTiltQuaternion(
-                orientationEstimator.UpX,
-                orientationEstimator.UpY,
-                orientationEstimator.UpZ);
-
-            long currentTimestamp = Stopwatch.GetTimestamp();
-            double rawPitchRate = 0;
-            double rawRollRate = 0;
-
-            if (hasPreviousTilt)
-            {
-                double dt = (currentTimestamp - previousOrientationTimestamp) / (double)Stopwatch.Frequency;
-                (double omegaX, double omegaY) = MotionOrientationEstimator.CalculateAngularVelocity(
-                    previousTilt,
-                    currentTilt,
-                    dt);
-                rawPitchRate = omegaX;
-                rawRollRate = omegaY;
-            }
-
-            double filteredPitchRate = pitchRateFilter.Update(rawPitchRate, filterStrength);
-            double filteredRollRate = rollRateFilter.Update(rawRollRate, filterStrength);
-
-            previousTilt = currentTilt;
-            previousOrientationTimestamp = currentTimestamp;
-            hasPreviousTilt = true;
-
-            PublishSnapshot(new Ds3MotionSnapshot(
-                true,
-                filteredAccelX,
-                filteredAccelY,
-                filteredAccelZ,
-                filteredGyroOutput,
-                filteredPitchRate,
-                filteredRollRate));
+            // Empty slots and missing events can return immediately rather than wait.
+            TimeSpan remaining = TimeSpan.FromMilliseconds(10) - Stopwatch.GetElapsedTime(readStart);
+            if (remaining > TimeSpan.Zero)
+                cancellationToken.WaitHandle.WaitOne(remaining);
         }
-
-        PublishSnapshot(new Ds3MotionSnapshot(false, 0, 0, 0, 0, 0, 0));
     }
 }

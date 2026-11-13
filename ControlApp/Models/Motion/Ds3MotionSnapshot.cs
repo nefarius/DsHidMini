@@ -11,4 +11,5 @@ internal sealed record Ds3MotionSnapshot(
     double AccelZG,
     double GyroAxisDegreesPerSecond,
     double PitchDegreesPerSecond,
-    double RollDegreesPerSecond);
+    double RollDegreesPerSecond,
+    ulong TimestampQpc = 0);
