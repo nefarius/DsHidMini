@@ -18,6 +18,12 @@ public class CemuhookUdpSettingsViewModel : DeviceSettingsViewModel
     private string? _loadedSharedAddress;
     private int _loadedSharedPort;
     private int? _dsuSlot;
+    private bool _isMotionAvailable = true;
+    public bool IsMotionAvailable
+    {
+        get => _isMotionAvailable;
+        internal set { _isMotionAvailable = value; NotifyValidation(); }
+    }
     public string SlotDisplay => _dsuSlot is { } slot ? $"DSU slot {slot}" : "No DSU slot assigned";
 
     public CemuhookUdpSettingsViewModel() : this(CemuhookListenAddresses.Discover)
@@ -95,7 +101,7 @@ public class CemuhookUdpSettingsViewModel : DeviceSettingsViewModel
           ?? (SelectedListenAddress?.IsAvailable == true ? null
               : "The saved listen address is unavailable on this PC. Choose another address.");
 
-    public bool CanApply => ValidationError == null;
+    public bool CanApply => !IsGroupVisible || !IsMotionAvailable || ValidationError == null;
     public string? ErrorMessage => !Enabled ? null : ValidationError ?? _serverError ?? _discoveryError;
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
@@ -136,10 +142,23 @@ public class CemuhookUdpSettingsViewModel : DeviceSettingsViewModel
             LoadSharedEndpoint(endpoint);
     }
 
-    public void SaveSharedEndpoint(CemuhookUdpSettings endpoint)
+    public bool SaveSharedEndpoint(CemuhookUdpSettings endpoint, Func<CemuhookUdpSettings, string?>? tryUpdate = null)
     {
+        if (!Enabled || !IsGroupVisible || (!IsMotionAvailable && ValidationError != null))
+        {
+            LoadSharedEndpoint(endpoint);
+            return true;
+        }
+        if (ValidationError != null) return false;
+        var candidate = new CemuhookUdpSettings { IpAddress = IpAddress, Port = Port };
+        if (tryUpdate?.Invoke(candidate) is { } error)
+        {
+            ReportServerError(error, IpAddress, Port, _dsuSlot);
+            return false;
+        }
         endpoint.IpAddress = IpAddress;
         endpoint.Port = Port;
+        return true;
     }
 
     public void ReportServerError(string? message, string address, int port, int? slot = null)

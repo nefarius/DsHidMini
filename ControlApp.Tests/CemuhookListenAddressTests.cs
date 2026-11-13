@@ -290,6 +290,83 @@ public class CemuhookListenAddressTests
     }
 
     private static CemuhookUdpSettingsViewModel CreateSettings() => new(AdapterChoices);
+    [Fact]
+    public async Task FailedEndpointReplacementKeepsTheWorkingListener()
+    {
+        using var occupied = new UdpClient();
+        occupied.ExclusiveAddressUse = true;
+        occupied.Client.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+        int busyPort = ((IPEndPoint)occupied.Client.LocalEndPoint!).Port;
+        var endpoint = new CemuhookUdpSettings { Port = FreePort() };
+        using var host = new CemuhookBridgeHost(settings => new(settings.Port, settings.IpAddress, CemuhookPadState.Empty));
+        Assert.True(host.Update(endpoint, true));
+        byte[] before = await VersionReply(endpoint.Port);
+        Assert.False(host.Update(new() { Port = busyPort }, true));
+        Assert.Contains("already in use", host.ErrorMessage);
+        Assert.Equal(before, await VersionReply(endpoint.Port));
+        Assert.False(host.Update(new() { IpAddress = "nonsense", Port = endpoint.Port }, true));
+        Assert.Equal(before, await VersionReply(endpoint.Port));
+    }
+
+    [Fact]
+    public async Task FailedAddressChangeOnTheSamePortRestoresThePreviousBinding()
+    {
+        var endpoint = new CemuhookUdpSettings { Port = FreePort() };
+        using var host = new CemuhookBridgeHost(settings => settings.IpAddress == "0.0.0.0"
+            ? throw new SocketException((int)SocketError.AccessDenied)
+            : new(settings.Port, settings.IpAddress, CemuhookPadState.Empty));
+        Assert.True(host.Update(endpoint, true));
+        Assert.False(host.Update(new() { IpAddress = "0.0.0.0", Port = endpoint.Port }, true));
+        Assert.Contains("denied", host.ErrorMessage);
+        Assert.NotEmpty(await VersionReply(endpoint.Port));
+        Assert.True(host.Update(endpoint, true));
+        Assert.Null(host.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task ConcurrentEndpointUpdatesAndDisposalSerializeSocketOwnership()
+    {
+        using var entered = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        var endpoint = new CemuhookUdpSettings { Port = FreePort() };
+        int starts = 0;
+        using var host = new CemuhookBridgeHost(settings =>
+        {
+            Interlocked.Increment(ref starts);
+            entered.Set();
+            if (!release.Wait(TimeSpan.FromSeconds(5))) throw new TimeoutException();
+            return new(settings.Port, settings.IpAddress, CemuhookPadState.Empty);
+        });
+        Task first = Task.Run(() => host.Update(endpoint, true));
+        Assert.True(entered.Wait(TimeSpan.FromSeconds(5)));
+        using var secondEntered = new ManualResetEventSlim();
+        Task second = Task.Run(() =>
+        {
+            secondEntered.Set();
+            for (int i = 0; i < 20; i++) host.Update(endpoint, i % 2 == 0);
+        });
+        Task dispose = Task.Run(host.Dispose);
+        try
+        {
+            Assert.True(secondEntered.Wait(TimeSpan.FromSeconds(5)));
+            Assert.False(second.IsCompleted);
+            Assert.False(dispose.IsCompleted);
+            Assert.Equal(1, Volatile.Read(ref starts));
+        }
+        finally { release.Set(); }
+        await Task.WhenAll(first, second, dispose).WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.False(host.Update(endpoint, true));
+        using var rebound = new UdpClient(new IPEndPoint(IPAddress.Loopback, endpoint.Port));
+    }
+
+    private static async Task<byte[]> VersionReply(int port)
+    {
+        using var client = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
+        await client.SendAsync(CemuhookServerLifecycleTests.ClientPacket(DsuPacket.MessageVersion, []),
+            new IPEndPoint(IPAddress.Loopback, port));
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        return (await client.ReceiveAsync(timeout.Token)).Buffer;
+    }
     private static IReadOnlyList<CemuhookListenAddress> AdapterChoices() =>
         CemuhookListenAddresses.CreateOptions([("Ethernet", IPAddress.Parse("192.168.1.42"))]);
 

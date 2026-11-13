@@ -1312,6 +1312,9 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         DeviceCustomsVM.CemuhookUdpSettingsVM.RefreshListenAddresses();
         if (!DeviceCustomsVM.CemuhookUdpSettingsVM.CanApply)
             return;
+        if (!DeviceCustomsVM.CemuhookUdpSettingsVM.SaveSharedEndpoint(_dshmConfigManager.SharedCemuhookUdp,
+                _cemuhookBridgeService.TryUpdateEndpoint))
+            return;
 
         Log.Logger.Information("Saving and applying changes made to Device '{DeviceAddress}'", DeviceAddress);
         _deviceUserData.BluetoothPairingMode = PairingMode;
@@ -1326,7 +1329,6 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
 
         DeviceCustomsVM.CemuhookUdpSettingsVM.SaveSettingsToBackingDataContainer(_deviceUserData.Settings);
         DeviceCustomsVM.MotionControlsSettingsVM.SaveSettingsToBackingDataContainer(_deviceUserData.Settings);
-        DeviceCustomsVM.CemuhookUdpSettingsVM.SaveSharedEndpoint(_dshmConfigManager.SharedCemuhookUdp);
 
         if (CurrentDeviceSettingsMode == SettingsModes.Profile)
         {

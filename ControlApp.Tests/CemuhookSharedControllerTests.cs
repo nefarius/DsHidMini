@@ -222,7 +222,7 @@ public class CemuhookSharedControllerTests
         source.Enqueue(Input(1, 1));
         await CemuhookTestSource.Eventually(() => reader.LatestSnapshot.Connected);
         source.OnRead(() => { Volatile.Write(ref binding, new("B", "INSTANCE-B", 1)); return Input(1, 99, 2, 1.005); });
-        await CemuhookTestSource.Eventually(() => source.IsDisposed);
+        await CemuhookTestSource.Eventually(() => source.IsDisposed && !reader.LatestSnapshot.Connected);
         Assert.False(reader.LatestSnapshot.Connected);
         Assert.DoesNotContain(published, snapshot => snapshot.AccelXG == 99);
         Assert.Equal(1, Volatile.Read(ref opened));

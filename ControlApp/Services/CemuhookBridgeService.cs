@@ -114,6 +114,8 @@ public sealed class CemuhookBridgeService : IDisposable
     {
         if (!_disposed) _host.Update(_endpoint(), !_controllers.IsEmpty);
     }
+    internal string? TryUpdateEndpoint(CemuhookUdpSettings endpoint) =>
+        _host.Update(endpoint, !_controllers.IsEmpty) ? null : _host.ErrorMessage ?? "The Cemuhook listener is unavailable.";
     public void Dispose()
     {
         if (_disposed) return;

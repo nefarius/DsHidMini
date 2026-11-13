@@ -73,6 +73,11 @@ public partial class SettingsEditorViewModel : ObservableObject
         CemuhookGroups = [CemuhookUdpSettingsVM, MotionControlsSettingsVM];
 
         HidModeVM.PropertyChanged += ModeSettingsChanged;
+        CemuhookUdpSettingsVM.PropertyChanged += (_, args) =>
+        {
+            if (string.IsNullOrEmpty(args.PropertyName) || args.PropertyName == nameof(CemuhookUdpSettingsViewModel.Enabled))
+                UpdateLockStateOfGroups();
+        };
 
         if (dataContainer != null)
         {
@@ -166,7 +171,9 @@ public partial class SettingsEditorViewModel : ObservableObject
         }
 
         bool hasMotionPath = _motionPath != DsIdentificationMotionPath.Unknown;
-        CemuhookUdpSettingsVM.IsGroupVisible = hasMotionPath;
+        CemuhookUdpSettingsVM.IsMotionAvailable = hasMotionPath;
+        // Keep an already-enabled bridge accessible so it can be disabled or repaired.
+        CemuhookUdpSettingsVM.IsGroupVisible = hasMotionPath || CemuhookUdpSettingsVM.Enabled;
         MotionControlsSettingsVM.IsGroupVisible = hasMotionPath;
     }
 

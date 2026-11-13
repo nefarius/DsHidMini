@@ -1,14 +1,110 @@
 using System.Collections.Concurrent;
+using System.IO;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.Motion;
 using Nefarius.DsHidMini.ControlApp.Services;
+using Nefarius.DsHidMini.ControlApp.ViewModels.UserControls;
 using Nefarius.DsHidMini.ControlApp.ViewModels.UserControls.DeviceSettings;
+using Nefarius.DsHidMini.IPC.Models.Drivers;
+using Nefarius.DsHidMini.IPC.Models.Public;
 using Xunit;
 
 namespace Nefarius.DsHidMini.ControlApp.Tests;
 
 public class CemuhookSharedConfigurationTests
 {
+    [Fact]
+    public void FailedConfigurationSaveDoesNotReconfigureTheListener()
+    {
+        string root = Path.Combine(Path.GetTempPath(), "dshm-cemuhook-save-" + Guid.NewGuid().ToString("N"));
+        var locations = new DshmConfigLocations(root, root);
+        var data = new DshmConfigManagerUserData
+            { SchemaVersion = DshmConfigManagerUserData.CurrentSchemaVersion, CemuhookServer = new() { Port = FreePort() } };
+        try
+        {
+            using var configuration = new DshmConfigManager(data, locations);
+            // A directory at the driver file path makes the save fail deterministically.
+            Directory.CreateDirectory(locations.DriverConfigFilePath);
+            using var service = new CemuhookBridgeService(configuration);
+            service.UpdateController("owner", CemuhookControllerIdentity.Create("001122334401", "A"), true, 1, new(), () => null);
+            Assert.Null(service.GetError("owner"));
+            configuration.SharedCemuhookUdp.IpAddress = "nonsense";
+            Assert.False(configuration.SaveChangesAndUpdateDsHidMiniConfigFile());
+            Assert.Null(service.GetError("owner"));
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Theory]
+    [InlineData("nonsense", 26760)]
+    [InlineData("127.0.0.1", 0)]
+    [InlineData("127.0.0.1", 26761)]
+    public void DisablingDiscardsEndpointDraftWithoutRebindingOtherControllers(string address, int port)
+    {
+        var endpoint = new CemuhookUdpSettings { Port = 26760 };
+        var vm = new CemuhookUdpSettingsViewModel(() => CemuhookListenAddresses.CreateOptions([])) { Enabled = true };
+        vm.LoadSharedEndpoint(endpoint);
+        vm.IpAddress = address; vm.Port = port; vm.Enabled = false;
+        Assert.True(vm.CanApply);
+        Assert.True(vm.SaveSharedEndpoint(endpoint, _ => throw new InvalidOperationException("Must not rebind on disable")));
+        Assert.Equal("127.0.0.1", endpoint.IpAddress);
+        Assert.Equal(26760, endpoint.Port);
+        Assert.Equal(endpoint.IpAddress, vm.IpAddress);
+        Assert.Equal(endpoint.Port, vm.Port);
+        Assert.False(vm.Enabled);
+    }
+
+    [Fact]
+    public void MissingMotionDoesNotBlockUnrelatedChangesAndEnabledBridgeRemainsAccessible()
+    {
+        var editor = new SettingsEditorViewModel(new DeviceSettings
+            { CemuhookUdp = new() { Enabled = true, IpAddress = "nonsense" } });
+        var vm = editor.CemuhookUdpSettingsVM;
+        Assert.False(vm.IsMotionAvailable);
+        Assert.True(vm.IsGroupVisible);
+        Assert.True(vm.CanApply);
+        Assert.NotNull(vm.ValidationError);
+        var endpoint = new CemuhookUdpSettings();
+        Assert.True(vm.SaveSharedEndpoint(endpoint));
+        Assert.Equal("127.0.0.1", endpoint.IpAddress);
+
+        vm.IpAddress = "nonsense";
+        editor.ApplyDeviceCapabilities(DsDeviceType.Sixaxis, DsIdentificationMotionPath.HwCal);
+        Assert.False(vm.CanApply);
+        vm.IsGroupVisible = false;
+        Assert.True(vm.CanApply);
+        Assert.True(vm.SaveSharedEndpoint(endpoint));
+        vm.IsGroupVisible = true;
+        vm.Enabled = false;
+        Assert.True(vm.CanApply);
+        editor.ApplyDeviceCapabilities(DsDeviceType.Sixaxis);
+        Assert.False(vm.IsGroupVisible);
+    }
+
+    [Fact]
+    public void FailedReplacementBindDoesNotPersistTheEndpointDraft()
+    {
+        var endpoint = new CemuhookUdpSettings { Port = FreePort() };
+        using var service = new CemuhookBridgeService(() => endpoint, _ => null, (_, _) => { },
+            _ => throw new InvalidOperationException("No IPC source expected"));
+        service.UpdateController("owner", CemuhookControllerIdentity.Create("001122334401", "A"), true, 1, new(), () => null);
+        using var occupied = new System.Net.Sockets.UdpClient();
+        occupied.ExclusiveAddressUse = true;
+        occupied.Client.Bind(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, 0));
+        int busyPort = ((System.Net.IPEndPoint)occupied.Client.LocalEndPoint!).Port;
+        var vm = new CemuhookUdpSettingsViewModel(() => CemuhookListenAddresses.CreateOptions([])) { Enabled = true };
+        vm.LoadSharedEndpoint(endpoint);
+        int originalPort = endpoint.Port;
+        vm.Port = busyPort;
+        Assert.False(vm.SaveSharedEndpoint(endpoint, service.TryUpdateEndpoint));
+        Assert.Equal(originalPort, endpoint.Port);
+        Assert.Equal(busyPort, vm.Port);
+        Assert.Contains("already in use", vm.ErrorMessage);
+        occupied.Dispose();
+        Assert.True(vm.SaveSharedEndpoint(endpoint, service.TryUpdateEndpoint));
+        Assert.Equal(busyPort, endpoint.Port);
+    }
+
     [Fact]
     public void SharedEndpointRefreshPreservesPerControllerEnablementAndPendingEdits()
     {
