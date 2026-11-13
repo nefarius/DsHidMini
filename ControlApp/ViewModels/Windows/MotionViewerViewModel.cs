@@ -260,7 +260,9 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
                         double filteredAccelZ = _accelFilterZ.Update(accelZG, filterStrength);
                         double filteredGyro = _gyroFilter.Update(gyroDps, filterStrength);
 
-                        _estimator.Smoothing = Math.Clamp(filterStrength, 0.01, 1.0);
+                        // Decouple gravity smoothing from Kalman filter strength at the minimum.
+                        double gravityWeight = filterStrength <= 0.001 ? 0.18 : Math.Clamp(filterStrength, 0.01, 1.0);
+                        _estimator.Smoothing = gravityWeight;
 
                         var bridgeSnapshot = new Ds3MotionSnapshot(
                             true,

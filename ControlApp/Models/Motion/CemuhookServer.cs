@@ -72,6 +72,11 @@ internal sealed class CemuhookServer : IDisposable
             {
                 break;
             }
+            catch (SocketException ex) when (ex.SocketErrorCode is SocketError.ConnectionReset)
+            {
+                // ICMP Port Unreachable from a closed client; recover and continue.
+                continue;
+            }
 
             if (!DsuPacket.TryParseClientPacket(
                     received.Buffer,
@@ -148,22 +153,19 @@ internal sealed class CemuhookServer : IDisposable
         byte flags = request[0];
         byte requestedSlot = request[1];
 
-        bool allControllers = flags == 0;
+        bool allControllers = (flags & 0x03) == 0;
 
-        if (flags == 1)
-        {
-            if (requestedSlot != DsuSlot)
-                return;
-        }
-        else if (flags == 2)
-        {
-            if (!request.AsSpan(2, 6).SequenceEqual(DsuMac))
-                return;
-        }
-        else if (flags != 0)
-        {
+        // Reject unsupported bits.
+        if ((flags & ~0x03) != 0)
             return;
-        }
+
+        // Bit 0 = slot-based registration.
+        if ((flags & 0x01) != 0 && requestedSlot != DsuSlot)
+            return;
+
+        // Bit 1 = MAC-based registration.
+        if ((flags & 0x02) != 0 && !request.AsSpan(2, 6).SequenceEqual(DsuMac))
+            return;
 
         string key = endpoint.ToString();
         _subscriptions[key] = new Subscription

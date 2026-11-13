@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.Motion;
 using Nefarius.DsHidMini.IPC;
+using Nefarius.DsHidMini.IPC.Models.Drivers;
 using Nefarius.DsHidMini.IPC.Models.Public;
 
 namespace Nefarius.DsHidMini.ControlApp.Services;
@@ -18,6 +19,8 @@ namespace Nefarius.DsHidMini.ControlApp.Services;
 /// </summary>
 internal sealed class CemuhookBridgeService : IDisposable
 {
+    private const int MissedReadTimeoutMs = 2000;
+
     private readonly int _deviceSlot;
     private readonly CemuhookUdpSettings _udpSettings;
     private readonly MotionControlsSettings _motionSettings;
@@ -53,6 +56,21 @@ internal sealed class CemuhookBridgeService : IDisposable
 
         _bridgeTask = Task.Run(() => RunBridge(_cts.Token));
         _dsuTask = Task.Run(async () => await _dsuServer.RunAsync(_cts.Token));
+
+        // Observe faults so a crash in one worker stops the other.
+        _ = Task.Run(async () =>
+        {
+            var completed = await Task.WhenAny(_bridgeTask, _dsuTask!);
+            if (completed.IsFaulted)
+            {
+                Log.Logger.Error(completed.Exception, "Cemuhook bridge worker faulted.");
+            }
+
+            if (!_cts.IsCancellationRequested)
+            {
+                _cts.Cancel();
+            }
+        });
     }
 
     public void Dispose()
@@ -100,6 +118,7 @@ internal sealed class CemuhookBridgeService : IDisposable
         long previousOrientationTimestamp = 0;
 
         var report = default(DS3_RAW_INPUT_REPORT);
+        long lastReadTimestamp = Stopwatch.GetTimestamp();
 
         while (!cancellationToken.IsCancellationRequested)
         {
@@ -107,25 +126,74 @@ internal sealed class CemuhookBridgeService : IDisposable
                 _deviceSlot,
                 ref report,
                 TimeSpan.FromMilliseconds(100));
+
             if (!received)
+            {
+                // Publish inactive snapshot after a bounded miss interval so stale
+                // motion values are not broadcast as fresh data.
+                double missedMs = Stopwatch.GetElapsedTime(lastReadTimestamp).TotalMilliseconds;
+                if (missedMs >= MissedReadTimeoutMs)
+                {
+                    PublishSnapshot(new Ds3MotionSnapshot(false, 0, 0, 0, 0, 0, 0));
+                    return;
+                }
+
                 continue;
+            }
+
+            lastReadTimestamp = Stopwatch.GetTimestamp();
 
             ushort rawAccelX = BinaryPrimitives.ReverseEndianness(report.AccelerometerX);
             ushort rawAccelY = BinaryPrimitives.ReverseEndianness(report.AccelerometerY);
             ushort rawAccelZ = BinaryPrimitives.ReverseEndianness(report.AccelerometerZ);
             ushort rawGyro = BinaryPrimitives.ReverseEndianness(report.Gyroscope);
 
-            int calibratedGyro = gyroCal.Runtime(
-                rawGyro,
-                out byte currentCalByte,
-                out bool calChanged);
+            // Check whether the driver provides per-device calibration data.
+            // When Fallback is set, EEPROM was not read; use nominal values.
+            ushort accelZeroX = 512, accelZeroY = 512, accelZeroZ = 512;
+            ushort accelOneGX = 399, accelOneGY = 399, accelOneGZ = 399;
+
+            if (interop.GetMotionSnapshot(_deviceSlot, out var motionSnap, TimeSpan.Zero) &&
+                motionSnap.IsAvailable && !motionSnap.IsFallback)
+            {
+                accelZeroX = motionSnap.AccelZeroX;
+                accelZeroY = motionSnap.AccelZeroY;
+                accelZeroZ = motionSnap.AccelZeroZ;
+                accelOneGX = motionSnap.AccelOneGX;
+                accelOneGY = motionSnap.AccelOneGY;
+                accelOneGZ = motionSnap.AccelOneGZ;
+            }
+
+            // For HwCal path the driver already applies the hardware cal byte;
+            // for Sixaxis the GyroCal tracker provides the adjustment.
+            // For PlainZero the driver uses software-only tracking, so we skip
+            // the GyroCal retarget offset and use the raw gyro directly.
+            DsIdentificationMotionPath motionPath = DsIdentificationMotionPath.Unknown;
+            if (interop.GetMotionSnapshot(_deviceSlot, out motionSnap, TimeSpan.Zero) &&
+                motionSnap.IsAvailable)
+            {
+                motionPath = motionSnap.MotionPath;
+            }
+
+            int calibratedGyro;
+            if (motionPath == DsIdentificationMotionPath.PlainZero)
+            {
+                calibratedGyro = rawGyro;
+            }
+            else
+            {
+                calibratedGyro = gyroCal.Runtime(
+                    rawGyro,
+                    out byte currentCalByte,
+                    out bool calChanged);
+            }
 
             double gyroOutput = DsMotionMath.ToMilliDps(calibratedGyro) / 1000.0 * _motionSettings.GyroSensitivity;
 
             // accelX and accelY are mirrored to match SixAxisBridge behavior (InvertTilt = false => mirror: true)
-            int accelX = DsMotionMath.CalibrateAccel(rawAccelX, 508, 395, mirror: true);
-            int accelY = DsMotionMath.CalibrateAccel(rawAccelY, 517, 404, mirror: true);
-            int accelZ = DsMotionMath.CalibrateAccel(rawAccelZ, 511, 395, mirror: false);
+            int accelX = DsMotionMath.CalibrateAccel(rawAccelX, accelZeroX, accelOneGX, mirror: true);
+            int accelY = DsMotionMath.CalibrateAccel(rawAccelY, accelZeroY, accelOneGY, mirror: true);
+            int accelZ = DsMotionMath.CalibrateAccel(rawAccelZ, accelZeroZ, accelOneGZ, mirror: false);
 
             double accelXG = DsMotionMath.ToMilliG(accelX) / 1000.0 * _motionSettings.AccelSensitivity;
             double accelYG = DsMotionMath.ToMilliG(accelY) / 1000.0 * _motionSettings.AccelSensitivity;
@@ -138,7 +206,10 @@ internal sealed class CemuhookBridgeService : IDisposable
             double filteredAccelZ = accelFilterZ.Update(accelZG, filterStrength);
             double filteredGyroOutput = gyroYawFilter.Update(gyroOutput, filterStrength);
 
-            orientationEstimator.Smoothing = Math.Clamp(filterStrength, 0.01, 1.0);
+            // Decouple gravity smoothing from Kalman filter strength at the minimum
+            // so a 0.001 filter setting does not impose only 0.01 gravity weight.
+            double gravityWeight = filterStrength <= 0.001 ? 0.18 : Math.Clamp(filterStrength, 0.01, 1.0);
+            orientationEstimator.Smoothing = gravityWeight;
 
             var motionSnapshot = new Ds3MotionSnapshot(
                 true,

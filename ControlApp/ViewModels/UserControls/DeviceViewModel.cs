@@ -67,6 +67,9 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     private RumbleTesterWindow? _rumbleTester;
     private BluetoothDiagnosticWindow? _bluetoothDiagnosticWindow;
     private CemuhookBridgeService? _cemuhookBridgeService;
+    private string _cemuhookActiveIp = string.Empty;
+    private int _cemuhookActivePort = 0;
+    private bool _isViewModelDisposed;
 
     // ------------------------------------------------------ FIELDS
 
@@ -1084,6 +1087,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             _inputReportMetricsInterop?.Dispose();
             _inputReportMetricsInterop = null;
         }
+        _isViewModelDisposed = true;
         StopCemuhookBridgeService();
         CloseInputTester();
         CloseMotionViewer();
@@ -1861,19 +1865,32 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
 
     private void UpdateCemuhookBridgeService()
     {
+        if (_isViewModelDisposed)
+            return;
+
         bool enabled = _deviceUserData.Settings.CemuhookUdp.Enabled;
+        var udpSettings = _deviceUserData.Settings.CemuhookUdp;
 
         if (enabled && _cemuhookBridgeService == null)
         {
-            StartCemuhookBridgeService();
+            StartCemuhookBridgeService(udpSettings);
         }
         else if (!enabled && _cemuhookBridgeService != null)
         {
             StopCemuhookBridgeService();
         }
+        else if (enabled && _cemuhookBridgeService != null)
+        {
+            // Restart if the endpoint changed.
+            if (udpSettings.IpAddress != _cemuhookActiveIp || udpSettings.Port != _cemuhookActivePort)
+            {
+                StopCemuhookBridgeService();
+                StartCemuhookBridgeService(udpSettings);
+            }
+        }
     }
 
-    private void StartCemuhookBridgeService()
+    private void StartCemuhookBridgeService(CemuhookUdpSettings udpSettings)
     {
         int? slot = DsHidMiniInterop.TryGetIpcSlotIndex(Device);
         if (slot is not { } deviceIndex)
@@ -1892,12 +1909,13 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             return;
         }
 
-        var udpSettings = _deviceUserData.Settings.CemuhookUdp;
         var motionSettings = _deviceUserData.Settings.MotionControls;
 
         try
         {
             _cemuhookBridgeService = new CemuhookBridgeService(deviceIndex, udpSettings, motionSettings);
+            _cemuhookActiveIp = udpSettings.IpAddress;
+            _cemuhookActivePort = udpSettings.Port;
             Log.Logger.Information(
                 "Cemuhook UDP bridge started for device '{DeviceAddress}' on {IpAddress}:{Port}.",
                 DeviceAddress, udpSettings.IpAddress, udpSettings.Port);
@@ -1932,6 +1950,8 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         finally
         {
             _cemuhookBridgeService = null;
+            _cemuhookActiveIp = string.Empty;
+            _cemuhookActivePort = 0;
         }
     }
 }
