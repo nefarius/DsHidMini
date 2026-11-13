@@ -43,7 +43,13 @@ internal sealed class CemuhookBridgeService : IDisposable
         }
 
         CancellationToken token = _cts.Token;
-        Task producer = Task.Run(() => RunBridge(sourceFactory, motionSettings, token));
+        // The IPC API blocks synchronously for the device's lifetime. Give it a
+        // dedicated background thread instead of occupying a thread-pool worker.
+        Task producer = Task.Factory.StartNew(
+            () => RunBridge(sourceFactory, motionSettings, token),
+            CancellationToken.None,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default);
         Task server = Task.Run(() => _server.RunAsync(token));
         Completion = SuperviseAsync(producer, server);
         // Observe background failures even before the owner next checks Completion.

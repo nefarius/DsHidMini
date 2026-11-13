@@ -13,6 +13,16 @@ namespace Nefarius.DsHidMini.ControlApp.Tests;
 public class CemuhookBridgeLifecycleTests
 {
     [Fact]
+    public async Task BlockingReaderRunsOnADedicatedBackgroundThread()
+    {
+        using var source = new ScriptedSource();
+        using var service = new CemuhookBridgeService(Settings(), new(), () => source);
+        Thread reader = await source.ReaderThread.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.False(reader.IsThreadPoolThread);
+        Assert.True(reader.IsBackground);
+    }
+
+    [Fact]
     public async Task StartupFailureCompletesAndReleasesTheListener()
     {
         var udp = Settings();
@@ -189,6 +199,7 @@ public class CemuhookBridgeLifecycleTests
         public int Reads => Volatile.Read(ref _reads);
         public bool IsDisposed => Volatile.Read(ref _disposed) != 0;
         public TaskCompletionSource Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource<Thread> ReaderThread { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public void Enqueue(DsMotionSnapshot sample) => _samples.Add(() => sample);
         public void Fail(Exception error) => _samples.Add(() => throw error);
@@ -196,6 +207,7 @@ public class CemuhookBridgeLifecycleTests
         public bool TryRead(out DsMotionSnapshot snapshot, TimeSpan timeout)
         {
             Interlocked.Increment(ref _reads);
+            ReaderThread.TrySetResult(Thread.CurrentThread);
             Entered.TrySetResult();
             if (_samples.TryTake(out var read, immediateMisses ? TimeSpan.Zero : timeout))
             {
