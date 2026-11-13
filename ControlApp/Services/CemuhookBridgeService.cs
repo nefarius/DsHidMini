@@ -122,12 +122,14 @@ internal sealed class CemuhookBridgeService : IDisposable
                     break;
                 lastRead = Stopwatch.GetTimestamp();
                 Volatile.Write(ref _latestSnapshot, snapshot);
+                _server.NotifySnapshotAvailable();
                 continue;
             }
 
             if (Stopwatch.GetElapsedTime(lastRead).TotalSeconds >= 2 && LatestSnapshot.Connected)
             {
                 Volatile.Write(ref _latestSnapshot, InactiveSnapshot);
+                _server.NotifySnapshotAvailable();
                 processor.Reset();
             }
 

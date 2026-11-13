@@ -4,13 +4,14 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace Nefarius.DsHidMini.ControlApp.Models.Motion;
 
 /// <summary>
 ///     UDP server for the Cemuhook DSU protocol. Accepts client connections and
-///     broadcasts controller motion data at ~125 Hz.
+///     broadcasts the latest controller motion sample when input arrives.
 /// </summary>
 internal sealed class CemuhookServer : IDisposable
 {
@@ -22,6 +23,12 @@ internal sealed class CemuhookServer : IDisposable
     private readonly UdpClient _udp;
     private readonly ConcurrentDictionary<string, Subscription> _subscriptions = new();
     private readonly Func<Ds3MotionSnapshot> _snapshotProvider;
+    private readonly Channel<byte> _updates = Channel.CreateBounded<byte>(new BoundedChannelOptions(1)
+    {
+        SingleReader = true,
+        FullMode = BoundedChannelFullMode.DropOldest,
+        AllowSynchronousContinuations = false
+    });
     private uint _packetNumber;
 
     internal IPEndPoint LocalEndPoint => (IPEndPoint)_udp.Client.LocalEndPoint!;
@@ -39,7 +46,11 @@ internal sealed class CemuhookServer : IDisposable
         _snapshotProvider = snapshotProvider;
         IPAddress bindIp = IPAddress.Parse(bindAddress);
         _udp = new UdpClient(new IPEndPoint(bindIp, port));
+        NotifySnapshotAvailable();
     }
+
+    /// <summary>Wakes the async sender without blocking the IPC reader or queuing old samples.</summary>
+    public void NotifySnapshotAvailable() => _updates.Writer.TryWrite(0);
 
     public async Task RunAsync(CancellationToken cancellationToken)
     {
@@ -184,19 +195,16 @@ internal sealed class CemuhookServer : IDisposable
             AllControllers = allControllers,
             Slot = DsuSlot
         };
+        NotifySnapshotAvailable();
     }
 
     private async Task SendLoopAsync(CancellationToken cancellationToken)
     {
-        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(8));
-
-        while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
+        await foreach (byte _ in _updates.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
         {
             Ds3MotionSnapshot snapshot = _snapshotProvider();
-            if (!snapshot.Connected)
-                continue;
-
             long now = Stopwatch.GetTimestamp();
+            byte[]? packet = null;
 
             foreach (var entry in _subscriptions)
             {
@@ -205,15 +213,16 @@ internal sealed class CemuhookServer : IDisposable
                 double age = Stopwatch.GetElapsedTime(subscription.LastRequest, now).TotalSeconds;
                 if (age > SubscriptionTimeoutSeconds)
                 {
-                    _subscriptions.TryRemove(entry.Key, out _);
+                    _subscriptions.TryRemove(entry);
                     continue;
                 }
 
-                if (!subscription.AllControllers && subscription.Slot != DsuSlot)
+                if (!snapshot.Connected || (!subscription.AllControllers && subscription.Slot != DsuSlot))
                     continue;
 
-                byte[] payload = BuildControllerData(snapshot);
-                await SendPacketAsync(subscription.Endpoint, DsuPacket.MessageControllerData, payload, cancellationToken).ConfigureAwait(false);
+                // Serialize once per sample, then share the immutable packet with all clients.
+                packet ??= DsuPacket.BuildServerPacket(DsuPacket.MessageControllerData, BuildControllerData(snapshot), _serverId);
+                await _udp.SendAsync(packet, subscription.Endpoint, cancellationToken).ConfigureAwait(false);
             }
         }
     }
@@ -243,11 +252,10 @@ internal sealed class CemuhookServer : IDisposable
         WriteFloat(payload, 60, (float)snapshot.AccelZG);
         WriteFloat(payload, 64, (float)-snapshot.AccelYG);
 
-        // DSU protocol spec expects gyro values scaled by 312/360
-        const double dsuGyroScale = 312.0 / 360.0;
-        WriteFloat(payload, 68, (float)(snapshot.PitchDegreesPerSecond * dsuGyroScale));
-        WriteFloat(payload, 72, (float)(snapshot.GyroAxisDegreesPerSecond * dsuGyroScale));
-        WriteFloat(payload, 76, (float)(-snapshot.RollDegreesPerSecond * dsuGyroScale));
+        // DSU uses degrees per second, matching the processed snapshot.
+        WriteFloat(payload, 68, (float)snapshot.PitchDegreesPerSecond);
+        WriteFloat(payload, 72, (float)snapshot.GyroAxisDegreesPerSecond);
+        WriteFloat(payload, 76, (float)-snapshot.RollDegreesPerSecond);
 
         return payload;
     }
@@ -265,6 +273,7 @@ internal sealed class CemuhookServer : IDisposable
 
     public void Dispose()
     {
+        _updates.Writer.TryComplete();
         _udp.Dispose();
     }
 }

@@ -9,7 +9,8 @@ namespace Nefarius.DsHidMini.ControlApp.Models.Motion;
 /// <summary>Filters one coherent, driver-calibrated sample at its acquisition time.</summary>
 internal sealed class CemuhookMotionProcessor(MotionControlsSettings settings)
 {
-    private readonly MotionOrientationEstimator _orientation = new(Stopwatch.Frequency, smoothing: 0.18);
+    // The Kalman filters already smooth gravity; a second low-pass layer adds latency.
+    private readonly MotionOrientationEstimator _orientation = new(Stopwatch.Frequency, smoothing: 1.0);
     private readonly KalmanFilter1D _accelX = new(0.01, 0.05);
     private readonly KalmanFilter1D _accelY = new(0.01, 0.05);
     private readonly KalmanFilter1D _accelZ = new(0.01, 0.05);
@@ -43,7 +44,6 @@ internal sealed class CemuhookMotionProcessor(MotionControlsSettings settings)
         double z = _accelZ.Update(sample.AccelMilliGZ / 1000.0 * settings.AccelSensitivity, strength);
         double yaw = _yaw.Update(sample.GyroMilliDps / 1000.0 * settings.GyroSensitivity, strength);
 
-        _orientation.Smoothing = strength <= 0.001 ? 0.18 : Math.Clamp(strength, 0.01, 1.0);
         var filtered = new Ds3MotionSnapshot(true, x, y, z, yaw, 0, 0, sample.TimestampQpc);
         _orientation.Update(in filtered);
         Quaternion tilt = MotionOrientationEstimator.CreateTiltQuaternion(_orientation.UpX, _orientation.UpY, _orientation.UpZ);

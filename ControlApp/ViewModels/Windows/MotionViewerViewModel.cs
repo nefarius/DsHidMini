@@ -48,12 +48,12 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
 
         if (motionSettings != null)
         {
-            double filterStrength = motionSettings.KalmanFilterStrength;
             _accelFilterX = new KalmanFilter1D(q: 0.01, r: 0.05);
             _accelFilterY = new KalmanFilter1D(q: 0.01, r: 0.05);
             _accelFilterZ = new KalmanFilter1D(q: 0.01, r: 0.05);
             _gyroFilter = new KalmanFilter1D(q: 0.05, r: 0.2);
-            _estimator.Smoothing = Math.Clamp(filterStrength, 0.01, 1.0);
+            // Gravity is already smoothed by the configurable Kalman filters.
+            _estimator.Smoothing = 1.0;
         }
 
         StatusText = MotionStatusFormatter.StatusText(true, false, false, false);
@@ -259,10 +259,6 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
                         double filteredAccelY = _accelFilterY.Update(accelYG, filterStrength);
                         double filteredAccelZ = _accelFilterZ.Update(accelZG, filterStrength);
                         double filteredGyro = _gyroFilter.Update(gyroDps, filterStrength);
-
-                        // Decouple gravity smoothing from Kalman filter strength at the minimum.
-                        double gravityWeight = filterStrength <= 0.001 ? 0.18 : Math.Clamp(filterStrength, 0.01, 1.0);
-                        _estimator.Smoothing = gravityWeight;
 
                         var bridgeSnapshot = new Ds3MotionSnapshot(
                             true,

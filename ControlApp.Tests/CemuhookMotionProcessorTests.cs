@@ -12,6 +12,26 @@ namespace Nefarius.DsHidMini.ControlApp.Tests;
 public class CemuhookMotionProcessorTests
 {
     [Theory]
+    [InlineData(0)]
+    [InlineData(0.001)]
+    [InlineData(0.0011)]
+    [InlineData(0.002)]
+    [InlineData(0.01)]
+    public void LowFilterStrengthDoesNotAddASecondGravitySmoothingDelay(double strength)
+    {
+        var processor = new CemuhookMotionProcessor(new() { KalmanFilterStrength = strength });
+        var first = Sample(1, 1);
+        var tilted = Sample(2, 1.1);
+        tilted.AccelMilliGY = 500;
+        tilted.AccelMilliGZ = -866;
+        Assert.True(processor.TryProcess(in first, out _));
+        Assert.True(processor.TryProcess(in tilted, out var result));
+        // A 30 degree input change over 100 ms should stay close to 300 deg/s at
+        // the low end of the slider, including either side of the old 0.001 cliff.
+        Assert.InRange(result.PitchDegreesPerSecond, 280, 301);
+    }
+
+    [Theory]
     [InlineData(DsIdentificationMotionPath.HwCal, false)]
     [InlineData(DsIdentificationMotionPath.Sixaxis, false)]
     [InlineData(DsIdentificationMotionPath.PlainZero, false)]
