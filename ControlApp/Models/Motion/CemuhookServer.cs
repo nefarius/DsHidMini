@@ -234,6 +234,7 @@ internal sealed class CemuhookServer : IDisposable
         WriteFloat(payload, 60, (float)snapshot.AccelZG);
         WriteFloat(payload, 64, (float)-snapshot.AccelYG);
 
+        // DSU protocol spec expects gyro values scaled by 312/360
         const double dsuGyroScale = 312.0 / 360.0;
         WriteFloat(payload, 68, (float)(snapshot.PitchDegreesPerSecond * dsuGyroScale));
         WriteFloat(payload, 72, (float)(snapshot.GyroAxisDegreesPerSecond * dsuGyroScale));
