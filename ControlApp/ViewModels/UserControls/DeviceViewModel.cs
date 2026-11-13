@@ -66,6 +66,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
     private ControllerDiagnosticExportWindow? _diagnosticsExport;
     private RumbleTesterWindow? _rumbleTester;
     private BluetoothDiagnosticWindow? _bluetoothDiagnosticWindow;
+    private CemuhookBridgeService? _cemuhookBridgeService;
 
     // ------------------------------------------------------ FIELDS
 
@@ -165,7 +166,9 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         _deviceUserData = _dshmConfigManager.GetDeviceData(DeviceAddress);
         _pairingMode = _deviceUserData.BluetoothPairingMode;
         DeviceCustomsVM.AllowEditing = _dshmConfigManager.CanPersistSharedConfiguration;
-        DeviceCustomsVM.ApplyDeviceCapabilities(DeviceType);
+        DeviceCustomsVM.ApplyDeviceCapabilities(
+            DeviceType,
+            IdentificationInfo?.MotionPath ?? DsIdentificationMotionPath.Unknown);
         // Loads correspondent controller data based on controller's MAC address 
 
 
@@ -910,6 +913,11 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(IdentificationCheckSummary));
         OnPropertyChanged(nameof(IdentificationCheckDetail));
         OnPropertyChanged(nameof(ShowIdentificationCheckWarning));
+        // Update settings visibility whenever identification data changes
+        DeviceCustomsVM.ApplyDeviceCapabilities(
+            DeviceType,
+            IdentificationInfo?.MotionPath ?? DsIdentificationMotionPath.Unknown);
+        UpdateCemuhookBridgeService();
     }
 
     private void NotifyAddressAuthenticityProperties()
@@ -1076,6 +1084,7 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             _inputReportMetricsInterop?.Dispose();
             _inputReportMetricsInterop = null;
         }
+        StopCemuhookBridgeService();
         CloseInputTester();
         CloseMotionViewer();
         if (_diagnosticsExport?.DataContext is ControllerDiagnosticExportViewModel export)
@@ -1301,6 +1310,9 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             DeviceCustomsVM.SaveAllChangesToBackingData(_deviceUserData.Settings);
         }
 
+        DeviceCustomsVM.CemuhookUdpSettingsVM.SaveSettingsToBackingDataContainer(_deviceUserData.Settings);
+        DeviceCustomsVM.MotionControlsSettingsVM.SaveSettingsToBackingDataContainer(_deviceUserData.Settings);
+
         if (CurrentDeviceSettingsMode == SettingsModes.Profile)
         {
             _deviceUserData.GuidOfProfileToUse =
@@ -1317,6 +1329,8 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
         {
             _appSnackbarMessagesService.ShowDsHidMiniConfigurationUpdateFailedMessage();
         }
+
+        UpdateCemuhookBridgeService();
 
         await RefreshDeviceSettings();
     }
@@ -1652,7 +1666,8 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             deviceIndex,
             DeviceAddressFriendly ?? DeviceAddress,
             calibrationSource,
-            ApplicationConfiguration.Instance.MotionViewerSoftwareRendering);
+            ApplicationConfiguration.Instance.MotionViewerSoftwareRendering,
+            _deviceUserData.Settings.MotionControls);
         _motionViewer = new MotionViewerWindow(viewer)
         {
             Owner = Application.Current.MainWindow
@@ -1838,5 +1853,85 @@ public partial class DeviceViewModel : ObservableObject, IDisposable
             }
         );
         return result;
+    }
+
+    /* ------------------------------------------------------------------
+     * Cemuhook bridge
+     * ------------------------------------------------------------------ */
+
+    private void UpdateCemuhookBridgeService()
+    {
+        bool enabled = _deviceUserData.Settings.CemuhookUdp.Enabled;
+
+        if (enabled && _cemuhookBridgeService == null)
+        {
+            StartCemuhookBridgeService();
+        }
+        else if (!enabled && _cemuhookBridgeService != null)
+        {
+            StopCemuhookBridgeService();
+        }
+    }
+
+    private void StartCemuhookBridgeService()
+    {
+        int? slot = DsHidMiniInterop.TryGetIpcSlotIndex(Device);
+        if (slot is not { } deviceIndex)
+        {
+            Log.Logger.Warning(
+                "Cannot start Cemuhook UDP bridge for device '{DeviceAddress}': no IPC slot available.",
+                DeviceAddress);
+            return;
+        }
+
+        if (!DsHidMiniInterop.IsAvailable)
+        {
+            Log.Logger.Warning(
+                "Cannot start Cemuhook UDP bridge for device '{DeviceAddress}': DsHidMini IPC is unavailable.",
+                DeviceAddress);
+            return;
+        }
+
+        var udpSettings = _deviceUserData.Settings.CemuhookUdp;
+        var motionSettings = _deviceUserData.Settings.MotionControls;
+
+        try
+        {
+            _cemuhookBridgeService = new CemuhookBridgeService(deviceIndex, udpSettings, motionSettings);
+            Log.Logger.Information(
+                "Cemuhook UDP bridge started for device '{DeviceAddress}' on {IpAddress}:{Port}.",
+                DeviceAddress, udpSettings.IpAddress, udpSettings.Port);
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Error(ex,
+                "Failed to start Cemuhook UDP bridge for device '{DeviceAddress}'.",
+                DeviceAddress);
+            _cemuhookBridgeService = null;
+        }
+    }
+
+    private void StopCemuhookBridgeService()
+    {
+        if (_cemuhookBridgeService is null)
+            return;
+
+        try
+        {
+            _cemuhookBridgeService.Dispose();
+            Log.Logger.Information(
+                "Cemuhook UDP bridge stopped for device '{DeviceAddress}'.",
+                DeviceAddress);
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Warning(ex,
+                "Error while stopping Cemuhook UDP bridge for device '{DeviceAddress}'.",
+                DeviceAddress);
+        }
+        finally
+        {
+            _cemuhookBridgeService = null;
+        }
     }
 }

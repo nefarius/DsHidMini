@@ -15,6 +15,8 @@ public abstract partial class DeviceSettingsViewModel : ObservableObject
         { SettingsModeGroups.OutputReportControl, "Output report control" },
         { SettingsModeGroups.RumbleLeftStrRescale, "Left motor rescale" },
         { SettingsModeGroups.RumbleRightConversion, "Alternative rumble mode adjuster" },
+        { SettingsModeGroups.CemuhookUdpBridge, "Cemuhook UDP Bridge" },
+        { SettingsModeGroups.MotionControls, "Motion Controls" },
         { SettingsModeGroups.Unique_All, "HID Mode" },
         { SettingsModeGroups.Unique_Global, "Default settings" },
         { SettingsModeGroups.Unique_General, "General settings" },

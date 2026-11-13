@@ -1,3 +1,6 @@
+using System.Diagnostics;
+using System.Numerics;
+
 using Nefarius.DsHidMini.IPC.Models.Public;
 
 namespace Nefarius.DsHidMini.ControlApp.Models.Motion;
@@ -33,7 +36,7 @@ internal sealed class MotionOrientationEstimator
 
     private const double BiasLearnMaxRangeDps = 1.5;
 
-    private readonly double _smoothing;
+    private double _smoothing;
     private readonly double _yawRestDeadzoneDps;
     private readonly double _biasLearnMaxAbsDps;
     private bool _hasGravity;
@@ -64,6 +67,12 @@ internal sealed class MotionOrientationEstimator
     }
 
     public double QpcFrequency { get; }
+
+    public double Smoothing
+    {
+        get => _smoothing;
+        set => _smoothing = Math.Clamp(value, 0.001, 1.0);
+    }
 
     public double PitchDegrees { get; private set; }
 
@@ -135,28 +144,74 @@ internal sealed class MotionOrientationEstimator
             return;
         }
 
-        double gx = snapshot.AccelMilliGX;
-        double gy = snapshot.AccelMilliGY;
-        double gz = snapshot.AccelMilliGZ;
+        UpdateCore(
+            snapshot.AccelMilliGX,
+            snapshot.AccelMilliGY,
+            snapshot.AccelMilliGZ,
+            snapshot.GyroMilliDps / 1000.0,
+            snapshot.TimestampQpc,
+            snapshot.AccelMilliGX,
+            snapshot.AccelMilliGY,
+            snapshot.AccelMilliGZ);
 
+        _lastSampleIndex = snapshot.SampleIndex;
+    }
+
+    /// <summary>
+    ///     Updates orientation from a Cemuhook bridge snapshot (g-force values instead of milli-g).
+    /// </summary>
+    internal void Update(in Ds3MotionSnapshot snapshot)
+    {
+        if (!snapshot.Connected)
+            return;
+
+        ulong timestampQpc = (ulong)Stopwatch.GetTimestamp();
+        double gx = snapshot.AccelXG * 1000.0;
+        double gy = snapshot.AccelYG * 1000.0;
+        double gz = snapshot.AccelZG * 1000.0;
+
+        UpdateCore(
+            gx,
+            gy,
+            gz,
+            snapshot.GyroAxisDegreesPerSecond,
+            timestampQpc,
+            (int)Math.Round(gx),
+            (int)Math.Round(gy),
+            (int)Math.Round(gz));
+    }
+
+    private void UpdateCore(
+        double accelMilliGX,
+        double accelMilliGY,
+        double accelMilliGZ,
+        double rawDps,
+        ulong timestampQpc,
+        int accelMilliGXInt,
+        int accelMilliGYInt,
+        int accelMilliGZInt)
+    {
+        // Smooth gravity vector
         if (!_hasGravity)
         {
-            _smoothX = gx;
-            _smoothY = gy;
-            _smoothZ = gz;
+            _smoothX = accelMilliGX;
+            _smoothY = accelMilliGY;
+            _smoothZ = accelMilliGZ;
             _hasGravity = true;
         }
         else
         {
-            _smoothX += (gx - _smoothX) * _smoothing;
-            _smoothY += (gy - _smoothY) * _smoothing;
-            _smoothZ += (gz - _smoothZ) * _smoothing;
+            _smoothX += (accelMilliGX - _smoothX) * _smoothing;
+            _smoothY += (accelMilliGY - _smoothY) * _smoothing;
+            _smoothZ += (accelMilliGZ - _smoothZ) * _smoothing;
         }
 
         double ax = _smoothX / 1000.0;
         double ay = _smoothY / 1000.0;
         double az = _smoothZ / 1000.0;
+
         double mag = Math.Sqrt((ax * ax) + (ay * ay) + (az * az));
+
         if (mag > 1e-6)
         {
             UpX = ax / mag;
@@ -176,11 +231,10 @@ internal sealed class MotionOrientationEstimator
 
         RollDegrees = Math.Atan2(-ax, horiz) * (180.0 / Math.PI);
 
-        double rawDps = snapshot.GyroMilliDps / 1000.0;
-
-        if (_hasTiming && snapshot.TimestampQpc > _lastQpc)
+        // Integrate yaw from gyro
+        if (_hasTiming && timestampQpc > _lastQpc)
         {
-            double dt = (snapshot.TimestampQpc - _lastQpc) / QpcFrequency;
+            double dt = (timestampQpc - _lastQpc) / QpcFrequency;
             if (dt > 0 && dt < 0.25)
             {
                 if (Math.Abs(rawDps) >= _yawRestDeadzoneDps)
@@ -190,11 +244,10 @@ internal sealed class MotionOrientationEstimator
             }
         }
 
-        UpdateRestBias(in snapshot, rawDps, mag);
+        UpdateRestBias(accelMilliGXInt, accelMilliGYInt, accelMilliGZInt, rawDps, mag);
 
         _hasTiming = true;
-        _lastQpc = snapshot.TimestampQpc;
-        _lastSampleIndex = snapshot.SampleIndex;
+        _lastQpc = timestampQpc;
     }
 
     private void ClearRestBias()
@@ -212,26 +265,32 @@ internal sealed class MotionOrientationEstimator
         _biasMax = double.NegativeInfinity;
     }
 
-    private void UpdateRestBias(in DsMotionSnapshot snapshot, double rawDps, double mag)
+    private void UpdateRestBias(
+        int accelMilliGX,
+        int accelMilliGY,
+        int accelMilliGZ,
+        double rawDps,
+        double mag)
     {
         if (HasRestBias)
-        {
             return;
-        }
 
         bool accelStill = !_hasPrevAccel
-                          || (Math.Abs(snapshot.AccelMilliGX - _prevMilliGX) <= BiasLearnAccelJitterMilliG
-                              && Math.Abs(snapshot.AccelMilliGY - _prevMilliGY) <= BiasLearnAccelJitterMilliG
-                              && Math.Abs(snapshot.AccelMilliGZ - _prevMilliGZ) <= BiasLearnAccelJitterMilliG);
-        _hasPrevAccel = true;
-        _prevMilliGX = snapshot.AccelMilliGX;
-        _prevMilliGY = snapshot.AccelMilliGY;
-        _prevMilliGZ = snapshot.AccelMilliGZ;
+            || (Math.Abs(accelMilliGX - _prevMilliGX) <= BiasLearnAccelJitterMilliG
+            && Math.Abs(accelMilliGY - _prevMilliGY) <= BiasLearnAccelJitterMilliG
+            && Math.Abs(accelMilliGZ - _prevMilliGZ) <= BiasLearnAccelJitterMilliG);
 
-        bool still = UpZ <= BiasLearnFlatUpZ
-                     && Math.Abs(mag - 1.0) <= BiasLearnGTolerance
-                     && Math.Abs(rawDps) <= _biasLearnMaxAbsDps
-                     && accelStill;
+        _hasPrevAccel = true;
+        _prevMilliGX = accelMilliGX;
+        _prevMilliGY = accelMilliGY;
+        _prevMilliGZ = accelMilliGZ;
+
+        bool still =
+            UpZ <= BiasLearnFlatUpZ
+            && Math.Abs(mag - 1.0) <= BiasLearnGTolerance
+            && Math.Abs(rawDps) <= _biasLearnMaxAbsDps
+            && accelStill;
+
         if (!still)
         {
             ResetBiasWindow();
@@ -240,28 +299,103 @@ internal sealed class MotionOrientationEstimator
 
         _stillCount++;
         _biasSum += rawDps;
+
         if (rawDps < _biasMin)
-        {
             _biasMin = rawDps;
-        }
 
         if (rawDps > _biasMax)
-        {
             _biasMax = rawDps;
-        }
 
         if (_stillCount < BiasLearnSamples)
-        {
             return;
-        }
 
         if (_biasMax - _biasMin <= BiasLearnMaxRangeDps)
         {
-            RestBiasDps = Math.Clamp(_biasSum / _stillCount, -_biasLearnMaxAbsDps, _biasLearnMaxAbsDps);
+            RestBiasDps = Math.Clamp(
+                _biasSum / _stillCount,
+                -_biasLearnMaxAbsDps,
+                _biasLearnMaxAbsDps);
+
             HasRestBias = true;
             return;
         }
 
         ResetBiasWindow();
+    }
+
+    /// <summary>
+    /// Computes the shortest-arc tilt quaternion that takes the mapped pad-up vector
+    /// onto world-up (0, 0, 1), matching DsHidMini's MotionViewerRotation.TiltFromUp.
+    /// </summary>
+    public static Quaternion CreateTiltQuaternion(double upX, double upY, double upZ)
+    {
+        double vx = upX;
+        double vy = -upY;
+        double vz = -upZ;
+
+        double magnitude = Math.Sqrt(vx * vx + vy * vy + vz * vz);
+        if (magnitude < 1e-9)
+            return Quaternion.Identity;
+
+        vx /= magnitude;
+        vy /= magnitude;
+        vz /= magnitude;
+
+        double dot = vz;
+        if (dot > 0.999999)
+            return Quaternion.Identity;
+
+        if (dot < -0.999999)
+            return new Quaternion(1, 0, 0, 0);
+
+        return Quaternion.Normalize(
+            new Quaternion((float)vy, (float)-vx, 0, (float)(1.0 + dot)));
+    }
+
+    /// <summary>
+    /// Computes angular velocity in degrees per second from consecutive tilt quaternions.
+    /// </summary>
+    public static (double OmegaX, double OmegaY) CalculateAngularVelocity(
+        Quaternion previousTilt,
+        Quaternion currentTilt,
+        double dt)
+    {
+        if (dt <= 0 || dt >= 0.25)
+            return (0, 0);
+
+        // Relative rotation in controller-local space.
+        Quaternion delta = Quaternion.Normalize(
+            Quaternion.Multiply(
+                Quaternion.Conjugate(previousTilt),
+                currentTilt));
+
+        // Use the shortest quaternion representation.
+        if (delta.W < 0)
+        {
+            delta = new Quaternion(-delta.X, -delta.Y, -delta.Z, -delta.W);
+        }
+
+        double sinHalf = Math.Sqrt(
+            delta.X * delta.X +
+            delta.Y * delta.Y +
+            delta.Z * delta.Z);
+
+        if (sinHalf > 1e-7)
+        {
+            double angle = 2.0 * Math.Atan2(
+                sinHalf,
+                Math.Clamp(delta.W, -1.0, 1.0));
+
+            double degreesPerSecond =
+                angle / sinHalf *
+                (180.0 / Math.PI) / dt;
+
+            double omegaX = delta.X * degreesPerSecond;
+            double omegaY = delta.Y * degreesPerSecond;
+
+            return (omegaX, omegaY);
+        }
+
+        return (0, 0);
     }
 }

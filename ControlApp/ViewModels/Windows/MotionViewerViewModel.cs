@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Windows;
 
+using Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager;
 using Nefarius.DsHidMini.ControlApp.Models.Motion;
 using Nefarius.DsHidMini.IPC;
 using Nefarius.DsHidMini.IPC.Models.Drivers;
@@ -15,6 +16,11 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
     private readonly int _deviceIndex;
     private readonly DsMotionCalibrationSource _calibrationSource;
     private readonly MotionOrientationEstimator _estimator;
+    private readonly MotionControlsSettings? _motionSettings;
+    private readonly KalmanFilter1D? _accelFilterX;
+    private readonly KalmanFilter1D? _accelFilterY;
+    private readonly KalmanFilter1D? _accelFilterZ;
+    private readonly KalmanFilter1D? _gyroFilter;
     private readonly CancellationTokenSource _cts = new();
     private readonly object _interopLock = new();
     private readonly object _recorderLock = new();
@@ -31,12 +37,25 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
         int deviceIndex,
         string deviceTitle,
         DsMotionCalibrationSource calibrationSource = DsMotionCalibrationSource.LiveUsb,
-        bool useSoftwareRendering = false)
+        bool useSoftwareRendering = false,
+        MotionControlsSettings? motionSettings = null)
     {
         _deviceIndex = deviceIndex;
         _calibrationSource = calibrationSource;
+        _motionSettings = motionSettings;
         Title = $"Motion viewer — {deviceTitle}";
         _estimator = new MotionOrientationEstimator(Stopwatch.Frequency);
+
+        if (motionSettings != null)
+        {
+            double filterStrength = motionSettings.KalmanFilterStrength;
+            _accelFilterX = new KalmanFilter1D(q: 0.01, r: 0.05);
+            _accelFilterY = new KalmanFilter1D(q: 0.01, r: 0.05);
+            _accelFilterZ = new KalmanFilter1D(q: 0.01, r: 0.05);
+            _gyroFilter = new KalmanFilter1D(q: 0.05, r: 0.2);
+            _estimator.Smoothing = Math.Clamp(filterStrength, 0.01, 1.0);
+        }
+
         StatusText = MotionStatusFormatter.StatusText(true, false, false, false);
         UseSoftwareRendering = useSoftwareRendering;
     }
@@ -227,7 +246,36 @@ public sealed partial class MotionViewerViewModel : ObservableObject, IDisposabl
 
                 if (!IsPaused)
                 {
-                    _estimator.Update(snapshot);
+                    if (_motionSettings != null &&
+                        _accelFilterX != null && _accelFilterY != null && _accelFilterZ != null && _gyroFilter != null)
+                    {
+                        double gyroDps = (snapshot.GyroMilliDps / 1000.0) * _motionSettings.GyroSensitivity;
+                        double accelXG = (snapshot.AccelMilliGX / 1000.0) * _motionSettings.AccelSensitivity;
+                        double accelYG = (snapshot.AccelMilliGY / 1000.0) * _motionSettings.AccelSensitivity;
+                        double accelZG = (snapshot.AccelMilliGZ / 1000.0) * _motionSettings.AccelSensitivity;
+
+                        double filterStrength = _motionSettings.KalmanFilterStrength;
+                        double filteredAccelX = _accelFilterX.Update(accelXG, filterStrength);
+                        double filteredAccelY = _accelFilterY.Update(accelYG, filterStrength);
+                        double filteredAccelZ = _accelFilterZ.Update(accelZG, filterStrength);
+                        double filteredGyro = _gyroFilter.Update(gyroDps, filterStrength);
+
+                        _estimator.Smoothing = Math.Clamp(filterStrength, 0.01, 1.0);
+
+                        var bridgeSnapshot = new Ds3MotionSnapshot(
+                            true,
+                            filteredAccelX,
+                            filteredAccelY,
+                            filteredAccelZ,
+                            filteredGyro,
+                            0,
+                            0);
+                        _estimator.Update(in bridgeSnapshot);
+                    }
+                    else
+                    {
+                        _estimator.Update(snapshot);
+                    }
 
                     lock (_recorderLock)
                     {

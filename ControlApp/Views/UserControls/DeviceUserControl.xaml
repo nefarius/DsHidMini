@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:deviceSettings="clr-namespace:Nefarius.DsHidMini.ControlApp.ViewModels.UserControls.DeviceSettings"
     xmlns:enums="clr-namespace:Nefarius.DsHidMini.ControlApp.Models.DshmConfigManager.Enums"
     xmlns:helpers="clr-namespace:Nefarius.DsHidMini.ControlApp.Helpers"
     xmlns:local="clr-namespace:Nefarius.DsHidMini.ControlApp.Views.UserControls"
@@ -26,6 +27,193 @@
             <Setter Property="Width" Value="40" />
         </Style>
         <system:Double x:Key="MyKey_SymbolFontSize">25</system:Double>
+
+        <Style x:Key="SettingsFieldLabel" TargetType="ui:TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,0,12,0" />
+        </Style>
+        <Style x:Key="SettingsSliderLabel" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        </Style>
+        <Style x:Key="SettingsSliderValue" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="MinWidth" Value="36" />
+            <Setter Property="Margin" Value="10,0,16,0" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        </Style>
+        <Style x:Key="SettingsSliderRow" TargetType="Grid">
+            <Setter Property="MinHeight" Value="40" />
+            <Setter Property="Margin" Value="0,0,0,16" />
+        </Style>
+
+        <DataTemplate x:Key="CemuhookModeSetting" DataType="{x:Type deviceSettings:DeviceSettingsViewModel}">
+            <ui:Card
+                Margin="0,0,0,14"
+                Padding="20,18"
+                DockPanel.Dock="Top"
+                Visibility="{Binding IsGroupVisible, Converter={StaticResource BoolToVis_TV_FC}}">
+                <DockPanel Margin="2,0">
+                    <Grid Margin="0,0,0,12" DockPanel.Dock="Top">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ui:TextBlock
+                            VerticalAlignment="Center"
+                            FontTypography="Subtitle"
+                            Text="{Binding Header}" />
+                        <ui:Button
+                            Grid.Column="1"
+                            Margin="12,0,0,0"
+                            HorizontalAlignment="Right"
+                            Command="{Binding ResetGroupToOriginalDefaultsCommand}"
+                            Content="Reset"
+                            Visibility="{Binding IsGroupLocked, Converter={StaticResource BoolToVis_TC_FV}}" />
+                    </Grid>
+                    <ContentControl
+                        HorizontalAlignment="Stretch"
+                        Content="{Binding}"
+                        DockPanel.Dock="Top"
+                        Visibility="{Binding IsGroupLocked, Converter={StaticResource BoolToVis_TC_FV}}" />
+                    <ui:InfoBar
+                        Title="Unavailable with the current configuration"
+                        DockPanel.Dock="Top"
+                        IsClosable="False"
+                        IsOpen="{Binding IsGroupLocked}"
+                        Message="{Binding LockReason}"
+                        Severity="Informational" />
+                </DockPanel>
+            </ui:Card>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type deviceSettings:CemuhookUdpSettingsViewModel}">
+            <StackPanel>
+                <ui:ToggleSwitch
+                    Margin="{StaticResource MyKey_NextLineSpacement}"
+                    Content="Enable Cemuhook UDP broadcast"
+                    IsChecked="{Binding Enabled}" />
+
+                <DockPanel Margin="{StaticResource MyKey_NextLineSpacement}"
+                           Visibility="{Binding Enabled, Converter={StaticResource BoolToVis_TV_FC}}">
+                    <ui:TextBlock
+                        Style="{StaticResource SettingsFieldLabel}"
+                        VerticalAlignment="Center"
+                        DockPanel.Dock="Left"
+                        Text="Broadcast IP:" />
+                    <TextBox
+                        VerticalAlignment="Center"
+                        DockPanel.Dock="Right"
+                        Text="{Binding IpAddress, UpdateSourceTrigger=PropertyChanged}"
+                        Width="150" />
+                </DockPanel>
+
+                <StackPanel Margin="{StaticResource MyKey_NextLineSpacement}"
+                           Visibility="{Binding Enabled, Converter={StaticResource BoolToVis_TV_FC}}">
+                    <DockPanel>
+                        <ui:TextBlock
+                            Style="{StaticResource SettingsFieldLabel}"
+                            VerticalAlignment="Center"
+                            DockPanel.Dock="Left"
+                            Text="UDP Port:" />
+                        <ui:NumberBox
+                            VerticalAlignment="Center"
+                            DockPanel.Dock="Right"
+                            Minimum="1"
+                            Maximum="65535"
+                            ClearButtonEnabled="False"
+                            Value="{Binding Port, UpdateSourceTrigger=PropertyChanged}"
+                            Width="150" />
+                    </DockPanel>
+                    <TextBlock
+                        Margin="0,4,0,0"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                        Text="Use different ports for multiple controllers" />
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type deviceSettings:MotionControlsSettingsViewModel}">
+            <StackPanel>
+                <Grid Style="{StaticResource SettingsSliderRow}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        Style="{StaticResource SettingsSliderLabel}"
+                        Text="Kalman Filter Strength:" />
+                    <TextBlock
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        Style="{StaticResource SettingsSliderValue}"
+                        Text="{Binding KalmanFilterStrengthDisplay}" />
+                    <Slider
+                        Grid.Column="2"
+                        Height="24"
+                        VerticalAlignment="Center"
+                        Maximum="1.0"
+                        Minimum="0.0"
+                        SmallChange="0.01"
+                        LargeChange="0.1"
+                        Value="{Binding KalmanFilterStrength}" />
+                </Grid>
+
+                <Grid Style="{StaticResource SettingsSliderRow}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        Style="{StaticResource SettingsSliderLabel}"
+                        Text="Gyro Sensitivity:" />
+                    <TextBlock
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        Style="{StaticResource SettingsSliderValue}"
+                        Text="{Binding GyroSensitivityDisplay}" />
+                    <Slider
+                        Grid.Column="2"
+                        Height="24"
+                        VerticalAlignment="Center"
+                        Maximum="1.5"
+                        Minimum="0.1"
+                        SmallChange="0.01"
+                        LargeChange="0.1"
+                        Value="{Binding GyroSensitivity}" />
+                </Grid>
+
+                <Grid Style="{StaticResource SettingsSliderRow}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        Style="{StaticResource SettingsSliderLabel}"
+                        Text="Accelerometer Sensitivity:" />
+                    <TextBlock
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        Style="{StaticResource SettingsSliderValue}"
+                        Text="{Binding AccelSensitivityDisplay}" />
+                    <Slider
+                        Grid.Column="2"
+                        Height="24"
+                        VerticalAlignment="Center"
+                        Maximum="1.5"
+                        Minimum="0.1"
+                        SmallChange="0.01"
+                        LargeChange="0.1"
+                        Value="{Binding AccelSensitivity}" />
+                </Grid>
+            </StackPanel>
+        </DataTemplate>
 
     </UserControl.Resources>
     <DockPanel>
@@ -538,6 +726,30 @@
                                 Visibility="{Binding IsProfileSelectorVisible, Converter={StaticResource BoolToVis}}" />
                         </DockPanel>
                     </ui:Card>
+
+                    <ui:CardExpander
+                        Margin="0,0,0,12"
+                        Padding="16,8"
+                        DockPanel.Dock="Top"
+                        DataContext="{Binding DeviceCustomsVM}"
+                        Header="Cemuhook UDP Bridge &amp; Motion Controls configuration">
+                        <ui:CardExpander.Content>
+                            <DockPanel Margin="0,8,0,0">
+                                <ui:InfoBar
+                                    Margin="0,0,0,8"
+                                    DockPanel.Dock="Top"
+                                    IsClosable="False"
+                                    IsOpen="True"
+                                    Message="Settings are saved per-controller. Each connected controller has its own UDP port and motion controls configuration."
+                                    Severity="Informational" />
+                                <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding CemuhookGroups}">
+                                    <ItemsControl.ItemTemplate>
+                                        <StaticResource ResourceKey="CemuhookModeSetting" />
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </DockPanel>
+                        </ui:CardExpander.Content>
+                    </ui:CardExpander>
 
                     <ContentControl Visibility="{Binding IsEditorVisible, Converter={StaticResource BoolToVis}}">
                         <local:DeviceSettingsEditor

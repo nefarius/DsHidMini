@@ -57,6 +57,8 @@ public class DeviceSettings
     public OutputReportSettings OutputReport { get; set; } = new();
     public LeftMotorRescalingSettings LeftMotorRescaling { get; set; } = new();
     public AltRumbleModeSettings AltRumbleAdjusts { get; set; } = new();
+    public CemuhookUdpSettings CemuhookUdp { get; set; } = new();
+    public MotionControlsSettings MotionControls { get; set; } = new();
 
     public void ResetToDefault()
     {
@@ -68,6 +70,8 @@ public class DeviceSettings
         OutputReport.ResetToDefault();
         LeftMotorRescaling.ResetToDefault();
         AltRumbleAdjusts.ResetToDefault();
+        CemuhookUdp.ResetToDefault();
+        MotionControls.ResetToDefault();
     }
 
     public static void CopySettings(DeviceSettings destiny, DeviceSettings source)
@@ -80,6 +84,8 @@ public class DeviceSettings
         OutputReportSettings.CopySettings(destiny.OutputReport, source.OutputReport);
         LeftMotorRescalingSettings.CopySettings(destiny.LeftMotorRescaling, source.LeftMotorRescaling);
         AltRumbleModeSettings.CopySettings(destiny.AltRumbleAdjusts, source.AltRumbleAdjusts);
+        CemuhookUdpSettings.CopySettings(destiny.CemuhookUdp, source.CemuhookUdp);
+        MotionControlsSettings.CopySettings(destiny.MotionControls, source.MotionControls);
     }
 }
 
@@ -440,5 +446,41 @@ public class AltRumbleModeSettings : DeviceSubSettings
         // Left rumble (Heavy) threshold
         destiny.IsForcedRightMotorHeavyThresholdEnabled = source.IsForcedRightMotorHeavyThresholdEnabled;
         destiny.ForcedRightMotorHeavyThreshold = source.ForcedRightMotorHeavyThreshold;
+    }
+}
+
+public class CemuhookUdpSettings : DeviceSubSettings
+{
+    public bool Enabled { get; set; }
+    public string IpAddress { get; set; } = "127.0.0.1";
+    public int Port { get; set; } = 26760;
+
+    public override void ResetToDefault() => CopySettings(this, new CemuhookUdpSettings());
+    public override void CopyFrom(DeviceSettings source) => CopySettings(this, source.CemuhookUdp);
+    public override void CopyTo(DeviceSettings destination) => CopySettings(destination.CemuhookUdp, this);
+
+    public static void CopySettings(CemuhookUdpSettings destiny, CemuhookUdpSettings source)
+    {
+        destiny.Enabled = source.Enabled;
+        destiny.IpAddress = source.IpAddress;
+        destiny.Port = source.Port;
+    }
+}
+
+public class MotionControlsSettings : DeviceSubSettings
+{
+    public double KalmanFilterStrength { get; set; } = 1.0;
+    public double GyroSensitivity { get; set; } = 1.0;
+    public double AccelSensitivity { get; set; } = 1.0;
+
+    public override void ResetToDefault() => CopySettings(this, new MotionControlsSettings());
+    public override void CopyFrom(DeviceSettings source) => CopySettings(this, source.MotionControls);
+    public override void CopyTo(DeviceSettings destination) => CopySettings(destination.MotionControls, this);
+
+    public static void CopySettings(MotionControlsSettings destiny, MotionControlsSettings source)
+    {
+        destiny.KalmanFilterStrength = source.KalmanFilterStrength;
+        destiny.GyroSensitivity = source.GyroSensitivity;
+        destiny.AccelSensitivity = source.AccelSensitivity;
     }
 }
