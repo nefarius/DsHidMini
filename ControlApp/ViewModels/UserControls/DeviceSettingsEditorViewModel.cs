@@ -38,6 +38,12 @@ public partial class SettingsEditorViewModel : ObservableObject
     [ObservableProperty]
     private WirelessSettingsViewModel _wirelessSettingsVM = new();
 
+    [ObservableProperty]
+    private CemuhookUdpSettingsViewModel _cemuhookUdpSettingsVM = new();
+
+    [ObservableProperty]
+    private MotionControlsSettingsViewModel _motionControlsSettingsVM = new();
+
     public SettingsEditorViewModel() : this(null)
     {
     }
@@ -47,6 +53,8 @@ public partial class SettingsEditorViewModel : ObservableObject
     public IReadOnlyList<DeviceSettingsViewModel> PrimaryGroups { get; }
 
     public IReadOnlyList<DeviceSettingsViewModel> AdvancedGroups { get; }
+
+    public IReadOnlyList<DeviceSettingsViewModel> CemuhookGroups { get; }
 
     public SettingsEditorViewModel(Models.DshmConfigManager.DeviceSettings? dataContainer = null)
     {
@@ -58,10 +66,18 @@ public partial class SettingsEditorViewModel : ObservableObject
         groupSettingsList.Add(OutRepSettingsVM);
         groupSettingsList.Add(LeftMotorRescaleSettingsVM);
         groupSettingsList.Add(AltRumbleSettingsVM);
+        groupSettingsList.Add(CemuhookUdpSettingsVM);
+        groupSettingsList.Add(MotionControlsSettingsVM);
         PrimaryGroups = [HidModeVM, LedsSettingsVM, WirelessSettingsVM, SticksSettingsVM, GeneralRumbleSettingsVM];
         AdvancedGroups = [OutRepSettingsVM, LeftMotorRescaleSettingsVM, AltRumbleSettingsVM];
+        CemuhookGroups = [CemuhookUdpSettingsVM, MotionControlsSettingsVM];
 
         HidModeVM.PropertyChanged += ModeSettingsChanged;
+        CemuhookUdpSettingsVM.PropertyChanged += (_, args) =>
+        {
+            if (string.IsNullOrEmpty(args.PropertyName) || args.PropertyName == nameof(CemuhookUdpSettingsViewModel.Enabled))
+                UpdateLockStateOfGroups();
+        };
 
         if (dataContainer != null)
         {
@@ -72,6 +88,7 @@ public partial class SettingsEditorViewModel : ObservableObject
     }
 
     private DsDeviceType _deviceType = DsDeviceType.Unknown;
+    private DsIdentificationMotionPath _motionPath = DsIdentificationMotionPath.Unknown;
 
     public bool HideRumbleSettings { get; private set; }
 
@@ -87,9 +104,10 @@ public partial class SettingsEditorViewModel : ObservableObject
     public const string SxsRumbleLockReason =
         "SXS passes rumble commands directly to the controller, so these driver-side rumble settings have no effect. Select another HID emulation mode to change them.";
 
-    public void ApplyDeviceCapabilities(DsDeviceType deviceType)
+    public void ApplyDeviceCapabilities(DsDeviceType deviceType, DsIdentificationMotionPath motionPath = DsIdentificationMotionPath.Unknown)
     {
         _deviceType = deviceType;
+        _motionPath = motionPath;
         HideRumbleSettings = !DsDeviceCapabilities.HasRumble(deviceType);
         LedsSettingsVM.IsSingleLedDevice = DsDeviceCapabilities.HasSingleLed(deviceType);
         if (LedsSettingsVM.IsSingleLedDevice)
@@ -151,6 +169,12 @@ public partial class SettingsEditorViewModel : ObservableObject
         {
             WirelessSettingsVM.IsGroupVisible = false;
         }
+
+        bool hasMotionPath = _motionPath != DsIdentificationMotionPath.Unknown;
+        CemuhookUdpSettingsVM.IsMotionAvailable = hasMotionPath;
+        // Keep an already-enabled bridge accessible so it can be disabled or repaired.
+        CemuhookUdpSettingsVM.IsGroupVisible = hasMotionPath || CemuhookUdpSettingsVM.Enabled;
+        MotionControlsSettingsVM.IsGroupVisible = hasMotionPath;
     }
 
     private void ModeSettingsChanged(object? sender, PropertyChangedEventArgs e)

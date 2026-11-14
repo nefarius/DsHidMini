@@ -5,6 +5,7 @@ using System.Net.NetworkInformation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http.Resilience;
+using Microsoft.Extensions.Logging;
 
 using Nefarius.DsHidMini.ControlApp.Models;
 using Nefarius.DsHidMini.ControlApp.Models.Util.Web;
@@ -224,6 +225,9 @@ public class DocsHttpCacheTests
             ScriptedHandler handler = new(respond);
 
             IHost host = Host.CreateDefaultBuilder()
+                // Tests must not depend on access to the machine's Windows Event Log.
+                // A failing provider also masks HttpRequestException and interrupts retries.
+                .ConfigureLogging(logging => logging.ClearProviders())
                 .ConfigureServices(services =>
                 {
                     services.AddDocsHttpClient(
