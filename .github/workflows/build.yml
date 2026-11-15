@@ -83,11 +83,13 @@ jobs:
     runs-on: windows-2025-vs2026
     permissions:
       contents: read
+      actions: read
     env:
       BUILD_VERSION: ${{ needs.version.outputs.driver-version }}
       # Secrets can't be referenced directly in `if:` conditions, only in `env:`/`with:`,
-      # so promote it here and check env.VCPKG_NUGET_TOKEN in the step below instead.
+      # so promote them here and check the env vars in the steps below instead.
       VCPKG_NUGET_TOKEN: ${{ secrets.VCPKG_NUGET_TOKEN }}
+      WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
     strategy:
       fail-fast: false
       matrix:
@@ -269,6 +271,18 @@ jobs:
             bin/**/*.pdb
             bin/**/*.dll
             bin/*.exe
+
+      # Driver and utility PDBs are already in this artifact. Do not retarget builds/DsHidMini/latest.
+      - name: 'Mirror artifacts'
+        if: "${{ env.WEBHOOK_URL != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}"
+        # nefarius/AppVeyorArtifactsReceiver@0f7518cedcb5cd881da597799c1c069a4a06a558 (master; provides skip-zip-extraction)
+        uses: nefarius/AppVeyorArtifactsReceiver@0f7518cedcb5cd881da597799c1c069a4a06a558
+        with:
+          webhook-url: ${{ secrets.WEBHOOK_URL }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          artifact-name: dshidmini-${{ matrix.platform }}
+          skip-latest-symlink: true
+          job-label: ${{ matrix.platform }}
 
   unsigned-tools:
     name: 'Publish unsigned ControlApp and XInput'
