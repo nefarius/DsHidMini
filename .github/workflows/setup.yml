@@ -161,6 +161,7 @@ jobs:
             -ToolsSource 'artifacts/ci/tools' `
             -ArtifactsRoot (Join-Path $pwd 'artifacts')
           Assert-DsHidMiniAttestedDriverSignatures -DriversRoot (Join-Path $pwd 'artifacts\drivers')
+          Assert-DsHidMiniStagedPayloadSignatures -RepositoryRoot $pwd -ArtifactsRoot (Join-Path $pwd 'artifacts')
           Write-Output 'Do not append another publisher signature after Microsoft attestation.'
 
       - name: 'Setup .NET'
@@ -196,11 +197,109 @@ jobs:
           . ./build/SetupRelease.ps1
           Assert-DsHidMiniNoGitLfsPointers -RepositoryRoot $pwd
 
-      - name: 'Build MSI'
+      - name: 'Compile installer'
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          dotnet build -c Release -p:SetupVersion=$env:SETUP_VERSION -p:GenerateMsi=true .\setup\DsHidMini.Installer.csproj
+          dotnet build -c Release -p:SetupVersion=$env:SETUP_VERSION .\setup\DsHidMini.Installer.csproj
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+      - name: 'List unsigned installer assemblies'
+        id: unsigned-assemblies
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . ./build/SetupRelease.ps1
+          $dir = Join-Path $pwd 'setup\bin\Release\net48'
+          $files = @(Get-DsHidMiniUnsignedPeFiles -Directory $dir)
+          Write-DsHidMiniGitHubOutput -GitHubOutput $env:GITHUB_OUTPUT -Values @{ count = $files.Count }
+          Write-DsHidMiniGitHubMultilineOutput -Name 'files' -Values $files -GitHubOutput $env:GITHUB_OUTPUT
+          Write-Output "Unsigned installer assemblies: $($files.Count)"
+
+      - name: 'Sign installer assemblies'
+        if: steps.unsigned-assemblies.outputs.count != '0'
+        uses: nefarius/SignRelay@31a8d34f0d7da6e44e9c4a794b0f51e0f5f2e8fd
+        with:
+          server: ${{ env.SIGN_RELAY_SERVER }}
+          token: ${{ env.SIGN_RELAY_CI_TOKEN }}
+          in-place: true
+          files: ${{ steps.unsigned-assemblies.outputs.files }}
+
+      - name: 'Verify installer assembly signatures'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . ./build/SetupRelease.ps1
+          Assert-DsHidMiniDirectoryPeSignatures `
+            -Directory (Join-Path $pwd 'setup\bin\Release\net48') `
+            -PublisherOwnedFiles @('DsHidMini.Installer.exe', 'Nefarius.Utilities.DeviceManagement.dll')
+
+      - name: 'Emit MSI build command'
+        working-directory: setup
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & .\bin\Release\net48\DsHidMini.Installer.exe --build-cmd
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+      - name: 'List unsigned SfxCA packages'
+        id: unsigned-sfxca
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . ./build/SetupRelease.ps1
+          $base = [IO.Path]::GetFileNameWithoutExtension($env:MSI_NAME)
+          $wxs = Join-Path $pwd "setup\$base.wxs"
+          $files = @(Get-DsHidMiniWxsEmbeddedPeFiles -WxsPath $wxs)
+          $unsigned = [System.Collections.Generic.List[string]]::new()
+          foreach ($file in $files) {
+            $sig = Get-AuthenticodeSignature -LiteralPath $file
+            if ($sig.Status -eq 'Valid') {
+              continue
+            }
+            if ($sig.Status -eq 'NotSigned') {
+              $unsigned.Add($file)
+              continue
+            }
+            throw "Unexpected Authenticode status $($sig.Status) on $file."
+          }
+          Write-DsHidMiniGitHubOutput -GitHubOutput $env:GITHUB_OUTPUT -Values @{ count = $unsigned.Count }
+          Write-DsHidMiniGitHubMultilineOutput -Name 'files' -Values @($unsigned) -GitHubOutput $env:GITHUB_OUTPUT
+          Write-Output "Unsigned SfxCA packages: $($unsigned.Count)"
+
+      - name: 'Sign SfxCA packages'
+        if: steps.unsigned-sfxca.outputs.count != '0'
+        uses: nefarius/SignRelay@31a8d34f0d7da6e44e9c4a794b0f51e0f5f2e8fd
+        with:
+          server: ${{ env.SIGN_RELAY_SERVER }}
+          token: ${{ env.SIGN_RELAY_CI_TOKEN }}
+          in-place: true
+          skip-tool-install: "${{ steps.unsigned-assemblies.outputs.count != '0' }}"
+          files: ${{ steps.unsigned-sfxca.outputs.files }}
+
+      - name: 'Verify SfxCA signatures'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . ./build/SetupRelease.ps1
+          $base = [IO.Path]::GetFileNameWithoutExtension($env:MSI_NAME)
+          $files = @(Get-DsHidMiniWxsEmbeddedPeFiles -WxsPath (Join-Path $pwd "setup\$base.wxs"))
+          foreach ($file in $files) {
+            Assert-DsHidMiniPeSignature -Path $file -RequireAllowlistedPublisher | Out-Null
+            Write-Output "Signed: $file"
+          }
+
+      - name: 'Link MSI'
+        working-directory: setup
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $base = [IO.Path]::GetFileNameWithoutExtension($env:MSI_NAME)
+          $cmd = Join-Path $pwd "Build_$base.cmd"
+          if (-not (Test-Path -LiteralPath $cmd -PathType Leaf)) {
+            throw "MSI build command was not produced: $cmd"
+          }
+          & cmd.exe /c "`"$cmd`""
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
 
       - name: 'Assert MSI payload and custom-action package'
@@ -214,6 +313,7 @@ jobs:
           $manifest = Join-Path $pwd 'setup\obj\ca-support-assemblies.txt'
           Assert-DsHidMiniCustomActionPackage -MsiPath $msi -ManifestPath $manifest
           Assert-DsHidMiniMsiContract -MsiPath $msi
+          Assert-DsHidMiniMsiEmbeddedSignatures -MsiPath $msi
 
       - name: 'Assert MSI is unsigned'
         shell: pwsh
@@ -234,6 +334,7 @@ jobs:
           server: ${{ env.SIGN_RELAY_SERVER }}
           token: ${{ env.SIGN_RELAY_CI_TOKEN }}
           in-place: true
+          skip-tool-install: "${{ steps.unsigned-assemblies.outputs.count != '0' || steps.unsigned-sfxca.outputs.count != '0' }}"
           files: setup/${{ needs.resolve.outputs.msi-name }}
 
       - name: 'Verify signed MSI and write provenance'
