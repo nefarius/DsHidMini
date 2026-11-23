@@ -4,6 +4,12 @@ CI is the only supported way to produce a signed setup. Dispatch **Build setup**
 and choose the driver tag whose attested artifacts should be embedded. Do not
 build or sign the MSI locally.
 
+Before WiX links the MSI, CI signs every unsigned PE image the installer later
+extracts. That covers `DsHidMini.Installer.exe`, its managed dependencies, and
+the `*.CA.dll` SfxCA wrappers used for Managed UI and custom actions. Files
+that already carry a valid Authenticode signature, including
+Microsoft-attested drivers, are left unchanged. The outer MSI is signed last.
+
 WixSharp MSI that installs the dual-architecture DsHidMini driver, `igfilter`,
 ControlApp, nefcon, and the vicius-based updater. ControlApp is a
 framework-dependent win-x64 app and requires the **.NET 10 Desktop Runtime

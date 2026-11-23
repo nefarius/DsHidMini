@@ -382,6 +382,82 @@ try {
             [pscustomobject]@{ FileName = 'nefconc.exe'; FileSize = 132; Version = '' }
         )
     } 'unversioned MSI executable rejected'
+
+    $peHeader = [byte[]](0x4D, 0x5A, 0x90, 0x00)
+    $peFile = Join-Path $tempRoot 'extensionless-image'
+    $textFile = Join-Path $tempRoot 'banner.bmp'
+    [IO.File]::WriteAllBytes($peFile, $peHeader)
+    [IO.File]::WriteAllBytes($textFile, [Text.Encoding]::ASCII.GetBytes('BM'))
+    Assert-True (Test-DsHidMiniIsPeImage -Path $peFile) 'MZ header is a PE image'
+    Assert-True (-not (Test-DsHidMiniIsPeImage -Path $textFile)) 'bitmap is not a PE image'
+    Assert-True (-not (Test-DsHidMiniAuthenticodeExtension -Path $peFile)) 'extensionless image needs an Authenticode probe copy'
+
+    $cabBytes = [IO.File]::ReadAllBytes($cab)
+    $withTrailer = New-Object byte[] ($cabBytes.Length + 48)
+    [Array]::Copy($cabBytes, 0, $withTrailer, 0, $cabBytes.Length)
+    $trailerRange = Find-DsHidMiniCabinetRange -Bytes $withTrailer
+    Assert-Equal $trailerRange.Offset 0 'cabinet range stays at the start when a signature trailer follows'
+    Assert-Equal $trailerRange.Length $cabBytes.Length 'cabinet range ignores trailing signature bytes'
+
+    $signedSource = Join-Path (Split-Path -Parent $here) 'setup\nefcon\x64\nefconc.exe'
+    $signDir = Join-Path $tempRoot 'sign-scan'
+    New-Item -ItemType Directory -Force -Path $signDir | Out-Null
+    Copy-Item -LiteralPath $signedSource -Destination (Join-Path $signDir 'AlreadySigned.exe')
+    $unsignedPe = Join-Path $signDir 'Unsigned.dll'
+    Copy-Item -LiteralPath $signedSource -Destination $unsignedPe
+    $unsignedBytes = [IO.File]::ReadAllBytes($unsignedPe)
+    $lfanew = [BitConverter]::ToInt32($unsignedBytes, 0x3C)
+    $magic = [BitConverter]::ToUInt16($unsignedBytes, $lfanew + 24)
+    $certDir = if ($magic -eq 0x20B) { $lfanew + 24 + 112 + 32 } else { $lfanew + 24 + 96 + 32 }
+    [Array]::Clear($unsignedBytes, $certDir, 8)
+    [IO.File]::WriteAllBytes($unsignedPe, $unsignedBytes)
+    Set-Content -LiteralPath (Join-Path $signDir 'NotAPe.dll') -Value 'not a pe' -Encoding ascii
+    Set-Content -LiteralPath (Join-Path $signDir 'notes.txt') -Value 'ignore' -Encoding ascii
+    $unsigned = @(Get-DsHidMiniUnsignedPeFiles -Directory $signDir)
+    Assert-Equal $unsigned.Count 1 'signed PE is skipped and non-PE files are ignored'
+    Assert-True ($unsigned[0].EndsWith('Unsigned.dll')) 'unsigned dll is returned'
+    $broken = Join-Path $signDir 'Broken.exe'
+    Copy-Item -LiteralPath $signedSource -Destination $broken
+    $brokenBytes = [IO.File]::ReadAllBytes($broken)
+    $brokenBytes[0x200] = $brokenBytes[0x200] -bxor 0xFF
+    [IO.File]::WriteAllBytes($broken, $brokenBytes)
+    Assert-Throws { Get-DsHidMiniUnsignedPeFiles -Directory $signDir } 'broken Authenticode status is rejected'
+
+    $wxsDir = Join-Path $tempRoot 'wxs'
+    New-Item -ItemType Directory -Force -Path $wxsDir | Out-Null
+    $uiDll = Join-Path $wxsDir 'WixSharp.UI.CA.dll'
+    $caDll = Join-Path $wxsDir 'InstallDrivers.CA.dll'
+    $banner = Join-Path $wxsDir 'banner.bmp'
+    [IO.File]::WriteAllBytes($uiDll, $peHeader)
+    [IO.File]::WriteAllBytes($caDll, $peHeader)
+    [IO.File]::WriteAllBytes($banner, [Text.Encoding]::ASCII.GetBytes('BM'))
+    $wxs = Join-Path $wxsDir 'setup.wxs'
+    @"
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package>
+    <UI>
+      <EmbeddedUI Id="WixSharp_EmbeddedUI_Asm" SourceFile="$uiDll" />
+    </UI>
+    <Binary Id="Banner" SourceFile="$banner" />
+    <Binary Id="InstallDrivers" SourceFile="$caDll" />
+  </Package>
+</Wix>
+"@ | Set-Content -LiteralPath $wxs -Encoding utf8
+    $embedded = @(Get-DsHidMiniWxsEmbeddedPeFiles -WxsPath $wxs)
+    Assert-Equal $embedded.Count 2 'wxs parser returns EmbeddedUI and Binary PE images'
+    Assert-True ($embedded -contains $uiDll) 'wxs parser keeps the embedded UI dll'
+    Assert-True ($embedded -contains $caDll) 'wxs parser keeps the custom-action dll'
+    Assert-True ($embedded -notcontains $banner) 'wxs parser ignores a non-PE binary'
+
+    $missingUi = Join-Path $wxsDir 'missing-ui.wxs'
+    @"
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package>
+    <Binary Id="InstallDrivers" SourceFile="$caDll" />
+  </Package>
+</Wix>
+"@ | Set-Content -LiteralPath $missingUi -Encoding utf8
+    Assert-Throws { Get-DsHidMiniWxsEmbeddedPeFiles -WxsPath $missingUi } 'wxs without an EmbeddedUI PE is rejected'
 }
 finally {
     if (Test-Path -LiteralPath $tempRoot) {

@@ -512,7 +512,7 @@ function Find-DsHidMiniCabinetRange {
     return $null
 }
 
-function Get-DsHidMiniSfxCaCabinetFileNames {
+function Expand-DsHidMiniSfxCaCabinet {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
@@ -549,11 +549,33 @@ function Get-DsHidMiniSfxCaCabinetFileNames {
             throw "expand.exe failed to extract the SfxCA cabinet from $Path (exit $LASTEXITCODE)."
         }
 
-        @(Get-ChildItem -LiteralPath $extract -File | ForEach-Object { $_.Name })
+        return [pscustomobject]@{
+            TempRoot = $tempRoot
+            Files    = @(Get-ChildItem -LiteralPath $extract -File)
+        }
     }
-    finally {
+    catch {
         if (Test-Path -LiteralPath $tempRoot) {
             Remove-Item -LiteralPath $tempRoot -Recurse -Force
+        }
+        throw
+    }
+}
+
+function Get-DsHidMiniSfxCaCabinetFileNames {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $Path
+    )
+
+    $expanded = Expand-DsHidMiniSfxCaCabinet -Path $Path
+    try {
+        return @($expanded.Files | ForEach-Object { $_.Name })
+    }
+    finally {
+        if ($expanded.TempRoot -and (Test-Path -LiteralPath $expanded.TempRoot)) {
+            Remove-Item -LiteralPath $expanded.TempRoot -Recurse -Force
         }
     }
 }
@@ -1652,4 +1674,489 @@ function New-DsHidMiniSetupGitTag {
     }
 
     return $Tag
+}
+
+function Test-DsHidMiniIsPeImage {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $Path
+    )
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        return $false
+    }
+
+    $stream = [IO.File]::Open($Path, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::ReadWrite)
+    try {
+        $header = New-Object byte[] 2
+        $read = $stream.Read($header, 0, 2)
+        return $read -eq 2 -and $header[0] -eq 0x4D -and $header[1] -eq 0x5A
+    }
+    finally {
+        $stream.Dispose()
+    }
+}
+
+function Test-DsHidMiniAuthenticodeExtension {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $Path
+    )
+
+    $extension = [IO.Path]::GetExtension($Path)
+    return $extension -match '^\.(exe|dll|sys|ocx|mui|scr|efi)$'
+}
+
+function Get-DsHidMiniAuthenticodeProbePath {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $Path
+    )
+
+    if (Test-DsHidMiniAuthenticodeExtension -Path $Path) {
+        return [pscustomobject]@{
+            Path     = $Path
+            TempRoot = $null
+        }
+    }
+
+    # Get-AuthenticodeSignature ignores images whose extension it does not
+    # recognize, including the extensionless assemblies MakeSfxCA sometimes stores.
+    $tempRoot = Join-Path ([IO.Path]::GetTempPath()) ("dshidmini-pe-probe-" + [guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Force -Path $tempRoot | Out-Null
+    $probe = Join-Path $tempRoot (([IO.Path]::GetFileName($Path)) + '.dll')
+    Copy-Item -LiteralPath $Path -Destination $probe
+    return [pscustomobject]@{
+        Path     = $probe
+        TempRoot = $tempRoot
+    }
+}
+
+function Get-DsHidMiniPeSignature {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $Path
+    )
+
+    $probe = Get-DsHidMiniAuthenticodeProbePath -Path $Path
+    try {
+        return Get-AuthenticodeSignature -LiteralPath $probe.Path
+    }
+    finally {
+        if ($probe.TempRoot -and (Test-Path -LiteralPath $probe.TempRoot)) {
+            Remove-Item -LiteralPath $probe.TempRoot -Recurse -Force
+        }
+    }
+}
+
+function Assert-DsHidMiniPeSignature {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $Path,
+
+        [switch] $RequireAllowlistedPublisher
+    )
+
+    $signature = Get-DsHidMiniPeSignature -Path $Path
+    if ($signature.Status -ne 'Valid' -or -not $signature.SignerCertificate) {
+        throw "PE image is not validly signed: $Path (Status=$($signature.Status))."
+    }
+
+    if ($RequireAllowlistedPublisher) {
+        Assert-DsHidMiniAllowlistedPublisher -Certificate $signature.SignerCertificate -Path $Path
+    }
+
+    return $signature
+}
+
+function Assert-DsHidMiniTrustedOrPublisherSignature {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $Path
+    )
+
+    $signature = Assert-DsHidMiniPeSignature -Path $Path
+    $subject = [string]$signature.SignerCertificate.Subject
+    if ((Test-DsHidMiniIsAllowlistedPublisher -Certificate $signature.SignerCertificate) -or
+        $subject -match 'Microsoft') {
+        Write-Output "Valid: $Path ($subject)"
+        return
+    }
+
+    throw "Unexpected signer on $Path : $subject"
+}
+
+function Get-DsHidMiniUnsignedPeFiles {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $Directory
+    )
+
+    if (-not (Test-Path -LiteralPath $Directory -PathType Container)) {
+        throw "PE directory was not found: $Directory"
+    }
+
+    $unsigned = [System.Collections.Generic.List[string]]::new()
+    $files = @(
+        Get-ChildItem -LiteralPath $Directory -File |
+            Where-Object { $_.Extension -match '^\.(exe|dll)$' -and (Test-DsHidMiniIsPeImage -Path $_.FullName) }
+    )
+    foreach ($file in $files) {
+        $signature = Get-AuthenticodeSignature -LiteralPath $file.FullName
+        if ($signature.Status -eq 'Valid') {
+            continue
+        }
+
+        if ($signature.Status -eq 'NotSigned') {
+            $unsigned.Add($file.FullName)
+            continue
+        }
+
+        throw "Unexpected Authenticode status $($signature.Status) on $($file.FullName)."
+    }
+
+    return @($unsigned)
+}
+
+function Assert-DsHidMiniDirectoryPeSignatures {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $Directory,
+
+        [AllowNull()]
+        [AllowEmptyCollection()]
+        [string[]] $PublisherOwnedFiles
+    )
+
+    if (-not (Test-Path -LiteralPath $Directory -PathType Container)) {
+        throw "PE directory was not found: $Directory"
+    }
+
+    $owned = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach ($name in @($PublisherOwnedFiles)) {
+        if (-not [string]::IsNullOrWhiteSpace($name)) {
+            [void]$owned.Add($name)
+        }
+    }
+
+    $files = @(Get-ChildItem -LiteralPath $Directory -File | Where-Object { $_.Extension -match '^\.(exe|dll)$' })
+    if ($files.Count -eq 0) {
+        throw "No PE images were found in $Directory."
+    }
+
+    foreach ($file in $files) {
+        $requirePublisher = $owned.Contains($file.Name)
+        Assert-DsHidMiniPeSignature -Path $file.FullName -RequireAllowlistedPublisher:$requirePublisher | Out-Null
+        Write-Output "Valid: $($file.FullName)"
+    }
+}
+
+function Resolve-DsHidMiniWxsSourceFile {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $WxsPath,
+
+        [Parameter(Mandatory)]
+        [string] $SourceFile
+    )
+
+    if ([IO.Path]::IsPathRooted($SourceFile)) {
+        return [IO.Path]::GetFullPath($SourceFile)
+    }
+
+    $base = Split-Path -Parent (Resolve-Path -LiteralPath $WxsPath).Path
+    return [IO.Path]::GetFullPath((Join-Path $base $SourceFile))
+}
+
+function Get-DsHidMiniWxsEmbeddedPeFiles {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $WxsPath
+    )
+
+    if (-not (Test-Path -LiteralPath $WxsPath -PathType Leaf)) {
+        throw "WiX source was not found: $WxsPath"
+    }
+
+    $xml = New-Object System.Xml.XmlDocument
+    $xml.Load((Resolve-Path -LiteralPath $WxsPath).Path)
+
+    $resolved = [System.Collections.Generic.List[string]]::new()
+    foreach ($elementName in @('EmbeddedUI', 'Binary')) {
+        $nodes = @($xml.SelectNodes("//*[local-name()='$elementName']"))
+        $peFiles = [System.Collections.Generic.List[string]]::new()
+        foreach ($node in $nodes) {
+            $source = [string]$node.GetAttribute('SourceFile')
+            if ([string]::IsNullOrWhiteSpace($source)) {
+                continue
+            }
+
+            $full = Resolve-DsHidMiniWxsSourceFile -WxsPath $WxsPath -SourceFile $source
+            if (-not (Test-Path -LiteralPath $full -PathType Leaf)) {
+                throw "WiX $elementName SourceFile does not exist: $full"
+            }
+
+            if (Test-DsHidMiniIsPeImage -Path $full) {
+                $peFiles.Add($full)
+            }
+        }
+
+        if ($peFiles.Count -eq 0) {
+            throw "WiX source has no $elementName PE image: $WxsPath"
+        }
+
+        foreach ($path in $peFiles) {
+            $resolved.Add($path)
+        }
+    }
+
+    return @($resolved | Select-Object -Unique)
+}
+
+function Get-DsHidMiniMsiStreamPayload {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $MsiPath,
+
+        [Parameter(Mandatory)]
+        [string] $Sql,
+
+        [Parameter(Mandatory)]
+        [string] $Label
+    )
+
+    if (-not (Test-Path -LiteralPath $MsiPath -PathType Leaf)) {
+        throw "MSI was not found: $MsiPath"
+    }
+
+    $tempRoot = Join-Path ([IO.Path]::GetTempPath()) ("dshidmini-msi-stream-" + [guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Force -Path $tempRoot | Out-Null
+    $destination = Join-Path $tempRoot 'payload.bin'
+
+    $installer = $null
+    $database = $null
+    $view = $null
+    $record = $null
+    try {
+        $installer = New-Object -ComObject WindowsInstaller.Installer
+        $database = $installer.OpenDatabase((Resolve-Path -LiteralPath $MsiPath).Path, 0)
+        $view = $database.OpenView($Sql)
+        [void]$view.Execute()
+        $record = $view.Fetch()
+        if ($null -eq $record) {
+            throw "Stream '$Label' was not found in $MsiPath."
+        }
+
+        $remaining = [int64]$record.DataSize(1)
+        if ($remaining -le 0) {
+            throw "Stream '$Label' in $MsiPath is empty."
+        }
+
+        $output = [IO.File]::Create($destination)
+        try {
+            while ($remaining -gt 0) {
+                $chunkSize = [int][Math]::Min(1048576L, $remaining)
+                # Record.ReadStream(..., 1) returns a string whose Char values are the raw bytes.
+                $chunk = $record.ReadStream(1, $chunkSize, 1)
+                $bytes = [byte[]][char[]]$chunk
+                if ($bytes.Length -le 0) {
+                    throw "Windows Installer stopped streaming '$Label' with $remaining bytes remaining."
+                }
+
+                $output.Write($bytes, 0, $bytes.Length)
+                $remaining -= $bytes.Length
+            }
+        }
+        finally {
+            $output.Dispose()
+        }
+
+        return [pscustomobject]@{
+            Path     = $destination
+            TempRoot = $tempRoot
+        }
+    }
+    catch {
+        if (Test-Path -LiteralPath $tempRoot) {
+            Remove-Item -LiteralPath $tempRoot -Recurse -Force
+        }
+        throw
+    }
+    finally {
+        foreach ($comObject in @($record, $view, $database, $installer)) {
+            if ($null -ne $comObject) {
+                [void][Runtime.InteropServices.Marshal]::ReleaseComObject($comObject)
+            }
+        }
+    }
+}
+
+function Assert-DsHidMiniSfxCaContentsSigned {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $Path
+    )
+
+    $bytes = [IO.File]::ReadAllBytes((Resolve-Path -LiteralPath $Path).Path)
+    if ($null -eq (Find-DsHidMiniCabinetRange -Bytes $bytes)) {
+        return
+    }
+
+    $expanded = Expand-DsHidMiniSfxCaCabinet -Path $Path
+    try {
+        $checked = 0
+        foreach ($file in @($expanded.Files)) {
+            if (-not (Test-DsHidMiniIsPeImage -Path $file.FullName)) {
+                continue
+            }
+
+            Assert-DsHidMiniPeSignature -Path $file.FullName | Out-Null
+            $checked++
+        }
+
+        if ($checked -eq 0) {
+            throw "SfxCA package contains no PE images: $Path"
+        }
+
+        Write-Output "SfxCA package is signed inside: $Path ($checked PE images)"
+    }
+    finally {
+        if ($expanded.TempRoot -and (Test-Path -LiteralPath $expanded.TempRoot)) {
+            Remove-Item -LiteralPath $expanded.TempRoot -Recurse -Force
+        }
+    }
+}
+
+function Assert-DsHidMiniMsiEmbeddedSignatures {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $MsiPath
+    )
+
+    $tables = @(
+        Get-DsHidMiniMsiTableRows -MsiPath $MsiPath -Sql "SELECT ``Name`` FROM ``_Tables``" -ColumnCount 1 |
+            ForEach-Object { $_[0] }
+    )
+    foreach ($required in @('Binary', 'MsiEmbeddedUI')) {
+        if ($tables -notcontains $required) {
+            throw "MSI is missing the $required table: $MsiPath"
+        }
+    }
+
+    $checked = 0
+    foreach ($table in @('Binary', 'MsiEmbeddedUI')) {
+        $names = @(
+            Get-DsHidMiniMsiTableRows -MsiPath $MsiPath -Sql "SELECT ``Name`` FROM ``$table``" -ColumnCount 1 |
+                ForEach-Object { $_[0] }
+        )
+        $peCount = 0
+        foreach ($name in $names) {
+            if ($name -match "'") {
+                throw "MSI stream name contains a quote and cannot be queried safely: '$name'."
+            }
+
+            $payload = Get-DsHidMiniMsiStreamPayload `
+                -MsiPath $MsiPath `
+                -Sql "SELECT ``Data`` FROM ``$table`` WHERE ``Name``='$name'" `
+                -Label "$table/$name"
+            try {
+                if (-not (Test-DsHidMiniIsPeImage -Path $payload.Path)) {
+                    continue
+                }
+
+                $peCount++
+                Assert-DsHidMiniPeSignature -Path $payload.Path -RequireAllowlistedPublisher | Out-Null
+                Assert-DsHidMiniSfxCaContentsSigned -Path $payload.Path
+                $checked++
+                Write-Output "Signed embedded ${table}: $name"
+            }
+            finally {
+                if ($payload.TempRoot -and (Test-Path -LiteralPath $payload.TempRoot)) {
+                    Remove-Item -LiteralPath $payload.TempRoot -Recurse -Force
+                }
+            }
+        }
+
+        if ($peCount -eq 0) {
+            throw "MSI $table table has no embedded PE image: $MsiPath"
+        }
+    }
+
+    Write-Output "Embedded installer images are signed: $checked"
+}
+
+function Assert-DsHidMiniStagedPayloadSignatures {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $RepositoryRoot,
+
+        [Parameter(Mandatory)]
+        [string] $ArtifactsRoot
+    )
+
+    $publisherOwned = @(
+        (Join-Path $ArtifactsRoot 'bin\ControlApp.exe')
+        (Join-Path $RepositoryRoot 'setup\nefcon\x64\nefconc.exe')
+        (Join-Path $RepositoryRoot 'setup\nefcon\ARM64\nefconc.exe')
+        (Join-Path $RepositoryRoot 'setup\nefarius_DsHidMini_Updater.exe')
+    )
+    foreach ($file in $publisherOwned) {
+        if (-not (Test-Path -LiteralPath $file -PathType Leaf)) {
+            throw "Staged payload file is missing: $file"
+        }
+
+        Assert-DsHidMiniPeSignature -Path $file -RequireAllowlistedPublisher | Out-Null
+        Write-Output "Publisher-signed: $file"
+    }
+
+    foreach ($relative in @('setup\igfilter\nssmkig_x64\nssmkig.sys', 'setup\igfilter\nssmkig_ARM64\nssmkig.sys')) {
+        $file = Join-Path $RepositoryRoot $relative
+        if (-not (Test-Path -LiteralPath $file -PathType Leaf)) {
+            throw "Staged filter driver is missing: $file"
+        }
+
+        Assert-DsHidMiniTrustedOrPublisherSignature -Path $file | Out-Null
+    }
+}
+
+function Write-DsHidMiniGitHubMultilineOutput {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $Name,
+
+        [AllowNull()]
+        [AllowEmptyCollection()]
+        [string[]] $Values,
+
+        [Parameter(Mandatory)]
+        [string] $GitHubOutput
+    )
+
+    if ($Name -notmatch '^[A-Za-z0-9_-]+$') {
+        throw "GitHub output name contains unsupported characters: '$Name'."
+    }
+
+    $directory = Split-Path -Parent $GitHubOutput
+    if ($directory -and -not (Test-Path -LiteralPath $directory)) {
+        New-Item -ItemType Directory -Force -Path $directory | Out-Null
+    }
+
+    $delimiter = "dshidmini_$([guid]::NewGuid().ToString('N'))"
+    $lines = @("$Name<<$delimiter") + @($Values) + @($delimiter)
+    Add-Content -LiteralPath $GitHubOutput -Value $lines -Encoding utf8
 }

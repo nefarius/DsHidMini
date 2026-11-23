@@ -42,8 +42,10 @@ internal class InstallScript
 
     /// <summary>
     /// Builds and emits the MSI installer for the Nefarius DsHidMini drivers and packaged artifacts.
+    /// Pass <c>--build-cmd</c> to emit the WiX source and SfxCA packages plus a batch file,
+    /// without linking the MSI, so CI can sign those packages first.
     /// </summary>
-    private static void Main()
+    private static void Main(string[] args)
     {
         RequireStagedInputs();
 
@@ -274,6 +276,25 @@ internal class InstallScript
             throw new InvalidOperationException(
                 $"SfxCA.dll {sfxCaVersion.FileVersion} at '{sfxCa}' predates the WiX v5 temp-folder fix; " +
                 "non-elevated installs would fail with 1603.");
+        }
+
+        bool buildCmd = false;
+        foreach (string arg in args)
+        {
+            if (string.Equals(arg, "--build-cmd", StringComparison.OrdinalIgnoreCase))
+            {
+                buildCmd = true;
+                continue;
+            }
+
+            throw new ArgumentException($"Unknown installer argument '{arg}'.");
+        }
+
+        if (buildCmd)
+        {
+            string cmd = Compiler.BuildMsiCmd(project);
+            Console.WriteLine($"MSI build command: {cmd}");
+            return;
         }
 
         project.BuildMsi();
