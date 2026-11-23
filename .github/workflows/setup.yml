@@ -251,15 +251,21 @@ jobs:
           $base = [IO.Path]::GetFileNameWithoutExtension($env:MSI_NAME)
           $wxs = Join-Path $pwd "setup\$base.wxs"
           $files = @(Get-DsHidMiniWxsEmbeddedPeFiles -WxsPath $wxs)
+          $unsigned = [System.Collections.Generic.List[string]]::new()
           foreach ($file in $files) {
             $sig = Get-AuthenticodeSignature -LiteralPath $file
-            if ($sig.Status -ne 'NotSigned') {
-              throw "Expected unsigned $file but Get-AuthenticodeSignature returned $($sig.Status)."
+            if ($sig.Status -eq 'Valid') {
+              continue
             }
+            if ($sig.Status -eq 'NotSigned') {
+              $unsigned.Add($file)
+              continue
+            }
+            throw "Unexpected Authenticode status $($sig.Status) on $file."
           }
-          Write-DsHidMiniGitHubOutput -GitHubOutput $env:GITHUB_OUTPUT -Values @{ count = $files.Count }
-          Write-DsHidMiniGitHubMultilineOutput -Name 'files' -Values $files -GitHubOutput $env:GITHUB_OUTPUT
-          Write-Output "Unsigned SfxCA packages: $($files.Count)"
+          Write-DsHidMiniGitHubOutput -GitHubOutput $env:GITHUB_OUTPUT -Values @{ count = $unsigned.Count }
+          Write-DsHidMiniGitHubMultilineOutput -Name 'files' -Values @($unsigned) -GitHubOutput $env:GITHUB_OUTPUT
+          Write-Output "Unsigned SfxCA packages: $($unsigned.Count)"
 
       - name: 'Sign SfxCA packages'
         if: steps.unsigned-sfxca.outputs.count != '0'
@@ -284,11 +290,12 @@ jobs:
           }
 
       - name: 'Link MSI'
+        working-directory: setup
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $base = [IO.Path]::GetFileNameWithoutExtension($env:MSI_NAME)
-          $cmd = Join-Path $pwd "setup\Build_$base.cmd"
+          $cmd = Join-Path $pwd "Build_$base.cmd"
           if (-not (Test-Path -LiteralPath $cmd -PathType Leaf)) {
             throw "MSI build command was not produced: $cmd"
           }
@@ -327,7 +334,7 @@ jobs:
           server: ${{ env.SIGN_RELAY_SERVER }}
           token: ${{ env.SIGN_RELAY_CI_TOKEN }}
           in-place: true
-          skip-tool-install: true
+          skip-tool-install: "${{ steps.unsigned-assemblies.outputs.count != '0' || steps.unsigned-sfxca.outputs.count != '0' }}"
           files: setup/${{ needs.resolve.outputs.msi-name }}
 
       - name: 'Verify signed MSI and write provenance'
